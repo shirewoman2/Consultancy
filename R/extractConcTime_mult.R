@@ -370,9 +370,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
          ObsAssign <- data.frame()
          obs_to_sim_assignment <- NA
       } else {
-         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                         "TRUE" = existing_exp_details, 
-                         "FALSE" = deannotateDetails(existing_exp_details))
+         existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
+                                                   exp_details = "Summary and Input")
+         Deets <- existing_exp_details[["MainDetails"]]
          
          if("ObsOverlayFile" %in% names(Deets) == FALSE){
             warning("The observed data overlay file was not included in `existing_exp_details`, so we don't know which observed data files to use for the simulated files. We cannot extract any observed data.\n", 
@@ -556,227 +556,223 @@ extractConcTime_mult <- function(sim_data_files = NA,
       # Getting expdetails for the simulation(s)
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA and we have not yet extracted any details
          existing_exp_details <- extractExpDetails_mult(
-            ff, exp_details = "Input Sheet", annotate_output = FALSE)
-         Deets <- existing_exp_details %>% filter(File == ff)
+            ff, exp_details = "Summary and Input", annotate_output = FALSE)
+         Deets <- existing_exp_details$MainDetails %>% filter(File == ff)
       } else {
-         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                         "TRUE" = existing_exp_details, 
-                         "FALSE" = deannotateDetails(existing_exp_details)) 
+         existing_exp_details <- extractExpDetails(sim_data_file = ff, 
+                                                   exp_details = "Summary and Input")
+         Deets <- existing_exp_details[["MainDetails"]] %>% filter(File == ff)
          
-         if("data.frame" %in% class(Deets)){
-            Deets <- Deets %>% filter(File == ff)
+         if(nrow(Deets) == 0){
+            existing_exp_details <- extractExpDetails_mult(
+               ff, exp_details = "Summary and Input", 
+               annotate_output = FALSE)
             
-            if(nrow(Deets) == 0){
-               existing_exp_details <- extractExpDetails_mult(
-                  ff, exp_details = "Input Sheet", 
-                  existing_exp_details = existing_exp_details,
-                  annotate_output = FALSE)
-               Deets <- existing_exp_details %>% filter(File == ff)
-            }
+            Deets <- existing_exp_details[["MainDetails"]] %>% filter(File == ff)
          }
       }
+   }
+   
+   if(nrow(Deets) == 0){
+      # Using "warning" instead of "stop" here b/c I want this to be able to
+      # pass through to other functions and just skip any files that
+      # aren't simulator output.
+      warning(paste("The file", ff,
+                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
+              call. = FALSE)
+      next()
+   }
+   
+   # Names of compounds requested for checking whether the data exist
+   CompoundCheck <- c("substrate" = Deets$Substrate,
+                      "inhibitor 1" = ifelse("Inhibitor1" %in% names(Deets), 
+                                             Deets$Inhibitor1, NA),
+                      "inhibitor 1 metabolite" = ifelse("Inhibitor1Metabolite" %in% names(Deets), 
+                                                        Deets$Inhibitor1Metabolite, NA),
+                      "inhibitor 2" = ifelse("Inhibitor2" %in% names(Deets), 
+                                             Deets$Inhibitor2, NA),
+                      "primary metabolite 1" = ifelse("PrimaryMetabolite1" %in% names(Deets), 
+                                                      Deets$PrimaryMetabolite1, NA),
+                      "primary metabolite 2" = ifelse("PrimaryMetabolite2" %in% names(Deets), 
+                                                      Deets$PrimaryMetabolite2, NA),
+                      "secondary metabolite" = ifelse("SecondaryMetabolite" %in% names(Deets), 
+                                                      Deets$SecondaryMetabolite, NA))
+   
+   # NB: Asking whether it's an ADCSimulation or an ADCSimulation_sub for
+   # back compatibility w/package versions < 2.6.0
+   if(any(Deets$ADCSimulation, Deets$ADCSimulation_sub, na.rm = TRUE)){
+      CompoundCheck <- c(CompoundCheck, 
+                         "conjugated protein" = "conjugated protein", 
+                         "total protein" = "total protein", 
+                         "released payload" = "released payload")
+   }
+   
+   if(compoundsToExtract_orig[1] == "all"){
+      compoundsToExtract_n <- names(CompoundCheck)[complete.cases(CompoundCheck)]
+   } else {
+      # If the requested compound is not present in the Excel file, remove
+      # it from consideration.
+      compoundsToExtract_n <- intersect(compoundsToExtract,
+                                        names(CompoundCheck)[complete.cases(CompoundCheck)])
+   }
+   
+   if(compoundsToExtract_orig[1] != "all" &&
+      all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
+      warning(paste0("For the file ", ff, ", the compound(s) ",
+                     str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
+                     " was/were not available.\n"),
+              call. = FALSE)
+   }
+   
+   # Each tissue will be on its own sheet in the Excel file, so each
+   # will need their own iterations of the loop for reading different
+   # sheets.
+   for(j in tissues){
       
-      if(nrow(Deets) == 0){
-         # Using "warning" instead of "stop" here b/c I want this to be able to
-         # pass through to other functions and just skip any files that
-         # aren't simulator output.
-         warning(paste("The file", ff,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
-                 call. = FALSE)
-         next()
-      }
+      message(paste("Extracting data for tissue =", j))
+      # Depending on both the tissue AND which compound the user
+      # requests, that could be on multiple sheets or on a single
+      # sheet. Figuring out which sheet to read.
       
-      # Names of compounds requested for checking whether the data exist
-      CompoundCheck <- c("substrate" = Deets$Substrate,
-                         "inhibitor 1" = ifelse("Inhibitor1" %in% names(Deets), 
-                                                Deets$Inhibitor1, NA),
-                         "inhibitor 1 metabolite" = ifelse("Inhibitor1Metabolite" %in% names(Deets), 
-                                                           Deets$Inhibitor1Metabolite, NA),
-                         "inhibitor 2" = ifelse("Inhibitor2" %in% names(Deets), 
-                                                Deets$Inhibitor2, NA),
-                         "primary metabolite 1" = ifelse("PrimaryMetabolite1" %in% names(Deets), 
-                                                         Deets$PrimaryMetabolite1, NA),
-                         "primary metabolite 2" = ifelse("PrimaryMetabolite2" %in% names(Deets), 
-                                                         Deets$PrimaryMetabolite2, NA),
-                         "secondary metabolite" = ifelse("SecondaryMetabolite" %in% names(Deets), 
-                                                         Deets$SecondaryMetabolite, NA))
+      # Extracting tissue or plasma/blood data? Sheet format differs.
+      TissueType <- ifelse(str_detect(j, "plasma|blood|portal|peripheral"),
+                           "systemic", "tissue")
       
-      # NB: Asking whether it's an ADCSimulation or an ADCSimulation_sub for
-      # back compatibility w/package versions < 2.6.0
-      if(any(Deets$ADCSimulation, Deets$ADCSimulation_sub, na.rm = TRUE)){
-         CompoundCheck <- c(CompoundCheck, 
-                            "conjugated protein" = "conjugated protein", 
-                            "total protein" = "total protein", 
-                            "released payload" = "released payload")
-      }
-      
-      if(compoundsToExtract_orig[1] == "all"){
-         compoundsToExtract_n <- names(CompoundCheck)[complete.cases(CompoundCheck)]
-      } else {
-         # If the requested compound is not present in the Excel file, remove
-         # it from consideration.
-         compoundsToExtract_n <- intersect(compoundsToExtract,
-                                           names(CompoundCheck)[complete.cases(CompoundCheck)])
-      }
-      
-      if(compoundsToExtract_orig[1] != "all" &&
-         all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
-         warning(paste0("For the file ", ff, ", the compound(s) ",
-                        str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
-                        " was/were not available.\n"),
-                 call. = FALSE)
-      }
-      
-      # Each tissue will be on its own sheet in the Excel file, so each
-      # will need their own iterations of the loop for reading different
-      # sheets.
-      for(j in tissues){
+      if(TissueType == "tissue"){
+         # If the tissue type is a solid tissue, then any
+         # compound concentrations available will be on that
+         # sheet and that requires only one iteration of the
+         # loop.
          
-         message(paste("Extracting data for tissue =", j))
-         # Depending on both the tissue AND which compound the user
-         # requests, that could be on multiple sheets or on a single
-         # sheet. Figuring out which sheet to read.
+         MultData[[ff]][[j]] <- extractConcTime(
+            sim_data_file = ff,
+            obs_data_file = NA, # will add this later
+            compoundToExtract = compoundsToExtract_n,
+            tissue = j,
+            returnAggregateOrIndiv = returnAggregateOrIndiv, 
+            fromMultFunction = TRUE, 
+            existing_exp_details = as.data.frame(Deets) %>% filter(File == ff))
          
-         # Extracting tissue or plasma/blood data? Sheet format differs.
-         TissueType <- ifelse(str_detect(j, "plasma|blood|portal|peripheral"),
-                              "systemic", "tissue")
-         
-         if(TissueType == "tissue"){
-            # If the tissue type is a solid tissue, then any
-            # compound concentrations available will be on that
-            # sheet and that requires only one iteration of the
-            # loop.
+         # When the particular combination of compound and tissue is not
+         # available in that file, extractConcTime will return an empty
+         # data.frame, which we don't want to be included in the final
+         # data. Not adding info for File in that scenario b/c it would
+         # add a row to what would have been an empty data.frame.
+         if(nrow(MultData[[ff]][[j]]) > 0){
+            MultData[[ff]][[j]] <-
+               MultData[[ff]][[j]] %>%
+               mutate(File = ff)
             
-            MultData[[ff]][[j]] <- extractConcTime(
-               sim_data_file = ff,
-               obs_data_file = NA, # will add this later
-               compoundToExtract = compoundsToExtract_n,
-               tissue = j,
-               returnAggregateOrIndiv = returnAggregateOrIndiv, 
-               fromMultFunction = TRUE, 
-               existing_exp_details = as.data.frame(Deets) %>% filter(File == ff))
-            
-            # When the particular combination of compound and tissue is not
-            # available in that file, extractConcTime will return an empty
-            # data.frame, which we don't want to be included in the final
-            # data. Not adding info for File in that scenario b/c it would
-            # add a row to what would have been an empty data.frame.
-            if(nrow(MultData[[ff]][[j]]) > 0){
-               MultData[[ff]][[j]] <-
-                  MultData[[ff]][[j]] %>%
-                  mutate(File = ff)
+            # Need to handle ADAM data specially
+            ADAMtissue <- c("stomach", "duodenum", "jejunum I",
+                            "jejunum II", "ileum I", "ileum II",
+                            "ileum III", "ileum IV", "colon", "faeces", 
+                            "gut tissue", "cumulative absorption", 
+                            "cumulative fraction released",
+                            "cumulative dissolution")
+            if(any(MultData[[ff]][[j]]$Tissue %in% ADAMtissue)){
+               CT_adam <- MultData[[ff]][[j]] %>% 
+                  filter(Tissue %in% ADAMtissue)
                
-               # Need to handle ADAM data specially
-               ADAMtissue <- c("stomach", "duodenum", "jejunum I",
-                               "jejunum II", "ileum I", "ileum II",
-                               "ileum III", "ileum IV", "colon", "faeces", 
-                               "gut tissue", "cumulative absorption", 
-                               "cumulative fraction released",
-                               "cumulative dissolution")
-               if(any(MultData[[ff]][[j]]$Tissue %in% ADAMtissue)){
-                  CT_adam <- MultData[[ff]][[j]] %>% 
-                     filter(Tissue %in% ADAMtissue)
-                  
-                  
-                  CT_nonadam <- MultData[[ff]][[j]] %>% 
-                     filter(Tissue %in% ADAMtissue == FALSE)
-                  
-                  if(nrow(CT_nonadam) > 0){
-                     CT_nonadam <- CT_nonadam %>% 
-                        match_units(DF_to_adjust = CT_nonadam,
-                                    goodunits = list("Conc_units" = conc_units_to_use,
-                                                     "Time_units" = time_units_to_use))
-                  }
-                  
-                  MultData[[ff]][[j]] <- bind_rows(CT_adam, CT_nonadam)
-                  
-               } else {
-                  
-                  MultData[[ff]][[j]] <-
-                     match_units(DF_to_adjust = MultData[[ff]][[j]],
+               
+               CT_nonadam <- MultData[[ff]][[j]] %>% 
+                  filter(Tissue %in% ADAMtissue == FALSE)
+               
+               if(nrow(CT_nonadam) > 0){
+                  CT_nonadam <- CT_nonadam %>% 
+                     match_units(DF_to_adjust = CT_nonadam,
                                  goodunits = list("Conc_units" = conc_units_to_use,
                                                   "Time_units" = time_units_to_use))
                }
+               
+               MultData[[ff]][[j]] <- bind_rows(CT_adam, CT_nonadam)
+               
+            } else {
+               
+               MultData[[ff]][[j]] <-
+                  match_units(DF_to_adjust = MultData[[ff]][[j]],
+                              goodunits = list("Conc_units" = conc_units_to_use,
+                                               "Time_units" = time_units_to_use))
             }
+         }
+         
+      } else {
+         # If TissueType is systemic, then substrate and
+         # inhibitor concs are on the same sheet, but metabolite
+         # concs are elsewhere.
+         CompoundTypes <-
+            data.frame(PossCompounds = PossCmpd) %>%
+            mutate(Type = ifelse(PossCompounds %in%
+                                    c("substrate", "inhibitor 1",
+                                      "inhibitor 2",
+                                      "inhibitor 1 metabolite"),
+                                 "substrate", PossCompounds)) %>%
+            filter(PossCompounds %in% compoundsToExtract_n)
+         
+         MultData[[ff]][[j]] <- list()
+         
+         for(k in unique(CompoundTypes$Type)){
             
-         } else {
-            # If TissueType is systemic, then substrate and
-            # inhibitor concs are on the same sheet, but metabolite
-            # concs are elsewhere.
-            CompoundTypes <-
-               data.frame(PossCompounds = PossCmpd) %>%
-               mutate(Type = ifelse(PossCompounds %in%
-                                       c("substrate", "inhibitor 1",
-                                         "inhibitor 2",
-                                         "inhibitor 1 metabolite"),
-                                    "substrate", PossCompounds)) %>%
-               filter(PossCompounds %in% compoundsToExtract_n)
+            # print(paste("CompoundTypes$Type k =", k))
+            compoundsToExtract_k <-
+               CompoundTypes %>% filter(Type == k) %>%
+               pull(PossCompounds)
             
-            MultData[[ff]][[j]] <- list()
+            MultData[[ff]][[j]][[k]] <-
+               extractConcTime(
+                  sim_data_file = ff,
+                  obs_data_file = NA, # will add this later
+                  compoundToExtract = compoundsToExtract_k,
+                  tissue = j,
+                  returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                  fromMultFunction = TRUE, 
+                  existing_exp_details = Deets)
             
-            for(k in unique(CompoundTypes$Type)){
-               
-               # print(paste("CompoundTypes$Type k =", k))
-               compoundsToExtract_k <-
-                  CompoundTypes %>% filter(Type == k) %>%
-                  pull(PossCompounds)
-               
+            # When the particular combination of compound and
+            # tissue is not available in that file,
+            # extractConcTime will return an empty data.frame,
+            # which we don't want to be included in the final
+            # data. Not adding info for File in that scenario
+            # b/c it would add a row to what would have been
+            # an empty data.frame.
+            if(nrow(MultData[[ff]][[j]][[k]]) > 0){
                MultData[[ff]][[j]][[k]] <-
-                  extractConcTime(
-                     sim_data_file = ff,
-                     obs_data_file = NA, # will add this later
-                     compoundToExtract = compoundsToExtract_k,
-                     tissue = j,
-                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                     fromMultFunction = TRUE, 
-                     existing_exp_details = Deets)
+                  MultData[[ff]][[j]][[k]] %>%
+                  mutate(File = ff)
                
-               # When the particular combination of compound and
-               # tissue is not available in that file,
-               # extractConcTime will return an empty data.frame,
-               # which we don't want to be included in the final
-               # data. Not adding info for File in that scenario
-               # b/c it would add a row to what would have been
-               # an empty data.frame.
-               if(nrow(MultData[[ff]][[j]][[k]]) > 0){
-                  MultData[[ff]][[j]][[k]] <-
-                     MultData[[ff]][[j]][[k]] %>%
-                     mutate(File = ff)
-                  
-                  # Adding some NA values to Deets as needed for the next bit to
-                  # work w/out generating a ton of warnings.
-                  MissingCols <- setdiff(paste0("MW", 
-                                                c("_sub", "_met1", "_met2", "_secmet",
-                                                  "_inhib", "_inhib2", "_inhib1met")), 
-                                         names(Deets))
-                  if(length(MissingCols) > 0){
-                     Deets <- Deets %>% 
-                        bind_cols(as.data.frame(matrix(
-                           data = NA, ncol = length(MissingCols), 
-                           dimnames = list(NULL, MissingCols))))
-                  }
-                  
-                  MolWts <- c("substrate" = Deets$MW_sub, 
-                              "primary metabolite 1" = Deets$MW_met1, 
-                              "primary metabolite 2" = Deets$MW_met2,
-                              "secondary metabolite" = Deets$MW_secmet,
-                              "inhibitor 1"= Deets$MW_inhib,
-                              "inhibitor 2" = Deets$MW_inhib2,
-                              "inhibitor 1 metabolite" = Deets$MW_inhib1met)
-                  
-                  
-                  MultData[[ff]][[j]][[k]] <-
-                     match_units(DF_to_adjust = MultData[[ff]][[j]][[k]],
-                                 goodunits = list("Conc_units" = conc_units_to_use,
-                                                  "Time_units" = time_units_to_use), 
-                                 MW = MolWts[complete.cases(MolWts)])
+               # Adding some NA values to Deets as needed for the next bit to
+               # work w/out generating a ton of warnings.
+               MissingCols <- setdiff(paste0("MW", 
+                                             c("_sub", "_met1", "_met2", "_secmet",
+                                               "_inhib", "_inhib2", "_inhib1met")), 
+                                      names(Deets))
+               if(length(MissingCols) > 0){
+                  Deets <- Deets %>% 
+                     bind_cols(as.data.frame(matrix(
+                        data = NA, ncol = length(MissingCols), 
+                        dimnames = list(NULL, MissingCols))))
                }
                
-               rm(compoundsToExtract_k)
+               MolWts <- c("substrate" = Deets$MW_sub, 
+                           "primary metabolite 1" = Deets$MW_met1, 
+                           "primary metabolite 2" = Deets$MW_met2,
+                           "secondary metabolite" = Deets$MW_secmet,
+                           "inhibitor 1"= Deets$MW_inhib,
+                           "inhibitor 2" = Deets$MW_inhib2,
+                           "inhibitor 1 metabolite" = Deets$MW_inhib1met)
+               
+               
+               MultData[[ff]][[j]][[k]] <-
+                  match_units(DF_to_adjust = MultData[[ff]][[j]][[k]],
+                              goodunits = list("Conc_units" = conc_units_to_use,
+                                               "Time_units" = time_units_to_use), 
+                              MW = MolWts[complete.cases(MolWts)])
             }
             
-            MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
+            rm(compoundsToExtract_k)
          }
+         
+         MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
       }
       
       MultData[[ff]] <- bind_rows(MultData[[ff]])
@@ -816,7 +812,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    if("Dose_sub" %in% names(ct_dataframe) &
       "Dose_sub" %in% names(MultData) &&
       (class(ct_dataframe$Dose_sub) == "character" |
-      class(MultData$Dose_sub) == "character")){
+       class(MultData$Dose_sub) == "character")){
       
       MultData$Dose_sub <- as.character(MultData$Dose_sub)
       ct_dataframe$Dose_sub <- as.character(ct_dataframe$Dose_sub)

@@ -798,40 +798,18 @@ pksummary_table <- function(sim_data_file = NA,
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                     exp_details = NecessaryDetails)
-         if("list" %in% class(Deets)){
-            Deets <- Deets$MainDetails
-         }
       } else {
-         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                         "TRUE" = existing_exp_details, 
-                         "FALSE" = deannotateDetails(existing_exp_details))
          
-         if("data.frame" %in% class(Deets)){
-            Deets <- Deets %>% filter(File == sim_data_file)
-            
-            if(nrow(Deets) == 0){
-               Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                          exp_details = NecessaryDetails)
-            }
-         } else {
-            Deets <- as.data.frame(Deets)
-         }
+         existing_exp_details <- 
+            harmonize_details(existing_exp_details = existing_exp_details)
          
-         # Deets should now be a data.frame. Checking that we have everything we need.
-         if(any(NecessaryDetails %in% names(Deets) == FALSE)){
+         Deets <- existing_exp_details$MainDetails %>% 
+            filter(File == sim_data_file)
+         
+         if(nrow(Deets) == 0){
             Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                        exp_details = NecessaryDetails)
          }
-      }
-      
-      # We need to know the dosing regimen for whatever compound they
-      # requested, but, if the compoundID is inhibitor 2, then that's listed
-      # on the input tab, and we'll need to extract exp details for that, too.
-      if("inhibitor 2" %in% compoundToExtract &
-         "Inhibitor2" %in% names(Deets) == FALSE){
-         DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
-                                              exp_details = "Input Sheet")
-         Deets <- c(as.list(Deets), DeetsInputSheet)
       }
       
       # extractExpDetails will check whether the Excel file provided was, in
@@ -879,7 +857,7 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    ## Determining which PK parameters to pull --------------------------------
-   if(complete.cases(PKparameters[1])){
+   if(any(complete.cases(PKparameters))){
       # If user specified "_first" instead of "_dose1", make that work, too. 
       PKToPull <- sub("_first", "_dose1", PKparameters)
       
@@ -951,7 +929,7 @@ pksummary_table <- function(sim_data_file = NA,
         complete.cases(Deets$DoseInt_inhib2) &&
         Deets$DoseInt_inhib2 == "custom dosing")) &
       
-      any(str_detect(PKparameters, "_last")) & is.na(sheet_PKparameters)){
+      any(str_detect(PKToPull, "_last")) & is.na(sheet_PKparameters)){
       warning(paste0("The file `",
                      sim_data_file,
                      "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.\nWe cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet_PKparameters`."), 

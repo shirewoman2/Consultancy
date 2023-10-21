@@ -598,38 +598,22 @@ pksummary_mult <- function(sim_data_files = NA,
       # existing_exp_details will include ALL experimental details provided or
       # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-         existing_exp_details <- extractExpDetails(i, exp_details = "Summary tab", 
+         existing_exp_details <- extractExpDetails(i, exp_details = "Summary and Input", 
                                                    annotate_output = FALSE) %>% 
             as.data.frame()
       } else {
-         existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
-                                        "TRUE" = existing_exp_details, 
-                                        "FALSE" = deannotateDetails(existing_exp_details)) 
+         existing_exp_details <- harmonize_details(existing_exp_details)
       }
       
-      Deets <- existing_exp_details %>% filter(File == i)
+      Deets <- existing_exp_details$MainDetails %>% filter(File == i)
       
       if(nrow(Deets) == 0){
-         existing_exp_details <- 
-            extractExpDetails_mult(sim_data_file = i, 
-                                   existing_exp_details = existing_exp_details,
-                                   exp_details = "Summary tab", 
-                                   annotate_output = FALSE)
-         
-         Deets <- existing_exp_details %>% filter(File == i)
+         Deets <- 
+            extractExpDetails(sim_data_file = i, 
+                              exp_details = "Summary and Input", 
+                              annotate_output = FALSE)[["MainDetails"]]
       }
-      
-      # We need to know the dosing regimen for whatever compound they
-      # requested, but, if the compoundID is inhibitor 2, then that's listed
-      # on the input tab, and we'll need to extract exp details for that, too.
-      if("inhibitor 2" %in% compoundsToExtract){
-         existing_exp_details <-
-            extractExpDetails_mult(sim_data_file = i, 
-                                   existing_exp_details = existing_exp_details,
-                                   exp_details = "Input Sheet")
-         Deets <- existing_exp_details %>% filter(File == i)
-      }
-      
+
       # Checking that the file is, indeed, a simulator output file.
       if(length(Deets) == 0){
          # Using "warning" instead of "stop" here b/c I want this to be able to

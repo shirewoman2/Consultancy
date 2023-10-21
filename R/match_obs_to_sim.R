@@ -143,7 +143,7 @@ match_obs_to_sim <- function(ct_dataframe,
    ObsAssign$File <- paste0(sub("\\..*", "", ObsAssign$File), ".xlsx")
    
    # Making sure we have all the info we need.
-   if(all(ObsAssign$File %in% existing_exp_details$File) == FALSE){
+   if(all(ObsAssign$File %in% existing_exp_details$MainDetails$File) == FALSE){
       suppressMessages(
          existing_exp_details <- 
             extractExpDetails_mult(sim_data_files = ObsAssign$File, 
@@ -185,8 +185,8 @@ match_obs_to_sim <- function(ct_dataframe,
          # file existing_exp_details.
          ObsData_j[[k]] <- calc_dosenumber(
             ct_dataframe = ObsData_j[[k]], 
-            existing_exp_details = existing_exp_details %>% 
-               filter(File == k))
+            existing_exp_details = list(MainDetails = existing_exp_details$MainDetails %>% 
+                                           filter(File == k)))
          
          # Matching units
          ObsData_j[[k]] <- match_units(ObsData_j[[k]], 

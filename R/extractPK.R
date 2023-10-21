@@ -197,29 +197,15 @@ extractPK <- function(sim_data_file,
    # Checking experimental details to only pull details that apply
    if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
       Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                 exp_details = "Summary tab")
+                                 exp_details = "Summary and Input")[["MainDetails"]]
    } else {
-      Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                      "TRUE" = existing_exp_details, 
-                      "FALSE" = deannotateDetails(existing_exp_details))
+      Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>% 
+         filter(File == sim_data_file)
       
-      if("data.frame" %in% class(Deets)){
-         Deets <- Deets %>% filter(File == sim_data_file)
-         
-         if(nrow(Deets) == 0){
-            Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                       exp_details = "Summary tab")
-         }
+      if(nrow(Deets) == 0){
+         Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                    exp_details = "Summary and Input")[["MainDetails"]]
       }
-   }
-   
-   # We need to know the dosing regimen for whatever compound they
-   # requested, but, if the compoundID is inhibitor 2, then that's listed
-   # on the input tab, and we'll need to extract exp details for that, too.
-   if("inhibitor 2" %in% compoundToExtract){
-      DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
-                                           exp_details = "Input Sheet")
-      Deets <- c(as.list(Deets), DeetsInputSheet)
    }
    
    # extractExpDetails will check whether the Excel file provided was, in

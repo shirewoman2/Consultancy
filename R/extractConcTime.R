@@ -269,21 +269,19 @@ extractConcTime <- function(sim_data_file,
    
    # Getting summary data for the simulation(s)
    if(fromMultFunction || ("logical" %in% class(existing_exp_details) == FALSE)){
-      Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                      "TRUE" = existing_exp_details, 
-                      "FALSE" = deannotateDetails(existing_exp_details))
+      Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>% 
+         filter(File == sim_data_file)
       
-      if("data.frame" %in% class(Deets)){
-         Deets <- Deets %>% filter(File == sim_data_file)
-         
-         if(nrow(Deets) == 0){
-            Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                       exp_details = "Input Sheet")
-         }
+      if(nrow(Deets) == 0){
+         existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
+                                                   exp_details = "Summary and Input")
+         Deets <- existing_exp_details[["MainDetails"]]
       }
       
    } else {
-      Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
+      existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
+                                                exp_details = "Summary and Input")
+      Deets <- existing_exp_details[["MainDetails"]]
    } 
    
    if(is.null(Deets$PopRepSim) == FALSE && Deets$PopRepSim == "Yes" &
@@ -1999,7 +1997,7 @@ extractConcTime <- function(sim_data_file,
    }
    
    Data <- calc_dosenumber(ct_dataframe = Data %>% mutate(File = sim_data_file), 
-                           existing_exp_details = Deets)
+                           existing_exp_details = existing_exp_details)
    
    # Finalizing
    Data <- Data %>%
