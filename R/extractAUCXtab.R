@@ -9,7 +9,7 @@
 #' @param UserSpecified TRUE or FALSE for whether this was a user-specified
 #'   sheet, in which case we don't know which dose it is
 #' @param Deets output from running extractExpDetails on the provided
-#'   sim_data_file
+#'   sim_data_file and setting \code{Deets <- existing_exp_details$MainDetails}
 #' @param includeTrialInfo TRUE or FALSE
 #' @param DataCheck DataCheck data.frame
 #' @param PKparameters_orig original PK parameters from extractPK function

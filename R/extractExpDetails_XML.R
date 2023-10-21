@@ -318,8 +318,9 @@ extractExpDetails_XML <- function(sim_workspace_files,
    Deets[Deets == ""] <- NA
    
    # Sorting to help organize output
-   Deets <- Deets %>% 
-      select(File, everything())
+   Deets <- Deets %>% select(Workspace, everything())
+   
+   # Saving & harmonizing ------------------------------------------------------
    
    if(complete.cases(save_output)){
       FileName <- save_output
@@ -342,7 +343,9 @@ extractExpDetails_XML <- function(sim_workspace_files,
                                     sheet = "Simulation experimental details"))
    }
    
-   return(Deets)
+   Out <- harmonize_details(Deets)
+   
+   return(Out)
    
 }
 

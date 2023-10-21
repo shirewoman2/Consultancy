@@ -51,8 +51,6 @@ match_units <- function(DF_to_adjust,
            call. = FALSE)
    }
    
-   # FIXME - left off here
-   
    # if("logical" %in% class(goodunits)){
    #     stop("You have supplied units you want but not labeled them in a way the function `match_units` can understand. Please name the items in the list supplied to `goodunits` as `Time_units` and/or `Conc_units`.", 
    #          call. = FALSE)
@@ -82,36 +80,30 @@ match_units <- function(DF_to_adjust,
    
    
    # Main body of function -------------------------------------------------
-   # If user only wants to change conc units or only time units, make the other
-   # option be whatever the DF_to_adjust already has.
-   if("data.frame" %in% class(goodunits) == FALSE && 
-      length(goodunits) == 1){
-      
-      if("Conc_units" %in% names(goodunits) == FALSE){
-         goodunits$Conc_units <- unique(DF_to_adjust$Conc_units)
-      }
-      
-      if("Time_units" %in% names(goodunits) == FALSE){
-         goodunits$Time_units <- unique(DF_to_adjust$Time_units)
-      }
-   }
    
+   ## Setting up the data --------------------------------------------------
+   
+   if("data.frame" %in% class(goodunits)){
+      goodunits <- goodunits %>% 
+         mutate(Conc_units = sub("ug", "µg", Conc_units), 
+                Conc_units = sub("uM", "µM", Conc_units))
+   } else if("list" %in% class(goodunits)){
+      goodunits$Conc_units <- sub("ug", "µg", goodunits$Conc_units)
+      goodunits$Conc_units <- sub("uM", "µM", goodunits$Conc_units)
+   } else {
+      goodunits <- list(Conc_units = conc_units, 
+                        Time_units = time_units)
+   }
    
    # Allowing for "u" instead of "µ" as input
    DF_to_adjust <- DF_to_adjust %>% 
       mutate(Conc_units = sub("ug", "µg", Conc_units), 
              Conc_units = sub("uM", "µM", Conc_units))
    
-   if("data.frame" %in% class(goodunits)){
-      goodunits <- goodunits %>% 
-         mutate(Conc_units = sub("ug", "µg", Conc_units), 
-                Conc_units = sub("uM", "µM", Conc_units))
-   } else {
-      goodunits$Conc_units <- sub("ug", "µg", goodunits$Conc_units)
-      goodunits$Conc_units <- sub("uM", "µM", goodunits$Conc_units)
-   }
+   goodunits$Conc_units <- sub("ug", "µg", goodunits$Conc_units)
+   goodunits$Conc_units <- sub("uM", "µM", goodunits$Conc_units)
    
-   # Matching concentration units --------------------------------------
+   ## Matching concentration units --------------------------------------
    
    MassUnits <- c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL")
    MolarUnits <- c("µM", "nM")
@@ -241,7 +233,7 @@ match_units <- function(DF_to_adjust,
    DF_to_adjust <- DF_to_adjust %>% mutate(Conc = Conc*ConvFactor_conc,
                                            Conc_units = unique(goodunits$Conc_units))
    
-   # Matching time units -------------------------------------------------
+   ## Matching time units -------------------------------------------------
    
    ConvTable_time <- data.frame(
       OrigUnits = rep(c("hours", "minutes", "days"), 3),
@@ -261,6 +253,9 @@ match_units <- function(DF_to_adjust,
    
    DF_to_adjust <- DF_to_adjust %>% mutate(Time = Time*ConvFactor_time,
                                            Time_units = unique(goodunits$Time_units))
+   
+   
+   ## Output -----------------------------------------------------------
    
    return(DF_to_adjust)
 }

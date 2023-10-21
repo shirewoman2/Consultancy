@@ -13,9 +13,8 @@
 #' 
 determine_myeffector <- function(Deets, prettify_compound_names){
    
-   Deets <- switch(as.character("File" %in% names(as.data.frame(Deets))), 
-                   "TRUE" = as.data.frame(Deets), 
-                   "FALSE" = deannotateDetails(Deets))
+   Deets <- harmonize_details(Deets)
+   Deets <- Deets$MainDetails
    
    MyEffector <- 
       c("Inhibitor1" = switch(as.character("Inhibitor1" %in% names(Deets)), 

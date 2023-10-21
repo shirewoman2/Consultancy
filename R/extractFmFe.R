@@ -58,23 +58,21 @@ extractFmFe <- function(sim_data_file,
    # Main body of function ----------------------------------------------------------------
    
    # Getting summary data for the simulation(s)
-   if("logical" %in% class(existing_exp_details) == FALSE){
-      Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                      "TRUE" = existing_exp_details, 
-                      "FALSE" = deannotateDetails(existing_exp_details))
-      
-      if("data.frame" %in% class(Deets)){
-         Deets <- Deets %>% filter(File == sim_data_file)
-         
-         if(nrow(Deets) == 0){
-            Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                       exp_details = "Input Sheet")
-         }
-      }
+   
+   if("logical" %in% class(existing_exp_details)){
+      Deets <- extractExpDetails(sim_data_file,
+                                 exp_details = "Summary and Input")[["MainDetails"]]
       
    } else {
-      Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
-   } 
+      existing_exp_details <- harmonize_details(existing_exp_details)
+      
+      Deets <- existing_exp_details$MainDetails
+      
+      if(nrow(Deets) == 0){
+         Deets <- extractExpDetails(sim_data_file,
+                                    exp_details = "Summary and Input")[["MainDetails"]]
+      }
+   }
    
    if(Deets$PopRepSim == "Yes"){
       warning(paste0("The simulator file supplied, `", 
@@ -112,18 +110,18 @@ extractFmFe <- function(sim_data_file,
       EndRow <- which(is.na(sim_data_xl$...1[3:nrow(sim_data_xl)]))[1] + 1
       
       suppressMessages(
-      Out <- sim_data_xl[3:EndRow, 1:5] %>% 
-         rename(Max = ...2, 
-                tmax = ...3, 
-                Min = ...4, 
-                tmin = ...5) %>% 
-         mutate(Tissue = str_extract(tolower(...1), "liver|kidney|renal"), 
-                Enzyme = str_extract(...1, "(CYP|UGT)[1-9][ABCDEFJ][1-9]{1,2}|Additional"), 
-                EffectorPresent = str_detect(tolower(...1), "with inh"), 
-                Parameter = str_extract(...1, "fm|fe"), 
-                across(.cols = c(Max, tmax, Min, tmin), 
-                       .fns = as.numeric)) %>% 
-         select(Parameter, Tissue, Enzyme, EffectorPresent, Max, tmax, Min, tmin)
+         Out <- sim_data_xl[3:EndRow, 1:5] %>% 
+            rename(Max = ...2, 
+                   tmax = ...3, 
+                   Min = ...4, 
+                   tmin = ...5) %>% 
+            mutate(Tissue = str_extract(tolower(...1), "liver|kidney|renal"), 
+                   Enzyme = str_extract(...1, "(CYP|UGT)[1-9][ABCDEFJ][1-9]{1,2}|Additional"), 
+                   EffectorPresent = str_detect(tolower(...1), "with inh"), 
+                   Parameter = str_extract(...1, "fm|fe"), 
+                   across(.cols = c(Max, tmax, Min, tmin), 
+                          .fns = as.numeric)) %>% 
+            select(Parameter, Tissue, Enzyme, EffectorPresent, Max, tmax, Min, tmin)
       )
       
       return(Out)

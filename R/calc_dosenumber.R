@@ -43,15 +43,15 @@ calc_dosenumber <- function(ct_dataframe,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   existing_exp_details <- harmonize_details(existing_exp_details)
+   Deets <- harmonize_details(existing_exp_details)[["MainDetails"]]
    
-   if(all(existing_exp_details$MainDetails$File == "all", na.rm = T)){
-      if(nrow(existing_exp_details$MainDetails) > 1){
-         stop("You have set the file names in `existing_exp_details$MainDetails` to `all`, but `existing_exp_details$MainDetails` has more than one row, so we don't know which files should have which dosing regimen. We cannot assign any dose numbers.", 
+   if(all(Deets$File == "all", na.rm = T)){
+      if(nrow(Deets) > 1){
+         stop("You have set the file names in `Deets` to `all`, but `Deets` has more than one row, so we don't know which files should have which dosing regimen. We cannot assign any dose numbers.", 
               call. = FALSE)
       } 
       
-      existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+      Deets <- Deets %>% 
          select(-File) %>% 
          mutate(Placeholder = "A") %>% 
          left_join(data.frame(File = unique(ct_dataframe$File), 
@@ -60,79 +60,79 @@ calc_dosenumber <- function(ct_dataframe,
          select(-Placeholder)
    }
    
-   # Checking that all files are present in existing_exp_details$MainDetails and giving
+   # Checking that all files are present in Deets and giving
    # warning if not.
    FileCheck <- setdiff(unique(ct_dataframe$File), 
-                        existing_exp_details$MainDetails$File)
+                        Deets$File)
    if(length(FileCheck) > 0){
-      warning(paste0("The following files are not present in `existing_exp_details$MainDetails`, so we can't determine what the dose numbers were and will ignore these data: ", 
+      warning(paste0("The following files are not present in `Deets`, so we can't determine what the dose numbers were and will ignore these data: ", 
                      str_c(FileCheck, collapse = "\n")), 
               call. = FALSE)
    }
    
    # Main body of function -------------------------------------------------
    
-   # Adding some NA values to existing_exp_details$MainDetails as needed for the next bit to
+   # Adding some NA values to Deets as needed for the next bit to
    # work w/out generating a ton of warnings.
    MissingCols <- setdiff(paste0(rep(c("DoseInt", "StartHr", "Regimen", 
                                        "NumDoses"), each = 3), 
                                  c("_sub", "_inhib", "_inhib2")), 
-                          names(existing_exp_details$MainDetails))
+                          names(Deets))
    
    if(length(MissingCols) > 0){
-      existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+      Deets <- Deets %>% 
          bind_cols(as.data.frame(matrix(data = NA, 
                                         ncol = length(MissingCols),
                                         dimnames = list(NULL, MissingCols))))
    }
    
-   # Splitting existing_exp_details$MainDetails and ct_dataframe by file and going through 1
+   # Splitting Deets and ct_dataframe by file and going through 1
    # file at a time.
-   existing_exp_details$MainDetails <- split(existing_exp_details$MainDetails,
-                                             f = existing_exp_details$MainDetails$File)
+   Deets <- split(Deets,
+                  f = Deets$File)
    
    ct_dataframe <- split(ct_dataframe, 
                          f = ct_dataframe$File)
    
-   for(i in intersect(names(existing_exp_details$MainDetails), 
+   for(i in intersect(names(Deets), 
                       names(ct_dataframe))){
       
       # Getting dose regimen info
       MyIntervals <- 
-         c("substrate" = existing_exp_details$MainDetails[[i]]$DoseInt_sub,
-           "primary metabolite 1" = existing_exp_details$MainDetails[[i]]$DoseInt_sub,
-           "primary metabolite 2" = existing_exp_details$MainDetails[[i]]$DoseInt_sub,
-           "secondary metabolite" = existing_exp_details$MainDetails[[i]]$DoseInt_sub,
-           "inhibitor 1" = existing_exp_details$MainDetails[[i]]$DoseInt_inhib,
-           "inhibitor 1 metabolite" = existing_exp_details$MainDetails[[i]]$DoseInt_inhib,
-           "inhibitor 2" = existing_exp_details$MainDetails[[i]]$DoseInt_inhib2, 
+         c("substrate" = Deets[[i]]$DoseInt_sub,
+           "primary metabolite 1" = Deets[[i]]$DoseInt_sub,
+           "primary metabolite 2" = Deets[[i]]$DoseInt_sub,
+           "secondary metabolite" = Deets[[i]]$DoseInt_sub,
+           "inhibitor 1" = Deets[[i]]$DoseInt_inhib,
+           "inhibitor 1 metabolite" = Deets[[i]]$DoseInt_inhib,
+           "inhibitor 2" = Deets[[i]]$DoseInt_inhib2, 
            "UNKNOWN" = NA)
       
       MyStartTimes <- 
-         c("substrate" = existing_exp_details$MainDetails[[i]]$StartHr_sub,
-           "primary metabolite 1" = existing_exp_details$MainDetails[[i]]$StartHr_sub,
-           "primarymetabolite 2" = existing_exp_details$MainDetails[[i]]$StartHr_sub,
-           "secondary metabolite" = existing_exp_details$MainDetails[[i]]$StartHr_sub,
-           "inhibitor 1" = existing_exp_details$MainDetails[[i]]$StartHr_inhib,
-           "inhibitor 2" = existing_exp_details$MainDetails[[i]]$StartHr_inhib2,
-           "inhibitor 1 metabolite" = existing_exp_details$MainDetails[[i]]$StartHr_inhib, 
+         c("substrate" = Deets[[i]]$StartHr_sub,
+           "primary metabolite 1" = Deets[[i]]$StartHr_sub,
+           "primarymetabolite 2" = Deets[[i]]$StartHr_sub,
+           "secondary metabolite" = Deets[[i]]$StartHr_sub,
+           "inhibitor 1" = Deets[[i]]$StartHr_inhib,
+           "inhibitor 2" = Deets[[i]]$StartHr_inhib2,
+           "inhibitor 1 metabolite" = Deets[[i]]$StartHr_inhib, 
            "UNKNOWN" = NA)
       
       MyMaxDoseNum <- 
-         c("substrate" = ifelse(existing_exp_details$MainDetails[[i]]$Regimen_sub == "Single Dose", 
-                                1, existing_exp_details$MainDetails[[i]]$NumDoses_sub),
-           "primary metabolite 1" = ifelse(existing_exp_details$MainDetails[[i]]$Regimen_sub == "Single Dose", 
-                                           1, existing_exp_details$MainDetails[[i]]$NumDoses_sub),
-           "primarymetabolite 2" = ifelse(existing_exp_details$MainDetails[[i]]$Regimen_sub == "Single Dose", 
-                                          1, existing_exp_details$MainDetails[[i]]$NumDoses_sub),
-           "secondary metabolite" = ifelse(existing_exp_details$MainDetails[[i]]$Regimen_sub == "Single Dose", 
-                                           1, existing_exp_details$MainDetails[[i]]$NumDoses_sub),
-           "inhibitor 1" = ifelse(existing_exp_details$MainDetails[[i]]$Regimen_inhib == "Single Dose", 
-                                  1, existing_exp_details$MainDetails[[i]]$NumDoses_inhib),
-           "inhibitor 2" = ifelse(existing_exp_details$MainDetails[[i]]$Regimen_inhib2 == "Single Dose", 
-                                  1, existing_exp_details$MainDetails[[i]]$NumDoses_inhib2),
-           "inhibitor 1 metabolite" = ifelse(existing_exp_details$MainDetails[[i]]$Regimen_inhib == "Single Dose", 
-                                             1, existing_exp_details$MainDetails[[i]]$NumDoses_inhib), 
+         c("substrate" = ifelse(Deets[[i]]$Regimen_sub == "Single Dose", 
+                                1, Deets[[i]]$NumDoses_sub),
+           "primary metabolite 1" = ifelse(Deets[[i]]$Regimen_sub == "Single Dose", 
+                                           1, Deets[[i]]$NumDoses_sub),
+           "primarymetabolite 2" = ifelse(Deets[[i]]$Regimen_sub == "Single Dose", 
+                                          1, Deets[[i]]$NumDoses_sub),
+           "secondary metabolite" = ifelse(Deets[[i]]$Regimen_sub == "Single Dose", 
+                                           1, Deets[[i]]$NumDoses_sub),
+           "inhibitor 1" = ifelse(Deets[[i]]$Regimen_inhib == "Single Dose", 
+                                  1, Deets[[i]]$NumDoses_inhib),
+           "inhibitor 2" = ifelse(Deets[[i]]$Regimen_inhib2 == "Single Dose", 
+                                  1, Deets[[i]]$NumDoses_inhib2),
+           "inhibitor 1 metabolite" = ifelse(Deets[[i]]$Regimen_inhib == "Single Dose", 
+                                             1, Deets[[i]]$NumDoses_inhib), 
            "UNKNOWN" = NA)
       
       # Converting data to numeric while also retaining names
@@ -159,10 +159,10 @@ calc_dosenumber <- function(ct_dataframe,
                                  ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
       
       # Checking for any custom dosing
-      CDnames <- names(existing_exp_details[[i]])[
-         sapply(existing_exp_details[[i]], is.null) == FALSE]
-      CDnames <- names(existing_exp_details[[i]][CDnames])[
-         sapply(existing_exp_details[[i]][CDnames], nrow) > 0]
+      CDnames <- names(Deets[[i]])[
+         sapply(Deets[[i]], is.null) == FALSE]
+      CDnames <- names(Deets[[i]][CDnames])[
+         sapply(Deets[[i]][CDnames], nrow) > 0]
       CDnames <- CDnames[str_detect(CDnames, "CustomDosing")]
       
       if(length(CDnames) < 0){
@@ -187,40 +187,40 @@ calc_dosenumber <- function(ct_dataframe,
                jj <- CDCompounds$CompoundID[CDCompounds$CDnames == j]
                
                # message(paste("CDCompounds$CompoundID j =", j))
-               if(max(ct_dataframe[[i]][[jj]]$Time) > max(existing_exp_details[[i]][[j]]$Time)){
-                  existing_exp_details[[i]][[j]] <- existing_exp_details[[i]][[j]] %>% 
+               if(max(ct_dataframe[[i]][[jj]]$Time) > max(Deets[[i]][[j]]$Time)){
+                  Deets[[i]][[j]] <- Deets[[i]][[j]] %>% 
                      # Need this next bit for using cut function appropriately
                      bind_rows(data.frame(Time = max(ct_dataframe[[i]][[jj]]$Time) + 1, 
-                                          DoseNum = max(existing_exp_details[[i]][[j]]$DoseNum)))
+                                          DoseNum = max(Deets[[i]][[j]]$DoseNum)))
                }
                
                # If there was a loading dose or something (not really sure what
                # this would be), then there are two dose numbers listed for t0.
                # Removing the earlier one so that this will work.
-               if(any(duplicated(existing_exp_details[[i]][[j]]$Time))){
+               if(any(duplicated(Deets[[i]][[j]]$Time))){
                   warning(paste0("There were multiple dose numbers listed at the same time for the ",
                                  j," in the file ", sim_data_file, 
                                  "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed."),
                           call. = FALSE)
                   TimeToRemove <- which(duplicated(
-                     existing_exp_details[[i]][[j]]$Time, fromLast = TRUE))
-                  existing_exp_details[[i]][[j]] <- existing_exp_details[[i]][[j]] %>% slice(-TimeToRemove)
+                     Deets[[i]][[j]]$Time, fromLast = TRUE))
+                  Deets[[i]][[j]] <- Deets[[i]][[j]] %>% slice(-TimeToRemove)
                }
                
-               existing_exp_details[[i]][[j]]$Breaks <-
-                  as.character(cut(existing_exp_details[[i]][[j]]$Time,
-                                   breaks = existing_exp_details[[i]][[j]]$Time,
+               Deets[[i]][[j]]$Breaks <-
+                  as.character(cut(Deets[[i]][[j]]$Time,
+                                   breaks = Deets[[i]][[j]]$Time,
                                    right = FALSE))
             }
             
             ct_dataframe[[i]][[jj]]$DoseNum <- NULL
             ct_dataframe[[i]][[jj]]$Breaks <-
                as.character(cut(ct_dataframe[[i]][[jj]]$Time,
-                                breaks = existing_exp_details[[i]][[j]]$Time,
+                                breaks = Deets[[i]][[j]]$Time,
                                 right = FALSE))
             
             ct_dataframe[[i]][[jj]] <- ct_dataframe[[i]][[jj]] %>% 
-               left_join(existing_exp_details[[i]][[j]] %>% select(Breaks, DoseNum), 
+               left_join(Deets[[i]][[j]] %>% select(Breaks, DoseNum), 
                          by = "Breaks")
             
          }

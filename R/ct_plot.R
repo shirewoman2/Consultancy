@@ -545,22 +545,18 @@ ct_plot <- function(ct_dataframe = NA,
       if("logical" %in% class(existing_exp_details)){ 
          Deets <- tryCatch(
             extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
-                              exp_details = "all", 
-                              annotate_output = FALSE) %>% 
-               as.data.frame(), 
+                              exp_details = "Summary and Input", 
+                              annotate_output = FALSE)[["MainDetails"]], 
             error = function(x) "missing file")
       } else {
-         Deets <- switch(as.character("File" %in% names(as.data.frame(existing_exp_details))), 
-                         "TRUE" = as.data.frame(existing_exp_details), 
-                         "FALSE" = deannotateDetails(existing_exp_details))
-         
-         Deets <- Deets %>% filter(unique(ct_dataframe$File) %in% File)
+         Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
+            filter(unique(ct_dataframe$File) %in% File)
          
          if(nrow(Deets == 0)){
             Deets <- tryCatch(
                extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
-                                 exp_details = "all", 
-                                 annotate_output = FALSE) %>% as.data.frame(), 
+                                 exp_details = "Summary and Input", 
+                                 annotate_output = FALSE)[["MainDetails"]], 
                error = function(x) "missing file")
          }
       }

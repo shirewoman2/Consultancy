@@ -328,14 +328,6 @@
 #'   guesses about what a prettier compound name should be. An example of
 #'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 #'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
-#' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of
-#'   the graph where the left panel shows the original graph and the right panel
-#'   shows information about the simulation trial design. This works MUCH faster
-#'   when you have already used \code{\link{extractExpDetails_mult}} to get
-#'   information about how your simulation or simulations were set up and supply
-#'   that object to the argument \code{existing_exp_details}.
-#' @param existing_exp_details output from \code{\link{extractExpDetails}} or
-#'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   The nice thing about saving to Word is that the figure title and caption
@@ -403,8 +395,6 @@ ct_plot_obs <- function(ct_dataframe,
                         graph_title_size = 14, 
                         legend_position = NA,
                         prettify_compound_names = TRUE,
-                        qc_graph = FALSE,
-                        existing_exp_details = NA,
                         save_graph = NA,
                         fig_height = 6,
                         fig_width = 5){

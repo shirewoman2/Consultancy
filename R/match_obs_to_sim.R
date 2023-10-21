@@ -111,11 +111,7 @@ match_obs_to_sim <- function(ct_dataframe,
          extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File))
    }
    
-   # Checking whether existing_exp_details needs to be de-annotated
-   if("data.frame" %in% class(existing_exp_details) &
-      "File" %in% names(existing_exp_details) == FALSE){
-      existing_exp_details <- deannotateDetails(existing_exp_details)
-   }
+   existing_exp_details <- harmonize_details(existing_exp_details)
    
    # Summary of approach: Use expand_grid on obs_dataframe to include all
    # possible appropriate File values and then bind obs_dataframe to
@@ -130,7 +126,7 @@ match_obs_to_sim <- function(ct_dataframe,
    } else if("logical" %in% class(obs_to_sim_assignment)){
       # This is when they have left obs_to_sim_assignment as NA and want all the
       # obs data to match all the sim.
-      ObsAssign <- expand.grid(File = unique(ct_dataframe$File), 
+      ObsAssign <- expand_grid(File = unique(ct_dataframe$File), 
                                ObsFile = unique(obs_dataframe$ObsFile))
    } else {
       # This is when they have supplied a data.frame.
@@ -183,22 +179,24 @@ match_obs_to_sim <- function(ct_dataframe,
          # include all the dose numbers at all the right times and instead
          # should get the dose number and dosing interval from the sim
          # file existing_exp_details.
-         ObsData_j[[k]] <- calc_dosenumber(
-            ct_dataframe = ObsData_j[[k]], 
-            existing_exp_details = list(MainDetails = existing_exp_details$MainDetails %>% 
-                                           filter(File == k)))
+         Deets <- existing_exp_details
+         Deets$MainDetails <- Deets$MainDetails %>% filter(File == k)
+         
+         ObsData_j[[k]] <- calc_dosenumber(ct_dataframe = ObsData_j[[k]], 
+                                           existing_exp_details = Deets)
          
          # Matching units
          ObsData_j[[k]] <- match_units(ObsData_j[[k]], 
                                        goodunits = ct_dataframe[[k]])
          
          # Adding inhibitor name as needed
-         MyEffector <- determine_myeffector(existing_exp_details %>% 
-                                               filter(File == k),
+         MyEffector <- determine_myeffector(Deets,
                                             prettify_compound_names = FALSE)
          
          ObsData_j[[k]]$Inhibitor[ObsData_j[[k]]$Inhibitor != "none"] <- 
             MyEffector
+         
+         rm(Deets)
       }
       
       obs_dataframe[[j]] <- bind_rows(ObsData_j)

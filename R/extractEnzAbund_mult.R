@@ -185,23 +185,18 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       
       # Getting summary data for the simulation(s)
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-         Deets <- extractExpDetails(ff, exp_details = "Input Sheet")
+         Deets <- extractExpDetails(ff, exp_details = "Summary and Input")[["MainDetails"]]
       } else {
-         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                         "TRUE" = existing_exp_details, 
-                         "FALSE" = deannotateDetails(existing_exp_details)) 
          
-         if("data.frame" %in% class(Deets)){
-            Deets <- Deets %>% filter(File == ff)
-            
-            if(nrow(Deets == 0)){
-               Deets <- extractExpDetails(sim_data_file = ff, 
-                                          exp_details = "Input Sheet")
-            }
+         Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>% 
+            filter(File == ff)
+         
+         if(nrow(Deets == 0)){
+            Deets <- extractExpDetails(ff, exp_details = "Summary and Input")[["MainDetails"]]
          }
       }
       
-      if(length(Deets) == 0){
+      if(nrow(Deets) == 0){
          # Using "warning" instead of "stop" here b/c I want this to be able to
          # pass through to other functions and just skip any files that
          # aren't simulator output.

@@ -302,23 +302,27 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
       Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
                                                         sim_data_file_denominator), 
-                                      exp_details = "Summary tab", 
-                                      annotate_output = FALSE)
+                                      exp_details = "Summary and Input", 
+                                      annotate_output = FALSE)[["MainDetails"]]
    } else {
-      Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                      "TRUE" = existing_exp_details, 
-                      "FALSE" = deannotateDetails(existing_exp_details))
+      Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
+         filter(File %in% c(sim_data_file_numerator, 
+                            sim_data_file_denominator))
       
-      if("data.frame" %in% class(Deets)){
-         Deets <- Deets %>% filter(File %in% c(sim_data_file_numerator, 
-                                               sim_data_file_denominator))
-         
-         if(nrow(Deets) != 2){
-            Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
-                                                              sim_data_file_denominator), 
-                                            exp_details = "Summary tab", 
-                                            annotate_output = FALSE)
-         }
+      if(nrow(Deets) != 2){
+         Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
+                                                           sim_data_file_denominator), 
+                                         exp_details = "Summary and Input", 
+                                         annotate_output = FALSE)[["MainDetails"]]
+      }
+      
+      if(nrow(Deets) != 2){
+         warning(paste0("We were attempting to find the simulation details for ", 
+                        str_comma(c(sim_data_file_numerator, 
+                                    sim_data_file_denominator)), 
+                        " and failed to find them, so we cannot return information on these files.\n"), 
+                 call. = FALSE)
+         return(data.frame())
       }
    }
    

@@ -603,24 +603,18 @@ ct_plot_overlay <- function(ct_dataframe,
       if("logical" %in% class(existing_exp_details)){ 
          Deets <- tryCatch(
             extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
-                                   exp_details = "all", 
-                                   annotate_output = FALSE) %>% as.data.frame(), 
+                                   exp_details = "Summary and Input")[["MainDetails"]], 
             error = function(x) "missing file")
          
       } else {
          
-         Deets <- switch(as.character("File" %in% names(as.data.frame(existing_exp_details))), 
-                         "TRUE" = existing_exp_details, 
-                         "FALSE" = deannotateDetails(existing_exp_details))
-         
-         Deets <- Deets %>% filter(File %in% unique(ct_dataframe$File))
+         Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
+            filter(File %in% unique(ct_dataframe$File))
          
          if(nrow(Deets == 0) | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
             Deets <- tryCatch(
                extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
-                                      exp_details = "all", 
-                                      annotate_output = FALSE, 
-                                      existing_exp_details = Deets) %>% as.data.frame(), 
+                                      exp_details = "Summary and Input")[["MainDetails"]], 
                error = function(x) "missing file")
          }
       }
