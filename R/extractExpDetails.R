@@ -189,8 +189,8 @@ extractExpDetails <- function(sim_data_file,
       # *specific* set of exp_details b/c I'm assuming that this function will
       # be serving a different purpose in that scenario.
       exp_details <- 
-         unique(exp_details, 
-                c(AllCompounds$DetailNames, 
+         unique(c(exp_details, 
+                  AllCompounds$DetailNames, 
                   paste0(rep(c("StartHr", "StartDayTime", "Regimen"), each = 3), 
                          c("_sub", "_inhib", "_inhib2"))))
       
@@ -1381,7 +1381,9 @@ extractExpDetails <- function(sim_data_file,
          TEMP <- extractExpDetails_XML(
             sim_workspace_files = WkspFile, 
             compoundsToExtract = "all",
-            exp_details = "all") %>% 
+            exp_details = "all")
+         
+         TEMP$MainDetails <- TEMP$MainDetails %>% 
             # This currently removes anything that we already have from the
             # Excel file. May change that later to verify that Excel and
             # workspace match.
@@ -1390,13 +1392,17 @@ extractExpDetails <- function(sim_data_file,
                              "SecondaryMetabolite", "Inhibitor1Metabolite", 
                              paste0("DistributionModel",
                                     c("inhib1met", 
-                                      "_met1", "_met2", "_secmet"))))) %>% 
-            as.list()
+                                      "_met1", "_met2", "_secmet")))))
          
+         # Note: Currently, we are not extracting anything from the workspace
+         # that would be its own separate list. When we DO do that, we'll need
+         # to adjust this code to bind the MainDetails and whatever that list
+         # is.
          Out <- c(Out,
                   TEMP$MainDetails[
-                     setdiff(names(TEMP$MainDetails)[names(TEMP$MainDetails) != "Workspace"], 
-                             names(Out))])
+                     setdiff(names(TEMP$MainDetails)[
+                        names(TEMP$MainDetails) != "Workspace"], 
+                        names(Out))])
          
          rm(TEMP)
       }

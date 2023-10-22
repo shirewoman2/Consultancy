@@ -25,322 +25,329 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
                       prettify_compound_names = TRUE, 
                       y_axis_limits_log, Ylim_data, pad_y_axis,
                       time_range_relative){
-    
-    if(EnzPlot){
-        ObsConcUnits <- "Relative abundance"
-    } else {
-        ObsConcUnits <- sort(unique(Data$Conc_units))
-    }
-    
-    if(any(ADAM, na.rm = TRUE)){
-        
-        # # ADAM options available (this is for my reference and was copied from ct_plot.R)
-        # ADAMoptions <- c("undissolved compound", "enterocyte concentration",
-        #                  "free compound in lumen", "total compound in lumen",
-        #                  "Heff", "absorption rate",
-        #                  "unreleased compound in faeces", 
-        #                  "dissolved compound", "luminal CLint", 
-        #                  "dissolution rate of solid state", 
-        #                  "cumulative fraction of compound absorbed", 
-        #                  "cumulative fraction of compound dissolved")
-        
-        if(class(prettify_compound_names) == "logical"){
-            CompoundLab <- ifelse(prettify_compound_names == TRUE, 
-                                  prettify_compound_name(unique(Data$Compound)), 
-                                  unique(Data$Compound))
-        } else {
-            CompoundLab <- str_comma(
-                unique(
-                    prettify_compound_names[
-                        prettify_compound_names %in%
-                            unique(Data$Compound[Data$CompoundID == "substrate"])]), 
-                conjunction = "or")
-        }
-        
-        ylab1 <- 
-            switch(subsection_ADAM, 
-                   "dissolved compound" = 
-                       paste("Dissolved", CompoundLab, "in", unique(Data$Tissue)),
-                   "undissolved compound" = 
-                       paste0("Undissolved ", CompoundLab, " in ", unique(Data$Tissue)),
-                   "enterocyte concentration" = 
-                       # bquote(atop("Enterocyte concentration of", bquote(CompoundLab))), # can't get this to work
-                       paste("Enterocyte concentration of", CompoundLab),
-                   "free compound in lumen" = 
-                       paste0("Free ", CompoundLab, " in lumen"),
-                   "total compound in lumen" = 
-                       paste0("Total ", CompoundLab, " in lumen"),
-                   "Heff" = bquote("Particle"~H[eff]),
-                   "absorption rate" = 
-                       paste0("Absorption rate of ", CompoundLab, " in ", unique(Data$Tissue)),
-                   "unreleased compound in faeces" = 
-                       paste("Unreleased", CompoundLab, "in faeces"),
-                   "luminal CLint" = bquote("Luminal"~CL[int]), 
-                   "dissolution rate of solid state" = 
-                       paste0("Dissolution rate of ", CompoundLab, " in ", unique(Data$Tissue)), 
-                   "cumulative fraction of compound absorbed" =
-                       paste0("Cumulative fraction of ", CompoundLab, " absorbed"), 
-                   "cumulative fraction of compound dissolved" =
-                       paste0("Cumulative fraction of ", CompoundLab, " dissolved"), 
-                   "cumulative fraction of compound released" = 
-                       paste0("cumulative fraction of ", CompoundLab, " released")) 
-        
-        # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
-        # so do NOT interchange them in the code.
-        PossConcUnits <- list("mg/mL" = "(mg/mL)",
-                              "µg/L" = bquote("("*"\u03bc"*g*"/"*L*")"),
-                              "µg/mL" = bquote("("*"\u03bc"*g*"/"*mL*")"),
-                              "ng/mL" = "(ng/mL)",
-                              "ng/L" = "(ng/L)",
-                              "µM" = bquote("("*"\u03bc"*M*")"),
-                              "µm" = bquote("("*"\u03bc"*m*")"),
-                              "nM" = "(nM)",
-                              "mM" = "(mM)",
-                              "mg" = "(mg)",
-                              "µg" = bquote("("*"\u03bc"*"g)"),
-                              "ng" = "(ng)",
-                              "mg/h" = "(mg/h)",
-                              "mg/L" = bquote("("*"\u03bc"*g*"/"*mL*")"),
-                              "mL" = "(mL)", 
-                              "mmol" = "(mmol)", 
-                              "µmol" = bquote("("*"\u03bc"*"mol)"),
-                              "nmol" = "(nmol)")
-        
-        ylab2 <- PossConcUnits[[unique(Data$Conc_units)]]
-        
-        if(subsection_ADAM %in% c("cumulative fraction of compound absorbed", 
-                                  "cumulative fraction of compound dissolved", 
-                                  "cumulative fraction of compound released")){
-            ylab <- bquote(bold(.(ylab1)))
-            
-        } else {
-            ylab <- bquote(bold(.(ylab1)) ~ bold(.(ylab2)))
-        }
-        
-    } else {
-        
-        # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
-        # so do NOT interchange them in the code.
-        PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
-                              "µg/L" = bquote(Concentration~"("*"\u03bc"*g*"/"*L*")"),
-                              "µg/mL" = bquote(Concentration~"("*"\u03bc"*g*"/"*mL*")"),
-                              "ng/mL" = "Concentration (ng/mL)",
-                              "ng/L" = "Concentration (ng/L)",
-                              "µM" = bquote(Concentration~"("*"\u03bc"*M*")"),
-                              "nM" = "Concentration (nM)",
-                              "mg" = "Amount (mg)",
-                              "mg/h" = "Absorption rate (mg/h)",
-                              "mg/L" = bquote(Concentration~"("*"\u03bc"*g*"/"*mL*")"),
-                              "mL" = "Volume (mL)",
-                              "PD response" = "PD response",
-                              "Relative abundance" = "Relative abundance")
-        
-        ylab <- PossConcUnits[[ObsConcUnits]]
-        
-    }
-    
-    # Per Hannah: If there are observed data included in the simulation, set the
-    # y axis limits to show those data well. 
-    
-    # To do this, when observed data are present, filtering Ylim_data to only
-    # include concentrations >= 0.8*min(observed conc). t0 point isn't included
-    # in this calculation. 
-    if(EnzPlot == FALSE && nrow(Ylim_data %>% filter(Simulated == FALSE)) > 0){
-        ObsMin <- Ylim_data %>% filter(Simulated == FALSE & Conc > 0) %>% 
-            pull(Conc) %>% min(na.rm = TRUE) 
-        
-        Ylim_data <- Ylim_data %>% filter(Conc >= ObsMin)
-    }
-    
-    # One option LS discussed w/MBK and FC: We could also limit the semi-log y
-    # axis when there are no observed data to show Cmax * 1.25 then round up to
-    # nearest factor of 10 and then give 4 orders of magnitude below that.
-    # Problem is that often people will want to see full simulation, and that
-    # would not provide that. We're holding off on implementing that until we
-    # hear from users that they want that.
-    
-    Ylim <- Ylim_data %>% 
-        filter(Time_orig >= time_range[1] &
-                   Time_orig <= time_range[2] &
-                   complete.cases(Conc)) %>% pull(Conc) %>%
-        range()
-    
-    if(all(Ylim == 0) && (any(is.na(y_axis_limits_lin) | any(is.na(y_axis_limits_log))))){
-        stop("For the tissue and compound selected, all concentrations = 0. Please either 1) specify what y axis limits you'd like for what will be empty graphs (set both y_axis_limits_lin and y_axis_limits_log) or 2) select a different combination of tissue and compound to graph.",
-             call. = FALSE)
-    }
-    
-    if(any(complete.cases(y_axis_limits_lin))){
-        Ylim <- y_axis_limits_lin[1:2]
-    } else if(EnzPlot){
-        # If it's an enzyme abundance plot, user will generally want the lower
-        # limit for the y axis to be 0 rather than 100 in the case of induction.
-        # Setting that here, but user can override w/y_axis_limits_lin argument.
-        Ylim[1] <- 0
-    }
-    
-    # Some users are sometimes getting Inf for possible upper limit of data,
-    # although I haven't been able to reproduce this error. Trying to catch
-    # that nonetheless.
-    if(is.infinite(Ylim[2]) | is.na(Ylim[2])){
-        Ylim[2] <- max(Data$Conc, na.rm = T)
-    }
-    
-    PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
-                                       100, 200, 500, 1000, 2000, 5000,
-                                       10000, 20000, 50000, 100000,
-                                       200000, 500000, Inf),
-                              YBreaksToUse = c(0.02, 0.05, 0.1, 0.2, 0.5,
-                                               1, 2, 5, 10, 20, 50, 100, 200,
-                                               500, 1000, 2000, 5000, 10000,
-                                               20000, 50000, 100000, 200000))
-    
-    YBreaksToUse <- PossYBreaks %>% filter(Ymax >= (Ylim[2] - Ylim[1])) %>%
-        slice(which.min(Ymax)) %>% pull(YBreaksToUse)
-    
-    YInterval    <- switch(paste(is.na(y_axis_interval), EnzPlot), 
-                           "TRUE FALSE" = YBreaksToUse, 
-                           "FALSE FALSE" = y_axis_interval, 
-                           "TRUE TRUE" = YBreaksToUse,
-                           "FALSE TRUE" = 2*y_axis_interval)
-    YmaxRnd      <- ifelse(is.na(y_axis_limits_lin[2]), 
-                           round_up_unit(Ylim[2], YInterval),
-                           y_axis_limits_lin[2])
-    YBreaks      <- seq(ifelse(is.na(y_axis_limits_lin[1]), 
-                               0, y_axis_limits_lin[1]),
-                        YmaxRnd, YInterval/2)                    # create labels at major and minor points
-    YLabels      <- format(YBreaks, scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-    YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
-    
-    # If the user specified a y axis interval, make sure there's an axis label
-    # for the top of the y axis
-    if(any(complete.cases(y_axis_limits_lin))){
-        YBreaks <- unique(c(YBreaks, y_axis_limits_lin[2]))
-        if(length(YLabels) == length(YBreaks)){
-            YLabels[length(YLabels)] <- 
-                format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        } else {
-            YLabels <- c(YLabels, 
-                         format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE))
-        }
-    }
-    
-    # Adding padding if user requests it
-    if(class(pad_y_axis) == "logical"){ # class is logical if pad_y_axis unspecified
-        if(EnzPlot){
-            if(pad_y_axis){
-                pad_y_num <-  c(0.02, 0.1)
-            } else {
-                pad_y_num <- c(0, 0)
-            }
-            
-        } else {
-            if(pad_y_axis){
-                pad_y_num <-  c(0.02, 0)
-            } else {
-                pad_y_num <- c(0, 0)
-            }
-        }
-    } else {
-        pad_y_num <- pad_y_axis
-        if(length(pad_y_axis) == 1){
-            pad_y_num <- c(pad_y_num, 0)
-        } else {
-            pad_y_num <- pad_y_axis[1:2]
-        }
-        
-        pad_y_axis <- pad_y_num[1] != 0 # Making pad_y_axis logical again to work with code elsewhere
-    }
-    
-    # Setting up y axis for semi-log graphs ----------------------------------
-    
-    near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
-    
-    if(is.na(y_axis_limits_log[1])){ # Option to consider for the future: Allow user to specify only the upper limit, which would leave y_axis_limits_log[1] as NA?
-        
-        Ylim_log <- Ylim
-        
-        Ylim_log[1] <- Ylim_data %>%
-            filter(Conc >= 0) %>%  # Not allowing BLQ values that were set below 0.
-            filter(Time == near_match(Ylim_data$Time, time_range_relative[2])) %>%
-            pull(Conc) %>% min()
-        
-        # If Ylim_log[1] is 0, which can happen when the concs are really low, that
-        # is undefined for log transformations. Setting it to be max value / 100
-        # when that happens.
-        Ylim_log[1] <- ifelse(Ylim_log[1] == 0, 
-                              Ylim_log[2]/100, Ylim_log[1])
-        Ylim_log[1] <- round_down(Ylim_log[1])
-        Ylim_log[2] <- round_up(Ylim[2])
-        Ylim_log <- sort(Ylim_log)
-        
-    } else {
-        # If user set Ylim_log[1] to 0, set it to 1/100th the higher value and
-        # tell them we can't use 0.
-        if(y_axis_limits_log[1] <= 0){
-            y_axis_limits_log[1] <- y_axis_limits_log[2]/100
-            warning("You requested a lower y axis limit that is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.",
-                    call. = FALSE)
-        }
-        
-        Ylim_log <- y_axis_limits_log
-        
-        # Previously, we *had* been rounding here, but I think the user may
-        # actually want a specific set of limits, so commenting that out for
-        # now. -LS 
-        # Ylim_log[1] <- round_down(Ylim_log[1]) 
-        # Ylim_log[2] <- round_up(Ylim[2])
-        
-    }
-    
-    YLogBreaks <- as.vector(outer(1:9, 10^(log10(Ylim_log[1]):log10(Ylim_log[2]))))
-    YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
-    YLogLabels   <- rep("",length(YLogBreaks))
-    
-    
-    if(is.na(y_axis_limits_log[1]) |
-       # checking whether Ylim_log values are a factor of 10 b/c, if they are,
-       # then just use the Ylim_log that we would have come up with using the
-       # other method b/c that makes prettier breaks
-       all(log10(Ylim_log) == round(log10(Ylim_log)))){
-        
-        # add labels at order of magnitude
-        YLogLabels[seq(1,length(YLogLabels),9)] <- 
-            format(YLogBreaks[seq(1,length(YLogLabels),9)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        
-    } else {
-        
-        # add labels for the 1st and last YLogBreaks and also 3 in between. The
-        # odd fractions are b/c I want to have them spaced out somewhat
-        # regularly, and that requires nonlinear intervals since it's log
-        # transformed.
-        YLogLabels[1] <- 
-            format(YLogBreaks[1], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        Nbreaks <- length(YLogBreaks)
-        YLogLabels[Nbreaks] <- 
-            format(YLogBreaks[Nbreaks], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        YLogLabels[round(Nbreaks/4)] <- 
-            format(YLogBreaks[round(Nbreaks/4)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        YLogLabels[round(2*Nbreaks/3)] <- 
-            format(YLogBreaks[round(2*Nbreaks/3)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        YLogLabels[round(5*Nbreaks/6)] <- 
-            format(YLogBreaks[round(5*Nbreaks/6)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
-        
-    } 
-    
-    # Assigning the variables created or changed here to the environment one
-    # level up, e.g., probably the environment within the function that's
-    # calling on *this* function.
-    
-    Out <- list("ObsConcUnits" = ObsConcUnits,
-                "ylab" = ylab,
-                "YLabels" = YLabels,
-                "YLogLabels" = YLogLabels,
-                "YBreaks" = YBreaks, 
-                "YLogBreaks" = YLogBreaks, 
-                "Ylim_log" = Ylim_log,
-                "YmaxRnd" = YmaxRnd, 
-                "pad_y_num" = pad_y_num, 
-                "pad_y_axis" = pad_y_axis)
+   
+   if(EnzPlot){
+      ObsConcUnits <- "Relative abundance"
+   } else {
+      ObsConcUnits <- sort(unique(Data$Conc_units))
+   }
+   
+   if(any(ADAM, na.rm = TRUE)){
+      
+      # # ADAM options available (this is for my reference and was copied from ct_plot.R)
+      # ADAMoptions <- c("undissolved compound", "enterocyte concentration",
+      #                  "free compound in lumen", "total compound in lumen",
+      #                  "Heff", "absorption rate",
+      #                  "unreleased compound in faeces", 
+      #                  "dissolved compound", "luminal CLint", 
+      #                  "dissolution rate of solid state", 
+      #                  "cumulative fraction of compound absorbed", 
+      #                  "cumulative fraction of compound dissolved")
+      
+      if(class(prettify_compound_names) == "logical"){
+         CompoundLab <- ifelse(prettify_compound_names == TRUE, 
+                               prettify_compound_name(unique(Data$Compound)), 
+                               unique(Data$Compound))
+      } else {
+         CompoundLab <- str_comma(
+            unique(
+               prettify_compound_names[
+                  prettify_compound_names %in%
+                     unique(Data$Compound[Data$CompoundID == "substrate"])]), 
+            conjunction = "or")
+      }
+      
+      ylab1 <- 
+         switch(subsection_ADAM, 
+                "dissolved compound" = 
+                   paste("Dissolved", CompoundLab, "in", unique(Data$Tissue)),
+                "undissolved compound" = 
+                   paste0("Undissolved ", CompoundLab, " in ", unique(Data$Tissue)),
+                "enterocyte concentration" = 
+                   # bquote(atop("Enterocyte concentration of", bquote(CompoundLab))), # can't get this to work
+                   paste("Enterocyte concentration of", CompoundLab),
+                "free compound in lumen" = 
+                   paste0("Free ", CompoundLab, " in lumen"),
+                "total compound in lumen" = 
+                   paste0("Total ", CompoundLab, " in lumen"),
+                "Heff" = bquote("Particle"~H[eff]),
+                "absorption rate" = 
+                   paste0("Absorption rate of ", CompoundLab, " in ", unique(Data$Tissue)),
+                "unreleased compound in faeces" = 
+                   paste("Unreleased", CompoundLab, "in faeces"),
+                "luminal CLint" = bquote("Luminal"~CL[int]), 
+                "dissolution rate of solid state" = 
+                   paste0("Dissolution rate of ", CompoundLab, " in ", unique(Data$Tissue)), 
+                "cumulative fraction of compound absorbed" =
+                   paste0("Cumulative fraction of ", CompoundLab, " absorbed"), 
+                "cumulative fraction of compound dissolved" =
+                   paste0("Cumulative fraction of ", CompoundLab, " dissolved"), 
+                "cumulative fraction of compound released" = 
+                   paste0("cumulative fraction of ", CompoundLab, " released")) 
+      
+      # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
+      # so do NOT interchange them in the code.
+      PossConcUnits <- list("mg/mL" = "(mg/mL)",
+                            "µg/L" = bquote("("*"\u03bc"*g*"/"*L*")"),
+                            "µg/mL" = bquote("("*"\u03bc"*g*"/"*mL*")"),
+                            "ng/mL" = "(ng/mL)",
+                            "ng/L" = "(ng/L)",
+                            "µM" = bquote("("*"\u03bc"*M*")"),
+                            "µm" = bquote("("*"\u03bc"*m*")"),
+                            "nM" = "(nM)",
+                            "mM" = "(mM)",
+                            "mg" = "(mg)",
+                            "µg" = bquote("("*"\u03bc"*"g)"),
+                            "ng" = "(ng)",
+                            "mg/h" = "(mg/h)",
+                            "mg/L" = bquote("("*"\u03bc"*g*"/"*mL*")"),
+                            "mL" = "(mL)", 
+                            "mmol" = "(mmol)", 
+                            "µmol" = bquote("("*"\u03bc"*"mol)"),
+                            "nmol" = "(nmol)")
+      
+      ylab2 <- PossConcUnits[[unique(Data$Conc_units)]]
+      
+      if(subsection_ADAM %in% c("cumulative fraction of compound absorbed", 
+                                "cumulative fraction of compound dissolved", 
+                                "cumulative fraction of compound released")){
+         ylab <- bquote(bold(.(ylab1)))
+         
+      } else {
+         ylab <- bquote(bold(.(ylab1)) ~ bold(.(ylab2)))
+      }
+      
+   } else {
+      
+      # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
+      # so do NOT interchange them in the code.
+      PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
+                            "µg/L" = bquote(Concentration~"("*"\u03bc"*g*"/"*L*")"),
+                            "µg/mL" = bquote(Concentration~"("*"\u03bc"*g*"/"*mL*")"),
+                            "ng/mL" = "Concentration (ng/mL)",
+                            "ng/L" = "Concentration (ng/L)",
+                            "µM" = bquote(Concentration~"("*"\u03bc"*M*")"),
+                            "nM" = "Concentration (nM)",
+                            "mg" = "Amount (mg)",
+                            "mg/h" = "Absorption rate (mg/h)",
+                            "mg/L" = bquote(Concentration~"("*"\u03bc"*g*"/"*mL*")"),
+                            "mL" = "Volume (mL)",
+                            "PD response" = "PD response",
+                            "Relative abundance" = "Relative abundance")
+      
+      ylab <- PossConcUnits[[ObsConcUnits]]
+      
+   }
+   
+   # Per Hannah: If there are observed data included in the simulation, set the
+   # y axis limits to show those data well. 
+   
+   # To do this, when observed data are present, filtering Ylim_data to only
+   # include concentrations >= 0.8*min(observed conc). t0 point isn't included
+   # in this calculation. 
+   if(EnzPlot == FALSE && nrow(Ylim_data %>% filter(Simulated == FALSE)) > 0){
+      ObsMin <- Ylim_data %>% filter(Simulated == FALSE & Conc > 0) %>% 
+         pull(Conc) %>% min(na.rm = TRUE) 
+      
+      Ylim_data <- Ylim_data %>% filter(Conc >= ObsMin)
+   }
+   
+   # One option LS discussed w/MBK and FC: We could also limit the semi-log y
+   # axis when there are no observed data to show Cmax * 1.25 then round up to
+   # nearest factor of 10 and then give 4 orders of magnitude below that.
+   # Problem is that often people will want to see full simulation, and that
+   # would not provide that. We're holding off on implementing that until we
+   # hear from users that they want that.
+   
+   # Time cannot be NA for it to be included in Ylim calculations, and it *will*
+   # be NA if there were values in the SD_SE column. Using placeholder values
+   # for time; just making sure that they're within the time range.
+   
+   Ylim <- Ylim_data %>% 
+      mutate(Time = ifelse(is.na(Time), time_range[1], Time), 
+             Time_orig = ifelse(is.na(Time_orig), Time, Time_orig)) %>% 
+      filter(Time_orig >= time_range[1] &
+                Time_orig <= time_range[2] &
+                complete.cases(Conc)) %>%
+      pull(Conc) %>%
+      range()
+   
+   if(all(Ylim == 0) && (any(is.na(y_axis_limits_lin) | any(is.na(y_axis_limits_log))))){
+      stop("For the tissue and compound selected, all concentrations = 0. Please either 1) specify what y axis limits you'd like for what will be empty graphs (set both y_axis_limits_lin and y_axis_limits_log) or 2) select a different combination of tissue and compound to graph.",
+           call. = FALSE)
+   }
+   
+   if(any(complete.cases(y_axis_limits_lin))){
+      Ylim <- y_axis_limits_lin[1:2]
+   } else if(EnzPlot){
+      # If it's an enzyme abundance plot, user will generally want the lower
+      # limit for the y axis to be 0 rather than 100 in the case of induction.
+      # Setting that here, but user can override w/y_axis_limits_lin argument.
+      Ylim[1] <- 0
+   }
+   
+   # Some users are sometimes getting Inf for possible upper limit of data,
+   # although I haven't been able to reproduce this error. Trying to catch
+   # that nonetheless.
+   if(is.infinite(Ylim[2]) | is.na(Ylim[2])){
+      Ylim[2] <- max(Data$Conc, na.rm = T)
+   }
+   
+   PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
+                                      100, 200, 500, 1000, 2000, 5000,
+                                      10000, 20000, 50000, 100000,
+                                      200000, 500000, Inf),
+                             YBreaksToUse = c(0.02, 0.05, 0.1, 0.2, 0.5,
+                                              1, 2, 5, 10, 20, 50, 100, 200,
+                                              500, 1000, 2000, 5000, 10000,
+                                              20000, 50000, 100000, 200000))
+   
+   YBreaksToUse <- PossYBreaks %>% filter(Ymax >= (Ylim[2] - Ylim[1])) %>%
+      slice(which.min(Ymax)) %>% pull(YBreaksToUse)
+   
+   YInterval    <- switch(paste(is.na(y_axis_interval), EnzPlot), 
+                          "TRUE FALSE" = YBreaksToUse, 
+                          "FALSE FALSE" = y_axis_interval, 
+                          "TRUE TRUE" = YBreaksToUse,
+                          "FALSE TRUE" = 2*y_axis_interval)
+   YmaxRnd      <- ifelse(is.na(y_axis_limits_lin[2]), 
+                          round_up_unit(Ylim[2], YInterval),
+                          y_axis_limits_lin[2])
+   YBreaks      <- seq(ifelse(is.na(y_axis_limits_lin[1]), 
+                              0, y_axis_limits_lin[1]),
+                       YmaxRnd, YInterval/2)                    # create labels at major and minor points
+   YLabels      <- format(YBreaks, scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+   YLabels[seq(2,length(YLabels),2)] <- ""                         # add blank labels at every other point i.e. for just minor tick marks at every other point
+   
+   # If the user specified a y axis interval, make sure there's an axis label
+   # for the top of the y axis
+   if(any(complete.cases(y_axis_limits_lin))){
+      YBreaks <- unique(c(YBreaks, y_axis_limits_lin[2]))
+      if(length(YLabels) == length(YBreaks)){
+         YLabels[length(YLabels)] <- 
+            format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      } else {
+         YLabels <- c(YLabels, 
+                      format(YBreaks[length(YBreaks)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE))
+      }
+   }
+   
+   # Adding padding if user requests it
+   if(class(pad_y_axis) == "logical"){ # class is logical if pad_y_axis unspecified
+      if(EnzPlot){
+         if(pad_y_axis){
+            pad_y_num <-  c(0.02, 0.1)
+         } else {
+            pad_y_num <- c(0, 0)
+         }
+         
+      } else {
+         if(pad_y_axis){
+            pad_y_num <-  c(0.02, 0)
+         } else {
+            pad_y_num <- c(0, 0)
+         }
+      }
+   } else {
+      pad_y_num <- pad_y_axis
+      if(length(pad_y_axis) == 1){
+         pad_y_num <- c(pad_y_num, 0)
+      } else {
+         pad_y_num <- pad_y_axis[1:2]
+      }
+      
+      pad_y_axis <- pad_y_num[1] != 0 # Making pad_y_axis logical again to work with code elsewhere
+   }
+   
+   # Setting up y axis for semi-log graphs ----------------------------------
+   
+   near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
+   
+   if(is.na(y_axis_limits_log[1])){ # Option to consider for the future: Allow user to specify only the upper limit, which would leave y_axis_limits_log[1] as NA?
+      
+      Ylim_log <- Ylim
+      
+      Ylim_log[1] <- Ylim_data %>%
+         filter(Conc >= 0) %>%  # Not allowing BLQ values that were set below 0.
+         filter(Time == near_match(Ylim_data$Time, time_range_relative[2])) %>%
+         pull(Conc) %>% min()
+      
+      # If Ylim_log[1] is 0, which can happen when the concs are really low, that
+      # is undefined for log transformations. Setting it to be max value / 100
+      # when that happens.
+      Ylim_log[1] <- ifelse(Ylim_log[1] == 0, 
+                            Ylim_log[2]/100, Ylim_log[1])
+      Ylim_log[1] <- round_down(Ylim_log[1])
+      Ylim_log[2] <- round_up(Ylim[2])
+      Ylim_log <- sort(Ylim_log)
+      
+   } else {
+      # If user set Ylim_log[1] to 0, set it to 1/100th the higher value and
+      # tell them we can't use 0.
+      if(y_axis_limits_log[1] <= 0){
+         y_axis_limits_log[1] <- y_axis_limits_log[2]/100
+         warning("You requested a lower y axis limit that is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.",
+                 call. = FALSE)
+      }
+      
+      Ylim_log <- y_axis_limits_log
+      
+      # Previously, we *had* been rounding here, but I think the user may
+      # actually want a specific set of limits, so commenting that out for
+      # now. -LS 
+      # Ylim_log[1] <- round_down(Ylim_log[1]) 
+      # Ylim_log[2] <- round_up(Ylim[2])
+      
+   }
+   
+   YLogBreaks <- as.vector(outer(1:9, 10^(log10(Ylim_log[1]):log10(Ylim_log[2]))))
+   YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
+   YLogLabels   <- rep("",length(YLogBreaks))
+   
+   
+   if(is.na(y_axis_limits_log[1]) |
+      # checking whether Ylim_log values are a factor of 10 b/c, if they are,
+      # then just use the Ylim_log that we would have come up with using the
+      # other method b/c that makes prettier breaks
+      all(log10(Ylim_log) == round(log10(Ylim_log)))){
+      
+      # add labels at order of magnitude
+      YLogLabels[seq(1,length(YLogLabels),9)] <- 
+         format(YLogBreaks[seq(1,length(YLogLabels),9)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      
+   } else {
+      
+      # add labels for the 1st and last YLogBreaks and also 3 in between. The
+      # odd fractions are b/c I want to have them spaced out somewhat
+      # regularly, and that requires nonlinear intervals since it's log
+      # transformed.
+      YLogLabels[1] <- 
+         format(YLogBreaks[1], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      Nbreaks <- length(YLogBreaks)
+      YLogLabels[Nbreaks] <- 
+         format(YLogBreaks[Nbreaks], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      YLogLabels[round(Nbreaks/4)] <- 
+         format(YLogBreaks[round(Nbreaks/4)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      YLogLabels[round(2*Nbreaks/3)] <- 
+         format(YLogBreaks[round(2*Nbreaks/3)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      YLogLabels[round(5*Nbreaks/6)] <- 
+         format(YLogBreaks[round(5*Nbreaks/6)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      
+   } 
+   
+   # Assigning the variables created or changed here to the environment one
+   # level up, e.g., probably the environment within the function that's
+   # calling on *this* function.
+   
+   Out <- list("ObsConcUnits" = ObsConcUnits,
+               "ylab" = ylab,
+               "YLabels" = YLabels,
+               "YLogLabels" = YLogLabels,
+               "YBreaks" = YBreaks, 
+               "YLogBreaks" = YLogBreaks, 
+               "Ylim_log" = Ylim_log,
+               "YmaxRnd" = YmaxRnd, 
+               "pad_y_num" = pad_y_num, 
+               "pad_y_axis" = pad_y_axis)
 }
 

@@ -870,6 +870,17 @@ ct_plot <- function(ct_dataframe = NA,
                        "means only" = sim_data_mean %>% filter(as.character(Trial) == MyMeanType) 
    )
    
+   if("SD_SE" %in% names(Ylim_data)){
+      Ylim_data <- Ylim_data %>% 
+         mutate(MaxConc = Conc + ifelse(complete.cases(SD_SE), SD_SE, 0), 
+                MinConc = Conc - ifelse(complete.cases(SD_SE), SD_SE, 0))
+      
+      Ylim_data <- bind_rows(Ylim_data, 
+                             data.frame(Conc = c(
+                                max(Ylim_data$MaxConc, na.rm = T), 
+                                min(Ylim_data$MinConc, na.rm = T))))
+   }
+   
    if(nrow(Ylim_data) == 0){
       Ylim_data <- bind_rows(sim_data_trial, obs_dataframe, sim_data_mean)
    }

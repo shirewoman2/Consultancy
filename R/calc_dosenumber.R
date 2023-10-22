@@ -162,10 +162,10 @@ calc_dosenumber <- function(ct_dataframe,
       CDnames <- names(Deets[[i]])[
          sapply(Deets[[i]], is.null) == FALSE]
       CDnames <- names(Deets[[i]][CDnames])[
-         sapply(Deets[[i]][CDnames], nrow) > 0]
+         sapply(Deets[[i]][CDnames], length) > 1]
       CDnames <- CDnames[str_detect(CDnames, "CustomDosing")]
       
-      if(length(CDnames) < 0){
+      if(length(CDnames) > 0){
          
          CDCompounds <-
             data.frame(CDnames = c("CustomDosing_sub", "CustomDosing_inhib", "CustomDosing_inhib2"), 

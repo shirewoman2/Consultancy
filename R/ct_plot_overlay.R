@@ -748,10 +748,9 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # If there are any replicate names for color_labels, give a warning.
    if(any(duplicated(names(color_labels)))){
-      warning(paste0("You have listed this file more than once for the argument `color_labels`:
-", names(color_labels[duplicated(names(color_labels))]), "
-and we can only work with unique values here. We won't be able to use anything for `color_labels`. Please check your input."), 
-call. = FALSE)
+      warning(paste0("You have listed this file more than once for the argument `color_labels`:\n", names(color_labels[duplicated(names(color_labels))]), 
+                     "\nand we can only work with unique values here. We won't be able to use anything for `color_labels`. Please check your input."), 
+              call. = FALSE)
       color_labels <- NA
    }
    
@@ -1101,14 +1100,16 @@ call. = FALSE)
       }
       
       if(length(sort(unique(c(simcheck, obscheck)))) > 
-         length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column])){
+         length(color_labels[names(color_labels) %in% c(sim_dataframe$colorBy_column, 
+                                                        obs_dataframe$colorBy_column)])){
          warning(paste0("You have not included enough labels for the colors in the legend. The values in '",
                         as_label(colorBy_column), 
                         "' will be used as labels instead."),
                  call. = FALSE)
          color_labels <- NA
       } else {
-         if(length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column]) == 0 |
+         if(length(color_labels[names(color_labels) %in% c(sim_dataframe$colorBy_column, 
+                                                           obs_dataframe$colorBy_column)]) == 0 |
             length(sort(unique(c(simcheck, obscheck)))) == 0){
             warning(paste0("There is some kind of mismatch between the color labels provided and the values actually present in ",
                            as_label(colorBy_column), ". The specified labels cannot be used."),
@@ -1150,14 +1151,16 @@ call. = FALSE)
       }
       
       if(length(sort(unique(c(simcheck, obscheck)))) > 
-         length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column])){
+         length(linetype_labels[names(linetype_labels) %in% c(sim_dataframe$linetype_column, 
+                                                              obs_dataframe$linetype_column)])){
          warning(paste0("You have not included enough labels for the linetypes in the legend. The values in '",
                         as_label(linetype_column), 
                         "' will be used as labels instead."),
                  call. = FALSE)
          linetype_labels <- NA
       } else {
-         if(length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column]) == 0 |
+         if(length(linetype_labels[names(linetype_labels) %in% c(sim_dataframe$linetype_column, 
+                                                                 obs_dataframe$linetype_column)]) == 0 |
             length(sort(unique(c(simcheck, obscheck)))) == 0){
             warning(paste0("There is some kind of mismatch between the linetype labels provided and the values actually present in ",
                            as_label(linetype_column), ". The specified labels cannot be used."),
@@ -1183,61 +1186,6 @@ call. = FALSE)
          }
       }
    }
-   
-   # Not sure how I'm going to relabel the facets, actually. Commenting this
-   # out for now.
-   
-   # if(complete.cases(facet1_labels[1])){
-   #     simcheck <- sim_dataframe %>% 
-   #         filter(FC1 %in% names(facet1_labels)) %>% 
-   #         select(FC1) %>% unique() %>% pull()
-   #     obscheck <- obs_dataframe %>% 
-   #         filter(FC1 %in% names(facet1_labels)) %>% 
-   #         select(FC1) %>% unique() %>% pull()
-   #     
-   #     if(length(sort(unique(c(simcheck, obscheck)))) > 
-   #        length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1])){
-   #         warning(paste0("You have not included enough labels for number of unique values in ", 
-   #                        as_label(FC1), 
-   #                        ". The values will be used as labels instead."))
-   #         facet1_labels <- NA
-   #     } else {
-   #         if(length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1]) == 0 |
-   #            length(sort(unique(c(simcheck, obscheck)))) == 0){
-   #             warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
-   #                            as_label(FC1), ". The specified labels cannot be used."))  
-   #             
-   #             facet1_labels <- NA
-   #         } 
-   #     } # If facet1_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
-   # }
-   # 
-   # if(complete.cases(facet2_labels[1])){
-   #     simcheck <- sim_dataframe %>% 
-   #         filter(FC2 %in% names(facet2_labels)) %>% 
-   #         select(FC2) %>% unique() %>% pull()
-   #     obscheck <- obs_dataframe %>% 
-   #         filter(FC2 %in% names(facet2_labels)) %>% 
-   #         select(FC2) %>% unique() %>% pull()
-   #     
-   #     if(length(sort(unique(c(simcheck, obscheck)))) > 
-   #        length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2])){
-   #         warning(paste0("You have not included enough labels for number of unique values in ", 
-   #                        as_label(FC2), 
-   #                        ". The values will be used as labels instead."))
-   #         
-   #         facet2_labels <- NA
-   #         
-   #     } else {
-   #         if(length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2]) == 0 |
-   #            length(sort(unique(c(simcheck, obscheck)))) == 0){
-   #             warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
-   #                            as_label(FC2), ". The specified labels cannot be used."))  
-   #             
-   #             facet2_labels <- NA
-   #         }
-   #     }
-   # } # If facet2_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
    
    AESCols <- c("color" = as_label(colorBy_column), 
                 "linetype" = as_label(linetype_column),
@@ -1315,9 +1263,8 @@ call. = FALSE)
          warning("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. ", 
                  "If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame: 
                     MyEnzData <- MyEnzData %>% mutate(Tissue2 = Tissue)
-                    ct_plot_overlay(ct_dataframe = MyEnzData, colorBy_column = Tissue2, ...)
-Replace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.",
-call. = FALSE)
+                    ct_plot_overlay(ct_dataframe = MyEnzData, colorBy_column = Tissue2, ...)\nReplace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.\n",
+                 call. = FALSE)
          
          sim_dataframe <- sim_dataframe %>% filter(Tissue != "colon") %>% 
             mutate(Tissue = ifelse(Tissue == "small intestine", 
@@ -1436,7 +1383,21 @@ call. = FALSE)
    TimeUnits <- XStuff$TimeUnits
    
    # Setting up the y axis using the subfunction ct_y_axis
-   YStuff <- ct_y_axis(Data = bind_rows(sim_dataframe, obs_dataframe), 
+   Ylim_data <- bind_rows(sim_dataframe, obs_dataframe) %>%
+      mutate(Time_orig = Time)
+   
+   if("SD_SE" %in% names(Ylim_data)){
+      Ylim_data <- Ylim_data %>% 
+         mutate(MaxConc = Conc + ifelse(complete.cases(SD_SE), SD_SE, 0), 
+                MinConc = Conc - ifelse(complete.cases(SD_SE), SD_SE, 0))
+      
+      Ylim_data <- bind_rows(Ylim_data, 
+                             data.frame(Conc = c(
+                                max(Ylim_data$MaxConc, na.rm = T), 
+                                min(Ylim_data$MinConc, na.rm = T))))
+   }
+   
+   YStuff <- ct_y_axis(Data = Ylim_data, 
                        ADAM = ADAM, 
                        subsection_ADAM = switch(as.character(EnzPlot), 
                                                 "TRUE" = NA, 
@@ -1445,8 +1406,7 @@ call. = FALSE)
                        EnzPlot = EnzPlot, 
                        time_range = time_range,
                        time_range_relative = time_range_relative,
-                       Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
-                          mutate(Time_orig = Time), 
+                       Ylim_data = Ylim_data, 
                        pad_y_axis = pad_y_axis,
                        y_axis_limits_lin = y_axis_limits_lin, 
                        y_axis_limits_log = y_axis_limits_log, 
@@ -1540,7 +1500,8 @@ call. = FALSE)
       NumShapes <- 1
    }
    
-   AesthetStuff <- set_aesthet(line_type = linetypes, figure_type = figure_type,
+   AesthetStuff <- set_aesthet(line_type = linetypes, 
+                               figure_type = figure_type,
                                MyEffector = MyEffector, 
                                compoundToExtract = switch(as.character(EnzPlot),
                                                           "TRUE" = "substrate", 
@@ -1705,7 +1666,7 @@ call. = FALSE)
       # or linetype column or the Inhibitor column, then include it
       if(length(LegCheck) == 0){
          LegCheck <- FALSE 
-      } else if(length(LegCheck == 1)){
+      } else if(length(LegCheck) == 1){
          LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
       } else {
          LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
@@ -2067,7 +2028,9 @@ call. = FALSE)
                # AND the user hasn't supplied a named character vector for
                # how to assign the colors AND the colors are not assigned
                # to the individual subject.
-               names(MyColors) <- levels(sim_dataframe$colorBy_column)
+               names(MyColors) <- levels(c(sim_dataframe$colorBy_column,
+                                           obs_dataframe$colorBy_column))
+               
             }
          }
          
@@ -2079,7 +2042,61 @@ call. = FALSE)
    }
    
    # Specifying linetypes
-   A <- A + scale_linetype_manual(values = linetypes)
+   if(AES %in% c("linetype", "color-linetype")){
+      
+      # Calculating the number of linetypes needed
+      
+      # If the user requests the column Individual for linetype_column, they
+      # most likely want each observed individual to be a different linetype but
+      # the aggregate simulated data to be the usual linetypes (black or gray).
+      # NumlinetypesNeeded should only include the obs data in that scenario.
+      if(AESCols["linetype"] == "Individual"){
+         NumlinetypesNeeded <- obs_dataframe %>% 
+            pull(linetype_column) %>% unique() %>% length()
+      } else {
+         NumlinetypesNeeded <-
+            ifelse(MapObsData,
+                   bind_rows(sim_dataframe, obs_dataframe) %>% 
+                      pull(linetype_column) %>% unique() %>% length(),
+                   sim_dataframe %>% 
+                      pull(linetype_column) %>% unique() %>% length())
+         
+      }
+      
+      if(all(complete.cases(linetypes))){
+         
+         # This makes sure that we definitely have enough linetypes
+         Mylinetypes <- rep(linetypes, NumlinetypesNeeded)[1:NumlinetypesNeeded]
+         names(Mylinetypes) <- levels(c(sim_dataframe$linetype_column,
+                                        obs_dataframe$linetype_column))
+         
+         suppressWarnings(
+            A <-  A + scale_linetype_manual(values = Mylinetypes)
+         )
+         
+      } else {
+         # If there's only one unique value in the linetype_column, then make that
+         # item solid. 
+         if(length(sort(unique(c(sim_dataframe$linetype_column, 
+                                 obs_dataframe$linetype_column)))) == 1){
+            A <- A + scale_linetype_manual(values = "solid")
+            
+         } else {
+            
+            # This makes sure that we definitely have enough linetypes
+            Mylinetypes <- rep(c("solid", "dashed", "dotted", "dotdash", "longdash"), 
+                               NumlinetypesNeeded)[1:NumlinetypesNeeded] 
+            
+            
+            names(Mylinetypes) <- levels(c(sim_dataframe$linetype_column,
+                                           obs_dataframe$linetype_column))
+            
+            suppressWarnings(
+               A <-  A + scale_linetype_manual(values = Mylinetypes)
+            )
+         }
+      }
+   }
    
    # Adding legend label for color and linetype as appropriate
    if(complete.cases(legend_label_color)){

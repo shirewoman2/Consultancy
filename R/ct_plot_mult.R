@@ -469,7 +469,7 @@ ct_plot_mult <- function(ct_dataframe,
    }
    
    for(i in Order){
-      if(nrow(ct_dataframe[[i]]) == 0){
+      if(nrow(ct_dataframe[[i]] %>% filter(Simulated == TRUE)) == 0){
          next
       }
       

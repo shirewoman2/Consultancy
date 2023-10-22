@@ -24,7 +24,7 @@ ct_x_axis <- function(Data, time_range, t0,
     }
     
     if(all(complete.cases(time_range)) && class(time_range) == "character" &
-       length(time_range != 1)){
+       length(time_range) != 1){
         time_range <- time_range[1]
     }
     

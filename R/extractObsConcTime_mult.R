@@ -15,18 +15,6 @@
 #' @param returnDosingInfo TRUE or FALSE (default) for whether to return a
 #'   second data.frame with dosing and demographic information from the Excel
 #'   file.
-#' @param studyID (optional) either a single value for the study ID or a named
-#'   character vector of which observed data files go with which study IDs. An
-#'   example of acceptable input: \code{studyID = "HV 101"} or \code{studyID = c("HV 101" =
-#'   "Observed CT 1.xlsx", "HV 102" = "Observed CT 2.xlsx")}. These are
-#'   \emph{optional} and for your use only. We ask for them here because this
-#'   information can be useful for graphing later.
-#' @param study_arm (optional) either a single value for the study arm or cohort
-#'   or a named character vector of which observed data files go with which arms
-#'   An example of acceptable input: \code{study_arm = "SAD 01"} or \code{study_arm =
-#'   c("SAD 01" = "Observed CT 1.xlsx", "MAD 05" = "Observed CT 2.xlsx")}. These
-#'   are \emph{optional} and for your use only. We ask for them here because
-#'   this information can be useful for graphing later.
 #'
 #' @return a data.frame with the following columns:
 #'   \describe{\item{Individual}{the individual ID}
@@ -59,9 +47,7 @@
 #' extractObsConcTime(obs_data_file = "My observed data.xlsx")
 #' 
 extractObsConcTime_mult <- function(obs_data_files = NA, 
-                                    returnDosingInfo = FALSE, 
-                                    studyID = NA, 
-                                    study_arm = NA){
+                                    returnDosingInfo = FALSE){
    
    # Error catching ---------------------------------------------------
    
@@ -98,37 +84,6 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
    # Removing those from consideration.
    obs_data_files <- obs_data_files[!str_detect(obs_data_files, 
                                                 "support-docs")]
-   
-   if(length(studyID) > 1){
-      if(is.null(names(studyID))){
-         warning("The value for `studyID` must either be NA, a single value, or a named character vector where the names match the observed data files, but you have entered something for `studyID` that lacks names, so we don't know which observed files should be assigned to which study ID.", 
-                 call. = FALSE)
-         studyID <- NA
-      } else {
-         studyID <- studyID[names(studyID %in% obs_data_files)]
-         if(length(studyID) == 0){
-            warning("None of the names of the study IDs matched the observed data files, so we don't know which study IDs to use for which observed data files. Please check your input and the help file.", 
-                    call. = FALSE)
-            studyID <- NA
-         }
-      }
-   }
-   
-   if(length(study_arm) > 1){
-      if(is.null(names(study_arm))){
-         warning("The value for `study_arm` must either be NA, a single value, or a named character vector where the names match the observed data files, but you have entered something for `study_arm` that lacks names, so we don't know which observed files should be assigned to which study ID.", 
-                 call. = FALSE)
-         study_arm <- NA
-      } else {
-         study_arm <- study_arm[names(study_arm %in% obs_data_files)]
-         if(length(study_arm) == 0){
-            warning("None of the names of the study arms matched the observed data files, so we don't know which study arms to use for which observed data files. Please check your input and the help file.", 
-                    call. = FALSE)
-            study_arm <- NA
-         }
-      }
-   }
-   
    
    # Main body of function ---------------------------------------------------
    
