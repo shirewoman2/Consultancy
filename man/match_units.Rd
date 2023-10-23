@@ -4,7 +4,13 @@
 \alias{match_units}
 \title{Match concentration and time units as needed}
 \usage{
-match_units(DF_to_adjust, goodunits, MW = NA)
+match_units(
+  DF_to_adjust,
+  time_units = "hours",
+  conc_units = "ng/mL",
+  goodunits = NA,
+  MW = NA
+)
 }
 \arguments{
 \item{DF_to_adjust}{the data.frame of concentration-time data with units that
@@ -15,13 +21,18 @@ may need to be adjusted. This must include the columns "Conc",
 mass per volume and molar concentrations and there are multiple compounds
 present, this must also include the column "CompoundID".}
 
-\item{goodunits}{either a data.frame that has the desired concentration and
-time units OR a named list with the desired units. Example:
-\code{list("Conc_units" = "ng/mL", "Time_units" = "hours")}. Names of the
-list must be "Conc_units" and "Time_units", although you can provide only
-one or the other if you only want to convert one of them. Options for
+\item{time_units}{time units to use, e.g., "hours". Options for time units
+are "hours", "days", and "minutes".}
+
+\item{conc_units}{concentration units to use, e.g. "ng/mL". Options for
 concentration units are the same as the ones in the Excel form for PE data
-entry, and options for time units are "hours", "days", and "minutes".}
+entry.}
+
+\item{goodunits}{if you would like to just match another data.frame, supply
+here a data.frame that has the desired concentration and time units.
+Options for concentration units are the same as the ones in the Excel form
+for PE data entry, and options for time units are "hours", "days", and
+"minutes".}
 
 \item{MW}{optionally supply a molecular weight for the compound of interest
 to enable conversions between mass per volume and molar concentrations. If
