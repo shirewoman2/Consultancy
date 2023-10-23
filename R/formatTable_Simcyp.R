@@ -70,6 +70,10 @@
 #'   green, you can get that by specifying
 #'   \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
 #'   c("green", "red")}
+#' @param highlight_gmr_colors optionally specify a set of colors to use for
+#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+#'   "green to red" or a vector of 4 colors of your choosing. If left as NA, no
+#'   highlighting for GMR level will be done.
 #' @param highlight_so_colors optionally specify a set of colors to use for
 #'   highlighting S/O values outside the limits you specified with
 #'   \code{highlight_so_cutoffs}. Options: \describe{
@@ -186,6 +190,7 @@ formatTable_Simcyp <- function(DF,
                                bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
                                prettify_columns = FALSE, 
+                               highlight_gmr_colors = NA, 
                                highlight_so_cutoffs = NA, 
                                highlight_so_colors = "yellow to red",
                                highlight_cells = NA, 
@@ -241,13 +246,19 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
-   if(prettify_columns){
-      DF <- prettify_column_names(DF)
+   if(any(complete.cases(highlight_gmr_colors)) &&
+      highlight_gmr_colors[1] %in% c("yellow to red", "green to red") == FALSE){
+      if(length(highlight_gmr_colors) != 4){
+         warning("We need 4 colors for highlighting geometric mean ratios, one each for negligible, weak, moderate, and strong interactions, and you have provided a different number of colors. We'll use yellow to red values for highlighting these.\n", 
+                 call. = FALSE)
+         highlight_gmr_colors <- "yellow to red"
+      } else if(is.matrix(col2rgb(highlight_gmr_colors)) == FALSE){
+         warning("The values you used for highlighting geometric mean ratios are not all valid colors in R. We'll used the default colors instead.\n", 
+                 call. = FALSE)
+         highlight_gmr_colors <- "yellow to red"
+      } 
    }
    
-   if(prettify_columns){
-      DF <- prettify_column_names(DF)
-   }
    
    # Setting things up for nonstandard evaluation ----------------------------
    shading_column <- rlang::enquo(shading_column)
@@ -259,6 +270,15 @@ formatTable_Simcyp <- function(DF,
    }
    
    # Main body of function -------------------------------------------------
+   
+   if(prettify_columns){
+      DF <- prettify_column_names(DF)
+   }
+   
+   if(prettify_columns){
+      DF <- prettify_column_names(DF)
+   }
+   
    FT <- flextable::flextable(DF)
    
    # Optionally making things bold face
@@ -335,27 +355,60 @@ formatTable_Simcyp <- function(DF,
       }
    } 
    
-   # Optionally highlight specific cells
-   if(any(sapply(highlight_cells, complete.cases))){
-      for(i in 1:length(highlight_cells)){
+   
+   ## Highlight GMRs ---------------------------------------------------------
+   
+   if(any(complete.cases(highlight_gmr_colors))){
+      if(highlight_gmr_colors[1] %in% c("yellow to red", "green to red")){
          
-         FT <- FT %>% 
-            flextable::bg(i = switch(paste(is.na(highlight_cells[[i]][1]), 
-                                           highlight_cells[[i]][1] == 0), 
-                                     "TRUE NA" = NULL, 
-                                     "FALSE TRUE" = 1, # this is when the row should be the only row in the header
-                                     "FALSE FALSE" = highlight_cells[[i]][1]), 
-                          j = switch(as.character(is.na(highlight_cells[[i]][2])), 
-                                     "TRUE" = NULL, 
-                                     "FALSE" = highlight_cells[[i]][2]), 
-                          bg = highlight_color, 
-                          part = ifelse(complete.cases(highlight_cells[[i]][1]) & 
-                                           highlight_cells[[i]][1] == 0, 
-                                        "header", "body"))   
+         highlight_gmr_colors <- switch(tolower(highlight_gmr_colors), 
+                                        "green to red" = c("negligible" = "#C7FEAC", 
+                                                           "weak" = "#FFFF95",
+                                                           "moderate" = "#FFDA95",
+                                                           "strong" = "#FF9595"),
+                                        "yellow to red" = c("negligible" = "white", 
+                                                            "weak" = "#FFFF95",
+                                                            "moderate" = "#FFDA95",
+                                                            "strong" = "#FF9595"))
+         
+      } else {
+         
+         # If the user did not properly name the vector, fix that.
+         if(any(names(highlight_gmr_colors) != c("negligible", "weak", "moderate", 
+                                                 "strong"))){
+            names(highlight_gmr_colors) <- c("negligible", "weak", "moderate", 
+                                             "strong")
+         }
       }
    }
    
-   # Optionally highlighting poor fidelity S/O values
+   # Finding each cell that should be colored according to each level of interaction
+   for(j in which(str_detect(tolower(names(DF)), "ratio"))){
+      FT <- FT %>% 
+         # Negligible
+         flextable::bg(i = which(DF[, j] >= 0.8 & DF[, j] <= 1.25), 
+                       j = j, 
+                       bg = highlight_gmr_colors["negligible"]) %>% 
+         # Weak
+         flextable::bg(i = c(which(DF[, j] >= 0.5 & DF[, j] < 0.8), 
+                             which(DF[, j] > 1.25 & DF[, j] <= 2)),
+                       j = j, 
+                       bg = highlight_gmr_colors["weak"]) %>% 
+         # Moderate 
+         flextable::bg(i = c(which(DF[, j] >= 0.2 & DF[, j] < 0.5), 
+                             which(DF[, j] > 2 & DF[, j] <= 5)),
+                       j = j, 
+                       bg = highlight_gmr_colors["moderate"]) %>% 
+         # Strong
+         flextable::bg(i = which(DF[, j] < 0.2 | DF[, j] > 5), 
+                       j = j, 
+                       bg = highlight_gmr_colors["strong"])
+      
+   }
+   
+   
+   ## Optionally highlighting poor fidelity S/O values -----------------------
+   
    if(any(complete.cases(highlight_so_cutoffs))){
       
       # Tidying inputs
@@ -427,9 +480,9 @@ formatTable_Simcyp <- function(DF,
                    
                    # highlight middle, >3 cutoffs other than middle
                    "yellow to red TRUE (4,Inf]" = 
-                      c("#C7FEAC", 
-                        colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                           length(highlight_so_cutoffs))), 
+                   c("#C7FEAC", 
+                     colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                        length(highlight_so_cutoffs))), 
                    
                    ## traffic
                    
@@ -465,9 +518,9 @@ formatTable_Simcyp <- function(DF,
                    
                    # highlight middle, >3 cutoffs other than middle
                    "traffic TRUE (4,Inf]" = 
-                      c("#00B050", 
-                        colorRampPalette(c("#FFC000", "#FF0000"))(
-                           length(highlight_so_cutoffs)))
+                   c("#00B050", 
+                     colorRampPalette(c("#FFC000", "#FF0000"))(
+                        length(highlight_so_cutoffs)))
             )
       }
       
@@ -479,7 +532,7 @@ formatTable_Simcyp <- function(DF,
             suppressWarnings(
                SO_col <- which(
                   as.numeric(t(DF[i, ])) >= highlight_so_cutoffs[j] | 
-                     as.numeric(t(DF[i, ])) <= 1/highlight_so_cutoffs[j])
+                  as.numeric(t(DF[i, ])) <= 1/highlight_so_cutoffs[j])
             )
             
             if(length(SO_col) > 0){
@@ -494,22 +547,45 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
+   ## Optionally highlight specific cells -----------------------------------
+   if(any(sapply(highlight_cells, complete.cases))){
+      for(i in 1:length(highlight_cells)){
+         
+         FT <- FT %>% 
+            flextable::bg(i = switch(paste(is.na(highlight_cells[[i]][1]), 
+                                           highlight_cells[[i]][1] == 0), 
+                                     "TRUE NA" = NULL, 
+                                     "FALSE TRUE" = 1, # this is when the row should be the only row in the header
+                                     "FALSE FALSE" = highlight_cells[[i]][1]), 
+                          j = switch(as.character(is.na(highlight_cells[[i]][2])), 
+                                     "TRUE" = NULL, 
+                                     "FALSE" = highlight_cells[[i]][2]), 
+                          bg = highlight_color, 
+                          part = ifelse(complete.cases(highlight_cells[[i]][1]) & 
+                                        highlight_cells[[i]][1] == 0, 
+                                        "header", "body"))   
+      }
+   }
+   
+   
+   ## Applying other aesthetics -------------------------------------------
+   
    FT <- FT %>% 
-      
-      # Set the font size
-      flextable::fontsize(part = "all", size = fontsize) %>% 
-      
-      # setting up which borderlines to show
-      flextable::border_remove() %>% 
-      flextable::border_inner_v(part = "all", 
-                                border = officer::fp_border(width = 0.5)) %>% 
-      flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
-      flextable::hline_bottom(part = "body", 
-                              border = officer::fp_border(width = 0.5)) %>% 
-      flextable::fix_border_issues() %>% 
-      
-      # making the width autofitted to contents
-      flextable::set_table_properties(width = 1, layout = "autofit")
+   
+   # Set the font size
+   flextable::fontsize(part = "all", size = fontsize) %>% 
+   
+   # setting up which borderlines to show
+   flextable::border_remove() %>% 
+   flextable::border_inner_v(part = "all", 
+                             border = officer::fp_border(width = 0.5)) %>% 
+   flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
+   flextable::hline_bottom(part = "body", 
+                           border = officer::fp_border(width = 0.5)) %>% 
+   flextable::fix_border_issues() %>% 
+   
+   # making the width autofitted to contents
+   flextable::set_table_properties(width = 1, layout = "autofit")
    
    # Dealing with subscripts
    ColNames <- names(DF)
@@ -586,6 +662,6 @@ formatTable_Simcyp <- function(DF,
    
    return(FT)
    
-}
+   }
 
 
