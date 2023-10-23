@@ -101,28 +101,6 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
    
    ObsData <- bind_rows(ObsData %>% unique())
    
-   if(complete.cases(studyID)){
-      if(length(studyID) == 1){
-         ObsData$StudyID <- studyID
-      } else {
-         MyStudies <- data.frame(StudyID = studyID, 
-                                 ObsFile = names(studyID))
-         ObsData <- ObsData %>% 
-            left_join(MyStudies, by = "ObsFile")
-      }
-   }
-   
-   if(complete.cases(study_arm)){
-      if(length(study_arm) == 1){
-         ObsData$study_arm <- study_arm
-      } else {
-         MyStudies <- data.frame(study_arm = study_arm, 
-                                 ObsFile = names(study_arm))
-         ObsData <- ObsData %>% 
-            left_join(MyStudies, by = "ObsFile")
-      }
-   }
-   
    Out <- list("ObsData" = ObsData)
    
    if(returnDosingInfo){
