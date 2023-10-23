@@ -121,11 +121,21 @@
 #'   \emph{only} those details. Options are "Absorption", "Distribution",
 #'   "Elimination", "Transport", "Interaction", "Phys Chem and Blood Binding",
 #'   "Population", or "Trial Design". Not case sensitive. If you want more than
-#'   one, enclose them with \code{c(...)}.
+#'   one, enclose them with \code{c(...)}
+#' @param file_order optionally specify the order in which files should be shown
+#'   in the annotated output, e.g., \code{file_order = c("file A.xlsx", "file
+#'   B.xlsx", "file C.xlsx")}
+#' @param return_list TRUE or FALSE (default) for whether to return the entire
+#'   list of information from \code{existing_exp_details}. Before running this
+#'   function, \code{existing_exp_details} was a list. Probably, though, all you
+#'   want \emph{out} of this function most of the time is a single data.frame
+#'   with the main information annotated. If you want more than that, set this
+#'   to TRUE.
 #' @param save_output optionally save the output by supplying a csv or Excel
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-#'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
-#'   csv file.
+#'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the
+#'   file name. If you leave off the file extension, it will be saved as a csv
+#'   file.
 #'
 #' @return Returns a data.frame of simulation experimental details including the
 #'   following columns: \describe{
@@ -189,6 +199,8 @@ annotateDetails <- function(existing_exp_details,
                             find_matching_details = NA,
                             show_compound_col = TRUE,
                             omit_all_missing = TRUE, 
+                            file_order = NA,
+                            return_list = FALSE,
                             save_output = NA){
    
    # Error catching --------------------------------------------------------
@@ -272,8 +284,14 @@ annotateDetails <- function(existing_exp_details,
    existing_exp_details <- harmonize_details(existing_exp_details)
    
    if("File" %in% names(existing_exp_details$MainDetails) == FALSE){
-      existing_exp_details$MainDetails$File <- paste("unknown file", 1:nrow(existing_exp_details$MainDetails))
+      existing_exp_details$MainDetails$File <-
+         paste("unknown file", 1:nrow(existing_exp_details$MainDetails))
+   }
+   
+   if(is.na(file_order)){
       FileOrder <- existing_exp_details$MainDetails$File
+   } else {
+      FileOrder <- unique(c(file_order, existing_exp_details$MainDetails$File))
    }
    
    if(complete.cases(template_sim) && 
@@ -1032,8 +1050,12 @@ annotateDetails <- function(existing_exp_details,
       }
    }
    
-   Out <- existing_exp_details
-   Out$MainDetails <- Main
+   if(return_list){
+      Out <- existing_exp_details
+      Out$MainDetails <- Main
+   } else {
+      Out <- Main
+   }
    
    return(Out)
    

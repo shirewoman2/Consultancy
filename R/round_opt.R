@@ -5,6 +5,11 @@
 #'   "consultancy", "none".
 #' @param is_this_for_Word TRUE or FALSE for whether this is being applied to a
 #'   Word file in this situation
+#' @param out_class data class of the ouput; defaults to "numeric" but
+#'   "character" is acceptable and will often work better if this is for a Word
+#'   file or is being supplied to \code{formatTable_Simcyp}. NB: If you chose a
+#'   rounding option of "Consultancy", this will return character data no matter
+#'   what.
 #'
 #' @return rounded numbers that might, after running this, be character data
 #'
@@ -12,7 +17,10 @@
 #' # None.
 #' 
 
-round_opt <- function(x, round_fun, is_this_for_Word = FALSE){
+round_opt <- function(x, 
+                      round_fun, 
+                      is_this_for_Word = FALSE, 
+                      out_class = "numeric"){
    
    round_fun <- ifelse(is.na(round_fun), "consultancy", tolower(round_fun))
    round_fun <- ifelse(str_detect(tolower(round_fun), "word") & 
@@ -38,6 +46,9 @@ round_opt <- function(x, round_fun, is_this_for_Word = FALSE){
                  "signif" = signif(x, digits = NumDig), 
                  "consultancy" = round_consultancy(x), 
                  "none" = x)
+   if(out_class == "character"){
+      Out <- as.character(Out)
+   }
    
    return(Out)
 }

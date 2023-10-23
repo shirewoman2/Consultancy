@@ -208,6 +208,10 @@ value for the concentration you want or leave as NA (default) for no line.}
 
   \item{"round X" where "X" is a number}{Output will be rounded to X digits}
 
+  \item{"Consultancy"}{round according to the Simcyp Consultancy report 
+  template: 3 significant figures if less than 100 and otherwise, round to 
+  the nearest integer}
+
   \item{"Word only"}{Output saved to Word file will be rounded using the
   function \code{\link{round_consultancy}}, but nothing will be rounded in
   the csv file if you supply a file name for \code{save_table} or in

@@ -97,14 +97,38 @@ if(model == "all" & fitByDonor){
          mutate(DonorID = "mean")
    )
    
-   AllFits <- bind_rows(Fit_ind, Fit_sum) %>% 
+   # Rounding as requested - FIXME - Not working. Left off here. 
+   Fit_ind <- Fit_ind %>%
+      mutate(across(.cols = any_of(matches("Emax|EC50|Gamma|slope|IndC50|Indmax|AIC")),
+                    .fns = round_opt, 
+                    round_fun = rounding, 
+                    is_this_for_Word = TRUE, 
+                    out_class = "character"))
+   
+   Fit_sum <- Fit_sum %>%
+      mutate(across(.cols = any_of(matches("Emax|EC50|Gamma|slope|IndC50|Indmax|AIC")),
+                    .fns = round_opt, 
+                    round_fun = rounding, 
+                    is_this_for_Word = TRUE, 
+                    out_class = "character"))
+   
+   AllFits <- bind_rows(
+      Fit_ind %>% mutate(across(.cols = everything(), .fns = as.character)),
+      Fit_sum %>% mutate(across(.cols = everything(), .fns = as.character))) %>% 
       mutate(DonorID = as.factor(DonorID),
              DonorID = forcats::fct_relevel(DonorID, "mean", after = Inf)) %>% 
       arrange(Model, DonorID)
    
 } else {
    # Not fit by donor here, so not calculating means
-   AllFits <- Out$Fit
+   
+   AllFits <- Out$Fit %>%
+      mutate(across(.cols = any_of(matches("Emax|EC50|Gamma|slope|IndC50|Indmax|AIC")),
+                    .fns = round_opt, 
+                    round_fun = rounding, 
+                    is_this_for_Word = TRUE, 
+                    out_class = "character"))
+   
 }
 
 # Making "model" look nice for the table

@@ -27,9 +27,18 @@ harmonize_details <- function(existing_exp_details){
       if("MainDetails" %in% names(existing_exp_details)){
          
          # This is when they've run extractExpDetails with versions >= 2.8.0.
-         # For this scenario, we only need to check that they also have any
-         # other ExpDetailListItems they should have and then we can return the full
-         # list, in order.
+         # For this scenario, we need to do 2 things: 1. check that they also
+         # have any other ExpDetailListItems they should have. 2. Make sure that
+         # the details are not annotated (since that's generally what's required
+         # for most functions) and then we can return the full list, in order.
+         
+         if("Detail" %in% names(existing_exp_details$MainDetails)){
+            # This is when it has already been annotated previously. Need to
+            # deannotate 1st.
+            existing_exp_details <- deannotateDetails(existing_exp_details, 
+                                                      apply_class = FALSE)
+         }
+         
          itemstoadd <- setdiff(ExpDetailListItems, names(existing_exp_details))
          append_items <- lapply(itemstoadd, function(x) return(NULL))
          names(append_items) <- itemstoadd

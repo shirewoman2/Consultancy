@@ -175,6 +175,10 @@
 #'
 #'   \item{"round X" where "X" is a number}{Output will be rounded to X digits}
 #'
+#'   \item{"Consultancy"}{round according to the Simcyp Consultancy report 
+#'   template: 3 significant figures if less than 100 and otherwise, round to 
+#'   the nearest integer}
+#'
 #'   \item{"Word only"}{Output saved to Word file will be rounded using the
 #'   function \code{\link{round_consultancy}}, but nothing will be rounded in
 #'   the csv file if you supply a file name for \code{save_table} or in
@@ -184,7 +188,7 @@
 #' @param include_fit_stats TRUE (default) or FALSE for whether to include
 #'   statistics describing the goodness of fit: the standard error (SE), the p
 #'   value, and the Akaike information criterion (AIC). These values come from
-#'   the nonlinear regression of the various models to the data. 
+#'   the nonlinear regression of the various models to the data.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My induction graph.png". If you leave off ".png", it
 #'   will be saved as a png file, but if you specify a different file extension,
@@ -1205,6 +1209,9 @@ inductFit <- function(DF,
       
       FileName <- basename(FileName)
       
+      # NB: NO ROUNDING before here! Rmd file optionally calculates mean of
+      # fits, so it can't be character data yet!
+      
       rmarkdown::render(system.file("rmarkdown/templates/inductfit/skeleton/skeleton.Rmd",
                                     package="SimcypConsultancy"),
                         output_dir = OutPath,
@@ -1215,6 +1222,13 @@ inductFit <- function(DF,
       # full path.
       
    }
+   
+   # Rounding as requested
+   Out$Fit <- Out$Fit %>%
+      mutate(across(.cols = any_of(matches("Emax|EC50|Gamma|slope|IndC50|Indmax|AIC")),
+                    .fns = round_opt, 
+                    round_fun = rounding,
+                    is_this_for_Word = FALSE))
    
    return(Out)
    

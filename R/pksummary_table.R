@@ -797,7 +797,7 @@ pksummary_table <- function(sim_data_file = NA,
       # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                    exp_details = NecessaryDetails)
+                                    exp_details = NecessaryDetails)[["MainDetails"]]
       } else {
          
          existing_exp_details <- 
@@ -808,7 +808,7 @@ pksummary_table <- function(sim_data_file = NA,
          
          if(nrow(Deets) == 0){
             Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                       exp_details = NecessaryDetails)
+                                       exp_details = NecessaryDetails)[["MainDetails"]]
          }
       }
       
