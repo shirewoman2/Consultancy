@@ -781,8 +781,11 @@ annotateDetails <- function(existing_exp_details,
          # Checking whether user has asked to concatenate compounds that occupy
          # multiple positions in the simulator for the same simulation, e.g.,
          # asked to concatenate info on the substrate and the inhibitor 1 b/c
-         # that would result in multiple values in the same cell.
-         CmpdCheck <- existing_exp_details %>% 
+         # that would result in multiple values in the same cell. 
+         
+         # NB: This SHOULD be existing_exp_details here and NOT main. Need it to
+         # be in the original, wide format.
+         CmpdCheck <- existing_exp_details$MainDetails %>% 
             select(File, any_of(c("Substrate", 
                                   "PrimaryMetabolite1", 
                                   "PrimaryMetabolite2",
