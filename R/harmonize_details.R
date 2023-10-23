@@ -65,25 +65,20 @@ harmonize_details <- function(existing_exp_details){
       # which is when I changed the output from extractExpDetails from sometimes
       # being a list & sometimes being a data.frame to ALWAYS being a list.
       
-      if(all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details))){
-         # This is when existing_exp_details has been annotated. Need to
-         # de-annotate here to make this work well with the rest of the
-         # function.
-         existing_exp_details <- deannotateDetails(existing_exp_details)
-         
-      } else {
-         # This is for when they may have saved extractExpDetails_mult from
-         # package versions < 2.8.0, which is when I changed the output from
-         # extractExpDetails_X from sometimes being a list & sometimes being a
-         # data.frame to ALWAYS being a list.
-         existing_exp_details <- list(MainDetails = existing_exp_details)
-         
-      }
+      existing_exp_details <- list(MainDetails = existing_exp_details)
       
       itemstoadd <- setdiff(ExpDetailListItems, names(existing_exp_details))
       append_items <- lapply(itemstoadd, function(x) return(NULL))
       names(append_items) <- itemstoadd
       existing_exp_details <- c(existing_exp_details, append_items)
+      
+      if(all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details$MainDetails))){
+         # This is when existing_exp_details has been annotated. Need to
+         # de-annotate here to make this work well with the rest of the
+         # function.
+         existing_exp_details <- deannotateDetails(existing_exp_details)
+         
+      }
       
       return(existing_exp_details[ExpDetailListItems])
    }

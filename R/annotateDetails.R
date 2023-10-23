@@ -327,71 +327,28 @@ annotateDetails <- function(existing_exp_details,
       template_sim <- NA
    }
    
-   # If the model was not ADAM, existing_exp_details will include a bunch of irrelevant
-   # details. Removing those if none of the models for that compound ID were
-   # ADAM. NOTE TO SELF: There must be a better way to do this that doesn't
-   # require so much copying and pasting!
-   if("Abs_model_sub" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_sub == "ADAM", na.rm = T) == FALSE){
-      Main <- Main %>%
-         filter(Detail %in% (AllExpDetails %>%
-                                filter(CompoundID == "substrate" &
-                                          ADAMParameter == TRUE) %>%
-                                pull(Detail)) == FALSE)
-   }
+   # If the model was *not* ADAM, existing_exp_details will include a bunch of
+   # irrelevant details. Removing those if none of the models for that compound
+   # ID were ADAM.
+   ADAMcheck <- data.frame(CompoundID = AllCompounds$CompoundID, 
+                           Detail = paste0("Abs_model", AllCompounds$Suffix)) %>% 
+      filter(Detail %in% names(existing_exp_details$MainDetails))
    
-   if("Abs_model_inhib" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_inhib == "ADAM", na.rm = T) == FALSE){
-      Main <- Main %>%
-         filter(Detail %in% (AllExpDetails %>%
-                                filter(CompoundID == "inhibitor 1" &
-                                          ADAMParameter == TRUE) %>%
-                                pull(Detail)) == FALSE)
-   }
-   
-   if("Abs_model_inhib2" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_inhib2 == "ADAM", na.rm = T) == FALSE){
-      Main <- Main %>%
-         filter(Detail %in% (AllExpDetails %>%
-                                filter(CompoundID == "inhibitor 2" &
-                                          ADAMParameter == TRUE) %>%
-                                pull(Detail)) == FALSE)
-   }
-   
-   if("Abs_model_met1" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_met1 == "ADAM", na.rm = T) == FALSE){
-      Main <- Main %>%
-         filter(Detail %in% (AllExpDetails %>%
-                                filter(CompoundID == "primary metabolite 1" &
-                                          ADAMParameter == TRUE) %>%
-                                pull(Detail)) == FALSE)
-   }
-   
-   if("Abs_model_met2" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_met2 == "ADAM", na.rm = T) == FALSE){
-      Main <- Main %>%
-         filter(Detail %in% (AllExpDetails %>%
-                                filter(CompoundID == "primary metabolite 2" &
-                                          ADAMParameter == TRUE) %>%
-                                pull(Detail)) == FALSE)
-   }
-   
-   if("Abs_model_secmet" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_secmet == "ADAM", na.rm = T) == FALSE){
-      Main <- Main %>%
-         filter(Detail %in% (AllExpDetails %>%
-                                filter(CompoundID == "secondary metabolite" &
-                                          ADAMParameter == TRUE) %>%
-                                pull(Detail)) == FALSE)
-   }
-   
-   if("Abs_model_inhib1met" %in% names(existing_exp_details) &&
-      any(existing_exp_details$Abs_model_inhib1met == "ADAM", na.rm = T) == FALSE){
-      Main <- Main %>%
-         filter(Detail %in% (AllExpDetails %>%
-                                filter(CompoundID == "inhibitor 1 metabolite" &
-                                          ADAMParameter == TRUE) %>%
-                                pull(Detail)) == FALSE)
+   if(nrow(ADAMcheck) > 0){
+      ADAMcheck <- ADAMcheck %>% 
+         mutate(ADAM = lapply(existing_exp_details$MainDetails[ADAMcheck$Detail], 
+                              FUN = function(x) any(x == "ADAM", na.rm = T)))
+      
+      for(i in ADAMcheck$Detail[ADAMcheck$ADAM == FALSE]){
+         
+         Main <- Main %>% 
+            filter(Detail %in% 
+                      (AllExpDetails %>%
+                          filter(CompoundID ==  ADAMcheck$CompoundID[
+                             ADAMcheck$Detail == i] &
+                                ADAMParameter == TRUE) %>%
+                          pull(Detail)) == FALSE)   
+      }
    }
    
    CompoundNames <- Main %>%
@@ -739,36 +696,15 @@ annotateDetails <- function(existing_exp_details,
    
    # Cleaning up and removing unnecessary info ----------------------------
    # Removing unnecessary compounds.
-   if(all(is.na(Main %>% filter(str_detect(Detail, "_inhib$")) %>%
-                pull(Value)))){
-      Main <- Main %>% filter(!str_detect(Detail, "_inhib$|Inhibitor1$"))
-   }
    
-   if(all(is.na(Main %>% filter(str_detect(Detail, "_inhib2")) %>%
-                pull(Value)))){
-      Main <- Main %>% filter(!str_detect(Detail, "_inhib2|Inhibitor2"))
-   }
+   CmpdCheck <- Main %>%
+      filter(complete.cases(CompoundID)) %>% 
+      group_by(CompoundID, Detail) %>% 
+      summarize(Keep = any(complete.cases(Value))) %>% 
+      pull(CompoundID) %>% unique() %>% as.character()
    
-   if(all(is.na(Main %>% filter(str_detect(Detail, "_inhib1met")) %>%
-                pull(Value)))){
-      Main <- Main %>% filter(!str_detect(Detail, "_inhib1met|Inhibitor1Metabolite"))
-   }
-   
-   if(all(is.na(Main %>% filter(str_detect(Detail, "_met1")) %>%
-                pull(Value)))){
-      Main <- Main %>% filter(!str_detect(Detail, "_met1|PrimaryMetabolite1"))
-   }
-   
-   if(all(is.na(Main %>% filter(str_detect(Detail, "_met2")) %>%
-                pull(Value)))){
-      Main <- Main %>% filter(!str_detect(Detail, "_met2|PrimaryMetabolite2"))
-   }
-   
-   if(all(is.na(Main %>% filter(str_detect(Detail, "_secmet")) %>%
-                pull(Value)))){
-      Main <- Main %>% filter(!str_detect(Detail, "_secmet|SecondaryMetabolite"))
-   }
-   
+   Main <- Main %>% 
+      filter(is.na(CompoundID) | CompoundID %in% {{CmpdCheck}})
    
    # Removing compound column if they don't want it
    if(class(show_compound_col) == "logical"){
