@@ -318,8 +318,7 @@ extractExpDetails_XML <- function(sim_workspace_files,
    Deets[Deets == ""] <- NA
    
    # Sorting to help organize output
-   Deets <- Deets %>% 
-      select(File, everything())
+   Deets <- Deets %>% select(Workspace, everything())
    
    if(complete.cases(save_output)){
       FileName <- save_output
