@@ -463,7 +463,8 @@ inductFit <- function(DF,
       MyCurves <- list()
       
       if(any(c("all", "Emax") %in% model) & 
-         any(c("all", "Emax") %in% names(indfit))){
+         any(c("all", "Emax") %in% names(indfit)) &&
+         all(complete.cases(indfit$Emax$estimate))){
          MyCurves[["Emax"]] <- Curve %>%
             mutate(Model = "Emax",
                    FoldInduction = 
@@ -474,7 +475,8 @@ inductFit <- function(DF,
       }
       
       if(any(c("all", "EmaxSlope") %in% model) & 
-         any(c("all", "EmaxSlope") %in% names(indfit))){
+         any(c("all", "EmaxSlope") %in% names(indfit)) &&
+         all(complete.cases(indfit$EmaxSlope$estimate))){
          MyCurves[["EmaxSlope"]] <- Curve %>%
             mutate(Model = "EmaxSlope",
                    FoldInduction = 
@@ -486,7 +488,8 @@ inductFit <- function(DF,
       }
       
       if(any(c("all", "Slope") %in% model) & 
-         any(c("all", "Slope") %in% names(indfit))){
+         any(c("all", "Slope") %in% names(indfit)) &&
+         all(complete.cases(indfit$Slope$estimate))){
          MyCurves[["Slope"]] <- Curve %>%
             mutate(Model = "Slope", 
                    FoldInduction = 
@@ -494,7 +497,8 @@ inductFit <- function(DF,
       }
       
       if(any(c("all", "Sig3Param") %in% model) & 
-         any(c("all", "Sig3Param") %in% names(indfit))){
+         any(c("all", "Sig3Param") %in% names(indfit)) &&
+         all(complete.cases(indfit$Sig3Param$estimate))){
          MyCurves[["Sig3Param"]] <- Curve %>%
             mutate(Model = "Sig3Param", 
                    FoldInduction = 
