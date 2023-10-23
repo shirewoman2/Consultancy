@@ -13,7 +13,7 @@ if("logical" %in% class(existing_exp_details)){
    Deets <- data.frame(Inhibitor1 = "UNKNOWN INHIBITOR", 
                        File = MyFiles)
 } else {
-   Deets <- existing_exp_details %>% filter(File %in% MyFiles)
+   Deets <- existing_exp_details$MainDetails %>% filter(File %in% MyFiles)
 }
 
 MyEffector <- determine_myeffector(Deets = Deets, 
