@@ -20,31 +20,31 @@
 #'   \item{"percentiles"}{(default) plots an opaque line for the mean data,
 #'   lighter lines for the 5th and 95th percentiles of the simulated data, and
 #'   open circles for the observed data. If an effecter were present, the
-#'   default is dashed lines for the data in the presence of an effector.}
+#'   default is dashed lines for the data in the presence of a perpetrator.}
 #'
 #'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
 #'   for the mean of each trial of simulated data, and open circles for the
-#'   observed data. If an effector were present, lighter dashed lines indicate
-#'   the mean of each trial of simulated data in the presence of the effector.}
+#'   observed data. If a perpetrator were present, lighter dashed lines indicate
+#'   the mean of each trial of simulated data in the presence of the perpetrator.}
 #'
 #'   \item{"percentile ribbon"}{plots an opaque line for the mean data,
 #'   transparent shading for the 5th to 95th percentiles of the simulated data,
-#'   and open circles for the observed data. If an effector were present, the
-#'   default is to show the data without the effector in blue and the data in
-#'   the presence of the effector in red. Note: You may sometimes see some
+#'   and open circles for the observed data. If a perpetrator were present, the
+#'   default is to show the data without the perpetrator in blue and the data in
+#'   the presence of the perpetrator in red. Note: You may sometimes see some
 #'   artifacts -- especially for semi-log plots -- where the ribbon gets partly
 #'   cut off. For arcane reasons we don't want to bore you with here, we can't
 #'   easily prevent this. However, a possible fix is to set your y axis limits
 #'   for the semi-log plot to be wider using \code{y_axis_limits_log}.}
 #'
 #'   \item{"means only"}{plots a black line for the mean data and, if an
-#'   effector was modeled, a dashed line for the concentration-time data with
+#'   perpetrator was modeled, a dashed line for the concentration-time data with
 #'   Inhibitor 1.}
 #'
 #'   \item{"Freddy"}{Freddy's favorite style of plot with trial means in light
 #'   gray, the overall mean in thicker black, the 5th and 95th percentiles in
 #'   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
-#'   with an effector present lose the trial means, and the percentiles switch
+#'   with a perpetrator present lose the trial means, and the percentiles switch
 #'   to solid, gray lines. \strong{An editorial comment:} While this does not
 #'   align with the officially sanctioned template at this time, this looks
 #'   \emph{sharp}, makes it easy to see the defining characteristics of the
@@ -105,7 +105,7 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all. If you include the legend but then some graphs do have a legend and
-#'   some graphs do not (e.g., some have effectors and some do not so there's
+#'   some graphs do not (e.g., some have perpetrators and some do not so there's
 #'   nothing to put in a legend), the alignment between sets of graphs will be a
 #'   bit off.
 #' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of

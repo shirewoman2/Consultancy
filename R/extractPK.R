@@ -528,7 +528,7 @@ extractPK <- function(sim_data_file,
    if(is.na(Deets$Inhibitor1)){
       PKparameters <- 
          PKparameters[PKparameters %in% 
-                         AllPKParameters$PKparameter[AllPKParameters$AppliesOnlyWhenEffectorPresent == FALSE]]
+                         AllPKParameters$PKparameter[AllPKParameters$AppliesOnlyWhenPerpPresent == FALSE]]
    }
    
    if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
@@ -1096,7 +1096,7 @@ call. = FALSE)
                                   col_names = FALSE))
             
             SubCols <- 3:5
-            # This is IN THE PRESENCE OF AN EFFECTOR -- not the effector
+            # This is IN THE PRESENCE OF AN PERPETRATOR -- not the perpetrator
             # itself. I haven't set that up yet. 
             WithInhibCols <- 6:10
             

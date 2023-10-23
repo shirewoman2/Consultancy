@@ -51,7 +51,7 @@
 #'   \item{"primary metabolite 2",} \item{"secondary metabolite",}
 #'   \item{"inhibitor 1" (default) -- this can be an inducer, inhibitor,
 #'   activator, or suppresesor, but it's labeled as "Inhibitor 1" in the
-#'   simulator,} \item{"inhibitor 2" for the 2nd effector listed in the
+#'   simulator,} \item{"inhibitor 2" for the 2nd perpetrator listed in the
 #'   simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
 #'   inhibitor 1}}
 #' @param enzymes enzymes whose interaction parameters you want to change, e.g.,

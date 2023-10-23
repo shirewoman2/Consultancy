@@ -7,7 +7,7 @@
 set_aesthet(
   line_type,
   figure_type,
-  MyEffector,
+  MyPerpetrator,
   compoundToExtract,
   obs_shape,
   line_color,
@@ -21,7 +21,7 @@ set_aesthet(
 
 \item{figure_type}{user-specified figure type}
 
-\item{MyEffector}{concatenated string of all effectors involved}
+\item{MyPerpetrator}{concatenated string of all perpetrators involved}
 
 \item{compoundToExtract}{compound user wants}
 

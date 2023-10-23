@@ -16,7 +16,7 @@ if("logical" %in% class(existing_exp_details)){
    Deets <- existing_exp_details$MainDetails %>% filter(File %in% MyFiles)
 }
 
-MyEffector <- determine_myeffector(Deets = Deets, 
+MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
                                    prettify_compound_names = TRUE)
 
 if(FromCalcPKRatios){
@@ -84,7 +84,7 @@ if(include_dose_num_i == FALSE){
 TempTable <- MyPKResults[[i]] %>% ungroup() %>% 
    purrr::discard(~all(is.na(.))) %>% 
    select(-any_of(c("CompoundID", "Tissue", "File")))
-names(TempTable) <- sub("effector", MyEffector, names(TempTable))
+names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
 
 formatTable_Simcyp(TempTable,
                    fontsize = fontsize,

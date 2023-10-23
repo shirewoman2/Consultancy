@@ -90,8 +90,8 @@
 #'   \item{By default, if you have a single-dose simulation, the parameters will
 #'   include AUC and Cmax for dose 1, and, if you have a multiple-dose
 #'   simulation, AUC and Cmax for the last dose. Also by default, if you have an
-#'   effector present, the parameters will include the AUC and Cmax values with
-#'   and without the effector as well as those ratios.}
+#'   perpetrator present, the parameters will include the AUC and Cmax values with
+#'   and without the perpetrator as well as those ratios.}
 #'
 #'   \item{Alternatively, you can specify a vector of any combination of
 #'   specific, individual parameters, e.g., \code{c("Cmax_dose1",
@@ -106,7 +106,7 @@
 #'
 #'   \item{Parameters that don't make sense for your scenario -- such as asking
 #'   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
-#'   inhibitor or effector -- will not be included.}
+#'   inhibitor or perpetrator -- will not be included.}
 #'
 #'   \item{tmax will be listed as median, min, and max rather than mean, lower
 #'   and higher confidence interval or percentiles. Similarly, if you request
@@ -228,8 +228,8 @@
 #'   substrate or a substrate metabolite. If set to TRUE, this will return a
 #'   list that includes data formatted for use with the function
 #'   \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
-#'   only works with simulations with effectors (at least, for now), this will
-#'   only work for simulations that included an effector.
+#'   only works with simulations with perpetrators (at least, for now), this will
+#'   only work for simulations that included a perpetrator.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
@@ -559,7 +559,7 @@ pksummary_mult <- function(sim_data_files = NA,
    }
    
    # Setting this for all files 
-   prettify_compound_names <- c("inhibitor" = "effector",
+   prettify_compound_names <- c("inhibitor" = "perpetrator",
                                 "substrate" = "substrate")
    
    ## Getting simulated data ------------------------------------------------

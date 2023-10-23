@@ -117,11 +117,11 @@ extractFmFe <- function(sim_data_file,
                    tmin = ...5) %>% 
             mutate(Tissue = str_extract(tolower(...1), "liver|kidney|renal"), 
                    Enzyme = str_extract(...1, "(CYP|UGT)[1-9][ABCDEFJ][1-9]{1,2}|Additional"), 
-                   EffectorPresent = str_detect(tolower(...1), "with inh"), 
+                   PerpPresent = str_detect(tolower(...1), "with inh"), 
                    Parameter = str_extract(...1, "fm|fe"), 
                    across(.cols = c(Max, tmax, Min, tmin), 
                           .fns = as.numeric)) %>% 
-            select(Parameter, Tissue, Enzyme, EffectorPresent, Max, tmax, Min, tmin)
+            select(Parameter, Tissue, Enzyme, PerpPresent, Max, tmax, Min, tmin)
       )
       
       return(Out)
@@ -172,7 +172,7 @@ extractFmFe <- function(sim_data_file,
                                   Trial == "95th percentile" ~ "per95", 
                                   Trial == "geometric mean" ~ "geomean",
                                   TRUE ~ Trial),
-                EffectorPresent = str_detect(ID, "with inh"), 
+                PerpPresent = str_detect(ID, "with inh"), 
                 Parameter = str_trim(str_extract(ID, " fe | fm ")))
       
       sim_data_mean <- sim_data_xl[c(TimeRow, RowsToUse + TimeRow - 1), ] %>% 
@@ -220,7 +220,7 @@ extractFmFe <- function(sim_data_file,
                                           "\\((liver|kidney|renal)\\)")), 
                 Enzyme = str_extract(ID,
                                      "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), 
-                EffectorPresent = str_detect(ID, "with inh"), 
+                PerpPresent = str_detect(ID, "with inh"), 
                 Parameter = str_trim(str_extract(ID, " fe | fm ")))
       
       sim_data_indiv <- sim_data_xl[c(TimeRow, RowsToUse), ] %>% 
@@ -392,17 +392,17 @@ extractFmFe <- function(sim_data_file,
                                         MyMaxDoseNum_inhib2 - 1, DoseNum_inhib2))
    }
    
-   # Noting exactly what the effectors were
-   AllEffectors <- c(Deets$Inhibitor1, Deets$Inhibitor2,
+   # Noting exactly what the perpetrators were
+   AllPerpetrators <- c(Deets$Inhibitor1, Deets$Inhibitor2,
                      Deets$Inhibitor1Metabolite)
-   AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
+   AllPerpetrators <- AllPerpetrators[complete.cases(AllPerpetrators)]
    
    # Finalizing, tidying, selecting only useful columns
    Data <- Data %>%
       mutate(Time_units = tolower({{TimeUnits}}),
              File = sim_data_file,
-             Inhibitor = ifelse(EffectorPresent,
-                                str_comma(AllEffectors), "none"), 
+             Inhibitor = ifelse(PerpPresent,
+                                str_comma(AllPerpetrators), "none"), 
              Substrate = Deets$Substrate, 
              Compound = AllCompounds[CompoundID]) %>%
       arrange(across(any_of(c("Parameter", "Tissue", "Enzyme",

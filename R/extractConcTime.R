@@ -14,10 +14,10 @@
 #'
 #' \strong{A note on observed data:} When observed data are included in a
 #' simulator output file, because the simulator output does not explicitly say
-#' whether those observed data were in the presence of an inhibitor or effector,
+#' whether those observed data were in the presence of an inhibitor or perpetrator,
 #' this function cannot tell the difference and will thus assume all observed
 #' data included in the simulator output were for the substrate in the
-#' \emph{absence} of any effector. It will further assume that the compound --
+#' \emph{absence} of any perpetrator. It will further assume that the compound --
 #' substrate or inhibitor 1 or primary metabolite 1 or whatever -- is the same
 #' as \code{compoundToExtract}. If \code{compoundToExtract} was an inhibitor or
 #' inhibitor metabolite, the observed data from the simulator output will NOT be
@@ -97,10 +97,10 @@
 #'   \item{CompoundID}{the generic name of the compound: "substrate", "inhibitor
 #'   1", "primary metabolite 1", etc.}
 #'
-#'   \item{Inhibitor (as applicable)}{the inhibitor(s) or effector(s) of
+#'   \item{Inhibitor (as applicable)}{the inhibitor(s) or perpetrator(s) of
 #'   interest; this matches whatever you named "Inhibitor 1", "Inhibitor 2", or
 #'   "Inhibitor 1 metabolite" in the simulator and will be a concatenation of
-#'   all the effectors present}
+#'   all the perpetrators present}
 #'
 #'   \item{Tissue}{the tissue}
 #'
@@ -305,9 +305,9 @@ extractConcTime <- function(sim_data_file,
    Animal <- str_detect(tolower(Deets$Species), "monkey|rat|mouse|dog|beagle")
    Animal <- ifelse(is.na(Animal), FALSE, Animal)
    
-   # Effector present?
-   EffectorPresent <- complete.cases(Deets$Inhibitor1)
-   if(EffectorPresent == FALSE & any(str_detect(compoundToExtract, "inhibitor"))){
+   # Perpetrator present?
+   PerpPresent <- complete.cases(Deets$Inhibitor1)
+   if(PerpPresent == FALSE & any(str_detect(compoundToExtract, "inhibitor"))){
       # Giving user an empty data.frame rather than stopping so that this will
       # work with either single or multiple version of function.
       warning(paste0("There are no inhibitor data in `", 
@@ -316,8 +316,8 @@ extractConcTime <- function(sim_data_file,
       return(data.frame())
    }
    
-   AllEffectorsPresent <- c(Deets$Inhibitor1, Deets$Inhibitor2, Deets$Inhibitor1Metabolite)
-   AllEffectorsPresent <- AllEffectorsPresent[complete.cases(AllEffectorsPresent)]
+   AllPerpsPresent <- c(Deets$Inhibitor1, Deets$Inhibitor2, Deets$Inhibitor1Metabolite)
+   AllPerpsPresent <- AllPerpsPresent[complete.cases(AllPerpsPresent)]
    
    # Noting all compounds present
    AllCompoundsPresent <- c("substrate" = Deets$Substrate,
@@ -330,17 +330,17 @@ extractConcTime <- function(sim_data_file,
    AllCompoundsPresent <- AllCompoundsPresent[complete.cases(AllCompoundsPresent)]
    AllCompoundsID <- names(AllCompoundsPresent)
    
-   # For matching the correct effector to the correct names in the output file.
-   # NB: I made inhibitor 1 be "EFFECTOR1INHIB" rather than just "EFFECTOR1"
-   # for ease of regex. If it's just "EFFECTOR1" then, later, the regex will
-   # match both "EFFECTOR1" and "EFFECTOR1METABOLITE".
+   # For matching the correct perpetrator to the correct names in the output file.
+   # NB: I made inhibitor 1 be "PERPETRATOR1INHIB" rather than just "PERPETRATOR1"
+   # for ease of regex. If it's just "PERPETRATOR1" then, later, the regex will
+   # match both "PERPETRATOR1" and "PERPETRATOR1METABOLITE".
    Eff_DF <- data.frame(CompoundID = c("inhibitor 1", "inhibitor 2",
                                        "inhibitor 1 metabolite"),
                         Compound = c(Deets$Inhibitor1,
                                      Deets$Inhibitor2,
                                      Deets$Inhibitor1Metabolite), 
-                        COMPOUND = c("EFFECTOR1INHIB", "EFFECTOR2", 
-                                     "EFFECTOR1MET"))
+                        COMPOUND = c("PERPETRATOR1INHIB", "PERPETRATOR2", 
+                                     "PERPETRATOR1MET"))
    COMPOUND_regex <- str_c(Eff_DF %>% filter(complete.cases(Compound)) %>%
                               pull(COMPOUND), collapse = "|")
    
@@ -669,7 +669,7 @@ extractConcTime <- function(sim_data_file,
                                 which(CmpdMatches$CompoundID == "inhibitor 1")[1]])))
          
          sim_data_xl$...1[PossRows] <- sub(gsub("\\(|\\)|\\-", ".", Deets$Inhibitor1),
-                                           "EFFECTOR1INHIB", sim_data_xl$...1[PossRows])
+                                           "PERPETRATOR1INHIB", sim_data_xl$...1[PossRows])
          rm(PossRows)
          
       } else if("inhibitor 1" %in% compoundToExtract){
@@ -686,7 +686,7 @@ extractConcTime <- function(sim_data_file,
                                 which(CmpdMatches$CompoundID == "inhibitor 2")[1]])))
          
          sim_data_xl$...1[PossRows] <- sub(gsub("\\(|\\)|\\-", ".", Deets$Inhibitor2),
-                                           "EFFECTOR2", sim_data_xl$...1[PossRows])
+                                           "PERPETRATOR2", sim_data_xl$...1[PossRows])
          rm(PossRows)
          
       } else if("inhibitor 2" %in% compoundToExtract){
@@ -711,12 +711,12 @@ extractConcTime <- function(sim_data_file,
          
          # sim_data_xl$...1[PossRows] <- 
          #    sub(gsub("\\(|\\)|\\-", ".", 
-         #             sub(Deets$Inhibitor1, "EFFECTOR1INHIB", Deets$Inhibitor1Metabolite)),
-         #        "EFFECTOR1MET", sim_data_xl$...1[PossRows])
+         #             sub(Deets$Inhibitor1, "PERPETRATOR1INHIB", Deets$Inhibitor1Metabolite)),
+         #        "PERPETRATOR1MET", sim_data_xl$...1[PossRows])
          
          sim_data_xl$...1[PossRows] <- 
             sub(gsub("\\(|\\)|\\-", ".", Deets$Inhibitor1Metabolite), 
-                "EFFECTOR1MET", sim_data_xl$...1[PossRows])
+                "PERPETRATOR1MET", sim_data_xl$...1[PossRows])
          
          rm(PossRows)
          
@@ -876,7 +876,7 @@ extractConcTime <- function(sim_data_file,
                               "released payload" = Deets$PrimaryMetabolite1)
       } 
       
-      if(EffectorPresent){
+      if(PerpPresent){
          # When the simulator output is for an inhibitor, for reasons I
          # *cannot fathom*, they include a number after "ISys" to designate
          # which inhibitor the data pertain to and, *sometimes*, they will
@@ -1052,7 +1052,7 @@ extractConcTime <- function(sim_data_file,
                rm(RowsToUse, Include)
             }
             
-            if(EffectorPresent){
+            if(PerpPresent){
                
                for(s in subsection_ADAMs){
                   # message(paste("subsection_ADAMs =", s))
@@ -1123,17 +1123,17 @@ extractConcTime <- function(sim_data_file,
                   if(length(RowsToUse) > 0){
                      
                      suppressWarnings(
-                        sim_data_mean_SubPlusEffector <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+                        sim_data_mean_SubPlusPerp <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                            t() %>%
                            as.data.frame() %>% slice(-(1:3)) %>%
                            mutate_all(as.numeric)
                      )
-                     names(sim_data_mean_SubPlusEffector) <- c("Time", names(RowsToUse))
-                     sim_data_mean_SubPlusEffector <- sim_data_mean_SubPlusEffector %>%
+                     names(sim_data_mean_SubPlusPerp) <- c("Time", names(RowsToUse))
+                     sim_data_mean_SubPlusPerp <- sim_data_mean_SubPlusPerp %>%
                         pivot_longer(names_to = "Trial", values_to = "Conc",
                                      cols = -c(Time)) %>%
                         mutate(Compound = MyCompound,
-                               Inhibitor = str_comma(AllEffectorsPresent),
+                               Inhibitor = str_comma(AllPerpsPresent),
                                CompoundID = m,
                                Time_units = SimTimeUnits,
                                Conc_units = ifelse(ADAM, 
@@ -1143,7 +1143,7 @@ extractConcTime <- function(sim_data_file,
                                subsection_ADAM = ifelse(ADAM, s, NA))
                      
                      sim_data_mean[[m]][[s]] <- bind_rows(sim_data_mean[[m]][[s]],
-                                                          sim_data_mean_SubPlusEffector)
+                                                          sim_data_mean_SubPlusPerp)
                      
                   }
                }
@@ -1161,7 +1161,7 @@ extractConcTime <- function(sim_data_file,
          # w/substrate info for systemic tissues.
          if(m %in% c("inhibitor 1", "inhibitor 2",
                      "inhibitor 1 metabolite") &
-            length(AllEffectorsPresent) > 0){
+            length(AllPerpsPresent) > 0){
             
             TimeRow <- which(str_detect(sim_data_xl$...1,
                                         "^Time.*Inhibitor "))[1]
@@ -1206,9 +1206,9 @@ extractConcTime <- function(sim_data_file,
                } else {
                   Include <- which(str_detect(NamesToCheck,
                                               NumCheck[switch(m, 
-                                                              "inhibitor 1" = "EFFECTOR1INHIB", 
-                                                              "inhibitor 2" = "EFFECTOR2", 
-                                                              "inhibitor 1 metabolite" = "EFFECTOR1MET")]))
+                                                              "inhibitor 1" = "PERPETRATOR1INHIB", 
+                                                              "inhibitor 2" = "PERPETRATOR2", 
+                                                              "inhibitor 1 metabolite" = "PERPETRATOR1MET")]))
                }
                
                RowsToUse <- c(
@@ -1249,7 +1249,7 @@ extractConcTime <- function(sim_data_file,
                                cols = -c("Time")) %>%
                   mutate(Compound = Eff_DF$Compound[which(Eff_DF$CompoundID == m)],
                          CompoundID = m,
-                         Inhibitor = str_comma(AllEffectorsPresent),
+                         Inhibitor = str_comma(AllPerpsPresent),
                          Time_units = SimTimeUnits,
                          Conc_units = ifelse(ADAM, 
                                              SimConcUnits$ConcUnit[
@@ -1269,7 +1269,7 @@ extractConcTime <- function(sim_data_file,
          # ADC compound sheets are set up differently
          if(CompoundType == "ADC" &
             all(compoundToExtract != "released payload") &
-            length(AllEffectorsPresent) == 0){
+            length(AllPerpsPresent) == 0){
             TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))[1]
             
             # Figuring out which rows contain which data
@@ -1356,7 +1356,7 @@ extractConcTime <- function(sim_data_file,
             sim_data_mean[[m]] <- bind_rows(sim_data_mean[[m]])
             rm(NamesToCheck, TimeRow, FirstBlank)
             
-         } # RETURN TO THIS when there are effectors. Not set up yet. 
+         } # RETURN TO THIS when there are perpetrators. Not set up yet. 
       }
       
       ## individual data ------------------------------------------------------
@@ -1454,7 +1454,7 @@ extractConcTime <- function(sim_data_file,
                
             }
             
-            if(EffectorPresent){
+            if(PerpPresent){
                
                for(s in subsection_ADAMs){
                   # message(paste("subsection_ADAMs =", s))
@@ -1496,22 +1496,22 @@ extractConcTime <- function(sim_data_file,
                   if(length(RowsToUse) > 0){
                      
                      suppressWarnings(
-                        sim_data_ind_SubPlusEffector <-
+                        sim_data_ind_SubPlusPerp <-
                            sim_data_xl[c(TimeRow, RowsToUse), ] %>%
                            t() %>%
                            as.data.frame() %>% slice(-(1:3)) %>%
                            mutate_all(as.numeric) %>%
                            rename(Time = "V1")
                      )
-                     names(sim_data_ind_SubPlusEffector)[
-                        2:ncol(sim_data_ind_SubPlusEffector)] <- SubjTrial$SubjTrial
-                     sim_data_ind_SubPlusEffector <-
-                        sim_data_ind_SubPlusEffector %>%
+                     names(sim_data_ind_SubPlusPerp)[
+                        2:ncol(sim_data_ind_SubPlusPerp)] <- SubjTrial$SubjTrial
+                     sim_data_ind_SubPlusPerp <-
+                        sim_data_ind_SubPlusPerp %>%
                         pivot_longer(names_to = "SubjTrial", values_to = "Conc",
                                      cols = -Time) %>%
                         mutate(Compound = MyCompound,
                                CompoundID = m,
-                               Inhibitor = str_comma(AllEffectorsPresent),
+                               Inhibitor = str_comma(AllPerpsPresent),
                                SubjTrial = sub("ID", "", SubjTrial),
                                Time_units = SimTimeUnits,
                                Conc_units = ifelse(ADAM, 
@@ -1523,7 +1523,7 @@ extractConcTime <- function(sim_data_file,
                                  sep = "_")
                      
                      sim_data_ind[[m]][[s]] <- bind_rows(sim_data_ind[[m]][[s]],
-                                                         sim_data_ind_SubPlusEffector)
+                                                         sim_data_ind_SubPlusPerp)
                   }
                   
                   rm(RowsToUse)
@@ -1541,7 +1541,7 @@ extractConcTime <- function(sim_data_file,
          # w/substrate info for systemic tissues.
          if(m %in% c("inhibitor 1", "inhibitor 2",
                      "inhibitor 1 metabolite") &
-            length(AllEffectorsPresent) > 0){
+            length(AllPerpsPresent) > 0){
             
             sim_data_ind[[m]] <- list()
             
@@ -1591,9 +1591,9 @@ extractConcTime <- function(sim_data_file,
                } else {
                   Include <- which(str_detect(NamesToCheck,
                                               NumCheck[switch(m, 
-                                                              "inhibitor 1" = "EFFECTOR1INHIB", 
-                                                              "inhibitor 2" = "EFFECTOR2", 
-                                                              "inhibitor 1 metabolite" = "EFFECTOR1MET")]))
+                                                              "inhibitor 1" = "PERPETRATOR1INHIB", 
+                                                              "inhibitor 2" = "PERPETRATOR2", 
+                                                              "inhibitor 1 metabolite" = "PERPETRATOR1MET")]))
                }
                
                if(length(Include) == 0){
@@ -1618,9 +1618,9 @@ extractConcTime <- function(sim_data_file,
                      switch(TissueType,
                             "systemic" = paste0(
                                NumCheck[switch(m, 
-                                               "inhibitor 1" = "EFFECTOR1INHIB", 
-                                               "inhibitor 2" = "EFFECTOR2", 
-                                               "inhibitor 1 metabolite" = "EFFECTOR1MET")],
+                                               "inhibitor 1" = "PERPETRATOR1INHIB", 
+                                               "inhibitor 2" = "PERPETRATOR2", 
+                                               "inhibitor 1 metabolite" = "PERPETRATOR1MET")],
                                " \\(|", m),
                             "tissue" = paste0("ITissue\\(Inh 1|",
                                               "I", tissue, " 1 \\("))
@@ -1651,7 +1651,7 @@ extractConcTime <- function(sim_data_file,
                                cols = -Time) %>%
                   mutate(Compound = Eff_DF$Compound[which(Eff_DF$CompoundID == m)],
                          CompoundID = m,
-                         Inhibitor = str_comma(AllEffectorsPresent),
+                         Inhibitor = str_comma(AllPerpsPresent),
                          SubjTrial = sub("ID", "", SubjTrial),
                          Time_units = SimTimeUnits,
                          Conc_units = ifelse(ADAM, 
@@ -1670,7 +1670,7 @@ extractConcTime <- function(sim_data_file,
          ### m is an ADC compound -----------
          if(CompoundType == "ADC" & 
             all(compoundToExtract != "released payload") &
-            length(AllEffectorsPresent) == 0){
+            length(AllPerpsPresent) == 0){
             
             # substrate data
             TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
@@ -1756,8 +1756,8 @@ extractConcTime <- function(sim_data_file,
                            "released payload" = Deets$PrimaryMetabolite1)
       }
       
-      AllEffectors_comma <- ifelse(length(AllEffectorsPresent) == 0,
-                                   NA, str_comma(AllEffectorsPresent))
+      AllPerps_comma <- ifelse(length(AllPerpsPresent) == 0,
+                                   NA, str_comma(AllPerpsPresent))
       
       # Use the supplied obs file here if a) tissue is systemic and b) the
       # function was NOT called from the mult function OR the function WAS
@@ -1864,8 +1864,8 @@ extractConcTime <- function(sim_data_file,
             obs_data <- extractObsConcTime(obs_data_file) %>%
                mutate(Compound = ObsCompounds[CompoundID], 
                       Inhibitor = ifelse(Inhibitor == "inhibitor" &
-                                            complete.cases(AllEffectors_comma),
-                                         AllEffectors_comma, Inhibitor))
+                                            complete.cases(AllPerps_comma),
+                                         AllPerps_comma, Inhibitor))
             
             if(CompoundType == "ADC"){
                obs_data <- obs_data %>% 
@@ -1920,8 +1920,8 @@ extractConcTime <- function(sim_data_file,
                       ifelse(Inhibitor == "none",
                              "obs", "obs+inhibitor")))
          
-         if(any(is.na(obs_data$Inhibitor)) & length(AllEffectorsPresent) == 0){
-            warning("There is a mismatch of some kind between the observed data and the simulated data in terms of an effector or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?\n",
+         if(any(is.na(obs_data$Inhibitor)) & length(AllPerpsPresent) == 0){
+            warning("There is a mismatch of some kind between the observed data and the simulated data in terms of a perpetrator or inhibitor being present. Please check that the output from this function looks the way you'd expect. Have you perhaps included observed data with an inhibitor present but the simulation does not include an inhibitor?\n",
                     call. = FALSE)
          }
       }

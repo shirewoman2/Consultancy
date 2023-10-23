@@ -4,7 +4,7 @@
 #' \code{calc_PK} calculates AUCinf_dose1, AUCt_dose1, AUCtau_last, Cmax_dose1,
 #' Cmax_last, tmax_dose1, tmax_last, CLinf_dose1, and CLtau_last for the
 #' supplied concentration-time data and, when applicable, the same parameters in
-#' the presence of an effector and the ratios of those values for effector /
+#' the presence of a perpetrator and the ratios of those values for perpetrator /
 #' baseline. This can accommodate multiple simulations and multiple compounds as
 #' long as the dosing regimen was the same. For example, this will do fine with
 #' calculating the last-dose PK for two simulations where the last dose of
@@ -455,7 +455,7 @@ calc_PK <- function(ct_dataframe,
       
       PKtemp <- bind_rows(PKtemp, PKDDI) %>% 
          # Also fixing PK parameter names here since they should be different in
-         # the presence of an effector.
+         # the presence of a perpetrator.
          mutate(PKparameter = case_when(Inhibitor != "none" &
                                            !str_detect(PKparameter, "ratio") ~ 
                                            paste0(PKparameter, "_withInhib"), 

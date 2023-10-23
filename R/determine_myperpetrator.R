@@ -1,4 +1,4 @@
-#' Determine the (optionally pretty) name of all effectors included in a
+#' Determine the (optionally pretty) name of all perpetrators included in a
 #' simulation, all concatenated nicely
 #'
 #' @param Deets experimental details for only the single sim_data_file in
@@ -11,12 +11,12 @@
 #' @examples
 #' # None yet
 #' 
-determine_myeffector <- function(Deets, prettify_compound_names){
+determine_myperpetrator <- function(Deets, prettify_compound_names){
    
    Deets <- harmonize_details(Deets)
    Deets <- Deets$MainDetails
    
-   MyEffector <- 
+   MyPerpetrator <- 
       c("Inhibitor1" = switch(as.character("Inhibitor1" %in% names(Deets)), 
                               "TRUE" = str_comma(Deets$Inhibitor1), 
                               "FALSE" = as.character(NA)), 
@@ -24,25 +24,25 @@ determine_myeffector <- function(Deets, prettify_compound_names){
                               "TRUE" = str_comma(Deets$Inhibitor2), 
                               "FALSE" = as.character(NA)))
    
-   if(any(complete.cases(MyEffector))){
-      MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
+   if(any(complete.cases(MyPerpetrator))){
+      MyPerpetrator <- str_comma(MyPerpetrator[complete.cases(MyPerpetrator)])
       
       if(class(prettify_compound_names) == "logical" &&
          prettify_compound_names){
-         MyEffector <- prettify_compound_name(MyEffector)
+         MyPerpetrator <- prettify_compound_name(MyPerpetrator)
       }
       
       if(class(prettify_compound_names) == "character" &
-         "effector" %in% names(prettify_compound_names)){
+         "perpetrator" %in% names(prettify_compound_names)){
          names(prettify_compound_names)[
             str_detect(tolower(names(prettify_compound_names)), 
-                       "effector")][1] <- "effector"
-         MyEffector <- prettify_compound_names["effector"]
+                       "perpetrator")][1] <- "perpetrator"
+         MyPerpetrator <- prettify_compound_names["perpetrator"]
       }
    } else {
-      MyEffector <- "none"
+      MyPerpetrator <- "none"
    }
    
-   return(MyEffector)
+   return(MyPerpetrator)
    
 }

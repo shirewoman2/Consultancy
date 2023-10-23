@@ -45,8 +45,8 @@ a list with a) TableHeading text and b) TableCaption text
 for a table with a single set of results. This is meant for use with
 pksummary_table or for pksummary_mult when the results are split into
 multiple tables rather than all together in one. Note that this is designed
-for scenarios where, if there's an effector, there's only one. The text won't
-be quite right if there are 2 effectors. UNDER CONSTRUCTION.
+for scenarios where, if there's a perpetrator, there's only one. The text won't
+be quite right if there are 2 perpetrators. UNDER CONSTRUCTION.
 }
 \examples{
 # None yet

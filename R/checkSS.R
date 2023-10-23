@@ -198,12 +198,12 @@ call. = FALSE)
                                                       paste0("<", diff_cutoff*100, "%"))))
    )
    
-   # Noting whether effector present and what it is
-   MyEffector <- unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])
+   # Noting whether perpetrator present and what it is
+   MyPerpetrator <- unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])
    
-   if(length(MyEffector) > 0){
+   if(length(MyPerpetrator) > 0){
       ct_dataframe <- ct_dataframe %>%
-         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyEffector)))
+         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
    }
    
    # Setting up graphs
@@ -254,12 +254,12 @@ call. = FALSE)
       OverlayCT <- ct_dataframe %>% 
          filter(Trial == MyMeanType & CompoundID == overlay_compoundID) %>% 
          mutate(Inhibitor = ifelse(Inhibitor == "none", 
-                                   "without effector",
-                                   paste("with", prettify_compound_name(MyEffector))), 
+                                   "without perpetrator",
+                                   paste("with", prettify_compound_name(MyPerpetrator))), 
                 Inhibitor = factor(Inhibitor, 
-                                   levels = c("without effector",
+                                   levels = c("without perpetrator",
                                               paste("with", 
-                                                    prettify_compound_name(MyEffector)))))
+                                                    prettify_compound_name(MyPerpetrator)))))
       
       # Checking for differences in scale between accum_compoundID and
       # overlay_compoundID
@@ -272,7 +272,7 @@ call. = FALSE)
                                              max(OverlayCT$Conc, na.rm = T)))
       } 
       
-      if(length(MyEffector) > 0){
+      if(length(MyPerpetrator) > 0){
          G <- G + 
             geom_line(data = OverlayCT, 
                       aes(x = Time, y = Conc, linetype = Inhibitor), 

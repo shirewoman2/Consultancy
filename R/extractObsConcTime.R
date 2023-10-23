@@ -196,7 +196,7 @@ extractObsConcTime <- function(obs_data_file,
         `Tumour Volume (Inb)` = "tumour volume"
       )
    
-   ObsEffectors <- 
+   ObsPerpetrators <- 
       c(`ADC Plasma Free` = "none",
         `ADC Plasma Total` = "none",
         `Adipose (Sub)` = "none", 
@@ -250,8 +250,8 @@ extractObsConcTime <- function(obs_data_file,
    #                            Tissue = Tissue) %>%
    #     left_join(data.frame(ID = names(ObsCompoundIDs),
    #                          CompoundID = ObsCompoundIDs)) %>%
-   #     left_join(data.frame(ID = names(ObsEffectors),
-   #                          Effector = ObsEffectors))
+   #     left_join(data.frame(ID = names(ObsPerpetrators),
+   #                          Perpetrator = ObsPerpetrators))
    # 
    # save(ObsDVoptions, file = "data/ObsDVoptions.RData")
    
@@ -338,7 +338,7 @@ extractObsConcTime <- function(obs_data_file,
       mutate(across(.cols = any_of(c("Time", "Conc", "SD_SE")), .fns = as.numeric)) %>%
       mutate(CompoundID_obsfile = CompoundCode[as.character(DVID)],
              CompoundID = ObsCompoundIDs[CompoundID_obsfile],
-             Inhibitor = ObsEffectors[CompoundID_obsfile],
+             Inhibitor = ObsPerpetrators[CompoundID_obsfile],
              Simulated = FALSE,
              Trial = "obs",
              Tissue = Tissue[CompoundID_obsfile],

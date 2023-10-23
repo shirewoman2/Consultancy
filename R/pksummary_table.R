@@ -120,8 +120,8 @@
 #'   \item{By default, if you have a single-dose simulation, the parameters will
 #'   include AUC and Cmax for dose 1, and, if you have a multiple-dose
 #'   simulation, AUC and Cmax for the last dose. Also by default, if you have an
-#'   effector present, the parameters will include the AUC and Cmax values with
-#'   and without the effector as well as those ratios.}
+#'   perpetrator present, the parameters will include the AUC and Cmax values with
+#'   and without the perpetrator as well as those ratios.}
 #'
 #'   \item{Alternatively, you can specify a vector of any combination of
 #'   specific, individual parameters, e.g., \code{c("Cmax_dose1",
@@ -135,7 +135,7 @@
 #'
 #'   \item{Parameters that don't make sense for your scenario -- such as asking
 #'   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
-#'   inhibitor or effector -- will not be included.}
+#'   inhibitor or perpetrator -- will not be included.}
 #'
 #'   \item{tmax will be listed as median, minimum, and maximum rather than mean,
 #'   lower and higher 90\% confidence interval or 5th to 95th percentiles.
@@ -256,26 +256,26 @@
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
-#'   metabolites, effectors, or effector metabolites are among the standard
+#'   metabolites, perpetrators, or perpetrator metabolites are among the standard
 #'   options for the simulator, and leaving \code{prettify_compound_names =
 #'   TRUE} will make the name of those compounds something more human readable.
 #'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
 #'   "Sim-Midazolam" will become "midazolam". Set each compound to the name
 #'   you'd prefer to see in your column titles if you would like something
-#'   different. For example, \code{prettify_compound_names = c("effector" =
-#'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "effector"
-#'   includes \emph{all} the effectors and effector metabolites present, so, if
-#'   you're setting the effector name, you really should use something like this
-#'   if you're including effector metabolites: \code{prettify_compound_names =
-#'   c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+#'   different. For example, \code{prettify_compound_names = c("perpetrator" =
+#'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
+#'   includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
+#'   you're setting the perpetrator name, you really should use something like this
+#'   if you're including perpetrator metabolites: \code{prettify_compound_names =
+#'   c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
 #'   the same time. This only applies when the compound to extract is the
 #'   substrate or a substrate metabolite. If set to TRUE, this will return a
 #'   list that includes data formatted for use with the function
 #'   \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
-#'   only works with simulations with effectors (at least, for now), this will
-#'   only work for simulations that included an effector. This is probably most
+#'   only works with simulations with perpetrators (at least, for now), this will
+#'   only work for simulations that included a perpetrator. This is probably most
 #'   useful for the \code{\link{pksummary_mult}} function since a forest plot
 #'   with only one simulation isn't terribly informative.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
@@ -430,7 +430,7 @@ pksummary_table <- function(sim_data_file = NA,
    
    if(class(prettify_compound_names) == "character" &&
       is.null(names(prettify_compound_names))){
-      warning("You have supplied values for `prettify_compound_names` but not assigned them with compound IDs. That means we don't know which one is the substrate and which one is the effector(s). For now, we'll try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
+      warning("You have supplied values for `prettify_compound_names` but not assigned them with compound IDs. That means we don't know which one is the substrate and which one is the perpetrator(s). For now, we'll try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the perpetrator.", 
               call. = FALSE)
       prettify_compound_names <- TRUE
    }
@@ -438,11 +438,11 @@ pksummary_table <- function(sim_data_file = NA,
    if(class(prettify_compound_names) == "character"){
       if(any(str_detect(names(prettify_compound_names), "inhibitor"))){
          names(prettify_compound_names)[
-            which(str_detect(names(prettify_compound_names), "inhibitor"))] <- "effector"
+            which(str_detect(names(prettify_compound_names), "inhibitor"))] <- "perpetrator"
       }
       
       if("substrate" %in% names(prettify_compound_names) == FALSE){
-         warning("The compound IDs you supplied for `prettify_compound_names` must include compound IDs of `substrate` and, if there are any effectors, `effector` for the compounds to be prettified as requested. For now, we'll just try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the effector.", 
+         warning("The compound IDs you supplied for `prettify_compound_names` must include compound IDs of `substrate` and, if there are any perpetrators, `perpetrator` for the compounds to be prettified as requested. For now, we'll just try our best to prettify the compound names, but if the result is not what you want, please supply a named character vector for what you want to use for the substrate and what you want to use for the perpetrator.", 
                  call. = FALSE)
          prettify_compound_names <- TRUE
       }
@@ -760,7 +760,7 @@ pksummary_table <- function(sim_data_file = NA,
       GMR_mean_type <- sectionInfo$ObsData$GMR_mean_type
       if(is.null(GMR_mean_type)){GMR_mean_type <- MeanType}
       Deets <- sectionInfo
-      EffectorPresent <- complete.cases(Deets$Inhibitor1)
+      PerpPresent <- complete.cases(Deets$Inhibitor1)
       DoseRegimen <- Deets$Regimen_sub
       
    } else {
@@ -838,7 +838,7 @@ pksummary_table <- function(sim_data_file = NA,
       return(list())
    }
    
-   EffectorPresent <- complete.cases(Deets$Inhibitor1)
+   PerpPresent <- complete.cases(Deets$Inhibitor1)
    DoseRegimen <- switch(compoundToExtract, 
                          "substrate" = Deets$Regimen_sub,
                          "primary metabolite 1" = Deets$Regimen_sub,
@@ -961,10 +961,10 @@ pksummary_table <- function(sim_data_file = NA,
       }
    }
    
-   # If there was no effector, then don't pull any interaction info
+   # If there was no perpetrator, then don't pull any interaction info
    if(is.na(Deets$Inhibitor1)){
       EffParam <- AllPKParameters %>%
-         filter(AppliesOnlyWhenEffectorPresent == TRUE) %>%
+         filter(AppliesOnlyWhenPerpPresent == TRUE) %>%
          pull(PKparameter)
       
       PKToPull <- PKToPull[!PKToPull %in% EffParam]
@@ -1132,14 +1132,14 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    # Accounting for when mean_type is arithmetic but the user requests that the
-   # ratio for + effector over - effector be a GMR. This will replace the
+   # ratio for + perpetrator over - perpetrator be a GMR. This will replace the
    # arithmetic mean ratio data with geometric mean ratio data. However,
    # because later we need to join that with obs data and we need to use the
    # correct mean type throughout, this will be labeled as "mean" rather than
    # "geomean". Yes, that's confusing, so my apologies, but I couldn't come up
    # with a better way to do this. -LS
    if(MeanType == "arithmetic" &&
-      EffectorPresent == TRUE &&
+      PerpPresent == TRUE &&
       complete.cases(GMR_mean_type) &&
       GMR_mean_type == "geometric"){
       
@@ -1195,7 +1195,7 @@ pksummary_table <- function(sim_data_file = NA,
       MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
          MyPKResults$tmax_dose1[MyPKResults$Stat == "max"]
       
-      if(EffectorPresent & "tmax_dose1_withInhib" %in% names(MyPKResults)){
+      if(PerpPresent & "tmax_dose1_withInhib" %in% names(MyPKResults)){
          MyPKResults$tmax_dose1_withInhib[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "median"]
@@ -1217,7 +1217,7 @@ pksummary_table <- function(sim_data_file = NA,
       MyPKResults$tmax_last[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
          MyPKResults$tmax_last[MyPKResults$Stat == "max"]
       
-      if(EffectorPresent & "tmax_last_withInhib" %in% names(MyPKResults)){
+      if(PerpPresent & "tmax_last_withInhib" %in% names(MyPKResults)){
          MyPKResults$tmax_last_withInhib[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "median"]
@@ -1239,7 +1239,7 @@ pksummary_table <- function(sim_data_file = NA,
       MyPKResults$tmax[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
          MyPKResults$tmax[MyPKResults$Stat == "max"]
       
-      if(EffectorPresent & "tmax_withInhib" %in% names(MyPKResults)){
+      if(PerpPresent & "tmax_withInhib" %in% names(MyPKResults)){
          MyPKResults$tmax_withInhib[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
             MyPKResults$tmax_withInhib[MyPKResults$Stat == "median"]
@@ -1284,7 +1284,7 @@ pksummary_table <- function(sim_data_file = NA,
                    values_to = "Sim")
    
    MyObsPKParam <- c(PKToPull, paste0(PKToPull, "_CV"))
-   if(EffectorPresent){
+   if(PerpPresent){
       MyObsPKParam <- c(MyObsPKParam,
                         "Cmax_ratio_dose1_90CIL", "Cmax_ratio_dose1_90CIU",
                         "AUCinf_ratio_dose1_90CIL", "AUCinf_ratio_dose1_90CIU",
@@ -1313,7 +1313,7 @@ pksummary_table <- function(sim_data_file = NA,
                               ifelse({{MeanType}} == "geometric", "GCV", "CV"), 
                               ifelse({{MeanType}} == "geometric", "geomean", "mean")))
       
-      if(EffectorPresent){
+      if(PerpPresent){
          # Accounting for when the mean ratios for obs data are
          # actually geometric even though the other obs data means are
          # arithmetic. This will label observed data GMR values as
@@ -1619,33 +1619,33 @@ pksummary_table <- function(sim_data_file = NA,
       PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
       PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
       
-      # MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
+      # MyPerpetrator <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
       #                 Deets$Inhibitor2)
       # 
-      # if(any(complete.cases(MyEffector))){
-      #    MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
+      # if(any(complete.cases(MyPerpetrator))){
+      #    MyPerpetrator <- str_comma(MyPerpetrator[complete.cases(MyPerpetrator)])
       #    
       #    if(class(prettify_compound_names) == "logical" &&
       #       prettify_compound_names){
-      #       MyEffector <- prettify_compound_name(MyEffector)
+      #       MyPerpetrator <- prettify_compound_name(MyPerpetrator)
       #    }
       #    
       #    if(class(prettify_compound_names) == "character" &
-      #       "effector" %in% names(prettify_compound_names)){
+      #       "perpetrator" %in% names(prettify_compound_names)){
       #       names(prettify_compound_names)[
       #          str_detect(tolower(names(prettify_compound_names)), 
-      #                     "effector")][1] <- "effector"
-      #       MyEffector <- prettify_compound_names["effector"]
+      #                     "perpetrator")][1] <- "perpetrator"
+      #       MyPerpetrator <- prettify_compound_names["perpetrator"]
       #    }
       #    
-      #    PrettyCol <- sub("effector", MyEffector, PrettyCol)
+      #    PrettyCol <- sub("perpetrator", MyPerpetrator, PrettyCol)
       # }
       # 
       
-      MyEffector <- determine_myeffector(Deets, prettify_compound_names)
+      MyPerpetrator <- determine_myperpetrator(Deets, prettify_compound_names)
       
-      if(any(complete.cases(MyEffector))){
-         PrettyCol <- sub("effector", MyEffector, PrettyCol)
+      if(any(complete.cases(MyPerpetrator))){
+         PrettyCol <- sub("perpetrator", MyPerpetrator, PrettyCol)
       }
       
       names(MyPKResults) <- c("Statistic", PrettyCol)

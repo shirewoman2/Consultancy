@@ -6,7 +6,7 @@
 #'
 #' @param line_type user-specified line type
 #' @param figure_type user-specified figure type
-#' @param MyEffector concatenated string of all effectors involved
+#' @param MyPerpetrator concatenated string of all perpetrators involved
 #' @param compoundToExtract compound user wants
 #' @param obs_shape user-specified observed data shape
 #' @param line_color user-specified line color
@@ -14,7 +14,7 @@
 #'
 #' @return several objects to use with setting graph aesthetics
 
-set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract, 
+set_aesthet <- function(line_type, figure_type, MyPerpetrator, compoundToExtract, 
                         obs_shape, line_color, obs_color, 
                         obs_line_trans, obs_fill_trans){
     
@@ -22,8 +22,8 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
     # applicable.
     if(is.na(line_type[1])){
         if(str_detect(figure_type, "ribbon") & 
-           length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & 
+           length(MyPerpetrator) > 0 && complete.cases(MyPerpetrator[1]) &&
+           MyPerpetrator[1] != "none" & 
            ("inhibitor 1" %in% compoundToExtract == FALSE)){
             line_type <- c("solid", "solid")
         } else {
@@ -37,8 +37,8 @@ set_aesthet <- function(line_type, figure_type, MyEffector, compoundToExtract,
     
     if(is.na(line_color[1])){
         if(str_detect(figure_type, "ribbon") & 
-           length(MyEffector) > 0 && complete.cases(MyEffector[1]) &&
-           MyEffector[1] != "none" & 
+           length(MyPerpetrator) > 0 && complete.cases(MyPerpetrator[1]) &&
+           MyPerpetrator[1] != "none" & 
            ("inhibitor 1" %in% compoundToExtract == FALSE)){
             line_color <- c("#377EB8", "#E41A1C")
         } else {

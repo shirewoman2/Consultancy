@@ -41,7 +41,7 @@
 #'
 #'   \item{Substrate}{what the substrate was in the simulation}
 #'
-#'   \item{Inhibitor}{what the effector was in the simulation if there was one}
+#'   \item{Inhibitor}{what the perpetrator was in the simulation if there was one}
 #'
 #'   \item{Individual}{the individual for the given profile, which will be a
 #'   number for a simulated individual or will be "obs" or "obs+inhibitor" for
@@ -213,7 +213,7 @@ extractEnzAbund <- function(sim_data_file,
                          "small intestine" = SITimeRow:SIEndRow)
          
          # Checking for inhibitor
-         EffectorPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
+         PerpPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
          
          rm(NamesToCheck)
          
@@ -249,7 +249,7 @@ extractEnzAbund <- function(sim_data_file,
             
             rm(RowsToUse, NamesToCheck)
             
-            if(EffectorPresent){
+            if(PerpPresent){
                
                # Checking which cells contain mean, 5th, and 95th
                # percentile data.
@@ -277,12 +277,12 @@ extractEnzAbund <- function(sim_data_file,
                                cols = -Time) %>%
                   mutate(Enzyme = enzyme,
                          Tissue = i,
-                         EffectorPresent = TRUE)
+                         PerpPresent = TRUE)
                
                sim_data_mean[[i]] <- bind_rows(sim_data_mean[[i]],
                                                sim_data_mean_inhib) %>%
-                  mutate(EffectorPresent = ifelse(is.na(EffectorPresent),
-                                                  FALSE, EffectorPresent))
+                  mutate(PerpPresent = ifelse(is.na(PerpPresent),
+                                                  FALSE, PerpPresent))
                rm(NamesToCheck, RowsToUse, sim_data_mean_inhib)
             }
          }
@@ -346,8 +346,8 @@ extractEnzAbund <- function(sim_data_file,
          rm(RowsToUse)
          
          # Checking for inhibitor
-         EffectorPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
-         if(EffectorPresent){
+         PerpPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
+         if(PerpPresent){
             
             RowsToUse <- c(
                "mean" =
@@ -393,12 +393,12 @@ extractEnzAbund <- function(sim_data_file,
                             cols = -Time) %>%
                mutate(Enzyme = enzyme,
                       Tissue = tissue,
-                      EffectorPresent = TRUE)
+                      PerpPresent = TRUE)
             
             sim_data_mean <- bind_rows(sim_data_mean,
                                        sim_data_mean_inhib) %>%
-               mutate(EffectorPresent = ifelse(is.na(EffectorPresent),
-                                               FALSE, EffectorPresent))
+               mutate(PerpPresent = ifelse(is.na(PerpPresent),
+                                               FALSE, PerpPresent))
             rm(RowsToUse)
          }
          rm(TimeRow)
@@ -453,7 +453,7 @@ extractEnzAbund <- function(sim_data_file,
                          "small intestine" = SITimeRow:SIEndRow)
          
          # Checking for inhibitor
-         EffectorPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
+         PerpPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
          
          rm(NamesToCheck)
          
@@ -489,7 +489,7 @@ extractEnzAbund <- function(sim_data_file,
             
             rm(RowsToUse)
             
-            if(EffectorPresent){
+            if(PerpPresent){
                
                RowsToUse <- GutRows[[i]][which(
                   str_detect(tolower(sim_data_xl$...1[GutRows[[i]]]),
@@ -512,7 +512,7 @@ extractEnzAbund <- function(sim_data_file,
                                cols = -Time) %>%
                   mutate(Enzyme = enzyme,
                          Tissue = i,
-                         EffectorPresent = TRUE,
+                         PerpPresent = TRUE,
                          SubjTrial = sub("ID", "", SubjTrial)) %>%
                   separate(SubjTrial, into = c("Individual", "Trial"),
                            sep = "_") %>%
@@ -521,8 +521,8 @@ extractEnzAbund <- function(sim_data_file,
                
                sim_data_ind[[i]] <- bind_rows(sim_data_ind[[i]],
                                               sim_data_ind_inhib) %>%
-                  mutate(EffectorPresent = ifelse(is.na(EffectorPresent),
-                                                  FALSE, EffectorPresent))
+                  mutate(PerpPresent = ifelse(is.na(PerpPresent),
+                                                  FALSE, PerpPresent))
                rm(RowsToUse, sim_data_ind_inhib)
             }
          }
@@ -571,9 +571,9 @@ extractEnzAbund <- function(sim_data_file,
          rm(RowsToUse)
          
          # Checking for inhibitor
-         EffectorPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
+         PerpPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
          
-         if(EffectorPresent){
+         if(PerpPresent){
             
             RowsToUse <- which(str_detect(NamesToCheck, "with inh")) + TimeRow-1
             
@@ -593,7 +593,7 @@ extractEnzAbund <- function(sim_data_file,
                             cols = -Time) %>%
                mutate(Enzyme = enzyme,
                       Tissue = tissue,
-                      EffectorPresent = TRUE,
+                      PerpPresent = TRUE,
                       SubjTrial = sub("ID", "", SubjTrial)) %>%
                separate(SubjTrial, into = c("Individual", "Trial"),
                         sep = "_") %>%
@@ -602,8 +602,8 @@ extractEnzAbund <- function(sim_data_file,
             
             sim_data_ind <- bind_rows(sim_data_ind,
                                       sim_data_ind_inhib) %>%
-               mutate(EffectorPresent = ifelse(is.na(EffectorPresent),
-                                               FALSE, EffectorPresent))
+               mutate(PerpPresent = ifelse(is.na(PerpPresent),
+                                               FALSE, PerpPresent))
             
             rm(RowsToUse)
          }
@@ -821,17 +821,17 @@ extractEnzAbund <- function(sim_data_file,
                                         MyMaxDoseNum_inhib2 - 1, DoseNum_inhib2))
    }
    
-   # Noting exactly what the effectors were
-   AllEffectors <- c(Deets$Inhibitor1, Deets$Inhibitor2,
+   # Noting exactly what the perpetrators were
+   AllPerpetrators <- c(Deets$Inhibitor1, Deets$Inhibitor2,
                      Deets$Inhibitor1Metabolite)
-   AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
+   AllPerpetrators <- AllPerpetrators[complete.cases(AllPerpetrators)]
    
    # Finalizing, tidying, selecting only useful columns
    Data <- Data %>%
       mutate(Time_units = tolower({{TimeUnits}}),
              File = sim_data_file,
-             Inhibitor = ifelse(EffectorPresent,
-                                str_comma(AllEffectors), "none"), 
+             Inhibitor = ifelse(PerpPresent,
+                                str_comma(AllPerpetrators), "none"), 
              Substrate = Deets$Substrate) %>%
       arrange(across(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor",
                               "Individual", "Trial", "Time")))) %>%

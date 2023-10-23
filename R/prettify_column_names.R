@@ -10,18 +10,18 @@
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
-#'   metabolites, effectors, or effector metabolites are among the standard
+#'   metabolites, perpetrators, or perpetrator metabolites are among the standard
 #'   options for the simulator, and leaving \code{prettify_compound_names =
 #'   TRUE} will make the name of those compounds something more human readable.
 #'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
 #'   "Sim-Midazolam" will become "midazolam". Set each compound to the name
 #'   you'd prefer to see in your column titles if you would like something
-#'   different. For example, \code{prettify_compound_names = c("effector" =
-#'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "effector"
-#'   includes \emph{all} the effectors and effector metabolites present, so, if
-#'   you're setting the effector name, you really should use something like this
-#'   if you're including effector metabolites: \code{prettify_compound_names =
-#'   c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+#'   different. For example, \code{prettify_compound_names = c("perpetrator" =
+#'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
+#'   includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
+#'   you're setting the perpetrator name, you really should use something like this
+#'   if you're including perpetrator metabolites: \code{prettify_compound_names =
+#'   c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #'
 #' @return a PK table with prettier column names
@@ -122,34 +122,34 @@ prettify_column_names <- function(PKtable,
    # PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
    # PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
    
-   # MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
+   # MyPerpetrator <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
    #                 Deets$Inhibitor2)
    # 
-   # if(any(complete.cases(MyEffector))){
-   #    MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
+   # if(any(complete.cases(MyPerpetrator))){
+   #    MyPerpetrator <- str_comma(MyPerpetrator[complete.cases(MyPerpetrator)])
    #    
    #    if(class(prettify_compound_names) == "logical" &&
    #       prettify_compound_names){
-   #       MyEffector <- prettify_compound_name(MyEffector)
+   #       MyPerpetrator <- prettify_compound_name(MyPerpetrator)
    #    }
    #    
    #    if(class(prettify_compound_names) == "character" &
-   #       "effector" %in% names(prettify_compound_names)){
+   #       "perpetrator" %in% names(prettify_compound_names)){
    #       names(prettify_compound_names)[
    #          str_detect(tolower(names(prettify_compound_names)), 
-   #                     "effector")][1] <- "effector"
-   #       MyEffector <- prettify_compound_names["effector"]
+   #                     "perpetrator")][1] <- "perpetrator"
+   #       MyPerpetrator <- prettify_compound_names["perpetrator"]
    #    }
    #    
-   #    PrettyCol <- sub("effector", MyEffector, PrettyCol)
+   #    PrettyCol <- sub("perpetrator", MyPerpetrator, PrettyCol)
    # }
    # 
    
-   # MyEffector <- determine_myeffector(existing_exp_details, prettify_compound_names)
+   # MyPerpetrator <- determine_myperpetrator(existing_exp_details, prettify_compound_names)
    # <-- Also will need to add this back in to pksummary_table.
    
-   # if(any(complete.cases(MyEffector))){
-   #    PrettyCol <- sub("effector", MyEffector, PrettyCol)
+   # if(any(complete.cases(MyPerpetrator))){
+   #    PrettyCol <- sub("perpetrator", MyPerpetrator, PrettyCol)
    # }
    
    names(PKtable) <- TableNames$PrettifiedNames

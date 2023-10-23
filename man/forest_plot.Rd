@@ -53,7 +53,7 @@ up by the simulation file name behind the scenes, but that's likely not the
 prettiest way to label the y axis, which is where this argument comes in.
 If you already have a column in \code{forest_dataframe} with the label you
 want -- for example the column Inhibitor1 when your drug of interest is a
-victim or Substrate when it's the effector -- use that by specifying, for
+victim or Substrate when it's the perpetrator -- use that by specifying, for
 example, \code{y_axis_labels = Inhibitor1}. If you would like to manually
 specify which simulation file should be labeled what here, do so with a
 named character vector, e.g.,
@@ -130,11 +130,11 @@ use the same value for \code{y_axis_labels} for multiple simulations. For
 example, say you have one simulation -- "SimA.xlsx" -- where the substrate
 was dosed QD and another simulation -- "SimB.xlsx" -- where it was dosed
 BID, and both of them were co-administered with the inhibitor itraconazole.
-You want the y axis labels to show what effector was used in each
+You want the y axis labels to show what perpetrator was used in each
 simulation, and both of these used the same inhibitor. If you break up your
 graphs by setting \code{facet_column_x} to whatever column you used to
 indicate the dosing regimen, then "SimA.xlsx" and "SimB.xlsx" won't overlap
-on the graph even though they both had the same effector. That's the reason
+on the graph even though they both had the same perpetrator. That's the reason
 it's ok here. Unclear? Please check out the examples at the bottom,
 particularly the ones that employ \code{facet_column_x}.}
 
@@ -174,7 +174,7 @@ alphabetical order. If you want "QD" to show up first, though, set the
 order with \code{x_order = c("QD", "BID")}}
 
 \item{y_axis_title}{optionally specify a vertical title to be displayed to
-the left of the y axis. Example: \code{y_axis_title = "Effector
+the left of the y axis. Example: \code{y_axis_title = "Perpetrator
 co-administered with Drug X"}. Default ("none") leaves off any y-axis title.}
 
 \item{pad_y_axis}{optionally add a smidge of padding to the y axis (default
@@ -243,7 +243,7 @@ acceptable input looks like this: \code{rel_widths = c(5, 1)}}
 \item{prettify_ylabel}{NA (default), TRUE, or FALSE on whether to attempt to
 make text included in \code{y_axis_labels} prettier. This was designed for
 the situation where the y axis is labeled with the compound used in the
-simulation and where the substrates or effectors are among the standard
+simulation and where the substrates or perpetrators are among the standard
 options for the simulator. Setting \code{prettify_ylabel =
 TRUE} will make the name of those compounds something more human readable.
 For example, "SV-Rifampicin-MD" will become "rifampicin", and
@@ -333,7 +333,7 @@ are unable to include a link to it here.)
 \examples{
 
 # We'll use some example forest-plot data for the substrate bufuralol
-# with various effectors. To start, we'll use all the default settings.
+# with various perpetrators. To start, we'll use all the default settings.
 forest_plot(forest_dataframe = BufForestData_20mg)
 
 # You can used the argument y_axis_labels to specify what to use for the

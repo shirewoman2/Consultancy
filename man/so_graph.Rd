@@ -43,8 +43,8 @@ parameters, enter \code{view(PKParameterDefinitions)} into the console.}
 \code{boundaries = c(1.25, 1.5, 2)}}
 
 \item{boundaries_Guest}{Numerical boundaries to show on the graph when the PK
-parameter is a mean ratio of the parameter in the presence of an effector /
-the parameter in the absence of the effector. The default boundary for
+parameter is a mean ratio of the parameter in the presence of a perpetrator /
+the parameter in the absence of the perpetrator. The default boundary for
 Guest curves is 2, which will show both the Guest curve and a straight
 line. Honestly, we recommend leaving this as 2 for clarity of the graph.
 For these PK parameters, if there are any values listed for

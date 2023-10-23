@@ -14,7 +14,7 @@ A data.frame with the following columns: \describe{
   \item{CompoundID}{the compound ID that is used in the SimcypConsultancy R
   package}
 
-  \item{Effector}{whether an effector were present; listed as "none" or
+  \item{Perpetrator}{whether a perpetrator were present; listed as "none" or
   "inhibitor"} 
   
   }

@@ -12,6 +12,6 @@ BufForestData
 }
 \description{
 Example output from running \code{extractForestData} on some simulations with
-bufuralol as the substrate and then 4 different effectors.
+bufuralol as the substrate and then 4 different perpetrators.
 }
 \keyword{datasets}

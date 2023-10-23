@@ -190,11 +190,11 @@ match_obs_to_sim <- function(ct_dataframe,
                                        goodunits = ct_dataframe[[k]])
          
          # Adding inhibitor name as needed
-         MyEffector <- determine_myeffector(Deets,
+         MyPerpetrator <- determine_myperpetrator(Deets,
                                             prettify_compound_names = FALSE)
          
          ObsData_j[[k]]$Inhibitor[ObsData_j[[k]]$Inhibitor != "none"] <- 
-            MyEffector
+            MyPerpetrator
          
          rm(Deets)
       }

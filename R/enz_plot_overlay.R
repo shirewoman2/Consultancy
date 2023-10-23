@@ -127,7 +127,7 @@
 #'   explanatory about what the line types represent. For example, if
 #'   \code{linetype_column = Inhibitor} and \code{legend_label_linetype =
 #'   "Inhibitor present"}, that will make the label in the legend above, e.g.,
-#'   "none", and whatever effector was present more explanatory than just
+#'   "none", and whatever perpetrator was present more explanatory than just
 #'   "Inhibitor". The default is to use whatever the column name is for
 #'   \code{linetype_column}. If you don't want a label for this legend item, set
 #'   this to "none".
@@ -176,7 +176,7 @@
 #'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
 #'   which can be useful for BID data where the end of the simulation extended
 #'   past the dosing interval or data when the substrate was dosed BID and the
-#'   effector was dosed QD}
+#'   perpetrator was dosed QD}
 #'
 #'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
 #'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}

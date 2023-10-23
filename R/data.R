@@ -89,8 +89,8 @@
 #'   \code{PKparameters}} \item{Sheet}{the sheet in a simulator output file
 #'   where the PK parameter will be extracted, if possible}
 #'   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
-#'   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
-#'   for whether this item only applies when an effector is present in the
+#'   to single-dose data} \item{AppliesOnlyWhenPerpPresent}{TRUE or FALSE
+#'   for whether this item only applies when a perpetrator is present in the
 #'   simulation} \item{SortOrder}{the order to arrange columns for
 #'   pksummary_table and pksummary_table} \item{Notes}{an explanation of what
 #'   the parameter is}}
@@ -109,8 +109,8 @@
 #'   \code{PKparameters}} \item{Sheet}{the sheet in a simulator output file
 #'   where the PK parameter will be extracted, if possible}
 #'   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
-#'   to single-dose data} \item{AppliesOnlyWhenEffectorPresent}{TRUE or FALSE
-#'   for whether this item only applies when an effector is present in the
+#'   to single-dose data} \item{AppliesOnlyWhenPerpPresent}{TRUE or FALSE
+#'   for whether this item only applies when a perpetrator is present in the
 #'   simulation} \item{SortOrder}{the order to arrange columns for pksummary_table and
 #'   pksummary_table} \item{Notes}{an explanation of what the parameter is}}
 "PKParameterDefinitions"
@@ -299,7 +299,7 @@
 #'   \item{CompoundID}{the compound ID that is used in the SimcypConsultancy R
 #'   package}
 #'
-#'   \item{Effector}{whether an effector were present; listed as "none" or
+#'   \item{Perpetrator}{whether a perpetrator were present; listed as "none" or
 #'   "inhibitor"} 
 #'   
 #'   }
@@ -311,7 +311,7 @@
 #' Example output from \code{extractForestData}
 #'
 #' Example output from running \code{extractForestData} on some simulations with
-#' bufuralol as the substrate and then 4 different effectors.
+#' bufuralol as the substrate and then 4 different perpetrators.
 #'
 #' @format a data.frame 
 "BufForestData"

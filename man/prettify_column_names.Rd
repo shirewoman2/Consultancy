@@ -14,18 +14,18 @@ prettify_column_names(PKtable, prettify_compound_names = TRUE)
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in the prettified column titles and in any Word
 output files. This was designed for simulations where the substrate and any
-metabolites, effectors, or effector metabolites are among the standard
+metabolites, perpetrators, or perpetrator metabolites are among the standard
 options for the simulator, and leaving \code{prettify_compound_names =
 TRUE} will make the name of those compounds something more human readable.
 For example, "SV-Rifampicin-MD" will become "rifampicin", and
 "Sim-Midazolam" will become "midazolam". Set each compound to the name
 you'd prefer to see in your column titles if you would like something
-different. For example, \code{prettify_compound_names = c("effector" =
-"teeswiftavir", "substrate" = "superstatin")}. Please note that "effector"
-includes \emph{all} the effectors and effector metabolites present, so, if
-you're setting the effector name, you really should use something like this
-if you're including effector metabolites: \code{prettify_compound_names =
-c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+different. For example, \code{prettify_compound_names = c("perpetrator" =
+"teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
+includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
+you're setting the perpetrator name, you really should use something like this
+if you're including perpetrator metabolites: \code{prettify_compound_names =
+c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 }
 \value{

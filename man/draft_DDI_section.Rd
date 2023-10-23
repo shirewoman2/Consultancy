@@ -75,8 +75,8 @@ longer to run.}
   \item{By default, if you have a single-dose simulation, the parameters will
   include AUC and Cmax for dose 1, and, if you have a multiple-dose
   simulation, AUC and Cmax for the last dose. Also by default, if you have an
-  effector present, the parameters will include the AUC and Cmax values with
-  and without the effector as well as those ratios.}
+  perpetrator present, the parameters will include the AUC and Cmax values with
+  and without the perpetrator as well as those ratios.}
 
   \item{Alternatively, you can specify a vector of any combination of
   specific, individual parameters, e.g., \code{c("Cmax_dose1",
@@ -91,7 +91,7 @@ longer to run.}
 
   \item{Parameters that don't make sense for your scenario -- such as asking
   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
-  inhibitor or effector -- will not be included.}
+  inhibitor or perpetrator -- will not be included.}
 
   \item{tmax will be listed as median, min, and max rather than mean, lower
   and higher X\% confidence interval or X percentiles. Similarly, if you
@@ -165,18 +165,18 @@ value is fine here.}
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in legend entries and in any Word output files.
 This was designed for simulations where the substrate and any metabolites,
-effectors, or effector metabolites are among the standard options for the
+perpetrators, or perpetrator metabolites are among the standard options for the
 simulator, and leaving \code{prettify_compound_names = TRUE} will make the
 name of those compounds something more human readable. For example,
 "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
-become "midazolam". Set each of "substrate" and "effector" to the names
+become "midazolam". Set each of "substrate" and "perpetrator" to the names
 you'd prefer to see in your legend and Word output if you would like
 something different. For example, \code{prettify_compound_names =
-c("substrate" = "superstatin", "effector" = "teeswiftavir")}. Please note
-that "effector" includes \emph{all} the effectors and effector metabolites
-present, so, if you're setting the effector name, you really should use
-something like this if you're including effector metabolites:
-\code{prettify_compound_names = c("effector" = "teeswiftavir and
+c("substrate" = "superstatin", "perpetrator" = "teeswiftavir")}. Please note
+that "perpetrator" includes \emph{all} the perpetrators and perpetrator metabolites
+present, so, if you're setting the perpetrator name, you really should use
+something like this if you're including perpetrator metabolites:
+\code{prettify_compound_names = c("perpetrator" = "teeswiftavir and
 1-OH-teeswiftavir", "substrate" = "superstatin")}. (Order doesn't matter.)}
 
 \item{victim_sim}{TRUE (default) or FALSE for whether this was a victim DDI
@@ -185,11 +185,11 @@ thing this affects is the sentence in the template report text "Performance
 verification of the XXX model is provided in Appendix B - Performance
 Verification of CYP3A Substrates, Inhibitors and Inducers." If this was a
 victim DDI simulation, then this sentence will replace "XXX" with the name
-of the effector. If not, it will replace "XXX" with the name of the
+of the perpetrator. If not, it will replace "XXX" with the name of the
 substrate.}
 
 \item{default_cmpd_file}{Was one of the default compound files used for the
-substrate (if this was a perpetrator simulation) or the effector (if this
+substrate (if this was a perpetrator simulation) or the perpetrator (if this
 was a victim simulation)? TRUE (default) or FALSE. The only thing this
 affects is the sentence in the template report text, "The default compound
 library file for XXX was used."}
@@ -201,31 +201,31 @@ library file for XXX was used."}
   \item{"percentiles"}{(default) plots an opaque line for the mean data,
   lighter lines for the 5th and 95th percentiles of the simulated data, and
   open circles for the observed data. If an effecter were present, the
-  default is dashed lines for the data in the presence of an effector.}
+  default is dashed lines for the data in the presence of a perpetrator.}
 
   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
   for the mean of each trial of simulated data, and open circles for the
-  observed data. If an effector were present, lighter dashed lines indicate
-  the mean of each trial of simulated data in the presence of the effector.}
+  observed data. If a perpetrator were present, lighter dashed lines indicate
+  the mean of each trial of simulated data in the presence of the perpetrator.}
 
   \item{"percentile ribbon"}{plots an opaque line for the mean data,
   transparent shading for the 5th to 95th percentiles of the simulated data,
-  and open circles for the observed data. If an effector were present, the
-  default is to show the data without the effector in blue and the data in
-  the presence of the effector in red. Note: You may sometimes see some
+  and open circles for the observed data. If a perpetrator were present, the
+  default is to show the data without the perpetrator in blue and the data in
+  the presence of the perpetrator in red. Note: You may sometimes see some
   artifacts -- especially for semi-log plots -- where the ribbon gets partly
   cut off. For arcane reasons we don't want to bore you with here, we can't
   easily prevent this. However, a possible fix is to set your y axis limits
   for the semi-log plot to be wider using \code{y_axis_limits_log}.}
 
   \item{"means only"}{plots a black line for the mean data and, if an
-  effector was modeled, a dashed line for the concentration-time data with
+  perpetrator was modeled, a dashed line for the concentration-time data with
   Inhibitor 1.}
 
   \item{"Freddy"}{Freddy's favorite style of plot with trial means in light
   gray, the overall mean in thicker black, the 5th and 95th percentiles in
   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
-  with an effector present lose the trial means, and the percentiles switch
+  with a perpetrator present lose the trial means, and the percentiles switch
   to solid, gray lines. \strong{An editorial comment:} While this does not
   align with the officially sanctioned template at this time, this looks
   \emph{sharp}, makes it easy to see the defining characteristics of the
@@ -248,7 +248,7 @@ library file for XXX was used."}
   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
   which can be useful for BID data where the end of the simulation extended
   past the dosing interval or data when the substrate was dosed BID and the
-  effector was dosed QD}
+  perpetrator was dosed QD}
 
   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
@@ -279,10 +279,10 @@ left as the default NA, the Y axis limits for the semi-log plot will be
 automatically selected.}
 
 \item{legend_label_sub}{optionally indicate on the legend of the graph of the
-substrate whether the effector is an inhibitor, inducer, activator, or
+substrate whether the perpetrator is an inhibitor, inducer, activator, or
 suppressor. Input will be used as the label in the legend for the line
 style and the shape. If left as the default NA when a legend is included
-and an effector is present, the label in the legend will be "Inhibitor".}
+and a perpetrator is present, the label in the legend will be "Inhibitor".}
 
 \item{linear_or_log_sub}{the type of graph to be returned. Options:
   \describe{ \item{"semi-log"}{y axis is log transformed}
@@ -357,10 +357,10 @@ to aesthetically pleasing and PK-relevant intervals.}
 to use for the y axis label for the graph of the enzyme abundance}
 
 \item{legend_label_enz}{optionally indicate on the legend of the graph of the
-enzyme abundance whether the effector is an inhibitor, inducer, activator,
+enzyme abundance whether the perpetrator is an inhibitor, inducer, activator,
 or suppressor. Input will be used as the label in the legend for the line
 style and the shape. If left as the default NA when a legend is included
-and an effector is present, the label in the legend will be "Inhibitor".}
+and a perpetrator is present, the label in the legend will be "Inhibitor".}
 
 \item{linear_or_log_enz}{the type of enzyme-abundance graph to be returned.
 Options are the same as for the substrate plot.}

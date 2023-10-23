@@ -20,8 +20,8 @@
 #'   as in, the subjects are \emph{identical} between the two simulations.
 #'   \strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
 #'   CALCULATIONS ARE PERFORMED!} An example of a paired study would be a DDI
-#'   study where each subject has a measurement without the effector of interest
-#'   and then has a second measurement \emph{with} the effector. The comparison
+#'   study where each subject has a measurement without the perpetrator of interest
+#'   and then has a second measurement \emph{with} the perpetrator. The comparison
 #'   is for repeated measurements of the \emph{same subject}. An example of an
 #'   unpaired study design would be comparing healthy volunteers to subjects
 #'   with hepatic impairment because those are measurements on \emph{different}
@@ -41,7 +41,7 @@
 #'   metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
 #'   metabolite",} \item{"inhibitor 1" -- this can be an inducer, inhibitor,
 #'   activator, or suppressor, but it's labeled as "Inhibitor 1" in the
-#'   simulator,} \item{"inhibitor 2" for the 2nd effector listed in the
+#'   simulator,} \item{"inhibitor 2" for the 2nd perpetrator listed in the
 #'   simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
 #'   inhibitor 1}} At some point, we may expand this to allow for extracting PK
 #'   data for multiple compounds, but we have not done that at this point. Email
@@ -134,7 +134,7 @@
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
-#'   metabolites, effectors, or effector metabolites are among the standard
+#'   metabolites, perpetrators, or perpetrator metabolites are among the standard
 #'   options for the simulator, and leaving \code{prettify_compound_names =
 #'   TRUE} will make the name of those compounds something more human readable.
 #'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
@@ -142,9 +142,9 @@
 #'   you'd prefer to see in your column titles if you would like something
 #'   different. For example, \code{prettify_compound_names = c("inhibitor" =
 #'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "inhibitor"
-#'   includes \emph{all} the effectors and effector metabolites present, so, if
-#'   you're setting the effector name, you really should use something like this
-#'   if you're including effector metabolites: \code{prettify_compound_names =
+#'   includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
+#'   you're setting the perpetrator name, you really should use something like this
+#'   if you're including perpetrator metabolites: \code{prettify_compound_names =
 #'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #' @param rounding option for what rounding to perform, if any. Options are:
@@ -514,7 +514,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                 # "AUCinf_ratio_dose1" or "Cmax_ratio_last". However, if they
                 # just requested regular PK parameters, then "AUCinf_dose1" is
                 # NOT "AUCinf_ratio_dose1" because it is NOT the ratio of AUCinf
-                # with effector / AUCinf baseline but the ratio of, e.g.,
+                # with perpetrator / AUCinf baseline but the ratio of, e.g.,
                 # AUCinf_dose1 with hepatic impairment / AUCinf_dose1 for
                 # healthy volunteers or fed / fasted, etc. In any circumstances
                 # beyond the ones we can know definitively are the "regular" PK

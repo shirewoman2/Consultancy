@@ -66,8 +66,8 @@ blood".}
   \item{By default, if you have a single-dose simulation, the parameters will
   include AUC and Cmax for dose 1, and, if you have a multiple-dose
   simulation, AUC and Cmax for the last dose. Also by default, if you have an
-  effector present, the parameters will include the AUC and Cmax values with
-  and without the effector as well as those ratios.}
+  perpetrator present, the parameters will include the AUC and Cmax values with
+  and without the perpetrator as well as those ratios.}
 
   \item{Alternatively, you can specify a vector of any combination of
   specific, individual parameters, e.g., \code{c("Cmax_dose1",
@@ -81,7 +81,7 @@ blood".}
 
   \item{Parameters that don't make sense for your scenario -- such as asking
   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
-  inhibitor or effector -- will not be included.}
+  inhibitor or perpetrator -- will not be included.}
 
   \item{tmax will be listed as median, minimum, and maximum rather than mean,
   lower and higher 90\% confidence interval or 5th to 95th percentiles.
@@ -224,18 +224,18 @@ from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in the prettified column titles and in any Word
 output files. This was designed for simulations where the substrate and any
-metabolites, effectors, or effector metabolites are among the standard
+metabolites, perpetrators, or perpetrator metabolites are among the standard
 options for the simulator, and leaving \code{prettify_compound_names =
 TRUE} will make the name of those compounds something more human readable.
 For example, "SV-Rifampicin-MD" will become "rifampicin", and
 "Sim-Midazolam" will become "midazolam". Set each compound to the name
 you'd prefer to see in your column titles if you would like something
-different. For example, \code{prettify_compound_names = c("effector" =
-"teeswiftavir", "substrate" = "superstatin")}. Please note that "effector"
-includes \emph{all} the effectors and effector metabolites present, so, if
-you're setting the effector name, you really should use something like this
-if you're including effector metabolites: \code{prettify_compound_names =
-c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+different. For example, \code{prettify_compound_names = c("perpetrator" =
+"teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
+includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
+you're setting the perpetrator name, you really should use something like this
+if you're including perpetrator metabolites: \code{prettify_compound_names =
+c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
 \item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
@@ -243,8 +243,8 @@ the same time. This only applies when the compound to extract is the
 substrate or a substrate metabolite. If set to TRUE, this will return a
 list that includes data formatted for use with the function
 \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
-only works with simulations with effectors (at least, for now), this will
-only work for simulations that included an effector. This is probably most
+only works with simulations with perpetrators (at least, for now), this will
+only work for simulations that included a perpetrator. This is probably most
 useful for the \code{\link{pksummary_mult}} function since a forest plot
 with only one simulation isn't terribly informative.}
 

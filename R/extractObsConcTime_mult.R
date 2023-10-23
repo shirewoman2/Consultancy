@@ -25,7 +25,7 @@
 #'   \item{Tissue}{the tissue}
 #'
 #'   \item{Dose_sub, Dose_inhib, and/or Dose_inhib2}{the dose of the substrate
-#'   and any effectors present}
+#'   and any perpetrators present}
 #'
 #'   \item{Time}{time since dosing}
 #'

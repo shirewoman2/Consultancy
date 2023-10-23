@@ -172,11 +172,11 @@
 #'
 #' @param obs_shape optionally specify what shapes are used to depict observed
 #'   data for a) the substrate drug alone and b) the substrate drug in the
-#'   presence of an effector. Input should look like this, for example:
+#'   presence of a perpetrator. Input should look like this, for example:
 #'   \code{c(1, 2)} to get an open circle for the substrate and an open triangle
-#'   for the substrate in the presence of effectors, if there are any. If you
+#'   for the substrate in the presence of perpetrators, if there are any. If you
 #'   only specify one value, it will be used for both substrate with and without
-#'   effectors. To see all the possible shapes and what number corresponds to
+#'   perpetrators. To see all the possible shapes and what number corresponds to
 #'   which shape, type \code{ggpubr::show_point_shapes()} into the console. If
 #'   left as NA, substrate alone will be an open circle and substrate +
 #'   inhibitor 1 will be an open triangle.
@@ -255,7 +255,7 @@
 #'   explanatory about what the line types represent. For example, if
 #'   \code{linetype_column = Inhibitor} and \code{legend_label_linetype =
 #'   "Inhibitor present"}, that will make the label in the legend above, e.g.,
-#'   "none", and whatever effector was present more explanatory than just
+#'   "none", and whatever perpetrator was present more explanatory than just
 #'   "Inhibitor". The default is to use whatever the column name is for
 #'   \code{linetype_column}. If you don't want a label for this legend item, set
 #'   this to "none".
@@ -304,7 +304,7 @@
 #'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
 #'   which can be useful for BID data where the end of the simulation extended
 #'   past the dosing interval or data when the substrate was dosed BID and the
-#'   effector was dosed QD}
+#'   perpetrator was dosed QD}
 #'
 #'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
 #'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
@@ -557,7 +557,7 @@ ct_plot_overlay <- function(ct_dataframe,
           c("substrate", "inhibitor", "inhibitor 1", "primary metabolite 1", 
             "primary metabolite 2", "secondary metabolite", "inhibitor 2", 
             "inhibitor 1 metabolite"))){
-      warning("You appear to have used compound IDs such as `substrate` or `inhibitor 1` or possibly `Inhibitor` to indicate which compound names should be prettified. Unfortunately, we need the actual original compound here, e.g., `prettify_compound_names = c('SV-Rifampicin-MD' = 'rifampicin')`. We will set `prettify_effector_names` to TRUE but will not be able to use the specific names you provided.",
+      warning("You appear to have used compound IDs such as `substrate` or `inhibitor 1` or possibly `Inhibitor` to indicate which compound names should be prettified. Unfortunately, we need the actual original compound here, e.g., `prettify_compound_names = c('SV-Rifampicin-MD' = 'rifampicin')`. We will set `prettify_perpetrator_names` to TRUE but will not be able to use the specific names you provided.",
               call. = FALSE)
       prettify_compound_names <- TRUE
    }
@@ -574,7 +574,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                               face = "italic")) +
             annotate(geom = "text", x = 1, y = 1, size = 8,
                      color = "red", 
-                     label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
+                     label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether a perpetrator was present.\nWe cannot make your graph.")
       )
    }
    
@@ -694,12 +694,12 @@ ct_plot_overlay <- function(ct_dataframe,
    ct_dataframe <- ct_dataframe %>%
       mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
    
-   MyEffector <- unique(ct_dataframe$Inhibitor) %>% as.character()
-   MyEffector <- MyEffector[!MyEffector == "none"]
+   MyPerpetrator <- unique(ct_dataframe$Inhibitor) %>% as.character()
+   MyPerpetrator <- MyPerpetrator[!MyPerpetrator == "none"]
    
-   if(length(MyEffector) > 0 & class(ct_dataframe$Inhibitor) != "factor"){
+   if(length(MyPerpetrator) > 0 & class(ct_dataframe$Inhibitor) != "factor"){
       ct_dataframe <- ct_dataframe %>%
-         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyEffector)))
+         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
    }
    
    # Things will be more consistent and easier to code if Individual is a
@@ -1427,9 +1427,9 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # Setting figure types and general aesthetics ------------------------------
    
-   MyEffector <- unique(sim_dataframe$Inhibitor)
-   MyEffector <- fct_relevel(MyEffector, "none")
-   MyEffector <- sort(MyEffector)
+   MyPerpetrator <- unique(sim_dataframe$Inhibitor)
+   MyPerpetrator <- fct_relevel(MyPerpetrator, "none")
+   MyPerpetrator <- sort(MyPerpetrator)
    
    # Making linetype_column and colorBy_column factor data. This will
    # prevent errors w/mapping to color b/c ggplot expects only categorical data
@@ -1502,7 +1502,7 @@ ct_plot_overlay <- function(ct_dataframe,
    
    AesthetStuff <- set_aesthet(line_type = linetypes, 
                                figure_type = figure_type,
-                               MyEffector = MyEffector, 
+                               MyPerpetrator = MyPerpetrator, 
                                compoundToExtract = switch(as.character(EnzPlot),
                                                           "TRUE" = "substrate", 
                                                           "FALSE" = unique(sim_dataframe$CompoundID)),

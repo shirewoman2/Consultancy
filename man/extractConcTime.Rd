@@ -95,10 +95,10 @@ A data.frame of concentration-time data with the following columns:
   \item{CompoundID}{the generic name of the compound: "substrate", "inhibitor
   1", "primary metabolite 1", etc.}
 
-  \item{Inhibitor (as applicable)}{the inhibitor(s) or effector(s) of
+  \item{Inhibitor (as applicable)}{the inhibitor(s) or perpetrator(s) of
   interest; this matches whatever you named "Inhibitor 1", "Inhibitor 2", or
   "Inhibitor 1 metabolite" in the simulator and will be a concatenation of
-  all the effectors present}
+  all the perpetrators present}
 
   \item{Tissue}{the tissue}
 
@@ -151,10 +151,10 @@ include a link to it here.)
 \details{
 \strong{A note on observed data:} When observed data are included in a
 simulator output file, because the simulator output does not explicitly say
-whether those observed data were in the presence of an inhibitor or effector,
+whether those observed data were in the presence of an inhibitor or perpetrator,
 this function cannot tell the difference and will thus assume all observed
 data included in the simulator output were for the substrate in the
-\emph{absence} of any effector. It will further assume that the compound --
+\emph{absence} of any perpetrator. It will further assume that the compound --
 substrate or inhibitor 1 or primary metabolite 1 or whatever -- is the same
 as \code{compoundToExtract}. If \code{compoundToExtract} was an inhibitor or
 inhibitor metabolite, the observed data from the simulator output will NOT be
