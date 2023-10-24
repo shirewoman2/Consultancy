@@ -945,13 +945,19 @@ pksummary_table <- function(sim_data_file = NA,
       filter(PKparameter_lower %in% tolower(PKToPull)) %>% 
       pull(PKparameter) %>% unique()
    
+   SDParam <- AllPKParameters %>% 
+      filter(AppliesToSingleDose == TRUE) %>% 
+      pull(PKparameter)
+   
    # If dose regimen were single-dose, then only pull dose 1 data.
    if(DoseRegimen == "Single Dose"){
-      SDParam <- AllPKParameters %>% 
-         filter(AppliesToSingleDose == TRUE) %>% 
-         pull(PKparameter)
       PKToPull <- PKToPull[PKToPull %in% SDParam]
    } else {
+      
+      # NB: One strange thing that can happen is regimen is "Single Dose and
+      # Multiple Dose". This can happen if it's a single bolus dose and then
+      # multiple doses after that. Just something to be aware of.
+      
       # If it were multiple dose *and* if they did not specify PK parameters
       # to pull or have observed data to compare, then only pull last dose
       # parameters.

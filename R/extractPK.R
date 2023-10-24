@@ -456,7 +456,7 @@ extractPK <- function(sim_data_file,
          # This is when the formatting is like the AUC tab. Instead of rewriting
          # the user-specified sheet section, I'm hacking this to make the
          # function think that this should be the AUC tab.
-         UserAUC <- TRUE # A handle for checking whether to use XL instead of the regular AUC tab.
+         UserAUC <- TRUE # A handle for checking whether to use AUCX instead of the regular AUC tab.
          
       } else {
          UserAUC <- FALSE
