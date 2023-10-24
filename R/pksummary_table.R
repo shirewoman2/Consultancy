@@ -952,11 +952,7 @@ pksummary_table <- function(sim_data_file = NA,
    # If dose regimen were single-dose, then only pull dose 1 data.
    if(DoseRegimen == "Single Dose"){
       PKToPull <- PKToPull[PKToPull %in% SDParam]
-   } else {
-      
-      # NB: One strange thing that can happen is regimen is "Single Dose and
-      # Multiple Dose". This can happen if it's a single bolus dose and then
-      # multiple doses after that. Just something to be aware of.
+   } else if(DoseRegimen == "Multiple Dose"){
       
       # If it were multiple dose *and* if they did not specify PK parameters
       # to pull or have observed data to compare, then only pull last dose
@@ -966,6 +962,12 @@ pksummary_table <- function(sim_data_file = NA,
          PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
       }
    }
+   
+   # NB: One other scenario that we are NOT removing any possible PK parameters
+   # for: DoseRegimen == "Single Dose and Multiple Dose". This odd thing can
+   # happen if it's a single bolus dose and then multiple doses after that. Best
+   # to get both SD and MD parameters in that situation b/c it won't always be
+   # clear which ones user will want.
    
    # If there was no perpetrator, then don't pull any interaction info
    if(is.na(Deets$Inhibitor1)){
@@ -1017,7 +1019,7 @@ pksummary_table <- function(sim_data_file = NA,
    # remove suffixes in that case.
    if(complete.cases(sheet_PKparameters) &
       any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
-      PKToPull <- sub("_last|_dose1", "", PKToPull)
+      PKToPull <- unique(sub("_last|_dose1", "", PKToPull))
    }
    
    # Changing units if user wants. 
@@ -1575,13 +1577,13 @@ pksummary_table <- function(sim_data_file = NA,
                       "user specified TRUE" = sub("_dose1|_last", "", PKparameters))
    
    PKToPull <- factor(PKToPull, levels = PKlevels)
-   PKToPull <- sort(PKToPull)
+   PKToPull <- sort(unique(PKToPull))
    
    # Getting columns in a good order
    MyPKResults <- MyPKResults %>%
       select(any_of(c("Statistic", as.character(PKToPull))))
    
-   PKToPull <- as.character(intersect(PKToPull, names(MyPKResults)))
+   PKToPull <- unique(as.character(intersect(PKToPull, names(MyPKResults))))
    
    # Optionally adding final column names
    if(prettify_columns){
@@ -1597,6 +1599,20 @@ pksummary_table <- function(sim_data_file = NA,
             unique()
          
          # We don't know whether an AUC was actually AUCtau, so make it AUCt.
+         # First, though, if there are multiples of AUCt and AUCtau, remove the
+         # AUCtau or we'll get replicate columns. Since the user specified a
+         # sheet here, we do know that AUCt and AUCtau would be the same column
+         # getting pulled twice. Not sure where I messed up that code, but this
+         # fixes that problem.
+         if(all(c("AUCtau", "AUCt") %in% PKToPull) |
+            all(c("AUCtau_withInhib", "AUCt_withInhib") %in% PKToPull) |
+            all(c("AUCtau_ratio", "AUCt_ratio") %in% PKToPull)){
+            
+            PKToPull <- PKToPull[!str_detect(PKToPull, "AUCtau")]
+            MyPKResults <- MyPKResults %>% 
+               select(!matches("AUCtau"))
+         }
+         
          PKToPull <- sub("AUCtau", "AUCt", PKToPull)
          
          suppressMessages(
@@ -1624,29 +1640,6 @@ pksummary_table <- function(sim_data_file = NA,
       PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
       PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
       PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
-      
-      # MyPerpetrator <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
-      #                 Deets$Inhibitor2)
-      # 
-      # if(any(complete.cases(MyPerpetrator))){
-      #    MyPerpetrator <- str_comma(MyPerpetrator[complete.cases(MyPerpetrator)])
-      #    
-      #    if(class(prettify_compound_names) == "logical" &&
-      #       prettify_compound_names){
-      #       MyPerpetrator <- prettify_compound_name(MyPerpetrator)
-      #    }
-      #    
-      #    if(class(prettify_compound_names) == "character" &
-      #       "perpetrator" %in% names(prettify_compound_names)){
-      #       names(prettify_compound_names)[
-      #          str_detect(tolower(names(prettify_compound_names)), 
-      #                     "perpetrator")][1] <- "perpetrator"
-      #       MyPerpetrator <- prettify_compound_names["perpetrator"]
-      #    }
-      #    
-      #    PrettyCol <- sub("perpetrator", MyPerpetrator, PrettyCol)
-      # }
-      # 
       
       MyPerpetrator <- determine_myperpetrator(Deets, prettify_compound_names)
       
