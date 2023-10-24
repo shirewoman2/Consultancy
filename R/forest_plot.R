@@ -858,7 +858,9 @@ forest_plot <- function(forest_dataframe,
       summarize(N = n())
    if(any(CheckFile$N > 1)){
       CheckFile <- CheckFile %>% filter(N > 1)
-      stop("You have more than one simulation file associated with the same y axis label, which would result in a confusing graph. Please check your input for `y_axis_labels`.", 
+      stop(paste0("You have more than one simulation file associated with the same y axis label, which would result in a confusing graph. Specifically, you have the following replicate y axis labels:\n", 
+                  str_c(CheckFile %>% filter(N > 1) %>% pull(YCol), collapse = "\n"), 
+                  "\nPlease check your input for `y_axis_labels`."), 
            call. = FALSE)
    }
    
