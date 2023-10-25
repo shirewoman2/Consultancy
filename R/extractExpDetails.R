@@ -194,7 +194,8 @@ extractExpDetails <- function(sim_data_file,
                   "Units_AUC", "Units_Cmax", "Units_CL", "Units_tmax",
                   "PopRepSim",
                   paste0(rep(c("StartHr", "StartDayTime", "Regimen", "MW",
-                               "Dose", "NumDoses", "DoseInt", "DoseRoute"),
+                               "Dose", "NumDoses", "DoseInt", "DoseRoute", 
+                               "ReleaseProfileAvailable"),
                              each = 3), 
                          c("_sub", "_inhib", "_inhib2"))))
       
@@ -618,6 +619,35 @@ extractExpDetails <- function(sim_data_file,
                                           as.character(InputTab[1, 1]), 
                                           str_extract(as.character(InputTab[3, 1]),
                                                       "Version [12][0-9]"))
+      
+      # Checking on release profiles
+      ReleaseProfs <- list()
+      
+      if(any(str_detect(unlist(c(InputTab[, ColLocations])), 
+                        "Release Mean"))){
+         for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
+            StartRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "CR/MR Input"))[1] + 1
+            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Release Mean"))
+            EndRow <- EndRow[which.max(EndRow)] + 1 # Looking for last "Release Mean" row and then the next row will be the CV for that. 
+            
+            Release_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
+            
+            ReleaseProfs[[i]] <- data.frame(
+               Time = Release_temp$...2[which(str_detect(Release_temp$...1, "Time"))], 
+               ReleaseMean = Release_temp$...2[which(str_detect(Release_temp$...1, "Release Mean"))], 
+               ReleaseCV = Release_temp$...2[which(str_detect(Release_temp$...1, "CV"))]) %>% 
+               mutate(across(.cols = everything(), .fns = as.numeric), 
+                      ReleaseCV = ReleaseCV / 100, # Making this a fraction instead of a number up to 100
+                      File = sim_data_file, 
+                      CompoundID = i)
+            
+            rm(StartRow, EndRow, Release_temp)
+            
+         }
+         
+         ReleaseProfs <- bind_rows(ReleaseProfs)
+      }
+      
       
       ## Pulling CL info ----------------------------------------------------
       MyInputDeets2 <- MyInputDeets[str_detect(MyInputDeets, "CLint_")]
@@ -1545,7 +1575,8 @@ extractExpDetails <- function(sim_data_file,
    Out <- list(MainDetails = Main, 
                CustomDosing_sub = CustomDosing_sub, 
                CustomDosing_inhib = CustomDosing_inhib, 
-               CustomDosing_inhib2 = CustomDosing_inhib2)
+               CustomDosing_inhib2 = CustomDosing_inhib2, 
+               ReleaseProfiles = ReleaseProfs)
    
    for(j in names(Out)[unlist(lapply(Out, is.null)) == FALSE]){
       Out[[j]] <- Out[[j]] %>% 

@@ -26,18 +26,26 @@ Text1 <- switch(linear_or_log,
                 "log" = "Log-linear",
                 "semi-log" = "Log-linear")
 
-Text2 <- ifelse(EnzPlot, 
-                paste0("enzyme-abundance profiles of ",
-                       str_comma(unique(ct_dataframe$Enzyme)), 
-                       " in ", str_comma(unique(ct_dataframe$Tissue)), "."),
-                paste0(str_comma(unique(ct_dataframe$Tissue)), 
-                       " concentration-time profiles of ",
-                       str_comma(unique(ct_dataframe$Compound)), "."))
+# How could I do this w/out nested ifelse statements?
+PlotType <- ifelse(EnzPlot, 
+                   "Enz", 
+                   ifelse(ReleaseProfPlot, 
+                          "RelProf", "CTPlot"))
+
+Text2 <- switch(PlotType, 
+                "EnzPlot" = paste0("simulated enzyme-abundance profiles of ",
+                                   str_comma(unique(ct_dataframe$Enzyme)), 
+                                   " in ", str_comma(unique(ct_dataframe$Tissue)), "."),
+                "RelProf" = paste0("release profiles of ",
+                                   str_comma(unique(prettify_compound_name(ct_dataframe$Compound))), "."),
+                "CTPlot" = paste0(str_comma(unique(ct_dataframe$Tissue)), 
+                                  " simulated concentration-time profiles of ", # keep 1st and last spaces here
+                                  str_comma(unique(ct_dataframe$Compound)), "."))
 
 ```
 
 
-*Figure XXX. `r Text1` simulated `r Text2`*
+*Figure XXX. `r Text1` `r Text2`*
 
 ```{r ctplotmult, fig.width = fig_width, fig.height = fig_height}
 
@@ -55,18 +63,18 @@ InhibPresent <- any(ct_dataframe$Inhibitor != "none")
 
 CapText1 <-
    switch(paste(ifelse(InhibPresent, "InhibPresent", "NoInhibPresent"), 
-                ifelse(EnzPlot, "EnzPlot", "CTPlot")), 
+                PlotType), 
           "NoInhibPresent CTPlot" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                                           "and observed data (circles; mean of n = XXX individuals; Clinical Study XXX)", 
-                                           "data (lines)"), 
+                                           "simulated and observed data (circles; mean of n = XXX individuals; Clinical Study XXX)", 
+                                           "simulated data"), 
           
-          "NoInhibPresent EnzPlot" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                                            "and observed data (circles; mean of n = XXX individuals; Clinical Study XXX)", 
-                                            "data (lines)"), 
+          "NoInhibPresent EnzPlot" = "simulated data", 
+          
+          "NoInhibPresent RelProf" = "release profile data", 
           
           "InhibPresent CTPlot" = paste0(
              ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                    " and observed (circles; mean of n = XXX individuals; Clinical Study XXX)", 
+                    "simulated and observed (circles; mean of n = XXX individuals; Clinical Study XXX)", 
                     ""), 
              " plasma concentration-time profiles of ",
              str_comma(prettify_compound_name(
@@ -92,9 +100,9 @@ CapText1 <-
           
           "InhibPresent EnzPlot" = paste0(
              ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                    " and observed (circles; mean of n = XXX individuals; Clinical Study XXX)", 
+                    "simulated and observed (circles; mean of n = XXX individuals; Clinical Study XXX)", 
                     ""), 
-             " enzyme-abundance profiles of ",
+             "simulated enzyme-abundance profiles of ",
              str_comma(unique(ct_dataframe$Enzyme), conjunction = "or"), 
              " in the absence of ", 
              str_comma(prettify_compound_name(
@@ -105,43 +113,47 @@ CapText1 <-
                 unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
                 conjunction = "or"),
              " (dashed line)")
-          )
+   )
 
 CapText2 <- switch(figure_type, 
-                   "trial means" = paste("The grey lines represent the", 
+                   "trial means" = paste("The lighter lines represent the", 
                                          mean_type, 
-                                         "mean values of simulated individual trials and the black lines portray the",
+                                         "mean values of simulated individual trials and the darker lines portray the",
                                          mean_type, 
                                          "mean data of the simulated population (n = XXX)"), 
-                   "percentiles" = paste("The grey lines represent the 5th and 95th percentiles and the solid black line the",
+                   "percentiles" = paste("The lighter lines represent the 5th and 95th percentiles and the darker lines the",
                                          mean_type, 
                                          "mean data for the simulated population (n = XXX)"), 
-                   "percentile ribbon" = paste("The shaded regions represent the 5th to the 95th percentiles and the solid black line the",
+                   "percentile ribbon" = ifelse(ReleaseProfPlot, 
+                                                "The line(s) represent(s) the arithmetic mean, and the shaded regions represent the mean plus or minus the standard deviation", 
+                                                paste("The shaded regions represent the 5th to the 95th percentiles and the darker lines the",
+                                                      mean_type, 
+                                                      "mean data for the simulated population (n = XXX)")), 
+                   "means only" = ifelse(ReleaseProfPlot, 
+                                         "The lines represent the arithmetic mean", 
+                                         paste("The lines represent the",
                                                mean_type, 
-                                               "mean data for the simulated population (n = XXX)"), 
-                   "means only" = paste("The solid lines represent the",
-                                        mean_type, 
-                                        "mean data for the simulated population (n = XXX)"), 
-                   "Freddy" = paste("The grey lines represent",
+                                               "mean data for the simulated population (n = XXX)")), 
+                   "Freddy" = paste("The lighter lines represent",
                                     mean_type, 
-                                    "mean values of simulated individual trials and the black lines portray the",
+                                    "mean values of simulated individual trials and the darker lines portray the",
                                     mean_type, 
                                     "mean data of the simulated population (n = XXX). The dashed lines represent the 5th and 95th percentiles"))
 
 ```
 
-*Depicted are simulated `r CapText1`. `r CapText2`. Source simulated data: `r str_comma(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))`.*
+*Depicted are `r CapText1`. `r CapText2`. Source simulated data: `r str_comma(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))`.*
 
 ```{r QC, echo = FALSE, results = "asis"}
 
 if(qc_graph){
-    OptionalSection <- knitr::knit_child(
-        system.file("rmarkdown/templates/ctplotmult-qc/skeleton/skeleton.Rmd",
-                    package="SimcypConsultancy"), 
-        envir = environment(), 
-        quiet = TRUE)
-    
-    cat(OptionalSection, sep = "\n")
+   OptionalSection <- knitr::knit_child(
+      system.file("rmarkdown/templates/ctplotmult-qc/skeleton/skeleton.Rmd",
+                  package="SimcypConsultancy"), 
+      envir = environment(), 
+      quiet = TRUE)
+   
+   cat(OptionalSection, sep = "\n")
 }
 
 ```

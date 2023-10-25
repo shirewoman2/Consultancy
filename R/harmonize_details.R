@@ -54,7 +54,8 @@ harmonize_details <- function(existing_exp_details){
          return(list(Main = as.data.frame(existing_exp_details[which(sapply(existing_exp_details, length) == 1)]), 
                      CustomDosing_sub = existing_exp_details$CustomDosing_sub,
                      CustomDosing_inhib = existing_exp_details$CustomDosing_inhib, 
-                     CustomDosing_inhib2 = existing_exp_details$CustomDosing_inhib2))
+                     CustomDosing_inhib2 = existing_exp_details$CustomDosing_inhib2, 
+                     ReleaseProfiles = NULL))
          
       }
       

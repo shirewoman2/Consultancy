@@ -513,7 +513,19 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    # Checking whether this is an enzyme abundance plot
-   EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
+   EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe)) &
+      "Conc" %in% names(ct_dataframe) == FALSE
+   
+   # Checking whether this is a release-profile plot
+   ReleaseProfPlot <- all(c("ReleaseMean", "ReleaseCV") %in% names(ct_dataframe)) &
+      "Conc" %in% names(ct_dataframe) == FALSE
+   
+   if(ReleaseProfPlot){
+      ct_dataframe <- ct_dataframe %>% 
+         rename(Conc = ReleaseMean, 
+                SD_SE = ReleaseSD) %>% 
+         mutate(MyMean = Conc)
+   }
    
    # Checking for more than one tissue or ADAM data type b/c there's only one y
    # axis and it should have only one concentration type.
@@ -611,7 +623,7 @@ ct_plot_overlay <- function(ct_dataframe,
          Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
             filter(File %in% unique(ct_dataframe$File))
          
-         if(nrow(Deets == 0) | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
+         if(nrow(Deets) == 0 | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
             Deets <- tryCatch(
                extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
                                       exp_details = "Summary and Input")[["MainDetails"]], 
@@ -1353,7 +1365,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # compound that the user is plotting. Using whatever is the compoundID that
    # has the base level for the factor. <--- This may not be necessary, now
    # that I think about it further...
-   if(EnzPlot){
+   if(EnzPlot | ReleaseProfPlot){
       AnchorCompound <- "substrate"
    } else if(mean_type != "none"){
       AnchorCompound <- sim_dataframe %>% select(CompoundID) %>% unique() %>% 
@@ -1530,19 +1542,25 @@ ct_plot_overlay <- function(ct_dataframe,
    
    if(figure_type == "percentile ribbon"){
       
-      RibbonDF <-  sim_dataframe %>% 
-         filter(Trial %in% c({MyMeanType}, "per5", "per95") &
-                   # Ribbons don't work if any of the data are clipped on
-                   # the x axis
-                   Time >= time_range_relative[1] &
-                   Time <= time_range_relative[2]) %>% 
-         unique() %>% 
-         select(-any_of(c("Group", "Individual"))) %>% 
-         pivot_wider(names_from = Trial, values_from = Conc)
-      names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
-   }
-   
-   if(figure_type == "trial means"){
+      if(ReleaseProfPlot){
+         RibbonDF <- sim_dataframe %>% 
+            unique() %>% 
+            rename(per5 = "ReleaseUpper", 
+                   per95 = "ReleaseLower")
+         
+      } else {
+         RibbonDF <-  sim_dataframe %>% 
+            filter(Trial %in% c({MyMeanType}, "per5", "per95") &
+                      # Ribbons don't work if any of the data are clipped on
+                      # the x axis
+                      Time >= time_range_relative[1] &
+                      Time <= time_range_relative[2]) %>% 
+            unique() %>% 
+            select(-any_of(c("Group", "Individual"))) %>% 
+            pivot_wider(names_from = Trial, values_from = Conc)
+         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
+      }
+   } else if(figure_type == "trial means"){
       suppressMessages(
          sim_data_trial <- sim_dataframe %>%
             filter(Simulated == TRUE &
@@ -1564,7 +1582,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                         "colorBy_column", "FC1", "FC2")), 
                   sep = " ", remove = FALSE)
       )
-   }
+   } 
    
    A <- switch(
       figure_type, 
@@ -1653,7 +1671,7 @@ ct_plot_overlay <- function(ct_dataframe,
                           color = VLineAES[1], linetype = VLineAES[2])
    }
    
-   # Observed data on bottom -----------------------------------------------
+   ## Observed data on bottom -----------------------------------------------
    
    if(nrow(obs_dataframe) > 0){
       
@@ -1775,14 +1793,19 @@ ct_plot_overlay <- function(ct_dataframe,
                         LegCheck = LegCheck)
    }
    
-   if(nrow(obs_dataframe) > 0 && 
-      "SD_SE" %in% names(obs_dataframe) & include_errorbars){
-      if(figure_type == "percentile ribbon"){
-         A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
-                                aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
-                                width = errorbar_width)
-      } else {
-         A <- A + geom_errorbar(data = obs_dataframe, 
+   if(include_errorbars){
+      if(nrow(obs_dataframe) > 0 && "SD_SE" %in% names(obs_dataframe)){
+         if(figure_type == "percentile ribbon"){
+            A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
+                                   aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
+                                   width = errorbar_width)
+         } else {
+            A <- A + geom_errorbar(data = obs_dataframe, 
+                                   aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+                                   width = errorbar_width)
+         }
+      } else if(ReleaseProfPlot){
+         A <- A + geom_errorbar(data = sim_dataframe, 
                                 aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
                                 width = errorbar_width)
       }
