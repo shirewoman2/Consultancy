@@ -947,7 +947,7 @@ ct_plot <- function(ct_dataframe = NA,
    ## Setting up ggplot and aes bases for the graph -----------------------
    
    if(figure_type == "percentile ribbon"){
-      RibbonDF <- sim_data_mean %>% select(-Group, -Individual) %>% 
+      RibbonDF <- sim_data_mean %>% select(-any_of(c("Group", "Individual"))) %>% 
          pivot_wider(names_from = Trial, values_from = Conc) %>% 
          rename("MyMean" = {MyMeanType})
    }
