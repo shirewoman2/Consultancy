@@ -191,7 +191,11 @@ extractExpDetails <- function(sim_data_file,
       exp_details <- 
          unique(c(exp_details, 
                   AllCompounds$DetailNames, 
-                  paste0(rep(c("StartHr", "StartDayTime", "Regimen", "NumDoses"), each = 3), 
+                  "Units_AUC", "Units_Cmax", "Units_CL", "Units_tmax",
+                  "PopRepSim",
+                  paste0(rep(c("StartHr", "StartDayTime", "Regimen", "MW",
+                               "Dose", "NumDoses", "DoseInt", "DoseRoute"),
+                             each = 3), 
                          c("_sub", "_inhib", "_inhib2"))))
       
    }
