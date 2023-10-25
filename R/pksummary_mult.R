@@ -249,6 +249,10 @@
 #'   file into multiple tables. This only applies to the Word output.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
+#' @param highlight_gmr_colors optionally specify a set of colors to use for
+#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+#'   "green to red" or a vector of 4 colors of your choosing. If left as NA, no
+#'   highlighting for GMR level will be done.
 #' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
 #'   simulated-to-observed ratios. Anything that is above those values or below
 #'   the inverse of those values will be highlighted. To figure out what cells
@@ -335,6 +339,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            checkDataSource = TRUE, 
                            save_table = NA, 
                            fontsize = 11, 
+                           highlight_gmr_colors = NA, 
                            highlight_so_cutoffs = NA, 
                            highlight_so_colors = "yellow to red", 
                            single_table = FALSE,
@@ -599,8 +604,7 @@ pksummary_mult <- function(sim_data_files = NA,
       # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
          existing_exp_details <- extractExpDetails(i, exp_details = "Summary and Input", 
-                                                   annotate_output = FALSE) %>% 
-            as.data.frame()
+                                                   annotate_output = FALSE)
       } else {
          existing_exp_details <- harmonize_details(existing_exp_details)
       }

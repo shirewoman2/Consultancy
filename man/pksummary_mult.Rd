@@ -31,6 +31,7 @@ pksummary_mult(
   checkDataSource = TRUE,
   save_table = NA,
   fontsize = 11,
+  highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
   single_table = FALSE,
@@ -245,6 +246,11 @@ info will be included in a single Word or csv file, and, if
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
+
+\item{highlight_gmr_colors}{optionally specify a set of colors to use for
+highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+"green to red" or a vector of 4 colors of your choosing. If left as NA, no
+highlighting for GMR level will be done.}
 
 \item{highlight_so_cutoffs}{optionally specify cutoffs for highlighting any
 simulated-to-observed ratios. Anything that is above those values or below

@@ -47,7 +47,7 @@ extractAUCXtab <- function(PKparameters,
                            col_names = FALSE))
     
     # Finding the last row of the individual data
-    EndRow_ind <- which(AUCX_xl$...2 == "Statistics") - 3
+    EndRow_ind <- which(AUCX_xl$...2 == "Statistics")[1] - 3
     
     if(length(EndRow_ind) == 0){
         # Using "warning" instead of "stop" here b/c I want this to be
@@ -60,7 +60,7 @@ extractAUCXtab <- function(PKparameters,
     } 
     
     # Finding the aggregate data rows 
-    StartRow_agg <- which(AUCX_xl$...2 == "Statistics") + 2
+    StartRow_agg <- which(AUCX_xl$...2 == "Statistics")[1] + 2
     EndRow_agg <- which(AUCX_xl$...2 == "Std Dev")
     EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1]
     EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUCX_xl), EndRow_agg)

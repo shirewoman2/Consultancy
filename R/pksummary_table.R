@@ -298,6 +298,10 @@
 #'   added to the end of the file name.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
+#' @param highlight_gmr_colors optionally specify a set of colors to use for
+#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+#'   "green to red" or a vector of 4 colors of your choosing. If left as NA, no
+#'   highlighting for GMR level will be done.
 #' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
 #'   simulated-to-observed ratios. Anything that is above those values or below
 #'   the inverse of those values will be highlighted. To figure out what cells
@@ -397,11 +401,12 @@ pksummary_table <- function(sim_data_file = NA,
                             prettify_compound_names = TRUE, 
                             extract_forest_data = FALSE, 
                             checkDataSource = TRUE, 
-                            return_PK_pulled = FALSE,
-                            save_table = NA, 
-                            fontsize = 11, 
+                            return_PK_pulled = FALSE, 
+                            highlight_gmr_colors = NA,
                             highlight_so_cutoffs = NA, 
-                            highlight_so_colors = "yellow to red"){
+                            highlight_so_colors = "yellow to red",
+                            save_table = NA, 
+                            fontsize = 11){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -768,17 +773,6 @@ pksummary_table <- function(sim_data_file = NA,
       # And second, the scenario where user has not supplied a filled-out
       # report form.
       
-      NecessaryDetails <- 
-         c("Units_AUC", "Units_Cmax", 
-           "Units_CL", "Units_tmax",
-           AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract], 
-           paste0("Regimen", AllCompounds$DosedCompoundSuffix[AllCompounds$CompoundID == compoundToExtract]), 
-           paste0("Dose", AllCompounds$DosedCompoundSuffix[AllCompounds$CompoundID == compoundToExtract]), 
-           paste0("DoseInt", AllCompounds$DosedCompoundSuffix[AllCompounds$CompoundID == compoundToExtract]), 
-           paste0("NumDoses", AllCompounds$DosedCompoundSuffix[AllCompounds$CompoundID == compoundToExtract]), 
-           paste0("MW", AllCompounds$DosedCompoundSuffix[AllCompounds$CompoundID == compoundToExtract]), 
-           "PopRepSim")
-      
       MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
       GMR_mean_type <- MeanType
       # NB re. GMR_mean_type: I originally had this set to "geometric" all the
@@ -796,8 +790,7 @@ pksummary_table <- function(sim_data_file = NA,
       # existing_exp_details will include ALL experimental details provided or
       # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-         Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                    exp_details = NecessaryDetails)[["MainDetails"]]
+         Deets <- extractExpDetails(sim_data_file = sim_data_file)[["MainDetails"]]
       } else {
          
          existing_exp_details <- 
@@ -807,8 +800,7 @@ pksummary_table <- function(sim_data_file = NA,
             filter(File == sim_data_file)
          
          if(nrow(Deets) == 0){
-            Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                       exp_details = NecessaryDetails)[["MainDetails"]]
+            Deets <- extractExpDetails(sim_data_file = sim_data_file)[["MainDetails"]]
          }
       }
       
@@ -1002,6 +994,21 @@ pksummary_table <- function(sim_data_file = NA,
                                       switch(as.character(includeTrialMeans),
                                              "TRUE" = c("aggregate", "individual"),
                                              "FALSE" = "aggregate")))
+   
+   # Sometimes missing problems with extrapolation to infinity. Checking for
+   # that here. I thought that there wouldn't be any values for AUCinf, but
+   # there definitely are. If any of the AUCinf_X parameters have trouble with
+   # extrapolation, the others won't be useful either. Checking for any NA
+   # values in geomean, mean, or median. 
+   ExtrapCheck <- MyPKResults_all$aggregate %>% 
+      filter(Statistic %in% c("Mean", "Median", "Geometric Mean")) %>%
+      select(matches("AUCinf")) %>% 
+      summarize(across(.cols = everything(), .fns = function(x) any(is.na(x))))
+   
+   if(any(ExtrapCheck == TRUE)){
+      MyPKResults_all$aggregate <- MyPKResults_all$aggregate %>% 
+         select(-matches("AUCinf"))
+   }
    
    # If there were no PK parameters to be pulled, MyPKResults_all will have
    # length 0 and we can't proceed.

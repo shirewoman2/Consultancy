@@ -33,10 +33,11 @@ pksummary_table(
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
   return_PK_pulled = FALSE,
-  save_table = NA,
-  fontsize = 11,
+  highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
-  highlight_so_colors = "yellow to red"
+  highlight_so_colors = "yellow to red",
+  save_table = NA,
+  fontsize = 11
 )
 }
 \arguments{
@@ -256,24 +257,10 @@ simulator output file. Useful for QCing.}
 list item what PK parameters were pulled. This is used internally for
 writing table headings later.}
 
-\item{save_table}{optionally save the output table and, if requested, the QC
-info, by supplying a file name in quotes here, e.g., "My nicely formatted
-table.docx" or "My table.csv", depending on whether you'd prefer to have
-the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. (If you assign the output of
-\code{pksummary_table} to an R object, you can also save the table later to
-a Word file with the function \code{\link{formatTable_Simcyp}}.) If you
-supply only the file extension, e.g., \code{save_table = "docx"}, the name
-of the file will be the file name plus "PK summary table" with that
-extension, and the output file will be located in the same folder as
-\code{sim_data_file}. If you supply something other than just "docx" or
-just "csv" for the file name but you leave off the file extension, we'll
-assume you want it to be ".csv". While the main PK table data will be in
-whatever file format you requested, if you set \code{checkDataSource =
-TRUE}, the QC data will be in a csv file on its own and will have "- QC"
-added to the end of the file name.}
-
-\item{fontsize}{the numeric font size for Word output. Default is 11 point.
-This only applies when you save the table as a Word file.}
+\item{highlight_gmr_colors}{optionally specify a set of colors to use for
+highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+"green to red" or a vector of 4 colors of your choosing. If left as NA, no
+highlighting for GMR level will be done.}
 
 \item{highlight_so_cutoffs}{optionally specify cutoffs for highlighting any
 simulated-to-observed ratios. Anything that is above those values or below
@@ -313,6 +300,25 @@ c("green", "red")}. This only applies when you save the table as a Word file.}
   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
+
+\item{save_table}{optionally save the output table and, if requested, the QC
+info, by supplying a file name in quotes here, e.g., "My nicely formatted
+table.docx" or "My table.csv", depending on whether you'd prefer to have
+the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. (If you assign the output of
+\code{pksummary_table} to an R object, you can also save the table later to
+a Word file with the function \code{\link{formatTable_Simcyp}}.) If you
+supply only the file extension, e.g., \code{save_table = "docx"}, the name
+of the file will be the file name plus "PK summary table" with that
+extension, and the output file will be located in the same folder as
+\code{sim_data_file}. If you supply something other than just "docx" or
+just "csv" for the file name but you leave off the file extension, we'll
+assume you want it to be ".csv". While the main PK table data will be in
+whatever file format you requested, if you set \code{checkDataSource =
+TRUE}, the QC data will be in a csv file on its own and will have "- QC"
+added to the end of the file name.}
+
+\item{fontsize}{the numeric font size for Word output. Default is 11 point.
+This only applies when you save the table as a Word file.}
 }
 \value{
 Returns a data.frame of PK summary data and, if observed data were
