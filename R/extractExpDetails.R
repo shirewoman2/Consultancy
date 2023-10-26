@@ -171,7 +171,10 @@ extractExpDetails <- function(sim_data_file,
    PopDeets <- AllExpDetails %>% filter(Sheet == "population") %>% 
       rename(Deet = Detail) %>% arrange(Deet)
    
-   if(length(exp_details_input) == 1){
+   if(length(exp_details_input) == 1 && 
+      exp_details_input %in% c("all", "summary and input", "summary tab", 
+                               "input sheet", "population tab", "simcyp inputs",
+                               "workspace")){
       exp_details <- 
          switch(exp_details_input, 
                 "all" = unique(AllExpDetails$Detail), 
@@ -192,14 +195,22 @@ extractExpDetails <- function(sim_data_file,
          unique(c(exp_details, 
                   AllCompounds$DetailNames, 
                   "Units_AUC", "Units_Cmax", "Units_CL", "Units_tmax",
-                  "PopRepSim",
+                  "PopRepSim", "SimulatorUsed",
                   paste0(rep(c("StartHr", "StartDayTime", "Regimen", "MW",
                                "Dose", "NumDoses", "DoseInt", "DoseRoute", 
                                "ReleaseProfileAvailable"),
                              each = 3), 
                          c("_sub", "_inhib", "_inhib2"))))
       
+   } else {
+      # Even if they only want a few specific details, there are just a few
+      # details we need just to make this function work. Adding those.
+      exp_details <- 
+         unique(c(exp_details, "SimulatorUsed", "SimulatorVersion"))
    }
+   
+   # This needs to exist for all scenarios, even if we're not checking for it.
+   ReleaseProfs <- NULL
    
    # Need to note original exp_details requested b/c I'm adding to it if people
    # request info from other tabs than what they've originally got. Note that
@@ -621,10 +632,12 @@ extractExpDetails <- function(sim_data_file,
                                                       "Version [12][0-9]"))
       
       # Checking on release profiles
-      ReleaseProfs <- list()
-      
-      if(any(str_detect(unlist(c(InputTab[, ColLocations])), 
-                        "Release Mean"))){
+      if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
+         any(str_detect(unlist(c(InputTab[, ColLocations])), "Release Mean"),
+             na.rm = TRUE)){
+         
+         ReleaseProfs <- list()
+         
          for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
             StartRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "CR/MR Input"))[1] + 1
             EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Release Mean"))
