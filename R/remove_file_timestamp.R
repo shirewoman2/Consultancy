@@ -51,11 +51,11 @@ remove_file_timestamp <- function(sim_data_files = NA,
                                        regex_to_match = regex_to_match))
    
    if(any(duplicated(Changes$Revised))){
-      stop("We cannot proceed because the following files would have the same name:
-", 
-str_c(Changes$Original[Changes$Revised %in% 
-                      Changes$Revised[duplicated(Changes$Revise)]], 
-      collapse = "\n"))
+      stop("We cannot proceed because the following files would have the same name:\n", 
+           str_c(Changes$Original[Changes$Revised %in% 
+                                     Changes$Revised[duplicated(Changes$Revise)]], 
+                 collapse = "\n"), 
+           call. = FALSE)
    }
    
    for(i in 1:nrow(Changes)){

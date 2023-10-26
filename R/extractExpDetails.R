@@ -1537,6 +1537,22 @@ extractExpDetails <- function(sim_data_file,
    # extractExpDetails output more like extractExpDetails_mult.
    Out$File <- sim_data_file
    
+   # Noting when workspace, if there is a matching one, was last changed.
+   WorkspaceFile <- sub("xlsx", ifelse(Out$SimulatorUsed == "Discovery", 
+                                       "dscw", "wksz"), sim_data_file)
+   # Removing the file timestamp if there was one b/c that won't be part of the
+   # workspace file name.
+   WorkspaceFile <- sub(" - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}", 
+                        "", WorkspaceFile)
+   
+   Out$Workspace_TimeLastModified <- 
+      ifelse(file.exists(WorkspaceFile), 
+             file.info(WorkspaceFile)$mtime, NA)
+
+   # Noting when this was run. 
+   Out$expDetails_TimeStamp <- Sys.time()
+   
+   
    # Species should be lower case and not have "Sim" in front of it to work
    # more smoothly with other functions and also just look better. Setting
    # "beagle" to "dog" and setting it to "human" if it's missing, which it will
