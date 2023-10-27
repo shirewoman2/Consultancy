@@ -50,14 +50,14 @@ ct_plot_1stlast(
   hline_style = "red dotted",
   vline_position = NA,
   vline_style = "red dotted",
-  graph_labels = TRUE,
+  graph_labels = FALSE,
   graph_title = NA,
   graph_title_size = 14,
   legend_position = NA,
   prettify_compound_names = TRUE,
   save_graph = NA,
   fig_height = 6,
-  fig_width = 5
+  fig_width = 8
 )
 }
 \arguments{
@@ -395,9 +395,9 @@ acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 into the console.}
 
-\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
-etc.) for each of the small graphs. (Not applicable if only outputting
-linear or only semi-log graphs.)}
+\item{graph_labels}{TRUE or FALSE (default) for whether to include labels (A,
+B, C, etc.) for each of the small graphs. (Not applicable if only
+outputting linear or only semi-log graphs.)}
 
 \item{graph_title}{optionally specify a title that will be centered across
 your graph or set of graphs}

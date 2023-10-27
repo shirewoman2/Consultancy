@@ -380,9 +380,9 @@
 #'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 #'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 #'   into the console.
-#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
-#'   etc.) for each of the small graphs. (Not applicable if only outputting
-#'   linear or only semi-log graphs.)
+#' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
+#'   B, C, etc.) for each of the small graphs. (Not applicable if only
+#'   outputting linear or only semi-log graphs.)
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
@@ -2263,10 +2263,10 @@ ct_plot_overlay <- function(ct_dataframe,
       B <- B + ggtitle(graph_title) +
          theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
       AB <- ggpubr::annotate_figure(
-         AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
+         AB, top = ggpubr::text_grob(graph_title, hjust = 0.15, # <- Something is amuck here w/hjust b/c 0.5 is NOT centered. 
                                      face = "bold", size = graph_title_size))
       ABhoriz <- ggpubr::annotate_figure(
-         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5,
+         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.15, # <- Something is amuck here w/hjust b/c 0.5 is NOT centered. 
                                           face = "bold", size = graph_title_size))
    }
    

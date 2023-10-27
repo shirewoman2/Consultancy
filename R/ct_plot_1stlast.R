@@ -328,9 +328,9 @@
 #'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 #'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 #'   into the console.
-#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
-#'   etc.) for each of the small graphs. (Not applicable if only outputting
-#'   linear or only semi-log graphs.)
+#' @param graph_labels TRUE or FALSE (default) for whether to include labels (A,
+#'   B, C, etc.) for each of the small graphs. (Not applicable if only
+#'   outputting linear or only semi-log graphs.)
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
@@ -414,14 +414,14 @@ ct_plot_1stlast <- function(ct_dataframe,
                             hline_style = "red dotted", 
                             vline_position = NA, 
                             vline_style = "red dotted",
-                            graph_labels = TRUE,
+                            graph_labels = FALSE,
                             graph_title = NA,
                             graph_title_size = 14, 
                             legend_position = NA,
                             prettify_compound_names = TRUE,
                             save_graph = NA,
                             fig_height = 6,
-                            fig_width = 5){
+                            fig_width = 8){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -530,14 +530,14 @@ ct_plot_1stlast <- function(ct_dataframe,
                       prettify_compound_names = prettify_compound_names,
                       qc_graph = FALSE,
                       existing_exp_details = NA,
-                      save_graph = save_graph,
+                      save_graph = NA,
                       fig_height = fig_height,
-                      fig_width = fig_width)  
+                      fig_width = fig_width)
    }
    
    A <- ct_subfun(
       dosenumber = ifelse(any(complete.cases(time_range_1st)), 
-                       NA, 1), 
+                          NA, 1), 
       firstorlast = "1st",
       timerange = switch(as.character(any(complete.cases(time_range_1st))), 
                          "TRUE" = time_range_1st, 
@@ -547,7 +547,7 @@ ct_plot_1stlast <- function(ct_dataframe,
    suppressMessages(
       B <- ct_subfun(
          dosenumber = ifelse(any(complete.cases(time_range_last)), 
-                          NA, max(ct_dataframe$DoseNum, na.rm = T)), 
+                             NA, max(ct_dataframe$DoseNum, na.rm = T)), 
          firstorlast = "last",
          timerange = switch(as.character(any(complete.cases(time_range_last))), 
                             "TRUE" = time_range_last, 
@@ -555,10 +555,71 @@ ct_plot_1stlast <- function(ct_dataframe,
          xaxisinterval = x_axis_interval_last) )
    
    if(linear_or_log %in% c("both", "both vertical", "linear", "semi-log")){
-      A + B + plot_layout(ncol = 2)   
+      Out <- A + B + plot_layout(ncol = 2)   
    } else {
-      A + B + plot_layout(nrow = 2)
+      Out <- A + B + plot_layout(nrow = 2)
    }
+   
+   if(complete.cases(save_graph)){
+      FileName <- save_graph
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                       "png", "bmp", "svg", "jpg", "docx") == FALSE){
+            warning(paste0("You have requested the graph's file extension be `", 
+                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+                    call. = FALSE)
+         }
+         Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                  "png", "bmp", "svg", "jpg", "docx"), 
+                       Ext, "png")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".png")
+         Ext <- "png"
+      }
+      
+      if(Ext == "docx"){
+         
+         # This is when they want a Word file as output
+         OutPath <- dirname(FileName)
+         if(OutPath == "."){
+            OutPath <- getwd()
+         }
+         
+         FileName <- basename(FileName)
+         
+         if(length(unique(ct_dataframe$File)) == 1){
+            
+            Data <- ct_dataframe
+            MyPerpetrator <- unique(Data$Inhibitor) %>% as.character()
+            MyPerpetrator <- MyPerpetrator[!MyPerpetrator == "none"]
+            qc_graph <- FALSE
+            
+            rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
+                              output_dir = OutPath, 
+                              output_file = FileName, 
+                              quiet = TRUE)
+         } else {
+            
+            rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
+                                          package="SimcypConsultancy"), 
+                              output_dir = OutPath, 
+                              output_file = FileName, 
+                              quiet = TRUE)
+            
+         }
+         
+      } else {
+         ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+                plot = Out)
+      }
+   }
+   
+   return(Out)
 }
 
 

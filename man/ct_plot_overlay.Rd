@@ -426,9 +426,9 @@ acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 into the console.}
 
-\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
-etc.) for each of the small graphs. (Not applicable if only outputting
-linear or only semi-log graphs.)}
+\item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
+B, C, etc.) for each of the small graphs. (Not applicable if only
+outputting linear or only semi-log graphs.)}
 
 \item{graph_title}{optionally specify a title that will be centered across
 your graph or set of graphs}
