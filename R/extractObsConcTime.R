@@ -76,6 +76,12 @@ extractObsConcTime <- function(obs_data_file,
                   return(list())
                }))
    
+   if(length(obs_data_xl) == 0){
+      warning(paste("The file", obs_data_file, "does not appear to be an Excel file of observed data that's ready to be converted to an XML file. We cannot extract any data."), 
+              call. = FALSE)
+      return(list())
+   }
+   
    # Checking on whether this was animal data
    Animal <- str_detect(obs_data_xl[1, 1], "Animal")
    

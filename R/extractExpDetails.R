@@ -1547,8 +1547,8 @@ extractExpDetails <- function(sim_data_file,
    
    Out$Workspace_TimeLastModified <- 
       ifelse(file.exists(WorkspaceFile), 
-             file.info(WorkspaceFile)$mtime, NA)
-
+             as.character(file.info(WorkspaceFile)$mtime), NA)
+   
    # Noting when this was run. 
    Out$expDetails_TimeStamp <- Sys.time()
    

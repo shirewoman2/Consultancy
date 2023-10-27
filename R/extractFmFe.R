@@ -66,7 +66,7 @@ extractFmFe <- function(sim_data_file,
    } else {
       existing_exp_details <- harmonize_details(existing_exp_details)
       
-      Deets <- existing_exp_details$MainDetails
+      Deets <- existing_exp_details$MainDetails %>% filter(File == sim_data_file)
       
       if(nrow(Deets) == 0){
          Deets <- extractExpDetails(sim_data_file,
@@ -120,8 +120,9 @@ extractFmFe <- function(sim_data_file,
                    PerpPresent = str_detect(tolower(...1), "with inh"), 
                    Parameter = str_extract(...1, "fm|fe"), 
                    across(.cols = c(Max, tmax, Min, tmin), 
-                          .fns = as.numeric)) %>% 
-            select(Parameter, Tissue, Enzyme, PerpPresent, Max, tmax, Min, tmin)
+                          .fns = as.numeric), 
+                   File = sim_data_file) %>% 
+            select(Parameter, Tissue, Enzyme, PerpPresent, Max, tmax, Min, tmin, File)
       )
       
       return(Out)

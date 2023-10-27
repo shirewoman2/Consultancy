@@ -59,7 +59,7 @@
 
 
 
-extractExpDetails_XML <- function(sim_workspace_files,
+extractExpDetails_XML <- function(sim_workspace_files = NA,
                                   compoundsToExtract = "all",
                                   exp_details = "all", 
                                   save_output = NA){
@@ -147,6 +147,8 @@ extractExpDetails_XML <- function(sim_workspace_files,
    for(i in sim_workspace_files){
       
       Deets[[i]] <- list()
+      
+      Deets[[i]]$Workspace_TimeLastModified <- as.character(file.info(i)$mtime)
       
       workspace_xml <- XML::xmlTreeParse(i, useInternal = TRUE)
       RootNode <- XML::xmlRoot(workspace_xml)
