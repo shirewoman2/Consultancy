@@ -388,6 +388,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
             ObsAssign <- data.frame()
             obs_to_sim_assignment <- NA
          } else {
+            
+            # Make this work for whoever the current user is, even if the XML
+            # obs file path was for someone else.
+            Deets$ObsOverlayFile <- 
+               sub("Users\\\\.*\\\\Certara", 
+                   paste0("Users\\\\", Sys.info()["user"], "\\\\Certara"), 
+                   Deets$ObsOverlayFile)
+            
             ObsAssign <- Deets %>% select(File, ObsOverlayFile) %>% 
                rename(ObsFile = ObsOverlayFile) %>% 
                mutate(ObsFile = sub("\\.xml$", ".xlsx", ObsFile), 
