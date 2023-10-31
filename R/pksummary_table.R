@@ -1000,16 +1000,6 @@ pksummary_table <- function(sim_data_file = NA,
    # there definitely are. If any of the AUCinf_X parameters have trouble with
    # extrapolation, the others won't be useful either. Checking for any NA
    # values in geomean, mean, or median. 
-   ExtrapCheck <- MyPKResults_all$aggregate %>% 
-      filter(Statistic %in% c("Mean", "Median", "Geometric Mean")) %>%
-      select(matches("AUCinf")) %>% 
-      summarize(across(.cols = everything(), .fns = function(x) any(is.na(x))))
-   
-   if(any(ExtrapCheck == TRUE)){
-      MyPKResults_all$aggregate <- MyPKResults_all$aggregate %>% 
-         select(-matches("AUCinf"))
-   }
-   
    # If there were no PK parameters to be pulled, MyPKResults_all will have
    # length 0 and we can't proceed.
    if(length(MyPKResults_all) == 0){
@@ -1018,6 +1008,16 @@ pksummary_table <- function(sim_data_file = NA,
                      "."), 
               call. = FALSE)
       return()
+   }
+   
+   ExtrapCheck <- MyPKResults_all$aggregate %>% 
+      filter(Statistic %in% c("Mean", "Median", "Geometric Mean")) %>%
+      select(matches("AUCinf")) %>% 
+      summarize(across(.cols = everything(), .fns = function(x) any(is.na(x))))
+   
+   if(any(ExtrapCheck == TRUE)){
+      MyPKResults_all$aggregate <- MyPKResults_all$aggregate %>% 
+         select(-matches("AUCinf"))
    }
    
    # PKToPull must be changed if user specified a tab b/c then the parameters
