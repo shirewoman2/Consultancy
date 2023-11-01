@@ -23,12 +23,6 @@
 #'   include only the 1st dose and whatever dose number you do want and perhaps
 #'   running this multiple times in a loop to get all the PK you need. A member
 #'   of the R Working Group can help you set this up if you'd like.
-#' @param PKparameters Which PK parameters would you like? Options are "all"
-#'   (default) or any combination of \code{c("AUCinf_dose1",
-#'   "AUCinf_fraction_extrapolated_dose1", "AUCt_dose1", "CLinf_dose1",
-#'   "Cmax_dose1", "Clast_dose1", "tmax_dose1", "AUCtau_last", "CLtau_last",
-#'   "Cmax_last", "Clast_last", "Cmin_last", "tmax_last")} If you have provided 
-#'   only single-dose data, then only "XXX_dose1" parameters will be returned.
 #' @param first_dose_time the time at which the first dose was administered. If
 #'   this is left as NA, the default value, this will be set to 0.
 #' @param last_dose_time the time at which the last dose was administered. If
@@ -70,8 +64,11 @@
 #'   to ALL profiles.
 #' @param omit_0_concs TRUE (default) or FALSE for whether to omit any points
 #'   where the concentration = 0 since A) they were presumably below the LLOQ
-#'   and B) they will mess up weighting, should you choose to use a "1/y" or
-#'   "1/y^2" weighting scheme.
+#'   and B) they will mess up weighting should you choose to use a "1/y" or
+#'   "1/y^2" weighting scheme. Concentrations of 0 at t0 will be retained,
+#'   though, to allow for a more accurate calculation of the absorption-phase
+#'   contribution to AUCinf and since 0 values at t0 would not be included in
+#'   any regression of the elimination phase anyway.
 #' @param weights Weighting scheme to use for the regression. User may supply a
 #'   numeric vector of weights to use or choose from "1/x", "1/x^2", "1/y" or
 #'   "1/y^2". If left as NULL, no weighting scheme will be used. Be careful that
@@ -99,7 +96,6 @@
 #' # None yet
 #' 
 calc_PK <- function(ct_dataframe, 
-                    PKparameters = "all",
                     first_dose_time = NA, 
                     last_dose_time = NA,
                     dose_interval = NA,
@@ -122,417 +118,31 @@ calc_PK <- function(ct_dataframe,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   if(complete.cases(fit_points_after_x_time) & complete.cases(fit_last_x_number_of_points)){
-      warning("You requested that we fit both all points after time = X and also the last X number of points. You only get to use one of these options, so we'll use all points after time = X.\n", 
-              call. = FALSE)
-   }
-   
-   if(is.na(first_dose_time)){
-      warning("You have not specified the time of the 1st dose. We'll assume it's the minimum time included in your data.\n", 
-              call. = FALSE)
-   }
-   
-   if(is.na(last_dose_time) & any(ct_dataframe$DoseNum > 1)){
-      warning("You have not specified the time of the last dose. We'll assume it's the minimum time for the maxmimum dose number in your data.\n", 
-              call. = FALSE)
-   }
-   
-   AllPKPossible <- c("AUCinf_dose1",
-                      "AUCinf_fraction_extrapolated_dose1", 
-                      "AUCt_dose1",
-                      "CLinf_dose1",
-                      "Cmax_dose1",
-                      "Clast_dose1",
-                      "tmax_dose1",
-                      "AUCtau_last",
-                      "CLtau_last",
-                      "Cmax_last",
-                      "Clast_last",
-                      "Cmin_last",
-                      "tmax_last")
-   
-   if(length(PKparameters) == 1 && PKparameters == "all"){
-      PKparameters <- AllPKPossible
-   } else {
-      ProbPKparameters <- setdiff(PKparameters, AllPKPossible)
-      if(length(ProbPKparameters) > 0){
-         warning(paste0("The following PK parameters that you requested are not available: ", 
-                        str_comma(paste0("`", ProbPKparameters, "`")), 
-                        ". We will not be able to provide those. Please see the help file for acceptable options.\n"), 
-                 call. = FALSE)
-      }
-      PKparameters <- intersect(PKparameters, AllPKPossible)
-   }
-   
-   # Main body of function -------------------------------------------------
-   
-   ct_orig <- ct_dataframe # for debugging. remove this later. 
-   
-   if("File" %in% names(ct_dataframe) == FALSE){
-      ct_dataframe$File <- NA
-   }
-   
-   if("ObsFile" %in% names(ct_dataframe) == FALSE){
-      ct_dataframe$ObsFile <- NA
-   }
-   
-   if(omit_0_concs){
-      ct_dataframe <- ct_dataframe %>% filter(Conc > 0)
-   }
-   
-   if(is.na(first_dose_time)){
-      first_dose_time <- min(ct_dataframe$Time[ct_dataframe$DoseNum == 1], na.rm = T)
-   }
-   
-   MaxDoseNum <- max(ct_dataframe$DoseNum, na.rm = T)
-   
-   if(is.na(last_dose_time)){
-      last_dose_time <- min(ct_dataframe$Time[ct_dataframe$DoseNum == MaxDoseNum], na.rm = T)
-   }
-   
-   # Adjusting time to be time since most-recent dose. Only keeping 1st and
-   # last-dose data.
-   ct_dataframe <- ct_dataframe %>% 
-      filter(DoseNum %in% c(1, MaxDoseNum)) %>% 
-      mutate(TimeOrig = Time, 
-             DoseTime = ifelse(DoseNum == 1, first_dose_time, last_dose_time), 
-             Time = TimeOrig - DoseTime)
-   
-   ct_dataframe <- ct_dataframe %>% 
-      group_by(CompoundID, Inhibitor, Tissue, Individual, Trial, 
-               Simulated, File, ObsFile, DoseNum)
-   
-   suppressMessages(
-      t0s <- ct_dataframe %>% filter(complete.cases(Conc)) %>% 
-         summarize(t0 = min(Time), 
-                   MaxTime = max(Time)) %>% 
-         mutate(MaxTime = 
-                   switch(as.character(complete.cases(dose_interval)), 
-                          "TRUE" = t0 + dose_interval, 
-                          "FALSE" = MaxTime)) %>% 
-         group_by(CompoundID, Inhibitor, Tissue, Individual, Trial, 
-                  Simulated, File, ObsFile, DoseNum)
-   )
-   # Not sure this will be best way to set this up
-   
-   Keys_CT <- group_keys(ct_dataframe) %>% 
-      mutate(ID = paste(CompoundID, Inhibitor, Tissue, Individual, Trial, 
-                        ifelse(Simulated == TRUE, "simulated", "observed"),
-                        File, ObsFile, DoseNum))
-   
-   # Keys for CT and t0 *should* be the same, but setting this up separately to
-   # get names for t0s means that this will check that they contain the same
-   # info.
-   Keys_t0 <- group_keys(t0s) %>% 
-      mutate(ID = paste(CompoundID, Inhibitor, Tissue, Individual, Trial, 
-                        ifelse(Simulated == TRUE, "simulated", "observed"),
-                        File, ObsFile, DoseNum))
-   
-   ct_dataframe <- group_split(ct_dataframe)
-   names(ct_dataframe) <- Keys_CT$ID
-   t0s <- group_split(t0s)
-   names(t0s) <- Keys_t0$ID
-   
-   ElimFits <- list()
-   ElimFitGraphs <- list()
-   PKtemp <- list()
-   
-   for(j in names(ct_dataframe)){
-      
-      ThisIsDose1 <- unique(ct_dataframe[[j]]$DoseNum) == 1
-      MyDose <- switch(unique(ct_dataframe[[j]]$CompoundID), 
-                       "substrate" = unique(ct_dataframe[[j]]$Dose_sub), 
-                       "primary metabolite 1" = NA, 
-                       "primary metabolite 2" = NA, 
-                       "secondary metabolite" = NA,
-                       "inhibitor 1" = unique(ct_dataframe[[j]]$Dose_inhib), 
-                       "inhibitor 2" = unique(ct_dataframe[[j]]$Dose_inhib2),
-                       "inhibitor 1 metabolite" = NA)
-      
-      LastDoseNum <- max(ct_dataframe[[j]]$DoseNum)
-      SDorMD <- ifelse(LastDoseNum == 1, "SD", "MD")
-      
-      if(SDorMD == "MD"){
-         ct_dataframe[[j]] <- ct_dataframe[[j]] %>% 
-            filter(DoseNum %in% c(1, LastDoseNum))
-      }
-      
-      ct_dataframe[[j]] <- ct_dataframe[[j]] %>% 
-         filter(Time >= t0s[[j]]$t0 & Time <= t0s[[j]]$MaxTime)
-      
-      if(ThisIsDose1){
-         
-         # Subsetting the data if there are lots of it b/c fitting takes a lot
-         # longer. When there are thousands of points, there are thousands of
-         # values to minimize the residuals for. Instead of using all of the
-         # data, using only a subset of the time points when there are more than
-         # 100 observeations.
-         if(nrow(ct_dataframe[[j]]) > 100){
-            ct_dataframe[[j]] <- ct_dataframe[[j]][seq(from = 1, 
-                                                       to = nrow(ct_dataframe[[j]]), 
-                                                       length.out = 100), ]
-            
-         }
-         
-         if(is.na(fit_last_x_number_of_points)){
-            Omit <- NA
-         } else {
-            Omit <- 1:(nrow(ct_dataframe[[j]]) - fit_last_x_number_of_points)
-         }
-         TEMP <- elimFit(DF = ct_dataframe[[j]], 
-                         concentration = Conc, 
-                         time = Time, 
-                         tmax = fit_points_after_x_time, 
-                         omit = Omit,
-                         weights = weights,
-                         useNLS_outnames = FALSE,
-                         modelType = "monoexponential",
-                         graph = TRUE)
-         
-         if(any(TEMP == "Insufficient data to create model")){
-            ElimFits[[j]] <- NULL
-            ExtrapProbs <- TRUE
-            AUCextrap_temp <- NA
-         } else {
-            
-            if(any(is.na(TEMP$Estimates$Beta)) |
-               any(TEMP$Estimates$Estimate < 0)){
-               
-               cc <- capture.output(
-                  type="message",
-                  TEMP <- try(elimFit(DF = ct_dataframe[[j]], 
-                                      concentration = Conc, 
-                                      time = Time, 
-                                      useNLS_outnames = FALSE,
-                                      modelType = "biexponential",
-                                      startValues = data.frame(A = c(100, 1000), 
-                                                               alpha = c(0.1, 1), 
-                                                               B = c(1, 100), 
-                                                               beta = c(0.01, 0.1)),
-                                      graph = TRUE), 
-                              silent = TRUE)
-               )
-            }
-            
-            if(inherits(TEMP, "try-error") |
-               (inherits(TEMP, "try-error") == FALSE && 
-                (any(is.na(TEMP$Estimates$Beta)) |
-                 any(TEMP$Estimates$Estimate < 0)))){
-               TEMP <- elimFit(DF = ct_dataframe[[j]], 
-                               concentration = Conc, 
-                               time = Time, 
-                               useNLS_outnames = FALSE,
-                               modelType = "monoexponential",
-                               graph = TRUE)
-            }
-            
-            if((any(is.na(TEMP$Estimates$Beta)) |
-                any(TEMP$Estimates$Estimate < 0)) == FALSE){
-               ElimFitGraphs[[j]] <- TEMP$Graph +
-                  ggtitle(sub("observed ", "observed\n", 
-                              sub("simulated ", "simulated\n", j))) +
-                  theme(title = element_text(size = 6))
-            } 
-            
-            ElimFits[[j]] <- TEMP$Estimates
-            
-            ExtrapProbs <- any(is.na(ElimFits[[j]]$Beta))
-            
-         }
-         
-         rm(TEMP)
-         
-         Extrap <- ifelse(ExtrapProbs == FALSE, 
-                          TRUE, FALSE)
-         
-      } else {
-         Extrap <- FALSE
-         ExtrapProbs <- NA
-         ElimFits[[j]] <- NULL
-      }
-      
-      if(ThisIsDose1 & is.null(ElimFits[[j]]) == FALSE & 
-         Extrap == TRUE){
-         AUCextrap_temp <- noncompAUC(DF = ct_dataframe[[j]], 
-                                      concentration = Conc, 
-                                      time = Time, 
-                                      type = "LULD", 
-                                      extrap_inf = TRUE, 
-                                      extrap_inf_coefs = ElimFits[[j]], 
-                                      reportFractExtrap = TRUE)
-      }
-      
-      AUCt_temp <- noncompAUC(DF = ct_dataframe[[j]], 
-                              concentration = Conc, 
-                              time = Time, 
-                              type = "LULD", 
-                              extrap_inf = FALSE)
-      
-      CmaxTmax_temp <- ct_dataframe[[j]] %>% 
-         summarize(Cmax = max(Conc, na.rm = T), 
-                   tmax = Time[which.max(Conc)], 
-                   Cmin = min(Conc, na.rm = T), 
-                   Clast = Conc[which.max(Time)])
-      
-      PKtemp[[j]] <- 
-         data.frame(
-            ID = j,
-            WhichDose = ifelse({ThisIsDose1}, "dose1", "last"),
-            CompoundID = unique(ct_dataframe[[j]]$CompoundID), 
-            Inhibitor = unique(ct_dataframe[[j]]$Inhibitor),
-            Tissue = unique(ct_dataframe[[j]]$Tissue),
-            Individual = unique(ct_dataframe[[j]]$Individual), 
-            Trial = unique(ct_dataframe[[j]]$Trial), 
-            Simulated = unique(ct_dataframe[[j]]$Simulated), 
-            File = unique(ct_dataframe[[j]]$File), 
-            ObsFile = unique(ct_dataframe[[j]]$ObsFile), 
-            DoseNum = unique(ct_dataframe[[j]]$DoseNum), 
-            AUCinf = ifelse({ThisIsDose1 & Extrap}, AUCextrap_temp$AUC, NA),
-            AUCinf_fraction_extrapolated = ifelse({ThisIsDose1 & Extrap}, 
-                                                  AUCextrap_temp$`Fraction extrapolated to infinity`, 
-                                                  NA),
-            ExtrapProbs = ExtrapProbs,
-            AUCt = AUCt_temp, 
-            Cmax = CmaxTmax_temp$Cmax, 
-            tmax = CmaxTmax_temp$tmax, 
-            Cmin = CmaxTmax_temp$Cmin, 
-            Clast = CmaxTmax_temp$Clast) %>% 
-         mutate(CL = MyDose / ifelse({ThisIsDose1}, AUCinf, AUCt) * 1000)
-      
-      suppressWarnings(
-         rm(AUCextrap_temp, AUCt_temp, CmaxTmax_temp, ExtrapProbs, Extrap)
-      )
-   }
-   
-   PKtemp <- bind_rows(PKtemp) %>% 
-      pivot_longer(cols = c(AUCinf, AUCinf_fraction_extrapolated, AUCt, 
-                            Cmax, Cmin, Clast, tmax, CL), 
-                   names_to = "PKparameter", 
-                   values_to = "Value") %>% 
-      mutate(PKparameter = paste0(PKparameter, "_", WhichDose),
-             PKparameter = 
-                case_when(PKparameter == "AUCt_last" ~ "AUCtau_last",
-                          PKparameter == "CL_last" ~ "CLtau_last", 
-                          PKparameter == "CL_dose1" ~ "CLinf_dose1",
-                          TRUE ~ PKparameter)) %>% 
-      # Removing PK parameters that would not be accurate or informative for
-      # that dose
-      filter(!PKparameter %in% c("Cmin_dose1", "AUCinf_last", 
-                                "AUCinf_fraction_extrapolated_last")) 
-   
-   if(any(PKtemp$ExtrapProbs, na.rm = TRUE)){
-      warning(paste0(
-         "The following combinations of data had problems with extrapolation to infinity. Data are listed by CompoundID, Inhibitor, Tissue, Individual, Trial, whether the data were simulated or observed, File, ObsFile, and DoseNum:\n", 
-         str_c(unique(PKtemp$ID[PKtemp$ExtrapProbs], collapse = "\n"))), 
-         call. = FALSE)
-   }
-   
-   ## Checking for possible DDI parameters to calculate -----------------------
-   
-   if(any(PKtemp$Inhibitor != "none")){
-      suppressMessages(
-         PKDDI <- PKtemp %>% select(-ID) %>% 
-            # Recoding inhibitor to be consistent. Only using "none" and "inhibitorX".
-            mutate(Inhibitor = ifelse(Inhibitor == "none", Inhibitor, "inhibitorX")) %>% 
-            pivot_wider(names_from = Inhibitor, 
-                        values_from = Value) %>% 
-            mutate(Value = inhibitorX / none, 
-                   PKparameter = sub("_dose1", "_ratio_dose1", PKparameter), 
-                   PKparameter = sub("_last", "_ratio_last", PKparameter)) %>% 
-            select(CompoundID, Tissue, Individual, Trial,
-                   Simulated, File, ObsFile, DoseNum, PKparameter, Value) %>% 
-            # Remove any instances where there weren't matching data
-            filter(complete.cases(Value)) %>% 
-            # Get the inhibitor name back
-            left_join(PKtemp %>% filter(Inhibitor != "none") %>% 
-                         select(CompoundID, Tissue, Individual, 
-                                Trial, Simulated, File, 
-                                ObsFile, DoseNum, Inhibitor) %>% unique()) %>% 
-            mutate(ID = paste(CompoundID, Inhibitor, Tissue, Individual, Trial, 
-                              ifelse(Simulated == TRUE, "simulated", "observed"),
-                              File, ObsFile, DoseNum))
-      )
-      
-      PKtemp <- bind_rows(PKtemp, PKDDI) %>% 
-         # Also fixing PK parameter names here since they should be different in
-         # the presence of a perpetrator.
-         mutate(PKparameter = case_when(Inhibitor != "none" &
-                                           !str_detect(PKparameter, "ratio") ~ 
-                                           paste0(PKparameter, "_withInhib"), 
-                                        TRUE ~ PKparameter))
-      
-   }
-   
-   ## Calculating aggregate stats --------------------------------------------
-   
-   if(returnAggregateOrIndiv %in% c("aggregate", "both")){
-      
-      suppressWarnings(suppressMessages(
-         PK_agg_temp <- PKtemp %>% 
-            filter(PKparameter != "AUCinf_dose1" |
-                      (PKparameter == "AUCinf_dose1" & ExtrapProbs == FALSE)) %>% 
-            select(-ExtrapProbs) %>% 
-            group_by(CompoundID, Inhibitor, Tissue, 
-                     Simulated, File, ObsFile, DoseNum, PKparameter) %>% 
-            summarize(
-               Mean = mean(Value, na.rm = T),
-               SD = sd(Value, na.rm = T), 
-               Geomean = gm_mean(Value), 
-               GeoCV = gm_CV(Value), 
-               CI90_lower = gm_conf(Value, CI = 0.90)[1], 
-               CI90_upper = gm_conf(Value, CI = 0.90)[2],
-               Median = median(Value, na.rm = T), 
-               Minimum = min(Value, na.rm = T), 
-               Maximum = max(Value, na.rm = T)) 
-      ))
-      
-   }
-   
-   if(save_graphs_of_fits){
-      # Grouping by File, CompoundID, Inhibitor, Tissue for saving
-      Keys_CT <- Keys_CT %>% 
-         mutate(ID2 = paste(File, CompoundID, Inhibitor, Tissue))
-      
-      for(i in unique(Keys$ID2)){
-         if(all(is.null(nrow) & is.null(ncol))){
-            Nrow <- NULL
-            Ncol <- NULL
-         } else {
-            Nrow <- ifelse(is.null(nrow), 
-                           round_up_unit(length(Keys_CT$ID[Keys_CT$ID2 == i]) / ncol, 1), 
-                           nrow)
-            Ncol <- ifelse(is.null(ncol), 
-                           round_up_unit(length(Keys_CT$ID[Keys_CT$ID2 == i]) / nrow, 1), 
-                           ncol)
-         }
-         
-         ggpubr::ggarrange(
-            plotlist = ElimFitGraphs[Keys_CT$ID[Keys_CT$ID2 == i]], 
-            ncol = Ncol, 
-            nrow = Nrow)
-         ggsave(paste0(gsub("/", "-", gsub(".xlsx", "", i)), ".png"), 
-                height = fig_height, width = fig_width, dpi = 300)
-      }
-      
-   }
-   
-   Out <- list()
-   if(returnAggregateOrIndiv %in% c("individual", "both")){
-      Out[["individual"]] <- PKtemp %>% 
-         filter(PKparameter %in% PKparameters) %>% 
-         select(CompoundID, Inhibitor, Tissue, Individual, Trial, 
-                Simulated, File, ObsFile, DoseNum, ExtrapProbs, 
-                PKparameter, Value)
-   }
-   
-   if(returnAggregateOrIndiv %in% c("aggregate", "both")){
-      Out[["aggregate"]] <- PK_agg_temp %>% 
-         filter(PKparameter %in% PKparameters) 
-   }
-   
-   if(return_graphs_of_fits){
-      Out[["graphs"]] <- ElimFitGraphs
-   }
+   Out <- recalc_PK(ct_dataframe = ct_dataframe,
+                     existing_PK = NULL,
+                     compoundID_match = NA,
+                     inhibitor_match = NA, 
+                     tissue_match = NA, 
+                     individual_match = NA, 
+                     trial_match = NA,
+                     simulated_match = NA, 
+                     file_match = NA, 
+                     obsfile_match = NA, 
+                     dosenum_match = NA, 
+                     first_dose_time = first_dose_time, 
+                     last_dose_time = last_dose_time,
+                     dose_interval = dose_interval,
+                     fit_points_after_x_time = fit_points_after_x_time,
+                     fit_last_x_number_of_points = fit_last_x_number_of_points, 
+                     omit_0_concs = omit_0_concs,
+                     weights = weights, 
+                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                     return_graphs_of_fits = return_graphs_of_fits,
+                     save_graphs_of_fits = save_graphs_of_fits, 
+                     ncol = ncol, 
+                     nrow = nrow, 
+                     fig_width = fig_width, 
+                     fig_height = fig_height)
    
    return(Out)
    

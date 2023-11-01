@@ -7,7 +7,6 @@ concentration-time data}
 \usage{
 calc_PK(
   ct_dataframe,
-  PKparameters = "all",
   first_dose_time = NA,
   last_dose_time = NA,
   dose_interval = NA,
@@ -34,13 +33,6 @@ for a dose other than those two, we recommend subsetting your data to
 include only the 1st dose and whatever dose number you do want and perhaps
 running this multiple times in a loop to get all the PK you need. A member
 of the R Working Group can help you set this up if you'd like.}
-
-\item{PKparameters}{Which PK parameters would you like? Options are "all"
-(default) or any combination of \code{c("AUCinf_dose1",
-"AUCinf_fraction_extrapolated_dose1", "AUCt_dose1", "CLinf_dose1",
-"Cmax_dose1", "Clast_dose1", "tmax_dose1", "AUCtau_last", "CLtau_last",
-"Cmax_last", "Clast_last", "Cmin_last", "tmax_last")} If you have provided 
-only single-dose data, then only "XXX_dose1" parameters will be returned.}
 
 \item{first_dose_time}{the time at which the first dose was administered. If
 this is left as NA, the default value, this will be set to 0.}
@@ -88,8 +80,11 @@ and yield more predictable results if you specify a value for
 
 \item{omit_0_concs}{TRUE (default) or FALSE for whether to omit any points
 where the concentration = 0 since A) they were presumably below the LLOQ
-and B) they will mess up weighting, should you choose to use a "1/y" or
-"1/y^2" weighting scheme.}
+and B) they will mess up weighting should you choose to use a "1/y" or
+"1/y^2" weighting scheme. Concentrations of 0 at t0 will be retained,
+though, to allow for a more accurate calculation of the absorption-phase
+contribution to AUCinf and since 0 values at t0 would not be included in
+any regression of the elimination phase anyway.}
 
 \item{weights}{Weighting scheme to use for the regression. User may supply a
 numeric vector of weights to use or choose from "1/x", "1/x^2", "1/y" or
