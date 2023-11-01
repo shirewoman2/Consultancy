@@ -410,8 +410,7 @@ extractObsConcTime <- function(obs_data_file,
                               "inhibitor 1 metabolite" = "inhibitor 1")
          j <- paste(ParentDrug, i_split[2], sep = ".")
          
-         if(j %in% names(DoseInts) && 
-            nrow(DoseInts[[j]]) > 0){
+         if(j %in% names(DoseInts) && nrow(DoseInts[[j]]) > 0){
             DoseInts[[j]] <- DoseInts[[j]] %>% 
                mutate(Interval = cut(DoseTime, 
                                      breaks = c(unique(DoseInts[[j]]$DoseTime), Inf), 
@@ -421,7 +420,7 @@ extractObsConcTime <- function(obs_data_file,
                mutate(Interval = cut(Time, 
                                      breaks = c(unique(DoseInts[[j]]$DoseTime), Inf), 
                                      include.lowest = TRUE, right = FALSE)) %>% 
-               left_join(DoseInts[[j]] %>% mutate(CompoundID = i), 
+               left_join(DoseInts[[j]] %>% mutate(CompoundID = i_split[1]), 
                          by = join_by(CompoundID, Individual, Interval)) %>% 
                mutate(DoseNum = as.numeric(Interval))
          }
