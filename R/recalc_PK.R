@@ -293,6 +293,8 @@ recalc_PK <- function(ct_dataframe,
    )
    # Not sure this will be best way to set this up
    
+   ## Calculating PK parameters for individual datasets ------------------------
+   
    Keys_CT <- CTsubset %>%
       select(CompoundID, Inhibitor, Tissue, Individual, Trial, 
              Simulated, File, ObsFile, DoseNum) %>% unique() %>% 
@@ -513,15 +515,24 @@ recalc_PK <- function(ct_dataframe,
    
    # Replacing original PK and renaming this as PKtemp to match syntax in
    # original function
-   PKtemp <- existing_PK_indiv %>% bind_rows(PKtemp) %>% 
+   PKtemp <- bind_rows(PKtemp) %>% 
+      mutate(PKparameter = ifelse(Inhibitor != "none", 
+                                  paste0(PKparameter, "_withInhib"), 
+                                  PKparameter))
+   
+   PKtemp <- bind_rows(existing_PK_indiv, PKtemp) %>% 
       filter(complete.cases(PKparameter))
    
    
    ## Checking for possible DDI parameters to calculate -----------------------
    
    if(any(PKtemp$Inhibitor != "none")){
+      
+      # Removing any ratios b/c we'll be recalcualting them anyway. 
+      PKtemp <- PKtemp %>% filter(!str_detect(PKparameter, "ratio"))
+      
       suppressMessages(
-         PKDDI <- PKtemp %>% select(-ID) %>% 
+         PKDDI <- PKtemp %>% select(-ID, -ExtrapProbs, -WhichDose) %>% 
             # Removing any ratios b/c we're recalculating all of them
             filter(!str_detect(PKparameter, "_ratio")) %>% unique() %>% 
             # Recoding inhibitor to be consistent. Only using "none" and "inhibitorX".
