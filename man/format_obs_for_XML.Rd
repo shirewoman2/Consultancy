@@ -6,14 +6,17 @@
 \usage{
 format_obs_for_XML(
   obs_dataframe,
-  conc_column,
-  time_column,
   subject_column,
   DVID_column,
+  time_column,
+  conc_column,
+  conc_sd_column,
   dose = 100,
   dose_unit = "mg",
   inf_duration = NA,
   dosing_start_time = 0,
+  set_t0_concs_to_0 = TRUE,
+  missing_value_treatment = "as is",
   dose_route = "Oral",
   dose_interval = NA,
   num_doses = NA,
@@ -33,12 +36,6 @@ format_obs_for_XML(
 \arguments{
 \item{obs_dataframe}{observed concentration-time data.frame}
 
-\item{conc_column}{the column in the observed concentration-time data.frame
-that contains concentration data}
-
-\item{time_column}{the column in the observed concentration-time data.frame
-that contains time data}
-
 \item{subject_column}{the column in the observed concentration-time
 data.frame that contains the subject ID}
 
@@ -56,6 +53,19 @@ and any time the value changes in \code{obs_dataframe}, the number in the
 "DV" column will change in the output. We'll include a message to indicate
 which value in the original data was used for which DV number.}
 
+\item{time_column}{the column in the observed concentration-time data.frame
+that contains time data}
+
+\item{conc_column}{the column in the observed concentration-time data.frame
+that contains concentration data}
+
+\item{conc_sd_column}{the column in the observed concentration-time
+data.frame that contains the standard deviation of the concentration
+(optional). This will be mapped to the column "SD SE" in the PE data
+template file. This only applies for Simcyp Simulator versions >= 22 and
+also obviously only applies if you have reported mean concentrations for
+the dependent variable.}
+
 \item{dose}{the amount of the dose. If this amount varies, please include one
 dose amount for each time. For example: \code{dose = c(100, 50, 50)} will
 generate doses of 100 mg for the first dose and then 50 mg for the next two
@@ -72,6 +82,17 @@ rep(50, 10))}}
 
 \item{dosing_start_time}{the start time of compound administration (h);
 default is 0.}
+
+\item{set_t0_concs_to_0}{TRUE (default) or FALSE for whether to set any
+concentrations at t0 for the 1st dose to 0.}
+
+\item{missing_value_treatment}{How should missing values be dealt with? The
+Simcyp PE template will not allow any missing values for concentrations, so
+they will be removed from the data automatically. Options for dealing with
+missing values: \describe{\item{"as is" (default)}{leaves all data as is. Missing
+values will be removed.} \item{"impute X" where X is a number}{Missing
+values will be replaced with X.}} If you set \code{set_t0_concs_to_0 = TRUE},
+that overrides any options selected here, but only for t0 concentrations.}
 
 \item{dose_route}{the route of administration. Options are "Oral" (default),
 "Intravenous", "Dermal", "Inhaled", "SC-First Order", "SC-Mechanistic", or
