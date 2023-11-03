@@ -157,7 +157,8 @@
 #' @export
 #'
 
-elimFit <- function(DF, concentration = Concentration,
+elimFit <- function(DF, 
+                    concentration = Concentration,
                     time = Time,
                     startValues = NA,
                     omit = NA,
@@ -413,11 +414,14 @@ elimFit <- function(DF, concentration = Concentration,
       Graph <- ggplot2::ggplot(DFinit2, ggplot2::aes(x = TIME, y = CONC)) +
          ggplot2::geom_point() +
          ggplot2::scale_y_log10() +
-         ggplot2::xlab(rlang::as_label(time)) + ggplot2::ylab(rlang::as_label(concentration))
+         ggplot2::xlab(rlang::as_label(time)) +
+         ggplot2::ylab(rlang::as_label(concentration))
       
       if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DFinit))){
          Graph <- Graph +
-            ggplot2::geom_point(data = DFomit, color = "red", shape = "O", size = 2)
+            ggplot2::geom_point(data = DFomit, 
+                                color = "red", shape = "O",
+                                size = 2)
          
       }
       
@@ -514,8 +518,8 @@ elimFit <- function(DF, concentration = Concentration,
          dplyr::mutate(TIME = Time.offset + tmax)
       
       Graph <- ggplot2::ggplot(DFinit2, ggplot2::aes(x = TIME, y = CONC)) +
-         ggplot2::geom_point() +
-         ggplot2::geom_line(data = CurveData) +
+         ggplot2::geom_point(size = ifelse(nrow(DF) > 50, 0.5, 1.5)) +
+         ggplot2::geom_line(data = CurveData, color = "blue") +
          ggplot2::scale_y_log10() +
          ggplot2::ylab(rlang::as_label(concentration)) +
          scale_x_time(time_range = c(round_down_unit(min(DFinit2$TIME), 1), 
