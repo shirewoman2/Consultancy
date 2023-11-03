@@ -352,9 +352,10 @@ recalc_PK <- function(ct_dataframe,
          # data, using only a subset of the time points when there are more than
          # 100 observeations.
          if(nrow(CTsubset[[j]]) > 100){
-            CTsubset[[j]] <- CTsubset[[j]][seq(from = 1, 
-                                               to = nrow(CTsubset[[j]]), 
-                                               length.out = 100), ]
+            CTsubset[[j]] <- as.data.frame( # For some reason, you can't do this w/tibbles. 
+               CTsubset[[j]])[seq(from = 1, 
+                                  to = nrow(CTsubset[[j]]), 
+                                  length.out = 100), ]
             
          }
          
