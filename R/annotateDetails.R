@@ -497,6 +497,7 @@ annotateDetails <- function(existing_exp_details,
                                               "Elimination",
                                               "Transport",
                                               "Interaction",
+                                              "Other", # tumor permeability and breast/milk parameters
                                               "Trial Design", 
                                               "Population")),
          CompoundID = factor(CompoundID, 
@@ -562,6 +563,11 @@ annotateDetails <- function(existing_exp_details,
       
       if(str_detect(simulator_section, "absorption")){
          MySections <- c(MySections, "Absorption", "SimulatorVersion")
+         
+      }
+      
+      if(str_detect(simulator_section, "other")){
+         MySections <- c(MySections, "Other", "SimulatorVersion")
          
       }
       

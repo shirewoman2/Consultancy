@@ -373,13 +373,13 @@ extractConcTime_mult <- function(sim_data_files = NA,
          
          existing_exp_details <- harmonize_details(existing_exp_details)
          Deets <- existing_exp_details[["MainDetails"]] %>% 
-            filter(sim_data_files %in% File)
+            filter(File %in% sim_data_files)
          
          if(all(sim_data_files %in% Deets$File) == FALSE){
             existing_exp_details <- extractExpDetails_mult(sim_data_files = sim_data_files, 
                                                            exp_details = "Summary and Input")
             Deets <- existing_exp_details[["MainDetails"]] %>% 
-               filter(sim_data_files %in% File)
+               filter(File %in% sim_data_files)
          }
          
          if("ObsOverlayFile" %in% names(Deets) == FALSE){

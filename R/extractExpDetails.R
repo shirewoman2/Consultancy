@@ -607,7 +607,7 @@ extractExpDetails <- function(sim_data_file,
       # to do StartDayTime_x, SimulatorVersion, and ADCSimulation separately.
       MyInputDeets1 <-
          MyInputDeets[!str_detect(MyInputDeets, 
-                                  "CLint_|Interaction_|^StartDayTime|Transport_|ADCSimulation|SimulatorVersion")]
+                                  "CLint_|Interaction_|^StartDayTime|Transport_|ADCSimulation|SimulatorVersion|OrganTissue")]
       
       if(length(MyInputDeets1) > 0){
          for(i in MyInputDeets1){
@@ -949,372 +949,369 @@ extractExpDetails <- function(sim_data_file,
                rm(CLRows, IntRowStart, NameCol, Suffix)
             }
          }
+      } 
+      
+      ## Pulling interaction info -------------------------------------------
+      MyInputDeets3 <- MyInputDeets[str_detect(MyInputDeets, "Interaction_")]
+      
+      if(length(MyInputDeets3) > 0){
          
-         ## Pulling interaction info -------------------------------------------
-         MyInputDeets3 <- MyInputDeets[str_detect(MyInputDeets, "Interaction_")]
-         
-         if(length(MyInputDeets3) > 0){
+         for(j in MyInputDeets3){
             
-            for(j in MyInputDeets3){
-               
-               Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
-               NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
-               IntRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
-                                           "^Enzyme$|^Transporter$"))
-               IntRows <- IntRows[complete.cases(InputTab[IntRows + 1, NameCol])]
-               
-               # Only IntRows after the first instance of an
-               # interaction type of term is found in NameCol. NB: I
-               # thought it would work to just look for cells after
-               # "interaction", but "interaction" hasn't always been
-               # listed in the output files I've found.
-               IntRowStart <- which(str_detect(InputTab[, NameCol] %>%
-                                                  pull(), "Ind max|Ind slope|^Ki |^MBI"))[1] - 1
-               
-               if(complete.cases(IntRowStart)){
-                  
-                  IntRows <- IntRows[IntRows >= IntRowStart]
-                  
-                  
-                  for(i in IntRows){
-                     Enzyme <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
-                     NextEmptyCell <- which(is.na(InputTab[, NameCol + 1]))
-                     NextEmptyCell <- NextEmptyCell[NextEmptyCell > i][1]
-                     # If there's another interaction listed
-                     # before the next empty cell, need to
-                     # account for that.
-                     NextInt <- IntRows[which(IntRows == i) + 1] - 1
-                     NextInt <- ifelse(i == IntRows[length(IntRows)],
-                                       nrow(InputTab), NextInt)
-                     ThisIntRows <- i:(c(NextEmptyCell, NextInt)[which.min(c(NextEmptyCell, NextInt))])
-                     
-                     # Induction
-                     IndParam1stRow <- which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
-                                                        "Ind max|Ind Slope"))
-                     if(length(IndParam1stRow) > 0){
-                        IndModelCheck <- list(str_detect(t(InputTab[ThisIntRows, NameCol]), "Ind max"), 
-                                              str_detect(t(InputTab[ThisIntRows, NameCol]), "Ind Slope"), 
-                                              str_detect(t(InputTab[ThisIntRows, NameCol]), "Ind( )?C50"), 
-                                              str_detect(t(InputTab[ThisIntRows, NameCol]), "fu inc"), 
-                                              str_detect(t(InputTab[ThisIntRows, NameCol]), "\u03B3"))
-                        IndModelCheck <- sapply(IndModelCheck, FUN = function(x) which(x == TRUE))
-                        # Note: I can't seem to get regex to work for
-                        # detecting a Greek character; I figured that the
-                        # Hill coefficient gamma is the only time that an
-                        # induction parameter name is only going to be one
-                        # character long.
-                        
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste("IndMax", Enzyme,
-                                    sep = "_"), Suffix)]] <-
-                              as.numeric(InputTab[ThisIntRows[IndModelCheck[[1]][1]], NameCol + 1])
-                        )
-                        
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste("IndSlope", Enzyme,
-                                    sep = "_"), Suffix)]] <-
-                              as.numeric(InputTab[ThisIntRows[IndModelCheck[[2]][1]], NameCol + 1])
-                        )
-                        
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste("IndC50", Enzyme,
-                                    sep = "_"), Suffix)]] <-
-                              as.numeric(InputTab[ThisIntRows[IndModelCheck[[3]][1]], NameCol + 1])
-                        )
-                        
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste("Ind_fu_inc", Enzyme,
-                                    sep = "_"), Suffix)]] <-
-                              as.numeric(InputTab[ThisIntRows[IndModelCheck[[4]][1]], NameCol + 1])
-                        )
-                        
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste("Ind_gamma", Enzyme,
-                                    sep = "_"), Suffix)]] <-
-                              as.numeric(InputTab[ThisIntRows[IndModelCheck[[5]][1]], NameCol + 1])
-                        )
-                        
-                        rm(IndModelCheck)   
-                     }
-                     
-                     # competitive inhibition
-                     Ki <- which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
-                                            "Ki "))
-                     if(length(Ki) > 0){
-                        
-                        EnzTrans <- as.character(InputTab[i, NameCol])
-                        
-                        if(EnzTrans == "Transporter"){
-                           Enzyme <-
-                              paste0(Enzyme, "_",
-                                     tolower(as.character(InputTab[i-1, NameCol + 1])))
-                        }
-                        
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste("Ki", Enzyme,
-                                    sep = "_"), Suffix)]] <-
-                              as.numeric(InputTab[ThisIntRows[Ki], NameCol + 1])
-                        )
-                        
-                        # fu mic or fu inc
-                        IncType <- str_extract(InputTab[ThisIntRows[Ki+1], NameCol] %>%
-                                                  pull(),
-                                               "inc|mic")
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste(switch(IncType,
-                                           "inc" = "Ki_fu_inc",
-                                           "mic" = "Ki_fu_mic"),
-                                    Enzyme,
-                                    sep = "_"), Suffix)]] <-
-                              as.numeric(InputTab[ThisIntRows[Ki+1], NameCol + 1])
-                        )
-                        
-                        rm(IncType, EnzTrans)
-                     }
-                     
-                     # MBI
-                     MBI <-  which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
-                                              "MBI Kapp"))
-                     if(length(MBI) > 0){
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste("MBI_Kapp", Enzyme,
-                                    sep = "_"), Suffix)]] <-
-                              as.numeric(InputTab[ThisIntRows[MBI], NameCol + 1])
-                        )
-                        
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste("MBI_kinact", Enzyme,
-                                    sep = "_"), Suffix)]] <-
-                              as.numeric(InputTab[ThisIntRows[MBI+1], NameCol + 1])
-                        )
-                        
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste("MBI_fu_mic", Enzyme,
-                                    sep = "_"), Suffix)]] <-
-                              as.numeric(InputTab[ThisIntRows[MBI+2], NameCol + 1])
-                        )
-                     }
-                     
-                     rm(Enzyme, NextEmptyCell, NextInt,
-                        ThisIntRows, IndParam1stRow, Ki, MBI)
-                  }
-               }
-               
-               rm(Suffix, IntRows, IntRowStart, NameCol)
-            }
-         }
-         
-         ## Dealing with StartDayTime_x --------------------------------------
-         MyInputDeets4 <- MyInputDeets[str_detect(MyInputDeets, "^StartDayTime")]
-         
-         if(length(MyInputDeets4) > 0){
-            for(j in MyInputDeets4){
-               
-               NameCol <- InputDeets$NameCol[which(InputDeets$Deet == j)]
-               Row_day <- which(str_detect(InputTab[, NameCol] %>% pull(), "Start Day"))
-               # If this is not present, which sometimes happens with a custom
-               # dosing schedule, then will need to pull info from custom
-               # dosing sheet lower in script.
-               if(length(Row_day) == 0){
-                  CustomDosing <- c(CustomDosing, TRUE)
-               } else {
-                  Val_day <- InputTab[Row_day, InputDeets$ValueCol[
-                     which(InputDeets$Deet == j)]] %>% pull()
-                  Row_time <- which(str_detect(InputTab[, NameCol] %>% pull(), "Start Time"))
-                  Val_time <- InputTab[Row_time, InputDeets$ValueCol[
-                     which(InputDeets$Deet == j)]] %>% pull()
-                  
-                  # Dealing with inconsistencies in time format
-                  Val_time <- sub("m", "", Val_time)
-                  Val_time <- str_split(Val_time, pattern = "h")[[1]]
-                  Val_time <- str_c(str_pad(Val_time, width = 2, pad = "0"),
-                                    collapse = ":")
-                  
-                  Out[[j]] <- paste(paste0("Day ", Val_day),
-                                    Val_time, sep = ", ")
-               }
-            }
-         }
-         
-         
-         ## Transport parameters -----------------------------------------------
-         MyInputDeets5 <- MyInputDeets[str_detect(MyInputDeets, "Transport_")]
-         MyInputDeets5 <- InputDeets %>% 
-            filter(Deet %in% MyInputDeets5 & complete.cases(NameCol)) %>%
-            pull(Deet)
-         
-         if(length(MyInputDeets5) > 0){
+            Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
+            NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
+            IntRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
+                                        "^Enzyme$|^Transporter$"))
+            IntRows <- IntRows[complete.cases(InputTab[IntRows + 1, NameCol])]
             
-            for(j in MyInputDeets5){
+            # Only IntRows after the first instance of an
+            # interaction type of term is found in NameCol. NB: I
+            # thought it would work to just look for cells after
+            # "interaction", but "interaction" hasn't always been
+            # listed in the output files I've found.
+            IntRowStart <- which(str_detect(InputTab[, NameCol] %>%
+                                               pull(), "Ind max|Ind slope|^Ki |^MBI"))[1] - 1
+            
+            if(complete.cases(IntRowStart)){
                
-               Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
-               NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
-               ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
+               IntRows <- IntRows[IntRows >= IntRowStart]
                
-               # There can be transporter interactions higher up on the tab,
-               # but parameters that are actually just transport parameters all
-               # come after the title "Transport".
-               StartTrans <- which(InputTab[, NameCol] %>% pull() == "Transport")
                
-               if(length(StartTrans) > 0){
-                  OrganRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
-                                                "^Organ/Tissue"))
-                  TransRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
-                                                "^Transporter"))
-                  TransRows <- TransRows[TransRows > StartTrans]
+               for(i in IntRows){
+                  Enzyme <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
+                  NextEmptyCell <- which(is.na(InputTab[, NameCol + 1]))
+                  NextEmptyCell <- NextEmptyCell[NextEmptyCell > i][1]
+                  # If there's another interaction listed
+                  # before the next empty cell, need to
+                  # account for that.
+                  NextInt <- IntRows[which(IntRows == i) + 1] - 1
+                  NextInt <- ifelse(i == IntRows[length(IntRows)],
+                                    nrow(InputTab), NextInt)
+                  ThisIntRows <- i:(c(NextEmptyCell, NextInt)[which.min(c(NextEmptyCell, NextInt))])
                   
-                  if(length(TransRows) > 0){
-                     for(i in TransRows){
-                        
-                        # Last row always seems to contain RAF/REF or ISEF,T
-                        TransRowLast <- which(str_detect(InputTab[ , NameCol] %>% pull(), 
-                                                         "RAF/REF|ISEF"))
-                        TransRowLast <- TransRowLast[which(TransRowLast > i)][1]
-                        
-                        Transporter <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
-                        
-                        Organ <- OrganRows[which(OrganRows < TransRowLast)]
-                        Organ <- Organ[length(Organ)]
-                        Organ <- gsub(" |\\(|\\)|-|/", "", InputTab[Organ, NameCol + 1])
-                        
-                        TransRowNames <- InputTab[i:TransRowLast, NameCol] %>% pull(1)
-                        
-                        Location <- gsub(" |\\(|\\)|-|/", "", 
-                                         InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],
-                                                  ValueCol] %>% pull(1))
-                        
-                        ParamPrefix <- paste("Transporter", Organ, Transporter, Location, sep = "_")
-                        
-                        # Either CLint,T or Jmax and Km values will be listed
-                        if(any(str_detect(TransRowNames, "CLint,T"))){
-                           
-                           suppressWarnings(
-                              Out[[paste0(ParamPrefix, "_CLintT", Suffix)]] <- 
-                                 as.numeric(
-                                    InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "CLint,T"))],
-                                             ValueCol] %>% pull(1))
-                           )
-                           
-                        } else if(any(str_detect(TransRowNames, "Jmax"))){
-                           
-                           suppressWarnings(
-                              Out[[paste0(ParamPrefix, "_Jmax", Suffix)]] <- 
-                                 as.numeric(
-                                    InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "Jmax"))],
-                                             ValueCol] %>% pull(1))
-                           )
-                           
-                           suppressWarnings(
-                              Out[[paste0(ParamPrefix, "_Km", Suffix)]] <- 
-                                 as.numeric(
-                                    InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "Km"))],
-                                             ValueCol] %>% pull(1))
-                           )
-                           
-                        }
-                        
-                        # Checking for fuinc values b/c they're not always there
-                        fuinc <- as.numeric(
-                           InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
-                                    ValueCol] %>% pull(1))
-                        
-                        if(length(fuinc) > 0){
-                           suppressWarnings(
-                              Out[[paste0(ParamPrefix, "_fuinc", Suffix)]] <- fuinc
-                           )
-                        }
-                        rm(fuinc)
-                        
-                        # Checking for RAF/REF values b/c they're not always there
-                        RAFREF <- as.numeric(
-                           InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
-                                    ValueCol] %>% pull(1))
-                        
-                        if(length(RAFREF) > 0){
-                           suppressWarnings(
-                              Out[[paste0(ParamPrefix, "_RAFREF", Suffix)]] <- RAFREF
-                           )
-                        }
-                        rm(RAFREF)
-                        
-                        rm(TransRowLast, Transporter, Organ, TransRowNames, Location, 
-                           ParamPrefix)
-                     }
+                  # Induction
+                  IndParam1stRow <- which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
+                                                     "Ind max|Ind Slope"))
+                  if(length(IndParam1stRow) > 0){
+                     IndModelCheck <- list(str_detect(t(InputTab[ThisIntRows, NameCol]), "Ind max"), 
+                                           str_detect(t(InputTab[ThisIntRows, NameCol]), "Ind Slope"), 
+                                           str_detect(t(InputTab[ThisIntRows, NameCol]), "Ind( )?C50"), 
+                                           str_detect(t(InputTab[ThisIntRows, NameCol]), "fu inc"), 
+                                           str_detect(t(InputTab[ThisIntRows, NameCol]), "\u03B3"))
+                     IndModelCheck <- sapply(IndModelCheck, FUN = function(x) which(x == TRUE))
+                     # Note: I can't seem to get regex to work for
+                     # detecting a Greek character; I figured that the
+                     # Hill coefficient gamma is the only time that an
+                     # induction parameter name is only going to be one
+                     # character long.
+                     
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste("IndMax", Enzyme,
+                                 sep = "_"), Suffix)]] <-
+                           as.numeric(InputTab[ThisIntRows[IndModelCheck[[1]][1]], NameCol + 1])
+                     )
+                     
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste("IndSlope", Enzyme,
+                                 sep = "_"), Suffix)]] <-
+                           as.numeric(InputTab[ThisIntRows[IndModelCheck[[2]][1]], NameCol + 1])
+                     )
+                     
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste("IndC50", Enzyme,
+                                 sep = "_"), Suffix)]] <-
+                           as.numeric(InputTab[ThisIntRows[IndModelCheck[[3]][1]], NameCol + 1])
+                     )
+                     
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste("Ind_fu_inc", Enzyme,
+                                 sep = "_"), Suffix)]] <-
+                           as.numeric(InputTab[ThisIntRows[IndModelCheck[[4]][1]], NameCol + 1])
+                     )
+                     
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste("Ind_gamma", Enzyme,
+                                 sep = "_"), Suffix)]] <-
+                           as.numeric(InputTab[ThisIntRows[IndModelCheck[[5]][1]], NameCol + 1])
+                     )
+                     
+                     rm(IndModelCheck)   
                   }
                   
-                  rm(Suffix, NameCol, OrganRows, TransRows)
+                  # competitive inhibition
+                  Ki <- which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
+                                         "Ki "))
+                  if(length(Ki) > 0){
+                     
+                     EnzTrans <- as.character(InputTab[i, NameCol])
+                     
+                     if(EnzTrans == "Transporter"){
+                        Enzyme <-
+                           paste0(Enzyme, "_",
+                                  tolower(as.character(InputTab[i-1, NameCol + 1])))
+                     }
+                     
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste("Ki", Enzyme,
+                                 sep = "_"), Suffix)]] <-
+                           as.numeric(InputTab[ThisIntRows[Ki], NameCol + 1])
+                     )
+                     
+                     # fu mic or fu inc
+                     IncType <- str_extract(InputTab[ThisIntRows[Ki+1], NameCol] %>%
+                                               pull(),
+                                            "inc|mic")
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste(switch(IncType,
+                                        "inc" = "Ki_fu_inc",
+                                        "mic" = "Ki_fu_mic"),
+                                 Enzyme,
+                                 sep = "_"), Suffix)]] <-
+                           as.numeric(InputTab[ThisIntRows[Ki+1], NameCol + 1])
+                     )
+                     
+                     rm(IncType, EnzTrans)
+                  }
+                  
+                  # MBI
+                  MBI <-  which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
+                                           "MBI Kapp"))
+                  if(length(MBI) > 0){
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste("MBI_Kapp", Enzyme,
+                                 sep = "_"), Suffix)]] <-
+                           as.numeric(InputTab[ThisIntRows[MBI], NameCol + 1])
+                     )
+                     
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste("MBI_kinact", Enzyme,
+                                 sep = "_"), Suffix)]] <-
+                           as.numeric(InputTab[ThisIntRows[MBI+1], NameCol + 1])
+                     )
+                     
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste("MBI_fu_mic", Enzyme,
+                                 sep = "_"), Suffix)]] <-
+                           as.numeric(InputTab[ThisIntRows[MBI+2], NameCol + 1])
+                     )
+                  }
+                  
+                  rm(Enzyme, NextEmptyCell, NextInt,
+                     ThisIntRows, IndParam1stRow, Ki, MBI)
                }
+            }
+            
+            rm(Suffix, IntRows, IntRowStart, NameCol)
+         }
+      }
+      
+      ## Dealing with StartDayTime_x --------------------------------------
+      MyInputDeets4 <- MyInputDeets[str_detect(MyInputDeets, "^StartDayTime")]
+      
+      if(length(MyInputDeets4) > 0){
+         for(j in MyInputDeets4){
+            
+            NameCol <- InputDeets$NameCol[which(InputDeets$Deet == j)]
+            Row_day <- which(str_detect(InputTab[, NameCol] %>% pull(), "Start Day"))
+            # If this is not present, which sometimes happens with a custom
+            # dosing schedule, then will need to pull info from custom
+            # dosing sheet lower in script.
+            if(length(Row_day) == 0){
+               CustomDosing <- c(CustomDosing, TRUE)
+            } else {
+               Val_day <- InputTab[Row_day, InputDeets$ValueCol[
+                  which(InputDeets$Deet == j)]] %>% pull()
+               Row_time <- which(str_detect(InputTab[, NameCol] %>% pull(), "Start Time"))
+               Val_time <- InputTab[Row_time, InputDeets$ValueCol[
+                  which(InputDeets$Deet == j)]] %>% pull()
+               
+               # Dealing with inconsistencies in time format
+               Val_time <- sub("m", "", Val_time)
+               Val_time <- str_split(Val_time, pattern = "h")[[1]]
+               Val_time <- str_c(str_pad(Val_time, width = 2, pad = "0"),
+                                 collapse = ":")
+               
+               Out[[j]] <- paste(paste0("Day ", Val_day),
+                                 Val_time, sep = ", ")
             }
          }
       }
       
-      # Dealing with custom dosing schedules ---------------------------------
-      if(any(str_detect(exp_details, "StartDayTime")) & 
-         any(str_detect(names(Out), "StartDayTime")) == FALSE |
-         any(CustomDosing, na.rm = TRUE)){
+      
+      ## Transport parameters ----------------------------------------------
+      MyInputDeets5 <- MyInputDeets[str_detect(MyInputDeets, "Transport_")]
+      MyInputDeets5 <- InputDeets %>% 
+         filter(Deet %in% MyInputDeets5 & complete.cases(NameCol)) %>%
+         pull(Deet)
+      
+      if(length(MyInputDeets5) > 0){
          
-         # When there's custom dosing for any of the substrate or inhibitors,
-         # then the dosing start time should be pulled from a "Custom Dosing"
-         # tab. Pulling any custom dosing sheets here.
-         
-         CustomDoseSheets <- SheetNames[str_detect(SheetNames, "Custom Dosing")]
-         
-         for(j in CustomDoseSheets){
+         for(j in MyInputDeets5){
             
-            Suffix <- switch(str_extract(j, "Inh [12]|Sub"), 
-                             "Inh 1" = "_inhib", 
-                             "Inh 2" = "_inhib2", 
-                             "Sub" = "_sub")
+            Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
+            NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
+            ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
             
-            Dose_xl <- suppressMessages(tryCatch(
-               readxl::read_excel(path = sim_data_file, sheet = j,
-                                  col_names = FALSE),
-               error = openxlsx::read.xlsx(sim_data_file, sheet = j,
-                                           colNames = FALSE)))
+            # There can be transporter interactions higher up on the tab,
+            # but parameters that are actually just transport parameters all
+            # come after the title "Transport".
+            StartTrans <- which(InputTab[, NameCol] %>% pull() == "Transport") 
             
-            Dosing <- Dose_xl[4:nrow(Dose_xl), ]
-            names(Dosing) <- make.names(Dose_xl[3,])
-            Dosing <- Dosing %>% 
-               rename(DoseNum = Dose.Number, 
-                      Time1 = Time,
-                      Dose = Dose, 
-                      Dose_units = Dose.Units) 
-            names(Dosing)[names(Dosing) == "Dose"] <-
-               paste0("Dose", Suffix)
-            names(Dosing)[names(Dosing) == "Route.of.Administration"] <-
-               paste0("DoseRoute", Suffix)
-            TimeUnits <- names(Dosing)[str_detect(names(Dosing), "Offset")]
-            names(Dosing)[str_detect(names(Dosing), "Offset")] <- "Time"
-            Dosing <- Dosing %>% 
-               mutate(Time_units = ifelse(str_detect(TimeUnits, "\\.h\\.$"), 
-                                          "h", "min")) %>% 
-               mutate(across(.cols = matches("DoseNum|Time$|Dose_sub|Dose_inhib|Dose_inhib2"), 
-                             .fns = as.numeric)) %>% 
-               select(any_of(c("Time", "Time_units", "DoseNum", "Dose_sub", "Dose_inhib", 
-                               "Dose_inhib2", "Dose_units", "DoseRoute_sub", 
-                               "DoseRoute_inhib", "DoseRoute_inhib2")))
-            
-            Out[[paste0("CustomDosing", Suffix)]] <- Dosing
-            Out[[paste0("Dose", Suffix)]] <- "custom dosing"
-            Out[[paste0("StartDayTime", Suffix)]] <- "custom dosing"
-            Out[[paste0("StartHr", Suffix)]] <- Dosing$Time[Dosing$DoseNum == 1]
-            Out[[paste0("DoseRoute", Suffix)]] <- "custom dosing"
-            Out[[paste0("DoseInt", Suffix)]] <- "custom dosing"
-            Out[[paste0("Regimen", Suffix)]] <- "custom dosing"
-            
-            rm(Dosing, Suffix, Dose_xl)
-            
+            if(length(StartTrans) > 0){
+               TransRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
+                                             "^Transporter"))
+               TransRows <- TransRows[TransRows > StartTrans]
+               
+               if(length(TransRows) > 0){
+                  for(i in TransRows){
+                     
+                     # Last row always seems to contain RAF/REF or ISEF,T
+                     TransRowLast <- which(str_detect(InputTab[ , NameCol] %>% pull(), 
+                                                      "RAF/REF|ISEF"))
+                     TransRowLast <- TransRowLast[TransRowLast > i]
+                     TransRowLast <- ifelse(length(TransRowLast) == 0, 
+                                            nrow(InputTab), TransRowLast[1])
+                     TransRowNames <- InputTab[i:TransRowLast, NameCol] %>% pull(1)
+                     Transporter <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
+                     Location <- gsub(" |\\(|\\)|-|/", "", 
+                                      InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],
+                                               ValueCol] %>% pull(1))
+                     Organ <- which(str_detect(as.character(t(
+                        InputTab[(i-1):TransRowLast, NameCol])), "Organ/Tissue"))
+                     Organ <- ifelse(length(Organ) > 0, 
+                                     as.character(InputTab[((i-1):TransRowLast)[Organ], ValueCol]), 
+                                     "")
+                     
+                     ParamPrefix <- paste("Transporter", Organ, Transporter, Location, sep = "_")
+                     
+                     # Either CLint,T or Jmax and Km values will be listed
+                     if(any(str_detect(TransRowNames, "CLint,T"))){
+                        
+                        suppressWarnings(
+                           Out[[paste0(ParamPrefix, "_CLintT", Suffix)]] <- 
+                              as.numeric(
+                                 InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "CLint,T"))],
+                                          ValueCol] %>% pull(1))
+                        )
+                        
+                     } else if(any(str_detect(TransRowNames, "Jmax"))){
+                        
+                        suppressWarnings(
+                           Out[[paste0(ParamPrefix, "_Jmax", Suffix)]] <- 
+                              as.numeric(
+                                 InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "Jmax"))],
+                                          ValueCol] %>% pull(1))
+                        )
+                        
+                        suppressWarnings(
+                           Out[[paste0(ParamPrefix, "_Km", Suffix)]] <- 
+                              as.numeric(
+                                 InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "Km"))],
+                                          ValueCol] %>% pull(1))
+                        )
+                        
+                     }
+                     
+                     # Checking for fuinc values b/c they're not always there
+                     fuinc <- as.numeric(
+                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
+                                 ValueCol] %>% pull(1))
+                     
+                     if(length(fuinc) > 0){
+                        suppressWarnings(
+                           Out[[paste0(ParamPrefix, "_fuinc", Suffix)]] <- fuinc
+                        )
+                     }
+                     rm(fuinc)
+                     
+                     # Checking for RAF/REF values b/c they're not always there
+                     RAFREF <- as.numeric(
+                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
+                                 ValueCol] %>% pull(1))
+                     
+                     if(length(RAFREF) > 0){
+                        suppressWarnings(
+                           Out[[paste0(ParamPrefix, "_RAFREF", Suffix)]] <- RAFREF
+                        )
+                     }
+                     rm(RAFREF)
+                     
+                     rm(TransRowLast, Transporter, TransRowNames, Location, 
+                        ParamPrefix)
+                  }
+               }
+               
+            }
          }
+      }
+   }
+   
+   # Dealing with custom dosing schedules ---------------------------------
+   if(any(str_detect(exp_details, "StartDayTime")) & 
+      any(str_detect(names(Out), "StartDayTime")) == FALSE |
+      any(CustomDosing, na.rm = TRUE)){
+      
+      # When there's custom dosing for any of the substrate or inhibitors,
+      # then the dosing start time should be pulled from a "Custom Dosing"
+      # tab. Pulling any custom dosing sheets here.
+      
+      CustomDoseSheets <- SheetNames[str_detect(SheetNames, "Custom Dosing")]
+      
+      for(j in CustomDoseSheets){
+         
+         Suffix <- switch(str_extract(j, "Inh [12]|Sub"), 
+                          "Inh 1" = "_inhib", 
+                          "Inh 2" = "_inhib2", 
+                          "Sub" = "_sub")
+         
+         Dose_xl <- suppressMessages(tryCatch(
+            readxl::read_excel(path = sim_data_file, sheet = j,
+                               col_names = FALSE),
+            error = openxlsx::read.xlsx(sim_data_file, sheet = j,
+                                        colNames = FALSE)))
+         
+         Dosing <- Dose_xl[4:nrow(Dose_xl), ]
+         names(Dosing) <- make.names(Dose_xl[3,])
+         Dosing <- Dosing %>% 
+            rename(DoseNum = Dose.Number, 
+                   Time1 = Time,
+                   Dose = Dose, 
+                   Dose_units = Dose.Units) 
+         names(Dosing)[names(Dosing) == "Dose"] <-
+            paste0("Dose", Suffix)
+         names(Dosing)[names(Dosing) == "Route.of.Administration"] <-
+            paste0("DoseRoute", Suffix)
+         TimeUnits <- names(Dosing)[str_detect(names(Dosing), "Offset")]
+         names(Dosing)[str_detect(names(Dosing), "Offset")] <- "Time"
+         Dosing <- Dosing %>% 
+            mutate(Time_units = ifelse(str_detect(TimeUnits, "\\.h\\.$"), 
+                                       "h", "min")) %>% 
+            mutate(across(.cols = matches("DoseNum|Time$|Dose_sub|Dose_inhib|Dose_inhib2"), 
+                          .fns = as.numeric)) %>% 
+            select(any_of(c("Time", "Time_units", "DoseNum", "Dose_sub", "Dose_inhib", 
+                            "Dose_inhib2", "Dose_units", "DoseRoute_sub", 
+                            "DoseRoute_inhib", "DoseRoute_inhib2")))
+         
+         Out[[paste0("CustomDosing", Suffix)]] <- Dosing
+         Out[[paste0("Dose", Suffix)]] <- "custom dosing"
+         Out[[paste0("StartDayTime", Suffix)]] <- "custom dosing"
+         Out[[paste0("StartHr", Suffix)]] <- Dosing$Time[Dosing$DoseNum == 1]
+         Out[[paste0("DoseRoute", Suffix)]] <- "custom dosing"
+         Out[[paste0("DoseInt", Suffix)]] <- "custom dosing"
+         Out[[paste0("Regimen", Suffix)]] <- "custom dosing"
+         
+         rm(Dosing, Suffix, Dose_xl)
+         
       }
    }
    
