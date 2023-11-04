@@ -478,12 +478,14 @@ recalc_PK <- function(ct_dataframe,
                                                   AUCextrap_temp$`Fraction extrapolated to infinity`, 
                                                   NA),
             ExtrapProbs = ExtrapProbs,
-            AUCt = AUCt_temp, 
-            Cmax = CmaxTmax_temp$Cmax, 
-            tmax = CmaxTmax_temp$tmax, 
-            Cmin = CmaxTmax_temp$Cmin, 
-            Clast = CmaxTmax_temp$Clast) %>% 
-         mutate(CL = MyDose / ifelse({ThisIsDose1}, AUCinf, AUCt) * 1000)
+            k = ElimFits[[j]]$Estimate[ElimFits[[j]]$Beta %in% c("k", "beta")]) %>% 
+         mutate(HalfLife = log(2) / k,
+                AUCt = AUCt_temp, 
+                Cmax = CmaxTmax_temp$Cmax, 
+                tmax = CmaxTmax_temp$tmax, 
+                Cmin = CmaxTmax_temp$Cmin, 
+                Clast = CmaxTmax_temp$Clast,
+                CL = MyDose / ifelse({ThisIsDose1}, AUCinf, AUCt) * 1000)
       
       suppressWarnings(
          rm(AUCextrap_temp, AUCt_temp, CmaxTmax_temp, ExtrapProbs, Extrap)
@@ -491,7 +493,9 @@ recalc_PK <- function(ct_dataframe,
    }
    
    PKtemp <- bind_rows(PKtemp) %>% 
-      pivot_longer(cols = c(AUCinf, AUCinf_fraction_extrapolated, AUCt, 
+      pivot_longer(cols = c(AUCinf, AUCinf_fraction_extrapolated,
+                            k, HalfLife,
+                            AUCt, 
                             Cmax, Cmin, Clast, tmax, CL), 
                    names_to = "PKparameter", 
                    values_to = "Value") %>% 
