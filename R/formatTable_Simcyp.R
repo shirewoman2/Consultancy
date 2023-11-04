@@ -490,17 +490,20 @@ formatTable_Simcyp <- function(DF,
                    "traffic FALSE (0,1]" = "#FF0000", 
                    
                    # no middle, 2 cutoffs
-                   "traffic FALSE (1,2]" = c("#92D050", "#FF0000"), 
+                   "traffic FALSE (1,2]" = c("#FFC000", "#FF0000"), 
                    
                    # no middle, 3 cutoffs
-                   "traffic FALSE (2,3]" = c("#92D050", "#FFC000", "#FF0000"), 
+                   "traffic FALSE (2,3]" = colorRampPalette(c("#FFC000", "#FF0000"))(
+                      length(highlight_so_cutoffs)), 
                    
                    # no middle, >3 cutoffs
-                   "traffic FALSE (3,4]" = colorRampPalette(c("#92D050", "#FFC000", "#FF0000"))(
+                   "traffic FALSE (3,4]" = colorRampPalette(c("#FFC000", "#FF0000"))(
                       length(highlight_so_cutoffs)), 
                    # This is the same as the above on purpose.
-                   "FALSE (4,Inf]" = colorRampPalette(c("#92D050", "#FFC000", "#FF0000"))(
+                   
+                   "FALSE (4,Inf]" = colorRampPalette(c("#FFC000", "#FF0000"))(
                       length(highlight_so_cutoffs)), 
+                   # This is the same as the above on purpose.
                    
                    # Just highlight everything green. This would be weird and
                    # probably not what the user wants, but is among the possible
