@@ -88,6 +88,10 @@ one, enclose them with \code{c(...)}}
   simulated, population, percent female, age range, dose amount and regimen,
    etc.}
 
+ \item{"lactation"}{details from the "Input Sheet" tab that pertain to 
+ lactation such as the milk-to-plasma ratio and whether a breast 
+ perfusion-limited model was used.}
+
   \item{"all"}{all possible details}
 
   \item{a string of the specific details you want, each in quotes and

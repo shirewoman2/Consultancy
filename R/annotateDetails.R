@@ -104,6 +104,10 @@
 #'   simulated, population, percent female, age range, dose amount and regimen,
 #'    etc.}
 #'
+#'  \item{"lactation"}{details from the "Input Sheet" tab that pertain to 
+#'  lactation such as the milk-to-plasma ratio and whether a breast 
+#'  perfusion-limited model was used.}
+#'
 #'   \item{"all"}{all possible details}
 #'
 #'   \item{a string of the specific details you want, each in quotes and
@@ -674,7 +678,24 @@ annotateDetails <- function(existing_exp_details,
                         Main %>% filter(Sheet == "population") %>% pull(Detail))
       }
       
-      # This is when they have requested individual details.
+      if(any(str_detect(tolower(detail_set), "lactation"))){
+         DetailSet <- c(DetailSet, 
+                        paste0(rep(c("BreastPerfLimModel", 
+                                     "MilkPlasmaRatio", 
+                                     "MilkPmk", 
+                                     "fu_skimmedmilk_type", 
+                                     "Unionised_frac_milk_type", 
+                                     "Unionised_frac_plasma_type", 
+                                     "SkimToWholeMilk_drugratio_type"), 
+                                   each = 7),
+                               c("sub", "inhib", "inhib2", "met1", 
+                                 "met2", "secmet", "inhib1met")))
+         
+      }
+      
+      
+      # This is when they have requested individual details. This also removes
+      # any replicates.
       DetailSet <- unique(c(DetailSet, setdiff(detail_set, DetailSet)))
       
       # Replacing any "_X" details with the compound suffixes
