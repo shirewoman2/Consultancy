@@ -14,6 +14,7 @@ so_graph(
   boundary_line_types = "default",
   boundary_line_width = 0.7,
   axis_titles = c(y = "Simulated", x = "Observed"),
+  include_dose_num = NA,
   point_color_column,
   point_color_set = "default",
   legend_label_point_color = NA,
