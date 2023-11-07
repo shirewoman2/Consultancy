@@ -76,8 +76,9 @@ the column with the R-friendly name from \code{\link{extractPK}}, e.g.,
 
 \item{highlight_gmr_colors}{optionally specify a set of colors to use for
 highlighting geometric mean ratios for DDIs. Options are "yellow to red",
-"green to red" or a vector of 4 colors of your choosing. If left as NA, no
-highlighting for GMR level will be done.}
+"green to red", "traffic" (a more vivid version of "green to red"), or a
+vector of 4 colors of your choosing. If left as NA, no highlighting for GMR
+level will be done.}
 
 \item{highlight_so_cutoffs}{optionally specify cutoffs for highlighting any
 simulated-to-observed ratios. Anything that is above those values or below

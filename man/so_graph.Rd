@@ -15,6 +15,7 @@ so_graph(
   boundary_line_width = 0.7,
   axis_titles = c(y = "Simulated", x = "Observed"),
   include_dose_num = NA,
+  make_AUC_generic = FALSE,
   point_color_column,
   point_color_set = "default",
   legend_label_point_color = NA,
@@ -44,8 +45,8 @@ parameters, enter \code{view(PKParameterDefinitions)} into the console.}
 \code{boundaries = c(1.25, 1.5, 2)}}
 
 \item{boundaries_Guest}{Numerical boundaries to show on the graph when the PK
-parameter is a mean ratio of the parameter in the presence of a perpetrator /
-the parameter in the absence of the perpetrator. The default boundary for
+parameter is a mean ratio of the parameter in the presence of a perpetrator
+/ the parameter in the absence of the perpetrator. The default boundary for
 Guest curves is 2, which will show both the Guest curve and a straight
 line. Honestly, we recommend leaving this as 2 for clarity of the graph.
 For these PK parameters, if there are any values listed for
@@ -88,8 +89,13 @@ the possibilities, type \code{ggpubr::show_line_types()} into the console.}
 \code{boundary_indicator} is set to "lines", the default.}
 
 \item{axis_titles}{optionally specify what you'd like for the x and y axis
-titles with a named character vector. The default is 
-\code{axis_titles = c("x" = "Observed", "y" = "Simulated")}}
+titles with a named character vector. The default is \code{axis_titles =
+c("x" = "Observed", "y" = "Simulated")}}
+
+\item{make_AUC_generic}{TRUE or FALSE for whether to list just "AUC ratio"
+instead of, e.g., "AUCinf ratio" or "AUCtau ratio" or even instead of "AUCt
+ratio". If TRUE, all AUC values for a given dose number (1st or last or
+unspecified) will all be shown together.}
 
 \item{point_color_column}{(optional) the column in \code{PKtable} that should
 be used for determining which color the points will be. This should be
@@ -214,13 +220,13 @@ indicating where the predicted parameters fell within X fold of the observed.
 # to generate an object called MyPKOutput, then:
 so_graph(PKtable = SOdata)
 so_graph(PKtable = SOdata, boundary_indicator = "fill")
-so_graph(PKtable = SOdata, 
+so_graph(PKtable = SOdata,
          axis_titles = c("y" = "Predicted", "x" = "Observed"))
 so_graph(PKtable = SOdata, ncol = 1)
-so_graph(PKtable = SOdata, point_shape_column = Study, 
+so_graph(PKtable = SOdata, point_shape_column = Study,
          legend_position = "bottom")
-so_graph(PKtable = SOdata, 
-         point_shape_column = Study, 
+so_graph(PKtable = SOdata,
+         point_shape_column = Study,
          legend_label_point_shape = "Studies involving\nDrug X",
          point_color_column = File,
          legend_label_point_color = "Simulation file",
