@@ -426,13 +426,17 @@ formatTable_Simcyp <- function(DF,
          # column that's white where everything else in the row is a light gray.
          if(all(col2rgb(highlight_gmr_colors["negligible"]) == 
                 col2rgb("white"))){
-            RowsToMakeGray <- intersect(which(DF[RowsToShade, j] >= 0.8 & DF[RowsToShade, j] <= 1.25), 
-                                        ShadeRows)
+            RowsToMakeGray <- intersect(
+               intersect(which(DF[, j] >= 0.8 & DF[, j] <= 1.25), 
+                         RowsToShade), 
+               ShadeRows)
             
-            FT <- FT %>% 
-               flextable::bg(i = RowsToMakeGray, 
-                             j = j, 
-                             bg = "#F2F2F2") 
+            if(length(RowsToMakeGray) > 0){
+               FT <- FT %>% 
+                  flextable::bg(i = RowsToMakeGray, 
+                                j = j, 
+                                bg = "#F2F2F2") 
+            }
          }
       }
    }
