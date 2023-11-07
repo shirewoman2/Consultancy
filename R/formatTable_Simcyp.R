@@ -354,7 +354,9 @@ formatTable_Simcyp <- function(DF,
                flextable::merge_v(j = which(names(DF) == as_label(shading_column)))
          }
       }
-   } 
+   } else {
+      ShadeRows <- c()
+   }
    
    
    ## Highlight GMRs ---------------------------------------------------------
