@@ -557,8 +557,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    if(length(ObsAssign) > 0){
       ObsAssign <- ObsAssign %>% filter(complete.cases(File) &
                                            complete.cases(ObsFile) &
-                                           File %in% sim_data_files) 
-      
+                                           File %in% sim_data_files_topull) 
    }
    
    
