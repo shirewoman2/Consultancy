@@ -78,10 +78,22 @@ FitsThatWorked <- GoodMod[FitsThatWorked]
 FitsThatWorked <- paste(str_comma(FitsThatWorked), 
                         ifelse(length(FitsThatWorked) == 1, "model", "models"))
 
+
+
+VertLineText <- ifelse(complete.cases(vert_line), 
+                       "The red dotted vertical line indicates XXX REPLACE THIS WITH WHAT IT INDICATES XXX.", "")
+ImaxuText <- ifelse(complete.cases(Imaxu_line), 
+                    "The upper left quadrant as marked by the red dotted line indicates the region of concern for induction. Points in that quadrant are both above a 2-fold change in induction and also are below the expected Imax,u concentration. Please see p. 5 USFDA Guidance (2020) 'In Vitro Drug Interaction Studies - Cytochrome P450 Enzyme and Transporter Mediated Drug Interactions' for details.", "")
+
+HLineText <- ifelse(hline_foldinduct1, 
+                    "The red dotted horizontal line indicates a fold-change of 1, i.e., no induction compared to vehicle control.", "")
+
+LineText <- str_trim(paste(VertLineText, ImaxuText, HLineText))
+
 ```
 
 
-*`r ifelse(model == "all", "Models were", "The model was")` fit to the `r ifelse(fitByDonor, "individual", "mean")` data, and lines represent successful fits; where fits failed to converge, no line is shown.*
+*`r ifelse(model == "all", "Models were", "The model was")` fit to the `r ifelse(fitByDonor, "individual", "mean")` data, and lines represent successful fits; where fits failed to converge, no line is shown. `r LineText`*
 
 *Table XXX. Fitted parameters for the `r FitsThatWorked` for `r ifelse(is.na(enzyme), "", paste0(" ", enzyme))` `r measurement` fold-change data after incubations of human hepatocytes`r ifelse(complete.cases(drug), paste0(" with ", drug, "."), ".")`*
 

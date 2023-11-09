@@ -733,11 +733,26 @@ inductFit <- function(DF,
          if(hline_foldinduct1){
             G <- G +
                geom_hline(yintercept = 1, color = "red", linetype = "dotted")
+            GoodYLim <- range(c(GoodYLim, 1))
          }
          
          if(complete.cases(vert_line)){
             G <- G +
                geom_vline(xintercept = vert_line, color = "red", linetype = "dotted")
+            GoodXLim <- range(c(GoodXLim, log10(vert_line))) # needs to be log transformed since that's what it is in ggplot_build
+         }
+         
+         if(complete.cases(Imaxu_line)){
+            G <- G +
+               geom_path(data = data.frame(
+                  Concentration_uM = c(Imaxu_line, Imaxu_line,
+                                       10^GoodXLim[1]*0.9),
+                  FoldInduction = c(GoodYLim[2]*1.1, 2, 2),
+                  Omit = NA),
+                  color = "red", linetype = "dotted")
+            
+            GoodXLim <- range(c(GoodXLim, log10(Imaxu_line))) # needs to be log transformed since that's what it is in ggplot_build
+            GoodYLim <- range(c(GoodYLim, 2))
          }
          
          G <- G +
@@ -846,6 +861,8 @@ inductFit <- function(DF,
                mutate(Model_ch = ModelFacet[Model]) # NB: Capital M here b/c referring to the column and not the argument
          )
          
+         # Setting up graphs -------------------------------------------------
+         
          Curve <- do.call(bind_rows, Curve) %>%
             mutate(Model_ch = ModelFacet[Model]) # NB: Capital M here b/c referring to the column and not the argument
          
@@ -881,12 +898,14 @@ inductFit <- function(DF,
          if(hline_foldinduct1){
             G <- G +
                geom_hline(yintercept = 1, color = "red", linetype = "dotted")
+            GoodYLim <- range(c(GoodYLim, 1))
             
          }
          
          if(complete.cases(vert_line)){
             G <- G +
                geom_vline(xintercept = vert_line, color = "red", linetype = "dotted")
+            GoodXLim <- range(c(GoodXLim, log10(vert_line))) # needs to be log transformed since that's what it is in ggplot_build
          }
          
          if(complete.cases(Imaxu_line)){
@@ -897,6 +916,9 @@ inductFit <- function(DF,
                   FoldInduction = c(GoodYLim[2]*1.1, 2, 2),
                   Omit = NA),
                   color = "red", linetype = "dotted")
+            
+            GoodXLim <- range(c(GoodXLim, log10(Imaxu_line))) # needs to be log transformed since that's what it is in ggplot_build
+            GoodYLim <- range(c(GoodYLim, 2))
          }
          
          G <- G +
@@ -951,6 +973,8 @@ inductFit <- function(DF,
                             names_from = term) %>%
          arrange(Model)
       
+      # Setting up graphs ------------------------------------------------------
+      
       # Setting up facet labels for graphs
       DF <- DF %>% select(-c(Model, Model_ch)) %>% 
          left_join(expand.grid(DonorID = unique(DF$DonorID), 
@@ -998,7 +1022,8 @@ inductFit <- function(DF,
       Out[["Graph"]] <- G
    }
    
-   # Setting y axis limits ------------------------------------------------
+   ## Setting y axis limits ------------------------------------------------
+   
    if(any(complete.cases(y_axis_limits))){
       Ylim <- y_axis_limits[1:2]
    } else {
@@ -1057,7 +1082,7 @@ inductFit <- function(DF,
          theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
    }
    
-   # Adding options for colors -----------------------------------------------
+   ## Adding options for colors -----------------------------------------------
    NumColors <- length(unique(DF$DonorID))
    
    if(color_set == "default"){
@@ -1110,7 +1135,7 @@ inductFit <- function(DF,
          viridis::scale_fill_viridis(discrete = TRUE)
    }
    
-   # Making the final graph look nice --------------------------------------
+   ## Making the final graph look nice --------------------------------------
    
    suppressWarnings(
       Out$Graph <- Out$Graph +
