@@ -3,10 +3,12 @@
 #'
 #' This function takes a data.frame you want to save to an Excel file using the
 #' package \code{xlsx} and applies the formatting you want for the Excel file.
-#' \strong{Warning:} The arguments for this function are a lot of lists, and it
-#' can be tricky to get the syntax exactly right, but I haven't yet come up with
-#' a better way of doing things. If this isn't working, check that your lists
-#' are laid out correctly and named correctly.
+#' It will append a new tab to an existing file without overwriting unless that
+#' tab already exists, in which case in \emph{will} overwrite. \strong{Warning:}
+#' The arguments for this function are a lot of lists, and it can be tricky to
+#' get the syntax exactly right, but I haven't yet come up with a better way of
+#' doing things. If this isn't working, check that your lists are laid out
+#' correctly and named correctly.
 #'
 #' @param DF input data.frame
 #' @param file file name (character)
@@ -145,381 +147,375 @@ formatXL <- function(DF, file, sheet = NA,
                                      colName = NULL,
                                      width = NULL),
                      styles){
-    
-    # Error catching ----------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-    }
-    
-    # All the columns must be named for this to work well. Checking that.
-    if(any(is.na(names(DF)))){
-        stop("All the columns in your data.frame must be named.",
-             call. = FALSE)
-    }
-    
-    # Number format must by "general", "date", or "currency" only.
-    if(!is.null(styles$numberFormat)){
-        if(any(styles$numberFormat %in%
-               c("general", "date", "currency") == FALSE)){
-            stop("Options for number format are only 'general', 'date', and 'currency'. Please select one of those and make sure that you have spelled everything correctly.",
-                 call. = FALSE)
-        }
-    }
-    
-    # Font doesn't do anything if the items are anything other than "color",
-    # "size", "bold", "italics", or "underline".
-    if(!is.null(styles$font)){
-        if(any(names(styles$font) %in% c("color", "size", "bold", "italics",
-                                         "underline") == FALSE)){
-            stop("Options for the font are only 'color', 'size', 'bold', 'italics', and/or 'underline'. Please make sure that you're using those options and that you have spelled everything correctly.",
-                 call. = FALSE)
-        }
-    }
-    
-    
-    # Main body of function -------------------------------------------------
-    ## Loading the file ---------------------------------------------------
-    # See whether that file already exists. If it does, load the workbook.
-    # Otherwise, create it.
-    AllFiles <- list.files(pattern = ".xlsx")
-    if(length(AllFiles) == 0){
-        WB <- xlsx::createWorkbook(type = "xlsx")
-    } else {
-        if(file %in% AllFiles){
-            WB <- xlsx::loadWorkbook(file)
-        } else {
-            WB <- xlsx::createWorkbook(type = "xlsx")
-        }
-    }
-    
-    rm(AllFiles)
-    
-    # If nothing is supplied for the "sheet" argument, the sheet name will
-    # default to the name of the DF.
-    if(is.na(sheet)){
-        sheet <- as.character(substitute(DF))
-    }
-    
-    # Check whether the sheet already exists. If it does, remove it.
-    invisible(capture.output(AnySheets <- xlsx::getSheets(WB)))
-    if(!is.null(AnySheets)){
-        if(sheet %in% names(xlsx::getSheets(WB))){
-            xlsx::removeSheet(WB, sheetName = sheet)
-        }
-    }
-    
-    NewSheet <- xlsx::createSheet(WB, sheetName = sheet)
-    SheetRows <- xlsx::createRow(NewSheet, rowIndex = 1:(nrow(DF) + 1))
-    xlsx::addDataFrame(DF %>% as.data.frame(),
-                       sheet = NewSheet, row.names = FALSE)
-    
-    # Getting all the cells in that object and then their names
-    AllCells <- xlsx::getCells(SheetRows)
-    AllCellNames <- data.frame(AllNames = names(AllCells),
-                               stringsAsFactors = FALSE) %>%
-        tidyr::separate(AllNames, c("Row", "Column"), "\\.", remove = FALSE)
-    
-    StylesToApply <- list()
-    
-    for(i in 1:length(styles)){
-        
-        ### Selecting the cells --------------------------------------------
-        
-        # If they haven't specified rows or columns, apply to all cells.
-        if(is.null(styles[[i]]$rows) &
-           is.null(styles[[i]]$columns)){
-            MyCells <- AllCellNames %>%  dplyr::pull(AllNames)
-        } else {
-            # If they've specified both rows and columns, apply to those
-            # cells.
-            if(!is.null(styles[[i]]$rows) &
-               !is.null(styles[[i]]$columns)){
-                MyCells <- AllCellNames %>%
-                    dplyr::filter(Row %in% (styles[[i]]$rows + 1) &
-                                      Column %in% styles[[i]]$columns) %>%
-                    dplyr::pull(AllNames)
+   
+   # Error catching ----------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # All the columns must be named for this to work well. Checking that.
+   if(any(is.na(names(DF)))){
+      stop("All the columns in your data.frame must be named.",
+           call. = FALSE)
+   }
+   
+   # Number format must by "general", "date", or "currency" only.
+   if(!is.null(styles$numberFormat)){
+      if(any(styles$numberFormat %in%
+             c("general", "date", "currency") == FALSE)){
+         stop("Options for number format are only 'general', 'date', and 'currency'. Please select one of those and make sure that you have spelled everything correctly.",
+              call. = FALSE)
+      }
+   }
+   
+   # Font doesn't do anything if the items are anything other than "color",
+   # "size", "bold", "italics", or "underline".
+   if(!is.null(styles$font)){
+      if(any(names(styles$font) %in% c("color", "size", "bold", "italics",
+                                       "underline") == FALSE)){
+         stop("Options for the font are only 'color', 'size', 'bold', 'italics', and/or 'underline'. Please make sure that you're using those options and that you have spelled everything correctly.",
+              call. = FALSE)
+      }
+   }
+   
+   
+   # Main body of function -------------------------------------------------
+   ## Loading the file ---------------------------------------------------
+   # See whether that file already exists. If it does, load the workbook.
+   # Otherwise, create it.
+   
+   if(file.exists(file)){
+      WB <- xlsx::loadWorkbook(file) 
+   } else {
+      WB <- xlsx::createWorkbook(type = "xlsx")
+   }
+   
+   # If nothing is supplied for the "sheet" argument, the sheet name will
+   # default to the name of the DF.
+   if(is.na(sheet)){
+      sheet <- as.character(substitute(DF))
+   }
+   
+   # Check whether the sheet already exists. If it does, remove it.
+   invisible(capture.output(AnySheets <- xlsx::getSheets(WB)))
+   if(!is.null(AnySheets)){
+      if(sheet %in% names(xlsx::getSheets(WB))){
+         xlsx::removeSheet(WB, sheetName = sheet)
+      }
+   }
+   
+   NewSheet <- xlsx::createSheet(WB, sheetName = sheet)
+   SheetRows <- xlsx::createRow(NewSheet, rowIndex = 1:(nrow(DF) + 1))
+   xlsx::addDataFrame(DF %>% as.data.frame(),
+                      sheet = NewSheet, row.names = FALSE)
+   
+   # Getting all the cells in that object and then their names
+   AllCells <- xlsx::getCells(SheetRows)
+   AllCellNames <- data.frame(AllNames = names(AllCells),
+                              stringsAsFactors = FALSE) %>%
+      tidyr::separate(AllNames, c("Row", "Column"), "\\.", remove = FALSE)
+   
+   StylesToApply <- list()
+   
+   for(i in 1:length(styles)){
+      
+      ### Selecting the cells --------------------------------------------
+      
+      # If they haven't specified rows or columns, apply to all cells.
+      if(is.null(styles[[i]]$rows) &
+         is.null(styles[[i]]$columns)){
+         MyCells <- AllCellNames %>%  dplyr::pull(AllNames)
+      } else {
+         # If they've specified both rows and columns, apply to those
+         # cells.
+         if(!is.null(styles[[i]]$rows) &
+            !is.null(styles[[i]]$columns)){
+            MyCells <- AllCellNames %>%
+               dplyr::filter(Row %in% (styles[[i]]$rows + 1) &
+                                Column %in% styles[[i]]$columns) %>%
+               dplyr::pull(AllNames)
+         } else {
+            # If they've specified the columns but not the rows,
+            # apply to all rows in that column.
+            if(is.null(styles[[i]]$rows)){
+               MyCells <- AllCellNames %>%
+                  dplyr::filter(Column %in% styles[[i]]$columns) %>%
+                  dplyr::pull(AllNames)
             } else {
-                # If they've specified the columns but not the rows,
-                # apply to all rows in that column.
-                if(is.null(styles[[i]]$rows)){
-                    MyCells <- AllCellNames %>%
-                        dplyr::filter(Column %in% styles[[i]]$columns) %>%
-                        dplyr::pull(AllNames)
-                } else {
-                    # If they've specified the rows but not the
-                    # columns, apply to all columns in that row.
-                    MyCells <- AllCellNames %>%
-                        dplyr::filter(Row %in% (styles[[i]]$rows + 1)) %>%
-                        dplyr::pull(AllNames)
-                }
+               # If they've specified the rows but not the
+               # columns, apply to all columns in that row.
+               MyCells <- AllCellNames %>%
+                  dplyr::filter(Row %in% (styles[[i]]$rows + 1)) %>%
+                  dplyr::pull(AllNames)
             }
-        }
-        
-        ### Setting number format --------------------------------------------
-        if(is.null(styles[[i]]$numberFormat)){
+         }
+      }
+      
+      ### Setting number format --------------------------------------------
+      if(is.null(styles[[i]]$numberFormat)){
+         NumFormatArgs <- NULL
+      } else {
+         if(styles[[i]]$numberFormat == "general"){
+            styles[[i]]$numberFormat <- NULL
             NumFormatArgs <- NULL
-        } else {
-            if(styles[[i]]$numberFormat == "general"){
-                styles[[i]]$numberFormat <- NULL
-                NumFormatArgs <- NULL
-            } else {
-                
-                NumFormatOptions <-
-                    data.frame(Input = c("date", "currency"),
-                               Output = c("m/d/yyy",
-                                          "$#,##0.00_);[Red]($#,##0.00)"))
-                
-                NumFormatArgs <-
-                    xlsx::DataFormat(NumFormatOptions %>%
-                                         dplyr::filter(Input == styles[[i]]$numberFormat) %>%
-                                         dplyr::pull(Output))
-                # See
-                # https://www.excelhowto.com/macros/formatting-a-range-of-cells-in-excel-vba/
-                # for more examples of number formats.
+         } else {
+            
+            NumFormatOptions <-
+               data.frame(Input = c("date", "currency"),
+                          Output = c("m/d/yyy",
+                                     "$#,##0.00_);[Red]($#,##0.00)"))
+            
+            NumFormatArgs <-
+               xlsx::DataFormat(NumFormatOptions %>%
+                                   dplyr::filter(Input == styles[[i]]$numberFormat) %>%
+                                   dplyr::pull(Output))
+            # See
+            # https://www.excelhowto.com/macros/formatting-a-range-of-cells-in-excel-vba/
+            # for more examples of number formats.
+         }
+      }
+      
+      ### Setting font preferences --------------------------------------------
+      # Filling in defaults for anything unspecified for font.
+      if(is.null(styles[[i]]$font)){
+         styles[[i]]$font <- list(color = "#030303",
+                                  bold = FALSE,
+                                  italics = FALSE,
+                                  underline = FALSE)
+      }
+      
+      styles[[i]]$font$color <- ifelse(is.null(styles[[i]]$font$color),
+                                       "#030303", styles[[i]]$font$color)
+      styles[[i]]$font$color <- ifelse(styles[[i]]$font$color == "black",
+                                       "#030303", styles[[i]]$font$color)
+      # Note of explanation for the above: There is a glitch somewhere
+      # behind the scenes such that, when you set the font color to black,
+      # it's actually getting set to white. NO IDEA how to fix this, and
+      # it took me a bit of frustration to even figure out that that was
+      # what was happening. My workaround: Set the font color to the
+      # darkest possible gray.
+      
+      styles[[i]]$font$bold <- ifelse(is.null(styles[[i]]$font$bold),
+                                      FALSE, styles[[i]]$font$bold)
+      
+      styles[[i]]$font$italics <- ifelse(is.null(styles[[i]]$font$italics),
+                                         FALSE, styles[[i]]$font$italics)
+      
+      styles[[i]]$font$underline <- ifelse(is.null(styles[[i]]$font$underline),
+                                           FALSE, styles[[i]]$font$underline)
+      
+      
+      ### Setting alignment --------------------------------------------
+      # Filling in defaults for anything unspecified for alignment
+      if(is.null(styles[[i]]$textposition)){
+         styles[[i]]$textposition <- list(alignment = "general",
+                                          wrapping = FALSE)
+      }
+      
+      styles[[i]]$textposition$alignment <-
+         ifelse(is.null(styles[[i]]$textposition$alignment),
+                "general",
+                styles[[i]]$textposition$alignment)
+      
+      styles[[i]]$textposition$wrapping <-
+         ifelse(is.null(styles[[i]]$textposition$wrapping),
+                FALSE,
+                styles[[i]]$textposition$wrapping)
+      
+      if(styles[[i]]$textposition$alignment == "middle"){
+         AlignArg <- xlsx::Alignment(horizontal = "ALIGN_CENTER",
+                                     vertical = "VERTICAL_CENTER",
+                                     wrapText = styles[[i]]$textposition$wrapping)
+      } else {
+         AlignArg <-
+            xlsx::Alignment(horizontal =
+                               paste0("ALIGN_",
+                                      toupper(styles[[i]]$textposition$alignment)),
+                            wrapText = styles[[i]]$textposition$wrapping)
+      }
+      
+      ### Setting the fill --------------------------------------------
+      if(is.null(styles[[i]]$fill)){
+         FillArg <- xlsx::Fill(pattern = "NO_FILL")
+      } else {
+         FillArg <- xlsx::Fill(foregroundColor = styles[[i]]$fill)
+      }
+      
+      ### Setting the border --------------------------------------------
+      if(is.null(styles[[i]]$border)){
+         BorderArg <- xlsx::Border(pen = "BORDER_NONE")
+      } else {
+         BorderArg <-
+            xlsx::Border(color = ifelse(is.null(styles[[i]]$border$color),
+                                        "black", styles[[i]]$border$color),
+                         position = toupper(styles[[i]]$border$position),
+                         pen = paste0("BORDER_",
+                                      toupper(
+                                         ifelse(styles[[i]]$border$pen ==
+                                                   "solid",
+                                                "thin", styles[[i]]$border$pen))))
+      }
+      
+      
+      ### Applying the styles the user has set -------------------------------
+      
+      StylesToApply[[i]] <-
+         xlsx::CellStyle(WB,
+                         font = xlsx::Font(WB, color = styles[[i]]$font$color,
+                                           isItalic = styles[[i]]$font$italics,
+                                           underline = ifelse(styles[[i]]$font$underline,
+                                                              1, 0),
+                                           heightInPoints = styles[[i]]$font$size,
+                                           isBold = styles[[i]]$font$bold),
+                         
+                         alignment = AlignArg,
+                         
+                         fill = FillArg,
+                         
+                         border = BorderArg,
+                         
+                         dataFormat = NumFormatArgs)
+      
+      
+      for(j in MyCells){
+         xlsx::setCellStyle(cell = AllCells[[j]],
+                            cellStyle = StylesToApply[[i]])
+      }
+      
+      rm(MyCells, FillArg, BorderArg)
+   }
+   
+   # Setting column widths --------------------------------------------
+   
+   # If they've specified column width, then check which columns to apply
+   # that to.
+   if(!(is.null(colWidth$width))){
+      # If width contains some info but neither colName nor colNum are
+      # specified, then set colNum to 1:ncol(DF) so that we can then apply
+      # the specified width to ALL columns.
+      if(is.null(colWidth$colName) & is.null(colWidth$colNum)){
+         colWidth$colNum <- 1:ncol(DF)
+      } else {
+         # If the column name is specified, then apply the width to
+         # that column.
+         if(!is.null(colWidth$colName)){
+            for(k in colWidth$colName){
+               colWidth$colNum <- which(names(DF) == k)
             }
-        }
-        
-        ### Setting font preferences --------------------------------------------
-        # Filling in defaults for anything unspecified for font.
-        if(is.null(styles[[i]]$font)){
-            styles[[i]]$font <- list(color = "#030303",
-                                     bold = FALSE,
-                                     italics = FALSE,
-                                     underline = FALSE)
-        }
-        
-        styles[[i]]$font$color <- ifelse(is.null(styles[[i]]$font$color),
-                                         "#030303", styles[[i]]$font$color)
-        styles[[i]]$font$color <- ifelse(styles[[i]]$font$color == "black",
-                                         "#030303", styles[[i]]$font$color)
-        # Note of explanation for the above: There is a glitch somewhere
-        # behind the scenes such that, when you set the font color to black,
-        # it's actually getting set to white. NO IDEA how to fix this, and
-        # it took me a bit of frustration to even figure out that that was
-        # what was happening. My workaround: Set the font color to the
-        # darkest possible gray.
-        
-        styles[[i]]$font$bold <- ifelse(is.null(styles[[i]]$font$bold),
-                                        FALSE, styles[[i]]$font$bold)
-        
-        styles[[i]]$font$italics <- ifelse(is.null(styles[[i]]$font$italics),
-                                           FALSE, styles[[i]]$font$italics)
-        
-        styles[[i]]$font$underline <- ifelse(is.null(styles[[i]]$font$underline),
-                                             FALSE, styles[[i]]$font$underline)
-        
-        
-        ### Setting alignment --------------------------------------------
-        # Filling in defaults for anything unspecified for alignment
-        if(is.null(styles[[i]]$textposition)){
-            styles[[i]]$textposition <- list(alignment = "general",
-                                             wrapping = FALSE)
-        }
-        
-        styles[[i]]$textposition$alignment <-
-            ifelse(is.null(styles[[i]]$textposition$alignment),
-                   "general",
-                   styles[[i]]$textposition$alignment)
-        
-        styles[[i]]$textposition$wrapping <-
-            ifelse(is.null(styles[[i]]$textposition$wrapping),
-                   FALSE,
-                   styles[[i]]$textposition$wrapping)
-        
-        if(styles[[i]]$textposition$alignment == "middle"){
-            AlignArg <- xlsx::Alignment(horizontal = "ALIGN_CENTER",
-                                        vertical = "VERTICAL_CENTER",
-                                        wrapText = styles[[i]]$textposition$wrapping)
-        } else {
-            AlignArg <-
-                xlsx::Alignment(horizontal =
-                                    paste0("ALIGN_",
-                                           toupper(styles[[i]]$textposition$alignment)),
-                                wrapText = styles[[i]]$textposition$wrapping)
-        }
-        
-        ### Setting the fill --------------------------------------------
-        if(is.null(styles[[i]]$fill)){
-            FillArg <- xlsx::Fill(pattern = "NO_FILL")
-        } else {
-            FillArg <- xlsx::Fill(foregroundColor = styles[[i]]$fill)
-        }
-        
-        ### Setting the border --------------------------------------------
-        if(is.null(styles[[i]]$border)){
-            BorderArg <- xlsx::Border(pen = "BORDER_NONE")
-        } else {
-            BorderArg <-
-                xlsx::Border(color = ifelse(is.null(styles[[i]]$border$color),
-                                            "black", styles[[i]]$border$color),
-                             position = toupper(styles[[i]]$border$position),
-                             pen = paste0("BORDER_",
-                                          toupper(
-                                              ifelse(styles[[i]]$border$pen ==
-                                                         "solid",
-                                                     "thin", styles[[i]]$border$pen))))
-        }
-        
-        
-        ### Applying the styles the user has set -------------------------------
-        
-        StylesToApply[[i]] <-
-            xlsx::CellStyle(WB,
-                            font = xlsx::Font(WB, color = styles[[i]]$font$color,
-                                              isItalic = styles[[i]]$font$italics,
-                                              underline = ifelse(styles[[i]]$font$underline,
-                                                                 1, 0),
-                                              heightInPoints = styles[[i]]$font$size,
-                                              isBold = styles[[i]]$font$bold),
-                            
-                            alignment = AlignArg,
-                            
-                            fill = FillArg,
-                            
-                            border = BorderArg,
-                            
-                            dataFormat = NumFormatArgs)
-        
-        
-        for(j in MyCells){
-            xlsx::setCellStyle(cell = AllCells[[j]],
-                               cellStyle = StylesToApply[[i]])
-        }
-        
-        rm(MyCells, FillArg, BorderArg)
-    }
-    
-    # Setting column widths --------------------------------------------
-    
-    # If they've specified column width, then check which columns to apply
-    # that to.
-    if(!(is.null(colWidth$width))){
-        # If width contains some info but neither colName nor colNum are
-        # specified, then set colNum to 1:ncol(DF) so that we can then apply
-        # the specified width to ALL columns.
-        if(is.null(colWidth$colName) & is.null(colWidth$colNum)){
-            colWidth$colNum <- 1:ncol(DF)
-        } else {
-            # If the column name is specified, then apply the width to
-            # that column.
-            if(!is.null(colWidth$colName)){
-                for(k in colWidth$colName){
-                    colWidth$colNum <- which(names(DF) == k)
-                }
-                rm(k)
-            }
-        }
-    }
-    
-    
-    # error catching
-    if(length(colWidth$width) != 1 &
-       length(colWidth$width) != length(colWidth$colNum)){
-        stop("There must be either only 1 value for the column width or there must be the same number of values for column width as there are numbers of values for column number or name.",
-             call. = FALSE)
-    }
-    
-    # For any columns whose width is *not* set explicitly, guess at a
-    # reasonable width and set the column width to that.
-    
-    # Noting which columns are already set and their widths.
-    if(length(colWidth$colNum) > 0){
-        ColAlreadySet <- data.frame(colIndex = colWidth$colNum,
-                                    colWidth = colWidth$width)
-    }
-    
-    # Guessing at appropriate column width based on max number of characters
-    # in that column. First, need to include headers as a row so that it will
-    # count those.
-    DFwithHead <- DF %>% dplyr::mutate_all(as.character) %>%
-        rbind(names(DF))
-    
-    Nchar <- DFwithHead %>%
-        dplyr::summarize_all(function(x) max(nchar(as.character(x)), na.rm = TRUE)) %>%
-        as.numeric()
-    
-    # For anything where the max number of characters is > 15, look for spaces
-    # or hyphens to separate words and then find the max number of characters
-    # in a word. If there are a lot of words, we'll want the column to be
-    # wider than if there aren't as many.
-    
-    splitWords <- function(x){
-        max(as.numeric(sapply(stringr::str_split(x, " |-"), nchar)))
-    }
-    
-    XWide <- which(Nchar > 15)
-    Nchar_word <- Nchar
-    
-    # If the column is not included in XWide (the extra-wide columns), then
-    # set NumWord to 1.
-    NumWord <- rep(1, length(names(DF)))
-    for(i in XWide){
-        Nchar_word[i] <- mean(sapply(apply(DFwithHead[i], MARGIN = 1, splitWords),
-                                     as.vector), na.rm = TRUE)
-        
-        NumWord[i] <- max(apply(DFwithHead[i], MARGIN = 1, countWords),
-                          na.rm = TRUE)
-        # If there are at least 3 words, you probably want to see the first
-        # three, so multiplying Nchar_word by 3 to allow for that. If there
-        # are fewer words, just set it to the number of characters.
-        Nchar_word[i] <- ifelse(NumWord[i] >= 3,
-                                Nchar_word[i] * 3, Nchar[i])
-    }
-    
-    # Check whether the column class for anything with words was originally
-    # POSIXct or Date b/c those have a lot of hyphens but no actual words.
-    Classes <- sapply(DF, class)
-    for(i in 1:length(NumWord)){
-        Nchar_word[i] <- ifelse(Classes[[i]][1] %in%
-                                    c("POSIXct", "POSIXlt", "Date"),
-                                Nchar[i], Nchar_word[i])
-        NumWord[i] <- ifelse(Classes[[i]][1] %in%
+            rm(k)
+         }
+      }
+   }
+   
+   
+   # error catching
+   if(length(colWidth$width) != 1 &
+      length(colWidth$width) != length(colWidth$colNum)){
+      stop("There must be either only 1 value for the column width or there must be the same number of values for column width as there are numbers of values for column number or name.",
+           call. = FALSE)
+   }
+   
+   # For any columns whose width is *not* set explicitly, guess at a
+   # reasonable width and set the column width to that.
+   
+   # Noting which columns are already set and their widths.
+   if(length(colWidth$colNum) > 0){
+      ColAlreadySet <- data.frame(colIndex = colWidth$colNum,
+                                  colWidth = colWidth$width)
+   }
+   
+   # Guessing at appropriate column width based on max number of characters
+   # in that column. First, need to include headers as a row so that it will
+   # count those.
+   DFwithHead <- DF %>% dplyr::mutate_all(as.character) %>%
+      rbind(names(DF))
+   
+   Nchar <- DFwithHead %>%
+      dplyr::summarize_all(function(x) max(nchar(as.character(x)), na.rm = TRUE)) %>%
+      as.numeric()
+   
+   # For anything where the max number of characters is > 15, look for spaces
+   # or hyphens to separate words and then find the max number of characters
+   # in a word. If there are a lot of words, we'll want the column to be
+   # wider than if there aren't as many.
+   
+   splitWords <- function(x){
+      max(as.numeric(sapply(stringr::str_split(x, " |-"), nchar)))
+   }
+   
+   XWide <- which(Nchar > 15)
+   Nchar_word <- Nchar
+   
+   # If the column is not included in XWide (the extra-wide columns), then
+   # set NumWord to 1.
+   NumWord <- rep(1, length(names(DF)))
+   for(i in XWide){
+      Nchar_word[i] <- mean(sapply(apply(DFwithHead[i], MARGIN = 1, splitWords),
+                                   as.vector), na.rm = TRUE)
+      
+      NumWord[i] <- max(apply(DFwithHead[i], MARGIN = 1, countWords),
+                        na.rm = TRUE)
+      # If there are at least 3 words, you probably want to see the first
+      # three, so multiplying Nchar_word by 3 to allow for that. If there
+      # are fewer words, just set it to the number of characters.
+      Nchar_word[i] <- ifelse(NumWord[i] >= 3,
+                              Nchar_word[i] * 3, Nchar[i])
+   }
+   
+   # Check whether the column class for anything with words was originally
+   # POSIXct or Date b/c those have a lot of hyphens but no actual words.
+   Classes <- sapply(DF, class)
+   for(i in 1:length(NumWord)){
+      Nchar_word[i] <- ifelse(Classes[[i]][1] %in%
                                  c("POSIXct", "POSIXlt", "Date"),
-                             NA, NumWord[i])
-    }
-    
-    # Words in the header should NOT be split up, so Nchar_word should
-    # be at least as large as the largest word in the header.
-    Header_nchar <- as.numeric(sapply(names(DF), splitWords))
-    for(i in 1:length(Header_nchar)){
-        Nchar_word[i] <- ifelse(Header_nchar[i] > Nchar_word[i],
-                                Header_nchar[i], Nchar_word[i])
-    }
-    
-    # Using 10 pixels for values < 10, 15 for values from 10 to 15, 20 for
-    # values up to 30 characters and then 30 pixels for values even larger.
-    GoodWidths <- cutNumeric(as.numeric(Nchar_word),
-                             breaks = c(0, 8, 15, 20, 30, 100, 1000))
-    GoodWidths[which(GoodWidths > 30)] <- 30
-    
-    # However, if there were more than 5 words for that column, set the column
-    # width to 25 or the original width it came up with, whichever is wider.
-    # If there were more than 20 words in that column, set the column width to
-    # 50.
-    for(i in 1:length(NumWord[which(NumWord > 5)])){
-        GoodWidths[which(NumWord > 5)][i] <-
-            ifelse(GoodWidths[which(NumWord > 5)][i] > 25,
-                   GoodWidths[which(NumWord > 5)][i], 25)
-    }
-    GoodWidths[which(NumWord > 20)] <- 50
-    
-    # Replacing GoodWidths for the previously set column widths with those
-    # widths.
-    if(exists("ColAlreadySet")){
-        for(i in ColAlreadySet$colIndex){
-            GoodWidths[i] <- ColAlreadySet$colWidth[
-                ColAlreadySet$colIndex == i]
-        }
-    }
-    
-    for(k in 1:length(GoodWidths)){
-        xlsx::setColumnWidth(NewSheet, colIndex = k,
-                             colWidth = GoodWidths[k])
-    }
-    # Finally, saving.
-    xlsx::saveWorkbook(WB, file)
-    
+                              Nchar[i], Nchar_word[i])
+      NumWord[i] <- ifelse(Classes[[i]][1] %in%
+                              c("POSIXct", "POSIXlt", "Date"),
+                           NA, NumWord[i])
+   }
+   
+   # Words in the header should NOT be split up, so Nchar_word should
+   # be at least as large as the largest word in the header.
+   Header_nchar <- as.numeric(sapply(names(DF), splitWords))
+   for(i in 1:length(Header_nchar)){
+      Nchar_word[i] <- ifelse(Header_nchar[i] > Nchar_word[i],
+                              Header_nchar[i], Nchar_word[i])
+   }
+   
+   # Using 10 pixels for values < 10, 15 for values from 10 to 15, 20 for
+   # values up to 30 characters and then 30 pixels for values even larger.
+   GoodWidths <- cutNumeric(as.numeric(Nchar_word),
+                            breaks = c(0, 8, 15, 20, 30, 100, 1000))
+   GoodWidths[which(GoodWidths > 30)] <- 30
+   
+   # However, if there were more than 5 words for that column, set the column
+   # width to 25 or the original width it came up with, whichever is wider.
+   # If there were more than 20 words in that column, set the column width to
+   # 50.
+   for(i in 1:length(NumWord[which(NumWord > 5)])){
+      GoodWidths[which(NumWord > 5)][i] <-
+         ifelse(GoodWidths[which(NumWord > 5)][i] > 25,
+                GoodWidths[which(NumWord > 5)][i], 25)
+   }
+   GoodWidths[which(NumWord > 20)] <- 50
+   
+   # Replacing GoodWidths for the previously set column widths with those
+   # widths.
+   if(exists("ColAlreadySet")){
+      for(i in ColAlreadySet$colIndex){
+         GoodWidths[i] <- ColAlreadySet$colWidth[
+            ColAlreadySet$colIndex == i]
+      }
+   }
+   
+   for(k in 1:length(GoodWidths)){
+      xlsx::setColumnWidth(NewSheet, colIndex = k,
+                           colWidth = GoodWidths[k])
+   }
+   # Finally, saving.
+   xlsx::saveWorkbook(WB, file)
+   
 }
 
 

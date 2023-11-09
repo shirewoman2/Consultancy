@@ -106,10 +106,12 @@ saves a formatted Excel file
 \description{
 This function takes a data.frame you want to save to an Excel file using the
 package \code{xlsx} and applies the formatting you want for the Excel file.
-\strong{Warning:} The arguments for this function are a lot of lists, and it
-can be tricky to get the syntax exactly right, but I haven't yet come up with
-a better way of doing things. If this isn't working, check that your lists
-are laid out correctly and named correctly.
+It will append a new tab to an existing file without overwriting unless that
+tab already exists, in which case in \emph{will} overwrite. \strong{Warning:}
+The arguments for this function are a lot of lists, and it can be tricky to
+get the syntax exactly right, but I haven't yet come up with a better way of
+doing things. If this isn't working, check that your lists are laid out
+correctly and named correctly.
 }
 \details{
 \strong{COMMON ERRORS or ERROR MESSAGES} since this is a tad (ok, a
