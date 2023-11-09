@@ -13,11 +13,13 @@ annotateDetails(
   simulator_section = NA,
   detail_set = NA,
   find_matching_details = NA,
+  filename_text = NA,
   show_compound_col = TRUE,
   omit_all_missing = TRUE,
   file_order = NA,
   return_list = FALSE,
-  save_output = NA
+  save_output = NA,
+  output_tab_name = "Simulation experimental details"
 )
 }
 \arguments{
@@ -88,11 +90,13 @@ one, enclose them with \code{c(...)}}
   simulated, population, percent female, age range, dose amount and regimen,
    etc.}
 
- \item{"lactation"}{details from the "Input Sheet" tab that pertain to 
- lactation such as the milk-to-plasma ratio and whether a breast 
+ \item{"lactation"}{details from the "Input Sheet" tab that pertain to
+ lactation such as the milk-to-plasma ratio and whether a breast
  perfusion-limited model was used.}
 
-  \item{"all"}{all possible details}
+  \item{"all"}{all possible details. If you select this option, you will also
+  get additional tabs in the output Excel file for any custom dosing regimens 
+  and any drug-release profiles.}
 
   \item{a string of the specific details you want, each in quotes and
   encapsulated with \code{c(...)},}{For a complete list of possibilities,
@@ -119,6 +123,14 @@ one, enclose them with \code{c(...)}}
   = "^CLint.*CYP3A.*sub$"} to find all details that start with "CLint", then,
   somewhere in the name, include "CYP3A", and then end with "sub" (for
   "substrate"). Case sensitive.}
+
+\item{filename_text}{optionally specify a string of text to use for looking
+at only a subset of files. Standard regular expressions are acceptable; if
+you're unfamiliar with them, please see the notes on for the
+\code{find_matching_details} argument. For example, say you only want to
+look at development or verification simulations and you included "dev" or
+"ver" in those file names. Here is how you could specify that:
+\code{filename_text = "dev|ver"}}
 
 \item{show_compound_col}{TRUE (default), FALSE, or "concatenate" for whether
 to include in the results the column "Compound", which is the compound's
@@ -153,6 +165,17 @@ file name in quotes here, e.g., "Simulation details.csv" or "Simulation
 details.xlsx".  Do not include any slashes, dollar signs, or periods in the
 file name. If you leave off the file extension, it will be saved as a csv
 file.}
+
+\item{output_tab_name}{the tab name to use when saving the output as an Excel
+file. If you specify a tab that does not already exist in the Excel file
+you specified with \code{save_output}, this will add a new tab and not
+overwrite the existing ones. This means that you can, for example, run
+annotateDetails one time where you look at the detail set "Simcyp inputs"
+and save that tab eponymously and then you can run annotateDetails again,
+this time using the detail set "Trial design" and naming this second tab
+accordingly, and the result will be a single Excel file named according to
+what you specified with \code{save_output} with one tab for Simcyp inputs
+and one tab for the trial design parameters.}
 }
 \value{
 Returns a data.frame of simulation experimental details including the

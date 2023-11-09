@@ -104,11 +104,13 @@
 #'   simulated, population, percent female, age range, dose amount and regimen,
 #'    etc.}
 #'
-#'  \item{"lactation"}{details from the "Input Sheet" tab that pertain to 
-#'  lactation such as the milk-to-plasma ratio and whether a breast 
+#'  \item{"lactation"}{details from the "Input Sheet" tab that pertain to
+#'  lactation such as the milk-to-plasma ratio and whether a breast
 #'  perfusion-limited model was used.}
 #'
-#'   \item{"all"}{all possible details}
+#'   \item{"all"}{all possible details. If you select this option, you will also
+#'   get additional tabs in the output Excel file for any custom dosing regimens 
+#'   and any drug-release profiles.}
 #'
 #'   \item{a string of the specific details you want, each in quotes and
 #'   encapsulated with \code{c(...)},}{For a complete list of possibilities,
@@ -126,6 +128,13 @@
 #'   "Elimination", "Transport", "Interaction", "Phys Chem and Blood Binding",
 #'   "Population", or "Trial Design". Not case sensitive. If you want more than
 #'   one, enclose them with \code{c(...)}
+#' @param filename_text optionally specify a string of text to use for looking
+#'   at only a subset of files. Standard regular expressions are acceptable; if
+#'   you're unfamiliar with them, please see the notes on for the
+#'   \code{find_matching_details} argument. For example, say you only want to
+#'   look at development or verification simulations and you included "dev" or
+#'   "ver" in those file names. Here is how you could specify that:
+#'   \code{filename_text = "dev|ver"}
 #' @param file_order optionally specify the order in which files should be shown
 #'   in the annotated output, e.g., \code{file_order = c("file A.xlsx", "file
 #'   B.xlsx", "file C.xlsx")}
@@ -140,6 +149,16 @@
 #'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the
 #'   file name. If you leave off the file extension, it will be saved as a csv
 #'   file.
+#' @param output_tab_name the tab name to use when saving the output as an Excel
+#'   file. If you specify a tab that does not already exist in the Excel file
+#'   you specified with \code{save_output}, this will add a new tab and not
+#'   overwrite the existing ones. This means that you can, for example, run
+#'   annotateDetails one time where you look at the detail set "Simcyp inputs"
+#'   and save that tab eponymously and then you can run annotateDetails again,
+#'   this time using the detail set "Trial design" and naming this second tab
+#'   accordingly, and the result will be a single Excel file named according to
+#'   what you specified with \code{save_output} with one tab for Simcyp inputs
+#'   and one tab for the trial design parameters.
 #'
 #' @return Returns a data.frame of simulation experimental details including the
 #'   following columns: \describe{
@@ -201,11 +220,13 @@ annotateDetails <- function(existing_exp_details,
                             simulator_section = NA, 
                             detail_set = NA, 
                             find_matching_details = NA,
+                            filename_text = NA, 
                             show_compound_col = TRUE,
                             omit_all_missing = TRUE, 
                             file_order = NA,
                             return_list = FALSE,
-                            save_output = NA){
+                            save_output = NA, 
+                            output_tab_name = "Simulation experimental details"){
    
    # Error catching --------------------------------------------------------
    compoundID <- tolower(compoundID)
@@ -282,6 +303,12 @@ annotateDetails <- function(existing_exp_details,
    
    # We'll check whether that file was included once we've re-formatted existing_exp_details
    
+   if(length(filename_text) > 1){
+      warning("There should be only a single value for `filename_text`, and you have more than one. We'll only use the 1st one.\n", 
+              call. = FALSE)
+      filename_text <- filename_text[1]
+   }
+   
    
    # Getting things set up ---------------------------------------------------
    
@@ -292,10 +319,35 @@ annotateDetails <- function(existing_exp_details,
          paste("unknown file", 1:nrow(existing_exp_details$MainDetails))
    }
    
-   if(is.na(file_order)){
+   if(any(is.na(file_order))){
       FileOrder <- existing_exp_details$MainDetails$File
    } else {
       FileOrder <- unique(c(file_order, existing_exp_details$MainDetails$File))
+   }
+   
+   if(complete.cases(filename_text)){
+      existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+         filter(str_detect(File, filename_text))
+      
+      if(nrow(existing_exp_details$CustomDosing_sub) > 0){
+         existing_exp_details$CustomDosing_sub <- existing_exp_details$CustomDosing_sub %>% 
+            filter(str_detect(File, filename_text))
+      }
+      
+      if(nrow(existing_exp_details$CustomDosing_inhib) > 0){
+         existing_exp_details$CustomDosing_inhib <- existing_exp_details$CustomDosing_inhib %>% 
+            filter(str_detect(File, filename_text))
+      }
+      
+      if(nrow(existing_exp_details$CustomDosing_inhib2) > 0){
+         existing_exp_details$CustomDosing_inhib2 <- existing_exp_details$CustomDosing_inhib2 %>% 
+            filter(str_detect(File, filename_text))
+      }
+      
+      if(nrow(existing_exp_details$ReleaseProfiles) > 0){
+         existing_exp_details$ReleaseProfiles <- existing_exp_details$ReleaseProfiles %>% 
+            filter(str_detect(File, filename_text))
+      }
    }
    
    if(complete.cases(template_sim) && 
@@ -793,8 +845,6 @@ annotateDetails <- function(existing_exp_details,
    
    # Pivoting wider again ------------------------------------------------
    
-   AllFiles <- unique(Main$File)
-   
    Main <- Main %>% 
       pivot_wider(names_from = File, 
                   values_from = Value)
@@ -811,7 +861,7 @@ annotateDetails <- function(existing_exp_details,
       template_sim <- NA
    }
    
-   if(length(AllFiles) > 1){
+   if(length(FileOrder) > 1){
       # Checking for details that are the SAME across all files
       AllSame <- Main %>% 
          select(any_of(c("CompoundID", "Compound", "Detail")),
@@ -888,11 +938,14 @@ annotateDetails <- function(existing_exp_details,
       select(-BaseDetail, -SortOrder, -EnzymeForSorting) %>% 
       unique()
    
+   Main <- Main[, c(setdiff(names(Main), FileOrder), # SimulatorSection, etc.
+                    intersect(FileOrder, names(Main)))] # files in the order requested
+   
    # Checking for differences from template sim
    if(complete.cases(template_sim)){
       Diffs <- list()
       MyStyles <- list()
-      NontempFiles <- setdiff(AllFiles, template_sim)
+      NontempFiles <- setdiff(FileOrder, template_sim)
       
       for(i in 1:length(NontempFiles)){
          Diffs[[i]] <- 
@@ -948,7 +1001,7 @@ annotateDetails <- function(existing_exp_details,
             # including a column noting when a given value was the same for
             # all simulations.
             formatXL(
-               Main, FileName, sheet = "Simulation experimental details",
+               DF = Main, file = FileName, sheet = output_tab_name,
                styles = list(
                   list(columns = which(names(Main) == "Notes"), 
                        textposition = list(wrapping = TRUE)),
@@ -993,14 +1046,15 @@ annotateDetails <- function(existing_exp_details,
             MyStyles <- append(MyStyles, Diffs)
             
             formatXL(
-               Main, FileName, sheet = "Simulation experimental details",
+               DF = Main, file = FileName, sheet = output_tab_name,
                styles = MyStyles)
             
          }
          
          # Checking for other things we should save
          if(any(complete.cases(detail_set)) == FALSE |
-            (any(complete.cases(detail_set)) & detail_set == "all")){
+            (any(complete.cases(detail_set)) & 
+             detail_set == "all")){
             ToWrite <- names(existing_exp_details)[
                sapply(existing_exp_details, is.null) == FALSE]
             ToWrite <- names(existing_exp_details[ToWrite])[
