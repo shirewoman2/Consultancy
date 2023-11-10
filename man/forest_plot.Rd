@@ -42,9 +42,11 @@ forest_plot(
 }
 \arguments{
 \item{forest_dataframe}{a data.frame with extracted forest-plot data,
-generated from running \code{\link{extractForestData}} on Simulator output
-files or a csv or Excel file with the same data. (If it's an Excel file, it
-must have only one tab.)}
+generated from running \code{\link{extractForestData}} or
+\code{\link{pksummary_mult}} with the argument "extract_forest_data" set to
+TRUE on Simulator output files. Alternatively, if you already have some
+saved forest-plot data, supply a csv or Excel file with the same data. (If
+it's an Excel file, it must have only one tab.)}
 
 \item{y_axis_labels}{a column in \code{forest_dataframe} (unquoted) or a
 named character vector (each item in quotes) to use for labeling the
@@ -52,15 +54,15 @@ simulations on the y axis. In all forest plots, the y axis will be broken
 up by the simulation file name behind the scenes, but that's likely not the
 prettiest way to label the y axis, which is where this argument comes in.
 If you already have a column in \code{forest_dataframe} with the label you
-want -- for example the column Inhibitor1 when your drug of interest is a
-victim or Substrate when it's the perpetrator -- use that by specifying, for
-example, \code{y_axis_labels = Inhibitor1}. If you would like to manually
-specify which simulation file should be labeled what here, do so with a
-named character vector, e.g.,
+want -- for example the column "Inhibitor1" when your drug of interest is a
+victim or "Substrate" when it's the perpetrator -- use that by specifying,
+for example, \code{y_axis_labels = Inhibitor1}. You can optionally make the
+compound names prettier automatically with the argument
+\code{prettify_ylabel}. If you would like to manually specify which
+simulation file should be labeled what here, do so with a named character
+vector, e.g.,
 \code{y_axis_labels = c("myfile1.xlsx" = "itraconazole", "myfile2.xlsx" =
-"efavirenz")}. If left as NA, we'll use the simulation file names. You can
-optionally make the compound names prettier with the argument
-\code{prettify_ylabel}.}
+"efavirenz")}. If left as NA, we'll use the simulation file names.}
 
 \item{y_order}{optionally set the order of simulation files on the y axis. If
   \code{y_order} is left as NA, the y axis will be sorted according to the
@@ -98,20 +100,31 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
 
 \item{observed_PK}{observed PK data, with the following columns: \describe{
 
-  \item{File}{the file you'd like the observed data to be graphed
-  next to. Note that this file name must exist in the simulated data
-  (forest_dataframe).}
+  \item{File}{the simulation file you'd like the observed data to be graphed
+  next to. If you only have observed data, that's fine: Use a made-up file
+  name here instead. Think of the column "File" as "the set of data to use
+  to create one row in the forest plot". If you have more than one set of
+  observed data without matching simulated data, just use one dummy file
+  name for each.}
 
   \item{PKparameter}{the specific PK parameters to graph. Acceptable values
-  are: "AUCinf_ratio_dose1", "AUCt_ratio_dose1", "AUCinf_ratio",
+  are: "AUCinf_ratio_dose1", "AUCt_ratio_dose1", "AUCtau_ratio_last",
+  "AUCinf_ratio", "AUCt_ratio", "AUCtau_ratio",
   "Cmax_ratio_dose1", "Cmax_ratio_last", or "Cmax_ratio". Whatever you use
   must match what was listed in the simulated data to be included in the
-  graph.}
+  graph. Sorry, we get that it's annoying that these must be set up with
+  these coded names, but they have to match exactly to get displayed nicely
+  in the final graph.}
 
   \item{at least one column named "Mean", "GeoMean", or "Median"}{Must be
   specified depending on your choice for \code{mean_type}, this column will
   be used for determining where to place the point. Whatever statistic you
   use \strong{must} be the same for both observed and simulated data.}
+
+  \item{whatever column you specified for "y_axis_labels"}{If you're making 
+  a forest plot of perpetrators, for example, and you labeled the y axis 
+  according to the values in the column "Inhibitor1", make sure that 
+  "Inhibitor1" is included in your observed PK.}
 
   \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
   "Centile_Lower", "Centile_Upper", "GeoCV", "ArithCV", "Min", "Max",
@@ -134,8 +147,8 @@ You want the y axis labels to show what perpetrator was used in each
 simulation, and both of these used the same inhibitor. If you break up your
 graphs by setting \code{facet_column_x} to whatever column you used to
 indicate the dosing regimen, then "SimA.xlsx" and "SimB.xlsx" won't overlap
-on the graph even though they both had the same perpetrator. That's the reason
-it's ok here. Unclear? Please check out the examples at the bottom,
+on the graph even though they both had the same perpetrator. That's the
+reason it's ok here. Unclear? Please check out the examples at the bottom,
 particularly the ones that employ \code{facet_column_x}.}
 
 \item{show_numbers_on_right}{TRUE or FALSE (default) for whether to show the
@@ -315,13 +328,14 @@ Output is a graph.
 \description{
 \code{forest_plot} creates a forest plot of AUC and Cmax ratios. Please use
 the function \code{\link{extractForestData}} or \code{\link{pksummary_mult}}
-(set the argument "extract_forest_data" to TRUE) to generate the input data
-for \code{forest_dataframe}. In the graph, data will be broken up on the y
-axis by the simulation file name and, optionally, anything you specify for
-\code{facet_column_x}, which will be broken up along the x axis. Since file
-names do not generally make the most lovely of y axis labels, please use the
-argument \code{y_axis_labels} to specify how you'd like your y
-axis to look. \strong{If you're a little confused here or you're just the
+(set the argument "extract_forest_data" to TRUE) to generate the simulated
+input data for \code{forest_dataframe}. This function will also work with
+observed data; please see notes for the argument "PKparameters" for how to
+include observed data. In the graph, data will be broken up on the y axis by
+the simulation file name and, optionally, along the x axis by anything you
+specify for \code{facet_column_x}. Since file names do not generally make the
+most lovely of y axis labels, please use the argument \code{y_axis_labels} to
+specify how you'd like your y axis to look. \strong{If you're a little confused here or you're just the
 kind of person who prefers to wing it rather than reading the instructions
 when assembling furniture, we recommend skipping to the end of this help file
 and trying out the examples to see what we mean.} For detailed
