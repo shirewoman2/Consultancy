@@ -334,7 +334,7 @@
 #' # column "File", which should really be thought of as "the set of data that
 #' # comprise one row in the graph". Here's an example: 
 #' AddnlObsPK <- bind_rows(BufObsForestData_20mg, 
-#'                         data.frame(File = "Rifampicin obs data.xlsx", 
+#'                         data.frame(File = "Rifampicin obs data", # call it whatever you like
 #'                                    Inhibitor1 = "rifampicin", 
 #'                                    PKparameter = c("AUCt_ratio_dose1", 
 #'                                                    "Cmax_ratio_dose1"), 

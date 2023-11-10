@@ -43,10 +43,10 @@ forest_plot(
 \arguments{
 \item{forest_dataframe}{a data.frame with extracted forest-plot data,
 generated from running \code{\link{extractForestData}} or
-\code{\link{pksummary_mult}} with the argument "extract_forest_data" set to
-TRUE on Simulator output files. Alternatively, if you already have some
-saved forest-plot data, supply a csv or Excel file with the same data. (If
-it's an Excel file, it must have only one tab.)}
+\code{\link{pksummary_mult}} with the argument \code{extract_forest_data}
+set to TRUE on Simulator output files. Alternatively, if you already have
+some saved forest-plot data, supply a csv or Excel file with the same data.
+(If it's an Excel file, it must have only one tab.)}
 
 \item{y_axis_labels}{a column in \code{forest_dataframe} (unquoted) or a
 named character vector (each item in quotes) to use for labeling the
@@ -121,16 +121,16 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
   be used for determining where to place the point. Whatever statistic you
   use \strong{must} be the same for both observed and simulated data.}
 
-  \item{whatever column you specified for "y_axis_labels"}{If you're making 
-  a forest plot of perpetrators, for example, and you labeled the y axis 
-  according to the values in the column "Inhibitor1", make sure that 
+  \item{whatever column you specified for \code{y_axis_labels}}{If you're making
+  a forest plot of perpetrators, for example, and you labeled the y axis
+  according to the values in the column "Inhibitor1", make sure that
   "Inhibitor1" is included in your observed PK.}
 
   \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
   "Centile_Lower", "Centile_Upper", "GeoCV", "ArithCV", "Min", "Max",
   "Std Dev"}{these will be used for the error bars and are optional.}
 
-  \item{whatever column you used for facet_column_x}{If you broke up the
+  \item{whatever column you used for \code{facet_column_x}}{If you broke up the
   main graphs into two smaller graphs along the x axis, then whatever column you used for that
   must be present in the observed data, too.}
 
@@ -155,9 +155,7 @@ particularly the ones that employ \code{facet_column_x}.}
 numbers used for the centre statistic (the point) and any variability (the
 error bars). This \emph{only} works when the graph has not been facetted
 along the x direction. If it's facetted along the x direction, it wouldn't
-be clear which numbers belonged to which facet. There's a way around this
-limitation, though; please see the examples pertaining to
-\code{show_numbers_on_right}.}
+be clear which numbers belonged to which facet.}
 
 \item{mean_type}{type of mean to graph; options are "geometric" (default),
 "arithmetic", or "median", but this only works when those data are included
@@ -330,9 +328,9 @@ Output is a graph.
 the function \code{\link{extractForestData}} or \code{\link{pksummary_mult}}
 (set the argument "extract_forest_data" to TRUE) to generate the simulated
 input data for \code{forest_dataframe}. This function will also work with
-observed data; please see notes for the argument "PKparameters" for how to
-include observed data. In the graph, data will be broken up on the y axis by
-the simulation file name and, optionally, along the x axis by anything you
+observed data; please see notes for the argument "\code{observed_PK}" for how
+to include observed data. In the graph, data will be broken up on the y axis
+by the simulation file name and, optionally, along the x axis by anything you
 specify for \code{facet_column_x}. Since file names do not generally make the
 most lovely of y axis labels, please use the argument \code{y_axis_labels} to
 specify how you'd like your y axis to look. \strong{If you're a little confused here or you're just the
@@ -403,6 +401,24 @@ view(BufObsForestData_20mg)
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = Inhibitor1,
             observed_PK = BufObsForestData_20mg)
+
+# If you have some observed PK data that are not matched to specific 
+# simulated data, you can include them by setting a fake file name in the 
+# column "File", which should really be thought of as "the set of data that
+# comprise one row in the graph". Here's an example: 
+AddnlObsPK <- bind_rows(BufObsForestData_20mg, 
+                        data.frame(File = "Rifampicin obs data", # call it whatever you like
+                                   Inhibitor1 = "rifampicin", 
+                                   PKparameter = c("AUCt_ratio_dose1", 
+                                                   "Cmax_ratio_dose1"), 
+                                   GeoMean = c(0.4, 0.5), 
+                                   CI_Lower = c(0.35, 0.42), 
+                                   CI_Upper = c(0.45, 0.6)))
+
+forest_plot(forest_dataframe = BufForestData_20mg, 
+            observed_PK = AddnlObsPK, 
+            y_axis_labels = Inhibitor1,
+            legend_position = "right")
 
 # Here are some options for modifying the aesthetics of your graph:
 
