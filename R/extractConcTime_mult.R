@@ -813,7 +813,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # Observed data ------------------------------------------------------
    
-   if(nrow(ObsAssign) > 0){
+   if(nrow(ObsAssign) > 0 & nrow(MultData) > 0){
       
       obs_dataframe <- extractObsConcTime_mult(
          obs_data_files = ObsAssign %>% 
