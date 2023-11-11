@@ -146,6 +146,26 @@ match_obs_to_sim <- function(ct_dataframe,
                                    existing_exp_details = existing_exp_details))
    }
    
+   # This will cause problems if any of the sets of data have 0 rows. Checking
+   # for that. 
+   MissingFile <- setdiff(unique(ObsAssign$File), unique(ct_dataframe$File))
+   if(length(MissingFile) > 0){
+      warning(paste0("The file(s) ", 
+                     str_comma(paste0("`", MissingFile, "`")), 
+                     " is/are included in `obs_to_sim_assignment` but not present in the simulated concentration-time data. It/They cannot be matched to any observed data.\n"), 
+              call. = FALSE)
+      ObsAssign <- ObsAssign %>% filter(File %in% unique(ct_dataframe$File))
+   }
+   
+   MissingObsFile <- setdiff(unique(ObsAssign$ObsFile), unique(obs_dataframe$ObsFile))
+   if(length(MissingObsFile) > 0){
+      warning(paste0("The observed data file(s) ", 
+                     str_comma(paste0("`", MissingObsFile, "`")), 
+                     " is/are included in `obs_to_sim_assignment` but not present in the observed concentration-time data. It/They cannot be matched to any simulated data.\n"), 
+              call. = FALSE)
+      ObsAssign <- ObsAssign %>% filter(ObsFile %in% unique(obs_dataframe$ObsFile))
+   }
+   
    # NB: Splitting by ObsFile b/c you could have more than one obs file per
    # sim file, e.g., when there are observed data for more than 3 compound
    # IDs, the maximum allowed in the PE data entry template. You could also
