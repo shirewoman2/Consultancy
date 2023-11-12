@@ -88,7 +88,11 @@
 #'   \code{exp_details} for \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}}: \describe{
 #'
-#'   \item{"Summary tab"}{details available from the "Summary tab" (default)}
+#'   \item{"all"}{all possible details (default). If you select this option, you will also
+#'   get additional tabs in the output Excel file for any custom dosing regimens 
+#'   and any drug-release profiles.}
+#'
+#'   \item{"Summary tab"}{details available from the "Summary tab"}
 #'
 #'   \item{"Input Sheet"}{details available from the "Input Sheet" tab}
 #'
@@ -107,10 +111,6 @@
 #'  \item{"lactation"}{details from the "Input Sheet" tab that pertain to
 #'  lactation such as the milk-to-plasma ratio and whether a breast
 #'  perfusion-limited model was used.}
-#'
-#'   \item{"all"}{all possible details. If you select this option, you will also
-#'   get additional tabs in the output Excel file for any custom dosing regimens 
-#'   and any drug-release profiles.}
 #'
 #'   \item{a string of the specific details you want, each in quotes and
 #'   encapsulated with \code{c(...)},}{For a complete list of possibilities,
@@ -218,7 +218,7 @@ annotateDetails <- function(existing_exp_details,
                             template_sim = NA,
                             show_only_diff_from_template = FALSE,
                             simulator_section = NA, 
-                            detail_set = NA, 
+                            detail_set = "all", 
                             find_matching_details = NA,
                             filename_text = NA, 
                             show_compound_col = TRUE,
@@ -672,7 +672,8 @@ annotateDetails <- function(existing_exp_details,
    
    ## detail_set -------------------------------------------------------------
    
-   if(any(complete.cases(detail_set))){
+   if(any(complete.cases(detail_set)) &&
+      detail_set != "all"){
       
       DetailSet <- c()
       
