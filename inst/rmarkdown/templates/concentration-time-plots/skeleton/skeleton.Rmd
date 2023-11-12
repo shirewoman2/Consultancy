@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```{r ctplotheading}
 
-InhibPresent <- length(MyEffector) > 0 && complete.cases(MyEffector)
+InhibPresent <- length(MyPerpetrator) > 0 && complete.cases(MyPerpetrator)
 MySubstrate <- unique(Data$Compound[Data$CompoundID == "substrate"])
 MyTissue <- unique(ct_dataframe$Tissue)
 
@@ -32,10 +32,10 @@ if(length(MySubstrate) > 0){
    MyCompound <- MySubstrate
    
    Text2 <- ifelse(InhibPresent, 
-                   paste0("co-administered with ", MyEffector, " "), "")
+                   paste0("co-administered with ", MyPerpetrator, " "), "")
    
 } else {
-   Text2 <- paste("XXX mg", MyEffector, "QD/BID/TID ")
+   Text2 <- paste("XXX mg", MyPerpetrator, "QD/BID/TID ")
    MyCompound <- ""
 }
 
@@ -84,9 +84,9 @@ if(length(MySubstrate) > 0){
                    ""), 
             MyTissue, "concentration-time profiles of", MySubstrate, 
             "following a SINGLE/MULTIPLE ORAL/IV DOSES of", MySubstrate, 
-            "in the absence of", prettify_compound_name(MyEffector), 
+            "in the absence of", prettify_compound_name(MyPerpetrator), 
             " (solid line) and on the XXth day of XX days of dosing of", 
-            prettify_compound_name(MyEffector), "(dashed line)"))
+            prettify_compound_name(MyPerpetrator), "(dashed line)"))
 } else {
    
    CapText1 <- paste(
@@ -94,7 +94,7 @@ if(length(MySubstrate) > 0){
              paste("and observed (circles;", mean_type, 
                    "mean of n = XXX individuals; Clinical Study XXX)"), 
              ""), 
-      MyTissue, "concentration-time profiles of", MyEffector, 
+      MyTissue, "concentration-time profiles of", MyPerpetrator, 
       "with administration of [drug] on the XXXth day of dosing")
 }
 
