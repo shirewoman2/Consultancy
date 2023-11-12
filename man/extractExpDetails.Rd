@@ -6,7 +6,7 @@
 \usage{
 extractExpDetails(
   sim_data_file,
-  exp_details = "Summary tab",
+  exp_details = "Summary and Input",
   annotate_output = FALSE,
   save_output = NA
 )
@@ -23,6 +23,9 @@ the autorunner adds as long as that stamp is in a format like this: "myfile
 \item{exp_details}{Experiment details you want to extract from the simulator
   output file. Options are \describe{
 
+  \item{"Summary and Input"}{Extract details available from the "Summary tab"
+  and the "Input Sheet" (default)}
+
   \item{"Summary tab"}{Extract details available from the "Summary tab"
   (default)}
 
@@ -35,12 +38,12 @@ the autorunner adds as long as that stamp is in a format like this: "myfile
   on the "Simcyp inputs (and QC)" tab of a compound data sheet plus trial
   design information}
 
-  \item{"workspace"}{Extract an extremely limited set of details directly
+  \item{"workspace"}{Extract a limited set of details directly
   from the Simcyp Simulator workspace files. The set of possible details may
   be viewed by entering \code{view(AllWorkspaceDetails)} in the console. This
   \emph{only} works if the workspace file name perfectly matches the Excel
   results file name and is located in the same folder. Otherwise, this step
-  in the data extraction will be skipped. UNDER CONSTRUCTION.}
+  in the data extraction will be skipped.}
 
   \item{"all"}{Extract all possible parameters}
 
@@ -54,11 +57,10 @@ the autorunner adds as long as that stamp is in a format like this: "myfile
   listed, or "_inhib1met" for the inhibitor 1 metabolite. An example of
   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
 
-  \strong{NOTES:} \enumerate{\item{The default pulls only parameters that are
-  listed on the "Summary" tab. If you want experimental details on a second
-  inhibitor or more information on metabolites, try pulling them from the
-  "Input sheet" instead of the "Summary" tab, which doesn't have as much
-  information on those compounds.} \item{There are a few places where
+  \strong{NOTES:} \enumerate{\item{The default pulls parameters from the
+  "Summary" tab and the "Input Sheet" tab. Note that the
+  "Summary" tab does not include information on any compounds beyond the
+  substrate and inhibitor 1.} \item{There are a few places where
   requesting one item as input will get you multiple items as output:
   intrinsic clearance, interaction parameters, and transport parameters. For
   example, if you request intrinsic clearance values (ex: "CLint_sub"),
@@ -66,10 +68,7 @@ the autorunner adds as long as that stamp is in a format like this: "myfile
   they'll be named according to which parameter it is, which enzyme it's for,
   etc. Same thing with requesting interaction parameters (ex:
   "Interaction_inhib" to get all the interaction parameters for inhibitor 1)
-  and transporter parameters (ex: "Transport_sub").} \item{We have limited
-  experience with extracting these data when a custom dosing regimen was
-  used, so it would be a good idea to carefully check that the data are being
-  pulled correctly in that scenario.}}}
+  and transporter parameters (ex: "Transport_sub").}}}
 
 \item{annotate_output}{TRUE or FALSE (default) on whether to transpose the
 rows and columns in the output, making the output table longer instead of
@@ -84,8 +83,9 @@ organize this output to find what you need.}
 
 \item{save_output}{optionally save the output by supplying a csv or Excel
 file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
-csv file.}
+details.xlsx".  Do not include any slashes, dollar signs, or periods in the
+file name. If you leave off the file extension, it will be saved as a csv
+file.}
 }
 \value{
 Returns a named list of the experimental details

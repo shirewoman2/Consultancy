@@ -210,7 +210,7 @@ if(single_table == FALSE){
       
       cat(TableSection, sep = "\n")
       
-      rm(Heading, include_dose_num_i, Deets, MyEffector, MyFiles, 
+      rm(Heading, include_dose_num_i, Deets, MyPerpetrator, MyFiles, 
          MyAnnotations, PKpulled_i, TempTable)
       
    }

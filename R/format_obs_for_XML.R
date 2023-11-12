@@ -26,6 +26,12 @@
 #'   and any time the value changes in \code{obs_dataframe}, the number in the
 #'   "DV" column will change in the output. We'll include a message to indicate
 #'   which value in the original data was used for which DV number.
+#' @param conc_sd_column the column in the observed concentration-time
+#'   data.frame that contains the standard deviation of the concentration
+#'   (optional). This will be mapped to the column "SD SE" in the PE data
+#'   template file. This only applies for Simcyp Simulator versions >= 22 and
+#'   also obviously only applies if you have reported mean concentrations for
+#'   the dependent variable.
 #' @param dose the amount of the dose. If this amount varies, please include one
 #'   dose amount for each time. For example: \code{dose = c(100, 50, 50)} will
 #'   generate doses of 100 mg for the first dose and then 50 mg for the next two
@@ -39,6 +45,15 @@
 #' @param inf_duration the infusion duration (min) (optional)
 #' @param dosing_start_time the start time of compound administration (h);
 #'   default is 0.
+#' @param set_t0_concs_to_0 TRUE (default) or FALSE for whether to set any
+#'   concentrations at t0 for the 1st dose to 0.
+#' @param missing_value_treatment How should missing values be dealt with? The
+#'   Simcyp PE template will not allow any missing values for concentrations, so
+#'   they will be removed from the data automatically. Options for dealing with
+#'   missing values: \describe{\item{"as is" (default)}{leaves all data as is. Missing
+#'   values will be removed.} \item{"impute X" where X is a number}{Missing
+#'   values will be replaced with X.}} If you set \code{set_t0_concs_to_0 = TRUE},
+#'   that overrides any options selected here, but only for t0 concentrations.
 #' @param dose_route the route of administration. Options are "Oral" (default),
 #'   "Intravenous", "Dermal", "Inhaled", "SC-First Order", "SC-Mechanistic", or
 #'   "Auto-detect". Not case sensitive.
@@ -82,14 +97,17 @@
 #' # None yet
 #' 
 format_obs_for_XML <- function(obs_dataframe, 
-                               conc_column, 
-                               time_column, 
                                subject_column, 
                                DVID_column,
+                               time_column, 
+                               conc_column, 
+                               conc_sd_column, 
                                dose = 100,
                                dose_unit = "mg",
                                inf_duration = NA,
                                dosing_start_time = 0,
+                               set_t0_concs_to_0 = TRUE, 
+                               missing_value_treatment = "as is",
                                dose_route = "Oral",
                                dose_interval = NA, 
                                num_doses = NA,
@@ -111,8 +129,26 @@ format_obs_for_XML <- function(obs_dataframe,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   # Setting things up for nonstandard evaluation -------------------------
+   if(str_detect(missing_value_treatment, "impute")){
+      ValToImpute <- as.numeric(str_split_1(missing_value_treatment, pattern = " ")[2])
+      missing_value_treatment <- "impute"
+      if(is.na(ValToImpute)){
+         warning("The value you requested for replacing missing values is not a number, so we don't know what value to use. We'll leave missing values alone, which means they'll be removed from the data.\n",
+                 call. = FALSE)
+         missing_value_treatment <- "as is"
+      }
+      
+   } else if(str_detect(missing_value_treatment, "as is") == FALSE){
+      warning("You have requested an option for `missing_value_treatment` that is not `as is` (the default) or imputing a number, which are the only acceptable options. We'll leave missing values alone, which means they'll be removed from the data.\n", 
+              call. = FALSE)
+      missing_value_treatment <- "as is"
+   }
+   
+   # Main body of function ---------------------------------------------------
+   
+   ## Setting things up for nonstandard evaluation -------------------------
    conc_column <- rlang::enquo(conc_column)
+   conc_sd_column <- rlang::enquo(conc_sd_column)
    time_column <- rlang::enquo(time_column)
    subject_column <- rlang::enquo(subject_column)
    DVID_column <- rlang::enquo(DVID_column)
@@ -124,6 +160,7 @@ format_obs_for_XML <- function(obs_dataframe,
    # Converting everything to its non-NSE name b/c NSE is so hard to deal with.
    # Also b/c NSE is so hard to deal with, this next bit takes multiple steps.
    GoodNames_step1 <- c(Conc = rlang::as_label(conc_column),
+                        ConcSD = rlang::as_label(conc_sd_column),
                         Time = rlang::as_label(time_column),
                         Subject = rlang::as_label(subject_column), 
                         DVID = rlang::as_label(DVID_column),
@@ -146,8 +183,9 @@ format_obs_for_XML <- function(obs_dataframe,
    GoodNames <- names(GoodNames_step1)
    names(GoodNames) <- GoodNames_step1
    
-   obs_dataframe <- obs_dataframe %>% 
+   obs_dataframe <- obs_dataframe %>% ungroup() %>% 
       select(any_of(c(rlang::as_label(conc_column),
+                      rlang::as_label(conc_sd_column),
                       rlang::as_label(time_column),
                       rlang::as_label(subject_column), 
                       rlang::as_label(DVID_column),
@@ -157,6 +195,8 @@ format_obs_for_XML <- function(obs_dataframe,
                       rlang::as_label(sex_column)))) %>% 
       rename_with(~str_replace_all(., GoodNames)) %>% 
       unique()
+   
+   ## General data arranging, imputing, etc. --------------------------------
    
    if("Sex" %in% names(obs_dataframe)){
       obs_dataframe <- obs_dataframe %>% 
@@ -232,7 +272,24 @@ format_obs_for_XML <- function(obs_dataframe,
                                                         MissingCols))))
    }
    
-   # Main body of function ---------------------------------------------------
+   # Dealing with any imputating requested 
+   if(missing_value_treatment == "impute"){
+      obs_dataframe$Conc[is.na(obs_dataframe$Conc)] <- ValToImpute
+   }
+   
+   if(set_t0_concs_to_0){
+      obs_dataframe <- obs_dataframe %>% 
+         mutate(Conc = ifelse(Time == 0, 0, Conc))
+   }
+   
+   # Setting up final column names
+   NameKey <- c("Subject" = "Subject ID", 
+                "Age" = "Age (year)", 
+                "Weight" = "Weight (kg)", 
+                "Height" = "Height (cm)", 
+                "DVID" = "DV ID", 
+                "Conc$" = "DV", 
+                "ConcSD" = "SD SE")
    
    FinalObsDF <- obs_dataframe %>% 
       # filtering to remove NAs here but could return to this to
@@ -240,18 +297,13 @@ format_obs_for_XML <- function(obs_dataframe,
       # make it either remove NAs or set to 0 or some other value
       # s/a 1/2 LLOQ.
       filter(complete.cases(Conc)) %>% 
-      select(Subject, Time, Conc, DVID) %>% 
-      left_join(demog_dataframe %>%
+      select(any_of(c("Subject", "Time", "Conc", "DVID", "ConcSD"))) %>% 
+      left_join(demog_dataframe %>% 
                    select(Subject, Age, Height, Weight, Sex), 
                 by = "Subject") %>% 
       mutate(across(.cols = everything(), .fns = as.character), 
              DVID = as.factor(DVID)) %>% 
-      rename("Subject ID" = Subject,
-             "Age (year)" = Age, 
-             "Weight (kg)" = Weight, 
-             "Height (cm)" = Height, 
-             "DV ID" = DVID,
-             DV = Conc)
+      rename_with( ~ str_replace_all(., NameKey))
    
    if(all(is.na(FinalObsDF$`DV ID`))){
       FinalObsDF$`DV ID` <- 1

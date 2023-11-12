@@ -50,16 +50,14 @@ ct_plot_1stlast(
   hline_style = "red dotted",
   vline_position = NA,
   vline_style = "red dotted",
-  graph_labels = TRUE,
+  graph_labels = FALSE,
   graph_title = NA,
   graph_title_size = 14,
   legend_position = NA,
   prettify_compound_names = TRUE,
-  qc_graph = FALSE,
-  existing_exp_details = NA,
   save_graph = NA,
   fig_height = 6,
-  fig_width = 5
+  fig_width = 8
 )
 }
 \arguments{
@@ -187,11 +185,11 @@ label for this legend item, set this to "none".}
 
 \item{obs_shape}{optionally specify what shapes are used to depict observed
 data for a) the substrate drug alone and b) the substrate drug in the
-presence of an effector. Input should look like this, for example:
+presence of a perpetrator. Input should look like this, for example:
 \code{c(1, 2)} to get an open circle for the substrate and an open triangle
-for the substrate in the presence of effectors, if there are any. If you
+for the substrate in the presence of perpetrators, if there are any. If you
 only specify one value, it will be used for both substrate with and without
-effectors. To see all the possible shapes and what number corresponds to
+perpetrators. To see all the possible shapes and what number corresponds to
 which shape, type \code{ggpubr::show_point_shapes()} into the console. If
 left as NA, substrate alone will be an open circle and substrate +
 inhibitor 1 will be an open triangle.}
@@ -284,7 +282,7 @@ default NA, this value will be automatically determined.}
 explanatory about what the line types represent. For example, if
 \code{linetype_column = Inhibitor} and \code{legend_label_linetype =
 "Inhibitor present"}, that will make the label in the legend above, e.g.,
-"none", and whatever effector was present more explanatory than just
+"none", and whatever perpetrator was present more explanatory than just
 "Inhibitor". The default is to use whatever the column name is for
 \code{linetype_column}. If you don't want a label for this legend item, set
 this to "none".}
@@ -397,9 +395,9 @@ acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 into the console.}
 
-\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
-etc.) for each of the small graphs. (Not applicable if only outputting
-linear or only semi-log graphs.)}
+\item{graph_labels}{TRUE or FALSE (default) for whether to include labels (A,
+B, C, etc.) for each of the small graphs. (Not applicable if only
+outputting linear or only semi-log graphs.)}
 
 \item{graph_title}{optionally specify a title that will be centered across
 your graph or set of graphs}
@@ -421,16 +419,6 @@ legend, and \code{prettify_compound_names = TRUE} will make some reasonable
 guesses about what a prettier compound name should be. An example of
 setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".}
-
-\item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
-the graph where the left panel shows the original graph and the right panel
-shows information about the simulation trial design. This works MUCH faster
-when you have already used \code{\link{extractExpDetails_mult}} to get
-information about how your simulation or simulations were set up and supply
-that object to the argument \code{existing_exp_details}.}
-
-\item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
-\code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
@@ -462,7 +450,7 @@ saved to disk.}
   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
   which can be useful for BID data where the end of the simulation extended
   past the dosing interval or data when the substrate was dosed BID and the
-  effector was dosed QD}
+  perpetrator was dosed QD}
 
   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}

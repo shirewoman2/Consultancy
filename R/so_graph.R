@@ -9,12 +9,16 @@
 #'   \code{\link{pksummary_mult}}; if left as NA, this will make graphs for each
 #'   parameter included in \code{PKtable}. To see the full set of possible
 #'   parameters, enter \code{view(PKParameterDefinitions)} into the console.
+#' @param make_AUC_generic TRUE or FALSE for whether to list just "AUC ratio"
+#'   instead of, e.g., "AUCinf ratio" or "AUCtau ratio" or even instead of "AUCt
+#'   ratio". If TRUE, all AUC values for a given dose number (1st or last or
+#'   unspecified) will all be shown together.
 #' @param boundaries Numerical boundaries to show on the graph. Defaults to the
 #'   1.5- and 2-fold boundaries. Indicate boundaries you want like this:
 #'   \code{boundaries = c(1.25, 1.5, 2)}
 #' @param boundaries_Guest Numerical boundaries to show on the graph when the PK
-#'   parameter is a mean ratio of the parameter in the presence of an effector /
-#'   the parameter in the absence of the effector. The default boundary for
+#'   parameter is a mean ratio of the parameter in the presence of a perpetrator
+#'   / the parameter in the absence of the perpetrator. The default boundary for
 #'   Guest curves is 2, which will show both the Guest curve and a straight
 #'   line. Honestly, we recommend leaving this as 2 for clarity of the graph.
 #'   For these PK parameters, if there are any values listed for
@@ -52,8 +56,8 @@
 #' @param boundary_line_width line width; default is 0.7. This only applies when
 #'   \code{boundary_indicator} is set to "lines", the default.
 #' @param axis_titles optionally specify what you'd like for the x and y axis
-#'   titles with a named character vector. The default is 
-#'   \code{axis_titles = c("x" = "Observed", "y" = "Simulated")} 
+#'   titles with a named character vector. The default is \code{axis_titles =
+#'   c("x" = "Observed", "y" = "Simulated")}
 #' @param point_color_column (optional) the column in \code{PKtable} that should
 #'   be used for determining which color the points will be. This should be
 #'   unquoted. For example, if you have a column named "Study" in the data.frame
@@ -161,18 +165,18 @@
 #' # to generate an object called MyPKOutput, then:
 #' so_graph(PKtable = SOdata)
 #' so_graph(PKtable = SOdata, boundary_indicator = "fill")
-#' so_graph(PKtable = SOdata, 
+#' so_graph(PKtable = SOdata,
 #'          axis_titles = c("y" = "Predicted", "x" = "Observed"))
 #' so_graph(PKtable = SOdata, ncol = 1)
-#' so_graph(PKtable = SOdata, point_shape_column = Study, 
+#' so_graph(PKtable = SOdata, point_shape_column = Study,
 #'          legend_position = "bottom")
-#' so_graph(PKtable = SOdata, 
-#'          point_shape_column = Study, 
+#' so_graph(PKtable = SOdata,
+#'          point_shape_column = Study,
 #'          legend_label_point_shape = "Studies involving\nDrug X",
 #'          point_color_column = File,
 #'          legend_label_point_color = "Simulation file",
 #'          legend_position = "right")
-#' 
+#'
 #' 
 
 so_graph <- function(PKtable, 
@@ -184,6 +188,8 @@ so_graph <- function(PKtable,
                      boundary_line_types = "default",
                      boundary_line_width = 0.7, 
                      axis_titles = c("y" = "Simulated", "x" = "Observed"),
+                     include_dose_num = NA,
+                     make_AUC_generic = FALSE, 
                      point_color_column, 
                      point_color_set = "default",
                      legend_label_point_color = NA, 
@@ -261,6 +267,45 @@ so_graph <- function(PKtable,
    } 
    
    boundary_color_set_orig <- boundary_color_set
+   
+   
+   # Will need to figure out what PK parameters are and will need deprettified
+   # names when reshaping and organizing data here and lower in function
+   AllPKParameters_pretty <- AllPKParameters %>%
+      filter(!PKparameter == "CLt_dose1") %>% 
+      select(PrettifiedNames, PKparameter) %>% unique()
+   
+   AllPKParameters_pretty <- bind_rows(
+      AllPKParameters_pretty, 
+      AllPKParameters_pretty %>% 
+         mutate(PrettifiedNames = sub("(for )?[Dd]ose 1 |Last dose ", "", PrettifiedNames), 
+                PKparameter = sub("_dose1|_last", "", PKparameter)))
+   
+   if(any(is.na(PKparameters))){
+      PKparameters <- names(PKtable)
+      
+      # Need to get the un-prettified names here. First, check whether they're
+      # pretty or R friendly.
+      if(any(PKparameters %in% AllPKParameters$PKparameter)){
+         PKparameters <- PKparameters[PKparameters %in% AllPKParameters$PKparameter]
+      } else {
+         PKparameters <- data.frame(PrettifiedNames = PKparameters) %>% 
+            left_join(AllPKParameters_pretty, by = join_by(PrettifiedNames)) %>% 
+            filter(complete.cases(PKparameter)) %>% 
+            pull(PKparameter)
+      }
+   }
+   
+   names(axis_titles) <- tolower(names(axis_titles))
+   if(all(c("x", "y") %in% names(axis_titles)) == FALSE){
+      warning("It is not clear what you want for the x axis title and what you want for the y. Please check the help file for the argument `axis_titles`. For now, we'll use the default values.", 
+              call. = FALSE)
+      axis_titles <- c("y" = "Simulated", "x" = "Observed")
+   }
+   
+   # Main body of function --------------------------------------------------
+   
+   ## Setting colors & linetypes -----------------------------------------------
    
    if(boundary_color_set[1] %in% c("red green", "red black", 
                                    "muted red green") &
@@ -434,32 +479,6 @@ so_graph <- function(PKtable,
       boundary_color_set_guest <- rep(boundary_color_set, length(boundaries_Guest) + 1)
    }
    
-   # Will need to figure out what PK parameters are and will need deprettified
-   # names when reshaping and organizing data here and lower in function
-   AllPKParameters_pretty <- AllPKParameters %>%
-      filter(!PKparameter == "CLt_dose1") %>% 
-      select(PrettifiedNames, PKparameter) %>% unique()
-   
-   AllPKParameters_pretty <- bind_rows(
-      AllPKParameters_pretty, 
-      AllPKParameters_pretty %>% 
-         mutate(PrettifiedNames = sub("(for )?[Dd]ose 1 |Last dose ", "", PrettifiedNames), 
-                PKparameter = sub("_dose1|_last", "", PKparameter)))
-   
-   if(any(is.na(PKparameters))){
-      PKparameters <- names(PKtable)
-      
-      # Need to get the un-prettified names here. First, check whether they're
-      # pretty or R friendly.
-      if(any(PKparameters %in% AllPKParameters$PKparameter)){
-         PKparameters <- PKparameters[PKparameters %in% AllPKParameters$PKparameter]
-      } else {
-         PKparameters <- data.frame(PrettifiedNames = PKparameters) %>% 
-            left_join(AllPKParameters_pretty, by = join_by(PrettifiedNames)) %>% 
-            filter(complete.cases(PKparameter)) %>% 
-            pull(PKparameter)
-      }
-   }
    
    if(boundary_line_types[1] == "default"){
       boundary_line_types_straight <- c("dashed", 
@@ -473,14 +492,7 @@ so_graph <- function(PKtable,
                                        length(boundaries_Guest))
    }
    
-   names(axis_titles) <- tolower(names(axis_titles))
-   if(all(c("x", "y") %in% names(axis_titles)) == FALSE){
-      warning("It is not clear what you want for the x axis title and what you want for the y. Please check the help file for the argument `axis_titles`. For now, we'll use the default values.", 
-              call. = FALSE)
-      axis_titles <- c("y" = "Simulated", "x" = "Observed")
-   }
    
-   # Main body of function --------------------------------------------------
    
    ## Getting data arranged  ------------------------------------------------
    
@@ -599,11 +611,43 @@ so_graph <- function(PKtable,
          mutate(NewName = PKparameter)
    } else {
       PKnames <- data.frame(OrigName = names(PKtable)) %>% 
-         mutate(PrettifiedNames = sub("with .* ", "with effector ", OrigName)) %>% 
+         mutate(PrettifiedNames = sub("with .* ", "with perpetrator ", OrigName)) %>% 
          left_join(AllPKParameters_pretty %>% unique(),  by = join_by(PrettifiedNames)) %>% 
          mutate(NewName = ifelse(is.na(PKparameter), OrigName, PKparameter))
       
       names(SO) <- PKnames$NewName
+   }
+   
+   if(is.na(include_dose_num)){
+      # Dropping dose number depending on input. First, checking whether they have
+      # both dose 1 and last-dose data.
+      DoseCheck <- c("first" = any(str_detect(PKparameters, "dose1")), 
+                     "last" = any(str_detect(PKparameters, "last")))
+      include_dose_num <- all(DoseCheck)
+   }
+   
+   # include_dose_num now should be either T or F no matter what, so checking
+   # that.
+   if(is.logical(include_dose_num) == FALSE){
+      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+              call. = FALSE)
+      include_dose_num <- TRUE
+   }
+   
+   if(include_dose_num == FALSE){
+      PKparameters <- sub("_dose1|_last", "", PKparameters)
+      names(SO) <- sub("_dose1|_last", "", names(SO))
+      PKnames <- PKnames %>% 
+         mutate(across(.cols = everything(), 
+                       .fns = function(x) sub("_dose1|_last", "", x)))
+   }
+   
+   if(make_AUC_generic){
+      PKparameters <- sub("AUCinf|AUCtau|AUCt", "AUC", PKparameters)
+      names(SO) <- sub("AUCinf|AUCtau|AUCt", "AUC", names(SO))
+      PKnames <- PKnames %>% 
+         mutate(across(.cols = everything(), 
+                       .fns = function(x) sub("AUCinf|AUCtau|AUCt", "AUC", x)))
    }
    
    suppressWarnings(
@@ -949,7 +993,7 @@ so_graph <- function(PKtable,
    }
    
    if(length(G) == 1){
-      G <- G[[1]] + theme(legend.position = "none")
+      G <- G[[1]] + theme(legend.position = legend_position)
       
    } else {
       

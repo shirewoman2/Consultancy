@@ -203,7 +203,7 @@ extractForestData <- function(sim_data_files = NA,
    }
    
    if(any(CustDos_inhib)){
-      warning(paste("A custom dosing regimen was used for the effector for the files", 
+      warning(paste("A custom dosing regimen was used for the perpetrator for the files", 
                     names(Deets)[which(CustDos_inhib)], 
                     "so the dose amount and dose interval will be set to NA in those extracted forest-plot data."), 
               call. = FALSE)
@@ -219,9 +219,9 @@ extractForestData <- function(sim_data_files = NA,
       select(File, everything()) %>% arrange(File)
    
    if(any(is.na(Deets$Inhibitor1))){
-      warning(paste0("The functions `extractForestData` and `forest_plot` have been set up for comparing PK parameters with vs. without an effector present, and the files ", 
+      warning(paste0("The functions `extractForestData` and `forest_plot` have been set up for comparing PK parameters with vs. without a perpetrator present, and the files ", 
                      Deets %>% filter(is.na(Inhibitor1)) %>% pull(File) %>% str_comma, 
-                     " did not have an effector present. These files will not be included in the output data."))
+                     " did not have a perpetrator present. These files will not be included in the output data."))
       
       Deets <- Deets %>% filter(complete.cases(Inhibitor1))
       if(checkDataSource){DataCheck <- DataCheck %>% filter(File %in% Deets$File)}

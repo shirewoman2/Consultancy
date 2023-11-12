@@ -58,23 +58,21 @@ extractFmFe <- function(sim_data_file,
    # Main body of function ----------------------------------------------------------------
    
    # Getting summary data for the simulation(s)
-   if("logical" %in% class(existing_exp_details) == FALSE){
-      Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                      "TRUE" = existing_exp_details, 
-                      "FALSE" = deannotateDetails(existing_exp_details))
-      
-      if("data.frame" %in% class(Deets)){
-         Deets <- Deets %>% filter(File == sim_data_file)
-         
-         if(nrow(Deets) == 0){
-            Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                       exp_details = "Input Sheet")
-         }
-      }
+   
+   if("logical" %in% class(existing_exp_details)){
+      Deets <- extractExpDetails(sim_data_file,
+                                 exp_details = "Summary and Input")[["MainDetails"]]
       
    } else {
-      Deets <- extractExpDetails(sim_data_file, exp_details = "Input Sheet")
-   } 
+      existing_exp_details <- harmonize_details(existing_exp_details)
+      
+      Deets <- existing_exp_details$MainDetails %>% filter(File == sim_data_file)
+      
+      if(nrow(Deets) == 0){
+         Deets <- extractExpDetails(sim_data_file,
+                                    exp_details = "Summary and Input")[["MainDetails"]]
+      }
+   }
    
    if(Deets$PopRepSim == "Yes"){
       warning(paste0("The simulator file supplied, `", 
@@ -112,18 +110,19 @@ extractFmFe <- function(sim_data_file,
       EndRow <- which(is.na(sim_data_xl$...1[3:nrow(sim_data_xl)]))[1] + 1
       
       suppressMessages(
-      Out <- sim_data_xl[3:EndRow, 1:5] %>% 
-         rename(Max = ...2, 
-                tmax = ...3, 
-                Min = ...4, 
-                tmin = ...5) %>% 
-         mutate(Tissue = str_extract(tolower(...1), "liver|kidney|renal"), 
-                Enzyme = str_extract(...1, "(CYP|UGT)[1-9][ABCDEFJ][1-9]{1,2}|Additional"), 
-                EffectorPresent = str_detect(tolower(...1), "with inh"), 
-                Parameter = str_extract(...1, "fm|fe"), 
-                across(.cols = c(Max, tmax, Min, tmin), 
-                       .fns = as.numeric)) %>% 
-         select(Parameter, Tissue, Enzyme, EffectorPresent, Max, tmax, Min, tmin)
+         Out <- sim_data_xl[3:EndRow, 1:5] %>% 
+            rename(Max = ...2, 
+                   tmax = ...3, 
+                   Min = ...4, 
+                   tmin = ...5) %>% 
+            mutate(Tissue = str_extract(tolower(...1), "liver|kidney|renal"), 
+                   Enzyme = str_extract(...1, "(CYP|UGT)[1-9][ABCDEFJ][1-9]{1,2}|Additional"), 
+                   PerpPresent = str_detect(tolower(...1), "with inh"), 
+                   Parameter = str_extract(...1, "fm|fe"), 
+                   across(.cols = c(Max, tmax, Min, tmin), 
+                          .fns = as.numeric), 
+                   File = sim_data_file) %>% 
+            select(Parameter, Tissue, Enzyme, PerpPresent, Max, tmax, Min, tmin, File)
       )
       
       return(Out)
@@ -174,7 +173,7 @@ extractFmFe <- function(sim_data_file,
                                   Trial == "95th percentile" ~ "per95", 
                                   Trial == "geometric mean" ~ "geomean",
                                   TRUE ~ Trial),
-                EffectorPresent = str_detect(ID, "with inh"), 
+                PerpPresent = str_detect(ID, "with inh"), 
                 Parameter = str_trim(str_extract(ID, " fe | fm ")))
       
       sim_data_mean <- sim_data_xl[c(TimeRow, RowsToUse + TimeRow - 1), ] %>% 
@@ -222,7 +221,7 @@ extractFmFe <- function(sim_data_file,
                                           "\\((liver|kidney|renal)\\)")), 
                 Enzyme = str_extract(ID,
                                      "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), 
-                EffectorPresent = str_detect(ID, "with inh"), 
+                PerpPresent = str_detect(ID, "with inh"), 
                 Parameter = str_trim(str_extract(ID, " fe | fm ")))
       
       sim_data_indiv <- sim_data_xl[c(TimeRow, RowsToUse), ] %>% 
@@ -394,17 +393,17 @@ extractFmFe <- function(sim_data_file,
                                         MyMaxDoseNum_inhib2 - 1, DoseNum_inhib2))
    }
    
-   # Noting exactly what the effectors were
-   AllEffectors <- c(Deets$Inhibitor1, Deets$Inhibitor2,
+   # Noting exactly what the perpetrators were
+   AllPerpetrators <- c(Deets$Inhibitor1, Deets$Inhibitor2,
                      Deets$Inhibitor1Metabolite)
-   AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
+   AllPerpetrators <- AllPerpetrators[complete.cases(AllPerpetrators)]
    
    # Finalizing, tidying, selecting only useful columns
    Data <- Data %>%
       mutate(Time_units = tolower({{TimeUnits}}),
              File = sim_data_file,
-             Inhibitor = ifelse(EffectorPresent,
-                                str_comma(AllEffectors), "none"), 
+             Inhibitor = ifelse(PerpPresent,
+                                str_comma(AllPerpetrators), "none"), 
              Substrate = Deets$Substrate, 
              Compound = AllCompounds[CompoundID]) %>%
       arrange(across(any_of(c("Parameter", "Tissue", "Enzyme",

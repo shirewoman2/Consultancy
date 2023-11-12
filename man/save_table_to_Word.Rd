@@ -14,7 +14,8 @@ save_table_to_Word(
   prettify_columns = TRUE,
   fontsize = 11,
   highlight_so_cutoffs = NA,
-  highlight_so_colors = NA
+  highlight_so_colors = NA,
+  highlight_gmr_colors = NA
 )
 }
 \arguments{

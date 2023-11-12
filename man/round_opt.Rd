@@ -4,12 +4,22 @@
 \alias{round_opt}
 \title{INTERNAL: Rounding function}
 \usage{
-round_opt(x, round_fun)
+round_opt(x, round_fun, is_this_for_Word = FALSE, out_class = "numeric")
 }
 \arguments{
 \item{x}{vector to be rounded}
 
-\item{round_fun}{which function to use to round}
+\item{round_fun}{which function to use to round. Options: "round", "signif",
+"consultancy", "none".}
+
+\item{is_this_for_Word}{TRUE or FALSE for whether this is being applied to a
+Word file in this situation}
+
+\item{out_class}{data class of the ouput; defaults to "numeric" but
+"character" is acceptable and will often work better if this is for a Word
+file or is being supplied to \code{formatTable_Simcyp}. NB: If you chose a
+rounding option of "Consultancy", this will return character data no matter
+what.}
 }
 \value{
 rounded numbers that might, after running this, be character data

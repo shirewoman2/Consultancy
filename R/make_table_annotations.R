@@ -5,8 +5,8 @@
 #' for a table with a single set of results. This is meant for use with
 #' pksummary_table or for pksummary_mult when the results are split into
 #' multiple tables rather than all together in one. Note that this is designed
-#' for scenarios where, if there's an effector, there's only one. The text won't
-#' be quite right if there are 2 effectors. UNDER CONSTRUCTION.
+#' for scenarios where, if there's a perpetrator, there's only one. The text won't
+#' be quite right if there are 2 perpetrators. UNDER CONSTRUCTION.
 #'
 #' @param MyPKResults only the PK table
 #' @param MyFile the specific sim_data_file in question
@@ -137,19 +137,19 @@ make_table_annotations <- function(MyPKResults, # only PK table
                           DoseFreq_sub)
    
    
-   ## Info on any effectors included ---------------------------------
+   ## Info on any perpetrators included ---------------------------------
    
-   AllEffectors <- c("inhibitor 1" = ifelse("Inhibitor1" %in% names(Deets), 
+   AllPerpetrators <- c("inhibitor 1" = ifelse("Inhibitor1" %in% names(Deets), 
                                             Deets$Inhibitor1, NA), 
                      "inhibitor 2" = ifelse("Inhibitor2" %in% names(Deets), 
                                             Deets$Inhibitor2, NA), 
                      "inhibitor 1 metabolite" = ifelse("Inhibitor1Metabolite" %in% names(Deets), 
                                                        Deets$Inhibitor1, NA))
-   AllEffectors <- AllEffectors[complete.cases(AllEffectors)]
+   AllPerpetrators <- AllPerpetrators[complete.cases(AllPerpetrators)]
    
-   MyEffector <- determine_myeffector(Deets, prettify_compound_names)
+   MyPerpetrator <- determine_myperpetrator(Deets, prettify_compound_names)
    
-   if(MyEffector != "none"){
+   if(MyPerpetrator != "none"){
       SingMult_inhib <- ifelse(Deets$Regimen_inhib %in% c("custom dosing",
                                                           "Multiple Dose"), 
                                "multiple", "single")
@@ -211,12 +211,12 @@ make_table_annotations <- function(MyPKResults, # only PK table
                       )
    
    FigText3 <- ifelse(
-      MyEffector != "none" & 
+      MyPerpetrator != "none" & 
          (MyCompoundID %in% c("inhibitor 1", "inhibitor 2",
                               "inhibitor 1 metabolite") == FALSE |
-             length(setdiff(names(AllEffectors), MyCompoundID)) > 0),
+             length(setdiff(names(AllPerpetrators), MyCompoundID)) > 0),
       paste(" with or without", Deets$Dose_inhib, "mg",
-            MyEffector, DoseFreq_inhib),
+            MyPerpetrator, DoseFreq_inhib),
       "")
    
    Heading <- paste0("*Table XXX. Simulated ",
@@ -264,7 +264,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                   "Dose1included" = Dose1included, 
                   "LastDoseincluded" = LastDoseincluded, 
                   "Observedincluded" = Observedincluded, 
-                  "MyEffector" = MyEffector, # note that this is only 1 effector
+                  "MyPerpetrator" = MyPerpetrator, # note that this is only 1 perpetrator
                   "DoseDay_sub" = DoseDay_sub))
    } else {
       return(list("TableHeading" = Heading, 

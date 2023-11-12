@@ -90,8 +90,8 @@
 #'   \item{By default, if you have a single-dose simulation, the parameters will
 #'   include AUC and Cmax for dose 1, and, if you have a multiple-dose
 #'   simulation, AUC and Cmax for the last dose. Also by default, if you have an
-#'   effector present, the parameters will include the AUC and Cmax values with
-#'   and without the effector as well as those ratios.}
+#'   perpetrator present, the parameters will include the AUC and Cmax values with
+#'   and without the perpetrator as well as those ratios.}
 #'
 #'   \item{Alternatively, you can specify a vector of any combination of
 #'   specific, individual parameters, e.g., \code{c("Cmax_dose1",
@@ -106,7 +106,7 @@
 #'
 #'   \item{Parameters that don't make sense for your scenario -- such as asking
 #'   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
-#'   inhibitor or effector -- will not be included.}
+#'   inhibitor or perpetrator -- will not be included.}
 #'
 #'   \item{tmax will be listed as median, min, and max rather than mean, lower
 #'   and higher confidence interval or percentiles. Similarly, if you request
@@ -228,8 +228,8 @@
 #'   substrate or a substrate metabolite. If set to TRUE, this will return a
 #'   list that includes data formatted for use with the function
 #'   \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
-#'   only works with simulations with effectors (at least, for now), this will
-#'   only work for simulations that included an effector.
+#'   only works with simulations with perpetrators (at least, for now), this will
+#'   only work for simulations that included a perpetrator.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
@@ -249,6 +249,10 @@
 #'   file into multiple tables. This only applies to the Word output.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
+#' @param highlight_gmr_colors optionally specify a set of colors to use for
+#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+#'   "green to red" or a vector of 4 colors of your choosing. If left as NA, no
+#'   highlighting for GMR level will be done.
 #' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
 #'   simulated-to-observed ratios. Anything that is above those values or below
 #'   the inverse of those values will be highlighted. To figure out what cells
@@ -335,6 +339,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            checkDataSource = TRUE, 
                            save_table = NA, 
                            fontsize = 11, 
+                           highlight_gmr_colors = NA, 
                            highlight_so_cutoffs = NA, 
                            highlight_so_colors = "yellow to red", 
                            single_table = FALSE,
@@ -559,7 +564,7 @@ pksummary_mult <- function(sim_data_files = NA,
    }
    
    # Setting this for all files 
-   prettify_compound_names <- c("inhibitor" = "effector",
+   prettify_compound_names <- c("inhibitor" = "perpetrator",
                                 "substrate" = "substrate")
    
    ## Getting simulated data ------------------------------------------------
@@ -598,38 +603,21 @@ pksummary_mult <- function(sim_data_files = NA,
       # existing_exp_details will include ALL experimental details provided or
       # extracted inside the function.
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-         existing_exp_details <- extractExpDetails(i, exp_details = "Summary tab", 
-                                                   annotate_output = FALSE) %>% 
-            as.data.frame()
+         existing_exp_details <- extractExpDetails(i, exp_details = "Summary and Input", 
+                                                   annotate_output = FALSE)
       } else {
-         existing_exp_details <- switch(as.character("File" %in% names(existing_exp_details)), 
-                                        "TRUE" = existing_exp_details, 
-                                        "FALSE" = deannotateDetails(existing_exp_details)) 
+         existing_exp_details <- harmonize_details(existing_exp_details)
       }
       
-      Deets <- existing_exp_details %>% filter(File == i)
+      Deets <- existing_exp_details$MainDetails %>% filter(File == i)
       
       if(nrow(Deets) == 0){
-         existing_exp_details <- 
-            extractExpDetails_mult(sim_data_file = i, 
-                                   existing_exp_details = existing_exp_details,
-                                   exp_details = "Summary tab", 
-                                   annotate_output = FALSE)
-         
-         Deets <- existing_exp_details %>% filter(File == i)
+         Deets <- 
+            extractExpDetails(sim_data_file = i, 
+                              exp_details = "Summary and Input", 
+                              annotate_output = FALSE)[["MainDetails"]]
       }
-      
-      # We need to know the dosing regimen for whatever compound they
-      # requested, but, if the compoundID is inhibitor 2, then that's listed
-      # on the input tab, and we'll need to extract exp details for that, too.
-      if("inhibitor 2" %in% compoundsToExtract){
-         existing_exp_details <-
-            extractExpDetails_mult(sim_data_file = i, 
-                                   existing_exp_details = existing_exp_details,
-                                   exp_details = "Input Sheet")
-         Deets <- existing_exp_details %>% filter(File == i)
-      }
-      
+
       # Checking that the file is, indeed, a simulator output file.
       if(length(Deets) == 0){
          # Using "warning" instead of "stop" here b/c I want this to be able to

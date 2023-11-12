@@ -131,7 +131,7 @@ create_doses(custom_dosing_schedule = c(0, 12, 24, 48, 92, 168),
 
 
 # If you have multiple compounds -- say you've got a DDI study with both a
-# substrate and an effector -- this will probably be easiest to manage if you
+# substrate and a perpetrator -- this will probably be easiest to manage if you
 # run create_doses once for each compound. It just gets pretty
 # complicated pretty quickly to have a substrate with one dosing interval,
 # start time, and amount and then an inhibitor with a *different* dosing

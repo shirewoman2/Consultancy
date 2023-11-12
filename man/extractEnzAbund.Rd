@@ -48,7 +48,7 @@ A data.frame of enzyme abundance with time with the following
 
   \item{Substrate}{what the substrate was in the simulation}
 
-  \item{Inhibitor}{what the effector was in the simulation if there was one}
+  \item{Inhibitor}{what the perpetrator was in the simulation if there was one}
 
   \item{Individual}{the individual for the given profile, which will be a
   number for a simulated individual or will be "obs" or "obs+inhibitor" for

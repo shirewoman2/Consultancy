@@ -61,11 +61,10 @@ detect_file_timestamp <- function(sim_data_files = NA,
       filter(str_detect(Original, " - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}"))
    
    if(any(duplicated(Changes$Revised))){
-      warning("The following files would have the same name if you run remove_file_timestamp:
-", 
-str_c(Changes$Original[Changes$Revised %in% 
-                      Changes$Revised[duplicated(Changes$Revise)]], 
-      collapse = "\n"))
+      warning("The following files would have the same name if you run remove_file_timestamp:\n", 
+              str_c(Changes$Original[Changes$Revised %in% 
+                                        Changes$Revised[duplicated(Changes$Revise)]], 
+                    collapse = "\n"))
    }
    
    return(Changes)

@@ -118,7 +118,8 @@ save_table_to_Word <- function(
       prettify_columns = TRUE, # want to add prettify compound names but haven't yet
       fontsize = 11, 
       highlight_so_cutoffs = NA, 
-      highlight_so_colors = NA){
+      highlight_so_colors = NA, 
+      highlight_gmr_colors = NA){
    
    # PKtable needs to have the following columns to get saved w/pksummarymult Rmd file:
    # File

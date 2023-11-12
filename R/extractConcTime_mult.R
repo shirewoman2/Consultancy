@@ -370,9 +370,17 @@ extractConcTime_mult <- function(sim_data_files = NA,
          ObsAssign <- data.frame()
          obs_to_sim_assignment <- NA
       } else {
-         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                         "TRUE" = existing_exp_details, 
-                         "FALSE" = deannotateDetails(existing_exp_details))
+         
+         existing_exp_details <- harmonize_details(existing_exp_details)
+         Deets <- existing_exp_details[["MainDetails"]] %>% 
+            filter(File %in% sim_data_files)
+         
+         if(all(sim_data_files %in% Deets$File) == FALSE){
+            existing_exp_details <- extractExpDetails_mult(sim_data_files = sim_data_files, 
+                                                           exp_details = "Summary and Input")
+            Deets <- existing_exp_details[["MainDetails"]] %>% 
+               filter(File %in% sim_data_files)
+         }
          
          if("ObsOverlayFile" %in% names(Deets) == FALSE){
             warning("The observed data overlay file was not included in `existing_exp_details`, so we don't know which observed data files to use for the simulated files. We cannot extract any observed data.\n", 
@@ -380,6 +388,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
             ObsAssign <- data.frame()
             obs_to_sim_assignment <- NA
          } else {
+            
+            # Make this work for whoever the current user is, even if the XML
+            # obs file path was for someone else.
+            Deets$ObsOverlayFile <- 
+               sub("Users\\\\.*\\\\Certara", 
+                   paste0("Users\\\\", Sys.info()["user"], "\\\\Certara"), 
+                   Deets$ObsOverlayFile)
+            
             ObsAssign <- Deets %>% select(File, ObsOverlayFile) %>% 
                rename(ObsFile = ObsOverlayFile) %>% 
                mutate(ObsFile = sub("\\.xml$", ".xlsx", ObsFile), 
@@ -525,7 +541,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                MissingObsFiles <- ObsAssign$ObsFile[
                   which(file.exists(ObsAssign$ObsFile) == FALSE)]
                warning(paste0("The file(s) ", 
-                              str_comma(paste0("`", MissingObsFiles, "`")), 
+                              str_comma(paste0("`", unique(MissingObsFiles), "`")), 
                               " is/are not present and thus will not be extracted.\n"), 
                        call. = FALSE)
                ObsAssign <- ObsAssign %>% filter(!ObsFile %in% MissingObsFiles)
@@ -541,8 +557,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    if(length(ObsAssign) > 0){
       ObsAssign <- ObsAssign %>% filter(complete.cases(File) &
                                            complete.cases(ObsFile) &
-                                           File %in% sim_data_files) 
-      
+                                           File %in% sim_data_files_topull) 
    }
    
    
@@ -555,24 +570,25 @@ extractConcTime_mult <- function(sim_data_files = NA,
       
       # Getting expdetails for the simulation(s)
       if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA and we have not yet extracted any details
-         existing_exp_details <- extractExpDetails_mult(
-            ff, exp_details = "Input Sheet", annotate_output = FALSE)
-         Deets <- existing_exp_details %>% filter(File == ff)
-      } else {
-         Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                         "TRUE" = existing_exp_details, 
-                         "FALSE" = deannotateDetails(existing_exp_details)) 
+         existing_exp_details <- 
+            extractExpDetails_mult(sim_data_files = sim_data_files, 
+                                   exp_details = "Summary and Input", 
+                                   existing_exp_details = existing_exp_details)
          
-         if("data.frame" %in% class(Deets)){
-            Deets <- Deets %>% filter(File == ff)
+         Deets <- existing_exp_details[["MainDetails"]] %>% filter(File == ff)
+         
+      } else {
+         
+         existing_exp_details <- harmonize_details(existing_exp_details)
+         Deets <- existing_exp_details[["MainDetails"]] %>% filter(File == ff)
+         
+         if(nrow(Deets) == 0){
+            existing_exp_details <- 
+               extractExpDetails_mult(sim_data_files = sim_data_files, 
+                                      exp_details = "Summary and Input", 
+                                      existing_exp_details = existing_exp_details)
             
-            if(nrow(Deets) == 0){
-               existing_exp_details <- extractExpDetails_mult(
-                  ff, exp_details = "Input Sheet", 
-                  existing_exp_details = existing_exp_details,
-                  annotate_output = FALSE)
-               Deets <- existing_exp_details %>% filter(File == ff)
-            }
+            Deets <- existing_exp_details[["MainDetails"]] %>% filter(File == ff)
          }
       }
       
@@ -776,14 +792,15 @@ extractConcTime_mult <- function(sim_data_files = NA,
             }
             
             MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
+            
          }
-      }
+         
+      }  
       
       MultData[[ff]] <- bind_rows(MultData[[ff]])
       
       # MUST remove Deets or you can get the wrong info for each file!!!
       rm(Deets, CompoundCheck, compoundsToExtract_n) 
-      
    }
    
    MultData <- bind_rows(MultData)
@@ -796,12 +813,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # Observed data ------------------------------------------------------
    
-   if(length(ObsAssign) > 0){
+   if(nrow(ObsAssign) > 0 & nrow(MultData) > 0){
       
       obs_dataframe <- extractObsConcTime_mult(
          obs_data_files = ObsAssign %>% 
             filter(File %in% unique(MultData$File)) %>% 
-            pull(ObsFile))
+            pull(ObsFile)) %>% 
+         filter(CompoundID %in% compoundsToExtract &
+                   Tissue %in% tissues)
       
       MultData <- match_obs_to_sim(ct_dataframe = MultData, 
                                    obs_dataframe = obs_dataframe, 
@@ -816,7 +835,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    if("Dose_sub" %in% names(ct_dataframe) &
       "Dose_sub" %in% names(MultData) &&
       (class(ct_dataframe$Dose_sub) == "character" |
-      class(MultData$Dose_sub) == "character")){
+       class(MultData$Dose_sub) == "character")){
       
       MultData$Dose_sub <- as.character(MultData$Dose_sub)
       ct_dataframe$Dose_sub <- as.character(ct_dataframe$Dose_sub)

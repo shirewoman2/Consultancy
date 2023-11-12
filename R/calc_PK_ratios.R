@@ -18,8 +18,8 @@
 #'   as in, the subjects are \emph{identical} between the two simulations.
 #'   \strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
 #'   CALCULATIONS ARE PERFORMED!} An example of a paired study would be a DDI
-#'   study where each subject has a measurement without the effector of interest
-#'   and then has a second measurement \emph{with} the effector. The comparison
+#'   study where each subject has a measurement without the perpetrator of interest
+#'   and then has a second measurement \emph{with} the perpetrator. The comparison
 #'   is for repeated measurements of the \emph{same subject}. An example of an
 #'   unpaired study design would be comparing healthy volunteers to subjects
 #'   with hepatic impairment because those are measurements on \emph{different}
@@ -39,7 +39,7 @@
 #'   metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
 #'   metabolite",} \item{"inhibitor 1" -- this can be an inducer, inhibitor,
 #'   activator, or suppressor, but it's labeled as "Inhibitor 1" in the
-#'   simulator,} \item{"inhibitor 2" for the 2nd effector listed in the
+#'   simulator,} \item{"inhibitor 2" for the 2nd perpetrator listed in the
 #'   simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
 #'   inhibitor 1}}
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
@@ -158,7 +158,7 @@
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
-#'   metabolites, effectors, or effector metabolites are among the standard
+#'   metabolites, perpetrators, or perpetrator metabolites are among the standard
 #'   options for the simulator, and leaving \code{prettify_compound_names =
 #'   TRUE} will make the name of those compounds something more human readable.
 #'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
@@ -166,9 +166,9 @@
 #'   you'd prefer to see in your column titles if you would like something
 #'   different. For example, \code{prettify_compound_names = c("inhibitor" =
 #'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "inhibitor"
-#'   includes \emph{all} the effectors and effector metabolites present, so, if
-#'   you're setting the effector name, you really should use something like this
-#'   if you're including effector metabolites: \code{prettify_compound_names =
+#'   includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
+#'   you're setting the perpetrator name, you really should use something like this
+#'   if you're including perpetrator metabolites: \code{prettify_compound_names =
 #'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #' @param rounding option for what rounding to perform, if any. Options are:
@@ -302,23 +302,27 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
       Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
                                                         sim_data_file_denominator), 
-                                      exp_details = "Summary tab", 
-                                      annotate_output = FALSE)
+                                      exp_details = "Summary and Input", 
+                                      annotate_output = FALSE)[["MainDetails"]]
    } else {
-      Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                      "TRUE" = existing_exp_details, 
-                      "FALSE" = deannotateDetails(existing_exp_details))
+      Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
+         filter(File %in% c(sim_data_file_numerator, 
+                            sim_data_file_denominator))
       
-      if("data.frame" %in% class(Deets)){
-         Deets <- Deets %>% filter(File %in% c(sim_data_file_numerator, 
-                                               sim_data_file_denominator))
-         
-         if(nrow(Deets) != 2){
-            Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
-                                                              sim_data_file_denominator), 
-                                            exp_details = "Summary tab", 
-                                            annotate_output = FALSE)
-         }
+      if(nrow(Deets) != 2){
+         Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
+                                                           sim_data_file_denominator), 
+                                         exp_details = "Summary and Input", 
+                                         annotate_output = FALSE)[["MainDetails"]]
+      }
+      
+      if(nrow(Deets) != 2){
+         warning(paste0("We were attempting to find the simulation details for ", 
+                        str_comma(c(sim_data_file_numerator, 
+                                    sim_data_file_denominator)), 
+                        " and failed to find them, so we cannot return information on these files.\n"), 
+                 call. = FALSE)
+         return(data.frame())
       }
    }
    
@@ -849,32 +853,32 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       names(MyPKResults) <- sub("NumeratorSim", "numerator", names(MyPKResults))
    }
    
-   # Checking on possible effectors to prettify
-   MyEffector <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
+   # Checking on possible perpetrators to prettify
+   MyPerpetrator <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
                    Deets$Inhibitor2)
-   if(length(MyEffector) > 0){
-      MyEffector <- str_comma(MyEffector[complete.cases(MyEffector)])
-      MyEffector <- ifelse(MyEffector == "", NA, MyEffector)
+   if(length(MyPerpetrator) > 0){
+      MyPerpetrator <- str_comma(MyPerpetrator[complete.cases(MyPerpetrator)])
+      MyPerpetrator <- ifelse(MyPerpetrator == "", NA, MyPerpetrator)
    } else {
-      MyEffector <- NA
+      MyPerpetrator <- NA
    }
    
-   if(any(complete.cases(MyEffector))){
+   if(any(complete.cases(MyPerpetrator))){
       
       if(class(prettify_compound_names) == "logical" &&
          prettify_compound_names){
-         MyEffector <- prettify_compound_name(MyEffector)
+         MyPerpetrator <- prettify_compound_name(MyPerpetrator)
       }
       
       if(class(prettify_compound_names) == "character"){
          names(prettify_compound_names)[
             str_detect(tolower(names(prettify_compound_names)), 
                        "inhibitor")][1] <- "inhibitor"
-         MyEffector <- prettify_compound_names["inhibitor"]
+         MyPerpetrator <- prettify_compound_names["inhibitor"]
       }
       
-      # Prettifying effector names as necessary
-      names(MyPKResults) <- sub("effector", MyEffector, names(MyPKResults))
+      # Prettifying perpetrator names as necessary
+      names(MyPKResults) <- sub("perpetrator", MyPerpetrator, names(MyPKResults))
    }
    
    if(is.na(include_dose_num)){

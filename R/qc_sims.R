@@ -56,28 +56,12 @@ qc_sims <- function(existing_exp_details,
    
    # Main body of function ---------------------------------------------------
    
-   if(class(existing_exp_details)[1] == "list"){
-      # This is when the output is the default list from extractExpDetails
-      existing_exp_details <- as.data.frame(existing_exp_details)
-   }
+   existing_exp_details <- harmonize_details(existing_exp_details)
    
-   PrevAnnotated <- all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details))
-   
-   if(PrevAnnotated){
-      
-      existing_exp_details <- deannotateDetails(existing_exp_details, apply_class = FALSE)
-      
-   } else if("File" %in% names(existing_exp_details) == FALSE){
-      existing_exp_details$File <- paste("unknown file", 1:nrow(existing_exp_details))
-      FileOrder <- existing_exp_details$File
-      existing_exp_details <- existing_exp_details %>% 
-         mutate(File = factor(File, levels = FileOrder))
-   }
-   
-   AllFiles <- unique(existing_exp_details$File)
+   AllFiles <- unique(existing_exp_details$MainDetails$File)
    TSim <- paste("TEMPLATE SIMULATION -", template_sim)
    
-   AllCompoundIDs <- existing_exp_details %>% 
+   AllCompoundIDs <- existing_exp_details$MainDetails %>% 
       select(any_of(c("Substrate", "PrimaryMetabolite1", "PrimaryMetabolite2", 
                       "SecondaryMetabolite", "Inhibitor1", "Inhibitor2", 
                       "Inhibitor1Metabolite"))) %>% 

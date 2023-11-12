@@ -33,10 +33,11 @@ pksummary_table(
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
   return_PK_pulled = FALSE,
-  save_table = NA,
-  fontsize = 11,
+  highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
-  highlight_so_colors = "yellow to red"
+  highlight_so_colors = "yellow to red",
+  save_table = NA,
+  fontsize = 11
 )
 }
 \arguments{
@@ -66,8 +67,8 @@ blood".}
   \item{By default, if you have a single-dose simulation, the parameters will
   include AUC and Cmax for dose 1, and, if you have a multiple-dose
   simulation, AUC and Cmax for the last dose. Also by default, if you have an
-  effector present, the parameters will include the AUC and Cmax values with
-  and without the effector as well as those ratios.}
+  perpetrator present, the parameters will include the AUC and Cmax values with
+  and without the perpetrator as well as those ratios.}
 
   \item{Alternatively, you can specify a vector of any combination of
   specific, individual parameters, e.g., \code{c("Cmax_dose1",
@@ -81,7 +82,7 @@ blood".}
 
   \item{Parameters that don't make sense for your scenario -- such as asking
   for \code{AUCinf_dose1_withInhib} when your simulation did not include an
-  inhibitor or effector -- will not be included.}
+  inhibitor or perpetrator -- will not be included.}
 
   \item{tmax will be listed as median, minimum, and maximum rather than mean,
   lower and higher 90\% confidence interval or 5th to 95th percentiles.
@@ -224,18 +225,18 @@ from \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in the prettified column titles and in any Word
 output files. This was designed for simulations where the substrate and any
-metabolites, effectors, or effector metabolites are among the standard
+metabolites, perpetrators, or perpetrator metabolites are among the standard
 options for the simulator, and leaving \code{prettify_compound_names =
 TRUE} will make the name of those compounds something more human readable.
 For example, "SV-Rifampicin-MD" will become "rifampicin", and
 "Sim-Midazolam" will become "midazolam". Set each compound to the name
 you'd prefer to see in your column titles if you would like something
-different. For example, \code{prettify_compound_names = c("effector" =
-"teeswiftavir", "substrate" = "superstatin")}. Please note that "effector"
-includes \emph{all} the effectors and effector metabolites present, so, if
-you're setting the effector name, you really should use something like this
-if you're including effector metabolites: \code{prettify_compound_names =
-c("effector" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+different. For example, \code{prettify_compound_names = c("perpetrator" =
+"teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
+includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
+you're setting the perpetrator name, you really should use something like this
+if you're including perpetrator metabolites: \code{prettify_compound_names =
+c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
 \item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
@@ -243,8 +244,8 @@ the same time. This only applies when the compound to extract is the
 substrate or a substrate metabolite. If set to TRUE, this will return a
 list that includes data formatted for use with the function
 \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
-only works with simulations with effectors (at least, for now), this will
-only work for simulations that included an effector. This is probably most
+only works with simulations with perpetrators (at least, for now), this will
+only work for simulations that included a perpetrator. This is probably most
 useful for the \code{\link{pksummary_mult}} function since a forest plot
 with only one simulation isn't terribly informative.}
 
@@ -256,24 +257,10 @@ simulator output file. Useful for QCing.}
 list item what PK parameters were pulled. This is used internally for
 writing table headings later.}
 
-\item{save_table}{optionally save the output table and, if requested, the QC
-info, by supplying a file name in quotes here, e.g., "My nicely formatted
-table.docx" or "My table.csv", depending on whether you'd prefer to have
-the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. (If you assign the output of
-\code{pksummary_table} to an R object, you can also save the table later to
-a Word file with the function \code{\link{formatTable_Simcyp}}.) If you
-supply only the file extension, e.g., \code{save_table = "docx"}, the name
-of the file will be the file name plus "PK summary table" with that
-extension, and the output file will be located in the same folder as
-\code{sim_data_file}. If you supply something other than just "docx" or
-just "csv" for the file name but you leave off the file extension, we'll
-assume you want it to be ".csv". While the main PK table data will be in
-whatever file format you requested, if you set \code{checkDataSource =
-TRUE}, the QC data will be in a csv file on its own and will have "- QC"
-added to the end of the file name.}
-
-\item{fontsize}{the numeric font size for Word output. Default is 11 point.
-This only applies when you save the table as a Word file.}
+\item{highlight_gmr_colors}{optionally specify a set of colors to use for
+highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+"green to red" or a vector of 4 colors of your choosing. If left as NA, no
+highlighting for GMR level will be done.}
 
 \item{highlight_so_cutoffs}{optionally specify cutoffs for highlighting any
 simulated-to-observed ratios. Anything that is above those values or below
@@ -313,6 +300,25 @@ c("green", "red")}. This only applies when you save the table as a Word file.}
   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
+
+\item{save_table}{optionally save the output table and, if requested, the QC
+info, by supplying a file name in quotes here, e.g., "My nicely formatted
+table.docx" or "My table.csv", depending on whether you'd prefer to have
+the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. (If you assign the output of
+\code{pksummary_table} to an R object, you can also save the table later to
+a Word file with the function \code{\link{formatTable_Simcyp}}.) If you
+supply only the file extension, e.g., \code{save_table = "docx"}, the name
+of the file will be the file name plus "PK summary table" with that
+extension, and the output file will be located in the same folder as
+\code{sim_data_file}. If you supply something other than just "docx" or
+just "csv" for the file name but you leave off the file extension, we'll
+assume you want it to be ".csv". While the main PK table data will be in
+whatever file format you requested, if you set \code{checkDataSource =
+TRUE}, the QC data will be in a csv file on its own and will have "- QC"
+added to the end of the file name.}
+
+\item{fontsize}{the numeric font size for Word output. Default is 11 point.
+This only applies when you save the table as a Word file.}
 }
 \value{
 Returns a data.frame of PK summary data and, if observed data were

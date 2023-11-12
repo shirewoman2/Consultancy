@@ -6,7 +6,7 @@
 once}
 \usage{
 extractExpDetails_XML(
-  sim_workspace_files,
+  sim_workspace_files = NA,
   compoundsToExtract = "all",
   exp_details = "all",
   save_output = NA

@@ -168,36 +168,17 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    AnyExistingDeets <- exists(deparse(substitute(existing_exp_details)))
    
    if(AnyExistingDeets){
-      if(class(existing_exp_details)[1] == "list"){
-         existing_exp_details <- bind_rows(existing_exp_details)
-      }
       
-      if("data.frame" %in% class(existing_exp_details)){
-         if(all(c("SimulatorSection", "Sheet") %in% names(existing_exp_details))){
-            # This is when existing_exp_details has been annotated.
-            # Ironically, need to de-annotate here to make this work well
-            # with the rest of the function.
-            existing_exp_details <- existing_exp_details %>% 
-               select(-any_of(c("SimulatorSection", "Sheet", "Notes",
-                                "CompoundID", "Compound"))) %>% 
-               pivot_longer(cols = -Detail, 
-                            names_to = "File", values_to = "Value") %>% 
-               pivot_wider(names_from = Detail, values_from = Value)
-            
-         } else if("File" %in% names(existing_exp_details) == FALSE){
-            existing_exp_details$File <- paste("unknown file", 1:nrow(existing_exp_details))
-         }
-         
-         if(overwrite == FALSE){
-            sim_data_files_topull <- unique(setdiff(sim_data_files, 
-                                                    existing_exp_details$File))
-         } else {
-            sim_data_files_topull <- unique(sim_data_files)
-            existing_exp_details <- existing_exp_details %>%
-               filter(!File %in% existing_exp_details$File)
-         }
-      }
+      existing_exp_details <- harmonize_details(existing_exp_details)
       
+      if(overwrite == FALSE){
+         sim_data_files_topull <- 
+            unique(setdiff(sim_data_files, existing_exp_details$MainDetails$File))
+      } else {
+         sim_data_files_topull <- unique(sim_data_files)
+         existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>%
+            filter(!File %in% existing_exp_details$MainDetails$File)
+      }
    } else {
       sim_data_files_topull <- unique(sim_data_files)
    }
@@ -205,73 +186,33 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    MyDeets <- list()
    CustomDosing <- c()
    
-   for(i in sim_data_files_topull){
+   for(i in sim_data_files_topull){ 
       message(paste("Extracting simulation experimental details from file =", i))
       MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
                                         exp_details = exp_details) 
-      
-      # Checking for custom dosing regimens and removing those data b/c they
-      # have a different data structure and cannot easily be coerced into a
-      # single row for each simulator file.
-      if(any(str_detect(tolower(names(MyDeets[[i]])), "custom"))){
-         CustomDosing[i] <- TRUE
-         MyDeets[[i]] <- 
-            MyDeets[[i]][!str_detect(tolower(names(MyDeets[[i]])), "custom")]
-      } else {
-         CustomDosing[i] <- FALSE
-      }
-      
-      MyDeets[[i]] <- MyDeets[[i]] %>% 
-         as.data.frame() %>% 
-         mutate(File = i) %>% 
-         select(File, everything())
    }
    
-   # Checking for any values that are normally numeric but, for various possible
-   # reasons (they were calculated values in some sims, it was a custom-dosing
-   # regimen, etc.), are now character data. Making them all be character.
-   CheckChar <- AllExpDetails %>% 
-      filter(Detail %in% unique(c(names(existing_exp_details), 
-                                  unlist(lapply(MyDeets, names)))) &
-                Class == "numeric") %>% 
-      pull(Detail)
+   Out <- c(list(existing_exp_details), MyDeets)
    
-   check4char <- function(DF){
-      X <- lapply(DF[intersect(CheckChar, names(DF))], class)
-      X <- names(X)[X == "character"]
-      return(X)
+   # Binding like elements in the list with like
+   bind_details <- function(listname){
+      sub_out <- data.table::rbindlist(
+         map_depth(.x = Out, 
+                   .depth = 1,
+                   .f = listname), 
+         fill = TRUE) %>% 
+         as.data.frame()
    }
    
-   if(AnyExistingDeets){
-      MakeChar <- c(as.character(unlist(lapply(MyDeets, check4char))), 
-                    check4char(existing_exp_details))
-      
-      existing_exp_details <- existing_exp_details %>% 
-         mutate(across(.cols = any_of(MakeChar), 
-                       .fns = as.character))
-      
-   } else {
-      MakeChar <- as.character(unlist(lapply(MyDeets, check4char)))
-   }
+   Out <- map(ExpDetailListItems, .f = bind_details)
+   names(Out) <- ExpDetailListItems
    
-   MyDeets <- lapply(MyDeets, 
-                     FUN = function(x) x %>% mutate(across(.cols = any_of(MakeChar), 
-                                                           .fns = as.character)))
-   
-   # Binding and organizing
-   Out <- bind_rows(MyDeets)
-   
-   if(AnyExistingDeets){
-      Out <- bind_rows(Out, existing_exp_details)
-   }
-   
-   if(nrow(Out) == 0){
+   if(length(Out) == 0 | nrow(Out$MainDetails) == 0){
       stop("It was not possible to extract any simulation experimental details.")
    }
    
    # Sorting to help organize output
-   Out <- Out %>% 
-      select(File, everything())
+   Out$MainDetails <- Out$MainDetails %>% select(File, everything())
    
    if(annotate_output){
       Out <- annotateDetails(Out, 
@@ -291,8 +232,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       }
       
       switch(Ext, 
-             "csv" = write.csv(as.data.frame(Out), FileName, row.names = F), 
-             "xlsx" = formatXL_head(as.data.frame(Out), 
+             "csv" = write.csv(as.data.frame(Out$MainDetails), FileName, row.names = F), 
+             "xlsx" = formatXL_head(as.data.frame(Out$MainDetails), 
                                     FileName, 
                                     sheet = "Simulation experimental details"))
    }

@@ -43,7 +43,7 @@ metabolite of inhibitor 1}}}
 sheet, in which case we don't know which dose it is}
 
 \item{Deets}{output from running extractExpDetails on the provided
-sim_data_file}
+sim_data_file and setting \code{Deets <- existing_exp_details$MainDetails}}
 
 \item{DataCheck}{DataCheck data.frame}
 

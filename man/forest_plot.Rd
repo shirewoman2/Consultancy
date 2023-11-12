@@ -42,9 +42,11 @@ forest_plot(
 }
 \arguments{
 \item{forest_dataframe}{a data.frame with extracted forest-plot data,
-generated from running \code{\link{extractForestData}} on Simulator output
-files or a csv or Excel file with the same data. (If it's an Excel file, it
-must have only one tab.)}
+generated from running \code{\link{extractForestData}} or
+\code{\link{pksummary_mult}} with the argument \code{extract_forest_data}
+set to TRUE on Simulator output files. Alternatively, if you already have
+some saved forest-plot data, supply a csv or Excel file with the same data.
+(If it's an Excel file, it must have only one tab.)}
 
 \item{y_axis_labels}{a column in \code{forest_dataframe} (unquoted) or a
 named character vector (each item in quotes) to use for labeling the
@@ -52,15 +54,15 @@ simulations on the y axis. In all forest plots, the y axis will be broken
 up by the simulation file name behind the scenes, but that's likely not the
 prettiest way to label the y axis, which is where this argument comes in.
 If you already have a column in \code{forest_dataframe} with the label you
-want -- for example the column Inhibitor1 when your drug of interest is a
-victim or Substrate when it's the effector -- use that by specifying, for
-example, \code{y_axis_labels = Inhibitor1}. If you would like to manually
-specify which simulation file should be labeled what here, do so with a
-named character vector, e.g.,
+want -- for example the column "Inhibitor1" when your drug of interest is a
+victim or "Substrate" when it's the perpetrator -- use that by specifying,
+for example, \code{y_axis_labels = Inhibitor1}. You can optionally make the
+compound names prettier automatically with the argument
+\code{prettify_ylabel}. If you would like to manually specify which
+simulation file should be labeled what here, do so with a named character
+vector, e.g.,
 \code{y_axis_labels = c("myfile1.xlsx" = "itraconazole", "myfile2.xlsx" =
-"efavirenz")}. If left as NA, we'll use the simulation file names. You can
-optionally make the compound names prettier with the argument
-\code{prettify_ylabel}.}
+"efavirenz")}. If left as NA, we'll use the simulation file names.}
 
 \item{y_order}{optionally set the order of simulation files on the y axis. If
   \code{y_order} is left as NA, the y axis will be sorted according to the
@@ -98,26 +100,37 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
 
 \item{observed_PK}{observed PK data, with the following columns: \describe{
 
-  \item{File}{the file you'd like the observed data to be graphed
-  next to. Note that this file name must exist in the simulated data
-  (forest_dataframe).}
+  \item{File}{the simulation file you'd like the observed data to be graphed
+  next to. If you only have observed data, that's fine: Use a made-up file
+  name here instead. Think of the column "File" as "the set of data to use
+  to create one row in the forest plot". If you have more than one set of
+  observed data without matching simulated data, just use one dummy file
+  name for each.}
 
   \item{PKparameter}{the specific PK parameters to graph. Acceptable values
-  are: "AUCinf_ratio_dose1", "AUCt_ratio_dose1", "AUCinf_ratio",
+  are: "AUCinf_ratio_dose1", "AUCt_ratio_dose1", "AUCtau_ratio_last",
+  "AUCinf_ratio", "AUCt_ratio", "AUCtau_ratio",
   "Cmax_ratio_dose1", "Cmax_ratio_last", or "Cmax_ratio". Whatever you use
   must match what was listed in the simulated data to be included in the
-  graph.}
+  graph. Sorry, we get that it's annoying that these must be set up with
+  these coded names, but they have to match exactly to get displayed nicely
+  in the final graph.}
 
   \item{at least one column named "Mean", "GeoMean", or "Median"}{Must be
   specified depending on your choice for \code{mean_type}, this column will
   be used for determining where to place the point. Whatever statistic you
   use \strong{must} be the same for both observed and simulated data.}
 
+  \item{whatever column you specified for \code{y_axis_labels}}{If you're making
+  a forest plot of perpetrators, for example, and you labeled the y axis
+  according to the values in the column "Inhibitor1", make sure that
+  "Inhibitor1" is included in your observed PK.}
+
   \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
   "Centile_Lower", "Centile_Upper", "GeoCV", "ArithCV", "Min", "Max",
   "Std Dev"}{these will be used for the error bars and are optional.}
 
-  \item{whatever column you used for facet_column_x}{If you broke up the
+  \item{whatever column you used for \code{facet_column_x}}{If you broke up the
   main graphs into two smaller graphs along the x axis, then whatever column you used for that
   must be present in the observed data, too.}
 
@@ -130,21 +143,19 @@ use the same value for \code{y_axis_labels} for multiple simulations. For
 example, say you have one simulation -- "SimA.xlsx" -- where the substrate
 was dosed QD and another simulation -- "SimB.xlsx" -- where it was dosed
 BID, and both of them were co-administered with the inhibitor itraconazole.
-You want the y axis labels to show what effector was used in each
+You want the y axis labels to show what perpetrator was used in each
 simulation, and both of these used the same inhibitor. If you break up your
 graphs by setting \code{facet_column_x} to whatever column you used to
 indicate the dosing regimen, then "SimA.xlsx" and "SimB.xlsx" won't overlap
-on the graph even though they both had the same effector. That's the reason
-it's ok here. Unclear? Please check out the examples at the bottom,
+on the graph even though they both had the same perpetrator. That's the
+reason it's ok here. Unclear? Please check out the examples at the bottom,
 particularly the ones that employ \code{facet_column_x}.}
 
 \item{show_numbers_on_right}{TRUE or FALSE (default) for whether to show the
 numbers used for the centre statistic (the point) and any variability (the
 error bars). This \emph{only} works when the graph has not been facetted
 along the x direction. If it's facetted along the x direction, it wouldn't
-be clear which numbers belonged to which facet. There's a way around this
-limitation, though; please see the examples pertaining to
-\code{show_numbers_on_right}.}
+be clear which numbers belonged to which facet.}
 
 \item{mean_type}{type of mean to graph; options are "geometric" (default),
 "arithmetic", or "median", but this only works when those data are included
@@ -174,7 +185,7 @@ alphabetical order. If you want "QD" to show up first, though, set the
 order with \code{x_order = c("QD", "BID")}}
 
 \item{y_axis_title}{optionally specify a vertical title to be displayed to
-the left of the y axis. Example: \code{y_axis_title = "Effector
+the left of the y axis. Example: \code{y_axis_title = "Perpetrator
 co-administered with Drug X"}. Default ("none") leaves off any y-axis title.}
 
 \item{pad_y_axis}{optionally add a smidge of padding to the y axis (default
@@ -243,7 +254,7 @@ acceptable input looks like this: \code{rel_widths = c(5, 1)}}
 \item{prettify_ylabel}{NA (default), TRUE, or FALSE on whether to attempt to
 make text included in \code{y_axis_labels} prettier. This was designed for
 the situation where the y axis is labeled with the compound used in the
-simulation and where the substrates or effectors are among the standard
+simulation and where the substrates or perpetrators are among the standard
 options for the simulator. Setting \code{prettify_ylabel =
 TRUE} will make the name of those compounds something more human readable.
 For example, "SV-Rifampicin-MD" will become "rifampicin", and
@@ -315,13 +326,14 @@ Output is a graph.
 \description{
 \code{forest_plot} creates a forest plot of AUC and Cmax ratios. Please use
 the function \code{\link{extractForestData}} or \code{\link{pksummary_mult}}
-(set the argument "extract_forest_data" to TRUE) to generate the input data
-for \code{forest_dataframe}. In the graph, data will be broken up on the y
-axis by the simulation file name and, optionally, anything you specify for
-\code{facet_column_x}, which will be broken up along the x axis. Since file
-names do not generally make the most lovely of y axis labels, please use the
-argument \code{y_axis_labels} to specify how you'd like your y
-axis to look. \strong{If you're a little confused here or you're just the
+(set the argument "extract_forest_data" to TRUE) to generate the simulated
+input data for \code{forest_dataframe}. This function will also work with
+observed data; please see notes for the argument "\code{observed_PK}" for how
+to include observed data. In the graph, data will be broken up on the y axis
+by the simulation file name and, optionally, along the x axis by anything you
+specify for \code{facet_column_x}. Since file names do not generally make the
+most lovely of y axis labels, please use the argument \code{y_axis_labels} to
+specify how you'd like your y axis to look. \strong{If you're a little confused here or you're just the
 kind of person who prefers to wing it rather than reading the instructions
 when assembling furniture, we recommend skipping to the end of this help file
 and trying out the examples to see what we mean.} For detailed
@@ -333,7 +345,7 @@ are unable to include a link to it here.)
 \examples{
 
 # We'll use some example forest-plot data for the substrate bufuralol
-# with various effectors. To start, we'll use all the default settings.
+# with various perpetrators. To start, we'll use all the default settings.
 forest_plot(forest_dataframe = BufForestData_20mg)
 
 # You can used the argument y_axis_labels to specify what to use for the
@@ -389,6 +401,24 @@ view(BufObsForestData_20mg)
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = Inhibitor1,
             observed_PK = BufObsForestData_20mg)
+
+# If you have some observed PK data that are not matched to specific 
+# simulated data, you can include them by setting a fake file name in the 
+# column "File", which should really be thought of as "the set of data that
+# comprise one row in the graph". Here's an example: 
+AddnlObsPK <- bind_rows(BufObsForestData_20mg, 
+                        data.frame(File = "Rifampicin obs data", # call it whatever you like
+                                   Inhibitor1 = "rifampicin", 
+                                   PKparameter = c("AUCt_ratio_dose1", 
+                                                   "Cmax_ratio_dose1"), 
+                                   GeoMean = c(0.4, 0.5), 
+                                   CI_Lower = c(0.35, 0.42), 
+                                   CI_Upper = c(0.45, 0.6)))
+
+forest_plot(forest_dataframe = BufForestData_20mg, 
+            observed_PK = AddnlObsPK, 
+            y_axis_labels = Inhibitor1,
+            legend_position = "right")
 
 # Here are some options for modifying the aesthetics of your graph:
 

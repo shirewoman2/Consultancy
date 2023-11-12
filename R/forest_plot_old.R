@@ -20,13 +20,13 @@
 #'   must have only one tab.) If this is a forest plot of perpetrator drug-drug
 #'   interactions (DDIs), the column "VictimCompound" will be what is used to
 #'   label the y axis. If it is a forest plot of victim DDIs, it will be the
-#'   column "PerpCompound". If, instead of the substrate or effector names, you
+#'   column "PerpCompound". If, instead of the substrate or perpetrator names, you
 #'   would like some other label to appear on the y axis, please see the
 #'   argument \code{y_axis_labels}.
 #' @param perp_or_victim specify whether the drug of interest is a "victim" or
 #'   "perpetrator". This will determine whether the graphs will be labeled on
 #'   the y axis by the substrate name (for perpetrator forest plots) or by the
-#'   effector name (for victim forest plots).
+#'   perpetrator name (for victim forest plots).
 #' @param PKparameters optionally specify which PK parameters in
 #'   \code{forest_dataframe} to use as input. If left as NA, all the PK
 #'   parameters you extracted with \code{\link{extractForestData}} will be
@@ -53,7 +53,7 @@
 #' @param y_axis_column the column by which you would like to break up the y
 #'   axis, e.g., \code{y_axis_column = File} (default). You must specify
 #'   something here; it cannot be left blank. This will automatically replace
-#'   the file names listed in \code{forest_dataframe} with the effector for
+#'   the file names listed in \code{forest_dataframe} with the perpetrator for
 #'   victim forest plots and with the substrate for perpetrator forest plots.
 #' @param y_order optionally set the order of items on the y axis. If
 #'   \code{y_order} is left as NA, the y axis will be sorted according to the
@@ -108,7 +108,7 @@
 #'   File, the compounds that each file represents or a named character vector
 #'   of the compounds. Please see the examples at the bottom of this file.
 #' @param y_axis_title optionally specify a vertical title to be displayed to
-#'   the left of the y axis. Example: \code{y_axis_title = "Effector
+#'   the left of the y axis. Example: \code{y_axis_title = "Perpetrator
 #'   co-administered with Drug X"}. Default ("none") leaves off any y-axis title.
 #'   This does NOT work with a secondary y axis and will be ignored.
 #' @param x_axis_limits the x axis limits to use; default is 0.06 to 12.
@@ -137,7 +137,7 @@
 #'   \code{y_axis_column_secondary}, this will be ignored.
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier. This was designed for simulations where the
-#'   substrates or effectors are among the standard options for the simulator,
+#'   substrates or perpetrators are among the standard options for the simulator,
 #'   and leaving \code{prettify_compound_names = TRUE} will make the name of
 #'   those compounds something more human readable. For example,
 #'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
@@ -195,7 +195,7 @@
 #' @examples
 #'
 #' # We'll use some example forest-plot data for the substrate bufuralol
-#' # with various effectors. To start, we'll just look at one dose level.
+#' # with various perpetrators. To start, we'll just look at one dose level.
 #' Buf_lowdose <- ForestData %>% filter(Dose_sub == 20)
 #' forest_plot_old(forest_dataframe = Buf_lowdose,
 #'             perp_or_victim = "victim")
@@ -764,13 +764,13 @@ forest_plot_old <- function(forest_dataframe,
       stop(paste0("You have more than one file per " ,
                   switch(perp_or_victim, 
                          "perpetrator" = "substrate", 
-                         "victim" = "effector"),
+                         "victim" = "perpetrator"),
                   " for the compounds ",
                   str_comma(Check$Compound[which(Check$N > 1)]),
                   ". Did you specify `perp_or_victim` correctly? You *can* have more than one file per ",
                   switch(perp_or_victim, 
                          "perpetrator" = "substrate", 
-                         "victim" = "effector"),
+                         "victim" = "perpetrator"),
                   ", but only if you break up your graphs using `facet_column_x` or `y_axis_secondary` or if you specify something for `y_order` so that it's clear what y axis labels you want to use for each of those files."),
            call. = FALSE)
    }

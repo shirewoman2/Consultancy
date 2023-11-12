@@ -62,18 +62,18 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   \item{"percentiles"}{(default) plots an opaque line for the mean data,
   lighter lines for the 5th and 95th percentiles of the simulated data, and
   open circles for the observed data. If an effecter were present, the
-  default is dashed lines for the data in the presence of an effector.}
+  default is dashed lines for the data in the presence of a perpetrator.}
 
   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
   for the mean of each trial of simulated data, and open circles for the
-  observed data. If an effector were present, lighter dashed lines indicate
-  the mean of each trial of simulated data in the presence of the effector.}
+  observed data. If a perpetrator were present, lighter dashed lines indicate
+  the mean of each trial of simulated data in the presence of the perpetrator.}
 
   \item{"percentile ribbon"}{plots an opaque line for the mean data,
   transparent shading for the 5th to 95th percentiles of the simulated data,
-  and open circles for the observed data. If an effector were present, the
-  default is to show the data without the effector in blue and the data in
-  the presence of the effector in red. \strong{NOTE: There is a known bug
+  and open circles for the observed data. If a perpetrator were present, the
+  default is to show the data without the perpetrator in blue and the data in
+  the presence of the perpetrator in red. \strong{NOTE: There is a known bug
   within RStudio that causes filled semi-transparent areas like you get with
   the "percentile ribbon" figure type to NOT get graphed for certain versions
   of RStudio.} To get around this, within RStudio, go to Tools --> Global
@@ -82,13 +82,13 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   graphics anyway!}
 
   \item{"means only"}{plots a black line for the mean data and, if an
-  effector was modeled, a dashed line for the concentration-time data with
+  perpetrator was modeled, a dashed line for the concentration-time data with
   Inhibitor 1.}
 
   \item{"Freddy"}{Freddy's favorite style of plot with trial means in light
   gray, the overall mean in thicker black, the 5th and 95th percentiles in
   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
-  with an effector present lose the trial means, and the percentiles switch
+  with a perpetrator present lose the trial means, and the percentiles switch
   to solid, gray lines. \strong{An editorial comment:} While this does not
   align with the officially sanctioned template at this time, this looks
   \emph{sharp}, makes it easy to see the defining characteristics of the
@@ -124,7 +124,7 @@ output, you'll get a warning and the graph will include one that was.}
   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
   which can be useful for BID data where the end of the simulation extended
   past the dosing interval or data when the substrate was dosed BID and the
-  effector was dosed QD}
+  perpetrator was dosed QD}
 
   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
@@ -204,7 +204,7 @@ for that.}
 
 \item{obs_shape}{optionally specify what shapes are used to depict observed
 data for 1. the substrate drug alone and 2. the substrate drug in the
-presence of an effector. Input should look like this, for example:
+presence of a perpetrator. Input should look like this, for example:
 \code{c(1, 2)} to get an open circle and an open triangle. To see all the
 possible shapes and what number corresponds to which shape, type
 \code{ggpubr::show_point_shapes()} into the console. If left as NA,
@@ -253,13 +253,13 @@ values so that they will not show up on graphs.}
 
 \item{line_type}{Optionally specify what types of lines are used to depict
 \enumerate{\item{the substrate drug alone and} \item{the substrate drug in
-the presence of an effector (when applicable).}} Input should look like
+the presence of a perpetrator (when applicable).}} Input should look like
 this, for example: \code{c("solid", "dashed")} to get a solid line for the
 substrate drug and a dashed line for inhibitor 1. \itemize{ \item{To see
 all possible \code{line_type} options: \code{ggpubr::show_line_types()}}
 \item{If left as NA, substrate alone will be a solid line and substrate +
 inhibitor 1 will be a dashed line.} \item{If \code{figure_type} is "Freddy"
-and there's no effector present, which is a slightly different scenario
+and there's no perpetrator present, which is a slightly different scenario
 than the other graph types, the 1st line type specified will be for the
 mean simulated concentration and the trial means, and the 2nd line type
 specified will be for the 5th and 95th percentiles.}}}
@@ -314,16 +314,16 @@ into the console.}
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all.}
 
-\item{legend_label}{optionally indicate on the legend whether the effector is
+\item{legend_label}{optionally indicate on the legend whether the perpetrator is
 an inhibitor, inducer, activator, or suppressor. Input will be used as the
 label in the legend for the line style and the shape. If left as the
-default NA when a legend is included and an effector is present, the label
+default NA when a legend is included and a perpetrator is present, the label
 in the legend will be "Inhibitor".}
 
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in legend entries and in any Word output files.
 This was designed for simulations where the substrate and any metabolites,
-effectors, or effector metabolites are among the standard options for the
+perpetrators, or perpetrator metabolites are among the standard options for the
 simulator, and leaving \code{prettify_compound_names = TRUE} will make the
 name of those compounds something more human readable. For example,
 "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
@@ -331,9 +331,9 @@ become "midazolam". Set each compound to the name you'd prefer to see in
 your legend and Word output if you would like something different. For
 example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
 "substrate" = "superstatin")}. Please note that "inhibitor" includes
-\emph{all} the effectors and effector metabolites present, so, if you're
-setting the effector name, you really should use something like this if
-you're including effector metabolites: \code{prettify_compound_names =
+\emph{all} the perpetrators and perpetrator metabolites present, so, if you're
+setting the perpetrator name, you really should use something like this if
+you're including perpetrator metabolites: \code{prettify_compound_names =
 c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
@@ -422,12 +422,12 @@ inhibitors, or inhibitor metabolites are available in all tissues. If it's
 not present in your Excel output, we can't graph it here.}\item{When observed
 data are included in a simulator output file, because the simulator output
 does not explicitly say whether those observed data were in the presence of
-an effector, this function cannot tell the difference and will thus assume
+a perpetrator, this function cannot tell the difference and will thus assume
 all observed data included in the simulator output were for the substrate in
-the \emph{absence} of any effector. It will further assume that the compound
+the \emph{absence} of any perpetrator. It will further assume that the compound
 the observed data is for is the same as \code{compoundToExtract}. If you want
 to specify which compound the observed data were for and/or whether any
-effectors were present, please supply an observed data file to the argument
+perpetrators were present, please supply an observed data file to the argument
 \code{obs_data_file}.} \item{If you attempt to use data generated by
 \code{\link{extractConcTime_mult}} here, you can get weird results if you're
 not careful to only include one tissue and one compound ID. If you see

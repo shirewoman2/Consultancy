@@ -7,6 +7,9 @@ arguably inferior pie chart}
 \usage{
 fm_treemap(
   fm_dataframe,
+  pathway_column,
+  fm_column,
+  rounding = NA,
   color_set = "default",
   label_fm_cutoff = 0.05,
   legend_nrow = NA,
@@ -19,9 +22,35 @@ fm_treemap(
 )
 }
 \arguments{
-\item{fm_dataframe}{a data.frame containing columns for
-\describe{\item{DME}{the drug-metabolizing enzyme} \item{fm}{the fraction
-metaboilized}}}
+\item{fm_dataframe}{a data.frame containing columns for the drug-metabolizing
+enzyme and the fm, the fraction metabolized. If you ran
+\code{\link{extractFmFe}} to get these data, be sure to \emph{only} get the
+data you want. For example, if this was a DDI simulation, you would want to
+use only the data in the absense of a perpetrator or only in the presence
+of one; summing up both numbers wouldn't make sense.}
+
+\item{pathway_column}{the name of the column that contains the names of the
+pathways. If you ran \code{\link{extractFmFe}} to get these data, set this
+to \code{pathway_column = Enzyme}}
+
+\item{fm_column}{the name of the column that contains the fm values. If you
+ran \code{\link{extractFmFe}} to get these data, set this to
+\code{fm_column = Max} if you want the maximum fm value for each. Note that
+this should be the values as decimals, e.g., 0.8 for 80\%. The total area
+occupied by boxes in your treemap will sum to 100\%, even if these numbers
+do not, so pay attention to what data you're graphing and make sure things
+sum to 1.}
+
+\item{rounding}{option for what rounding to perform, if any. Options are:
+  \describe{
+
+  \item{"none"}{No rounding will be performed.}
+
+  \item{"significant X" where "X" is a number}{Output will be rounded to X
+  significant figures. \code{rounding = "signif X"} also works fine. If you
+  leave rounding as NA, the default is "significant 3".}
+
+  \item{"round X" where "X" is a number}{Output will be rounded to X digits}}}
 
 \item{color_set}{the set of colors to use. Options are "default", which
 matches Simcyp colors in PowerPoint presentations and is rather nice, "set

@@ -47,7 +47,7 @@ getSectionInfo <- function(report_input_file = NA,
     #     sim_data_file <- paste0(dirname(report_input_file), "/", sim_data_file)
     # }
     
-    Deets <- extractExpDetails(sim_data_file = sim_data_file)
+    Deets <- extractExpDetails(sim_data_file = sim_data_file)[["MainDetails"]]
     
     # Checking whether DDI involved.
     DDI <- any(complete.cases(c(Deets$Inhibitor1, Deets$Inhibitor2)))    
@@ -77,7 +77,7 @@ getSectionInfo <- function(report_input_file = NA,
     } else {
         
         if(any(str_detect(InputXL$Item, "Mean ratios"), na.rm = TRUE)){
-            stop("You have filled out the report input form tab for a DDI study, but no effector compounds are present in your simulation. Please fill out the tab for studies with no DDIs.",
+            stop("You have filled out the report input form tab for a DDI study, but no perpetrator compounds are present in your simulation. Please fill out the tab for studies with no DDIs.",
                  call. = FALSE)
         }
         

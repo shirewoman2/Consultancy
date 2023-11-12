@@ -85,19 +85,19 @@ argument \code{existing_exp_details}.}
 
   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
   for the mean of each trial of simulated data, and open circles for the
-  observed data. If an effector were present, lighter dashed lines indicate
-  the mean of each trial of simulated data in the presence of the effector.}
+  observed data. If a perpetrator were present, lighter dashed lines indicate
+  the mean of each trial of simulated data in the presence of the perpetrator.}
 
   \item{"percentiles"}{(default) plots an opaque line for the mean data,
   lighter lines for the 5th and 95th percentiles of the simulated data, and
   open circles for the observed data. If an effecter were present, the
-  default is dashed lines for the data in the presence of an effector.}
+  default is dashed lines for the data in the presence of a perpetrator.}
 
   \item{"percentile ribbon"}{plots an opaque line for the mean data,
   transparent shading for the 5th to 95th percentiles of the simulated data,
-  and open circles for the observed data. If an effector were present, the
-  default is to show the data without the effector in blue and the data in
-  the presence of the effector in red. \strong{NOTE: There is a known bug
+  and open circles for the observed data. If a perpetrator were present, the
+  default is to show the data without the perpetrator in blue and the data in
+  the presence of the perpetrator in red. \strong{NOTE: There is a known bug
   within RStudio that can cause filled semi-transparent areas like you get
   with the "percentile ribbon" figure type to NOT get graphed for certain
   versions of RStudio.} To get around this, within RStudio, go to Tools -->
@@ -106,13 +106,13 @@ argument \code{existing_exp_details}.}
   graphics anyway!}
 
   \item{"means only"}{plots a black line for the mean data and, if an
-  effector was modeled, a dashed line for the concentration-time data with
+  perpetrator was modeled, a dashed line for the concentration-time data with
   Inhibitor 1.}
 
   \item{"Freddy"}{Freddy's favorite style of plot with trial means in light
   gray, the overall mean in thicker black, the 5th and 95th percentiles in
   dashed lines, and the observed data in semi-transparent purple-blue points.
-  Graphs with an effector present lose the trial means, and the percentiles
+  Graphs with a perpetrator present lose the trial means, and the percentiles
   switch to solid, gray lines.}}}
 
 \item{mean_type}{graph "arithmetic" (default) or "geometric" means or
@@ -137,7 +137,7 @@ argument \code{existing_exp_details}.}
   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
   which can be useful for BID data where the end of the simulation extended
   past the dosing interval or data when the substrate was dosed BID and the
-  effector was dosed QD}
+  perpetrator was dosed QD}
 
   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
@@ -194,14 +194,14 @@ use for the y axis label}
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all. If you include the legend but then some graphs do have a legend and
-some graphs do not (e.g., some have effectors and some do not so there's
+some graphs do not (e.g., some have perpetrators and some do not so there's
 nothing to put in a legend), the alignment between sets of graphs will be a
 bit off.}
 
-\item{legend_label}{optionally indicate on the legend whether the effector is
+\item{legend_label}{optionally indicate on the legend whether the perpetrator is
 an inhibitor, inducer, activator, or suppressor. Input will be used as the
 label in the legend for the line style and the shape. If left as the
-default NA when a legend is included and an effector is present, the label
+default NA when a legend is included and a perpetrator is present, the label
 in the legend will be "Inhibitor".}
 
 \item{graph_titles}{optionally specify titles to be used in the graphs and

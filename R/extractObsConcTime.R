@@ -76,6 +76,12 @@ extractObsConcTime <- function(obs_data_file,
                   return(list())
                }))
    
+   if(length(obs_data_xl) == 0){
+      warning(paste("The file", obs_data_file, "does not appear to be an Excel file of observed data that's ready to be converted to an XML file. We cannot extract any data."), 
+              call. = FALSE)
+      return(list())
+   }
+   
    # Checking on whether this was animal data
    Animal <- str_detect(obs_data_xl[1, 1], "Animal")
    
@@ -196,7 +202,7 @@ extractObsConcTime <- function(obs_data_file,
         `Tumour Volume (Inb)` = "tumour volume"
       )
    
-   ObsEffectors <- 
+   ObsPerpetrators <- 
       c(`ADC Plasma Free` = "none",
         `ADC Plasma Total` = "none",
         `Adipose (Sub)` = "none", 
@@ -250,8 +256,8 @@ extractObsConcTime <- function(obs_data_file,
    #                            Tissue = Tissue) %>%
    #     left_join(data.frame(ID = names(ObsCompoundIDs),
    #                          CompoundID = ObsCompoundIDs)) %>%
-   #     left_join(data.frame(ID = names(ObsEffectors),
-   #                          Effector = ObsEffectors))
+   #     left_join(data.frame(ID = names(ObsPerpetrators),
+   #                          Perpetrator = ObsPerpetrators))
    # 
    # save(ObsDVoptions, file = "data/ObsDVoptions.RData")
    
@@ -338,7 +344,7 @@ extractObsConcTime <- function(obs_data_file,
       mutate(across(.cols = any_of(c("Time", "Conc", "SD_SE")), .fns = as.numeric)) %>%
       mutate(CompoundID_obsfile = CompoundCode[as.character(DVID)],
              CompoundID = ObsCompoundIDs[CompoundID_obsfile],
-             Inhibitor = ObsEffectors[CompoundID_obsfile],
+             Inhibitor = ObsPerpetrators[CompoundID_obsfile],
              Simulated = FALSE,
              Trial = "obs",
              Tissue = Tissue[CompoundID_obsfile],
@@ -404,8 +410,7 @@ extractObsConcTime <- function(obs_data_file,
                               "inhibitor 1 metabolite" = "inhibitor 1")
          j <- paste(ParentDrug, i_split[2], sep = ".")
          
-         if(j %in% names(DoseInts) && 
-            nrow(DoseInts[[j]]) > 0){
+         if(j %in% names(DoseInts) && nrow(DoseInts[[j]]) > 0){
             DoseInts[[j]] <- DoseInts[[j]] %>% 
                mutate(Interval = cut(DoseTime, 
                                      breaks = c(unique(DoseInts[[j]]$DoseTime), Inf), 
@@ -415,7 +420,7 @@ extractObsConcTime <- function(obs_data_file,
                mutate(Interval = cut(Time, 
                                      breaks = c(unique(DoseInts[[j]]$DoseTime), Inf), 
                                      include.lowest = TRUE, right = FALSE)) %>% 
-               left_join(DoseInts[[j]] %>% mutate(CompoundID = i), 
+               left_join(DoseInts[[j]] %>% mutate(CompoundID = i_split[1]), 
                          by = join_by(CompoundID, Individual, Interval)) %>% 
                mutate(DoseNum = as.numeric(Interval))
          }

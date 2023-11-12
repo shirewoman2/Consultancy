@@ -12,6 +12,8 @@ calc_PK(
   dose_interval = NA,
   fit_points_after_x_time = NA,
   fit_last_x_number_of_points = NA,
+  omit_0_concs = TRUE,
+  weights = NULL,
   returnAggregateOrIndiv = "both",
   return_graphs_of_fits = TRUE,
   save_graphs_of_fits = FALSE,
@@ -76,6 +78,19 @@ and yield more predictable results if you specify a value for
 \code{fit_points_after_x_time} rather than
 \code{fit_last_x_number_of_points}.}
 
+\item{omit_0_concs}{TRUE (default) or FALSE for whether to omit any points
+where the concentration = 0 since A) they were presumably below the LLOQ
+and B) they will mess up weighting should you choose to use a "1/y" or
+"1/y^2" weighting scheme. Concentrations of 0 at t0 will be retained,
+though, to allow for a more accurate calculation of the absorption-phase
+contribution to AUCinf and since 0 values at t0 would not be included in
+any regression of the elimination phase anyway.}
+
+\item{weights}{Weighting scheme to use for the regression. User may supply a
+numeric vector of weights to use or choose from "1/x", "1/x^2", "1/y" or
+"1/y^2". If left as NULL, no weighting scheme will be used. Be careful that
+you don't have any infinite values or this will fail!}
+
 \item{returnAggregateOrIndiv}{return aggregate and/or individual PK
 parameters? Options are "aggregate", "individual", or "both" (default).}
 
@@ -105,7 +120,7 @@ returns a list of individual and/or aggregate PK data
 \code{calc_PK} calculates AUCinf_dose1, AUCt_dose1, AUCtau_last, Cmax_dose1,
 Cmax_last, tmax_dose1, tmax_last, CLinf_dose1, and CLtau_last for the
 supplied concentration-time data and, when applicable, the same parameters in
-the presence of an effector and the ratios of those values for effector /
+the presence of a perpetrator and the ratios of those values for perpetrator /
 baseline. This can accommodate multiple simulations and multiple compounds as
 long as the dosing regimen was the same. For example, this will do fine with
 calculating the last-dose PK for two simulations where the last dose of

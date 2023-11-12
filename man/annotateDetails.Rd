@@ -13,9 +13,13 @@ annotateDetails(
   simulator_section = NA,
   detail_set = NA,
   find_matching_details = NA,
+  filename_text = NA,
   show_compound_col = TRUE,
   omit_all_missing = TRUE,
-  save_output = NA
+  file_order = NA,
+  return_list = FALSE,
+  save_output = NA,
+  output_tab_name = "Simulation experimental details"
 )
 }
 \arguments{
@@ -63,7 +67,7 @@ sections from which to find simulation experimental details and then return
 \emph{only} those details. Options are "Absorption", "Distribution",
 "Elimination", "Transport", "Interaction", "Phys Chem and Blood Binding",
 "Population", or "Trial Design". Not case sensitive. If you want more than
-one, enclose them with \code{c(...)}.}
+one, enclose them with \code{c(...)}}
 
 \item{detail_set}{optionally supply a set of details to return \emph{only}
   those details. Options are the same as the ones listed as possibilities for
@@ -86,7 +90,13 @@ one, enclose them with \code{c(...)}.}
   simulated, population, percent female, age range, dose amount and regimen,
    etc.}
 
-  \item{"all"}{all possible details}
+ \item{"lactation"}{details from the "Input Sheet" tab that pertain to
+ lactation such as the milk-to-plasma ratio and whether a breast
+ perfusion-limited model was used.}
+
+  \item{"all"}{all possible details. If you select this option, you will also
+  get additional tabs in the output Excel file for any custom dosing regimens 
+  and any drug-release profiles.}
 
   \item{a string of the specific details you want, each in quotes and
   encapsulated with \code{c(...)},}{For a complete list of possibilities,
@@ -114,6 +124,14 @@ one, enclose them with \code{c(...)}.}
   somewhere in the name, include "CYP3A", and then end with "sub" (for
   "substrate"). Case sensitive.}
 
+\item{filename_text}{optionally specify a string of text to use for looking
+at only a subset of files. Standard regular expressions are acceptable; if
+you're unfamiliar with them, please see the notes on for the
+\code{find_matching_details} argument. For example, say you only want to
+look at development or verification simulations and you included "dev" or
+"ver" in those file names. Here is how you could specify that:
+\code{filename_text = "dev|ver"}}
+
 \item{show_compound_col}{TRUE (default), FALSE, or "concatenate" for whether
 to include in the results the column "Compound", which is the compound's
 specific name in each simulation. Why would you ever omit this? If you have
@@ -131,10 +149,33 @@ as the compound.}
 \item{omit_all_missing}{TRUE (default) or FALSE for whether to omit a detail
 if the values are NA for all files}
 
+\item{file_order}{optionally specify the order in which files should be shown
+in the annotated output, e.g., \code{file_order = c("file A.xlsx", "file
+B.xlsx", "file C.xlsx")}}
+
+\item{return_list}{TRUE or FALSE (default) for whether to return the entire
+list of information from \code{existing_exp_details}. Before running this
+function, \code{existing_exp_details} was a list. Probably, though, all you
+want \emph{out} of this function most of the time is a single data.frame
+with the main information annotated. If you want more than that, set this
+to TRUE.}
+
 \item{save_output}{optionally save the output by supplying a csv or Excel
 file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
-csv file.}
+details.xlsx".  Do not include any slashes, dollar signs, or periods in the
+file name. If you leave off the file extension, it will be saved as a csv
+file.}
+
+\item{output_tab_name}{the tab name to use when saving the output as an Excel
+file. If you specify a tab that does not already exist in the Excel file
+you specified with \code{save_output}, this will add a new tab and not
+overwrite the existing ones. This means that you can, for example, run
+annotateDetails one time where you look at the detail set "Simcyp inputs"
+and save that tab eponymously and then you can run annotateDetails again,
+this time using the detail set "Trial design" and naming this second tab
+accordingly, and the result will be a single Excel file named according to
+what you specified with \code{save_output} with one tab for Simcyp inputs
+and one tab for the trial design parameters.}
 }
 \value{
 Returns a data.frame of simulation experimental details including the

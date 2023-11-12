@@ -172,11 +172,11 @@
 #'
 #' @param obs_shape optionally specify what shapes are used to depict observed
 #'   data for a) the substrate drug alone and b) the substrate drug in the
-#'   presence of an effector. Input should look like this, for example:
+#'   presence of a perpetrator. Input should look like this, for example:
 #'   \code{c(1, 2)} to get an open circle for the substrate and an open triangle
-#'   for the substrate in the presence of effectors, if there are any. If you
+#'   for the substrate in the presence of perpetrators, if there are any. If you
 #'   only specify one value, it will be used for both substrate with and without
-#'   effectors. To see all the possible shapes and what number corresponds to
+#'   perpetrators. To see all the possible shapes and what number corresponds to
 #'   which shape, type \code{ggpubr::show_point_shapes()} into the console. If
 #'   left as NA, substrate alone will be an open circle and substrate +
 #'   inhibitor 1 will be an open triangle.
@@ -255,7 +255,7 @@
 #'   explanatory about what the line types represent. For example, if
 #'   \code{linetype_column = Inhibitor} and \code{legend_label_linetype =
 #'   "Inhibitor present"}, that will make the label in the legend above, e.g.,
-#'   "none", and whatever effector was present more explanatory than just
+#'   "none", and whatever perpetrator was present more explanatory than just
 #'   "Inhibitor". The default is to use whatever the column name is for
 #'   \code{linetype_column}. If you don't want a label for this legend item, set
 #'   this to "none".
@@ -304,7 +304,7 @@
 #'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
 #'   which can be useful for BID data where the end of the simulation extended
 #'   past the dosing interval or data when the substrate was dosed BID and the
-#'   effector was dosed QD}
+#'   perpetrator was dosed QD}
 #'
 #'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
 #'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
@@ -380,9 +380,9 @@
 #'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 #'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 #'   into the console.
-#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
-#'   etc.) for each of the small graphs. (Not applicable if only outputting
-#'   linear or only semi-log graphs.)
+#' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
+#'   B, C, etc.) for each of the small graphs. (Not applicable if only
+#'   outputting linear or only semi-log graphs.)
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
@@ -513,7 +513,19 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    # Checking whether this is an enzyme abundance plot
-   EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
+   EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe)) &
+      "Conc" %in% names(ct_dataframe) == FALSE
+   
+   # Checking whether this is a release-profile plot
+   ReleaseProfPlot <- all(c("ReleaseMean", "ReleaseCV") %in% names(ct_dataframe)) &
+      "Conc" %in% names(ct_dataframe) == FALSE
+   
+   if(ReleaseProfPlot){
+      ct_dataframe <- ct_dataframe %>% 
+         rename(Conc = ReleaseMean, 
+                SD_SE = ReleaseSD) %>% 
+         mutate(MyMean = Conc)
+   }
    
    # Checking for more than one tissue or ADAM data type b/c there's only one y
    # axis and it should have only one concentration type.
@@ -557,7 +569,7 @@ ct_plot_overlay <- function(ct_dataframe,
           c("substrate", "inhibitor", "inhibitor 1", "primary metabolite 1", 
             "primary metabolite 2", "secondary metabolite", "inhibitor 2", 
             "inhibitor 1 metabolite"))){
-      warning("You appear to have used compound IDs such as `substrate` or `inhibitor 1` or possibly `Inhibitor` to indicate which compound names should be prettified. Unfortunately, we need the actual original compound here, e.g., `prettify_compound_names = c('SV-Rifampicin-MD' = 'rifampicin')`. We will set `prettify_effector_names` to TRUE but will not be able to use the specific names you provided.",
+      warning("You appear to have used compound IDs such as `substrate` or `inhibitor 1` or possibly `Inhibitor` to indicate which compound names should be prettified. Unfortunately, we need the actual original compound here, e.g., `prettify_compound_names = c('SV-Rifampicin-MD' = 'rifampicin')`. We will set `prettify_perpetrator_names` to TRUE but will not be able to use the specific names you provided.",
               call. = FALSE)
       prettify_compound_names <- TRUE
    }
@@ -574,7 +586,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                               face = "italic")) +
             annotate(geom = "text", x = 1, y = 1, size = 8,
                      color = "red", 
-                     label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether an effector was present.\nWe cannot make your graph.")
+                     label = "You have extracted observed\ndata from a simulator output\nfile, but the simulator doesn't\ninclude information on\nwhat compound it is or\nwhether a perpetrator was present.\nWe cannot make your graph.")
       )
    }
    
@@ -603,24 +615,18 @@ ct_plot_overlay <- function(ct_dataframe,
       if("logical" %in% class(existing_exp_details)){ 
          Deets <- tryCatch(
             extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
-                                   exp_details = "all", 
-                                   annotate_output = FALSE) %>% as.data.frame(), 
+                                   exp_details = "Summary and Input")[["MainDetails"]], 
             error = function(x) "missing file")
          
       } else {
          
-         Deets <- switch(as.character("File" %in% names(as.data.frame(existing_exp_details))), 
-                         "TRUE" = existing_exp_details, 
-                         "FALSE" = deannotateDetails(existing_exp_details))
+         Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
+            filter(File %in% unique(ct_dataframe$File))
          
-         Deets <- Deets %>% filter(File %in% unique(ct_dataframe$File))
-         
-         if(nrow(Deets == 0) | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
+         if(nrow(Deets) == 0 | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
             Deets <- tryCatch(
                extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
-                                      exp_details = "all", 
-                                      annotate_output = FALSE, 
-                                      existing_exp_details = Deets) %>% as.data.frame(), 
+                                      exp_details = "Summary and Input")[["MainDetails"]], 
                error = function(x) "missing file")
          }
       }
@@ -700,12 +706,12 @@ ct_plot_overlay <- function(ct_dataframe,
    ct_dataframe <- ct_dataframe %>%
       mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
    
-   MyEffector <- unique(ct_dataframe$Inhibitor) %>% as.character()
-   MyEffector <- MyEffector[!MyEffector == "none"]
+   MyPerpetrator <- unique(ct_dataframe$Inhibitor) %>% as.character()
+   MyPerpetrator <- MyPerpetrator[!MyPerpetrator == "none"]
    
-   if(length(MyEffector) > 0 & class(ct_dataframe$Inhibitor) != "factor"){
+   if(length(MyPerpetrator) > 0 & class(ct_dataframe$Inhibitor) != "factor"){
       ct_dataframe <- ct_dataframe %>%
-         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyEffector)))
+         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
    }
    
    # Things will be more consistent and easier to code if Individual is a
@@ -754,10 +760,9 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # If there are any replicate names for color_labels, give a warning.
    if(any(duplicated(names(color_labels)))){
-      warning(paste0("You have listed this file more than once for the argument `color_labels`:
-", names(color_labels[duplicated(names(color_labels))]), "
-and we can only work with unique values here. We won't be able to use anything for `color_labels`. Please check your input."), 
-call. = FALSE)
+      warning(paste0("You have listed this file more than once for the argument `color_labels`:\n", names(color_labels[duplicated(names(color_labels))]), 
+                     "\nand we can only work with unique values here. We won't be able to use anything for `color_labels`. Please check your input."), 
+              call. = FALSE)
       color_labels <- NA
    }
    
@@ -799,7 +804,8 @@ call. = FALSE)
    # If the linetype labels don't match the files available, give a warning.
    if(as_label(linetype_column) != "<empty>" && 
       any(complete.cases(linetype_labels)) && 
-      all(names(linetype_labels) %in% sort(unique(ct_dataframe[, as_label(linetype_column)]))) == FALSE){
+      all(names(linetype_labels) %in% (unique(ct_dataframe[, as_label(linetype_column)]) %>%
+                                       pull(1) %>% as.character()) == FALSE)){
       BadLabs <- setdiff(names(linetype_labels), unique(ct_dataframe[, as_label(linetype_column)]))
       
       warning(paste0("The labels you supplied for `linetype_labels` are not all present in the column ", 
@@ -812,7 +818,10 @@ call. = FALSE)
       WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
                              gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
       linetype_labels[names(linetype_labels) %in% BadLabs] <- WarningLabel
-      NewNames <- setdiff(unique(ct_dataframe[, as_label(linetype_column)]), names(linetype_labels))
+      NewNames <- setdiff(
+         unique(ct_dataframe[, as_label(linetype_column)] %>% pull(1) %>% 
+                   as.character()), 
+         names(linetype_labels))
       NewNames <- NewNames[complete.cases(NewNames)]
       names(linetype_labels)[which(names(linetype_labels) %in% BadLabs)] <- NewNames
       rm(NewNames, BadLabs, WarningLabel)
@@ -1103,14 +1112,16 @@ call. = FALSE)
       }
       
       if(length(sort(unique(c(simcheck, obscheck)))) > 
-         length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column])){
+         length(color_labels[names(color_labels) %in% c(sim_dataframe$colorBy_column, 
+                                                        obs_dataframe$colorBy_column)])){
          warning(paste0("You have not included enough labels for the colors in the legend. The values in '",
                         as_label(colorBy_column), 
                         "' will be used as labels instead."),
                  call. = FALSE)
          color_labels <- NA
       } else {
-         if(length(color_labels[names(color_labels) %in% sim_dataframe$colorBy_column]) == 0 |
+         if(length(color_labels[names(color_labels) %in% c(sim_dataframe$colorBy_column, 
+                                                           obs_dataframe$colorBy_column)]) == 0 |
             length(sort(unique(c(simcheck, obscheck)))) == 0){
             warning(paste0("There is some kind of mismatch between the color labels provided and the values actually present in ",
                            as_label(colorBy_column), ". The specified labels cannot be used."),
@@ -1152,14 +1163,16 @@ call. = FALSE)
       }
       
       if(length(sort(unique(c(simcheck, obscheck)))) > 
-         length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column])){
+         length(linetype_labels[names(linetype_labels) %in% c(sim_dataframe$linetype_column, 
+                                                              obs_dataframe$linetype_column)])){
          warning(paste0("You have not included enough labels for the linetypes in the legend. The values in '",
                         as_label(linetype_column), 
                         "' will be used as labels instead."),
                  call. = FALSE)
          linetype_labels <- NA
       } else {
-         if(length(linetype_labels[names(linetype_labels) %in% sim_dataframe$linetype_column]) == 0 |
+         if(length(linetype_labels[names(linetype_labels) %in% c(sim_dataframe$linetype_column, 
+                                                                 obs_dataframe$linetype_column)]) == 0 |
             length(sort(unique(c(simcheck, obscheck)))) == 0){
             warning(paste0("There is some kind of mismatch between the linetype labels provided and the values actually present in ",
                            as_label(linetype_column), ". The specified labels cannot be used."),
@@ -1185,61 +1198,6 @@ call. = FALSE)
          }
       }
    }
-   
-   # Not sure how I'm going to relabel the facets, actually. Commenting this
-   # out for now.
-   
-   # if(complete.cases(facet1_labels[1])){
-   #     simcheck <- sim_dataframe %>% 
-   #         filter(FC1 %in% names(facet1_labels)) %>% 
-   #         select(FC1) %>% unique() %>% pull()
-   #     obscheck <- obs_dataframe %>% 
-   #         filter(FC1 %in% names(facet1_labels)) %>% 
-   #         select(FC1) %>% unique() %>% pull()
-   #     
-   #     if(length(sort(unique(c(simcheck, obscheck)))) > 
-   #        length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1])){
-   #         warning(paste0("You have not included enough labels for number of unique values in ", 
-   #                        as_label(FC1), 
-   #                        ". The values will be used as labels instead."))
-   #         facet1_labels <- NA
-   #     } else {
-   #         if(length(facet1_labels[names(facet1_labels) %in% sim_dataframe$FC1]) == 0 |
-   #            length(sort(unique(c(simcheck, obscheck)))) == 0){
-   #             warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
-   #                            as_label(FC1), ". The specified labels cannot be used."))  
-   #             
-   #             facet1_labels <- NA
-   #         } 
-   #     } # If facet1_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
-   # }
-   # 
-   # if(complete.cases(facet2_labels[1])){
-   #     simcheck <- sim_dataframe %>% 
-   #         filter(FC2 %in% names(facet2_labels)) %>% 
-   #         select(FC2) %>% unique() %>% pull()
-   #     obscheck <- obs_dataframe %>% 
-   #         filter(FC2 %in% names(facet2_labels)) %>% 
-   #         select(FC2) %>% unique() %>% pull()
-   #     
-   #     if(length(sort(unique(c(simcheck, obscheck)))) > 
-   #        length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2])){
-   #         warning(paste0("You have not included enough labels for number of unique values in ", 
-   #                        as_label(FC2), 
-   #                        ". The values will be used as labels instead."))
-   #         
-   #         facet2_labels <- NA
-   #         
-   #     } else {
-   #         if(length(facet2_labels[names(facet2_labels) %in% sim_dataframe$FC2]) == 0 |
-   #            length(sort(unique(c(simcheck, obscheck)))) == 0){
-   #             warning(paste0("There is some kind of mismatch between the facet 1 labels provided and the values actually present in ",
-   #                            as_label(FC2), ". The specified labels cannot be used."))  
-   #             
-   #             facet2_labels <- NA
-   #         }
-   #     }
-   # } # If facet2_labels is not NA at this point, apply those labels for the facets using labeller...? Not sure how this is going to work yet.
    
    AESCols <- c("color" = as_label(colorBy_column), 
                 "linetype" = as_label(linetype_column),
@@ -1317,9 +1275,8 @@ call. = FALSE)
          warning("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. ", 
                  "If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame: 
                     MyEnzData <- MyEnzData %>% mutate(Tissue2 = Tissue)
-                    ct_plot_overlay(ct_dataframe = MyEnzData, colorBy_column = Tissue2, ...)
-Replace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.",
-call. = FALSE)
+                    ct_plot_overlay(ct_dataframe = MyEnzData, colorBy_column = Tissue2, ...)\nReplace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.\n",
+                 call. = FALSE)
          
          sim_dataframe <- sim_dataframe %>% filter(Tissue != "colon") %>% 
             mutate(Tissue = ifelse(Tissue == "small intestine", 
@@ -1408,7 +1365,7 @@ call. = FALSE)
    # compound that the user is plotting. Using whatever is the compoundID that
    # has the base level for the factor. <--- This may not be necessary, now
    # that I think about it further...
-   if(EnzPlot){
+   if(EnzPlot | ReleaseProfPlot){
       AnchorCompound <- "substrate"
    } else if(mean_type != "none"){
       AnchorCompound <- sim_dataframe %>% select(CompoundID) %>% unique() %>% 
@@ -1438,7 +1395,21 @@ call. = FALSE)
    TimeUnits <- XStuff$TimeUnits
    
    # Setting up the y axis using the subfunction ct_y_axis
-   YStuff <- ct_y_axis(Data = bind_rows(sim_dataframe, obs_dataframe), 
+   Ylim_data <- bind_rows(sim_dataframe, obs_dataframe) %>%
+      mutate(Time_orig = Time)
+   
+   if("SD_SE" %in% names(Ylim_data)){
+      Ylim_data <- Ylim_data %>% 
+         mutate(MaxConc = Conc + ifelse(complete.cases(SD_SE), SD_SE, 0), 
+                MinConc = Conc - ifelse(complete.cases(SD_SE), SD_SE, 0))
+      
+      Ylim_data <- bind_rows(Ylim_data, 
+                             data.frame(Conc = c(
+                                max(Ylim_data$MaxConc, na.rm = T), 
+                                min(Ylim_data$MinConc, na.rm = T))))
+   }
+   
+   YStuff <- ct_y_axis(Data = Ylim_data, 
                        ADAM = ADAM, 
                        subsection_ADAM = switch(as.character(EnzPlot), 
                                                 "TRUE" = NA, 
@@ -1447,8 +1418,7 @@ call. = FALSE)
                        EnzPlot = EnzPlot, 
                        time_range = time_range,
                        time_range_relative = time_range_relative,
-                       Ylim_data = bind_rows(sim_dataframe, obs_dataframe) %>%
-                          mutate(Time_orig = Time), 
+                       Ylim_data = Ylim_data, 
                        pad_y_axis = pad_y_axis,
                        y_axis_limits_lin = y_axis_limits_lin, 
                        y_axis_limits_log = y_axis_limits_log, 
@@ -1469,9 +1439,9 @@ call. = FALSE)
    
    # Setting figure types and general aesthetics ------------------------------
    
-   MyEffector <- unique(sim_dataframe$Inhibitor)
-   MyEffector <- fct_relevel(MyEffector, "none")
-   MyEffector <- sort(MyEffector)
+   MyPerpetrator <- unique(sim_dataframe$Inhibitor)
+   MyPerpetrator <- fct_relevel(MyPerpetrator, "none")
+   MyPerpetrator <- sort(MyPerpetrator)
    
    # Making linetype_column and colorBy_column factor data. This will
    # prevent errors w/mapping to color b/c ggplot expects only categorical data
@@ -1542,8 +1512,9 @@ call. = FALSE)
       NumShapes <- 1
    }
    
-   AesthetStuff <- set_aesthet(line_type = linetypes, figure_type = figure_type,
-                               MyEffector = MyEffector, 
+   AesthetStuff <- set_aesthet(line_type = linetypes, 
+                               figure_type = figure_type,
+                               MyPerpetrator = MyPerpetrator, 
                                compoundToExtract = switch(as.character(EnzPlot),
                                                           "TRUE" = "substrate", 
                                                           "FALSE" = unique(sim_dataframe$CompoundID)),
@@ -1571,19 +1542,25 @@ call. = FALSE)
    
    if(figure_type == "percentile ribbon"){
       
-      RibbonDF <-  sim_dataframe %>% 
-         filter(Trial %in% c({MyMeanType}, "per5", "per95") &
-                   # Ribbons don't work if any of the data are clipped on
-                   # the x axis
-                   Time >= time_range_relative[1] &
-                   Time <= time_range_relative[2]) %>% 
-         unique() %>% 
-         select(-any_of(c("Group", "Individual"))) %>% 
-         pivot_wider(names_from = Trial, values_from = Conc)
-      names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
-   }
-   
-   if(figure_type == "trial means"){
+      if(ReleaseProfPlot){
+         RibbonDF <- sim_dataframe %>% 
+            unique() %>% 
+            rename(per5 = "ReleaseUpper", 
+                   per95 = "ReleaseLower")
+         
+      } else {
+         RibbonDF <-  sim_dataframe %>% 
+            filter(Trial %in% c({MyMeanType}, "per5", "per95") &
+                      # Ribbons don't work if any of the data are clipped on
+                      # the x axis
+                      Time >= time_range_relative[1] &
+                      Time <= time_range_relative[2]) %>% 
+            unique() %>% 
+            select(-any_of(c("Group", "Individual"))) %>% 
+            pivot_wider(names_from = Trial, values_from = Conc)
+         names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
+      }
+   } else if(figure_type == "trial means"){
       suppressMessages(
          sim_data_trial <- sim_dataframe %>%
             filter(Simulated == TRUE &
@@ -1605,7 +1582,7 @@ call. = FALSE)
                                         "colorBy_column", "FC1", "FC2")), 
                   sep = " ", remove = FALSE)
       )
-   }
+   } 
    
    A <- switch(
       figure_type, 
@@ -1694,7 +1671,7 @@ call. = FALSE)
                           color = VLineAES[1], linetype = VLineAES[2])
    }
    
-   # Observed data on bottom -----------------------------------------------
+   ## Observed data on bottom -----------------------------------------------
    
    if(nrow(obs_dataframe) > 0){
       
@@ -1707,7 +1684,7 @@ call. = FALSE)
       # or linetype column or the Inhibitor column, then include it
       if(length(LegCheck) == 0){
          LegCheck <- FALSE 
-      } else if(length(LegCheck == 1)){
+      } else if(length(LegCheck) == 1){
          LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
       } else {
          LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
@@ -1816,14 +1793,19 @@ call. = FALSE)
                         LegCheck = LegCheck)
    }
    
-   if(nrow(obs_dataframe) > 0 && 
-      "SD_SE" %in% names(obs_dataframe) & include_errorbars){
-      if(figure_type == "percentile ribbon"){
-         A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
-                                aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
-                                width = errorbar_width)
-      } else {
-         A <- A + geom_errorbar(data = obs_dataframe, 
+   if(include_errorbars){
+      if(nrow(obs_dataframe) > 0 && "SD_SE" %in% names(obs_dataframe)){
+         if(figure_type == "percentile ribbon"){
+            A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
+                                   aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
+                                   width = errorbar_width)
+         } else {
+            A <- A + geom_errorbar(data = obs_dataframe, 
+                                   aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+                                   width = errorbar_width)
+         }
+      } else if(ReleaseProfPlot){
+         A <- A + geom_errorbar(data = sim_dataframe, 
                                 aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
                                 width = errorbar_width)
       }
@@ -2069,7 +2051,9 @@ call. = FALSE)
                # AND the user hasn't supplied a named character vector for
                # how to assign the colors AND the colors are not assigned
                # to the individual subject.
-               names(MyColors) <- levels(sim_dataframe$colorBy_column)
+               names(MyColors) <- levels(c(sim_dataframe$colorBy_column,
+                                           obs_dataframe$colorBy_column))
+               
             }
          }
          
@@ -2081,7 +2065,61 @@ call. = FALSE)
    }
    
    # Specifying linetypes
-   A <- A + scale_linetype_manual(values = linetypes)
+   if(AES %in% c("linetype", "color-linetype")){
+      
+      # Calculating the number of linetypes needed
+      
+      # If the user requests the column Individual for linetype_column, they
+      # most likely want each observed individual to be a different linetype but
+      # the aggregate simulated data to be the usual linetypes (black or gray).
+      # NumlinetypesNeeded should only include the obs data in that scenario.
+      if(AESCols["linetype"] == "Individual"){
+         NumlinetypesNeeded <- obs_dataframe %>% 
+            pull(linetype_column) %>% unique() %>% length()
+      } else {
+         NumlinetypesNeeded <-
+            ifelse(MapObsData,
+                   bind_rows(sim_dataframe, obs_dataframe) %>% 
+                      pull(linetype_column) %>% unique() %>% length(),
+                   sim_dataframe %>% 
+                      pull(linetype_column) %>% unique() %>% length())
+         
+      }
+      
+      if(all(complete.cases(linetypes))){
+         
+         # This makes sure that we definitely have enough linetypes
+         Mylinetypes <- rep(linetypes, NumlinetypesNeeded)[1:NumlinetypesNeeded]
+         names(Mylinetypes) <- levels(c(sim_dataframe$linetype_column,
+                                        obs_dataframe$linetype_column))
+         
+         suppressWarnings(
+            A <-  A + scale_linetype_manual(values = Mylinetypes)
+         )
+         
+      } else {
+         # If there's only one unique value in the linetype_column, then make that
+         # item solid. 
+         if(length(sort(unique(c(sim_dataframe$linetype_column, 
+                                 obs_dataframe$linetype_column)))) == 1){
+            A <- A + scale_linetype_manual(values = "solid")
+            
+         } else {
+            
+            # This makes sure that we definitely have enough linetypes
+            Mylinetypes <- rep(c("solid", "dashed", "dotted", "dotdash", "longdash"), 
+                               NumlinetypesNeeded)[1:NumlinetypesNeeded] 
+            
+            
+            names(Mylinetypes) <- levels(c(sim_dataframe$linetype_column,
+                                           obs_dataframe$linetype_column))
+            
+            suppressWarnings(
+               A <-  A + scale_linetype_manual(values = Mylinetypes)
+            )
+         }
+      }
+   }
    
    # Adding legend label for color and linetype as appropriate
    if(complete.cases(legend_label_color)){
@@ -2225,10 +2263,10 @@ call. = FALSE)
       B <- B + ggtitle(graph_title) +
          theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
       AB <- ggpubr::annotate_figure(
-         AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
+         AB, top = ggpubr::text_grob(graph_title, hjust = 0.15, # <- Something is amuck here w/hjust b/c 0.5 is NOT centered. 
                                      face = "bold", size = graph_title_size))
       ABhoriz <- ggpubr::annotate_figure(
-         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5,
+         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.15, # <- Something is amuck here w/hjust b/c 0.5 is NOT centered. 
                                           face = "bold", size = graph_title_size))
    }
    

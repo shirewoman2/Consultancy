@@ -53,24 +53,24 @@ Applicable only when the tissue extracted with
   \describe{
 
   \item{"means only"}{(default) plots a black line for the mean data and, if
-  an effector was modeled, a dashed line for the concentration-time data with
+  a perpetrator was modeled, a dashed line for the concentration-time data with
   Inhibitor 1.}
 
   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
   for the mean of each trial of simulated data, and open circles for the
-  observed data. If an effector were present, lighter dashed lines indicate
-  the mean of each trial of simulated data in the presence of the effector.}
+  observed data. If a perpetrator were present, lighter dashed lines indicate
+  the mean of each trial of simulated data in the presence of the perpetrator.}
 
   \item{"percentiles"}{plots an opaque line for the mean data, lighter lines
   for the 5th and 95th percentiles of the simulated data, and open circles
   for the observed data. If an effecter were present, the default is dashed
-  lines for the data in the presence of an effector.}
+  lines for the data in the presence of a perpetrator.}
 
   \item{"percentile ribbon"}{plots an opaque line for the mean data,
   transparent shading for the 5th to 95th percentiles of the simulated data,
-  and open circles for the observed data. If an effector were present, the
-  default is to show the data without the effector in blue and the data in
-  the presence of the effector in red. Note: You may sometimes see some
+  and open circles for the observed data. If a perpetrator were present, the
+  default is to show the data without the perpetrator in blue and the data in
+  the presence of the perpetrator in red. Note: You may sometimes see some
   artifacts -- especially for semi-log plots -- where the ribbon gets partly
   cut off. For arcane reasons we don't want to bore you with here, we can't
   easily prevent this. However, a possible fix is to set your y axis limits
@@ -79,7 +79,7 @@ Applicable only when the tissue extracted with
   \item{"Freddy"}{Freddy's favorite style of plot with trial means in light
   gray, the overall mean in thicker black, the 5th and 95th percentiles in
   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
-  with an effector present lose the trial means, and the percentiles switch
+  with a perpetrator present lose the trial means, and the percentiles switch
   to solid, gray lines. \strong{An editorial comment:} While this does not
   align with the officially sanctioned template at this time, this looks
   \emph{sharp}, makes it easy to see the defining characteristics of the
@@ -170,13 +170,13 @@ use for the y axis label}
 
 \item{line_type}{Optionally specify what types of lines are used to depict
 \enumerate{\item{the substrate drug alone and} \item{the substrate drug in
-the presence of an effector (when applicable).}} Input should look like
+the presence of a perpetrator (when applicable).}} Input should look like
 this, for example: \code{c("solid", "dashed")} to get a solid line for the
 substrate drug and a dashed line for inhibitor 1. \itemize{ \item{To see
 all possible \code{line_type} options: \code{ggpubr::show_line_types()}}
 \item{If left as NA, substrate alone will be a solid line and substrate +
 inhibitor 1 will be a dashed line.} \item{If \code{figure_type} is "Freddy"
-and there's no effector present, which is a slightly different scenario
+and there's no perpetrator present, which is a slightly different scenario
 than the other graph types, the 1st line type specified will be for the
 mean simulated concentration and the trial means, and the 2nd line type
 specified will be for the 5th and 95th percentiles.}}}
@@ -229,26 +229,27 @@ into the console.}
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all.}
 
-\item{legend_label}{optionally indicate on the legend whether the effector is
-an inhibitor, inducer, activator, or suppressor. Input will be used as the
-label in the legend for the line style and the shape. If left as the
-default NA when a legend is included and an effector is present, the label
-in the legend will be "Inhibitor".}
+\item{legend_label}{optionally indicate on the legend whether the perpetrator
+is an inhibitor, inducer, activator, or suppressor. Input will be used as
+the label in the legend for the line style and the shape. If left as the
+default NA when a legend is included and a perpetrator is present, the
+label in the legend will be "Inhibitor".}
 
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in legend entries and in any Word output files.
 This was designed for simulations where the substrate and any metabolites,
-effectors, or effector metabolites are among the standard options for the
-simulator, and leaving \code{prettify_compound_names = TRUE} will make the
-name of those compounds something more human readable. For example,
+perpetrators, or perpetrator metabolites are among the standard options for
+the simulator, and leaving \code{prettify_compound_names = TRUE} will make
+the name of those compounds something more human readable. For example,
 "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 become "midazolam". Set each compound to the name you'd prefer to see in
 your legend and Word output if you would like something different. For
 example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
 "substrate" = "superstatin")}. Please note that "inhibitor" includes
-\emph{all} the effectors and effector metabolites present, so, if you're
-setting the effector name, you really should use something like this if
-you're including effector metabolites: \code{prettify_compound_names =
+\emph{all} the perpetrators and perpetrator metabolites present, so, if
+you're setting the perpetrator name, you really should use something like
+this if
+you're including perpetrator metabolites: \code{prettify_compound_names =
 c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
@@ -277,7 +278,8 @@ in quotes here, e.g., "My conc time graph.png" or "My conc time
 graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 be saved as a png file, but if you specify a different graphical file
 extension, it will be saved as that file format. Acceptable graphical file
-extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name.
+extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+Do not include any slashes, dollar signs, or periods in the file name.
 Leaving this as NA means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}

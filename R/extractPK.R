@@ -197,29 +197,15 @@ extractPK <- function(sim_data_file,
    # Checking experimental details to only pull details that apply
    if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
       Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                 exp_details = "Summary tab")
+                                 exp_details = "Summary and Input")[["MainDetails"]]
    } else {
-      Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                      "TRUE" = existing_exp_details, 
-                      "FALSE" = deannotateDetails(existing_exp_details))
+      Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>% 
+         filter(File == sim_data_file)
       
-      if("data.frame" %in% class(Deets)){
-         Deets <- Deets %>% filter(File == sim_data_file)
-         
-         if(nrow(Deets) == 0){
-            Deets <- extractExpDetails(sim_data_file = sim_data_file, 
-                                       exp_details = "Summary tab")
-         }
+      if(nrow(Deets) == 0){
+         Deets <- extractExpDetails(sim_data_file = sim_data_file, 
+                                    exp_details = "Summary and Input")[["MainDetails"]]
       }
-   }
-   
-   # We need to know the dosing regimen for whatever compound they
-   # requested, but, if the compoundID is inhibitor 2, then that's listed
-   # on the input tab, and we'll need to extract exp details for that, too.
-   if("inhibitor 2" %in% compoundToExtract){
-      DeetsInputSheet <- extractExpDetails(sim_data_file = i, 
-                                           exp_details = "Input Sheet")
-      Deets <- c(as.list(Deets), DeetsInputSheet)
    }
    
    # extractExpDetails will check whether the Excel file provided was, in
@@ -470,7 +456,7 @@ extractPK <- function(sim_data_file,
          # This is when the formatting is like the AUC tab. Instead of rewriting
          # the user-specified sheet section, I'm hacking this to make the
          # function think that this should be the AUC tab.
-         UserAUC <- TRUE # A handle for checking whether to use XL instead of the regular AUC tab.
+         UserAUC <- TRUE # A handle for checking whether to use AUCX instead of the regular AUC tab.
          
       } else {
          UserAUC <- FALSE
@@ -542,7 +528,7 @@ extractPK <- function(sim_data_file,
    if(is.na(Deets$Inhibitor1)){
       PKparameters <- 
          PKparameters[PKparameters %in% 
-                         AllPKParameters$PKparameter[AllPKParameters$AppliesOnlyWhenEffectorPresent == FALSE]]
+                         AllPKParameters$PKparameter[AllPKParameters$AppliesOnlyWhenPerpPresent == FALSE]]
    }
    
    if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
@@ -585,9 +571,8 @@ extractPK <- function(sim_data_file,
       any(str_detect(PKparameters, "_last")) & is.na(sheet)){
       warning(paste0("The file `",
                      sim_data_file,
-                     "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.
-We cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet`."), 
-call. = FALSE)
+                     "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.\nWe cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet`."), 
+              call. = FALSE)
       PKparameters <- PKparameters[!str_detect(PKparameters, "_last")]
    }
    
@@ -1110,7 +1095,7 @@ call. = FALSE)
                                   col_names = FALSE))
             
             SubCols <- 3:5
-            # This is IN THE PRESENCE OF AN EFFECTOR -- not the effector
+            # This is IN THE PRESENCE OF AN PERPETRATOR -- not the perpetrator
             # itself. I haven't set that up yet. 
             WithInhibCols <- 6:10
             

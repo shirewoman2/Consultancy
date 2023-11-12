@@ -27,9 +27,9 @@ where I is the concentration of the inducer, E~max~ is the maximum change in fol
 
 *Equation 2. E~max~ slope model* 
 
-$$ \text{fold induction} = 1 + E_{max} \times \frac{I^n}{EC_{50}^n + I^n} $$
+$$ \text{fold induction} = 1 + E_{max} \times \frac{I^\gamma}{EC_{50}^\gamma + I^\gamma} $$
 
-where I is the concentration of the inducer, E~max~ is the maximum change in fold induction, EC~50~ is the concentration of the inducer that elicits half the maximum fold-change in induction, and n is the Hill equation coefficient describing the slope. 
+where I is the concentration of the inducer, E~max~ is the maximum change in fold induction, EC~50~ is the concentration of the inducer that elicits half the maximum fold-change in induction, and &gamma; is the Hill equation coefficient describing the slope. 
 
 *Equation 3. Slope model* 
 
@@ -39,9 +39,9 @@ where I is the concentration of the inducer and n is the slope.
 
 *Equation 4. Sigmoidal three-parameter model* 
 
-$$ \text{fold induction} = \frac{Ind_{max}}{1 + e^{ \frac{IndC_{50}-I}{n}}} $$
+$$ \text{fold induction} = \frac{Ind_{max}}{1 + e^{ \frac{IndC_{50}-I}{\gamma}}} $$
 
-where I is the concentration of the inducer, Ind~max~ is the maximum fold induction, IndC~50~ is the concentration of the inducer that elicits half the maximum fold induction, and n is the Hill equation coefficient describing the slope. 
+where I is the concentration of the inducer, Ind~max~ is the maximum fold induction, IndC~50~ is the concentration of the inducer that elicits half the maximum fold induction, and &gamma; is the Hill equation coefficient describing the slope. 
 
 
 
@@ -49,7 +49,7 @@ where I is the concentration of the inducer, Ind~max~ is the maximum fold induct
 
 model_label <- switch(model, 
                       "EmaxSlope" = "E~max~ slope model", 
-                      "slope" = "slope model", 
+                      "Slope" = "slope model", 
                       "Sig3Param" = "sigmoidal three-parameter model", 
                       "Emax" = "E~max~ model", 
                       "all" = "E~max~, E~max~ slope, sigmoidal three-parameter, and slope models")
@@ -65,78 +65,94 @@ model_label <- switch(model,
 Out$Graph
 
 if(model == "all"){
-    FitsThatWorked <- unique(Out$Fit$Model)    
+   FitsThatWorked <- unique(Out$Fit$Model)    
 } else {
-    FitsThatWorked <- model
+   FitsThatWorked <- model
 }
 
 GoodMod <-  c("EmaxSlope" = "E~max~ slope", 
-              "slope" = "slope", 
+              "Slope" = "slope", 
               "Sig3Param" = "sigmoidal three-parameter", 
               "Emax" = "E~max~")
 FitsThatWorked <- GoodMod[FitsThatWorked]
 FitsThatWorked <- paste(str_comma(FitsThatWorked), 
                         ifelse(length(FitsThatWorked) == 1, "model", "models"))
 
+
+
+VertLineText <- ifelse(complete.cases(vert_line), 
+                       "The red dotted vertical line indicates XXX REPLACE THIS WITH WHAT IT INDICATES XXX.", "")
+ImaxuText <- ifelse(complete.cases(Imaxu_line), 
+                    "The upper left quadrant as marked by the red dotted line indicates the region of concern for induction. Points in that quadrant are both above a 2-fold change in induction and also are below the expected Imax,u concentration. Please see p. 5 USFDA Guidance (2020) 'In Vitro Drug Interaction Studies - Cytochrome P450 Enzyme and Transporter Mediated Drug Interactions' for details.", "")
+
+HLineText <- ifelse(hline_foldinduct1, 
+                    "The red dotted horizontal line indicates a fold-change of 1, i.e., no induction compared to vehicle control.", "")
+
+LineText <- str_trim(paste(VertLineText, ImaxuText, HLineText))
+
 ```
 
 
-*`r ifelse(model == "all", "Models were", "The model was")` fit to the `r ifelse(fitByDonor, "individual", "mean")` data, and lines represent successful fits; where fits failed to converge, no line is shown.*
+*`r ifelse(model == "all", "Models were", "The model was")` fit to the `r ifelse(fitByDonor, "individual", "mean")` data, and lines represent successful fits; where fits failed to converge, no line is shown. `r LineText`*
 
 *Table XXX. Fitted parameters for the `r FitsThatWorked` for `r ifelse(is.na(enzyme), "", paste0(" ", enzyme))` `r measurement` fold-change data after incubations of human hepatocytes`r ifelse(complete.cases(drug), paste0(" with ", drug, "."), ".")`*
 
 ```{r indfit3}
 
 if(model == "all" & fitByDonor){
-    
-    Fit_ind <- Out$Fit
-    
-    suppressWarnings(
-        Fit_sum <- Fit_ind %>% group_by(Model) %>% 
-            summarize(across(.cols = everything(), .fns = mean, na.rm = T)) %>% 
-            mutate(DonorID = "mean")
-    )
-    
-    AllFits <- bind_rows(Fit_ind, Fit_sum) %>% 
-        mutate(DonorID = as.factor(DonorID),
-               DonorID = forcats::fct_relevel(DonorID, "mean", after = Inf)) %>% 
-        arrange(Model, DonorID)
-    
-} else {
-    # Not fit by donor here, so not calculating means
-    AllFits <- Out$Fit
-}
+   
+   Fit_ind <- Out$Fit
+   
+   suppressWarnings(
+      Fit_sum <- Fit_ind %>% group_by(Model) %>% 
+         summarize(across(.cols = everything(), .fns = mean, na.rm = T)) %>% 
+         mutate(DonorID = "mean")
+   )
+
+   AllFits <- bind_rows(Fit_ind, Fit_sum) %>% 
+      mutate(DonorID = as.factor(DonorID),
+             DonorID = forcats::fct_relevel(DonorID, "mean", after = Inf)) %>% 
+      arrange(Model, DonorID)
+   
+} 
 
 # Making "model" look nice for the table
+PvalCols <- names(AllFits)[str_detect(names(AllFits), "p value")]
+OtherCols <- names(AllFits)[str_detect(names(AllFits), "Emax|EC50|Gamma|slope|IndC50|Indmax|AIC")]
+OtherCols <- setdiff(OtherCols, PvalCols)
+
 AllFits <- AllFits %>% 
-    mutate(Model = case_when(Model == "Emax" ~ "Emax", 
-                             Model == "EmaxSlope" ~ "Emax slope", 
-                             Model == "Sig3Param" ~ "sigmoidal 3-parameter", 
-                             Model == "slope" ~ "slope")) %>% 
-    
-    # Rounding as requested
-    mutate(across(.cols = any_of(c("Emax", "EC50", "slope", "IndC50", "Indmax")), 
-                  .fns = round_opt, 
-                  round_fun = ifelse(complete.cases(rounding) && rounding == "Word only", 
-                                     "Consultancy", rounding)))
+   mutate(Model = case_when(Model == "Emax" ~ "Emax", 
+                            Model == "EmaxSlope" ~ "Emax slope", 
+                            Model == "Sig3Param" ~ "sigmoidal 3-parameter", 
+                            Model == "Slope" ~ "slope")) %>% 
+   
+   # Rounding as requested
+   mutate(across(.cols = any_of(OtherCols),
+                 .fns = round_opt, 
+                 round_fun = rounding, 
+                 is_this_for_Word = TRUE, 
+                 out_class = "character"), 
+          across(.cols = any_of(PvalCols), 
+                 .fns = ~ as.character(signif(.x, 1))))
 
 MeanRows <- which(AllFits$DonorID == "mean")
 
 if(model == "all"){
-    AllFits <- AllFits %>% 
-        formatTable_Simcyp(shading_column = Model, 
-                           bold_cells = list(c(0, NA)), 
-                           center_1st_column = TRUE) 
+   AllFits <- AllFits %>% 
+      formatTable_Simcyp(shading_column = Model, 
+                         bold_cells = list(c(0, NA)), 
+                         center_1st_column = TRUE) 
 } else {
-    AllFits <- AllFits %>% 
-        formatTable_Simcyp(bold_cells = list(c(0, NA)), 
-                           center_1st_column = TRUE) 
+   AllFits <- AllFits %>% 
+      formatTable_Simcyp(bold_cells = list(c(0, NA)), 
+                         center_1st_column = TRUE) 
 }
 
 AllFits %>% 
-    flextable::bold(i = MeanRows) %>% 
-    flextable::merge_v(j = 1) %>% 
-    flextable::hline_bottom(border = officer::fp_border(width = 0.5))
+   flextable::bold(i = MeanRows) %>% 
+   flextable::merge_v(j = 1) %>% 
+   flextable::hline_bottom(border = officer::fp_border(width = 0.5))
 
 ```
 
