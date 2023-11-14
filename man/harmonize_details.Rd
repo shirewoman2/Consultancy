@@ -19,8 +19,8 @@ Returns a list
 extractExpDetails, extractExpDetails_mult, annotateDetails, or
 deannotateDetails and makes it conform to the data structure the rest of the
 package needs: a list with the following items, which can be added to in the
-future: 1) MainDetails, 2) CustomDosing_sub, 3) CustomDosing_inhib, and 4)
-CustomDosing_inhib2.
+future: 1) MainDetails, 2) CustomDosing, 3) DissolutionProfiles, and 4)
+ReleaseProfiles.
 }
 \examples{
 # none

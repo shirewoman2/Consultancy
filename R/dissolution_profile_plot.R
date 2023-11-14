@@ -1,12 +1,12 @@
-#' Make a graph of the release profiles of a compound
+#' Make a graph of the dissolution profiles of a compound
 #'
-#' \code{release_profile_plot} is meant to be used in conjunction with
-#' \code{\link{extractExpDetails}} to create graphs with release-profile data,
+#' \code{dissolution_profile_plot} is meant to be used in conjunction with
+#' \code{\link{extractExpDetails}} to create graphs with dissolution-profile data,
 #' possibly for multiple simulations or for multiple compounds.
 #'
 #' @param figure_type the type of figure to plot. \describe{
 #'
-#'   \item{"means only"}{(default) show only the mean release profile}
+#'   \item{"means only"}{(default) show only the mean dissolution profile}
 #'
 #'   \item{"percentile ribbon"}{show an opaque line for the mean data and
 #'   transparent shading for the standard deviation.}}
@@ -21,7 +21,7 @@
 #'   \item{"both horizontal"}{both the linear and the semi-log graphs will be
 #'   returned, and graphs are stacked horizontally}}
 #' @param colorBy_column (optional) the column in
-#'   \code{existing_exp_details$ReleaseProfiles} that should be used for
+#'   \code{existing_exp_details$DissolutionProfiles} that should be used for
 #'   determining which color lines and/or points will be. This should be
 #'   unquoted, e.g., \code{colorBy_column = Tissue}.
 #' @param color_labels optionally specify a character vector for how you'd like
@@ -93,7 +93,7 @@
 #' @param errorbar_width width of error bars to use in hours (or, if you've used
 #'   some other time unit, in whatever units are in your data). Default is 0.5.
 #' @param linetype_column the column in
-#'   \code{existing_exp_details$ReleaseProfiles} that should be used for
+#'   \code{existing_exp_details$DissolutionProfiles} that should be used for
 #'   determining the line types
 #' @param linetype_labels optionally specify a character vector for how you'd
 #'   like the labels for whatever you choose for \code{linetype_column} to show
@@ -259,21 +259,21 @@
 #' @examples
 #' Details <- extractExpDetails_mult(sim_data_files = NA)
 #' 
-#' release_profile_plot(existing_exp_details = Details)
+#' dissolution_profile_plot(existing_exp_details = Details)
 #' 
 #' # If you have multiple simulations or multiple compounds and you only 
 #' # want to graph one, here is an example of how to filter your data to do
 #' # that. 
 #' 
 #'  Details_subset <- Details
-#'  Details_subset$ReleaseProfiles <- Details_subset$ReleaseProfiles %>% 
+#'  Details_subset$DissolutionProfiles <- Details_subset$DissolutionProfiles %>% 
 #'       filter(CompoundID == "substrate" & 
 #'              File == "simulation A.xlsx")
 #' 
-#' release_profile_plot(existing_exp_details = Details_subset)
+#' dissolution_profile_plot(existing_exp_details = Details_subset)
 #' 
 #' 
-release_profile_plot <- function(existing_exp_details, 
+dissolution_profile_plot <- function(existing_exp_details, 
                                  figure_type = "percentile ribbon", 
                                  linear_or_log = "linear",
                                  colorBy_column,
@@ -302,7 +302,7 @@ release_profile_plot <- function(existing_exp_details,
                                  y_axis_limits_lin = NA,
                                  y_axis_limits_log = NA, 
                                  y_axis_interval = NA,
-                                 y_axis_label = "Percent released",
+                                 y_axis_label = "Percent dissolved",
                                  hline_position = NA, 
                                  hline_style = "red dotted", 
                                  vline_position = NA, 
@@ -332,24 +332,24 @@ release_profile_plot <- function(existing_exp_details,
    }
    
    if(is.na(y_axis_label)){
-      warning("You must specify a value for `y_axis_label`. We'll use the default value of `Percent released`.\n", 
+      warning("You must specify a value for `y_axis_label`. We'll use the default value of `Percent dissolutiond`.\n", 
               call. = FALSE)
-      y_axis_label <- "Percent released"
+      y_axis_label <- "Percent dissolutiond"
    }
    
    if(any(complete.cases(time_range)) && class(time_range) != "numeric"){
-      warning("For the `release_profile_plot` function, the time range may only be numeric or NA. We'll set this to NA.\n", 
+      warning("For the `dissolution_profile_plot` function, the time range may only be numeric or NA. We'll set this to NA.\n", 
               call. = FALSE)
       time_range <- NA
    }
    
    # Main body of function -------------------------------------------------
    
-   Release <- existing_exp_details$ReleaseProfiles %>% 
-      mutate(Release_mean = Release_mean / 100,
-             ReleaseUpper = Release_mean + Release_mean * Release_CV, 
-             ReleaseLower = Release_mean - Release_mean * Release_CV, 
-             ReleaseSD = Release_mean * Release_CV, 
+   Dissolution <- existing_exp_details$DissolutionProfiles %>% 
+      mutate(Dissolution_mean = Dissolution_mean / 100,
+         DissolutionUpper = Dissolution_mean + Dissolution_mean * Dissolution_CV, 
+             DissolutionLower = Dissolution_mean - Dissolution_mean * Dissolution_CV, 
+             DissolutionSD = Dissolution_mean * Dissolution_CV,
              subsection_ADAM = NA, 
              Simulated = TRUE, 
              # placeholders only
@@ -360,8 +360,8 @@ release_profile_plot <- function(existing_exp_details,
              Time_units = "hours", 
              DoseNum = 1)
    
-   # ggplot(Release, aes(x = Time, y = Release_mean, 
-   #                     ymax = ReleaseUpper, ymin = ReleaseLower)) +
+   # ggplot(Dissolution, aes(x = Time, y = Dissolution_mean, 
+   #                     ymax = DissolutionUpper, ymin = DissolutionLower)) +
    #    geom_point() + geom_line() + 
    #    geom_ribbon(alpha = 0.5) + 
    #    scale_x_time() +
@@ -374,7 +374,7 @@ release_profile_plot <- function(existing_exp_details,
    
    # Including hacks to make this work
    ct_plot_overlay(
-      ct_dataframe = Release, 
+      ct_dataframe = Dissolution, 
       figure_type = figure_type, 
       # NSE trouble: not enquo alone, not quo, not
       # substitute, but enquo plus !! here

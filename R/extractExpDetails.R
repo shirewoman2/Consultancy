@@ -81,8 +81,6 @@
 #'   file.
 #'
 #' @return Returns a named list of the experimental details
-#' @import tidyverse
-#' @import readxl
 #' @export
 #'
 #' @examples
@@ -633,6 +631,7 @@ extractExpDetails <- function(sim_data_file,
       
       # Checking on release profiles
       if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
+         exists("InputTab", inherits = FALSE) &&
          any(str_detect(unlist(c(InputTab[, ColLocations])), "Release Mean"),
              na.rm = TRUE)){
          
@@ -647,18 +646,60 @@ extractExpDetails <- function(sim_data_file,
             
             ReleaseProfs[[i]] <- data.frame(
                Time = Release_temp$...2[which(str_detect(Release_temp$...1, "Time"))], 
-               ReleaseMean = Release_temp$...2[which(str_detect(Release_temp$...1, "Release Mean"))], 
-               ReleaseCV = Release_temp$...2[which(str_detect(Release_temp$...1, "CV"))]) %>% 
+               Release_mean = Release_temp$...2[which(str_detect(Release_temp$...1, "Release Mean"))], 
+               Release_CV = Release_temp$...2[which(str_detect(Release_temp$...1, "CV"))]) %>% 
                mutate(across(.cols = everything(), .fns = as.numeric), 
-                      ReleaseCV = ReleaseCV / 100, # Making this a fraction instead of a number up to 100
+                      Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
                       File = sim_data_file, 
-                      CompoundID = i)
+                      CompoundID = i, 
+                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+               select(File, CompoundID, Compound, Time, Release_mean, Release_CV)
             
             rm(StartRow, EndRow, Release_temp)
             
          }
          
          ReleaseProfs <- bind_rows(ReleaseProfs)
+      } else {
+         ReleaseProfs <- NULL
+      }
+      
+      # Checking on dissolution profiles
+      if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
+         exists("InputTab", inherits = FALSE) &&
+         any(str_detect(unlist(c(InputTab[, ColLocations])), "Dissolution Profile"),
+             na.rm = TRUE)){
+         
+         DissoProfs <- list()
+         
+         for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
+            StartRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution Profile"))[1] + 1
+            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution \\(\\%"))
+            EndRow <- EndRow[which.max(EndRow)] + 1 # Looking for last "Dissolution (%)" row and then the next row will be the CV for that. 
+            
+            Disso_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
+            
+            DissoProfs[[i]] <- data.frame(
+               Time = Disso_temp$...2[which(str_detect(Disso_temp$...1, "Time"))], 
+               Dissolution_mean = Disso_temp$...2[which(str_detect(Disso_temp$...1, "Dissolution \\(\\%"))], 
+               Dissolution_CV = Disso_temp$...2[which(str_detect(Disso_temp$...1, "CV"))]) %>% 
+               mutate(across(.cols = everything(), .fns = as.numeric), 
+                      Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
+                      File = sim_data_file, 
+                      CompoundID = i, 
+                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]],
+                      PrandialSt = sort(unique(tolower(
+                         str_extract(Disso_temp$...1, "Fasted|Fed"))))) %>% 
+               select(File, CompoundID, Compound, PrandialSt, 
+                      Time, Dissolution_mean, Dissolution_CV)
+            
+            rm(StartRow, EndRow, Disso_temp)
+            
+         }
+         
+         DissoProfs <- bind_rows(DissoProfs)
+      } else {
+         DissoProfs <- NULL
       }
       
       
@@ -1285,23 +1326,26 @@ extractExpDetails <- function(sim_data_file,
          Dosing <- Dosing %>% 
             rename(DoseNum = Dose.Number, 
                    Time1 = Time,
-                   Dose = Dose, 
-                   Dose_units = Dose.Units) 
-         names(Dosing)[names(Dosing) == "Dose"] <-
-            paste0("Dose", Suffix)
-         names(Dosing)[names(Dosing) == "Route.of.Administration"] <-
-            paste0("DoseRoute", Suffix)
+                   Dose_units = Dose.Units, 
+                   DoseRoute = Route.of.Administration)
+         
          TimeUnits <- names(Dosing)[str_detect(names(Dosing), "Offset")]
          names(Dosing)[str_detect(names(Dosing), "Offset")] <- "Time"
+         
+         MyCompoundID <- AllCompounds$CompoundID[AllCompounds$Suffix == Suffix]
+         MyCompound <- as.character(Out[AllCompounds$DetailNames[AllCompounds$Suffix == Suffix]])
+         
          Dosing <- Dosing %>% 
             mutate(Time_units = ifelse(str_detect(TimeUnits, "\\.h\\.$"), 
-                                       "h", "min")) %>% 
-            mutate(across(.cols = matches("DoseNum|Time$|Dose_sub|Dose_inhib|Dose_inhib2"), 
+                                       "h", "min"), 
+                   File = sim_data_file, 
+                   CompoundID = MyCompoundID, 
+                   Compound = MyCompound) %>% 
+            mutate(across(.cols = matches("DoseNum|Time$|Dose$"), 
                           .fns = as.numeric)) %>% 
-            select(any_of(c("Time", "Time_units", "DoseNum", "Dose_sub", "Dose_inhib", 
-                            "Dose_inhib2", "Dose_units", "DoseRoute_sub", 
-                            "DoseRoute_inhib", "DoseRoute_inhib2")))
-         
+            select(File, CompoundID, Compound, Time, Time_units, DoseNum, 
+                   Dose, Dose_units, DoseRoute)
+            
          Out[[paste0("CustomDosing", Suffix)]] <- Dosing
          Out[[paste0("Dose", Suffix)]] <- "custom dosing"
          Out[[paste0("StartDayTime", Suffix)]] <- "custom dosing"
@@ -1310,7 +1354,7 @@ extractExpDetails <- function(sim_data_file,
          Out[[paste0("DoseInt", Suffix)]] <- "custom dosing"
          Out[[paste0("Regimen", Suffix)]] <- "custom dosing"
          
-         rm(Dosing, Suffix, Dose_xl)
+         rm(Dosing, Suffix, Dose_xl, MyCompoundID, MyCompound, TimeUnits)
          
       }
    }
@@ -1594,14 +1638,12 @@ extractExpDetails <- function(sim_data_file,
    # separately, whatever items need to be lists, e.g., custom dosing regimens
    # and dissolution profiles. 
    Main <- as.data.frame(Out[which(sapply(Out, length) == 1)])
-   CustomDosing_sub <- Out$CustomDosing_sub
-   CustomDosing_inhib <- Out$CustomDosing_inhib
-   CustomDosing_inhib2 <- Out$CustomDosing_inhib2
    
    Out <- list(MainDetails = Main, 
-               CustomDosing_sub = CustomDosing_sub, 
-               CustomDosing_inhib = CustomDosing_inhib, 
-               CustomDosing_inhib2 = CustomDosing_inhib2, 
+               CustomDosing = bind_rows(Out$CustomDosing_sub, 
+                                        Out$CustomDosing_inhib, 
+                                        Out$CustomDosing_inhib2), 
+               DissolutionProfiles = DissoProfs,
                ReleaseProfiles = ReleaseProfs)
    
    for(j in names(Out)[unlist(lapply(Out, is.null)) == FALSE]){

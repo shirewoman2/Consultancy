@@ -274,6 +274,9 @@ annotateDetails <- function(existing_exp_details,
    simulator_section_orig <- simulator_section
    simulator_section <- str_c(unique(tolower(simulator_section)), collapse = " ")
    
+   # Need to harmonize input to check some of these other bits
+   existing_exp_details <- harmonize_details(existing_exp_details)
+   
    if("Substrate" %in% names(existing_exp_details$MainDetails) == FALSE & 
       (show_compound_col == TRUE | show_compound_col == "concatenate") & 
       "Compound" %in% names(existing_exp_details$MainDetails) == FALSE){
@@ -311,8 +314,6 @@ annotateDetails <- function(existing_exp_details,
    
    
    # Getting things set up ---------------------------------------------------
-   
-   existing_exp_details <- harmonize_details(existing_exp_details)
    
    if("File" %in% names(existing_exp_details$MainDetails) == FALSE){
       existing_exp_details$MainDetails$File <-
@@ -584,12 +585,25 @@ annotateDetails <- function(existing_exp_details,
    ## compound -------------------------------------------------------------
    if(complete.cases(compound)){
       
-      if(any(str_detect(tolower(Main$Compound), tolower(compound))) == FALSE){
-         warning(paste0("None of the simulations had information on the compound you requested. You requested a compound called `", 
-                        compound, 
-                        "``, but the compounds present in these simulations are: ", 
-                        str_comma(sort(unique(Main$Compound))), ". All the information specific to those compounds will be omitted from your output."), 
-                 call. = FALSE)
+      if(any(str_detect(tolower(compound), 
+                        tolower(Main$Compound)), na.rm = TRUE) == FALSE){
+         
+         if(complete.cases(compoundID)){
+            warning(paste0("None of the simulations had information on the specific compound and compound ID you requested. You requested a compound with `", 
+                           compound, 
+                           "`` in the name as the ", compoundID, 
+                           ", but the compounds present in these simulations for the ", 
+                           compoundID, 
+                           " are: ", 
+                           str_comma(sort(unique(Main$Compound))), ". All the information specific to only those compounds will be omitted from your output.\n"), 
+                    call. = FALSE)   
+         } else {
+            warning(paste0("None of the simulations had information on the specific compound you requested. You requested a compound with `", 
+                           compound, 
+                           "`` in the name, but the compounds present in these simulations are: ", 
+                           str_comma(sort(unique(Main$Compound))), ". All the information specific to only those compounds will be omitted from your output.\n"), 
+                    call. = FALSE)   
+         }
       }
       
       Main <- Main %>% filter(str_detect(tolower(Compound), tolower({{compound}})) |
