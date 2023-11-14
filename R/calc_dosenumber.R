@@ -166,48 +166,52 @@ calc_dosenumber <- function(ct_dataframe,
                                     f = ct_dataframe[[i]]$CompoundID)
          
          CD_i <- existing_exp_details$CustomDosing %>% filter(File == i)
-         CD_i <- split(CD_i, f = CD_i$CompoundID)
          
-         for(j in names(CD_i)){
+         if(nrow(CD_i) > 0){
             
-            if(max(ct_dataframe[[i]][[j]]$Time) > max(CD_i[[j]]$Time)){
-               CD_i[[j]] <- CD_i[[j]] %>% 
-                  # Need this next bit for using cut function appropriately
-                  bind_rows(data.frame(Time = max(ct_dataframe[[i]][[j]]$Time) + 1, 
-                                       DoseNum = max(CD_i[[j]]$DoseNum)))
+            CD_i <- split(CD_i, f = CD_i$CompoundID)
+            
+            for(j in names(CD_i)){
+               
+               if(max(ct_dataframe[[i]][[j]]$Time) > max(CD_i[[j]]$Time)){
+                  CD_i[[j]] <- CD_i[[j]] %>% 
+                     # Need this next bit for using cut function appropriately
+                     bind_rows(data.frame(Time = max(ct_dataframe[[i]][[j]]$Time) + 1, 
+                                          DoseNum = max(CD_i[[j]]$DoseNum)))
+               }
+               
+               # If there was a loading dose or something (not really sure what
+               # this would be), then there are two dose numbers listed for t0.
+               # Removing the earlier one so that this will work.
+               if(any(duplicated(CD_i[[j]]$Time))){
+                  warning(paste0("There were multiple dose numbers listed at the same time for the ",
+                                 j," in the file ", sim_data_file, 
+                                 "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed.\n"),
+                          call. = FALSE)
+                  TimeToRemove <- which(duplicated(
+                     CD_i[[j]]$Time, fromLast = TRUE))
+                  CD_i[[j]] <- CD_i[[j]] %>% slice(-TimeToRemove)
+               }
+               
+               CD_i[[j]]$Breaks <-
+                  as.character(cut(CD_i[[j]]$Time,
+                                   breaks = CD_i[[j]]$Time,
+                                   right = FALSE))
             }
             
-            # If there was a loading dose or something (not really sure what
-            # this would be), then there are two dose numbers listed for t0.
-            # Removing the earlier one so that this will work.
-            if(any(duplicated(CD_i[[j]]$Time))){
-               warning(paste0("There were multiple dose numbers listed at the same time for the ",
-                              j," in the file ", sim_data_file, 
-                              "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed.\n"),
-                       call. = FALSE)
-               TimeToRemove <- which(duplicated(
-                  CD_i[[j]]$Time, fromLast = TRUE))
-               CD_i[[j]] <- CD_i[[j]] %>% slice(-TimeToRemove)
-            }
-            
-            CD_i[[j]]$Breaks <-
-               as.character(cut(CD_i[[j]]$Time,
+            ct_dataframe[[i]][[j]]$DoseNum <- NULL
+            ct_dataframe[[i]][[j]]$Breaks <-
+               as.character(cut(ct_dataframe[[i]][[j]]$Time,
                                 breaks = CD_i[[j]]$Time,
                                 right = FALSE))
+            
+            ct_dataframe[[i]][[j]] <- ct_dataframe[[i]][[j]] %>% 
+               left_join(CD_i[[j]] %>% select(Breaks, DoseNum), 
+                         by = "Breaks")
+            
+            rm(CD_i)
+            
          }
-         
-         ct_dataframe[[i]][[j]]$DoseNum <- NULL
-         ct_dataframe[[i]][[j]]$Breaks <-
-            as.character(cut(ct_dataframe[[i]][[j]]$Time,
-                             breaks = CD_i[[j]]$Time,
-                             right = FALSE))
-         
-         ct_dataframe[[i]][[j]] <- ct_dataframe[[i]][[j]] %>% 
-            left_join(CD_i[[j]] %>% select(Breaks, DoseNum), 
-                      by = "Breaks")
-         
-         rm(CD_i)
-         
       }
       
       ct_dataframe[[i]] <- bind_rows(ct_dataframe[[i]])

@@ -56,18 +56,25 @@ harmonize_details <- function(existing_exp_details){
             }
             
             CustomDosing <- bind_rows(existing_exp_details[
-               c("CustomDosing_sub", "CustomDosing_inhib", "CustomDosing_inhib2")]) %>% 
-               left_join(Details$MainDetails %>% 
-                            select(File, Substrate, Inhibitor1, Inhibitor2) %>% 
-                            pivot_longer(cols = -File, 
-                                         names_to = "DetailNames", 
-                                         values_to = "Compound") %>% 
-                            left_join(AllCompounds %>%
-                                         select(DetailNames, CompoundID), 
-                                      by = "DetailNames"), 
-                         by = c("File", "CompoundID")) %>% 
-               select(File, CompoundID, Compound, Time, Time_units, DoseNum, 
-                      Dose, Dose_units, DoseRoute)
+               c("CustomDosing_sub", "CustomDosing_inhib", "CustomDosing_inhib2")])
+            
+            if(nrow(CustomDosing) > 0){
+               CustomDosing <- CustomDosing %>% 
+                  left_join(Details$MainDetails %>% 
+                               select(File, Substrate, Inhibitor1, Inhibitor2) %>% 
+                               pivot_longer(cols = -File, 
+                                            names_to = "DetailNames", 
+                                            values_to = "Compound") %>% 
+                               left_join(AllCompounds %>%
+                                            select(DetailNames, CompoundID), 
+                                         by = "DetailNames"), 
+                            by = c("File", "CompoundID")) %>% 
+                  select(File, CompoundID, Compound, Time, Time_units, DoseNum, 
+                         Dose, Dose_units, DoseRoute)
+               
+            } else {
+               CustomDosing <- NULL
+            }
             
             existing_exp_details$CustomDosing_sub <-  NULL
             existing_exp_details$CustomDosing_inhib <- NULL
