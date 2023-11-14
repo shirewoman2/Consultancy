@@ -585,8 +585,8 @@ annotateDetails <- function(existing_exp_details,
    ## compound -------------------------------------------------------------
    if(complete.cases(compound)){
       
-      if(any(str_detect(tolower(compound), 
-                        tolower(Main$Compound)), na.rm = TRUE) == FALSE){
+      if(any(str_detect(tolower(Main$Compound), tolower(compound)),
+             na.rm = TRUE) == FALSE){
          
          if(complete.cases(compoundID)){
             warning(paste0("None of the simulations had information on the specific compound and compound ID you requested. You requested a compound with `", 
@@ -604,15 +604,18 @@ annotateDetails <- function(existing_exp_details,
                            str_comma(sort(unique(Main$Compound))), ". All the information specific to only those compounds will be omitted from your output.\n"), 
                     call. = FALSE)   
          }
+         
+      } else {
+         
+         Main <- Main %>%
+            filter(str_detect(tolower(Compound), tolower({{compound}})) |
+                      is.na(Compound)) %>% 
+            mutate(Notes = str_trim(gsub("(for|of) (the )?(substrate|primary metabolite 1|primary metabolite 2|secondary metabolite|inhibitor 1|inhibitor 2|inhibitor 1 metabolite)",
+                                         "", Notes)), 
+                   Detail = sub("_sub$|_inhib$|_met1$|_met2$|_secmet$|_inhib2$|_inhib1met$", 
+                                "", Detail))
+         show_compound_col <- "concatenate"
       }
-      
-      Main <- Main %>% filter(str_detect(tolower(Compound), tolower({{compound}})) |
-                                 is.na(Compound)) %>% 
-         mutate(Notes = str_trim(gsub("(for|of) (the )?(substrate|primary metabolite 1|primary metabolite 2|secondary metabolite|inhibitor 1|inhibitor 2|inhibitor 1 metabolite)",
-                                      "", Notes)), 
-                Detail = sub("_sub$|_inhib$|_met1$|_met2$|_secmet$|_inhib2$|_inhib1met$", 
-                             "", Detail))
-      show_compound_col <- "concatenate"
    }
    
    ## simulator_section --------------------------------------------------
