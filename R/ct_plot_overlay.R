@@ -516,14 +516,29 @@ ct_plot_overlay <- function(ct_dataframe,
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
    
-   # Checking whether this is a release-profile plot
-   ReleaseProfPlot <- all(c("ReleaseMean", "ReleaseCV") %in% names(ct_dataframe)) &
+   # Checking whether this is a release-profile plot or a dissolution-profile plot
+   ReleaseProfPlot <- all(c("Release_mean", "Release_CV") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
    
    if(ReleaseProfPlot){
       ct_dataframe <- ct_dataframe %>% 
-         rename(Conc = ReleaseMean, 
+         # This is to take advantage of some stuff I set up for enzyme-abundance
+         # plots. 
+         rename(Conc = Release_mean, 
                 SD_SE = ReleaseSD) %>% 
+         mutate(MyMean = Conc)
+   }
+   
+   DissolutionProfPlot <- all(c("Dissolution_mean", "Dissolution_CV") %in% 
+                                 names(ct_dataframe)) &
+      "Conc" %in% names(ct_dataframe) == FALSE
+   
+   if(DissolutionProfPlot){
+      ct_dataframe <- ct_dataframe %>% 
+         # This is to take advantage of some stuff I set up for enzyme-abundance
+         # plots. 
+         rename(Conc = Dissolution_mean, 
+                SD_SE = DissolutionSD) %>% 
          mutate(MyMean = Conc)
    }
    
@@ -947,6 +962,7 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    if(EnzPlot){ 
+      
       # for enzyme abundance data
       ct_dataframe <- ct_dataframe %>%
          unite(col = Group, any_of(c("File", "Trial", "Tissue", "Enzyme",
@@ -1365,7 +1381,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # compound that the user is plotting. Using whatever is the compoundID that
    # has the base level for the factor. <--- This may not be necessary, now
    # that I think about it further...
-   if(EnzPlot | ReleaseProfPlot){
+   if(EnzPlot | ReleaseProfPlot | DissolutionProfPlot){
       AnchorCompound <- "substrate"
    } else if(mean_type != "none"){
       AnchorCompound <- sim_dataframe %>% select(CompoundID) %>% unique() %>% 
@@ -1415,7 +1431,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                                 "TRUE" = NA, 
                                                 "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
                        prettify_compound_names = prettify_compound_names,
-                       EnzPlot = EnzPlot, 
+                       EnzPlot = any(c(EnzPlot, DissolutionProfPlot, ReleaseProfPlot)), 
                        time_range = time_range,
                        time_range_relative = time_range_relative,
                        Ylim_data = Ylim_data, 
@@ -1547,6 +1563,12 @@ ct_plot_overlay <- function(ct_dataframe,
             unique() %>% 
             rename(per5 = "ReleaseUpper", 
                    per95 = "ReleaseLower")
+         
+      } else if(DissolutionProfPlot){
+         RibbonDF <- sim_dataframe %>% 
+            unique() %>% 
+            rename(per5 = "DissolutionUpper", 
+                   per95 = "DissolutionLower")
          
       } else {
          RibbonDF <-  sim_dataframe %>% 
@@ -1804,7 +1826,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                    aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
                                    width = errorbar_width)
          }
-      } else if(ReleaseProfPlot){
+      } else if(ReleaseProfPlot | DissolutionProfPlot){
          A <- A + geom_errorbar(data = sim_dataframe, 
                                 aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
                                 width = errorbar_width)
@@ -1856,7 +1878,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                   "FALSE" = facet_nrow), 
                     strip.position = strip.position)
       
-      if(EnzPlot){
+      if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
          A <- A +
             scale_y_continuous(expand = expansion(mult = pad_y_num),
                                labels = scales::percent)
@@ -1889,7 +1911,7 @@ ct_plot_overlay <- function(ct_dataframe,
                        nrow = switch(as.character(is.na(facet_nrow)), "TRUE" = NULL, "FALSE" = facet_nrow))
       )
       
-      if(EnzPlot){
+      if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
          A <- suppressWarnings(suppressMessages(
             A + scale_y_continuous(labels = scales::percent,
                                    expand = expansion(mult = pad_y_num)) 
@@ -1913,7 +1935,7 @@ ct_plot_overlay <- function(ct_dataframe,
                       pad_x_axis = pad_x_axis) +
          facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
       
-      if(EnzPlot){
+      if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
          A <- suppressWarnings(suppressMessages(
             A + scale_y_continuous(labels = scales::label_percent(big.mark = ","),
                                    breaks = YBreaks,
@@ -2206,7 +2228,7 @@ ct_plot_overlay <- function(ct_dataframe,
               call. = FALSE)
    }
    
-   if(EnzPlot){
+   if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
       B <- suppressMessages(suppressWarnings(
          A + scale_y_log10(labels = scales::label_percent(big.mark = ","), 
                            expand = expansion(mult = pad_y_num)) +

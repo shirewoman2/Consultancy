@@ -159,74 +159,57 @@ calc_dosenumber <- function(ct_dataframe,
                                  ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
       
       # Checking for any custom dosing
-      CDnames <- names(Deets[[i]])[
-         sapply(Deets[[i]], is.null) == FALSE]
-      CDnames <- names(Deets[[i]][CDnames])[
-         sapply(Deets[[i]][CDnames], length) > 1]
-      CDnames <- CDnames[str_detect(CDnames, "CustomDosing")]
-      
-      if(length(CDnames) > 0){
+      if(nrow(existing_exp_details$CustomDosing) > 0){
          
-         CDCompounds <-
-            data.frame(CDnames = c("CustomDosing_sub", "CustomDosing_inhib", "CustomDosing_inhib2"), 
-                       CompoundSuffix = str_extract(names(CD),
-                                                    "_sub|_inhib(2)?")) %>% 
-            mutate(CompoundID = recode(CompoundSuffix, 
-                                       "_sub" = "substrate", 
-                                       "_inhib" = "inhibitor 1", 
-                                       "_inhib2" = "inhibitor 2")) %>% 
-            unique() %>% 
-            filter(CDnames %in% {{CDnames}})
+         ct_dataframe[[i]] <- split(ct_dataframe[[i]],
+                                    f = ct_dataframe[[i]]$CompoundID)
          
-         if(any(unique(ct_dataframe[[i]]$CompoundID) %in% CDCompounds$CompoundID)){
+         CD_i <- existing_exp_details$CustomDosing %>% filter(File == i)
+         CD_i <- split(CD_i, f = CD_i$CompoundID)
+         
+         for(j in names(CD_i)){
             
-            ct_dataframe[[i]] <- split(ct_dataframe[[i]], f = ct_dataframe[[i]]$CompoundID)
-            
-            for(j in CDCompounds$CDnames){
-               
-               jj <- CDCompounds$CompoundID[CDCompounds$CDnames == j]
-               
-               # message(paste("CDCompounds$CompoundID j =", j))
-               if(max(ct_dataframe[[i]][[jj]]$Time) > max(Deets[[i]][[j]]$Time)){
-                  Deets[[i]][[j]] <- Deets[[i]][[j]] %>% 
-                     # Need this next bit for using cut function appropriately
-                     bind_rows(data.frame(Time = max(ct_dataframe[[i]][[jj]]$Time) + 1, 
-                                          DoseNum = max(Deets[[i]][[j]]$DoseNum)))
-               }
-               
-               # If there was a loading dose or something (not really sure what
-               # this would be), then there are two dose numbers listed for t0.
-               # Removing the earlier one so that this will work.
-               if(any(duplicated(Deets[[i]][[j]]$Time))){
-                  warning(paste0("There were multiple dose numbers listed at the same time for the ",
-                                 j," in the file ", sim_data_file, 
-                                 "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed."),
-                          call. = FALSE)
-                  TimeToRemove <- which(duplicated(
-                     Deets[[i]][[j]]$Time, fromLast = TRUE))
-                  Deets[[i]][[j]] <- Deets[[i]][[j]] %>% slice(-TimeToRemove)
-               }
-               
-               Deets[[i]][[j]]$Breaks <-
-                  as.character(cut(Deets[[i]][[j]]$Time,
-                                   breaks = Deets[[i]][[j]]$Time,
-                                   right = FALSE))
+            if(max(ct_dataframe[[i]][[j]]$Time) > max(CD_i[[j]]$Time)){
+               CD_i[[j]] <- CD_i[[j]] %>% 
+                  # Need this next bit for using cut function appropriately
+                  bind_rows(data.frame(Time = max(ct_dataframe[[i]][[j]]$Time) + 1, 
+                                       DoseNum = max(CD_i[[j]]$DoseNum)))
             }
             
-            ct_dataframe[[i]][[jj]]$DoseNum <- NULL
-            ct_dataframe[[i]][[jj]]$Breaks <-
-               as.character(cut(ct_dataframe[[i]][[jj]]$Time,
-                                breaks = Deets[[i]][[j]]$Time,
+            # If there was a loading dose or something (not really sure what
+            # this would be), then there are two dose numbers listed for t0.
+            # Removing the earlier one so that this will work.
+            if(any(duplicated(CD_i[[j]]$Time))){
+               warning(paste0("There were multiple dose numbers listed at the same time for the ",
+                              j," in the file ", sim_data_file, 
+                              "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed.\n"),
+                       call. = FALSE)
+               TimeToRemove <- which(duplicated(
+                  CD_i[[j]]$Time, fromLast = TRUE))
+               CD_i[[j]] <- CD_i[[j]] %>% slice(-TimeToRemove)
+            }
+            
+            CD_i[[j]]$Breaks <-
+               as.character(cut(CD_i[[j]]$Time,
+                                breaks = CD_i[[j]]$Time,
                                 right = FALSE))
-            
-            ct_dataframe[[i]][[jj]] <- ct_dataframe[[i]][[jj]] %>% 
-               left_join(Deets[[i]][[j]] %>% select(Breaks, DoseNum), 
-                         by = "Breaks")
-            
          }
          
-         ct_dataframe[[i]] <- bind_rows(ct_dataframe[[i]])
+         ct_dataframe[[i]][[j]]$DoseNum <- NULL
+         ct_dataframe[[i]][[j]]$Breaks <-
+            as.character(cut(ct_dataframe[[i]][[j]]$Time,
+                             breaks = CD_i[[j]]$Time,
+                             right = FALSE))
+         
+         ct_dataframe[[i]][[j]] <- ct_dataframe[[i]][[j]] %>% 
+            left_join(CD_i[[j]] %>% select(Breaks, DoseNum), 
+                      by = "Breaks")
+         
+         rm(CD_i)
+         
       }
+      
+      ct_dataframe[[i]] <- bind_rows(ct_dataframe[[i]])
       
       # Checking for when the simulation ends right at the last dose b/c
       # then, setting that number to 1 dose lower
@@ -241,15 +224,13 @@ calc_dosenumber <- function(ct_dataframe,
       ct_dataframe[[i]] <- ct_dataframe[[i]] %>% select(-any_of(c("MaxDoseNum", "Breaks")))
       
       rm(MyIntervals, MyStartTimes, MyMaxDoseNum)
-      # Later, if we expand extractExpDetails_mult to return the custom dosing
-      # info, we'll need to also rm all the custom dosing info for each file
-      # here. For now, not necessary and might mess things up. 
       
    }
    
    ct_dataframe <- bind_rows(ct_dataframe)
    
    return(ct_dataframe)
+   
 }
 
 
