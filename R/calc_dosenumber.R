@@ -159,7 +159,8 @@ calc_dosenumber <- function(ct_dataframe,
                                  ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
       
       # Checking for any custom dosing
-      if(nrow(existing_exp_details$CustomDosing) > 0){
+      if(is.null(existing_exp_details$CustomDosing) == FALSE &&
+         nrow(existing_exp_details$CustomDosing) > 0){
          
          ct_dataframe[[i]] <- split(ct_dataframe[[i]],
                                     f = ct_dataframe[[i]]$CompoundID)
