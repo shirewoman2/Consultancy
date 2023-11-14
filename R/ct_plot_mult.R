@@ -670,6 +670,15 @@ ct_plot_mult <- function(ct_dataframe,
             
             FileName <- basename(FileName)
             
+            # Checking whether this is an enzyme-abundance plot, a
+            # release-profile plot or a dissolution-profile plot
+            EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
+            ReleaseProfPlot <- all(c("Release_mean", "Release_CV") %in% names(ct_dataframe)) &
+               "Conc" %in% names(ct_dataframe) == FALSE
+            DissolutionProfPlot <- all(c("Dissolution_mean", "Dissolution_CV") %in% 
+                                          names(ct_dataframe)) &
+               "Conc" %in% names(ct_dataframe) == FALSE
+            
             rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
                               output_dir = OutPath, 
