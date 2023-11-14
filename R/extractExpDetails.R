@@ -642,12 +642,23 @@ extractExpDetails <- function(sim_data_file,
             EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Release Mean"))
             EndRow <- EndRow[which.max(EndRow)] + 1 # Looking for last "Release Mean" row and then the next row will be the CV for that. 
             
+            # It could be that one compound has release profiles and another
+            # compound does not. Checking that here since I did not check it in
+            # the original if statement at the top of this section.
+            if(is.na(StartRow)){
+               next
+            }
+            
             Release_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
+            names(Release_temp) <- c("NameCol", "ValCol")
+            
+            # Older versions of simulator do not have CV. Checking. 
+            ReleaseCV <- Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "CV"))]
             
             ReleaseProfs[[i]] <- data.frame(
-               Time = Release_temp$...2[which(str_detect(Release_temp$...1, "Time"))], 
-               Release_mean = Release_temp$...2[which(str_detect(Release_temp$...1, "Release Mean"))], 
-               Release_CV = Release_temp$...2[which(str_detect(Release_temp$...1, "CV"))]) %>% 
+               Time = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Time"))], 
+               Release_mean = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Release Mean"))], 
+               Release_CV = ifelse(is.null(ReleaseCV), NA, ReleaseCV)) %>% 
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
                       File = sim_data_file, 
@@ -677,19 +688,30 @@ extractExpDetails <- function(sim_data_file,
             EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution \\(\\%"))
             EndRow <- EndRow[which.max(EndRow)] + 1 # Looking for last "Dissolution (%)" row and then the next row will be the CV for that. 
             
+            # It could be that one compound has dissolution profiles and another
+            # compound does not. Checking that here since I did not check it in
+            # the original if statement at the top of this section.
+            if(is.na(StartRow)){
+               next
+            }
+            
             Disso_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
+            names(Disso_temp) <- c("NameCol", "ValCol")
+            
+            # Older versions of simulator do not have CV. Checking. 
+            DissoCV <- Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "CV"))]
             
             DissoProfs[[i]] <- data.frame(
-               Time = Disso_temp$...2[which(str_detect(Disso_temp$...1, "Time"))], 
-               Dissolution_mean = Disso_temp$...2[which(str_detect(Disso_temp$...1, "Dissolution \\(\\%"))], 
-               Dissolution_CV = Disso_temp$...2[which(str_detect(Disso_temp$...1, "CV"))]) %>% 
+               Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
+               Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution \\(\\%"))], 
+               Dissolution_CV = ifelse(is.null(DissoCV), NA, DissoCV)) %>% 
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
                       File = sim_data_file, 
                       CompoundID = i, 
                       Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]],
                       PrandialSt = sort(unique(tolower(
-                         str_extract(Disso_temp$...1, "Fasted|Fed"))))) %>% 
+                         str_extract(Disso_temp$NameCol, "Fasted|Fed"))))) %>% 
                select(File, CompoundID, Compound, PrandialSt, 
                       Time, Dissolution_mean, Dissolution_CV)
             
