@@ -64,10 +64,11 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
       obs_data_files <- obs_data_files[!str_detect(obs_data_files, "^~")]
    }
    
-   # If they didn't include ".xlsx" at the end, add that.
-   obs_data_files[str_detect(obs_data_files, "\\.xlsx$") == FALSE] <-
-      paste0(obs_data_files[str_detect(obs_data_files, "\\.xlsx$") == FALSE], 
-             ".xlsx")
+   # If they didn't include ".xlsx" at the end, add that. At the same time, if
+   # they ended the files with XML, let's try just substituting xlsx for that.
+   # We'll check whether that file exists in a moment.
+   obs_data_files <- paste0(sub("\\.xml$|\\.xlsx$", "", obs_data_files), 
+                            ".xlsx")
    
    # Making sure that all the files exist before attempting to pull data
    if(any(file.exists(obs_data_files) == FALSE)){

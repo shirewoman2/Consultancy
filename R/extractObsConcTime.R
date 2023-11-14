@@ -59,10 +59,19 @@ extractObsConcTime <- function(obs_data_file,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   # If they didn't include ".xlsx" at the end, add that.
-   obs_data_file <- ifelse(str_detect(obs_data_file, "xlsx$"), 
-                           obs_data_file, paste0(obs_data_file, ".xlsx"))
+   # If they didn't include ".xlsx" at the end, add that. At the same time, if
+   # they ended the files with XML, let's try just substituting xlsx for that.
+   # We'll check whether that file exists in a moment.
+   obs_data_file <- paste0(sub("\\.xml$|\\.xlsx$", "", obs_data_file), 
+                            ".xlsx")
    
+   # Checking that the file exists.
+   if(file.exists(obs_data_file) == FALSE){
+      # Using warning instead of stop so that this will pass through to mult function. 
+      warning(paste0("The file `", obs_data_file, 
+                     "` is not present, so it will be skipped.\n"))
+      return(data.frame())
+   }
    
    # Main body of function -------------------------------------------------
    obs_data_xl <- suppressMessages(
