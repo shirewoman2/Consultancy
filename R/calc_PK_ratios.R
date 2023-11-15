@@ -490,6 +490,20 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       PKdenominator$individual[, c("Individual", "Trial", Comparisons$PKparam_denom)]
    names(PKdenominator$individual) <- c("Individual", "Trial", Comparisons$PKparam_num)
    
+   # I now regret that I made this coding choice ages ago, but if there's only 1
+   # PK parameter, then the aggregate output from extractPK is a list. Need to
+   # work around that.
+   if("list" %in% class(PKdenominator$aggregate)){
+      Stats <- names(PKdenominator$aggregate[[1]])
+      Vals <- PKdenominator$aggregate[[1]]
+      temp <- data.frame(Statistic = Stats, 
+                 Val = Vals)
+      names(temp)[2] <- names(PKdenominator$aggregate)
+      
+      PKdenominator$aggregate <- temp
+      
+   }
+   
    PKdenominator$aggregate <-
       PKdenominator$aggregate[, c("Statistic", Comparisons$PKparam_denom)]
    names(PKdenominator$aggregate) <- c("Statistic", Comparisons$PKparam_num)
