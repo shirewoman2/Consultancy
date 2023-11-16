@@ -1924,6 +1924,7 @@ ct_plot_overlay <- function(ct_dataframe,
       }
       
    } else {
+      
       A <- A +
          coord_cartesian(xlim = time_range_relative, 
                          ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 

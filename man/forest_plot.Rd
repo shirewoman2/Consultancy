@@ -109,7 +109,8 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
 
   \item{PKparameter}{the specific PK parameters to graph. Acceptable values
   are: "AUCinf_ratio_dose1", "AUCt_ratio_dose1", "AUCtau_ratio_last",
-  "AUCinf_ratio", "AUCt_ratio", "AUCtau_ratio",
+  "AUCinf_ratio", "AUCt_ratio", "AUC_ratio" (for when you don't want to
+  specify which AUC it is at all),  "AUCtau_ratio",
   "Cmax_ratio_dose1", "Cmax_ratio_last", or "Cmax_ratio". Whatever you use
   must match what was listed in the simulated data to be included in the
   graph. Sorry, we get that it's annoying that these must be set up with
@@ -394,6 +395,26 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             mean_type = "median",
             variability_type = "range")
 
+# Here's how to include a table of the numbers used for the centre 
+# statistic and variability along the right side of the graph.
+forest_plot(forest_dataframe = BufForestData_20mg,
+            y_axis_labels = Inhibitor1,
+            legend_position = "bottom",
+            show_numbers_on_right = TRUE,
+            color_set = "yellow to red")
+
+# Sometimes, it can take some tweaking to get this to look *just right*, so
+# let's specify what we want for the table title and make the table
+# proportionately wider compared to the graph.
+forest_plot(forest_dataframe = BufForestData_20mg,
+            y_axis_labels = Inhibitor1,
+            legend_position = "bottom",
+            show_numbers_on_right = TRUE,
+            table_title = "GMR values",
+            rel_widths = c(2, 1),
+            color_set = "yellow to red")
+
+
 # You can compare observed PK data as long as they are laid out the same
 # way as the simulated data. Please see the argument `observed_PK` for
 # details, but here's an example.
@@ -402,21 +423,21 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = Inhibitor1,
             observed_PK = BufObsForestData_20mg)
 
-# If you have some observed PK data that are not matched to specific 
-# simulated data, you can include them by setting a fake file name in the 
+# If you have some observed PK data that are not matched to specific
+# simulated data, you can include them by setting a fake file name in the
 # column "File", which should really be thought of as "the set of data that
-# comprise one row in the graph". Here's an example: 
-AddnlObsPK <- bind_rows(BufObsForestData_20mg, 
+# comprise one row in the graph". Here's an example:
+AddnlObsPK <- bind_rows(BufObsForestData_20mg,
                         data.frame(File = "Rifampicin obs data", # call it whatever you like
-                                   Inhibitor1 = "rifampicin", 
-                                   PKparameter = c("AUCt_ratio_dose1", 
-                                                   "Cmax_ratio_dose1"), 
-                                   GeoMean = c(0.4, 0.5), 
-                                   CI_Lower = c(0.35, 0.42), 
+                                   Inhibitor1 = "rifampicin",
+                                   PKparameter = c("AUCt_ratio_dose1",
+                                                   "Cmax_ratio_dose1"),
+                                   GeoMean = c(0.4, 0.5),
+                                   CI_Lower = c(0.35, 0.42),
                                    CI_Upper = c(0.45, 0.6)))
 
-forest_plot(forest_dataframe = BufForestData_20mg, 
-            observed_PK = AddnlObsPK, 
+forest_plot(forest_dataframe = BufForestData_20mg,
+            observed_PK = AddnlObsPK,
             y_axis_labels = Inhibitor1,
             legend_position = "right")
 
@@ -466,19 +487,12 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             show_borders = FALSE,
             error_bar_height = 0)
 
-# -- Make the compound names match *exactly* what was in the simulator file
+# -- Make the compound names match *exactly* what was in the Simulator file
 # rather than being automatically prettified
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = Inhibitor1,
             prettify_ylabel = FALSE)
 
-# -- Include a table of the numbers used for the centre statistic and
-# variability along the right side of the graph.
-forest_plot(forest_dataframe = BufForestData_20mg,
-            y_axis_labels = Inhibitor1,
-            legend_position = "bottom",
-            show_numbers_on_right = TRUE,
-            color_set = "yellow to red")
 
 
 }
