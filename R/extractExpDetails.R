@@ -737,7 +737,8 @@ extractExpDetails <- function(sim_data_file,
             StartRow <- which(str_detect(t(InputTab[, ColLocations[i] + 1]), 
                                          "Concentration-dependent fu profile"))[1] + 2
             EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), 
-                                       "Reference Binding Component")) - 1
+                                       "fu [0-9]"))
+            EndRow <- EndRow[which.max(EndRow)]
             
             # It could be that one compound has conc-dependent fu,p profiles and
             # another compound does not. Checking that here since I did not check it
