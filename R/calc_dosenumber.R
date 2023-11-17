@@ -162,8 +162,21 @@ calc_dosenumber <- function(ct_dataframe,
       if(is.null(existing_exp_details$CustomDosing) == FALSE &&
          nrow(existing_exp_details$CustomDosing) > 0){
          
+         # Need match the conc-time compound ID with the CustomDosing data.frame
+         # based on the compound that was DOSED for this to work with
+         # metabolites.
+         ct_dataframe[[i]] <- ct_dataframe[[i]] %>% 
+            mutate(DosedCompoundID =
+                      case_when(CompoundID %in% c("substrate", 
+                                                  "primary metabolite 1",
+                                                  "primary metabolite 2", 
+                                                  "secondary metabolite") ~ "substrate", 
+                                CompoundID %in% c("inhibitor 1", 
+                                                  "inhibitor 1 metabolite") ~ "inhibitor 1", 
+                                CompoundID %in% c("inhibitor 2") ~ "inhibitor 2"))
+         
          ct_dataframe[[i]] <- split(ct_dataframe[[i]],
-                                    f = ct_dataframe[[i]]$CompoundID)
+                                    f = ct_dataframe[[i]]$DosedCompoundID)
          
          CD_i <- existing_exp_details$CustomDosing %>% filter(File == i)
          
@@ -171,7 +184,7 @@ calc_dosenumber <- function(ct_dataframe,
             
             CD_i <- split(CD_i, f = CD_i$CompoundID)
             
-            for(j in names(CD_i)){
+            for(j in intersect(names(CD_i), names(ct_dataframe[[i]]))){
                
                if(max(ct_dataframe[[i]][[j]]$Time) > max(CD_i[[j]]$Time)){
                   CD_i[[j]] <- CD_i[[j]] %>% 
@@ -197,21 +210,22 @@ calc_dosenumber <- function(ct_dataframe,
                   as.character(cut(CD_i[[j]]$Time,
                                    breaks = CD_i[[j]]$Time,
                                    right = FALSE))
+               
+               ct_dataframe[[i]][[j]]$DoseNum <- NULL
+               ct_dataframe[[i]][[j]]$Breaks <-
+                  as.character(cut(ct_dataframe[[i]][[j]]$Time,
+                                   breaks = CD_i[[j]]$Time,
+                                   right = FALSE))
+               
+               ct_dataframe[[i]][[j]] <- ct_dataframe[[i]][[j]] %>% 
+                  left_join(CD_i[[j]] %>% select(Breaks, DoseNum), 
+                            by = "Breaks")
+               
             }
-            
-            ct_dataframe[[i]][[j]]$DoseNum <- NULL
-            ct_dataframe[[i]][[j]]$Breaks <-
-               as.character(cut(ct_dataframe[[i]][[j]]$Time,
-                                breaks = CD_i[[j]]$Time,
-                                right = FALSE))
-            
-            ct_dataframe[[i]][[j]] <- ct_dataframe[[i]][[j]] %>% 
-               left_join(CD_i[[j]] %>% select(Breaks, DoseNum), 
-                         by = "Breaks")
-            
-            rm(CD_i)
-            
          }
+         
+         rm(CD_i)
+         
       }
       
       ct_dataframe[[i]] <- bind_rows(ct_dataframe[[i]])

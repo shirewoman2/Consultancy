@@ -670,7 +670,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                tissue = j,
                returnAggregateOrIndiv = returnAggregateOrIndiv, 
                fromMultFunction = TRUE, 
-               existing_exp_details = as.data.frame(Deets) %>% filter(File == ff))
+               existing_exp_details = existing_exp_details)
             
             # When the particular combination of compound and tissue is not
             # available in that file, extractConcTime will return an empty
@@ -745,7 +745,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                      tissue = j,
                      returnAggregateOrIndiv = returnAggregateOrIndiv, 
                      fromMultFunction = TRUE, 
-                     existing_exp_details = Deets)
+                     existing_exp_details = existing_exp_details)
                
                # When the particular combination of compound and
                # tissue is not available in that file,
@@ -822,11 +822,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
          filter(CompoundID %in% compoundsToExtract &
                    Tissue %in% tissues)
       
-      MultData <- match_obs_to_sim(ct_dataframe = MultData, 
-                                   obs_dataframe = obs_dataframe, 
-                                   obs_to_sim_assignment = ObsAssign, 
-                                   existing_exp_details = existing_exp_details)
-      
+      if(nrow(obs_dataframe) > 0){
+         MultData <- match_obs_to_sim(ct_dataframe = MultData, 
+                                      obs_dataframe = obs_dataframe, 
+                                      obs_to_sim_assignment = ObsAssign, 
+                                      existing_exp_details = existing_exp_details)
+      }
    }
    
    # all data together -------------------------------------------------
