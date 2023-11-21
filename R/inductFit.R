@@ -1028,11 +1028,12 @@ inductFit <- function(DF,
       if(length(y_axis_limits) < 2){
          warning("If you want to specify y axis limits, you must provide 2 numbers for the argument `y_axis_limits`, and you've only supplied one. We don't know what to use for y axis limits.\n", 
                  call. = FALSE)
+         Ylim <- GoodYLim
       } else {
          Ylim <- y_axis_limits[1:2]
          GoodYLim <- Ylim
       }
-   } 
+   } else {Ylim <- GoodYLim}
    
    PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
                                       100, 200, 500, 1000, 2000, 5000,
