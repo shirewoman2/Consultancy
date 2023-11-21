@@ -8,6 +8,17 @@
 #'   to be converted to an XML file, not a file that contains only digitized
 #'   time and concentration data and not the XML file itself that you would
 #'   include in a Simulator workspace for observed data.
+#' @param compound_name the name of the compound, e.g., "midazolam". If you have
+#'   more than one compound that you want to specify -- for example, the data
+#'   include both the substrate and primary metabolite 1 -- you can specify them
+#'   with a named character vector
+#'   like this: \code{compound_name = c("substrate" = "midazolam", "primary
+#'   metabolite 1" = "OH-midazolam")}. All
+#'   possible compound IDs permissible here: "substrate", "primary metabolite
+#'   1", "primary metabolite 2", "secondary metabolite", "inhibitor 1",
+#'   "inhibitor 2", or "inhibitor 1 metabolite". 
+#' @param perpetrator_name the name of the perpetrator, where applicable, e.g.,
+#'   "itraconazole". This will be listed in the column "Inhibitor" in the output.
 #' @param add_t0 TRUE or FALSE (default) for whether to add t0 points if they're
 #'   missing. Sometimes, observed data do not include a measurement at t0
 #'   because, presumably, the concentration should always be 0 at that time. If
@@ -49,6 +60,8 @@
 #' extractObsConcTime(obs_data_file = "My observed data.xlsx")
 #' 
 extractObsConcTime <- function(obs_data_file, 
+                               compound_name = NA, 
+                               perpetrator_name = NA,
                                add_t0 = FALSE, 
                                returnDosingInfo = FALSE){
    
@@ -63,7 +76,7 @@ extractObsConcTime <- function(obs_data_file,
    # they ended the files with XML, let's try just substituting xlsx for that.
    # We'll check whether that file exists in a moment.
    obs_data_file <- paste0(sub("\\.xml$|\\.xlsx$", "", obs_data_file), 
-                            ".xlsx")
+                           ".xlsx")
    
    # Checking that the file exists.
    if(file.exists(obs_data_file) == FALSE){
@@ -467,6 +480,38 @@ extractObsConcTime <- function(obs_data_file,
          bind_rows(ToAdd) %>% unique() %>% 
          arrange(CompoundID, Inhibitor, Tissue, Individual, Time, Trial, Simulated)
    }
+   
+   # Tidying compound names
+   if(length(compound_name) == 1 & complete.cases(compound_name) & 
+      is.null(names(compound_name))){
+      compound_name <- c("substrate" = compound_name)
+   }
+   
+   if(any(names(compound_name) %in% AllCompounds$CompoundID) == FALSE){
+      warning("Some of the compound IDs used for naming the values for `compound_name` are not among the permissible compound IDs, so we won't be able to supply a compound name for any of the compound IDs listed. Please check the help file for what values are acceptable.\n", 
+              call. = FALSE)
+      
+      compound_name <- rep(NA, each = nrow(AllCompounds))
+      names(compound_name) <- AllCompounds$CompoundID
+   } else {
+      Missing <- setdiff(AllCompounds$CompoundID, names(compound_name))
+      ToAdd <- rep(NA, each = length(Missing))
+      names(ToAdd) <- Missing
+      compound_name <- c(compound_name, Missing)
+      rm(Missing, ToAdd)
+   }
+   
+   obs_data$Compound <- compound_name[obs_data$CompoundID]
+   
+   if(complete.cases(perpetrator_name)){
+      obs_data$Inhibitor[obs_data$Inhibitor != "none"] <- perpetrator_name
+   }
+   
+   obs_data <- obs_data %>% 
+      select(Compound, CompoundID, Inhibitor, Simulated, 
+             Tissue, Individual, Trial,
+             Time, Conc, SD_SE, Time_units, Conc_units, 
+             everything())
    
    if(returnDosingInfo){
       Out <- list("ObsCT" = obs_data,

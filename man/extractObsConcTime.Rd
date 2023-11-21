@@ -4,7 +4,13 @@
 \alias{extractObsConcTime}
 \title{Extract observed concentration-time data from an Excel file}
 \usage{
-extractObsConcTime(obs_data_file, add_t0 = FALSE, returnDosingInfo = FALSE)
+extractObsConcTime(
+  obs_data_file,
+  compound_name = NA,
+  perpetrator_name = NA,
+  add_t0 = FALSE,
+  returnDosingInfo = FALSE
+)
 }
 \arguments{
 \item{obs_data_file}{name of the Excel file containing the observed
@@ -12,6 +18,19 @@ concentration-time data, in quotes. This is the file that is \emph{ready}
 to be converted to an XML file, not a file that contains only digitized
 time and concentration data and not the XML file itself that you would
 include in a Simulator workspace for observed data.}
+
+\item{compound_name}{the name of the compound, e.g., "midazolam". If you have
+more than one compound that you want to specify -- for example, the data
+include both the substrate and primary metabolite 1 -- you can specify them
+with a named character vector
+like this: \code{compound_name = c("substrate" = "midazolam", "primary
+metabolite 1" = "OH-midazolam")}. All
+possible compound IDs permissible here: "substrate", "primary metabolite
+1", "primary metabolite 2", "secondary metabolite", "inhibitor 1",
+"inhibitor 2", or "inhibitor 1 metabolite".}
+
+\item{perpetrator_name}{the name of the perpetrator, where applicable, e.g.,
+"itraconazole". This will be listed in the column "Inhibitor" in the output.}
 
 \item{add_t0}{TRUE or FALSE (default) for whether to add t0 points if they're
 missing. Sometimes, observed data do not include a measurement at t0

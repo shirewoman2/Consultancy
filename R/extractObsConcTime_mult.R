@@ -12,6 +12,25 @@
 #'   contain only the digitized time and concentration data and not the XML
 #'   files themselves that you would include in a Simulator workspace for
 #'   observed data.
+#' @param compound_name the name of the compound, e.g., "midazolam". If you have
+#'   more than one compound that you want to specify -- for example, the data
+#'   include both the substrate and primary metabolite 1 -- you can specify them
+#'   with a named character vector
+#'   like this: \code{compound_name = c("substrate" = "midazolam", "primary
+#'   metabolite 1" = "OH-midazolam")}. All
+#'   possible compound IDs permissible here: "substrate", "primary metabolite
+#'   1", "primary metabolite 2", "secondary metabolite", "inhibitor 1",
+#'   "inhibitor 2", or "inhibitor 1 metabolite".
+#' @param perpetrator_name the name of the perpetrator, where applicable, e.g.,
+#'   "itraconazole". This will be listed in the column "Inhibitor" in the
+#'   output.
+#' @param add_t0 TRUE or FALSE (default) for whether to add t0 points if they're
+#'   missing. Sometimes, observed data do not include a measurement at t0
+#'   because, presumably, the concentration should always be 0 at that time. If
+#'   you're using these data to calculate PK, though, you'll miss that initial
+#'   part of the AUC if t0 is missing. If \code{add_t0} is set to TRUE, this
+#'   will add a concentration of 0 and time 0 for all of the individual
+#'   concentration-time profiles.
 #' @param returnDosingInfo TRUE or FALSE (default) for whether to return a
 #'   second data.frame with dosing and demographic information from the Excel
 #'   file.
@@ -47,6 +66,8 @@
 #' extractObsConcTime(obs_data_file = "My observed data.xlsx")
 #' 
 extractObsConcTime_mult <- function(obs_data_files = NA, 
+                                    compound_name = NA, 
+                                    perpetrator_name = NA,
                                     returnDosingInfo = FALSE){
    
    # Error catching ---------------------------------------------------
@@ -93,6 +114,8 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
    
    for(i in obs_data_files){
       TEMP <- extractObsConcTime(obs_data_file = i, 
+                                 compound_name = compound_name, 
+                                 perpetrator_name = perpetrator_name,
                                  returnDosingInfo = TRUE)
       ObsData[[i]] <- TEMP$ObsCT
       DosingInfo[[i]] <- TEMP$ObsDosing
