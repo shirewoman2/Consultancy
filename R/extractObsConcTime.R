@@ -487,7 +487,8 @@ extractObsConcTime <- function(obs_data_file,
       compound_name <- c("substrate" = compound_name)
    }
    
-   if(any(names(compound_name) %in% AllCompounds$CompoundID) == FALSE){
+   if(any(complete.cases(compound_name)) &&
+      any(names(compound_name) %in% AllCompounds$CompoundID) == FALSE){
       warning("Some of the compound IDs used for naming the values for `compound_name` are not among the permissible compound IDs, so we won't be able to supply a compound name for any of the compound IDs listed. Please check the help file for what values are acceptable.\n", 
               call. = FALSE)
       
@@ -508,9 +509,9 @@ extractObsConcTime <- function(obs_data_file,
    }
    
    obs_data <- obs_data %>% 
-      select(Compound, CompoundID, Inhibitor, Simulated, 
-             Tissue, Individual, Trial,
-             Time, Conc, SD_SE, Time_units, Conc_units, 
+      select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated", 
+                      "Tissue", "Individual", "Trial",
+                      "Time", "Conc", "SD_SE", "Time_units", "Conc_units")), 
              everything())
    
    if(returnDosingInfo){
