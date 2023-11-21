@@ -7,6 +7,8 @@
 \usage{
 recalc_PK(
   ct_dataframe,
+  compound_name = NA,
+  perpetrator_name = NA,
   existing_PK,
   compoundID_match = NA,
   inhibitor_match = NA,
@@ -43,6 +45,27 @@ for a dose other than those two, we recommend subsetting your data to
 include only the 1st dose and whatever dose number you do want and perhaps
 running this multiple times in a loop to get all the PK you need. A member
 of the R Working Group can help you set this up if you'd like.}
+
+\item{compound_name}{the name of the compound for which PK are being
+calculated, e.g., "midazolam". If you already have a column titled
+"Compound" in \code{ct_dataframe}, leaving this as NA will retain that
+compound name. If you have more than one compound that you want to specify
+-- for example, you're calculating the PK for both the substrate and for
+primary metabolite 1 -- you can specify them with a named character vector
+like this: \code{compound_name = c("substrate" = "midazolam", "primary
+metabolite 1" = "OH-midazolam")}. All possible compound IDs permissible
+here: "substrate", "primary metabolite 1", "primary metabolite 2",
+"secondary metabolite", "inhibitor 1", "inhibitor 2", or "inhibitor 1
+metabolite". This will not affect how any calculations are performed but
+will be included in the output data so that you have a record of which
+compound the data pertain to.}
+
+\item{perpetrator_name}{the name of the perpetrator, where applicable, e.g.,
+"itraconazole". If you already have a column titled "Inhibitor" in
+\code{ct_dataframe}, leaving this as NA will retain that perpetrator name.
+This will not affect how any calculations are performed but will be
+included in the output data so that you have a record of which compound the
+data pertain to.}
 
 \item{existing_PK}{the output from \code{\link{calc_PK}}}
 

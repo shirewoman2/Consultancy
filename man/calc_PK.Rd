@@ -7,6 +7,8 @@ concentration-time data}
 \usage{
 calc_PK(
   ct_dataframe,
+  compound_name = NA,
+  perpetrator_name = NA,
   first_dose_time = NA,
   last_dose_time = NA,
   dose_interval = NA,
@@ -33,6 +35,27 @@ for a dose other than those two, we recommend subsetting your data to
 include only the 1st dose and whatever dose number you do want and perhaps
 running this multiple times in a loop to get all the PK you need. A member
 of the R Working Group can help you set this up if you'd like.}
+
+\item{compound_name}{the name of the compound for which PK are being
+calculated, e.g., "midazolam". If you already have a column titled
+"Compound" in \code{ct_dataframe}, leaving this as NA will retain that
+compound name. If you have more than one compound that you want to specify
+-- for example, you're calculating the PK for both the substrate and for
+primary metabolite 1 -- you can specify them with a named character vector
+like this: \code{compound_name = c("substrate" = "midazolam", "primary
+metabolite 1" = "OH-midazolam")}. All possible compound IDs permissible
+here: "substrate", "primary metabolite 1", "primary metabolite 2",
+"secondary metabolite", "inhibitor 1", "inhibitor 2", or "inhibitor 1
+metabolite". This will not affect how any calculations are performed but
+will be included in the output data so that you have a record of which
+compound the data pertain to.}
+
+\item{perpetrator_name}{the name of the perpetrator, where applicable, e.g.,
+"itraconazole". If you already have a column titled "Inhibitor" in
+\code{ct_dataframe}, leaving this as NA will retain that perpetrator name.
+This will not affect how any calculations are performed but will be
+included in the output data so that you have a record of which compound the
+data pertain to.}
 
 \item{first_dose_time}{the time at which the first dose was administered. If
 this is left as NA, the default value, this will be set to 0.}
@@ -120,10 +143,10 @@ returns a list of individual and/or aggregate PK data
 \code{calc_PK} calculates AUCinf_dose1, AUCt_dose1, AUCtau_last, Cmax_dose1,
 Cmax_last, tmax_dose1, tmax_last, CLinf_dose1, and CLtau_last for the
 supplied concentration-time data and, when applicable, the same parameters in
-the presence of a perpetrator and the ratios of those values for perpetrator /
-baseline. This can accommodate multiple simulations and multiple compounds as
-long as the dosing regimen was the same. For example, this will do fine with
-calculating the last-dose PK for two simulations where the last dose of
+the presence of a perpetrator and the ratios of those values for perpetrator
+/ baseline. This can accommodate multiple simulations and multiple compounds
+as long as the dosing regimen was the same. For example, this will do fine
+with calculating the last-dose PK for two simulations where the last dose of
 substrate was at t = 168 h but not where one simulation last dose was at t =
 168 h and one was at t = 48 h. If you've got a scenario like that, we
 recommend running this function multiple times, one for each dosing regimen.

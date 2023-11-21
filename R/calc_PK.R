@@ -4,10 +4,10 @@
 #' \code{calc_PK} calculates AUCinf_dose1, AUCt_dose1, AUCtau_last, Cmax_dose1,
 #' Cmax_last, tmax_dose1, tmax_last, CLinf_dose1, and CLtau_last for the
 #' supplied concentration-time data and, when applicable, the same parameters in
-#' the presence of a perpetrator and the ratios of those values for perpetrator /
-#' baseline. This can accommodate multiple simulations and multiple compounds as
-#' long as the dosing regimen was the same. For example, this will do fine with
-#' calculating the last-dose PK for two simulations where the last dose of
+#' the presence of a perpetrator and the ratios of those values for perpetrator
+#' / baseline. This can accommodate multiple simulations and multiple compounds
+#' as long as the dosing regimen was the same. For example, this will do fine
+#' with calculating the last-dose PK for two simulations where the last dose of
 #' substrate was at t = 168 h but not where one simulation last dose was at t =
 #' 168 h and one was at t = 48 h. If you've got a scenario like that, we
 #' recommend running this function multiple times, one for each dosing regimen.
@@ -23,6 +23,25 @@
 #'   include only the 1st dose and whatever dose number you do want and perhaps
 #'   running this multiple times in a loop to get all the PK you need. A member
 #'   of the R Working Group can help you set this up if you'd like.
+#' @param compound_name the name of the compound for which PK are being
+#'   calculated, e.g., "midazolam". If you already have a column titled
+#'   "Compound" in \code{ct_dataframe}, leaving this as NA will retain that
+#'   compound name. If you have more than one compound that you want to specify
+#'   -- for example, you're calculating the PK for both the substrate and for
+#'   primary metabolite 1 -- you can specify them with a named character vector
+#'   like this: \code{compound_name = c("substrate" = "midazolam", "primary
+#'   metabolite 1" = "OH-midazolam")}. All possible compound IDs permissible
+#'   here: "substrate", "primary metabolite 1", "primary metabolite 2",
+#'   "secondary metabolite", "inhibitor 1", "inhibitor 2", or "inhibitor 1
+#'   metabolite". This will not affect how any calculations are performed but
+#'   will be included in the output data so that you have a record of which
+#'   compound the data pertain to.
+#' @param perpetrator_name the name of the perpetrator, where applicable, e.g.,
+#'   "itraconazole". If you already have a column titled "Inhibitor" in
+#'   \code{ct_dataframe}, leaving this as NA will retain that perpetrator name.
+#'   This will not affect how any calculations are performed but will be
+#'   included in the output data so that you have a record of which compound the
+#'   data pertain to.
 #' @param first_dose_time the time at which the first dose was administered. If
 #'   this is left as NA, the default value, this will be set to 0.
 #' @param last_dose_time the time at which the last dose was administered. If
@@ -95,7 +114,9 @@
 #' @examples
 #' # None yet
 #' 
-calc_PK <- function(ct_dataframe, 
+calc_PK <- function(ct_dataframe,
+                    compound_name = NA, 
+                    perpetrator_name = NA,
                     first_dose_time = NA, 
                     last_dose_time = NA,
                     dose_interval = NA,
@@ -119,30 +140,32 @@ calc_PK <- function(ct_dataframe,
    }
    
    Out <- recalc_PK(ct_dataframe = ct_dataframe,
-                     existing_PK = NULL,
-                     compoundID_match = NA,
-                     inhibitor_match = NA, 
-                     tissue_match = NA, 
-                     individual_match = NA, 
-                     trial_match = NA,
-                     simulated_match = NA, 
-                     file_match = NA, 
-                     obsfile_match = NA, 
-                     dosenum_match = NA, 
-                     first_dose_time = first_dose_time, 
-                     last_dose_time = last_dose_time,
-                     dose_interval = dose_interval,
-                     fit_points_after_x_time = fit_points_after_x_time,
-                     fit_last_x_number_of_points = fit_last_x_number_of_points, 
-                     omit_0_concs = omit_0_concs,
-                     weights = weights, 
-                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                     return_graphs_of_fits = return_graphs_of_fits,
-                     save_graphs_of_fits = save_graphs_of_fits, 
-                     ncol = ncol, 
-                     nrow = nrow, 
-                     fig_width = fig_width, 
-                     fig_height = fig_height)
+                    compound_name = compound_name, 
+                    perpetrator_name = perpetrator_name,
+                    existing_PK = NULL,
+                    compoundID_match = NA,
+                    inhibitor_match = NA, 
+                    tissue_match = NA, 
+                    individual_match = NA, 
+                    trial_match = NA,
+                    simulated_match = NA, 
+                    file_match = NA, 
+                    obsfile_match = NA, 
+                    dosenum_match = NA, 
+                    first_dose_time = first_dose_time, 
+                    last_dose_time = last_dose_time,
+                    dose_interval = dose_interval,
+                    fit_points_after_x_time = fit_points_after_x_time,
+                    fit_last_x_number_of_points = fit_last_x_number_of_points, 
+                    omit_0_concs = omit_0_concs,
+                    weights = weights, 
+                    returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                    return_graphs_of_fits = return_graphs_of_fits,
+                    save_graphs_of_fits = save_graphs_of_fits, 
+                    ncol = ncol, 
+                    nrow = nrow, 
+                    fig_width = fig_width, 
+                    fig_height = fig_height)
    
    return(Out)
    

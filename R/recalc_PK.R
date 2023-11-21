@@ -16,6 +16,25 @@
 #'   running this multiple times in a loop to get all the PK you need. A member
 #'   of the R Working Group can help you set this up if you'd like.
 #' @param existing_PK the output from \code{\link{calc_PK}}
+#' @param compound_name the name of the compound for which PK are being
+#'   calculated, e.g., "midazolam". If you already have a column titled
+#'   "Compound" in \code{ct_dataframe}, leaving this as NA will retain that
+#'   compound name. If you have more than one compound that you want to specify
+#'   -- for example, you're calculating the PK for both the substrate and for
+#'   primary metabolite 1 -- you can specify them with a named character vector
+#'   like this: \code{compound_name = c("substrate" = "midazolam", "primary
+#'   metabolite 1" = "OH-midazolam")}. All possible compound IDs permissible
+#'   here: "substrate", "primary metabolite 1", "primary metabolite 2",
+#'   "secondary metabolite", "inhibitor 1", "inhibitor 2", or "inhibitor 1
+#'   metabolite". This will not affect how any calculations are performed but
+#'   will be included in the output data so that you have a record of which
+#'   compound the data pertain to.
+#' @param perpetrator_name the name of the perpetrator, where applicable, e.g.,
+#'   "itraconazole". If you already have a column titled "Inhibitor" in
+#'   \code{ct_dataframe}, leaving this as NA will retain that perpetrator name.
+#'   This will not affect how any calculations are performed but will be
+#'   included in the output data so that you have a record of which compound the
+#'   data pertain to.
 #' @param compoundID_match any values in the CompoundID column to match in the
 #'   data; matching PK profiles will be recalculated
 #' @param inhibitor_match any values in the Inhibitor column to match in the
@@ -110,6 +129,8 @@
 #'
 #' 
 recalc_PK <- function(ct_dataframe,
+                      compound_name = NA, 
+                      perpetrator_name = NA,
                       existing_PK,
                       compoundID_match = NA,
                       inhibitor_match = NA, 
@@ -160,6 +181,39 @@ recalc_PK <- function(ct_dataframe,
    if(is.na(last_dose_time) & any(ct_dataframe$DoseNum > 1)){
       warning("You have not specified the time of the last dose. We'll assume it's the minimum time for the maxmimum dose number in your data.\n", 
               call. = FALSE)
+   }
+   
+   # Tidying compound names
+   if(length(compound_name) == 1 & complete.cases(compound_name) & 
+      is.null(names(compound_name))){
+      compound_name <- c("substrate" = compound_name)
+   }
+   
+   if("Compound" %in% names(ct_dataframe) == FALSE){
+      if(any(names(compound_name) %in% AllCompounds$CompoundID) == FALSE){
+         warning("Some of the compound IDs used for naming the values for `compound_name` are not among the permissible compound IDs, so we won't be able to supply a compound name for any of the compound IDs listed. Please check the help file for what values are acceptable.\n", 
+                 call. = FALSE)
+         
+         compound_name <- rep(NA, each = nrow(AllCompounds))
+         names(compound_name) <- AllCompounds$CompoundID
+      } else {
+         Missing <- setdiff(AllCompounds$CompoundID, names(compound_name))
+         ToAdd <- rep(NA, each = length(Missing))
+         names(ToAdd) <- Missing
+         compound_name <- c(compound_name, Missing)
+         rm(Missing, ToAdd)
+      }
+      
+      ct_dataframe$Compound <- compound_name[ct_dataframe$CompoundID]
+      
+   }
+   
+   if("Inhibitor" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$Inhibitor <- "none"
+   }
+   
+   if(complete.cases(perpetrator_name)){
+      ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"] <- perpetrator_name
    }
    
    # Main body of function -------------------------------------------------
@@ -276,12 +330,12 @@ recalc_PK <- function(ct_dataframe,
    }
    
    CTsubset <- CTsubset %>% 
-      group_by(CompoundID, Inhibitor, Tissue, Individual, Trial, 
+      group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial, 
                Simulated, File, ObsFile, DoseNum)
    
    suppressMessages(
       t0s <- CTsubset %>% filter(complete.cases(Conc)) %>% 
-         group_by(CompoundID, Inhibitor, Tissue, Individual, Trial, 
+         group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial, 
                   Simulated, File, ObsFile, DoseNum, # why the @#$% won't DoseNum be included in group_var() sometimes after this?!?!?!?!?!
                   .drop = FALSE) %>% 
          summarize(t0 = min(Time), 
@@ -296,7 +350,7 @@ recalc_PK <- function(ct_dataframe,
    ## Calculating PK parameters for individual datasets ------------------------
    
    Keys_CT <- CTsubset %>%
-      select(CompoundID, Inhibitor, Tissue, Individual, Trial, 
+      select(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial, 
              Simulated, File, ObsFile, DoseNum) %>% unique() %>% 
       mutate(ID = paste(CompoundID, Inhibitor, Tissue, Individual, Trial, 
                         ifelse(Simulated == TRUE, "simulated", "observed"),
@@ -306,7 +360,7 @@ recalc_PK <- function(ct_dataframe,
    # get names for t0s means that this will check that they contain the same
    # info.
    Keys_t0 <- t0s %>%
-      select(CompoundID, Inhibitor, Tissue, Individual, Trial, 
+      select(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial, 
              Simulated, File, ObsFile, DoseNum) %>% unique() %>% 
       mutate(ID = paste(CompoundID, Inhibitor, Tissue, Individual, Trial, 
                         ifelse(Simulated == TRUE, "simulated", "observed"),
@@ -464,6 +518,7 @@ recalc_PK <- function(ct_dataframe,
          data.frame(
             ID = j,
             WhichDose = ifelse({ThisIsDose1}, "dose1", "last"),
+            Compound = unique(CTsubset[[j]]$Compound), 
             CompoundID = unique(CTsubset[[j]]$CompoundID), 
             Inhibitor = unique(CTsubset[[j]]$Inhibitor),
             Tissue = unique(CTsubset[[j]]$Tissue),
@@ -485,7 +540,8 @@ recalc_PK <- function(ct_dataframe,
                 tmax = CmaxTmax_temp$tmax, 
                 Cmin = CmaxTmax_temp$Cmin, 
                 Clast = CmaxTmax_temp$Clast,
-                CL = MyDose / ifelse({ThisIsDose1}, AUCinf, AUCt) * 1000)
+                CL = MyDose / ifelse({ThisIsDose1}, AUCinf, AUCt) * 1000, 
+                Dose = MyDose)
       
       suppressWarnings(
          rm(AUCextrap_temp, AUCt_temp, CmaxTmax_temp, ExtrapProbs, Extrap)
@@ -548,14 +604,14 @@ recalc_PK <- function(ct_dataframe,
             mutate(Value = inhibitorX / none, 
                    PKparameter = sub("_dose1", "_ratio_dose1", PKparameter), 
                    PKparameter = sub("_last", "_ratio_last", PKparameter)) %>% 
-            select(CompoundID, Tissue, Individual, Trial,
+            select(Compound, CompoundID, Tissue, Individual, Trial,
                    Simulated, File, ObsFile, DoseNum, PKparameter, Value) %>% 
             # Remove any instances where there weren't matching data
             filter(complete.cases(Value)) %>% 
             # Get the inhibitor name back
             left_join(PKtemp %>% filter(Inhibitor != "none") %>% 
-                         select(CompoundID, Tissue, Individual, 
-                                Trial, Simulated, File, 
+                         select(Compound, CompoundID, Tissue, Individual, 
+                                Trial, Simulated, File, Dose, 
                                 ObsFile, DoseNum, Inhibitor) %>% unique()) %>% 
             mutate(ID = paste(CompoundID, Inhibitor, Tissue, Individual, Trial, 
                               ifelse(Simulated == TRUE, "simulated", "observed"),
@@ -583,8 +639,9 @@ recalc_PK <- function(ct_dataframe,
             filter(PKparameter != "AUCinf_dose1" |
                       (PKparameter == "AUCinf_dose1" & ExtrapProbs == FALSE)) %>% 
             select(-ExtrapProbs) %>% 
-            group_by(CompoundID, Inhibitor, Tissue, 
-                     Simulated, File, ObsFile, DoseNum, PKparameter) %>% 
+            group_by(Compound, CompoundID, Inhibitor, Tissue, 
+                     Simulated, File, ObsFile, Dose, 
+                     DoseNum, PKparameter) %>% 
             summarize(
                Mean = mean(Value, na.rm = T),
                SD = sd(Value, na.rm = T), 
@@ -628,13 +685,19 @@ recalc_PK <- function(ct_dataframe,
    
    if(returnAggregateOrIndiv %in% c("individual", "both")){
       Out[["individual"]] <- PKtemp %>% 
-         select(CompoundID, Inhibitor, Tissue, Individual, Trial, 
-                Simulated, File, ObsFile, DoseNum, ExtrapProbs, 
+         mutate(Inhibitor = ifelse(Inhibitor == "inhibitor",
+                                   {{perpetrator_name}}, Inhibitor)) %>% 
+         select(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial, 
+                Simulated, File, ObsFile, Dose, 
+                DoseNum, ExtrapProbs, 
                 PKparameter, Value)
    }
    
    if(returnAggregateOrIndiv %in% c("aggregate", "both")){
-      Out[["aggregate"]] <- PK_agg_temp 
+      Out[["aggregate"]] <- PK_agg_temp %>% 
+         mutate(Inhibitor = ifelse(Inhibitor == "inhibitor",
+                                   {{perpetrator_name}}, Inhibitor)) %>% 
+         select(Compound, CompoundID, everything())
    }
    
    if(return_graphs_of_fits){
