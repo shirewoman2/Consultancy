@@ -484,7 +484,7 @@ annotateDetails <- function(existing_exp_details,
          Notes = case_when(
             str_detect(Detail, "CLadditional_InVivo") ~ "Additional in vivo clearance",
             str_detect(Detail, "CLbiliary_InVivoCL") ~ "Additional in vivo biliary clearance",
-            str_detect(Detail, "CLint_AddHLM") ~ "Addtional HLM CLint",
+            str_detect(Detail, "CLint_AddHLM") ~ "Additional HLM CLint",
             str_detect(Detail, "CLint_biliary") ~ "Additional biliary CLint",
             
             str_detect(Detail, "CLint_CYP|CLint_UGT|CLint_ENZ.USER[1-9]|CLint_Intestine|CLint_Liver") ~ 

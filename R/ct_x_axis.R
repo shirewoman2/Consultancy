@@ -50,29 +50,33 @@ ct_x_axis <- function(Data, time_range, t0,
    
    TimeUnits <- sort(unique(Data$Time_units))
    
-   # A little more error catching
-   if(all(complete.cases(time_range))){
-      if(class(time_range) == "numeric" &&
-         (any(time_range < switch(as.character(EnzPlot), 
-                                  "TRUE" = min(Data$Time), 
-                                  "FALSE" = min(Data$Time[Data$Simulated == TRUE]))) |
-          any(time_range > switch(as.character(EnzPlot), 
-                                  "TRUE" = max(Data$Time), 
-                                  "FALSE" = max(Data$Time[Data$Simulated == TRUE]))))){
-         warning(paste0(
-            "Both of the values entered for the time range must be within the range of time simulated. The range of time in your simulation was ",
-            switch(as.character(EnzPlot), 
-                   "TRUE" = str_c(range(Data$Time), collapse = " to "), 
-                   "FALSE" = str_c(range(Data$Time[Data$Simulated == TRUE]), collapse = " to ")),
-            " ", TimeUnits,
-            ". We'll use that range instead."),
-            call. = FALSE)
-         
-         time_range <- switch(as.character(EnzPlot), 
-                              "TRUE" = range(Data$Time), 
-                              "FALSE" = range(Data$Time[Data$Simulated == TRUE]))
-      }
-   }
+   # Changing my mind about this b/c if user specifies a time range, they should
+   # be able to GET that time range. Using this error catch can lead to
+   # weird-looking x axes w/intervals s/a 1.003, 49.003, etc. 
+   
+   # # A little more error catching
+   # if(all(complete.cases(time_range))){
+   #    if(class(time_range) == "numeric" &&
+   #       (any(time_range < switch(as.character(EnzPlot), 
+   #                                "TRUE" = min(Data$Time), 
+   #                                "FALSE" = min(Data$Time[Data$Simulated == TRUE]))) |
+   #        any(time_range > switch(as.character(EnzPlot), 
+   #                                "TRUE" = max(Data$Time), 
+   #                                "FALSE" = max(Data$Time[Data$Simulated == TRUE]))))){
+   #       warning(paste0(
+   #          "Both of the values entered for the time range must be within the range of time simulated. The range of time in your simulation was ",
+   #          switch(as.character(EnzPlot), 
+   #                 "TRUE" = str_c(range(Data$Time), collapse = " to "), 
+   #                 "FALSE" = str_c(range(Data$Time[Data$Simulated == TRUE]), collapse = " to ")),
+   #          " ", TimeUnits,
+   #          ". We'll use that range instead."),
+   #          call. = FALSE)
+   #       
+   #       time_range <- switch(as.character(EnzPlot), 
+   #                            "TRUE" = range(Data$Time), 
+   #                            "FALSE" = range(Data$Time[Data$Simulated == TRUE]))
+   #    }
+   # }
    
    # Adjusting graph labels as appropriate for the observed data
    xlab <- switch(TimeUnits,

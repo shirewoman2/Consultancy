@@ -2,7 +2,7 @@
 % Please edit documentation in R/calcKi.R
 \name{calcKi}
 \alias{calcKi}
-\title{Calculate the Ki of an  inhibitor with the Cheng-Prusoff}
+\title{Calculate the Ki of an  inhibitor with the Cheng-Prusoff equation}
 \usage{
 calcKi(IC50, S, Km = NA)
 }

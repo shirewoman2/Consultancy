@@ -14,10 +14,10 @@
 #'
 #'   \item{NA}{(default) entire time range of data}
 #'
-#'   \item{a start time and end time in hours}{only data in that range, e.g.
+#'   \item{a start time and end time in hours}{only include data in that range, e.g.
 #'   \code{time_range = c(24, 48)}. Note that there are no quotes around numeric
 #'   data.}}
-#' @param time_units the units of time in the graph. Defaults is "hours", and
+#' @param time_units the units of time in the graph. Default is "hours", and
 #'   acceptable alternative input is "minutes" or "days".
 #' @param x_axis_interval optionally set the x-axis major tick-mark interval.
 #'   Acceptable input: any number or leave as NA to accept default values, which
