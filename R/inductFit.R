@@ -892,8 +892,8 @@ inductFit <- function(DF,
             scale_shape_manual(values = c(19, 1)) +
             guides(shape = "none")
          
-         GoodXLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$x.range
          GoodYLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$y.range
+         GoodXLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$x.range
          
          if(hline_foldinduct1){
             G <- G +
@@ -1024,11 +1024,15 @@ inductFit <- function(DF,
    
    ## Setting y axis limits ------------------------------------------------
    
-   if(any(complete.cases(y_axis_limits))){
-      Ylim <- y_axis_limits[1:2]
-   } else {
-      Ylim <- GoodYLim
-   }
+   if(all(complete.cases(y_axis_limits))){
+      if(length(y_axis_limits) < 2){
+         warning("If you want to specify y axis limits, you must provide 2 numbers for the argument `y_axis_limits`, and you've only supplied one. We don't know what to use for y axis limits.\n", 
+                 call. = FALSE)
+      } else {
+         Ylim <- y_axis_limits[1:2]
+         GoodYLim <- Ylim
+      }
+   } 
    
    PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,
                                       100, 200, 500, 1000, 2000, 5000,
