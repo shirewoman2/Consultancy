@@ -967,7 +967,7 @@ inductFit <- function(DF,
          }
       }
       
-      Out$Fit <- bind_rows(Out$Fit) %>%
+      Out$Fit <- bind_rows(Out$Fit, .id = "Model") %>%
          select(term, estimate, Model) %>%
          tidyr::pivot_wider(values_from = estimate,
                             names_from = term) %>%

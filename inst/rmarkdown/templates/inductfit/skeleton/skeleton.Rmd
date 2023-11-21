@@ -99,22 +99,26 @@ LineText <- str_trim(paste(VertLineText, ImaxuText, HLineText))
 
 ```{r indfit3}
 
-if(model == "all" & fitByDonor){
+if(fitByDonor){
    
    Fit_ind <- Out$Fit
    
    suppressWarnings(
       Fit_sum <- Fit_ind %>% group_by(Model) %>% 
-         summarize(across(.cols = everything(), .fns = mean, na.rm = T)) %>% 
+         summarize(across(.cols = any_of(c("Emax", "EC50", "Gamma", "slope", 
+                                           "IndMax", "IndC50")),
+                          .fns = mean, na.rm = T)) %>% 
          mutate(DonorID = "mean")
    )
-
+   
    AllFits <- bind_rows(Fit_ind, Fit_sum) %>% 
       mutate(DonorID = as.factor(DonorID),
              DonorID = forcats::fct_relevel(DonorID, "mean", after = Inf)) %>% 
       arrange(Model, DonorID)
    
-} 
+} else {
+   AllFits <- Out$Fit
+}
 
 # Making "model" look nice for the table
 PvalCols <- names(AllFits)[str_detect(names(AllFits), "p value")]
@@ -136,8 +140,6 @@ AllFits <- AllFits %>%
           across(.cols = any_of(PvalCols), 
                  .fns = ~ as.character(signif(.x, 1))))
 
-MeanRows <- which(AllFits$DonorID == "mean")
-
 if(model == "all"){
    AllFits <- AllFits %>% 
       formatTable_Simcyp(shading_column = Model, 
@@ -149,8 +151,12 @@ if(model == "all"){
                          center_1st_column = TRUE) 
 }
 
-AllFits %>% 
-   flextable::bold(i = MeanRows) %>% 
+if(fitByDonor){
+   AllFits <- AllFits %>% 
+      flextable::bold(i = which(AllFits$DonorID == "mean"))
+} 
+
+AllFits %>%
    flextable::merge_v(j = 1) %>% 
    flextable::hline_bottom(border = officer::fp_border(width = 0.5))
 
