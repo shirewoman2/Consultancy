@@ -618,6 +618,18 @@ so_graph <- function(PKtable,
       names(SO) <- PKnames$NewName
    }
    
+   if(any(complete.cases(PKparameters))){
+      # Removing any column names that are a) PK parameters (prettified or
+      # R-friendly) and b) not included in PKparameters.
+      PKCols <- names(SO)[names(SO) %in% c(AllPKParameters_pretty$PrettifiedNames, 
+                                           AllPKParameters_pretty$PKparameter)]
+      
+      ColsToRemove <- setdiff(PKCols, PKparameters)
+      
+      SO <- SO %>% select(-any_of(ColsToRemove))
+      
+   }
+   
    if(is.na(include_dose_num)){
       # Dropping dose number depending on input. First, checking whether they have
       # both dose 1 and last-dose data.
