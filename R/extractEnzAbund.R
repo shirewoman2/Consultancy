@@ -150,8 +150,8 @@ extractEnzAbund <- function(sim_data_file,
       pull(Sheet)
    
    if(length(SheetToExtract) == 0){
-      warning(paste0("The simulator output file provided, ", 
-                     sim_data_file, ", does not appear to have the sheet we need for the enzyme abundances requested. We were looking for a sheet titled `",
+      warning(paste0("The simulator output file `", 
+                     sim_data_file, "` does not appear to have the sheet we need for the enzyme abundances requested. We were looking for a sheet titled `",
                      paste(toupper(enzyme), switch(tissue,
                                                    "liver" = "(liver)",
                                                    "gut" = "(gut)",
