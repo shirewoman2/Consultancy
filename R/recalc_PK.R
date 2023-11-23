@@ -189,8 +189,10 @@ recalc_PK <- function(ct_dataframe,
       compound_name <- c("substrate" = compound_name)
    }
    
-   if("Compound" %in% names(ct_dataframe) == FALSE){
-      if(any(names(compound_name) %in% AllCompounds$CompoundID) == FALSE){
+   if("Compound" %in% names(ct_dataframe) == FALSE || 
+      all(is.na(ct_dataframe$Compound))){
+      if(any(complete.cases(compound_name)) &&
+         any(names(compound_name) %in% AllCompounds$CompoundID) == FALSE){
          warning("Some of the compound IDs used for naming the values for `compound_name` are not among the permissible compound IDs, so we won't be able to supply a compound name for any of the compound IDs listed. Please check the help file for what values are acceptable.\n", 
                  call. = FALSE)
          
@@ -200,12 +202,16 @@ recalc_PK <- function(ct_dataframe,
          Missing <- setdiff(AllCompounds$CompoundID, names(compound_name))
          ToAdd <- rep(NA, each = length(Missing))
          names(ToAdd) <- Missing
-         compound_name <- c(compound_name, Missing)
+         compound_name <- c(compound_name, ToAdd)
          rm(Missing, ToAdd)
       }
-      
+   }
+   
+   # If they already had a compound name in the data, this will change it to
+   # what they set with compound_name, but if they did not specify
+   # compound_name, then this will leave all compound names alone.
+   if(any(complete.cases(compound_name))){
       ct_dataframe$Compound <- compound_name[ct_dataframe$CompoundID]
-      
    }
    
    if("Inhibitor" %in% names(ct_dataframe) == FALSE){
