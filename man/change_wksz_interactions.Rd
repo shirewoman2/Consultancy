@@ -83,8 +83,9 @@ change interaction parameters for other enzymes or transporters, please
 talk to Laura Shireman.}
 
 \item{tissues}{tissues where the enzyme of interest may be found. Leave as NA
-if not applicable (CYPs, for exaple) or set to the tissue as listed in the
-Simulator, e.g., "Intestine" or "Liver" for P-gp.}
+if not applicable (CYPs, for example) or set to the tissue as listed in the
+Simulator, e.g., "intestine" or "liver" for P-gp or BCRP. Not case
+sensitive.}
 
 \item{competitive_inhibition_switch}{turn competitive inhibition "on" or
 "off" or set to "no change" to leave the original value}

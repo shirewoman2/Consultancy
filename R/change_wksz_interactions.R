@@ -60,8 +60,9 @@
 #'   change interaction parameters for other enzymes or transporters, please
 #'   talk to Laura Shireman.
 #' @param tissues tissues where the enzyme of interest may be found. Leave as NA
-#'   if not applicable (CYPs, for exaple) or set to the tissue as listed in the
-#'   Simulator, e.g., "Intestine" or "Liver" for P-gp.
+#'   if not applicable (CYPs, for example) or set to the tissue as listed in the
+#'   Simulator, e.g., "intestine" or "liver" for P-gp or BCRP. Not case
+#'   sensitive.
 #' @param competitive_inhibition_switch turn competitive inhibition "on" or
 #'   "off" or set to "no change" to leave the original value
 #' @param Ki Ki value to use for competitive inhibition (uM) or set to "no
@@ -400,10 +401,13 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                  "primary metabolite 2" = 8)
          
          EnzIntRoutes <- switch(str_extract(Changes[[i]]$enzymes[j], 
-                                            "CYP|UGT|Pgp"), 
+                                            "CYP|UGT|Pgp|BCRP"), 
                                 "CYP" = "CYPInteractionRoutes", 
                                 "UGT" = "UGTInteractionRoutes", 
                                 "Pgp" = switch(Changes[[i]]$tissues[j], 
+                                               "liver" = "LiverTransporterSet", 
+                                               "intestine" = "GutTransporterSet"), 
+                                "BCRP" = switch(Changes[[i]]$tissues[j], 
                                                "liver" = "LiverTransporterSet", 
                                                "intestine" = "GutTransporterSet"))
          
@@ -425,7 +429,10 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                           "User UGT1" = 17, 
                           "Pgp" =  switch(Changes[[i]]$tissues[j], 
                                           "liver" = 18, 
-                                          "intestine" = 10))
+                                          "intestine" = 10), 
+                          "BCRP" = switch(Changes[[i]]$tissues[j], 
+                                          "liver" = 21, 
+                                          "intestine" = 12))
          
          
          XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
