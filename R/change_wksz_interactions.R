@@ -56,13 +56,14 @@
 #'   inhibitor 1}}
 #' @param enzymes enzymes whose interaction parameters you want to change, e.g.,
 #'   \code{enzymes = c("CYP3A4", "CYP3A5")}. Note: This is currently only set up
-#'   to change CYP, some UGT, and P-gp interaction parameters. If you need to
-#'   change interaction parameters for other enzymes or transporters, please
+#'   to change CYP, some UGT, P-gp, and BCRP interaction parameters. If you need
+#'   to change interaction parameters for other enzymes or transporters, please
 #'   talk to Laura Shireman.
-#' @param tissues tissues where the enzyme of interest may be found. Leave as NA
-#'   if not applicable (CYPs, for example) or set to the tissue as listed in the
-#'   Simulator, e.g., "intestine" or "liver" for P-gp or BCRP. Not case
-#'   sensitive.
+#' @param tissues tissues where the enzyme of interest may be found. Leave as
+#'   "all" if not applicable (CYPs and UGTS) or where you want all the possible
+#'   tissues. For transporters, where the Simulator allows you to set different
+#'   values for different tissues, you can alternatively set this to
+#'   "intestine", "liver", or "kidney".
 #' @param competitive_inhibition_switch turn competitive inhibition "on" or
 #'   "off" or set to "no change" to leave the original value
 #' @param Ki Ki value to use for competitive inhibition (uM) or set to "no
@@ -114,7 +115,7 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                      
                                      compoundID = "inhibitor 1",
                                      enzymes, 
-                                     tissues = NA,
+                                     tissues = "all",
                                      
                                      competitive_inhibition_switch = "no change",
                                      Ki = "no change", 
@@ -253,6 +254,20 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
          left_join(data.frame(sim_workspace_files = sim_workspace_files, 
                               new_sim_workspace_files = new_sim_workspace_files), 
                    by = "sim_workspace_files")
+   }
+   
+   # Expanding DF for tissues if they listed tissues = "all".
+   if(all(tissues == "all")){
+      Changes <- Changes %>% rename(tissues_orig = tissues) %>% 
+         left_join(data.frame(tissues_orig = "all", 
+                              tissues = c("kidney", "liver", "intestine")), 
+                   relationship = "many-to-many", 
+                   by = "tissues_orig") %>% 
+         # no tissue specification for DME. Removing that to avoid duplicates.
+         mutate(tissues = ifelse(enzymes %in% c("P-gp", "BCRP"), 
+                                tissues, NA)) %>% 
+         select(-tissues_orig) %>% 
+         unique()
    }
    
    # At this point, regardless of whether they provided a data.frame to
@@ -406,10 +421,12 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                 "UGT" = "UGTInteractionRoutes", 
                                 "Pgp" = switch(Changes[[i]]$tissues[j], 
                                                "liver" = "LiverTransporterSet", 
+                                               "kidney" = "KidneyTransporterSet",
                                                "intestine" = "GutTransporterSet"), 
                                 "BCRP" = switch(Changes[[i]]$tissues[j], 
-                                               "liver" = "LiverTransporterSet", 
-                                               "intestine" = "GutTransporterSet"))
+                                                "liver" = "LiverTransporterSet", 
+                                                "kidney" = "KidneyTransporterSet",
+                                                "intestine" = "GutTransporterSet"))
          
          EnzNum <- switch(Changes[[i]]$enzymes[j],
                           "CYP1A2" = 1, 
@@ -429,9 +446,11 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                           "User UGT1" = 17, 
                           "Pgp" =  switch(Changes[[i]]$tissues[j], 
                                           "liver" = 18, 
+                                          "kidney" = 19,
                                           "intestine" = 10), 
                           "BCRP" = switch(Changes[[i]]$tissues[j], 
                                           "liver" = 21, 
+                                          "kidney" = 22,
                                           "intestine" = 12))
          
          
