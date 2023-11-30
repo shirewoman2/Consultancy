@@ -97,7 +97,7 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
          which(file.exists(obs_data_files) == FALSE)]
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present, so we cannot extract any information about the simulation experimental details."), 
+                     " is/are not present, so we cannot extract any concentration-time data."), 
               call. = FALSE)
       obs_data_files <- setdiff(obs_data_files, MissingSimFiles)
    }
