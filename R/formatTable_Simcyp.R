@@ -272,6 +272,14 @@ formatTable_Simcyp <- function(DF,
    
    # Main body of function -------------------------------------------------
    
+   # Figuring out which columns contain PK data
+   PKregex <- sub("perpetrator", ".", c(AllPKParameters$PKparameter,
+                                        AllPKParameters$PrettifiedNames))
+   PKregex <- str_trim(gsub(" \\(.*\\)|Dose 1|Last dose", "", PKregex))
+   PKregex <- str_c(unique(PKregex), collapse = "|")
+   PKCols <- which(sapply(names(DF), 
+                          FUN = function(x){str_detect(x, PKregex)}))
+   
    if(prettify_columns){
       DF <- prettify_column_names(DF)
    }
@@ -562,7 +570,7 @@ formatTable_Simcyp <- function(DF,
       }
       
       StatCol <- which(str_detect(names(DF), "[Ss]tat$|[Ss]tatistic"))
-      SOrows <- which(str_detect(DF[, StatCol][[1]],
+      SOrows <- which(str_detect(t(DF[, StatCol[1]]),
                                  "S/O|[Ss]simulated.*[Oo]bserved"))
       for(i in SOrows){
          for(j in 1:length(highlight_so_cutoffs)){
@@ -571,6 +579,7 @@ formatTable_Simcyp <- function(DF,
                   as.numeric(t(DF[i, ])) >= highlight_so_cutoffs[j] | 
                      as.numeric(t(DF[i, ])) <= 1/highlight_so_cutoffs[j])
             )
+            SO_col <- intersect(SO_col, PKCols)
             
             if(length(SO_col) > 0){
                FT <- FT %>% 
