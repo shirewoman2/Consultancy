@@ -1687,10 +1687,7 @@ extractPK <- function(sim_data_file,
       return(list())
    }
    
-   if("aggregate" %in% returnAggregateOrIndiv &
-      # If the user only wanted 1 parameter, ok to leave Out_agg as is b/c
-      # it's a named vector.
-      length(Out_agg) > 1){
+   if("aggregate" %in% returnAggregateOrIndiv){
       
       for(i in names(Out_agg)){
          Statistic_char <- names(Out_agg[[i]])
@@ -1709,21 +1706,8 @@ extractPK <- function(sim_data_file,
                            sort(setdiff(names(Out_agg), "Statistic")))]
    }
    
-   if(length(returnAggregateOrIndiv) == 1 &
-      returnAggregateOrIndiv[[1]] == "individual"){
-      Out <- Out_ind
-   }
-   
-   if(length(returnAggregateOrIndiv) == 1 &
-      returnAggregateOrIndiv[[1]] == "aggregate"){
-      Out <- Out_agg
-      
-   }
-   
-   if(length(returnAggregateOrIndiv) == 2){
-      Out <- list("individual" = Out_ind,
-                  "aggregate" = Out_agg)
-   }
+   Out <- list("individual" = Out_ind,
+               "aggregate" = Out_agg)
    
    if(checkDataSource){
       XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
@@ -1782,13 +1766,7 @@ extractPK <- function(sim_data_file,
    }
    
    if(returnExpDetails){
-      if(class(Out)[1] == "list"){
-         Out[["ExpDetails"]] <- Deets
-      } else {
-         Out <- list(Out)
-         Out[[2]] <- Deets
-         names(Out) <- c(returnAggregateOrIndiv, "ExpDetails")
-      }
+      Out[["ExpDetails"]] <- Deets
    }
    
    return(Out)
