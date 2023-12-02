@@ -760,9 +760,9 @@ pksummary_mult <- function(sim_data_files = NA,
       return(list())
    }
    
-   MyPKResults <- bind_rows(MyPKResults[sapply(MyPKResults, FUN = length) > 0])
+   MyPKResults <- bind_rows(MyPKResults[sapply(MyPKResults, FUN = nrow) > 0])
    PKpulled <- bind_rows(PKpulled[sapply(PKpulled, FUN = length) > 0])
-   OutQC <- bind_rows(OutQC[sapply(OutQC, FUN = length) > 0])
+   OutQC <- bind_rows(OutQC[sapply(OutQC, FUN = nrow) > 0])
    
    if(extract_forest_data){
       # Need to deal with possible character data for custom dosing before row
