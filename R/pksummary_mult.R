@@ -417,9 +417,13 @@ pksummary_mult <- function(sim_data_files = NA,
    
    # Main body of function --------------------------------------------------
    
+   # Noting sim_data_files input for later.
+   sim_data_files_input <- sim_data_files
+   
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx" or in all subfolders if they wanted it to be
    # recursive.
+   
    if(length(sim_data_files) == 1 &&
       (is.na(sim_data_files) | sim_data_files == "recursive")){
       sim_data_files <- list.files(pattern = "xlsx$",
@@ -444,8 +448,15 @@ pksummary_mult <- function(sim_data_files = NA,
       names(observed_PKDF)[str_detect(tolower(names(observed_PKDF)), "file")][1] <- 
          "File"
       
-      sim_data_files <- union(sim_data_files, observed_PKDF$File)
-      sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
+      # If they supplied a specific set of sims to extract, then ignore any
+      # extras, even if they're in observed PK
+      if(all(is.na(sim_data_files_input)) |
+         (all(complete.cases(sim_data_files_input)) & 
+          all(sim_data_files_input == "recursive"))){
+         sim_data_files <- union(sim_data_files, observed_PKDF$File)
+         sim_data_files <- sim_data_files[complete.cases(sim_data_files)]
+      }
+      
    } else if("numeric" %in% class(observed_PK)){
       observed_PKDF <- as.data.frame(t(observed_PK))
    }
@@ -617,7 +628,7 @@ pksummary_mult <- function(sim_data_files = NA,
                               exp_details = "Summary and Input", 
                               annotate_output = FALSE)[["MainDetails"]]
       }
-
+      
       # Checking that the file is, indeed, a simulator output file.
       if(length(Deets) == 0){
          # Using "warning" instead of "stop" here b/c I want this to be able to
@@ -760,9 +771,11 @@ pksummary_mult <- function(sim_data_files = NA,
       return(list())
    }
    
-   MyPKResults <- bind_rows(MyPKResults[sapply(MyPKResults, FUN = nrow) > 0])
+   MyPKResults <- bind_rows(MyPKResults[
+      sapply(MyPKResults, FUN = function(x) is.data.frame(x) && nrow(x) > 0)])
    PKpulled <- bind_rows(PKpulled[sapply(PKpulled, FUN = length) > 0])
-   OutQC <- bind_rows(OutQC[sapply(OutQC, FUN = nrow) > 0])
+   OutQC <- bind_rows(OutQC[
+      sapply(OutQC, FUN = function(x) is.data.frame(x) && nrow(x) > 0)])
    
    if(extract_forest_data){
       # Need to deal with possible character data for custom dosing before row
