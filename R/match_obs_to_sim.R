@@ -63,13 +63,15 @@ match_obs_to_sim <- function(ct_dataframe,
    }
    
    if(nrow(ct_dataframe) == 0){
-      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
-           call. = FALSE)
+      warning("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+              call. = FALSE)
+      return(ct_dataframe)
    }
    
    if(nrow(obs_dataframe) == 0){
-      stop("Please check your input. The data.frame you supplied for obs_dataframe doesn't have any rows.", 
-           call. = FALSE)
+      warning("Please check your input. The data.frame you supplied for obs_dataframe doesn't have any rows.", 
+              call. = FALSE)
+      return(ct_dataframe)
    }
    
    # Adjusting for slight differences in column names. 
@@ -211,7 +213,7 @@ match_obs_to_sim <- function(ct_dataframe,
          
          # Adding inhibitor name as needed
          MyPerpetrator <- determine_myperpetrator(Deets,
-                                            prettify_compound_names = FALSE)
+                                                  prettify_compound_names = FALSE)
          
          ObsData_j[[k]]$Inhibitor[ObsData_j[[k]]$Inhibitor != "none"] <- 
             MyPerpetrator

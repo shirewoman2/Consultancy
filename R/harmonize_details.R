@@ -100,7 +100,8 @@ harmonize_details <- function(existing_exp_details){
          return(list(Main = as.data.frame(existing_exp_details[which(sapply(existing_exp_details, length) == 1)]), 
                      CustomDosing = NULL,
                      DissolutionProfiles = NULL,
-                     ReleaseProfiles = NULL))
+                     ReleaseProfiles = NULL, 
+                     ConcDependent_fup = NULL))
          
       }
       

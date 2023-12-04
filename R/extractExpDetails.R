@@ -629,7 +629,7 @@ extractExpDetails <- function(sim_data_file,
                                           str_extract(as.character(InputTab[3, 1]),
                                                       "Version [12][0-9]"))
       
-      # Checking on release profiles
+      ### Checking on release profiles -----------------------------------------
       if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
          exists("InputTab", inherits = FALSE) &&
          any(str_detect(unlist(c(InputTab[, ColLocations])), "Release Mean"),
@@ -675,7 +675,7 @@ extractExpDetails <- function(sim_data_file,
          ReleaseProfs <- NULL
       }
       
-      # Checking on dissolution profiles
+      ### Checking on dissolution profiles ------------------------------------
       if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
          exists("InputTab", inherits = FALSE) &&
          any(str_detect(unlist(c(InputTab[, ColLocations])), "Dissolution Profile"),
@@ -723,6 +723,51 @@ extractExpDetails <- function(sim_data_file,
       } else {
          DissoProfs <- NULL
       }
+      
+      ### Concentration-dependent fu -----------------------------------------
+      if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
+         exists("InputTab", inherits = FALSE) &&
+         any(str_detect(unlist(c(InputTab[, ColLocations + 1])), 
+                        "Concentration-dependent fu profile"),
+             na.rm = TRUE)){
+         
+         CDfupProfs <- list()
+         
+         for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
+            StartRow <- which(str_detect(t(InputTab[, ColLocations[i] + 1]), 
+                                         "Concentration-dependent fu profile"))[1] + 2
+            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), 
+                                       "fu [0-9]"))
+            EndRow <- EndRow[which.max(EndRow)]
+            
+            # It could be that one compound has conc-dependent fu,p profiles and
+            # another compound does not. Checking that here since I did not check it
+            # in the original if statement at the top of this section.
+            if(is.na(StartRow)){
+               next
+            }
+            
+            CDfup_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
+            names(CDfup_temp) <- c("NameCol", "ValCol")
+            
+            CDfupProfs[[i]] <- data.frame(
+               Conc = CDfup_temp$ValCol[which(str_detect(CDfup_temp$NameCol, "Conc"))], 
+               fup = CDfup_temp$ValCol[which(str_detect(CDfup_temp$NameCol, "fu [0-9]"))]) %>%  
+               mutate(across(.cols = everything(), .fns = as.numeric), 
+                      File = sim_data_file, 
+                      CompoundID = i, 
+                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+               select(File, CompoundID, Compound, Conc, fup)
+            
+            rm(StartRow, EndRow, CDfup_temp)
+            
+         }
+         
+         CDfupProfs <- bind_rows(CDfupProfs)
+      } else {
+         CDfupProfs <- NULL
+      }
+      
       
       
       ## Pulling CL info ----------------------------------------------------
@@ -1367,7 +1412,7 @@ extractExpDetails <- function(sim_data_file,
                           .fns = as.numeric)) %>% 
             select(File, CompoundID, Compound, Time, Time_units, DoseNum, 
                    Dose, Dose_units, DoseRoute)
-            
+         
          Out[[paste0("CustomDosing", Suffix)]] <- Dosing
          Out[[paste0("Dose", Suffix)]] <- "custom dosing"
          Out[[paste0("StartDayTime", Suffix)]] <- "custom dosing"
@@ -1666,7 +1711,8 @@ extractExpDetails <- function(sim_data_file,
                                         Out$CustomDosing_inhib, 
                                         Out$CustomDosing_inhib2), 
                DissolutionProfiles = DissoProfs,
-               ReleaseProfiles = ReleaseProfs)
+               ReleaseProfiles = ReleaseProfs, 
+               ConcDependent_fup = CDfupProfs)
    
    for(j in names(Out)[unlist(lapply(Out, is.null)) == FALSE]){
       Out[[j]] <- Out[[j]] %>% 

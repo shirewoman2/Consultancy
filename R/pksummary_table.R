@@ -995,11 +995,6 @@ pksummary_table <- function(sim_data_file = NA,
                                              "TRUE" = c("aggregate", "individual"),
                                              "FALSE" = "aggregate")))
    
-   # Sometimes missing problems with extrapolation to infinity. Checking for
-   # that here. I thought that there wouldn't be any values for AUCinf, but
-   # there definitely are. If any of the AUCinf_X parameters have trouble with
-   # extrapolation, the others won't be useful either. Checking for any NA
-   # values in geomean, mean, or median. 
    # If there were no PK parameters to be pulled, MyPKResults_all will have
    # length 0 and we can't proceed.
    if(length(MyPKResults_all) == 0){
@@ -1010,6 +1005,11 @@ pksummary_table <- function(sim_data_file = NA,
       return()
    }
    
+   # Sometimes missing problems with extrapolation to infinity. Checking for
+   # that here. I thought that there wouldn't be any values for AUCinf, but
+   # there definitely are. If any of the AUCinf_X parameters have trouble with
+   # extrapolation, the others won't be useful either. Checking for any NA
+   # values in geomean, mean, or median. 
    ExtrapCheck <- MyPKResults_all$aggregate %>% 
       filter(Statistic %in% c("Mean", "Median", "Geometric Mean")) %>%
       select(matches("AUCinf")) %>% 
@@ -1127,24 +1127,7 @@ pksummary_table <- function(sim_data_file = NA,
               call. = FALSE)
    }
    
-   # If they only wanted one parameter, then extractPK returns only the
-   # aggregate data for that one parameter. In that situation, the names of the
-   # items in the extractPK output list are that parameter and "QC" -- not
-   # "aggregate" and "QC".
-   if(length(PKToPull) == 1){
-      if("aggregate" %in% names(MyPKResults_all)){
-         MyPKResults <- data.frame(MyPKResults_all$aggregate)
-         MyPKResults$Statistic = names(MyPKResults_all$aggregate[[1]])
-      } else {
-         MyPKResults <- data.frame(MyPKResults_all[[1]])
-         MyPKResults$Statistic = names(MyPKResults_all[[1]])
-      }
-      
-      names(MyPKResults)[1] <- PKToPull
-      
-   } else {
-      MyPKResults <- MyPKResults_all$aggregate
-   }
+   MyPKResults <- MyPKResults_all$aggregate
    
    # Accounting for when mean_type is arithmetic but the user requests that the
    # ratio for + perpetrator over - perpetrator be a GMR. This will replace the
