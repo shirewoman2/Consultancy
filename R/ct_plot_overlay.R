@@ -1562,6 +1562,39 @@ ct_plot_overlay <- function(ct_dataframe,
       obs_shape <- obs_shape[1:NumShapes] 
    }
    
+   ## Setting up for faceting later -----------------------------------------
+   
+   # Adjusting input data.frame for facet titles
+   if(complete.cases(facet1_title)){
+      sim_dataframe$Facet1Title <- facet1_title
+      if(nrow(obs_dataframe) > 0){
+         obs_dataframe$Facet1Title <- facet1_title
+      }
+   }
+   
+   if(complete.cases(facet2_title)){
+      sim_dataframe$Facet2Title <- facet2_title
+      if(nrow(obs_dataframe) > 0){
+         obs_dataframe$Facet2Title <- facet2_title
+      }
+   }
+   
+   # Here are the options for faceting: 
+   FacetOpts <- paste(ifelse(as_label(facet1_column) == "<empty>", 
+                             "NoFC1", 
+                             ifelse(complete.cases(facet1_title), 
+                                    "FC1PlusTitle", "FC1")),
+                      ifelse(as_label(facet2_column) == "<empty>", 
+                             "NoFC2", 
+                             ifelse(complete.cases(facet2_title), 
+                                    "FC2PlusTitle", "FC2")))
+   # If there are no facet columns or if there are just no titles for those
+   # columns, those scenarios all work the same.
+   FacetOpts <- ifelse(FacetOpts %in% c("NoFC1 NoFC2", "FC1 FC2", 
+                                        "NoFC1 FC2", "FC1 NoFC2"), 
+                       "ggplot2 facets", FacetOpts)
+   
+   
    ## Setting up ggplot and aes bases for the graph -----------------------
    
    if(figure_type == "percentile ribbon"){
@@ -1613,38 +1646,6 @@ ct_plot_overlay <- function(ct_dataframe,
                   sep = " ", remove = FALSE)
       )
    } 
-   
-   ## Setting up for faceting later -----------------------------------------
-   
-   # Adjusting input data.frame for facet titles
-   if(complete.cases(facet1_title)){
-      sim_dataframe$Facet1Title <- facet1_title
-      if(nrow(obs_dataframe) > 0){
-         obs_dataframe$Facet1Title <- facet1_title
-      }
-   }
-   
-   if(complete.cases(facet2_title)){
-      sim_dataframe$Facet2Title <- facet2_title
-      if(nrow(obs_dataframe) > 0){
-         obs_dataframe$Facet2Title <- facet2_title
-      }
-   }
-   
-   # Here are the options for faceting: 
-   FacetOpts <- paste(ifelse(as_label(facet1_column) == "<empty>", 
-                             "NoFC1", 
-                             ifelse(complete.cases(facet1_title), 
-                                    "FC1PlusTitle", "FC1")),
-                      ifelse(as_label(facet2_column) == "<empty>", 
-                             "NoFC2", 
-                             ifelse(complete.cases(facet2_title), 
-                                    "FC2PlusTitle", "FC2")))
-   # If there are no facet columns or if there are just no titles for those
-   # columns, those scenarios all work the same.
-   FacetOpts <- ifelse(FacetOpts %in% c("NoFC1 NoFC2", "FC1 FC2", 
-                                        "NoFC1 FC2", "FC1 NoFC2"), 
-                       "ggplot2 facets", FacetOpts)
    
    
    # Making the skeleton of the graph ----------------------------------------
