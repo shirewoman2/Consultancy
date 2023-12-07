@@ -265,6 +265,12 @@
 #'   Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
 #'   \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
 #'   designate the rows of the output graphs.
+#' @param facet1_title optionally specify a title to describe facet 1. This is
+#'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
+#'   \code{facet_ncol} or \code{facet_nrow}.
+#' @param facet2_title optionally specify a title to describe facet 2. This is
+#'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
+#'   \code{facet_ncol} or \code{facet_nrow}.
 #' @param facet2_column optionally break up the graph into small multiples; this
 #'   specifies the second of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet2_column =
@@ -471,7 +477,9 @@ ct_plot_overlay <- function(ct_dataframe,
                             line_transparency = NA,
                             legend_label_linetype = NA,
                             facet1_column,
+                            facet1_title = NA,
                             facet2_column, 
+                            facet2_title = NA, 
                             facet_ncol = NA, 
                             facet_nrow = NA,
                             floating_facet_scale = FALSE,
@@ -1606,6 +1614,40 @@ ct_plot_overlay <- function(ct_dataframe,
       )
    } 
    
+   ## Setting up for faceting later -----------------------------------------
+   
+   # Adjusting input data.frame for facet titles
+   if(complete.cases(facet1_title)){
+      sim_dataframe$Facet1Title <- facet1_title
+      if(nrow(obs_dataframe) > 0){
+         obs_dataframe$Facet1Title <- facet1_title
+      }
+   }
+   
+   if(complete.cases(facet2_title)){
+      sim_dataframe$Facet2Title <- facet2_title
+      if(nrow(obs_dataframe) > 0){
+         obs_dataframe$Facet2Title <- facet2_title
+      }
+   }
+   
+   # Here are the options for faceting: 
+   FacetOpts <- paste(ifelse(as_label(facet1_column) == "<empty>", 
+                             "NoFC1", 
+                             ifelse(complete.cases(facet1_title), 
+                                    "FC1PlusTitle", "FC1")),
+                      ifelse(as_label(facet2_column) == "<empty>", 
+                             "NoFC2", 
+                             ifelse(complete.cases(facet2_title), 
+                                    "FC2PlusTitle", "FC2")))
+   # If there are no facet columns or if there are just no titles for those
+   # columns, those scenarios all work the same.
+   FacetOpts <- ifelse(FacetOpts %in% c("NoFC1 NoFC2", "FC1 FC2", 
+                                        "NoFC1 FC2", "FC1 NoFC2"), 
+                       "ggplot2 facets", FacetOpts)
+   
+   
+   # Making the skeleton of the graph ----------------------------------------
    A <- switch(
       figure_type, 
       "means only" = ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
@@ -1852,6 +1894,9 @@ ct_plot_overlay <- function(ct_dataframe,
       theme_consultancy() +
       theme(panel.border = element_rect(color = "black", fill = NA)) # KEEP THIS
    
+   
+   ## Faceting -----------------------------------------------------------------
+   
    # Error catching
    if((complete.cases(facet_ncol) | complete.cases(facet_nrow)) == TRUE & 
       AESCols["facet1"] == "<empty>" & AESCols["facet2"] == "<empty>"){
@@ -1925,16 +1970,70 @@ ct_plot_overlay <- function(ct_dataframe,
       
    } else {
       
-      A <- A +
-         coord_cartesian(xlim = time_range_relative, 
-                         ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                         0, y_axis_limits_lin[1]),
-                                  YmaxRnd)) +
+      # Setting up theme for facet titles
+      FacetTitleTheme_XY <- ggh4x::strip_nested(
+         text_x = ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_x = TRUE, 
+         
+         text_y = ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_y = TRUE)
+      
+      FacetTitleTheme_Y <- ggh4x::strip_nested(
+         text_x = ggh4x::elem_list_text(face = "plain", 
+                                        size = calc_element("strip.text.x", theme_consultancy())$size), 
+         by_layer_x = TRUE, 
+         
+         text_y = ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_y = TRUE)
+      
+      FacetTitleTheme_X <- ggh4x::strip_nested(
+         text_x =             ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                                    size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                             calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_x = TRUE, 
+         
+         text_y = ggh4x::elem_list_text(face = "plain", 
+                                        size = calc_element("strip.text.x", theme_consultancy())$size), 
+         by_layer_y = TRUE)
+      
+      
+      A <- A + coord_cartesian(xlim = time_range_relative, 
+                                ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                                0, y_axis_limits_lin[1]),
+                                         YmaxRnd)) +
          scale_x_time(time_units = TimeUnits, 
                       time_range = time_range_relative,
                       x_axis_interval = x_axis_interval, 
                       pad_x_axis = pad_x_axis) +
-         facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
+         switch(FacetOpts, 
+                "ggplot2 facets" = facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)), 
+                "FC1PlusTitle FC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ FC2, 
+                                                         strip = FacetTitleTheme_Y), 
+                "FC1PlusTitle NoFC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ ., 
+                                                           strip = FacetTitleTheme_Y), 
+                "FC1 FC2PlusTitle" = ggh4x::facet_nested(FC1 ~ Facet2Title + FC2, 
+                                                         strip = FacetTitleTheme_X), 
+                "FC1PlusTitle FC2PlusTitle" = ggh4x::facet_nested(Facet1Title + FC1 ~ Facet2Title + FC2, 
+                                                                  strip = FacetTitleTheme_XY), 
+                "NoFC1 FC2PlusTitle" = ggh4x::facet_nested(. ~ Facet2Title + FC2, 
+                                                           strip = FacetTitleTheme_X))
+      
+      # A <- A +
+      #    coord_cartesian(xlim = time_range_relative, 
+      #                    ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+      #                                    0, y_axis_limits_lin[1]),
+      #                             YmaxRnd)) +
+      #    scale_x_time(time_units = TimeUnits, 
+      #                 time_range = time_range_relative,
+      #                 x_axis_interval = x_axis_interval, 
+      #                 pad_x_axis = pad_x_axis) +
+      #    facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
       
       if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
          A <- suppressWarnings(suppressMessages(
