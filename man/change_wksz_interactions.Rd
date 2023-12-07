@@ -11,7 +11,7 @@ change_wksz_interactions(
   interactions_to_set = NA,
   compoundID = "inhibitor 1",
   enzymes,
-  tissues = NA,
+  tissues = "all",
   competitive_inhibition_switch = "no change",
   Ki = "no change",
   Ki_fumic = "no change",
@@ -78,14 +78,15 @@ inhibitor 1}}}
 
 \item{enzymes}{enzymes whose interaction parameters you want to change, e.g.,
 \code{enzymes = c("CYP3A4", "CYP3A5")}. Note: This is currently only set up
-to change CYP, some UGT, and P-gp interaction parameters. If you need to
-change interaction parameters for other enzymes or transporters, please
+to change CYP, some UGT, P-gp, and BCRP interaction parameters. If you need
+to change interaction parameters for other enzymes or transporters, please
 talk to Laura Shireman.}
 
-\item{tissues}{tissues where the enzyme of interest may be found. Leave as NA
-if not applicable (CYPs, for example) or set to the tissue as listed in the
-Simulator, e.g., "intestine" or "liver" for P-gp or BCRP. Not case
-sensitive.}
+\item{tissues}{tissues where the enzyme of interest may be found. Leave as
+"all" if not applicable (CYPs and UGTS) or where you want all the possible
+tissues. For transporters, where the Simulator allows you to set different
+values for different tissues, you can alternatively set this to
+"intestine", "liver", or "kidney".}
 
 \item{competitive_inhibition_switch}{turn competitive inhibition "on" or
 "off" or set to "no change" to leave the original value}
