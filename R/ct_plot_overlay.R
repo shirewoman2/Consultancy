@@ -1299,7 +1299,7 @@ ct_plot_overlay <- function(ct_dataframe,
          warning("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. ", 
                  "If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame: 
                     MyEnzData <- MyEnzData %>% mutate(Tissue2 = Tissue)
-                    ct_plot_overlay(ct_dataframe = MyEnzData, colorBy_column = Tissue2, ...)\nReplace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.\n",
+                    enz_plot_overlay(sim_enz_dataframe = MyEnzData, colorBy_column = Tissue2, ...)\nReplace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.\n",
                  call. = FALSE)
          
          sim_dataframe <- sim_dataframe %>% filter(Tissue != "colon") %>% 
