@@ -557,6 +557,60 @@ forest_plot <- function(forest_dataframe,
            call. = FALSE)
    }
    
+   # Allowing for flexibility in case for input column names. Really, I should
+   # just make all the columns lower or upper case but I haven't coded
+   # everything else like that, so not fixing that now.
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "geomean"))] <- "GeoMean"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "geocv"))] <- "GeoCV"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "arithcv"))] <- "ArithCV"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "ci(90|95)?_lower"))] <- "CI_Lower"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "ci(90|95)?_upper"))] <- "CI_Upper"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "centile_lower"))] <- "Centile_Lower"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "centile_upper"))] <- "Centile_Upper"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "pkparameter"))] <- "PKparameter"
+   
+   names(forest_dataframe)[tolower(names(forest_dataframe)) %in% 
+                              c("file", "tissue", "mean", "median", "min", "max", 
+                                "fold", "substrate", "inhibitor1")] <- 
+      str_to_title(names(forest_dataframe)[tolower(names(forest_dataframe)) %in% 
+                                 c("file", "tissue", "mean", "median", "min", "max", 
+                                   "fold", "substrate", "inhibitor1")])
+   
+   
+   if(ObsIncluded){
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "geomean"))] <- "GeoMean"
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "geocv"))] <- "GeoCV"
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "arithcv"))] <- "ArithCV"
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "ci(90|95)?_lower"))] <- "CI_Lower"
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "ci(90|95)?_upper"))] <- "CI_Upper"
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "centile_lower"))] <- "Centile_Lower"
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "centile_upper"))] <- "Centile_Upper"
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "pkparameter"))] <- "PKparameter"
+      
+      names(observed_PK)[tolower(names(observed_PK)) %in% 
+                            c("file", "tissue", "mean", "median", "min", "max", 
+                              "fold", "substrate", "inhibitor1")] <- 
+         str_to_title(names(observed_PK)[tolower(names(observed_PK)) %in% 
+                                            c("file", "tissue", "mean", "median", "min", "max", 
+                                              "fold", "substrate", "inhibitor1")])
+   }
+   
    # Reshaping data as needed ------------------------------------------------
    
    # Getting data into the shape needed. Earlier versions of the
@@ -599,14 +653,14 @@ forest_plot <- function(forest_dataframe,
    if(ObsIncluded){
       # If any of the column names had older stat names, fix that.
       observed_PK <- observed_PK %>% 
-         rename_with(.fn = ~ gsub("CI90_lo|CI90_Lower", "CI_Lower", .x)) %>% 
-         rename_with(.fn = ~ gsub("CI90_hi|CI90_Upper", "CI_Upper", .x))
+         rename_with(.fn = ~ gsub("CI90_lo|CI90_Lower|CI90_lower", "CI_Lower", .x)) %>% 
+         rename_with(.fn = ~ gsub("CI90_hi|CI90_Upper|CI90_upper", "CI_Upper", .x))
    }
    
    # If any of the column names had older stat names, fix that.
    forest_dataframe <- forest_dataframe %>% 
-      rename_with(.fn = ~ gsub("CI90_lo|CI90_Lower", "CI_Lower", .x)) %>% 
-      rename_with(.fn = ~ gsub("CI90_hi|CI90_Upper", "CI_Upper", .x))
+      rename_with(.fn = ~ gsub("CI90_lo|CI90_Lower|CI90_lower", "CI_Lower", .x)) %>% 
+      rename_with(.fn = ~ gsub("CI90_hi|CI90_Upper|CI90_upper", "CI_Upper", .x))
    
    if(all(c("File", "PKparameter") %in% names(forest_dataframe) == FALSE)){
       stop(paste0("There must be a column titled `File` in what you supply for forest_dataframe, and there also must be some PK data. We can't find that in your input. For an example of acceptable data, please run\n", 

@@ -692,7 +692,8 @@ so_graph <- function(PKtable,
    point_shape_column <- rlang::enquo(point_shape_column)
    
    if(as_label(point_color_column) != "<empty>"){
-      SO <- SO %>% mutate(point_color_column = {{point_color_column}})
+      SO <- SO %>% mutate(point_color_column = {{point_color_column}}) %>% 
+         droplevels()
       
       if(class(SO$point_color_column) != "factor"){
          Levels <- sort(unique(SO$point_color_column))
@@ -777,7 +778,8 @@ so_graph <- function(PKtable,
    }
    
    if(as_label(point_shape_column) != "<empty>"){
-      SO <- SO %>% mutate(point_shape_column = {{point_shape_column}})
+      SO <- SO %>% mutate(point_shape_column = {{point_shape_column}}) %>% 
+         droplevels()
       
       if(class(SO$point_shape_column) != "factor"){
          Levels <- sort(unique(SO$point_shape_column))

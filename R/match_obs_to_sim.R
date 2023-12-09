@@ -137,8 +137,13 @@ match_obs_to_sim <- function(ct_dataframe,
    
    # Adding ".xlsx" to any files that don't have it already since people often
    # omit the extension or use the wrong one.
-   ObsAssign$ObsFile <- paste0(sub("\\..*", "", ObsAssign$ObsFile), ".xlsx")
-   ObsAssign$File <- paste0(sub("\\..*", "", ObsAssign$File), ".xlsx")
+   ObsAssign <- ObsAssign %>% 
+      mutate(Extension = str_extract(basename(ObsFile), pattern = "\\.(?<=\\.)[^\\.]+$"), 
+             ObsFile = case_when(
+                is.na(ObsFile) ~ NA, 
+                complete.cases(ObsFile) & is.na(Extension) ~ paste0(ObsFile, ".xlsx"), 
+                complete.cases(ObsFile) & Extension == ".xml" ~ sub("xml", "xlsx", ObsFile), 
+                TRUE ~ ObsFile))
    
    # Making sure we have all the info we need.
    if(all(ObsAssign$File %in% existing_exp_details$MainDetails$File) == FALSE){
