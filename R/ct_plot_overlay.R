@@ -1564,6 +1564,22 @@ ct_plot_overlay <- function(ct_dataframe,
    
    ## Setting up for faceting later -----------------------------------------
    
+   # If the user wants to title their facets, check whether ggh4x is installed
+   # and ask user if they want to install it if not.
+   if(any(c(complete.cases(facet1_title), complete.cases(facet2_title))) & 
+      length(find.package("ggh4x", quiet = TRUE)) == 0){
+      message("\nYou requested a title for facet1 or facet 2. Adding a title to facets requires the package ggh4x,\nwhich the R Working Group will ask IT to install next time VDIs are rebuilt but which we didn't\nthink of this go 'round.")
+      Install <- readline(prompt = "Is it ok to install ggh4x for you? (y or n)   ")
+      
+      if(tolower(str_sub(Install, 1, 1)) == "y"){
+         install.packages("ggh4x")
+      } else {
+         message("Ok, we will not install ggh4x for you, but we also won't be able to add facet titles to your graph.\n")
+         facet1_title <- NA
+         facet2_title <- NA
+      }
+   }
+   
    # Adjusting input data.frame for facet titles
    if(complete.cases(facet1_title)){
       sim_dataframe$Facet1Title <- facet1_title
