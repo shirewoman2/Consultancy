@@ -802,6 +802,13 @@ pksummary_mult <- function(sim_data_files = NA,
       
       MyPKResults <- bind_rows(MyPKResults)
       
+      if(nrow(MyPKResults) == 0){
+         warning("None of the PK values you requested could be found.\n", 
+                 call. = FALSE)
+         
+         return(data.frame())
+      }
+      
       suppressMessages(
          MyPKResults <- MyPKResults %>% 
             select(Statistic, 
