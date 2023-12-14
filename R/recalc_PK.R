@@ -222,6 +222,24 @@ recalc_PK <- function(ct_dataframe,
       ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"] <- perpetrator_name
    }
    
+   # Checking that they have all the columns necessary
+   if(all(c("CompoundID", "Inhibitor", "Tissue", "Individual", "Trial", 
+            "Simulated", "File", "DoseNum") %in% names(ct_dataframe)) == FALSE){
+      
+      MissingCols <- setdiff(c("CompoundID", "Inhibitor", "Tissue", "Individual", "Trial", 
+                               "Simulated", "File", "DoseNum"), 
+                             names(ct_dataframe))
+      
+      if("Individual" %in% MissingCols){
+         warning("It looks like you might not have requested individual data when you ran the function `extractConcTime`. We need individual concentration-time profiles here.\n", 
+                 call. = FALSE)
+      } 
+      stop(paste0("The data supplied for ct_dataframe is missing a column or columns called ", 
+                  str_comma(paste0("`", MissingCols, "`")), ", so we cannot proceed. Please ensure that your data match the format you'd get from running the functions extractConcTime or extractObsConcTime."), 
+           call. = FALSE)
+   }
+   
+   
    # Main body of function -------------------------------------------------
    
    if("File" %in% names(ct_dataframe) == FALSE){
@@ -539,14 +557,16 @@ recalc_PK <- function(ct_dataframe,
                                                   AUCextrap_temp$`Fraction extrapolated to infinity`, 
                                                   NA),
             ExtrapProbs = ExtrapProbs,
-            k = ElimFits[[j]]$Estimate[ElimFits[[j]]$Beta %in% c("k", "beta")]) %>% 
+            k = ifelse(is.null(ElimFits[[j]]),
+                       NA, ElimFits[[j]]$Estimate[ElimFits[[j]]$Beta %in% c("k", "beta")])) %>% 
          mutate(HalfLife = log(2) / k,
                 AUCt = AUCt_temp, 
                 Cmax = CmaxTmax_temp$Cmax, 
                 tmax = CmaxTmax_temp$tmax, 
                 Cmin = CmaxTmax_temp$Cmin, 
                 Clast = CmaxTmax_temp$Clast,
-                CL = MyDose / ifelse({ThisIsDose1}, AUCinf, AUCt) * 1000, 
+                CL = ifelse(is.na(AUCinf), 
+                            NA, MyDose / ifelse({ThisIsDose1}, AUCinf, AUCt) * 1000), 
                 Dose = MyDose)
       
       suppressWarnings(
@@ -575,7 +595,7 @@ recalc_PK <- function(ct_dataframe,
    if(any(PKtemp$ExtrapProbs, na.rm = TRUE)){
       warning(paste0(
          "The following combinations of data had problems with extrapolation to infinity. Data are listed by CompoundID, Inhibitor, Tissue, Individual, Trial, whether the data were simulated or observed, File, ObsFile, and DoseNum:\n", 
-         str_c(unique(PKtemp$ID[PKtemp$ExtrapProbs], collapse = "\n"))), 
+         str_c(unique(PKtemp$ID[PKtemp$ExtrapProbs]), collapse = "\n")), 
          call. = FALSE)
    }
    
