@@ -377,6 +377,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
          
          if(all(sim_data_files %in% Deets$File) == FALSE){
             existing_exp_details <- extractExpDetails_mult(sim_data_files = sim_data_files, 
+                                                           existing_exp_details = existing_exp_details,
                                                            exp_details = "Summary and Input")
             Deets <- existing_exp_details[["MainDetails"]] %>% 
                filter(File %in% sim_data_files)
@@ -871,7 +872,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                       "Species", "Tissue", "Individual", "Trial",
                       "Simulated", "Time", "Conc", "SD_SE",
                       "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
-                      "DoseInt", "File", "ObsFile"))) %>% 
+                      "DoseInt", "Dose_sub", "Dose_inhib", "Dose_inhib2", 
+                      "File", "ObsFile"))) %>% 
       unique()
    
    return(ct_dataframe)

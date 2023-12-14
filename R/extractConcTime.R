@@ -2020,7 +2020,8 @@ extractConcTime <- function(sim_data_file,
                       "Species", "Tissue", "Individual", "Trial",
                       "Simulated", "Time", "Conc", "SD_SE",
                       "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
-                      "DoseInt", "File", "ObsFile")))
+                      "DoseInt", "Dose_sub", "Dose_inhib", "Dose_inhib2", 
+                      "File", "ObsFile")))
    
    # Filtering to return ONLY the compound the user requested. This is what
    # works for input to ct_plot at the moment, too, so things get buggered up

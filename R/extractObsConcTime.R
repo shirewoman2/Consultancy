@@ -385,7 +385,13 @@ extractObsConcTime <- function(obs_data_file,
              Dose_inhib = case_when(complete.cases(Dose) & 
                                        CompoundID == "inhibitor 1" ~ Dose), 
              Dose_inhib2 = case_when(complete.cases(Dose) & 
-                                        CompoundID == "inhibitor 2" ~ Dose)) %>% 
+                                        CompoundID == "inhibitor 2" ~ Dose), 
+             InfDuration_sub = case_when(complete.cases(InfDuration) & 
+                                            CompoundID == "substrate" ~ InfDuration),
+             InfDuration_inhib = case_when(complete.cases(InfDuration) & 
+                                              CompoundID == "inhibitor 1" ~ InfDuration),
+             InfDuration_inhib2 = case_when(complete.cases(InfDuration) & 
+                                               CompoundID == "inhibitor 2" ~ InfDuration)) %>% 
       select(any_of(c("Individual", "Species", "Age",
                       "Weight_kg", "Height_cm",
                       "Sex", "SerumCreatinine_umolL", "HSA_gL", 
@@ -393,7 +399,7 @@ extractObsConcTime <- function(obs_data_file,
                       "GestationalAge_wk", "PlacentaVol_L", "FetalWt_kg", 
                       "ObsFile", "CompoundID", "Time", "Time_units",
                       "Dose_sub", "Dose_inhib", "Dose_inhib2", "Dose_units",
-                      "InfDuration"))) 
+                      "InfDuration_sub", "InfDuration_inhib", "InfDuration_inhib2"))) 
    
    if(nrow(dose_data) > 0){
       
@@ -407,7 +413,9 @@ extractObsConcTime <- function(obs_data_file,
       
       DoseInts <- dose_data %>%
          select(Individual, CompoundID, Time, 
-                Dose_sub, Dose_inhib, Dose_inhib2, Dose_units) %>% 
+                Dose_sub, Dose_inhib, Dose_inhib2,
+                InfDuration_sub, InfDuration_inhib, InfDuration_inhib2,
+                Dose_units) %>% 
          rename(DoseTime = Time)
       
       # Adding dose info to conc-time data.frame one CompoundID at a time.
@@ -462,6 +470,7 @@ extractObsConcTime <- function(obs_data_file,
                       "Simulated", "Time", "Conc", "SD_SE",
                       "Time_units",  "Conc_units", 
                       "Dose_sub", "Dose_inhib", "Dose_inhib2",
+                      "InfDuration_sub", "InfDuration_inhib", "InfDuration_inhib2",
                       "Dose_units", "DoseNum",
                       "ObsFile", "Period", "Species", "Age", "Weight_kg",
                       "Height_cm", "Sex", "SerumCreatinine_umolL",
