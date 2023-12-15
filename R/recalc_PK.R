@@ -222,12 +222,20 @@ recalc_PK <- function(ct_dataframe,
       ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"] <- perpetrator_name
    }
    
+   if("File" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$File <- NA
+   }
+   
+   if("ObsFile" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$ObsFile <- NA
+   }
+   
    # Checking that they have all the columns necessary
    if(all(c("CompoundID", "Inhibitor", "Tissue", "Individual", "Trial", 
-            "Simulated", "File", "DoseNum") %in% names(ct_dataframe)) == FALSE){
+            "Simulated", "DoseNum") %in% names(ct_dataframe)) == FALSE){
       
       MissingCols <- setdiff(c("CompoundID", "Inhibitor", "Tissue", "Individual", "Trial", 
-                               "Simulated", "File", "DoseNum"), 
+                               "Simulated", "DoseNum"), 
                              names(ct_dataframe))
       
       if("Individual" %in% MissingCols){
@@ -241,14 +249,6 @@ recalc_PK <- function(ct_dataframe,
    
    
    # Main body of function -------------------------------------------------
-   
-   if("File" %in% names(ct_dataframe) == FALSE){
-      ct_dataframe$File <- NA
-   }
-   
-   if("ObsFile" %in% names(ct_dataframe) == FALSE){
-      ct_dataframe$ObsFile <- NA
-   }
    
    if(omit_0_concs){
       ct_dataframe <- ct_dataframe %>%
