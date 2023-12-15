@@ -27,6 +27,8 @@ change_wksz_trial_design(
   NumTimePts = "no change",
   ObsOverlayFile = "no change",
   UseObservedData = "no change",
+  FixedTrialDesign = "no change",
+  FixedTrialDesignFile = "no change",
   fix_xml_paths = TRUE
 )
 }
@@ -69,7 +71,11 @@ inhibitor 1.)}
 
 \item{Dose_sub}{dose of substrate to use (mg)}
 
+\item{DoseRoute_sub}{Dose route for substrate}
+
 \item{Dose_inhib}{dose of inhibitor 1 to use (mg)}
+
+\item{DoseRoute_inhib}{Dose route for inhibitor 1}
 
 \item{DoseInt_sub}{dose interval for the substrate in hours. If you would
 like to have a single-dose regimen, set this to "single dose". Does not
@@ -86,6 +92,16 @@ may be tricky to do! May need to also adjust StartDayTime_sub!}
 
 \item{NumTimePts}{number of time points to use ("Number of Time Samples" in
 the Simulator)}
+
+\item{ObsOverlayFile}{Observed overlay XML file name}
+
+\item{UseObservedData}{Include the observed data in the results? TRUE or
+FALSE}
+
+\item{FixedTrialDesign}{Should this be a fixed-trial design simulation? TRUE
+or FALSE}
+
+\item{FixedTrialDesignFile}{File to use for a fixed-trial design.}
 
 \item{fix_xml_paths}{TRUE (default) or FALSE to automatically fix any
 discrepancies in user name on the SharePoint folder path for observed

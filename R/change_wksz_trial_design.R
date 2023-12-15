@@ -53,6 +53,18 @@
 #'   overlay data files or fixed trial design files. This can be useful if, say,
 #'   someone else ran the development and verification simulations and you're
 #'   now running the application simulations.
+#' @param DoseRoute_sub Dose route for substrate
+#' @param DoseRoute_inhib Dose route for inhibitor 1
+#' @param ObsOverlayFile Observed overlay XML file name
+#' @param UseObservedData Include the observed data in the results? TRUE or
+#'   FALSE
+#' @param FixedTrialDesign Should this be a fixed-trial design simulation? TRUE
+#'   or FALSE
+#' @param FixedTrialDesignFile File to use for a fixed-trial design.
+#' @param Units_dose_sub type of substrate dose administered. Options: "mg",
+#'   "mg/kg".
+#' @param Units_dose_inhib type of inhibitor 1 dose administered. Options: "mg",
+#'   "mg/kg".
 #'
 #' @return does not return anything in R but saves workspace files
 #' @export
@@ -71,8 +83,10 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      SimDuration = "no change", 
                                      activate_inhibitor1 = "no change",
                                      Dose_sub = "no change", 
+                                     Units_dose_sub = "no change", 
                                      DoseRoute_sub = "no change",
                                      Dose_inhib = "no change",
+                                     Units_dose_inhib = "no change", 
                                      DoseRoute_inhib = "no change",
                                      DoseInt_sub = "no change", 
                                      DoseInt_inhib = "no change", 
@@ -81,6 +95,8 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      NumTimePts = "no change", 
                                      ObsOverlayFile = "no change", 
                                      UseObservedData = "no change",
+                                     FixedTrialDesign = "no change", 
+                                     FixedTrialDesignFile = "no change", 
                                      fix_xml_paths = TRUE){
    
    # Error catching ----------------------------------------------------------
@@ -148,8 +164,10 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                          "SimDuration", 
                          "activate_inhibitor1",
                          "Dose_sub", 
+                         "Units_dose_sub",
                          "DoseRoute_sub",
                          "Dose_inhib",
+                         "Units_dose_inhib",
                          "DoseRoute_inhib",
                          "DoseInt_sub", 
                          "DoseInt_inhib",
@@ -173,8 +191,10 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                       SimDuration = SimDuration, 
                       activate_inhibitor1 = activate_inhibitor1,
                       Dose_sub = Dose_sub,
+                      Units_dose_sub = Units_dose_sub,
                       DoseRoute_sub = DoseRoute_sub,
                       Dose_inhib = Dose_inhib,
+                      Units_dose_inhib = Units_dose_inhib, 
                       DoseRoute_inhib = DoseRoute_inhib,
                       DoseInt_sub = DoseInt_sub, 
                       DoseInt_inhib = DoseInt_inhib, 
@@ -246,8 +266,8 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                 CompoundID == "_inhib$" & Level2 == "CompoundIDNum" ~ "2", 
                                 TRUE ~ Level2))
    
-   # Always need to have a levels 1-5 columns, even if they aren't
-   # important for these changes.
+   # Always need to have levels 1-5 columns, even if they aren't important for
+   # these changes.
    if("Level3" %in% names(Changes) == FALSE){Changes$Level3 <- NA}
    if("Level4" %in% names(Changes) == FALSE){Changes$Level4 <- NA}
    if("Level5" %in% names(Changes) == FALSE){Changes$Level5 <- NA}
@@ -332,6 +352,17 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                Level1 = "SimulationData", 
                Level2 = "idStudyEndDay"))
       }
+      
+      # Setting the dose units as needed
+      Changes[[i]]$Value[Changes[[i]]$Detail == "Units_dose_sub"] <- 
+         switch(Units_dose_sub, 
+                "mg" = 1, 
+                "mg/kg" = 2)
+      
+      Changes[[i]]$Value[Changes[[i]]$Detail == "Units_dose_inhib"] <- 
+         switch(Units_dose_inhib, 
+                "mg" = 1, 
+                "mg/kg" = 2)
       
       # Dealing w/all other changes
       for(j in 1:nrow(Changes[[i]])){
