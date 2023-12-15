@@ -280,6 +280,11 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                DeetValue <- NA
             }
             
+            if(m == "FixedTrialDesignFile" & 
+               XML::xmlValue(RootNode[["SimulationData"]][["FixedIndividualTrialDesign"]]) == "false"){
+               DeetValue <- NA
+            }
+            
             Deets[[i]][[DeetInfo$Detail]] <- DeetValue
             
             rm(DeetInfo, DeetLevels, DeetValue)
