@@ -8,6 +8,7 @@ files. UNDER CONSTRUCTION. USE WITH CAUTION.}
 change_wksz_trial_design(
   sim_workspace_files = NA,
   new_sim_workspace_files = NA,
+  fix_xml_paths = TRUE,
   trial_design_parameters_to_set = NA,
   NumTrials = "no change",
   NumSubjTrial = "no change",
@@ -17,8 +18,10 @@ change_wksz_trial_design(
   SimDuration = "no change",
   activate_inhibitor1 = "no change",
   Dose_sub = "no change",
+  Units_dose_sub = "no change",
   DoseRoute_sub = "no change",
   Dose_inhib = "no change",
+  Units_dose_inhib = "no change",
   DoseRoute_inhib = "no change",
   DoseInt_sub = "no change",
   DoseInt_inhib = "no change",
@@ -29,7 +32,7 @@ change_wksz_trial_design(
   UseObservedData = "no change",
   FixedTrialDesign = "no change",
   FixedTrialDesignFile = "no change",
-  fix_xml_paths = TRUE
+  CYP3A4_ontogeny_profile = "no change"
 )
 }
 \arguments{
@@ -48,10 +51,16 @@ Otherwise, specify a character vector of file names to use, e.g.,
 \code{new_sim_workspace_files = c("new file 1.wksz", "new file
 2.wksz")}}
 
+\item{fix_xml_paths}{TRUE (default) or FALSE to automatically fix any
+discrepancies in user name on the SharePoint folder path for observed
+overlay data files or fixed trial design files. This can be useful if, say,
+someone else ran the development and verification simulations and you're
+now running the application simulations.}
+
 \item{trial_design_parameters_to_set}{optionally specify a data.frame of
-trial design parameters to set. Acceptable column names: NumTrials,
-NumSubjTrial, PercFemale, AgeMin, AgeMax, SimDuration, activate_inhibitor1,
-Dose_sub, Dose_inhib, DoseInt_sub, DoseInt_inhib, StartHr_sub, NumTimePts.}
+trial design parameters to set. Acceptable column names are columns named
+\emph{exactly} like the subsequent argument names here and also must
+include the columns "sim_workspace_files" and "new_sim_workspace_files".}
 
 \item{NumTrials}{number of trials to use}
 
@@ -71,9 +80,15 @@ inhibitor 1.)}
 
 \item{Dose_sub}{dose of substrate to use (mg)}
 
+\item{Units_dose_sub}{type of substrate dose administered. Options: "mg",
+"mg/kg".}
+
 \item{DoseRoute_sub}{Dose route for substrate}
 
 \item{Dose_inhib}{dose of inhibitor 1 to use (mg)}
+
+\item{Units_dose_inhib}{type of inhibitor 1 dose administered. Options: "mg",
+"mg/kg".}
 
 \item{DoseRoute_inhib}{Dose route for inhibitor 1}
 
@@ -103,11 +118,9 @@ or FALSE}
 
 \item{FixedTrialDesignFile}{File to use for a fixed-trial design.}
 
-\item{fix_xml_paths}{TRUE (default) or FALSE to automatically fix any
-discrepancies in user name on the SharePoint folder path for observed
-overlay data files or fixed trial design files. This can be useful if, say,
-someone else ran the development and verification simulations and you're
-now running the application simulations.}
+\item{CYP3A4_ontogeny_profile}{CYP3A4 ontogeny profile to use? Options are
+"1" for profile 1 (default in the Simulator) and "2" for profile 2 (based
+on Upreti Wahlstrom 2016 J Clin Pharm).}
 }
 \value{
 does not return anything in R but saves workspace files

@@ -22,10 +22,15 @@
 #'   Otherwise, specify a character vector of file names to use, e.g.,
 #'   \code{new_sim_workspace_files = c("new file 1.wksz", "new file
 #'   2.wksz")}
+#' @param fix_xml_paths TRUE (default) or FALSE to automatically fix any
+#'   discrepancies in user name on the SharePoint folder path for observed
+#'   overlay data files or fixed trial design files. This can be useful if, say,
+#'   someone else ran the development and verification simulations and you're
+#'   now running the application simulations.
 #' @param trial_design_parameters_to_set optionally specify a data.frame of
-#'   trial design parameters to set. Acceptable column names: NumTrials,
-#'   NumSubjTrial, PercFemale, AgeMin, AgeMax, SimDuration, activate_inhibitor1,
-#'   Dose_sub, Dose_inhib, DoseInt_sub, DoseInt_inhib, StartHr_sub, NumTimePts.
+#'   trial design parameters to set. Acceptable column names are columns named
+#'   \emph{exactly} like the subsequent argument names here and also must
+#'   include the columns "sim_workspace_files" and "new_sim_workspace_files".
 #' @param NumTrials number of trials to use
 #' @param NumSubjTrial number of subjects per trial to use
 #' @param PercFemale percent of subjects who are female
@@ -48,11 +53,6 @@
 #' @param StartHr_inhib start time for administering inhibitor 1 in hours
 #' @param NumTimePts number of time points to use ("Number of Time Samples" in
 #'   the Simulator)
-#' @param fix_xml_paths TRUE (default) or FALSE to automatically fix any
-#'   discrepancies in user name on the SharePoint folder path for observed
-#'   overlay data files or fixed trial design files. This can be useful if, say,
-#'   someone else ran the development and verification simulations and you're
-#'   now running the application simulations.
 #' @param DoseRoute_sub Dose route for substrate
 #' @param DoseRoute_inhib Dose route for inhibitor 1
 #' @param ObsOverlayFile Observed overlay XML file name
@@ -65,6 +65,9 @@
 #'   "mg/kg".
 #' @param Units_dose_inhib type of inhibitor 1 dose administered. Options: "mg",
 #'   "mg/kg".
+#' @param CYP3A4_ontogeny_profile CYP3A4 ontogeny profile to use? Options are
+#'   "1" for profile 1 (default in the Simulator) and "2" for profile 2 (based
+#'   on Upreti Wahlstrom 2016 J Clin Pharm).
 #'
 #' @return does not return anything in R but saves workspace files
 #' @export
@@ -74,6 +77,7 @@
 #' 
 change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      new_sim_workspace_files = NA,
+                                     fix_xml_paths = TRUE,
                                      trial_design_parameters_to_set = NA,
                                      NumTrials = "no change", 
                                      NumSubjTrial = "no change", 
@@ -97,7 +101,7 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      UseObservedData = "no change",
                                      FixedTrialDesign = "no change", 
                                      FixedTrialDesignFile = "no change", 
-                                     fix_xml_paths = TRUE){
+                                     CYP3A4_ontogeny_profile = "no change"){
    
    # Error catching ----------------------------------------------------------
    
@@ -287,6 +291,23 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
    #         call. = FALSE)
    # }
    
+   # Setting the dose units as needed
+   Changes$Value[Changes$Detail == "Units_dose_sub"] <- 
+      switch(Units_dose_sub, 
+             "mg" = 1, 
+             "mg/kg" = 2)
+   
+   Changes$Value[Changes$Detail == "Units_dose_inhib"] <- 
+      switch(Units_dose_inhib, 
+             "mg" = 1, 
+             "mg/kg" = 2)
+   
+   # Setting the CYP3A4 ontogeny profile to the correct numbers
+   Changes$Value[Changes$Detail == "CYP3A4_ontogeny_profile"] <- 
+      switch(CYP3A4_ontogeny_profile, 
+             "1" = "0", 
+             "2" = "1")
+   
    # Grouping by new workspace
    Changes <- split(Changes, f = Changes$new_sim_workspace_files)
    
@@ -352,17 +373,6 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                Level1 = "SimulationData", 
                Level2 = "idStudyEndDay"))
       }
-      
-      # Setting the dose units as needed
-      Changes[[i]]$Value[Changes[[i]]$Detail == "Units_dose_sub"] <- 
-         switch(Units_dose_sub, 
-                "mg" = 1, 
-                "mg/kg" = 2)
-      
-      Changes[[i]]$Value[Changes[[i]]$Detail == "Units_dose_inhib"] <- 
-         switch(Units_dose_inhib, 
-                "mg" = 1, 
-                "mg/kg" = 2)
       
       # Dealing w/all other changes
       for(j in 1:nrow(Changes[[i]])){
