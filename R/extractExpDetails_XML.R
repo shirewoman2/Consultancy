@@ -142,6 +142,9 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                "SecondaryMetabolite", "Inhibitor1Metabolite")) %>% 
       pull(Detail)
    
+   PopulationDetails <- XMLDeets %>% 
+      filter(Sheet == "workspace XML file" & Level1 == "Populations")
+   
    Deets <- list()
    
    for(i in sim_workspace_files){
@@ -252,7 +255,9 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          for(m in setdiff(exp_details, CompoundDetails)){
             
             DeetInfo <- XMLDeets %>% 
-               filter(Sheet == "workspace XML file" & Detail == m)
+               filter(Sheet == "workspace XML file" & Detail == m) %>% 
+               mutate(Level2 = ifelse(m %in% PopulationDetails, 
+                                      as.numeric(Level2), as.character(Level2)))
             DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
             DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
             
@@ -283,6 +288,15 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             if(m == "FixedTrialDesignFile" & 
                XML::xmlValue(RootNode[["SimulationData"]][["FixedIndividualTrialDesign"]]) == "false"){
                DeetValue <- NA
+            }
+            
+            # Also dealing with instances where the value in the XML file is
+            # coded to make it clear what the actual value in the simulation
+            # was and to match what the user would see in the Excel results.
+            if(m == "CYP3A4_ontogeny_profile"){
+               DeetValue <- switch(DeetValue, 
+                                   "0" = "CYP3A4 Profile 1", 
+                                   "1" = "CYP3A4 Profile 2")
             }
             
             Deets[[i]][[DeetInfo$Detail]] <- DeetValue
