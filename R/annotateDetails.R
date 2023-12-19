@@ -35,6 +35,11 @@
 #'   match any compound names that include the letters "midaz" and is NOT case
 #'   sensitive), and set \code{show_compound_col = FALSE}. This will result in a
 #'   much clearer Excel file.
+#' @param sims_to_include optionally specify which simulation files you'd like
+#'   to include in the annotated output. Must be a character vector of the file
+#'   names \emph{exactly} as they appear in the column "File" of the
+#'   "MainDetails" item in \code{existing_exp_details}. Leave as default NA to
+#'   get all the simulations included in \code{existing_exp_details}.
 #' @param show_only_diff_from_template TRUE or FALSE (default) to show only the
 #'   details that differ from the template simulation, which reduces the number
 #'   of rows in your output and can make it easier to find what has changed
@@ -89,7 +94,7 @@
 #'   \code{\link{extractExpDetails_mult}}: \describe{
 #'
 #'   \item{"all"}{all possible details (default). If you select this option, you will also
-#'   get additional tabs in the output Excel file for any custom dosing regimens 
+#'   get additional tabs in the output Excel file for any custom dosing regimens
 #'   and any drug-release profiles.}
 #'
 #'   \item{"Summary tab"}{details available from the "Summary tab"}
@@ -216,6 +221,7 @@ annotateDetails <- function(existing_exp_details,
                             compoundID = NA, 
                             compound = NA,
                             template_sim = NA,
+                            sims_to_include = NA, 
                             show_only_diff_from_template = FALSE,
                             simulator_section = NA, 
                             detail_set = "all", 
@@ -276,6 +282,13 @@ annotateDetails <- function(existing_exp_details,
    
    # Need to harmonize input to check some of these other bits
    existing_exp_details <- harmonize_details(existing_exp_details)
+   
+   # Keeping only the requested sims for sims_to_include
+   if(any(complete.cases(sims_to_include))){
+      existing_exp_details <- filter_sims(which_object = existing_exp_details, 
+                                          which_sims = sims_to_include,
+                                          include_or_omit = "include")
+   }
    
    if("Substrate" %in% names(existing_exp_details$MainDetails) == FALSE & 
       (show_compound_col == TRUE | show_compound_col == "concatenate") & 

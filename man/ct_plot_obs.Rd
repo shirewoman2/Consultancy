@@ -66,12 +66,15 @@ the function \code{\link{extractConcObsTime_mult}} or
 
 \item{mean_type}{plot "arithmetic" (default) or "geometric" mean
 concentrations or "median" concentrations as the main (thickest or only)
-line for each data set. If you haven't included mean data in
-\code{ct_dataframe}, the mean will be calculated for you using our best
-guess as to what the groups should be. In other words, you may want to
-calculate the means yourself just to be sure you're getting what you
-expect. Talk to Laura Sh. if you would like help here. If you don't want to
-show the means, set this to "none".}
+line for each data set. If you don't want to show the means, set this to
+"none". If you \emph{only} want to show the mean data and not the
+individual, set this to whatever mean type you want plus "only", e.g.,
+\code{"arithmetic only"} to show only the arithmetic mean data and none of
+the individuals. If you haven't included mean data in \code{ct_dataframe},
+the mean will be calculated for you using our best guess as to what the
+groups should be. In other words, you may want to calculate the means
+yourself just to be sure you're getting what you expect. Talk to Laura Sh.
+if you would like help here.}
 
 \item{nominal_times}{optionally specify what the nominal times were for the
 concentration-time data. If left as NA, when we calculate the means, we'll
