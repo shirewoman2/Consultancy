@@ -9,12 +9,15 @@
 #'   \code{\link{extractObsConcTime}}. Not quoted.
 #' @param mean_type plot "arithmetic" (default) or "geometric" mean
 #'   concentrations or "median" concentrations as the main (thickest or only)
-#'   line for each data set. If you haven't included mean data in
-#'   \code{ct_dataframe}, the mean will be calculated for you using our best
-#'   guess as to what the groups should be. In other words, you may want to
-#'   calculate the means yourself just to be sure you're getting what you
-#'   expect. Talk to Laura Sh. if you would like help here. If you don't want to
-#'   show the means, set this to "none".
+#'   line for each data set. If you don't want to show the means, set this to
+#'   "none". If you \emph{only} want to show the mean data and not the
+#'   individual, set this to whatever mean type you want plus "only", e.g.,
+#'   \code{"arithmetic only"} to show only the arithmetic mean data and none of
+#'   the individuals. If you haven't included mean data in \code{ct_dataframe},
+#'   the mean will be calculated for you using our best guess as to what the
+#'   groups should be. In other words, you may want to calculate the means
+#'   yourself just to be sure you're getting what you expect. Talk to Laura Sh.
+#'   if you would like help here.
 #' @param nominal_times optionally specify what the nominal times were for the
 #'   concentration-time data. If left as NA, when we calculate the means, we'll
 #'   group the data by the times \emph{exactly} as listed in the individual
@@ -140,7 +143,7 @@
 #'   the observed data points will be opaque, so the same as if this were set to
 #'   1.
 #' @param connect_obs_points TRUE (default) or FALSE for whether to add
-#'   connecting lines between observed data points from the same individual 
+#'   connecting lines between observed data points from the same individual
 #' @param include_errorbars TRUE or FALSE (default) for whether to include error
 #'   bars for observed data points. This ONLY applies when you have supplied
 #'   observed data from V22 or higher because those data files included a column
@@ -434,22 +437,37 @@ ct_plot_obs <- function(ct_dataframe,
       ct_dataframe$Time <- centerBin(ct_dataframe$Time, breaks = nominal_times)
    }
    
+   if(str_detect(mean_type, "only")){
+      # This is when they only want to see means and not individual data. The
+      # easiest way to do this, I think, is to just set the obs_line_trans to 0.
+      mean_type <- sub("( )?only", "", mean_type)
+      obs_line_trans <- 0
+   } 
+   
    if("obs mean" %in% ct_dataframe$Trial == FALSE & 
       mean_type != "none"){
+      
+      # For calculating means, grouping by everything except conc and columns
+      # that would be just for one individual. Also omitting DoseNum b/c people
+      # don't consistently include accurate and COMPLETE dosing information,
+      # which means that the graph will look disjointed b/c dosing at the same
+      # time will be listed for a different DoseNum. I'm not positive that this
+      # is the right course of action, though, b/c I wouldn't want people who
+      # missed a dose to be included in mean calculation. STILL THINKING ABOUT
+      # THIS.
+      GroupingCols <- 
+         setdiff(names(ct_dataframe), 
+                 c(names(ct_dataframe)[
+                    str_detect(tolower(names(ct_dataframe)), "conc|dosenum")], 
+                   "Individual", "Conc", "Age", "Weight_kg", "Height_cm", "Sex", 
+                   "SerumCreatinine_umolL", "HSA_gL", "Haematocrit",
+                   "PhenotypeCYP2D6", "SmokingStatus"))
+      # We do need Conc_units to be included, though. Adding that back in.
+      GroupingCols <- c(GroupingCols, "Conc_units")
+      
       suppressMessages(
          CTagg <- ct_dataframe %>% 
-            group_by(across(.cols = -any_of(c(
-               "Individual", "Conc", "Age", "Weight_kg", "Height_cm", "Sex", 
-               # Omitting DoseNum b/c people don't consistently include accurate
-               # and COMPLETE dosing information, which means that the graph
-               # will look disjointed b/c dosing at the same time will be listed
-               # for a different DoseNum. I'm not positive that this is the
-               # right course of action, though, b/c I wouldn't want people who
-               # missed a dose to be included in mean calculation. STILL
-               # THINKING ABOUT THIS.
-               "DoseNum", 
-               "SerumCreatinine_umolL", "HSA_gL", "Haematocrit",
-               "PhenotypeCYP2D6", "SmokingStatus")))) %>% 
+            group_by(across(.cols = any_of(GroupingCols))) %>% 
             summarize(Conc = switch(mean_type, 
                                     "arithmetic" = mean(Conc, na.rm = T), 
                                     "geometric" = gm_mean(Conc), 
@@ -474,7 +492,8 @@ ct_plot_obs <- function(ct_dataframe,
                       mutate(subsection_ADAM = NA, 
                              Compound = "UNKNOWN COMPOUND", 
                              File = ObsFile, 
-                             Simulated = ifelse(Trial == "mean", TRUE, FALSE)), 
+                             Simulated = ifelse(
+                                Trial %in% c("mean", "geomean", "median"), TRUE, FALSE)), 
                    # NSE trouble: not enquo alone, not quo, not
                    # substitute, but enquo plus !! here
                    colorBy_column = !!colorBy_column,

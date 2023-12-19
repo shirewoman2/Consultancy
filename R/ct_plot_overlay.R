@@ -973,13 +973,13 @@ ct_plot_overlay <- function(ct_dataframe,
       
       # for enzyme abundance data
       ct_dataframe <- ct_dataframe %>%
+         mutate(Abundance = Abundance / 100) %>% 
+         rename(Conc = Abundance) %>% 
          unite(col = Group, any_of(c("File", "Trial", "Tissue", "Enzyme",
                                      "Inhibitor", "Individual",
                                      "colorBy_column", "FC1", "FC2")), 
-               sep = " ", remove = FALSE) %>% 
-         mutate(Abundance = Abundance / 100) %>% 
-         rename(Conc = Abundance)
-      
+               sep = " ", remove = FALSE)
+         
       sim_dataframe <- ct_dataframe
       
       obs_dataframe <- data.frame()
@@ -2021,9 +2021,9 @@ ct_plot_overlay <- function(ct_dataframe,
       
       
       A <- A + coord_cartesian(xlim = time_range_relative, 
-                                ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                                0, y_axis_limits_lin[1]),
-                                         YmaxRnd)) +
+                               ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                               0, y_axis_limits_lin[1]),
+                                        YmaxRnd)) +
          scale_x_time(time_units = TimeUnits, 
                       time_range = time_range_relative,
                       x_axis_interval = x_axis_interval, 
