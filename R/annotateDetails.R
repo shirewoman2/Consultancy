@@ -1080,7 +1080,21 @@ annotateDetails <- function(existing_exp_details,
             ToWrite <- setdiff(ToWrite, "MainDetails")
             
             for(i in ToWrite){
-               formatXL_head(DF = existing_exp_details[[i]], 
+               
+               if(i == "ConcDependent_fup"){
+                  DF4XL <- existing_exp_details[[i]] %>% 
+                     pivot_wider(names_from = File, values_from = fup)
+               } else if(i == "ConcDependent_BP"){ 
+                  DF4XL <- existing_exp_details[[i]] %>% 
+                     pivot_wider(names_from = File, values_from = BP)
+               } else if(i == "CustomDosing"){ 
+                  DF4XL <- existing_exp_details[[i]] %>% 
+                     pivot_wider(names_from = File, values_from = Dose)
+               } else {
+                  DF4XL <- existing_exp_details[[i]]
+               }
+               
+               formatXL_head(DF = DF4XL, 
                              file = FileName, 
                              sheet = i)
             }
