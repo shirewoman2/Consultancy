@@ -769,6 +769,50 @@ extractExpDetails <- function(sim_data_file,
       }
       
       
+      ### Concentration-dependent B/P -----------------------------------------
+      if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
+         exists("InputTab", inherits = FALSE) &&
+         any(str_detect(unlist(c(InputTab[, ColLocations + 1])), 
+                        "Concentration-dependent B/P profile"),
+             na.rm = TRUE)){
+         
+         CDBPProfs <- list()
+         
+         for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
+            StartRow <- which(str_detect(t(InputTab[, ColLocations[i] + 1]), 
+                                         "Concentration-dependent B/P profile"))[1] + 2
+            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), 
+                                       "B/P [0-9]"))
+            EndRow <- EndRow[which.max(EndRow)]
+            
+            # It could be that one compound has conc-dependent B/P profiles and
+            # another compound does not. Checking that here since I did not check it
+            # in the original if statement at the top of this section.
+            if(is.na(StartRow)){
+               next
+            }
+            
+            CDBP_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
+            names(CDBP_temp) <- c("NameCol", "ValCol")
+            
+            CDBPProfs[[i]] <- data.frame(
+               Conc = CDBP_temp$ValCol[which(str_detect(CDBP_temp$NameCol, "Conc"))], 
+               BP = CDBP_temp$ValCol[which(str_detect(CDBP_temp$NameCol, "B/P [0-9]"))]) %>%  
+               mutate(across(.cols = everything(), .fns = as.numeric), 
+                      File = sim_data_file, 
+                      CompoundID = i, 
+                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+               select(File, CompoundID, Compound, Conc, BP)
+            
+            rm(StartRow, EndRow, CDBP_temp)
+            
+         }
+         
+         CDBPProfs <- bind_rows(CDBPProfs)
+      } else {
+         CDBPProfs <- NULL
+      }
+      
       
       ## Pulling CL info ----------------------------------------------------
       MyInputDeets2 <- MyInputDeets[str_detect(MyInputDeets, "CLint_")]
@@ -1712,7 +1756,8 @@ extractExpDetails <- function(sim_data_file,
                                         Out$CustomDosing_inhib2), 
                DissolutionProfiles = DissoProfs,
                ReleaseProfiles = ReleaseProfs, 
-               ConcDependent_fup = CDfupProfs)
+               ConcDependent_fup = CDfupProfs, 
+               ConcDependent_BP = CDBPProfs)
    
    for(j in names(Out)[unlist(lapply(Out, is.null)) == FALSE]){
       Out[[j]] <- Out[[j]] %>% 
