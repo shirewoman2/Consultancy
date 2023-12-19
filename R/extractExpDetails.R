@@ -678,14 +678,14 @@ extractExpDetails <- function(sim_data_file,
       ### Checking on dissolution profiles ------------------------------------
       if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
          exists("InputTab", inherits = FALSE) &&
-         any(str_detect(unlist(c(InputTab[, ColLocations])), "Dissolution Profile"),
+         any(str_detect(unlist(c(InputTab[, ColLocations])), "Dissolution Mean"),
              na.rm = TRUE)){
          
          DissoProfs <- list()
          
          for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
-            StartRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution Profile"))[1] + 1
-            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution \\(\\%"))
+            StartRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution( Mean)? \\(\\%"))[1] - 1
+            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution( Mean)? \\(\\%"))
             EndRow <- EndRow[which.max(EndRow)] + 1 # Looking for last "Dissolution (%)" row and then the next row will be the CV for that. 
             
             # It could be that one compound has dissolution profiles and another
@@ -703,17 +703,20 @@ extractExpDetails <- function(sim_data_file,
             
             DissoProfs[[i]] <- data.frame(
                Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
-               Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution \\(\\%"))], 
-               Dissolution_CV = ifelse(is.null(DissoCV), NA, DissoCV)) %>% 
+               Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution( Mean)? \\(\\%"))])
+            
+            # This works better w/an if statement and then base R:
+            if(all(is.null(DissoCV)) == FALSE){
+               DissoProfs[[i]]$Dissolution_CV <- DissoCV
+            }
+            
+            DissoProfs[[i]] <- DissoProfs[[i]] %>% 
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]],
-                      PrandialSt = sort(unique(tolower(
-                         str_extract(Disso_temp$NameCol, "Fasted|Fed"))))) %>% 
-               select(File, CompoundID, Compound, PrandialSt, 
-                      Time, Dissolution_mean, Dissolution_CV)
+                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+               select(File, CompoundID, Compound, Time, Dissolution_mean, Dissolution_CV)
             
             rm(StartRow, EndRow, Disso_temp)
             
