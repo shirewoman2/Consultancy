@@ -384,6 +384,9 @@ draft_DDI_section <- function(sim_data_file,
       }
    }
    
+   # Harmonizing PK parameter names
+   PKparameters <- harmonize_PK_names(PKparameters)
+   
    # Making most character arguments lower case to avoid case sensitivity
    mean_type_PK <- tolower(mean_type_PK)
    mean_type_graph <- tolower(mean_type_graph)

@@ -564,6 +564,13 @@ extractConcTime <- function(sim_data_file,
       # Last step: Find the unique versions of the coding. 
       CmpdMatches2 <- unique(CmpdMatches2)
       
+      # FIXME - Need to return to this for when it's a tissue and there's a
+      # perpetrator. For now, just allowing an error message. 
+      if(PerpPresent == FALSE &
+         tissue %in% c("plasma", "blood", "unbound plasma", "unbound blood") == FALSE){
+         CmpdMatches2 <- CmpdMatches1
+      }
+      
       if(length(CmpdMatches1) != length(CmpdMatches2)){
          warning("PLEASE TELL LAURA SHIREMAN YOU SAW AN ERROR CALLED `COMPOUNDCODE` WHEN TRYING TO EXTRACT CONCENTRATION TIME DATA")
       }

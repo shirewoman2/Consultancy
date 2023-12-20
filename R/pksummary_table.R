@@ -471,6 +471,9 @@ pksummary_table <- function(sim_data_file = NA,
               call. = FALSE)
    }
    
+   # Harmonizing PK parameter syntax
+   PKparameters <- harmonize_PK_names(PKparameters)
+   
    # Main body of function --------------------------------------------------
    
    ## Reading in all data and tidying ------------------------------------
@@ -536,7 +539,6 @@ pksummary_table <- function(sim_data_file = NA,
          names(observed_PK)[str_detect(tolower(names(observed_PK)), "file")][1] <- 
             "File"
          
-         
       } else if("numeric" %in% class(observed_PK)){ # This is when user has supplied a named numeric vector
          
          observed_PK <- as.data.frame(t(observed_PK))
@@ -546,6 +548,12 @@ pksummary_table <- function(sim_data_file = NA,
    # At this point, observed_PK, if it exists, should be a data.frame b/c it
    # either was a data.frame at the outset, it has been created by reading an
    # Excel or csv file for observed data, or it came from a report input form.
+   
+   # Harmonizing PK parameter names
+   if("data.frame" %in% class(observed_PK)){
+      observed_PK$PKparameter <- harmonize_PK_names(observed_PK$PKparameter)
+   }
+   PKparameters <- harmonize_PK_names(PKparameters)
    
    # Checking on whether user has requested a specific sheet for PK parameters
    # b/c then we don't know which dose number things were. If they did, then we
@@ -596,7 +604,6 @@ pksummary_table <- function(sim_data_file = NA,
             # parameters. If it were a single-dose sim, that wouldn't
             # require a user-defined integration interval.
             
-            observed_PK$PKparameter <- sub("AUCt_last", "AUCtau_last", observed_PK$PKparameter)
          }
          
          observed_PK <- observed_PK %>% 

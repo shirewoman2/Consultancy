@@ -373,6 +373,8 @@ pksummary_mult <- function(sim_data_files = NA,
       save_table <- sys.call()$save_output
    }
    
+   # Harmonizing PK parameter names
+   PKparameters <- harmonize_PK_names(PKparameters)
    
    # Check for appropriate input for arguments
    compoundsToExtract <- tolower(compoundsToExtract)
