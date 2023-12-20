@@ -1,13 +1,16 @@
 #' Change a limited set of trial-design parameters in Simcyp Simulator workspace
-#' files. UNDER CONSTRUCTION. USE WITH CAUTION.
+#' files. UNDER CONSTRUCTION.
 #'
 #' \code{change_wksz_trial_design} changes a few trial-design parameters such as
 #' the number of subjects, the percent female, the dose or dose interval, etc.
 #' It does \emph{not} change populations because there are simply too many
-#' parameters to change in an automatic faction like this. (At least, not at
-#' this point.) It also doesn't turn on or off a fixed trial design. This will
+#' parameters to change in an automatic fashion in R like this and also because
+#' the Simulator starting with V22 can change populations for you with its
+#' workflow function. It also doesn't turn on or off a fixed trial design
+#' because we just haven't figured out how to get that to work right. This will
 #' change \emph{all} the workspace files provided to have the \emph{same}
-#' trial-design parameters you list here. UNDER CONSTRUCTION.
+#' trial-design parameters you list here. USE WITH CAUTION. THIS PERMANENTLY
+#' CHANGES WORKSPACES.
 #'
 #' @param sim_workspace_files the set of workspace files to modify; must end in
 #'   ".wksz" if you're specifying individual files. Leave as NA to change all
@@ -31,14 +34,16 @@
 #'   trial design parameters to set. Acceptable column names are columns named
 #'   \emph{exactly} like the subsequent argument names here and also must
 #'   include the columns "sim_workspace_files" and "new_sim_workspace_files".
-#' @param NumTrials number of trials to use
-#' @param NumSubjTrial number of subjects per trial to use
+#' @param NumTrials number of trials to use. If you set this you MUST also set
+#'   the number of subjects per trial.
+#' @param NumSubjTrial number of subjects per trial to use. If you set this you
+#'   MUST also set the number of trials.
 #' @param PercFemale percent of subjects who are female
-#' @param AgeMin minimum age
-#' @param AgeMax maximum age
+#' @param Age_min minimum age
+#' @param Age_max maximum age
 #' @param SimDuration study duration in hours
 #' @param activate_inhibitor1 TRUE or FALSE for whether to turn on inhibitor 1.
-#'   (At this point, this function will only se parametrs for substrate or
+#'   (At this point, this function will only use parameters for substrate or
 #'   inhibitor 1.)
 #' @param Dose_sub dose of substrate to use (mg)
 #' @param Dose_inhib dose of inhibitor 1 to use (mg)
@@ -58,9 +63,6 @@
 #' @param ObsOverlayFile Observed overlay XML file name
 #' @param UseObservedData Include the observed data in the results? TRUE or
 #'   FALSE
-#' @param FixedTrialDesign Should this be a fixed-trial design simulation? TRUE
-#'   or FALSE
-#' @param FixedTrialDesignFile File to use for a fixed-trial design.
 #' @param Units_dose_sub type of substrate dose administered. Options: "mg",
 #'   "mg/kg".
 #' @param Units_dose_inhib type of inhibitor 1 dose administered. Options: "mg",
@@ -82,8 +84,8 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      NumTrials = "no change", 
                                      NumSubjTrial = "no change", 
                                      PercFemale = "no change", 
-                                     AgeMin = "no change", 
-                                     AgeMax = "no change", 
+                                     Age_min = "no change", 
+                                     Age_max = "no change", 
                                      SimDuration = "no change", 
                                      activate_inhibitor1 = "no change",
                                      Dose_sub = "no change", 
@@ -99,8 +101,6 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      NumTimePts = "no change", 
                                      ObsOverlayFile = "no change", 
                                      UseObservedData = "no change",
-                                     FixedTrialDesign = "no change", 
-                                     FixedTrialDesignFile = "no change", 
                                      CYP3A4_ontogeny_profile = "no change"){
    
    # Error catching ----------------------------------------------------------
@@ -163,8 +163,8 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                          "NumTrials",
                          "NumSubjTrial", 
                          "PercFemale",
-                         "AgeMin",
-                         "AgeMax",
+                         "Age_min",
+                         "Age_max",
                          "SimDuration", 
                          "activate_inhibitor1",
                          "Dose_sub", 
@@ -179,8 +179,8 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                          "StartHr_inhib",
                          "NumTimePts", 
                          "ObsOverlayFile",
-                         "FixedTrialDesign", 
-                         "FixedTrialDesignFile")))
+                         "UseObservedData", 
+                         "CYP3A4_ontogeny_profile")))
       
    } else {
       
@@ -190,8 +190,8 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                       NumTrials = NumTrials, 
                       NumSubjTrial = NumSubjTrial, 
                       PercFemale = PercFemale, 
-                      AgeMin = AgeMin, 
-                      AgeMax = AgeMax, 
+                      Age_min = Age_min, 
+                      Age_max = Age_max, 
                       SimDuration = SimDuration, 
                       activate_inhibitor1 = activate_inhibitor1,
                       Dose_sub = Dose_sub,
@@ -205,16 +205,15 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                       StartHr_sub = StartHr_sub, 
                       StartHr_inhib = StartHr_inhib, 
                       NumTimePts = NumTimePts, 
-                      ObsOverlayFile = ObsOverlayFile,
-                      FixedTrialDesign = FixedTrialDesign, 
-                      FixedTrialDesignFile = FixedTrialDesignFile)
+                      ObsOverlayFile = ObsOverlayFile, 
+                      CYP3A4_ontogeny_profile = CYP3A4_ontogeny_profile)
       
       # Checking lengths of arguments
       ChangeLength <- unlist(lapply(Changes, length))
       ChangeLength <- ChangeLength[!ChangeLength == 1]
       
       if(length(unique(ChangeLength)) > 1){
-         stop("You have not provided the same number of inputs for each of the arguments `NumTrials` through `NumTimePts`, and all of these must have the same number of inputs or have just a single value, which will be repeated as needed. Please check this and try again.", 
+         stop("You have not provided the same number of inputs for each of the arguments from `NumTrials` onward, and all of these must have the same number of inputs or have just a single value, which will be repeated as needed. Please check this and try again.", 
               call. = FALSE)
       }
       
@@ -240,10 +239,28 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
    }
    
    # At this point, regardless of whether they provided a data.frame to
-   # trial_design_parameters_to_set or filled out the arguments individually, we should
-   # have a data.frame called Changes that includes all interactions AND the
-   # original and revised file names.
+   # trial_design_parameters_to_set or filled out the arguments individually, we
+   # should have a data.frame called Changes that includes all interactions AND
+   # the original and revised file names.
    
+   if(("NumSubjTrial" %in% names(Changes) & 
+       "NumTrials" %in% names(Changes) == FALSE)){
+      stop("You have specified a value for NumSubjTrial but not for NumTrials, and we need both of those to be set.", 
+           call. = FALSE)
+   }
+   
+   if(("NumTrials" %in% names(Changes) & 
+       "NumSubjTrial" %in% names(Changes) == FALSE)){
+      stop("You have specified a value for NumTrials but not for NumSubjTrial, and we need both of those to be set.", 
+           call. = FALSE)
+   }
+   
+   # If they've set the number of trials or number of subjects per trial, we
+   # also need to set the number in the population.
+   if("NumSubjTrial" %in% names(Changes)){
+      Changes <- Changes %>% 
+         mutate(PopSize = NumTrials * NumSubjTrial)
+   }
    
    # Main body of function ---------------------------------------------------
    
@@ -255,7 +272,6 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
              new_sim_workspace_files = paste0(sub("\\.xlsx|\\.wksz", "", 
                                                   new_sim_workspace_files), ".wksz"), 
              ObsOverlayFile = gsub("/", "\\\\", ObsOverlayFile), 
-             FixedTrialDesignFile = gsub("/", "\\\\", FixedTrialDesignFile), 
              across(.cols = everything(), .fns = as.character)) %>% 
       pivot_longer(cols = -c(sim_workspace_files, new_sim_workspace_files), 
                    names_to = "Detail", 
@@ -264,7 +280,7 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
       mutate(CompoundID = str_extract(Detail, "_sub|_inhib$")) %>%
       # Setting tag names
       left_join(AllExpDetails %>% filter(Sheet == "workspace XML file") %>% 
-                   select(Detail, Level1, Level2, Level3), 
+                   select(Detail, Level1, Level2, Level3, Level4, Level5, XMLswitch), 
                 by = "Detail") %>% 
       mutate(Level2 = case_when(CompoundID == "_sub" & Level2 == "CompoundIDNum" ~ "1", 
                                 CompoundID == "_inhib$" & Level2 == "CompoundIDNum" ~ "2", 
@@ -275,6 +291,11 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
    if("Level3" %in% names(Changes) == FALSE){Changes$Level3 <- NA}
    if("Level4" %in% names(Changes) == FALSE){Changes$Level4 <- NA}
    if("Level5" %in% names(Changes) == FALSE){Changes$Level5 <- NA}
+   
+   if(any(is.na(Changes$Value[Changes$Detail == "PopSize"]))){
+      stop("There's something wrong with your input for either NumTrials or NumSubjTrial because we're getting a missing value for the total population for at least one of your simulations. You must supply a number for both NumTrials and NumSubjTrial", 
+           call. = FALSE)
+   }
    
    # FIXME Will need to do something to check for bad inputs. This won't work.
    # # Check for bad inputs. 
@@ -291,22 +312,22 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
    #         call. = FALSE)
    # }
    
-   # Setting the dose units as needed
-   Changes$Value[Changes$Detail == "Units_dose_sub"] <- 
-      switch(Units_dose_sub, 
-             "mg" = 1, 
-             "mg/kg" = 2)
-   
-   Changes$Value[Changes$Detail == "Units_dose_inhib"] <- 
-      switch(Units_dose_inhib, 
-             "mg" = 1, 
-             "mg/kg" = 2)
-   
-   # Setting the CYP3A4 ontogeny profile to the correct numbers
-   Changes$Value[Changes$Detail == "CYP3A4_ontogeny_profile"] <- 
-      switch(CYP3A4_ontogeny_profile, 
-             "1" = "0", 
-             "2" = "1")
+   # Dealing with parameters where the human-readable input value from the user
+   # needs to be coded to the correct value for the XML file.
+   Changes <- Changes %>% 
+      mutate(
+         # Setting the dose units as needed
+         Value = case_when(
+            Detail %in% c("Units_dose_sub", "Units_dose_inhib") & 
+               Value == "mg" ~ "1", 
+            Detail %in% c("Units_dose_sub", "Units_dose_inhib") & 
+               Value == "mg/kg" ~ "2", 
+            # Setting the CYP3A4 ontogeny profile to the correct numbers
+            Detail == "CYP3A4_ontogeny_profile" &
+               Value == "1" ~ "0", 
+            Detail == "CYP3A4_ontogeny_profile" &
+               Value == "2" ~ "1", 
+            TRUE ~ Value))
    
    # Grouping by new workspace
    Changes <- split(Changes, f = Changes$new_sim_workspace_files)
@@ -376,9 +397,11 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
       
       # Dealing w/all other changes
       for(j in 1:nrow(Changes[[i]])){
-         MyChanges <- Changes[[i]][j, ] %>% 
-            mutate(Level2 = ifelse(complete.cases(as.numeric(Level2)), 
-                                   as.numeric(Level2), Level2))
+         suppressWarnings(
+            MyChanges <- Changes[[i]][j, ] %>% 
+               mutate(Level2 = ifelse(complete.cases(as.numeric(Level2)), 
+                                      as.numeric(Level2), Level2))
+         )
          DeetLevels <- t(MyChanges[, paste0("Level", 1:5)])
          DeetLevels <- min(which(is.na(DeetLevels))) - 1
          

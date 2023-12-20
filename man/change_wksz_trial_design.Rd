@@ -3,7 +3,7 @@
 \name{change_wksz_trial_design}
 \alias{change_wksz_trial_design}
 \title{Change a limited set of trial-design parameters in Simcyp Simulator workspace
-files. UNDER CONSTRUCTION. USE WITH CAUTION.}
+files. UNDER CONSTRUCTION.}
 \usage{
 change_wksz_trial_design(
   sim_workspace_files = NA,
@@ -13,8 +13,8 @@ change_wksz_trial_design(
   NumTrials = "no change",
   NumSubjTrial = "no change",
   PercFemale = "no change",
-  AgeMin = "no change",
-  AgeMax = "no change",
+  Age_min = "no change",
+  Age_max = "no change",
   SimDuration = "no change",
   activate_inhibitor1 = "no change",
   Dose_sub = "no change",
@@ -30,8 +30,6 @@ change_wksz_trial_design(
   NumTimePts = "no change",
   ObsOverlayFile = "no change",
   UseObservedData = "no change",
-  FixedTrialDesign = "no change",
-  FixedTrialDesignFile = "no change",
   CYP3A4_ontogeny_profile = "no change"
 )
 }
@@ -62,20 +60,22 @@ trial design parameters to set. Acceptable column names are columns named
 \emph{exactly} like the subsequent argument names here and also must
 include the columns "sim_workspace_files" and "new_sim_workspace_files".}
 
-\item{NumTrials}{number of trials to use}
+\item{NumTrials}{number of trials to use. If you set this you MUST also set
+the number of subjects per trial.}
 
-\item{NumSubjTrial}{number of subjects per trial to use}
+\item{NumSubjTrial}{number of subjects per trial to use. If you set this you
+MUST also set the number of trials.}
 
 \item{PercFemale}{percent of subjects who are female}
 
-\item{AgeMin}{minimum age}
+\item{Age_min}{minimum age}
 
-\item{AgeMax}{maximum age}
+\item{Age_max}{maximum age}
 
 \item{SimDuration}{study duration in hours}
 
 \item{activate_inhibitor1}{TRUE or FALSE for whether to turn on inhibitor 1.
-(At this point, this function will only se parametrs for substrate or
+(At this point, this function will only use parameters for substrate or
 inhibitor 1.)}
 
 \item{Dose_sub}{dose of substrate to use (mg)}
@@ -113,11 +113,6 @@ the Simulator)}
 \item{UseObservedData}{Include the observed data in the results? TRUE or
 FALSE}
 
-\item{FixedTrialDesign}{Should this be a fixed-trial design simulation? TRUE
-or FALSE}
-
-\item{FixedTrialDesignFile}{File to use for a fixed-trial design.}
-
 \item{CYP3A4_ontogeny_profile}{CYP3A4 ontogeny profile to use? Options are
 "1" for profile 1 (default in the Simulator) and "2" for profile 2 (based
 on Upreti Wahlstrom 2016 J Clin Pharm).}
@@ -129,10 +124,13 @@ does not return anything in R but saves workspace files
 \code{change_wksz_trial_design} changes a few trial-design parameters such as
 the number of subjects, the percent female, the dose or dose interval, etc.
 It does \emph{not} change populations because there are simply too many
-parameters to change in an automatic faction like this. (At least, not at
-this point.) It also doesn't turn on or off a fixed trial design. This will
+parameters to change in an automatic fashion in R like this and also because
+the Simulator starting with V22 can change populations for you with its
+workflow function. It also doesn't turn on or off a fixed trial design
+because we just haven't figured out how to get that to work right. This will
 change \emph{all} the workspace files provided to have the \emph{same}
-trial-design parameters you list here. UNDER CONSTRUCTION.
+trial-design parameters you list here. USE WITH CAUTION. THIS PERMANENTLY
+CHANGES WORKSPACES.
 }
 \examples{
 # None yet
