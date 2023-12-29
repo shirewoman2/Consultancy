@@ -77,9 +77,6 @@ extractForestData <- function(sim_data_files = NA,
    }
    
    # Harmonizing PK parameter names
-   if("data.frame" %in% class(observed_PK)){
-      observed_PK$PKparameter <- harmonize_PK_names(observed_PK$PKparameter)
-   }
    PKparameters <- harmonize_PK_names(PKparameters)
    
    if(all(PKparameters %in% c("AUCinf_ratio_dose1", "AUCt_ratio_dose1", 
