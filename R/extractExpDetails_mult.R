@@ -116,7 +116,7 @@
 #'  
 extractExpDetails_mult <- function(sim_data_files = NA, 
                                    exp_details = "all", 
-                                   existing_exp_details = "none", 
+                                   existing_exp_details = NA, 
                                    overwrite = FALSE,
                                    annotate_output = FALSE,
                                    save_output = NA, 
@@ -158,6 +158,19 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                      " is/are not present, so we cannot extract any information about the simulation experimental details.\n"), 
               call. = FALSE)
       sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
+   }
+   
+   # Make it so that, if they supply NA, NULL, or "none" for
+   # existing_exp_details, all of those will work. Note to coders: It was REALLY
+   # HARD to get this to work with just the perfect magical combination of
+   # exists and suppressWarnings, etc.
+   Recode_existing_exp_details <- suppressWarnings(
+      try(exists(deparse(substitute(existing_exp_details))), silent = TRUE))
+   Recode_existing_exp_details <- suppressWarnings(
+      class(Recode_existing_exp_details) == "try-error")
+   
+   if(Recode_existing_exp_details){
+      existing_exp_details <- "none"
    }
    
    
