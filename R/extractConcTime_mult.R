@@ -266,7 +266,21 @@ extractConcTime_mult <- function(sim_data_files = NA,
       }
    }
    
-   # TO DO: Add option of extracting all possible tissues or all ADAM tissues.
+   # FIXME: Add option of extracting all possible tissues or all ADAM tissues.
+   
+   # Make it so that, if they supply NA, NULL, or "none" for ct_dataframe, all
+   # of those will work. Note to coders: It was REALLY HARD to get this to work
+   # with just the perfect magical combination of exists and suppressWarnings,
+   # etc.
+   Recode_ct_dataframe <- suppressWarnings(
+      try(exists(deparse(substitute(ct_dataframe))), silent = TRUE))
+   Recode_ct_dataframe <- suppressWarnings(
+      class(Recode_ct_dataframe) == "try-error")
+   
+   if(Recode_ct_dataframe){
+      ct_dataframe <- "none"
+   }
+   
    
    # Main body of function -----------------------------------------------
    
@@ -303,8 +317,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
       mutate(ID = paste(File, Tissue, CompoundID))
    
    # Checking for existing conc-time data
-   if("logical" %in% class(ct_dataframe) == FALSE &&
-      exists(substitute(ct_dataframe)) && 
+   if(exists(deparse(substitute(ct_dataframe))) && 
+      "logical" %in% class(ct_dataframe) == FALSE &&
       "data.frame" %in% class(ct_dataframe) && 
       nrow(ct_dataframe) > 0){
       
@@ -683,20 +697,43 @@ extractConcTime_mult <- function(sim_data_files = NA,
                   MultData[[ff]][[j]] %>%
                   mutate(File = ff)
                
-               # Need to handle ADAM data specially
+               # Need to handle ADAM and AdvBrainModel data specially
                ADAMtissue <- c("stomach", "duodenum", "jejunum I",
                                "jejunum II", "ileum I", "ileum II",
                                "ileum III", "ileum IV", "colon", "faeces", 
                                "gut tissue", "cumulative absorption", 
                                "cumulative fraction released",
                                "cumulative dissolution")
-               if(any(MultData[[ff]][[j]]$Tissue %in% ADAMtissue)){
+               ADAMsubsection <- c("undissolved compound", 
+                                   "dissolution rate of solid state", 
+                                   "free compound in lumen", 
+                                   "total compound in lumen", 
+                                   "Heff", 
+                                   "absorption rate", 
+                                   "unreleased compound in faeces", 
+                                   "dissolved compound", 
+                                   "luminal CLint", 
+                                   "cumulative fraction of compound absorbed", 
+                                   "cumulative fraction of compound dissolved", 
+                                   "enterocyte concentration", 
+                                   # Below are technically AdvBrainModel but
+                                   # using ADAMtissue b/c that object name is
+                                   # already set up. Note that this omits
+                                   # AdvBrainModel tissues that just have mass
+                                   # per volume units.
+                                   "Kp,uu,brain", 
+                                   "Kp,uu,ICF", 
+                                   "Kp,uu,ISF")
+               
+               if(any(MultData[[ff]][[j]]$Tissue %in% ADAMtissue) |
+                  any(MultData[[ff]][[j]]$subsection_ADAM %in% ADAMsubsection)){
                   CT_adam <- MultData[[ff]][[j]] %>% 
-                     filter(Tissue %in% ADAMtissue)
-                  
+                     filter(Tissue %in% ADAMtissue |
+                               subsection_ADAM %in% ADAMsubsection)
                   
                   CT_nonadam <- MultData[[ff]][[j]] %>% 
-                     filter(Tissue %in% ADAMtissue == FALSE)
+                     filter(!(Tissue %in% ADAMtissue |
+                                 subsection_ADAM %in% ADAMsubsection))
                   
                   if(nrow(CT_nonadam) > 0){
                      CT_nonadam <- CT_nonadam %>% 
