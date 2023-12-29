@@ -654,11 +654,12 @@ extractExpDetails <- function(sim_data_file,
             
             # Older versions of simulator do not have CV. Checking. 
             ReleaseCV <- Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "CV"))]
+            if(all(is.null(ReleaseCV))){ReleaseCV <- NA}
             
             ReleaseProfs[[i]] <- data.frame(
                Time = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Time"))], 
                Release_mean = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Release Mean"))], 
-               Release_CV = ifelse(is.null(ReleaseCV), NA, ReleaseCV)) %>% 
+               Release_CV = ReleaseCV) %>% 
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
                       File = sim_data_file, 
@@ -678,7 +679,7 @@ extractExpDetails <- function(sim_data_file,
       ### Checking on dissolution profiles ------------------------------------
       if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
          exists("InputTab", inherits = FALSE) &&
-         any(str_detect(unlist(c(InputTab[, ColLocations])), "Dissolution Mean"),
+         any(str_detect(unlist(c(InputTab[, ColLocations])), "Dissolution( Mean)? \\(\\%"),
              na.rm = TRUE)){
          
          DissoProfs <- list()
@@ -700,17 +701,12 @@ extractExpDetails <- function(sim_data_file,
             
             # Older versions of simulator do not have CV. Checking. 
             DissoCV <- Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "CV"))]
+            if(all(is.null(DissoCV))){DissoCV <- NA}
             
             DissoProfs[[i]] <- data.frame(
                Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
-               Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution( Mean)? \\(\\%"))])
-            
-            # This works better w/an if statement and then base R:
-            if(all(is.null(DissoCV)) == FALSE){
-               DissoProfs[[i]]$Dissolution_CV <- DissoCV
-            }
-            
-            DissoProfs[[i]] <- DissoProfs[[i]] %>% 
+               Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution( Mean)? \\(\\%"))], 
+               Dissolution_CV = DissoCV) %>% 
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
                       File = sim_data_file, 
