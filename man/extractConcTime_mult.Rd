@@ -126,7 +126,7 @@ plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
+released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET 
 SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive. Acceptable
 input is all tissues desired as a character vector, e.g., \code{tissues =
 c("plasma", "blood", "liver")} or, if you want all possible tissues and

@@ -5,7 +5,7 @@
 \alias{AllCompounds}
 \title{All possible compound IDs, suffixes, etc.}
 \format{
-A data.frame
+a data.frame
 }
 \usage{
 AllCompounds

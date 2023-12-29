@@ -553,14 +553,8 @@ ct_plot_overlay <- function(ct_dataframe,
    # Checking for more than one tissue or ADAM data type b/c there's only one y
    # axis and it should have only one concentration type.
    if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
-      stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:\n", 
+      stop(paste("This function can only deal with one type of concentration unit at a time,\nand the supplied data.frame contains more than one non-convertable concentration unit.\n(Supplying some data in ng/mL and other data in mg/L is fine;\nsupplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.)\nPlease supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:\n", 
                  deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
-           call. = FALSE)
-   }
-   
-   if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
-      stop(paste("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this:\n", 
-                 deparse(substitute(ct_dataframe)), "%>% select(subsection_ADAM) %>% unique()"),
            call. = FALSE)
    }
    
@@ -979,7 +973,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                      "Inhibitor", "Individual",
                                      "colorBy_column", "FC1", "FC2")), 
                sep = " ", remove = FALSE)
-         
+      
       sim_dataframe <- ct_dataframe
       
       obs_dataframe <- data.frame()
@@ -1447,6 +1441,11 @@ ct_plot_overlay <- function(ct_dataframe,
                        y_axis_limits_lin = y_axis_limits_lin, 
                        y_axis_limits_log = y_axis_limits_log, 
                        y_axis_interval = y_axis_interval)
+   
+   if(length(unique(sim_dataframe$subsection_ADAM)) > 1){
+      warning("You have more than one subtype of tissue in the column subsection_ADAM, which is fine but does make it challenging to come up with a universally workable y axis label. We'll supply a generic one, but we recommend setting it yourself with `y_axis_label`.\n", 
+              call. = FALSE)
+   }
    
    ObsConcUnits <- YStuff$ObsConcUnits
    ylab <- YStuff$ylab
