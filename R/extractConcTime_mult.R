@@ -122,16 +122,19 @@
 #'   "Tissues" in the simulator. All possible options:\describe{
 #'   \item{First-order absorption models}{"plasma", "blood", "unbound blood",
 #'   "unbound plasma", "additional organ", "adipose", "bone", "brain",
-#'   "feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung", "muscle",
+#'   "feto-placenta", "gut tissue", "heart", "kidney", "liver", "lung", "muscle",
 #'   "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
 #'   blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 #'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 #'   or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 #'   "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 #'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-#'   released", or "cumulative dissolution".}} Not case sensitive. Acceptable
+#'   released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET 
+#'   SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive. Acceptable
 #'   input is all tissues desired as a character vector, e.g., \code{tissues =
-#'   c("plasma", "blood", "liver")}.
+#'   c("plasma", "blood", "liver")} or, if you want all possible tissues and
+#'   you've got some time to kill, "all". That will make R check for all sorts
+#'   of possible permutations of tab names, so it does take a while.
 #' @param compoundsToExtract For which compound do you want to extract
 #'   concentration-time data? Options are: \itemize{\item{"all" (default) for
 #'   all the possible compounds in the simulation (substrate, metabolites,
@@ -266,16 +269,30 @@ extractConcTime_mult <- function(sim_data_files = NA,
       }
    }
    
-   # FIXME: Add option of extracting all possible tissues or all ADAM tissues.
+   # If they used the American spelling of feces, change to the British version
+   # for compatibility with simulator output
+   tissues <- sub("feces", "faeces", tissues)
+   
+   tissue_input <- tissues
+   if(all(tissue_input == "all")){
+      tissues <- unique(AllTissues$Tissue_input)
+   }
    
    # Make it so that, if they supply NA, NULL, or "none" for ct_dataframe, all
    # of those will work. Note to coders: It was REALLY HARD to get this to work
    # with just the perfect magical combination of exists and suppressWarnings,
    # etc.
+   
+   # If user supplied an unquoted object, this checks whether that object
+   # exists. However, if they supplied NA or NULL, this throws an error. 
    Recode_ct_dataframe <- suppressWarnings(
-      try(exists(deparse(substitute(ct_dataframe))), silent = TRUE))
-   Recode_ct_dataframe <- suppressWarnings(
-      class(Recode_ct_dataframe) == "try-error")
+      try(exists(deparse(substitute(ct_dataframe))) == FALSE, silent = TRUE))
+   
+   # If they got an error, then the class of Recode_X will be "try-error", and
+   # then we want Recode_X to be TRUE.
+   if(suppressWarnings("try-error" %in% class(Recode_ct_dataframe))){
+      Recode_ct_dataframe <- TRUE
+   }
    
    if(Recode_ct_dataframe){
       ct_dataframe <- "none"
@@ -673,19 +690,47 @@ extractConcTime_mult <- function(sim_data_files = NA,
                               "systemic", "tissue")
          
          if(TissueType == "tissue"){
-            # If the tissue type is a solid tissue, then any
-            # compound concentrations available will be on that
-            # sheet and that requires only one iteration of the
-            # loop.
+            # If the tissue type is a solid tissue except for feces, then any
+            # compound concentrations available will be on that sheet and that
+            # requires only one iteration of the loop. Feces are special and
+            # there's one tab for substrate and one for inhibitor 1. Because why
+            # not?
             
-            MultData[[ff]][[j]] <- extractConcTime(
-               sim_data_file = ff,
-               obs_data_file = NA, # will add this later
-               compoundToExtract = compoundsToExtract_n,
-               tissue = j,
-               returnAggregateOrIndiv = returnAggregateOrIndiv, 
-               fromMultFunction = TRUE, 
-               existing_exp_details = existing_exp_details)
+            if(j == "faeces"){
+               if("substrate" %in% compoundsToExtract_n){
+                  MultData[[ff]][[j]][["substrate"]] <- extractConcTime(
+                     sim_data_file = ff,
+                     obs_data_file = NA, # will add this later
+                     compoundToExtract = "substrate",
+                     tissue = j,
+                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                     fromMultFunction = TRUE, 
+                     existing_exp_details = existing_exp_details)
+               }
+               
+               if("inhibitor 1" %in% compoundsToExtract_n){
+                  MultData[[ff]][[j]][["inhibitor 1"]] <- extractConcTime(
+                     sim_data_file = ff,
+                     obs_data_file = NA, # will add this later
+                     compoundToExtract = "inhibitor 1",
+                     tissue = j,
+                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                     fromMultFunction = TRUE, 
+                     existing_exp_details = existing_exp_details)
+               }
+               
+               MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
+               
+            } else {
+               MultData[[ff]][[j]] <- extractConcTime(
+                  sim_data_file = ff,
+                  obs_data_file = NA, # will add this later
+                  compoundToExtract = compoundsToExtract_n,
+                  tissue = j,
+                  returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                  fromMultFunction = TRUE, 
+                  existing_exp_details = existing_exp_details)
+            }
             
             # When the particular combination of compound and tissue is not
             # available in that file, extractConcTime will return an empty
