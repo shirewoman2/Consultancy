@@ -164,10 +164,18 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # existing_exp_details, all of those will work. Note to coders: It was REALLY
    # HARD to get this to work with just the perfect magical combination of
    # exists and suppressWarnings, etc.
+   
+   
+   # If user supplied an unquoted object, this checks whether that object
+   # exists. However, if they supplied NA or NULL, this throws an error. 
    Recode_existing_exp_details <- suppressWarnings(
-      try(exists(deparse(substitute(existing_exp_details))), silent = TRUE))
-   Recode_existing_exp_details <- suppressWarnings(
-      class(Recode_existing_exp_details) == "try-error")
+      try(exists(deparse(substitute(existing_exp_details))) == FALSE, silent = TRUE))
+   
+   # If they got an error, then the class of Recode_X will be "try-error", and
+   # then we want Recode_X to be TRUE.
+   if(suppressWarnings("try-error" %in% class(Recode_existing_exp_details))){
+      Recode_existing_exp_details <- TRUE
+   }
    
    if(Recode_existing_exp_details){
       existing_exp_details <- "none"
