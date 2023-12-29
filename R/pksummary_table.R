@@ -548,12 +548,7 @@ pksummary_table <- function(sim_data_file = NA,
    # At this point, observed_PK, if it exists, should be a data.frame b/c it
    # either was a data.frame at the outset, it has been created by reading an
    # Excel or csv file for observed data, or it came from a report input form.
-   
-   # Harmonizing PK parameter names
-   if("data.frame" %in% class(observed_PK)){
-      observed_PK$PKparameter <- harmonize_PK_names(observed_PK$PKparameter)
-   }
-   PKparameters <- harmonize_PK_names(PKparameters)
+   # It could be in either wide or long format.
    
    # Checking on whether user has requested a specific sheet for PK parameters
    # b/c then we don't know which dose number things were. If they did, then we
@@ -589,6 +584,9 @@ pksummary_table <- function(sim_data_file = NA,
    if("data.frame" %in% class(observed_PK)){
       # Reshape to wide format if necessary
       if(all(c("PKparameter", "Value") %in% names(observed_PK))){
+         
+         # Harmonizing PK parameter names
+         observed_PK$PKparameter <- harmonize_PK_names(observed_PK$PKparameter)
          
          # If user specified a sheet and/or didn't specify dose number in the PK
          # parameter name for obs PK, we don't know what dose the PK pertain to and
@@ -637,6 +635,9 @@ pksummary_table <- function(sim_data_file = NA,
                pivot_wider(names_from = PKparameter, 
                            values_from = Value)   
          }
+      } else {
+         # Harmonizing PK parameter names
+         names(observed_PK) <- harmonize_PK_names(names(observed_PK))
       }
       
       if(nrow(observed_PK) < 1){
