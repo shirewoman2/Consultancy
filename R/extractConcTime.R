@@ -197,7 +197,7 @@ extractConcTime <- function(sim_data_file,
    # If they used the American spelling of feces, change to the British version
    # for compatibility with simulator output
    tissue <- sub("feces", "faeces", tissue)
-
+   
    if(length(tissue) != 1 & fromMultFunction == FALSE){
       stop("You must enter one and only one option for 'tissue'. (Default is plasma.)",
            call. = FALSE)
@@ -218,7 +218,7 @@ extractConcTime <- function(sim_data_file,
       warning(paste("The file", sim_data_file,
                     "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
               call. = FALSE)
-      return(list())
+      return(data.frame())
    }
    
    
@@ -261,8 +261,11 @@ extractConcTime <- function(sim_data_file,
                         "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
                         "inhibitor 2 metabolite")
    
-   ADCCompoundIDs <- c("total protein", "conjugated protein", 
-                       "released payload")
+   ADCCompoundIDs <- c(
+      # "total protein"
+      # , "conjugated protein"
+      # , "released payload"
+   )
    
    if(any(compoundToExtract %in% c(MainCompoundIDs, ADCCompoundIDs) == FALSE)){
       stop("The compound for which you requested concentration-time data was not one of the possible options. For 'compoundToExtract', please enter 'substrate', 'primary metabolite 1', 'secondary metabolite', 'inhibitor 1', 'inhibitor 2', or 'inhibitor 1 metabolite'.",
@@ -373,8 +376,8 @@ extractConcTime <- function(sim_data_file,
                               c("substrate", "inhibitor 1",
                                 "inhibitor 2", "inhibitor 1 metabolite"),
                            "substrate", PossCompounds)) %>%
-      bind_rows(data.frame(PossCompounds = ADCCompoundIDs, 
-                           Type = "ADC")) %>% 
+      # bind_rows(data.frame(PossCompounds = ADCCompoundIDs, 
+      #                      Type = "ADC")) %>% 
       filter(PossCompounds %in% compoundToExtract) %>% pull(Type) %>% 
       unique()
    
@@ -388,8 +391,22 @@ extractConcTime <- function(sim_data_file,
       }
       
       Sheet <- switch(compoundToExtract, 
-                      "substrate" = "Conc Profiles", 
-                      "primary metabolite 1" = "Sub Pri Metab Conc Profiles")
+                      "substrate" = 
+                         switch(tissue, 
+                                "plasma" = "Conc Profiles", 
+                                "liver" = "Liver Conc Profiles", 
+                                "portal vein" = "PV Conc Profiles"), 
+                      "primary metabolite 1" =
+                         switch(tissue, 
+                                "plasma" = "Sub Pri Metab Conc Profiles"))
+      
+      if(is.null(Sheet)){
+         warning("The combination of compound ID and tissue you requested is not availble for Simcyp Discovery files. Please contact the R Working Group if you think it should be.\n", 
+                 call. = FALSE)
+         
+         return(data.frame())
+      }
+      
    } else if(TissueType == "systemic"){
       
       # Only looking for only sheets with conc-time data and not AUC, etc.
@@ -1931,13 +1948,15 @@ extractConcTime <- function(sim_data_file,
                if("individual" %in% returnAggregateOrIndiv){
                   sim_data_ind[[cmpd]] <-
                      match_units(DF_to_adjust = sim_data_ind[[cmpd]],
-                                 goodunits = obs_data)
+                                 goodunits = obs_data, 
+                                 MW = Deets[paste0("MW", AllCompounds$Suffix[AllCompounds$CompoundID == cmpd])])
                }
                
                if("aggregate" %in% returnAggregateOrIndiv){
                   sim_data_mean[[cmpd]] <-
                      match_units(DF_to_adjust = sim_data_mean[[cmpd]],
-                                 goodunits = obs_data)
+                                 goodunits = obs_data, 
+                                 MW = Deets[paste0("MW", AllCompounds$Suffix[AllCompounds$CompoundID == cmpd])])
                }
             }
          }

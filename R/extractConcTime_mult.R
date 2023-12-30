@@ -244,8 +244,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
                         "inhibitor 2 metabolite")
    
-   ADCCompoundIDs <- c("total protein", "conjugated protein", 
-                       "released payload")
+   ADCCompoundIDs <- c(
+      # "total protein"
+      # , "conjugated protein"
+      # , "released payload"
+   )
    
    PossCmpd <- c(MainCompoundIDs, ADCCompoundIDs, "all")
    
@@ -649,14 +652,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
                          "secondary metabolite" = ifelse("SecondaryMetabolite" %in% names(Deets), 
                                                          Deets$SecondaryMetabolite, NA))
       
-      # NB: Asking whether it's an ADCSimulation or an ADCSimulation_sub for
-      # back compatibility w/package versions < 2.6.0
-      if(any(Deets$ADCSimulation, Deets$ADCSimulation_sub, na.rm = TRUE)){
-         CompoundCheck <- c(CompoundCheck, 
-                            "conjugated protein" = "conjugated protein", 
-                            "total protein" = "total protein", 
-                            "released payload" = "released payload")
-      }
+      # # NB: Asking whether it's an ADCSimulation or an ADCSimulation_sub for
+      # # back compatibility w/package versions < 2.6.0
+      # if(any(Deets$ADCSimulation, Deets$ADCSimulation_sub, na.rm = TRUE)){
+      #    CompoundCheck <- c(CompoundCheck, 
+      #                       "conjugated protein" = "conjugated protein", 
+      #                       "total protein" = "total protein", 
+      #                       "released payload" = "released payload")
+      # }
       
       if(compoundsToExtract_orig[1] == "all"){
          compoundsToExtract_n <- names(CompoundCheck)[complete.cases(CompoundCheck)]
@@ -783,8 +786,15 @@ extractConcTime_mult <- function(sim_data_files = NA,
                   if(nrow(CT_nonadam) > 0){
                      CT_nonadam <- CT_nonadam %>% 
                         match_units(DF_to_adjust = CT_nonadam,
-                                    goodunits = list("Conc_units" = conc_units_to_use,
-                                                     "Time_units" = time_units_to_use))
+                                    conc_units = conc_units_to_use,
+                                    time_units = time_units_to_use, 
+                                    MW = c("substrate" = Deets$MW_sub, 
+                                           "inhibitor 1" = Deets$MW_inhib,
+                                           "primary metabolite 1" = Deets$MW_met1, 
+                                           "primary metabolite 2" = Deets$MW_met2, 
+                                           "inhibitor 2" = Deets$MW_inhib2, 
+                                           "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                                           "secondary metabolite" = Deets$MW_secmet))
                   }
                   
                   MultData[[ff]][[j]] <- bind_rows(CT_adam, CT_nonadam)
@@ -793,8 +803,15 @@ extractConcTime_mult <- function(sim_data_files = NA,
                   
                   MultData[[ff]][[j]] <-
                      match_units(DF_to_adjust = MultData[[ff]][[j]],
-                                 goodunits = list("Conc_units" = conc_units_to_use,
-                                                  "Time_units" = time_units_to_use))
+                                 conc_units = conc_units_to_use,
+                                 time_units = time_units_to_use, 
+                                 MW = c("substrate" = Deets$MW_sub, 
+                                        "inhibitor 1" = Deets$MW_inhib,
+                                        "primary metabolite 1" = Deets$MW_met1, 
+                                        "primary metabolite 2" = Deets$MW_met2, 
+                                        "inhibitor 2" = Deets$MW_inhib2, 
+                                        "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                                        "secondary metabolite" = Deets$MW_secmet))
                }
             }
             
@@ -855,36 +872,33 @@ extractConcTime_mult <- function(sim_data_files = NA,
                            dimnames = list(NULL, MissingCols))))
                   }
                   
-                  MolWts <- c("substrate" = Deets$MW_sub, 
-                              "primary metabolite 1" = Deets$MW_met1, 
-                              "primary metabolite 2" = Deets$MW_met2,
-                              "secondary metabolite" = Deets$MW_secmet,
-                              "inhibitor 1"= Deets$MW_inhib,
-                              "inhibitor 2" = Deets$MW_inhib2,
-                              "inhibitor 1 metabolite" = Deets$MW_inhib1met)
-                  
-                  
                   MultData[[ff]][[j]][[k]] <-
                      match_units(DF_to_adjust = MultData[[ff]][[j]][[k]],
-                                 goodunits = list("Conc_units" = conc_units_to_use,
-                                                  "Time_units" = time_units_to_use), 
-                                 MW = MolWts[complete.cases(MolWts)])
-               }
+                                 conc_units = conc_units_to_use,
+                                 time_units = time_units_to_use,
+                                 MW = c("substrate" = Deets$MW_sub, 
+                                        "inhibitor 1" = Deets$MW_inhib,
+                                        "primary metabolite 1" = Deets$MW_met1, 
+                                        "primary metabolite 2" = Deets$MW_met2, 
+                                        "inhibitor 2" = Deets$MW_inhib2, 
+                                        "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                                        "secondary metabolite" = Deets$MW_secmet))
+            }
                
                rm(compoundsToExtract_k)
-            }
+         }
             
             MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
             
-         }
+      }
          
-      }  
+   }  
       
       MultData[[ff]] <- bind_rows(MultData[[ff]])
       
       # MUST remove Deets or you can get the wrong info for each file!!!
       rm(Deets, CompoundCheck, compoundsToExtract_n) 
-   }
+}
    
    MultData <- bind_rows(MultData)
    if(nrow(MultData) > 0 & any(complete.cases(obs_to_sim_assignment))){
@@ -960,6 +974,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    return(ct_dataframe)
    
-}
+   }
 
 
