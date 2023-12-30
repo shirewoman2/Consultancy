@@ -639,6 +639,7 @@ extractConcTime <- function(sim_data_file,
       # I haven't found an example of this failing. The order that compounds are
       # listed -- whether by their actual names or by their coded names -- seems
       # to be the same always.
+      
       CmpdMatches <- data.frame(NamesInExcel = CmpdMatches1, 
                                 CompoundCode = CmpdMatches2) %>% 
          mutate(CompoundName = sub("( )?\\+( )?[Ii]nteraction", "", NamesInExcel), 
@@ -650,6 +651,14 @@ extractConcTime <- function(sim_data_file,
                                                          "secondary metabolite"), 
                                     AllCompoundsInv[str_detect(AllCompoundsInv, "inhibitor")][CompoundName], 
                                     CompoundID))
+      
+      # For V21 (and maybe others), when there's only a substrate present and
+      # maybe when it's single dose, they don't list the compound name, only,
+      # e.g., "CPlasma".
+      if(all(is.na(CmpdMatches$CompoundID)) & 
+         length(AllCompoundsPresent) == 1){
+         CmpdMatches$CompoundID <- AllCompoundsID
+      }
       
       rm(CmpdMatches1, CmpdMatches2, NApos, StartRow, EndRow, AllCompoundsInv)
       
