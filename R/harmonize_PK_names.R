@@ -27,6 +27,10 @@ harmonize_PK_names <- function(PKparameters){
                                   Rev, Orig)) %>% 
       pull(NoCaseProbs)
    
+   # If the user switched the order of "ratio" and "last" or "dose1", fix that.
+   PKparameters <- sub("dose1_ratio", "ratio_dose1", PKparameters)
+   PKparameters <- sub("last_ratio", "ratio_last", PKparameters)
+   
    # other miscellaneous errors
    PKparameters <- sub("cl(_)?hep", "CL_hep", PKparameters)
    PKparameters <- sub("cl(_)?po", "CL_po", PKparameters)
