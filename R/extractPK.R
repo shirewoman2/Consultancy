@@ -91,7 +91,7 @@
 #'
 #' 
 extractPK <- function(sim_data_file,
-                      PKparameters = "AUC tab",
+                      PKparameters = NA,
                       sheet = NA,
                       compoundToExtract = "substrate",
                       tissue = "plasma",
@@ -106,6 +106,23 @@ extractPK <- function(sim_data_file,
    if("package:tidyverse" %in% search() == FALSE){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
+   
+   # Checking on any user-specified sheets b/c that also implies which PK
+   # parameters to use. 
+   if(any(complete.cases(sheet))){
+      if(is.null(names(sheet)) & all(is.na(PKparameters))){
+         # Get all possible PK parameters from user-defined sheet if they have
+         # not specified PK parameters they want.
+         PKparameters <- "all" 
+      } else if(is.null(names(sheet)) == FALSE & all(is.na(PKparameters))){
+         PKSheets <- data.frame(Sheet = sheet, 
+                                PKparameter = names(sheet))
+         PKparameters <- PKSheets$PKparameter
+      } else if(is.null(names(sheet)) == FALSE & any(complete.cases(PKparameters))){
+         stop("You have specified some PK parameters with the argument `PKparameters` and some with the argument `sheet`, and we're not sure which set we should use. Please only use one or the other.\n", 
+              call. = FALSE)
+      }
+   } 
    
    # Harmonizing PK parameter names
    PKparameters <- harmonize_PK_names(PKparameters)
@@ -127,7 +144,8 @@ extractPK <- function(sim_data_file,
       return(list())
    }
    
-   if(complete.cases(sheet) & sheet %in% SheetNames == FALSE){
+   if(any(complete.cases(sheet)) &
+      all(sheet[complete.cases(sheet)] %in% SheetNames) == FALSE){
       warning(paste0("The sheet requested could not be found in the Excel file ",
                      sim_data_file, "."),
               call. = FALSE)
@@ -198,14 +216,6 @@ extractPK <- function(sim_data_file,
       }
    }
    
-   # extractExpDetails will check whether the Excel file provided was, in
-   # fact, a Simulator output file and return a list of length 0 if not.
-   # Checking for that here.
-   if(length(Deets) == 0){
-      # warning(paste0("The file ", sim_data_file, 
-      #                " is not a Simulator output file and will be skipped."))
-      return(list())
-   }
    
    ## Figuring out correct tab names ---------------------------------------
    
@@ -432,49 +442,31 @@ extractPK <- function(sim_data_file,
    # don't waste time reading more sheets than necessary
    PKparameters_orig <- PKparameters
    
-   # If the user supplied a sheet, temporarily set PKparameters to "all" to get
-   # all the possible parameters from that sheet b/c they're named differently
-   # since we don't know what dose that would be.
-   if(complete.cases(sheet)){
-      PKparameters <- "all"
-      # Checking formatting of the user-defined sheet b/c it's sometimes set up
-      # the same way as the AUC tab and thus requires special fiddling.
-      XL <- suppressMessages(
-         readxl::read_excel(path = sim_data_file, sheet = sheet,
-                            col_names = FALSE))
-      if(which(XL$...1 == "Index")[1] == 3){
-         # This is when the formatting is like the AUC tab. Instead of rewriting
-         # the user-specified sheet section, I'm hacking this to make the
-         # function think that this should be the AUC tab.
-         UserAUC <- TRUE # A handle for checking whether to use AUCX instead of the regular AUC tab.
-         
-      } else {
-         UserAUC <- FALSE
-      }
-      
-   } else {
-      UserAUC <- FALSE
-   }
+   ParamAUC <- intersect(AllPKParameters %>% filter(Sheet == "AUC") %>% 
+                            pull(PKparameter) %>% unique(), 
+                         PKparameters)
    
-   ParamAUC <- AllPKParameters %>% filter(Sheet == "AUC") %>% 
-      pull(PKparameter) %>% unique()
+   ParamAbsorption <- intersect(AllPKParameters %>% filter(Sheet %in% c("Absorption",
+                                                                        "Overall Fa Fg")) %>% 
+                                   pull(PKparameter) %>% unique(), 
+                                PKparameters)
    
-   ParamAbsorption <- AllPKParameters %>% filter(Sheet %in% c("Absorption",
-                                                              "Overall Fa Fg")) %>% 
-      pull(PKparameter) %>% unique()
+   ParamRegADAM <- intersect(AllPKParameters %>% filter(Sheet %in% c("Regional ADAM Fractions (Sub)")) %>% 
+                                pull(PKparameter) %>% unique(), 
+                             PKparameters)
    
-   ParamRegADAM <- AllPKParameters %>% filter(Sheet %in% c("Regional ADAM Fractions (Sub)")) %>% 
-      pull(PKparameter) %>% unique()
+   ParamAUC0 <- intersect(AllPKParameters %>% filter(Sheet == "AUC0") %>% 
+                             pull(PKparameter) %>% unique(), 
+                          PKparameters)
    
-   ParamAUC0 <- AllPKParameters %>% filter(Sheet == "AUC0") %>% 
-      pull(PKparameter) %>% unique()
+   ParamAUClast <- intersect(AllPKParameters %>% 
+                                filter(Sheet == "AUCX" & !str_detect(PKparameter, "_dose1")) %>% 
+                                pull(PKparameter) %>% unique(), 
+                             PKparameters)
    
-   ParamAUClast <- AllPKParameters %>% 
-      filter(Sheet == "AUCX" & !str_detect(PKparameter, "_dose1")) %>% 
-      pull(PKparameter) %>% unique()
-   
-   ParamCLTSS <- AllPKParameters %>% filter(Sheet == "Clearance Trials SS") %>% 
-      pull(PKparameter) %>% unique()
+   ParamCLTSS <- intersect(AllPKParameters %>% filter(Sheet == "Clearance Trials SS") %>% 
+                              pull(PKparameter) %>% unique(), 
+                           PKparameters)
    
    PKparameters <- 
       switch(tolower(PKparameters[1]), 
@@ -491,15 +483,19 @@ extractPK <- function(sim_data_file,
       PKparameters <- PKparameters_orig
    }
    
-   # Allowing for flexibility in case: Get the lower-case version of whatever
-   # PKparameters user specified and match them to the correct PKparameters in
-   # AllPKParameters.
-   PKparameters <- AllPKParameters %>%
-      mutate(PKparameter_lower = tolower(PKparameter)) %>% 
-      filter(PKparameter_lower %in% tolower(PKparameters)) %>% 
-      pull(PKparameter) %>% unique()
+   ParamUserDef <- intersect(setdiff(PKparameters, AllPKParameters$PKparameter), 
+                             sub("_dose1|_last", "", AllPKParameters$PKparameter))
    
-   MissingPKParam <- setdiff(PKparameters, AllPKParameters$PKparameter)
+   PKSheets <- PKSheets %>% 
+      filter(PKparameter %in% ParamUserDef & 
+                complete.cases(Sheet) & 
+                Sheet %in% {SheetNames})
+   
+   ParamUserDef <- PKSheets$PKparameter
+   
+   MissingPKParam <- setdiff(PKparameters,
+                             c(AllPKParameters$PKparameter, 
+                               sub("_dose1|_last", "", AllPKParameters$PKparameter)))
    if(length(MissingPKParam) > 0){
       warning(paste0("The parameter(s) ", str_comma(MissingPKParam),
                      " is/are not among the possible PK parameters and will not be extracted. Please see data(PKParameterDefinitions) for all possible parameters."),
@@ -558,7 +554,7 @@ extractPK <- function(sim_data_file,
         complete.cases(Deets$DoseInt_inhib2) &&
         Deets$DoseInt_inhib2 == "custom dosing")) &
       
-      any(str_detect(PKparameters, "_last")) & is.na(sheet)){
+      any(str_detect(PKparameters, "_last")) & all(is.na(sheet))){
       warning(paste0("The file `",
                      sim_data_file,
                      "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.\nWe cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet`."), 
@@ -603,14 +599,6 @@ extractPK <- function(sim_data_file,
       return(list())
    }
    
-   # For the special cases when the user specified a sheet and did not leave
-   # PKparameters as NA or as the default "AUC tab", then let's only return the
-   # parameters that they asked for. 
-   if(complete.cases(sheet) & complete.cases(PKparameters_orig[1]) &&
-      any(PKparameters_orig %in% c("all", "AUC tab")) == FALSE){
-      PKparameters <- intersect(PKparameters, PKparameters_orig)
-   }
-   
    Out_ind <- list()
    Out_agg <- list()
    DataCheck <- data.frame(PKparam = as.character(NA),
@@ -638,8 +626,7 @@ extractPK <- function(sim_data_file,
    # c) They requested a specific sheet for pulling the PK parameters and that
    # sheet was formatted like the AUC tab.
    
-   if((length(Tab_AUC) > 0 && complete.cases(Tab_AUC)) &
-      (is.na(sheet) | UserAUC == TRUE)){
+   if((length(Tab_AUC) > 0 && complete.cases(Tab_AUC))){
       
       PKparameters_AUC <- intersect(PKparameters, ParamAUC)
       
@@ -923,35 +910,15 @@ extractPK <- function(sim_data_file,
    }
    
    # Pulling dose 1 data NOT present on AUC tab ------------------------------
-   PKparameters_AUC0 <- intersect(PKparameters, ParamAUC0)
    
    # Some PK parameters show up on multiple sheets. No need to pull
    # those here if they've already been pulled from another sheet.
-   PKparameters_AUC0 <- setdiff(PKparameters_AUC0, names(Out_agg))
-   
-   if(complete.cases(sheet)){
-      # How do you set something to have length 0? Hacking it for now.
-      PKparameters_AUC0 <- intersect("A", "B")
-   }
+   PKparameters_AUC0 <- setdiff(ParamAUC0, names(Out_agg))
    
    if(length(PKparameters_AUC0) > 0 & complete.cases(Tab_first) &
       (any(PKparameters_orig %in% c("AUC tab", "Absorption tab")) == FALSE |
        (any(PKparameters_orig == "AUC tab") & "AUC" %in% SheetNames == FALSE) |
        (any(PKparameters_orig == "AUC tab") & compoundToExtract != "substrate"))){
-      # Error catching
-      # if(any(str_detect(SheetNames, "AUC0(_CI)?\\(Sub\\)\\(CPlasma\\)|Int AUC 1st\\(Sub\\)\\(CPlasma\\)")) == FALSE){
-      #     # IMPORTANT: The tab labelled "AUCt0(blah blah blah)" (note the "t")
-      #     # is actually NOT for the 1st dose but for the 1st user-defined
-      #     # interval! Do NOT use that tab unless/until we do something further
-      #     # to check which dosing interval the data are for, e.g., read the
-      #     # top line that says "something something integrated from time A to
-      #     # time B".
-      #     
-      #     warning(paste0("A sheet with a name like 'AUC0(Sub)(CPlasma)' or 'Int AUC 1st(Sub)(CPlasma)' must be present in the Excel simulated data file to extract the PK parameters ",
-      #                    sub("and", "or", str_comma(PKparameters_AUC0)),
-      #                    ". None of these parameters can be extracted."),
-      #             call. = FALSE)
-      # } else {
       
       Out_AUC0 <- extractAUCXtab(PKparameters = PKparameters_AUC0, 
                                  PKparameters_orig = PKparameters_orig,
@@ -975,27 +942,13 @@ extractPK <- function(sim_data_file,
    
    
    # Pulling last-dose data NOT present on AUC tab ------------------------------
-   PKparameters_AUClast <- intersect(PKparameters, ParamAUClast)
    
    # Some PK parameters show up on multiple sheets. No need to pull
    # those here if they've already been pulled from another sheet.
-   PKparameters_AUClast <- setdiff(PKparameters_AUClast, names(Out_agg))
-   
-   if(complete.cases(sheet)){
-      # How do you set something to have length 0? Hacking it for now.
-      PKparameters_AUClast <- intersect("A", "B")
-   }
+   PKparameters_AUClast <- setdiff(ParamAUClast, names(Out_agg))
    
    if(length(PKparameters_AUClast) > 0 && complete.cases(Tab_last) &
       any(PKparameters_orig %in% c("Regional ADAM", "Absorption tab")) == FALSE){
-      
-      # # Error catching
-      # if(length(Tab_last) == 0 | is.na(Tab_last)){
-      #     warning(paste0("The sheet 'AUCX(Sub)(CPlasma)', where 'X' is the tab for the last dose administered and is not dose 1, must be present in the Excel simulated data file to extract the PK parameters ",
-      #                    str_c(PKparameters_AUClast, collapse = ", "),
-      #                    ". None of these parameters can be extracted."),
-      #             call. = FALSE)
-      # } else {
       
       Out_AUClast <- extractAUCXtab(PKparameters = PKparameters_AUClast, 
                                     PKparameters_orig = PKparameters_orig,
@@ -1017,15 +970,11 @@ extractPK <- function(sim_data_file,
    }
    
    # Pulling parameters from a user-specified sheet --------------------------
-   if(complete.cases(sheet) & UserAUC == FALSE && 
-      sheet %in% SheetNames){
+   if(length(ParamUserDef) > 0){
       
-      # Not specifying which dose these parameters are for b/c we don't know.
-      # Only pulling whatever AUC, Cmax, etc. are available.
-      PKparameters <- unique(sub("_dose1|_last", "", PKparameters))
       # Some parameters are not going to be present, so removing those. 
-      PKparameters <- PKparameters[
-         !PKparameters %in% c("fa_sub", "fa_inhib",
+      ParamUserDef <- ParamUserDef[
+         !ParamUserDef %in% c("fa_sub", "fa_inhib",
                               "ka_sub", "ka_inhib",
                               "tlag_sub", "tlag_inhib",
                               "CLinf", "CLinf_withInhib",
@@ -1033,33 +982,31 @@ extractPK <- function(sim_data_file,
                               "F_sub", "F_inhib", "fg_sub", "fg_inhib",
                               "fh_sub", "fh_inhib")]
       
-      Out_AUCX <- extractAUCXtab(PKparameters = PKparameters, 
-                                 PKparameters_orig = PKparameters_orig,
-                                 sim_data_file = sim_data_file,
-                                 Sheet = sheet, 
-                                 PKset = "AUCX",
-                                 UserSpecified = TRUE,
-                                 Deets = Deets, 
-                                 DataCheck = DataCheck,
-                                 includeTrialInfo = includeTrialInfo)
-      
-      DataCheck <- DataCheck %>% bind_rows(Out_AUCX$DataCheck)
-      Out_agg <- c(Out_agg, Out_AUCX$Out_agg)
-      Out_ind <- c(Out_ind, Out_AUCX$Out_ind)
-      
+      for(sh in unique(PKSheets$Sheet)){
+         
+         Out_AUCX <- extractAUCXtab(PKparameters = PKSheets$PKparameter[PKSheets$Sheet == sh], 
+                                    PKparameters_orig = PKparameters_orig,
+                                    sim_data_file = sim_data_file,
+                                    Sheet = sh, 
+                                    PKset = "AUCX",
+                                    UserSpecified = TRUE,
+                                    Deets = Deets, 
+                                    DataCheck = DataCheck,
+                                    includeTrialInfo = includeTrialInfo)
+         
+         DataCheck <- DataCheck %>% bind_rows(Out_AUCX$DataCheck)
+         Out_agg <- c(Out_agg, Out_AUCX$Out_agg)
+         Out_ind <- c(Out_ind, Out_AUCX$Out_ind)
+         
+         rm(Out_AUCX)
+      }
    }
    
    # Pulling data from the "Absorption" sheet -----------------------------------
-   PKparameters_Abs <- intersect(PKparameters, ParamAbsorption)
    
    # Some PK parameters show up on multiple sheets. No need to pull
    # those here if they've already been pulled from another sheet.
-   PKparameters_Abs <- setdiff(PKparameters_Abs, names(Out_agg))
-   
-   if(complete.cases(sheet)){
-      # How do you set something to have length 0? Hacking it for now.
-      PKparameters_Abs <- intersect("A", "B")
-   }
+   PKparameters_Abs <- setdiff(ParamAbsorption, names(Out_agg))
    
    if(length(PKparameters_Abs) > 0 &
       any(PKparameters_orig %in% c("AUC tab")) == FALSE){
@@ -1313,16 +1260,10 @@ extractPK <- function(sim_data_file,
    }
    
    # Pulling data from the "Clearance Trials SS" sheet ------------------------------------------
-   PKparameters_CLTSS <- intersect(PKparameters, ParamCLTSS)
    
    # Some PK parameters show up on multiple sheets. No need to pull
    # those here if they've already been pulled from another sheet.
-   PKparameters_CLTSS <- setdiff(PKparameters_CLTSS, names(Out_agg))
-   
-   if(complete.cases(sheet)){
-      # How do you set something to have length 0? Hacking it for now.
-      PKparameters_CLTSS <- intersect("A", "B")
-   }
+   PKparameters_CLTSS <- setdiff(ParamCLTSS, names(Out_agg))
    
    if(length(PKparameters_CLTSS) > 0 &
       any(PKparameters_orig %in% c("AUC tab", "Absorption tab")) == FALSE){
@@ -1511,16 +1452,10 @@ extractPK <- function(sim_data_file,
    }
    
    # Pulling data from RegADAM tab -------------------------
-   PKparameters_RegADAM <- intersect(PKparameters, ParamRegADAM)
    
    # Some PK parameters show up on multiple sheets. No need to pull
    # those here if they've already been pulled from another sheet.
-   PKparameters_RegADAM <- setdiff(PKparameters_RegADAM, names(Out_agg))
-   
-   if(complete.cases(sheet)){
-      # How do you set something to have length 0? Hacking it for now.
-      PKparameters_RegADAM <- intersect("A", "B")
-   }
+   PKparameters_RegADAM <- setdiff(ParamRegADAM, names(Out_agg))
    
    if(length(PKparameters_RegADAM) > 0){
       # Error catching
