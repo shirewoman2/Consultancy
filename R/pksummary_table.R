@@ -473,6 +473,7 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Harmonizing PK parameter syntax
    PKparameters <- harmonize_PK_names(PKparameters)
+   PKparameters_orig <- PKparameters
    
    # Main body of function --------------------------------------------------
    
@@ -581,169 +582,136 @@ pksummary_table <- function(sim_data_file = NA,
       }
    }
    
+   # Cleaning up and harmonizing observed data
    if("data.frame" %in% class(observed_PK)){
-      # Reshape to wide format if necessary
-      if(all(c("PKparameter", "Value") %in% names(observed_PK))){
+      # Convert to long format as needed
+      if(any(AllPKParameters$PKparameter %in% names(observed_PK))){
          
-         # Harmonizing PK parameter names
-         observed_PK$PKparameter <- harmonize_PK_names(observed_PK$PKparameter)
-         
-         # If user specified a sheet and/or didn't specify dose number in the PK
-         # parameter name for obs PK, we don't know what dose the PK pertain to and
-         # that messes up everything else. Artificially adding that now and will
-         # remove it later.
-         if(any(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)){
-            observed_PK$PKparameter[
-               which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)] <- 
-               paste0(observed_PK$PKparameter[
-                  which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)], 
-                  "_last") 
-            # Using "last" here b/c more flexible; applicable to more PK
-            # parameters. If it were a single-dose sim, that wouldn't
-            # require a user-defined integration interval.
-            
-         }
-         
-         observed_PK <- observed_PK %>% 
-            select(any_of(c("File", "PKparameter", "Value"))) %>%  # Return to this later to add options for including variability
-            # Only keeping parameters that we've set up data extraction for,
-            # and only keeping complete.cases of obs data
-            filter(PKparameter %in% AllPKParameters$PKparameter &
-                      complete.cases(Value))
-         
-         if("File" %in% names(observed_PK)){
-            observed_PK <- observed_PK %>% filter(str_detect(File, sim_data_file)) # ok for user to drop file extension; this should still work
-         } else {
-            # If File is not in the column names, then assume that it's the
-            # same as sim_data_file anyway.
+         # If "File" isn't already present as a column, adding it to use for
+         # joining later. 
+         if("File" %in% names(observed_PK) == FALSE){
             observed_PK$File <- sim_data_file
          }
          
-         # Checking that they haven't provided more than one value for a
-         # given PK parameter for this sim_data_file. If they have, we don't
-         # know which observed data to compare.
-         ObsFileCheck <- observed_PK %>% 
-            unique() %>% group_by(File, PKparameter) %>% 
-            summarize(NVals = n())
-         
-         if(any(ObsFileCheck$NVals > 1)){
-            warning("You have supplied more than one value for a given PK parameter for this simulator output file, so we don't know which one to use. We will not be able to include observed data in your table.", 
-                    call. = FALSE)
-            observed_PK <- data.frame()
+         # Set aside variability columns for a moment to pivot correctly
+         if(any(str_detect(names(observed_PK), "_CV"))){
+            observed_PK_var <- observed_PK %>% 
+               select(any_of(c("File", paste0(AllPKParameters$PKparameter, "_CV")))) %>% 
+               pivot_longer(cols = -File, 
+                            names_to = "PKparameter", 
+                            values_to = "CV") %>% 
+               mutate(PKparameter = sub("_CV", "",  PKparameter))
          } else {
-            observed_PK <- observed_PK %>% 
-               pivot_wider(names_from = PKparameter, 
-                           values_from = Value)   
+            observed_PK_var <- data.frame(File = sim_data_file, 
+                                          PKparameter = NA)
          }
-      } else {
-         # Harmonizing PK parameter names
-         names(observed_PK) <- harmonize_PK_names(names(observed_PK))
+         
+         observed_PK <- observed_PK %>% 
+            select(-any_of(paste0(AllPKParameters$PKparameter, "_CV"))) %>% 
+            pivot_longer(cols = any_of(AllPKParameters$PKparameter), 
+                         names_to = "PKparameter", 
+                         values_to = "Value") %>% 
+            left_join(observed_PK_var, by = c("File", "PKparameter"))
+      } 
+      
+      # If they've included several possibilities for mean types, need to get
+      # ONLY the appropriate one.
+      if(any(tolower(c("GeoMean", "Mean", "Median")) %in% names(observed_PK))){
+         observed_PK <- observed_PK %>% 
+            # Dealing with any inconsistencies in capitalization. 
+            rename_with(.cols = any_of(c("GeoMean", "Mean", "Median")), 
+                        .fn = tolower) %>% 
+            mutate(Value = case_when(
+               {mean_type} == "geometric" & !str_detect(PKparaemter, "tmax") ~ "geomean", 
+               {mean_type} == "arithmetic" & !str_detect(PKparaemter, "tmax") ~ "mean", 
+               str_detect(PKparaemter, "tmax") ~ "median"))
       }
+      
+      if(any(c("GeoCV", "ArithCV") %in% names(observed_PK))){
+         observed_PK <- observed_PK %>% 
+            # Dealing with any inconsistencies in capitalization. 
+            rename_with(.cols = any_of(c("GeoCV", "ArithCV")), 
+                        .fn = tolower) %>% 
+            mutate(CV = case_when(
+               {mean_type} == "geometric" & !str_detect(PKparaemter, "tmax") ~ "geocv", 
+               {mean_type} == "arithmetic" & !str_detect(PKparaemter, "tmax") ~ "arithcv"))
+      }
+      
+      # Harmonizing PK parameter names
+      observed_PK$PKparameter <- harmonize_PK_names(observed_PK$PKparameter)
+      
+      # If user specified a sheet and/or didn't specify dose number in the PK
+      # parameter name for obs PK, we don't know what dose the PK pertain to and
+      # that messes up everything else. Artificially adding that now and will
+      # remove it later.
+      if(any(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)){
+         observed_PK$PKparameter[
+            which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)] <- 
+            paste0(observed_PK$PKparameter[
+               which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)], 
+               "_last") 
+         # Using "last" here b/c more flexible; applicable to more PK
+         # parameters. If it were a single-dose sim, that wouldn't
+         # require a user-defined integration interval.
+      }
+      
+      observed_PK <- observed_PK %>% 
+         select(any_of(c("File", "Tab", "PKparameter", "Value", "CV"))) %>%  
+         # Only keeping parameters that we've set up data extraction for,
+         # and only keeping complete.cases of obs data
+         filter(PKparameter %in% AllPKParameters$PKparameter &
+                   complete.cases(Value))
+      
+      if("File" %in% names(observed_PK)){
+         observed_PK <- observed_PK %>%
+            filter(str_detect(File, sim_data_file)) # ok for user to drop file extension; this should still work
+      } else {
+         # If File is not in the column names, then assume that it's the
+         # same as sim_data_file anyway.
+         observed_PK$File <- sim_data_file
+      }
+      
+      # Checking that they haven't provided more than one value for a given PK
+      # parameter for this sim_data_file. If they have, we don't know which
+      # observed data to compare.
+      ObsFileCheck <- observed_PK %>% 
+         unique() %>% group_by(File, PKparameter) %>% 
+         summarize(NVals = n())
+      
+      if(any(ObsFileCheck$NVals > 1)){
+         warning("You have supplied more than one value for a given PK parameter for this simulator output file, so we don't know which one to use. We will not be able to include observed data in your table.", 
+                 call. = FALSE)
+         observed_PK <- data.frame()
+      } 
       
       if(nrow(observed_PK) < 1){
          warning("None of the supplied observed PK were for the supplied sim_data_file. We cannot make any comparisons between simulated and observed PK.", 
                  call. = FALSE)
          observed_PK <- NA
-      } else {
-         
-         # There should be only 1 row in observed_PK, so removing any extras.
-         if("File" %in% names(observed_PK) & nrow(observed_PK) > 1 & 
-            complete.cases(sim_data_file) && 
-            any(observed_PK$File %in% sim_data_file)){
-            observed_PK <- observed_PK %>% filter(File == sim_data_file)
-         } else {
-            observed_PK <- observed_PK[1, ]
-         }
-         
-         if("File" %in% names(observed_PK) == FALSE){
-            observed_PK$File <- sim_data_file
-         }
-         
-         # Also only keeping columns with complete cases for PK values.
-         observed_PK <- observed_PK %>% select(where(~ any(complete.cases(.x))))
-         
-         # If they supplied a file name in the observed PK data and NA for
-         # sim_data_file, then sim_data_file will be NA. If not, then
-         # sim_data_file will be the same as the only entry for File in
-         # observed_PK. Either way, setting sim_data_file and making sure it has
-         # the correct file extension.
-         sim_data_file <- ifelse(str_detect(sim_data_file, "\\.xlsx"), 
-                                 sim_data_file, paste0(sim_data_file, ".xlsx"))
-         
-         # Cleaning up and harmonizing observed data
-         MyObsPK <- observed_PK
-         
-         # Checking whether data are long or wide and converting to wide as needed.
-         # An example of where you'd get long format here: If they're using
-         # observed data that are also laid out for the forest_plot function.
-         if("PKparameter" %in% names(MyObsPK)){
-            
-            MyObsPK <- MyObsPK %>% 
-               rename(Value = switch(mean_type, 
-                                     "geometric" = "GeoMean", 
-                                     "arithmetic" = "Mean", 
-                                     "median" = "Median")) %>% 
-               # Things work better for pivoting if the other possible summary
-               # statistic columns are no longer present.
-               select(-(any_of(c("Min", "Max", "GeoMean", "Mean", "Median",
-                                 "CI90_Upper", "CI90_Lower", "Centile95th_Upper", 
-                                 "Centile5th_Lower", "GeoCV", "AirthCV")))) %>% 
-               pivot_wider(names_from = PKparameter, values_from = Value)
-         }
-         
-         names(MyObsPK) <- sub("_first", "_dose1", names(MyObsPK))
-         names(MyObsPK) <- sub("tau_dose1", "t_dose1", names(MyObsPK))
-         names(MyObsPK) <- sub("AUCt_ratio_last", "AUCtau_ratio_last", names(MyObsPK))
-         names(MyObsPK) <- sub("_last", "_last", names(MyObsPK))
-         
-         # Making obs PK names match correct PK parameters regardless of case
-         suppressMessages(
-            ObsNames <- data.frame(OrigName = names(MyObsPK)) %>% 
-               mutate(PKparameter_lower = sub("_first", "_dose1",
-                                              tolower(OrigName)), 
-                      PKparameter_lower = sub("_ss", "_last", 
-                                              PKparameter_lower),
-                      PKparameter_lower = sub("_cv", "", PKparameter_lower)) %>% 
-               left_join(AllPKParameters %>% select(PKparameter) %>% 
-                            unique() %>% 
-                            mutate(PKparameter_lower = tolower(PKparameter))) %>% 
-               mutate(PKparameter = ifelse(str_detect(tolower(OrigName), "cv"), 
-                                           paste0(PKparameter, "_CV"), 
-                                           PKparameter), 
-                      PKparameter = ifelse(OrigName == "File", "File", PKparameter), 
-                      PKparameter = ifelse(is.na(PKparameter), OrigName, PKparameter))
-         )
-         names(MyObsPK) <- ObsNames$PKparameter
-         
-         # Having extra columns messes things up, so removing any extraneous
-         # things the user might have included.
-         
-         # Getting the names w/out "File"
-         NewObsNames <- names(MyObsPK)[names(MyObsPK) %in% 
-                                          c(AllPKParameters$PKparameter, 
-                                            paste0(AllPKParameters$PKparameter, "_CV"))]
-         MyObsPK <- as.data.frame(MyObsPK[, NewObsNames])
-         names(MyObsPK) <- NewObsNames
-         
-         # If user provided observed PK, then make sure those PK parameters are
-         # included in the PK to extract.
-         PKparameters <- sort(unique(union(PKparameters, names(MyObsPK))))
-      }
+      }  
+      
+      # Removing file name here. We should have already filtered to get only the
+      # appropriate files, and it's messing up joining with sim data later.
+      MyObsPK <- observed_PK %>% select(-File)
+      
+      # If user provided observed PK, then make sure those PK parameters are
+      # included in the PK to extract.
+      PKparameters <- sort(unique(union(PKparameters, MyObsPK$PKparameter)))
+      
    }
    
-   # From here down, function is set up for PKparameters to be a data.frame or,
+   # From here down, function is set up for observed PK to be a data.frame or,
    # if the user did not provide observed PK, then a logical. If something went
    # wrong with the data they supplied for observed PK, making the observed PK
    # data.frame just have a single column, "File".
-   if("data.frame" %in% class(observed_PK) &&
-      ncol(observed_PK) == 1){
+   if("data.frame" %in% class(observed_PK) && ncol(observed_PK) == 1){
       observed_PK <- NA
    }
    
    # If user specified PKorder, then use *either* PKparameters OR observed PK
    # to set the order. Not setting order here; just checking whether user input
    # is acceptable based on whether observed_PK exists.
-   if(PKorder != "default" & is.na(PKparameters[1]) & "logical" %in% class(observed_PK)){
+   if(PKorder != "default" & is.na(PKparameters_orig[1]) & "logical" %in% class(observed_PK)){
       warning("You have requested `user specified` for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument `PKparameters` or by supplying observed PK data. The order will be the default order from the Consultancy Report Template.", 
               call. = FALSE)
       PKorder <- "default"
@@ -760,7 +728,7 @@ pksummary_table <- function(sim_data_file = NA,
    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                            sim_data_file, paste0(sim_data_file, ".xlsx"))
    
-   # Figuring out what kind of means user wants, experimental details, etc.
+   ## Figuring out what kind of means user wants, experimental details, etc. --------
    
    # First, the scenarios where there are observed data to compare from a
    # filled-out report template (sectionInfo exists)
@@ -937,14 +905,6 @@ pksummary_table <- function(sim_data_file = NA,
       PKToPull <- PKToPull[!str_detect(PKToPull, "_last")]
    }
    
-   # Allowing for flexibility in case. Get the lower-case version of whatever
-   # PKparameters user specified and match them to the correct PKparameters in
-   # AllPKParameters.
-   PKToPull <- AllPKParameters %>%
-      mutate(PKparameter_lower = tolower(PKparameter)) %>% 
-      filter(PKparameter_lower %in% tolower(PKToPull)) %>% 
-      pull(PKparameter) %>% unique()
-   
    SDParam <- AllPKParameters %>% 
       filter(AppliesToSingleDose == TRUE) %>% 
       pull(PKparameter)
@@ -957,8 +917,8 @@ pksummary_table <- function(sim_data_file = NA,
       # If it were multiple dose *and* if they did not specify PK parameters
       # to pull or have observed data to compare, then only pull last dose
       # parameters.
-      if(is.na(PKparameters[1]) & class(sectionInfo) == "logical" & 
-         is.na(observed_PK[[1]])){
+      if(is.na(PKparameters_orig[1]) & class(sectionInfo) == "logical" & 
+         "logical" %in% class(observed_PK)){
          PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
       }
    }
@@ -1143,7 +1103,7 @@ pksummary_table <- function(sim_data_file = NA,
    # because later we need to join that with obs data and we need to use the
    # correct mean type throughout, this will be labeled as "mean" rather than
    # "geomean". Yes, that's confusing, so my apologies, but I couldn't come up
-   # with a better way to do this. -LS
+   # with a better way to do this. -LSh
    if(MeanType == "arithmetic" &&
       PerpPresent == TRUE &&
       complete.cases(GMR_mean_type) &&
@@ -1289,54 +1249,25 @@ pksummary_table <- function(sim_data_file = NA,
       pivot_longer(cols = -Stat, names_to = "PKParam",
                    values_to = "Sim")
    
-   MyObsPKParam <- c(PKToPull, paste0(PKToPull, "_CV"))
-   if(PerpPresent){
-      MyObsPKParam <- c(MyObsPKParam,
-                        "Cmax_ratio_dose1_90CIL", "Cmax_ratio_dose1_90CIU",
-                        "AUCinf_ratio_dose1_90CIL", "AUCinf_ratio_dose1_90CIU",
-                        "Cmax_ratio_last_90CIL", "Cmax_ratio_last_90CIU",
-                        "AUCtau_ratio_last_90CIL", "AUCtau_ratio_last_90CIU")
-   }
    
    # observed data -----------------------------------------------------
    
    if(exists("MyObsPK", inherits = FALSE)){
-      # Making observed_PK that was supplied as a data.frame or file long
-      # w/column for PKparameter.
-      if("PKparameter" %in%  names(MyObsPK)){
-         MyObsPK <- MyObsPK %>% rename(PKParam = PKparameter, 
-                                       Obs = Value)
-      } else {
-         MyObsPK <- MyObsPK %>% 
-            pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
-                                         paste0(AllPKParameters$PKparameter, "_CV"))), 
-                         names_to = "PKParam", 
-                         values_to = "Obs")
+      # Renaming column for PKparameter.
+      MyObsPK <- MyObsPK %>% rename(PKParam = PKparameter, Obs = Value)
+      
+      if("CV" %in% names(MyObsPK) & MeanType == "geometric"){
+         MyObsPK <- MyObsPK %>% rename(GCV = CV)
       }
       
-      MyObsPK <- MyObsPK %>% 
-         mutate(Stat = ifelse(str_detect(PKParam, "_CV"), 
-                              ifelse({{MeanType}} == "geometric", "GCV", "CV"), 
-                              ifelse({{MeanType}} == "geometric", "geomean", "mean")))
-      
-      if(PerpPresent){
-         # Accounting for when the mean ratios for obs data are
-         # actually geometric even though the other obs data means are
-         # arithmetic. This will label observed data GMR values as
-         # "mean" (for arithmetic means) rather than "geomean" so that
-         # it will be easier to return only the correct mean types. I
-         # know that's confusing, but I couldn't come up with a better
-         # way to do that, so my apologies! -LSh
-         MyObsPK <- MyObsPK %>% 
-            mutate(Stat = ifelse({{MeanType}} == "arithmetic" &
-                                    {{GMR_mean_type}} == "geometric" &
-                                    str_detect(PKParam, "ratio") &
-                                    str_detect(Stat, "mean"), # detecting mean or geomean but not CV 
-                                 "mean", Stat))
-      }
-      
-      MyObsPK <- MyObsPK %>% 
-         mutate(PKParam = sub("_CV", "", PKParam))
+      # Pivoting longer by stat
+      MyObsPK <- MyObsPK %>% pivot_longer(cols = any_of(c("Obs", "CV", "GCV")),
+                                          names_to = "Stat",
+                                          values_to = "Obs") %>% 
+         mutate(Stat = ifelse(Stat == "Obs", 
+                              switch(MeanType, 
+                                     "geometric" = "geomean", 
+                                     "arithmetic" = "mean"), Stat))
       
       if(complete.cases(sheet_PKparameters)){
          MyObsPK$PKParam <- sub("_first|_dose1|_last", "", MyObsPK$PKParam)
@@ -1345,10 +1276,10 @@ pksummary_table <- function(sim_data_file = NA,
       # Calculating S/O
       suppressMessages(
          SOratios <- MyPKResults %>% 
-            filter(Stat == ifelse(MeanType == "geometric", "geomean", "mean")) %>%
-            left_join(MyObsPK %>% 
-                         filter(Stat == 
-                                   ifelse(MeanType == "geometric", "geomean", "mean"))) %>%
+            filter(Stat == switch(MeanType, 
+                                  "geometric" = "geomean",
+                                  "arithmetic" = "mean")) %>%
+            left_join(MyObsPK) %>%
             mutate(Value = Sim / Obs,
                    Stat = "S_O", 
                    SorO = "S_O") %>%
@@ -1366,7 +1297,7 @@ pksummary_table <- function(sim_data_file = NA,
       # If user supplied obs data and did NOT specify PK parameters that they
       # wanted, only keep PK parameters where there are values for the
       # observed mean data.
-      if(is.na(PKparameters[1])){
+      if(is.na(PKparameters_orig[1])){
          PKToPull <- MyObsPK %>% filter(complete.cases(Obs)) %>% 
             pull(PKParam) %>% unique()
       }
@@ -1440,7 +1371,7 @@ pksummary_table <- function(sim_data_file = NA,
       }
    }
    
-   ## Putting everything together and formatting -------------------------
+   # Putting everything together and formatting -------------------------
    
    # Formatting and selecting only rows where there are data
    MyPKResults <- MyPKResults %>%
