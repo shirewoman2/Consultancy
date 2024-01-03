@@ -459,9 +459,8 @@ pksummary_table <- function(sim_data_file = NA,
    # which dose the PK is for. The other sheets w/PK parameters are not obvious
    # as to which dose it is, so for those, we need to remove the "_dose1" or
    # "_last".
-   if(complete.cases(sheet_PKparameters) &&
-      sheet_PKparameters %in% c("AUC", "AUC_CI", "AUC_SD")){
-      sheet_PKparameters <- NA
+   if(any(complete.cases(sheet_PKparameters))){
+      sheet_PKparameters[sheet_PKparameters %in% c("AUC", "AUC_CI", "AUC_SD")] <- NA
    }
    
    # Make sure that input to variability_format is ok
@@ -472,6 +471,16 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    # Harmonizing PK parameter syntax
+   if(is.null(names(sheet_PKparameters)) & any(complete.cases(PKparameters))){
+      # Scenario: User has supplied a single specific sheet and also a specific
+      # set of PK parameters they want. We want there to be no dose number
+      # suffix for consistency w/extractPK.
+      
+      PKparameters <- sub("_dose1|_last", "", PKparameters)
+      PKparameters <- sub("AUCtau", "AUCt", PKparameters)
+      
+   }
+   
    PKparameters <- harmonize_PK_names(PKparameters)
    PKparameters_orig <- PKparameters
    
@@ -556,7 +565,8 @@ pksummary_table <- function(sim_data_file = NA,
    # need them to have only supplied one value for each suffix-less PK
    # parameter, e.g., they can't supply both Cmax_dose1 and Cmax_last in the
    # observed data b/c we don't know which dose the simulated data are for.
-   if("data.frame" %in% class(observed_PK) & complete.cases(sheet_PKparameters)){
+   if("data.frame" %in% class(observed_PK) & 
+      any(complete.cases(sheet_PKparameters))){
       
       if("PKparameter" %in% names(observed_PK)){
          observed_PK <- observed_PK %>% 
@@ -826,22 +836,8 @@ pksummary_table <- function(sim_data_file = NA,
    
    ## Determining which PK parameters to pull --------------------------------
    if(any(complete.cases(PKparameters))){
-      # If user specified "_first" instead of "_dose1", make that work, too. 
-      PKToPull <- sub("_first", "_dose1", PKparameters)
       
-      # If the user supplied "XXXtau_dose1", change that to "XXXt_dose1". 
-      PKToPull <- sub("tau_dose1", "t_dose1", PKToPull)
-      
-      # If the user supplied "XXX_ss", change that to "XXX_last".
-      PKToPull <- sub("_last", "_last", PKToPull)
-      
-      # If the user used AUCt_last instead of AUCtau_last, fix that for them.
-      PKToPull <- sub("AUCt_last", "AUCtau_last", PKToPull)
-      PKToPull <- sub("AUCt_ratio_last", "AUCtau_ratio_last", PKToPull)
-      
-      # If the user switched the order of "ratio" and "last" or "dose1", fix that.
-      PKToPull <- sub("dose1_ratio", "ratio_dose1", PKToPull)
-      PKToPull <- sub("last_ratio", "ratio_last", PKToPull)
+      PKToPull <- PKparameters
       
    } else {
       
@@ -852,10 +848,8 @@ pksummary_table <- function(sim_data_file = NA,
             
             # FIXME
             
-            # If user specified "_first" instead of "_dose1", make that
-            # work, too.
-            PKToPull <- sub("_first", "_dose1", tolower(names(MyObsPK)))
-            
+         } else if(any(complete.cases(sheet_PKparameters))){ 
+            PKToPull <- NA # This will retrieve all possible parameters from user-defined interval.
          } else {
             # If the user didn't specify an observed file, didn't list
             # specific parameters they want, and didn't fill out a report
@@ -897,7 +891,8 @@ pksummary_table <- function(sim_data_file = NA,
         complete.cases(Deets$DoseInt_inhib2) &&
         Deets$DoseInt_inhib2 == "custom dosing")) &
       
-      any(str_detect(PKToPull, "_last")) & is.na(sheet_PKparameters)){
+      (length(PKToPull) > 0 && any(str_detect(PKToPull, "_last"), na.rm = T)) &
+      all(is.na(sheet_PKparameters))){
       warning(paste0("The file `",
                      sim_data_file,
                      "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.\nWe cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet_PKparameters`."), 
@@ -914,11 +909,12 @@ pksummary_table <- function(sim_data_file = NA,
       PKToPull <- PKToPull[PKToPull %in% SDParam]
    } else if(DoseRegimen == "Multiple Dose"){
       
-      # If it were multiple dose *and* if they did not specify PK parameters
-      # to pull or have observed data to compare, then only pull last dose
-      # parameters.
-      if(is.na(PKparameters_orig[1]) & class(sectionInfo) == "logical" & 
-         "logical" %in% class(observed_PK)){
+      # If it were multiple dose *and* if they did not specify PK parameters to
+      # pull or have observed data to compare and did not specify a user-defined
+      # interval, then only pull last dose parameters.
+      if(all(is.na(PKparameters_orig)) &
+         class(sectionInfo) == "logical" & 
+         "logical" %in% class(observed_PK) & all(is.na(sheet_PKparameters))){
          PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
       }
    }
@@ -935,7 +931,8 @@ pksummary_table <- function(sim_data_file = NA,
          filter(AppliesOnlyWhenPerpPresent == TRUE) %>%
          pull(PKparameter)
       
-      PKToPull <- PKToPull[!PKToPull %in% EffParam]
+      PKToPull <- PKToPull[!PKToPull %in% c(EffParam, 
+                                            sub("_dose1|_last", "", EffParam))]
    }
    
    # Give a useful message if there are no parameters to pull
@@ -979,7 +976,7 @@ pksummary_table <- function(sim_data_file = NA,
    # extrapolation, the others won't be useful either. Checking for any NA
    # values in geomean, mean, or median. 
    ExtrapCheck <- MyPKResults_all$aggregate %>% 
-      filter(Statistic %in% c("Mean", "Median", "Geometric Mean")) %>%
+      filter(Statistic %in% c("mean", "median", "geometric mean")) %>%
       select(matches("AUCinf")) %>% 
       summarize(across(.cols = everything(), .fns = function(x) any(is.na(x))))
    
@@ -992,7 +989,7 @@ pksummary_table <- function(sim_data_file = NA,
    # won't have _last or _dose1 suffixes. HOWEVER, if the sheet matched the AUC
    # tab in terms of formatting, then we DO know which dose it was, so don't
    # remove suffixes in that case.
-   if(complete.cases(sheet_PKparameters) &
+   if(any(complete.cases(sheet_PKparameters)) &
       any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
       PKToPull <- unique(sub("_last|_dose1", "", PKToPull))
    }
@@ -1061,7 +1058,8 @@ pksummary_table <- function(sim_data_file = NA,
    # If they requested AUCinf but there was trouble with that extrapolation,
    # AUCinf won't be present in the data but AUCt will be. Check for that and
    # change PKToPull to reflect that change.
-   if(any(str_detect(PKToPull, "AUCinf_[^P]")) & 
+   if(length(PKToPull) > 0 && 
+      any(str_detect(PKToPull, "AUCinf_[^P]"), na.rm = T) & 
       (("data.frame" %in% class(MyPKResults_all[[1]]) & 
         all(PKToPull[str_detect(PKToPull, "AUCinf_[^P]")] %in% 
             names(MyPKResults_all[[1]])) == FALSE) |
@@ -1109,9 +1107,9 @@ pksummary_table <- function(sim_data_file = NA,
       complete.cases(GMR_mean_type) &&
       GMR_mean_type == "geometric"){
       
-      MyPKResults[MyPKResults$Statistic == "Mean",
+      MyPKResults[MyPKResults$Statistic == "mean",
                   str_detect(names(MyPKResults), "ratio")] <-
-         MyPKResults[MyPKResults$Statistic == "Geometric Mean",
+         MyPKResults[MyPKResults$Statistic == "geometric mean",
                      str_detect(names(MyPKResults), "ratio")]
    }
    
@@ -1269,7 +1267,7 @@ pksummary_table <- function(sim_data_file = NA,
                                      "geometric" = "geomean", 
                                      "arithmetic" = "mean"), Stat))
       
-      if(complete.cases(sheet_PKparameters)){
+      if(any(complete.cases(sheet_PKparameters))){
          MyObsPK$PKParam <- sub("_first|_dose1|_last", "", MyObsPK$PKParam)
       }
       
@@ -1483,27 +1481,26 @@ pksummary_table <- function(sim_data_file = NA,
       select(-Stat) %>%
       select(Statistic, everything())
    
-   # setting levels for PK parameters so that they're in a nice order
-   PKlevels <- switch(paste(PKorder, complete.cases(sheet_PKparameters)), 
-                      
-                      # the default scenario
-                      "default FALSE" = AllPKParameters %>% 
-                         select(PKparameter, SortOrder) %>% 
-                         arrange(SortOrder) %>%
-                         pull(PKparameter) %>% unique(), 
-                      
-                      # user wants a specific order but using default tabs
-                      "user specified FALSE" = PKparameters, 
-                      
-                      # default order but specific tab
-                      "default TRUE" = sub("_dose1|_last", "", 
-                                           AllPKParameters %>% 
-                                              select(PKparameter, SortOrder) %>% 
-                                              arrange(SortOrder) %>%
-                                              pull(PKparameter)) %>% unique(), 
-                      
-                      # user-specified order and specific tab
-                      "user specified TRUE" = sub("_dose1|_last", "", PKparameters))
+   # setting levels for PK parameters so that they're in a nice order. This
+   # requires values for PKToPull, as does saving output to Word. PKToPull could
+   # be empty depending on user input, so adjusting for that here.
+   PKToPull <- names(MyPKResults)[
+      names(MyPKResults) %in% c(AllPKParameters$PKparameter, 
+                                sub("_dose1|_last", "", AllPKParameters$PKparameter))]
+   
+   PKlevels <- switch(PKorder, 
+      
+      # the default scenario
+      "default" =
+         bind_rows(AllPKParameters, 
+                   AllPKParameters %>% 
+                      mutate(PKparameter = sub("_dose1|_last", "", PKparameter))) %>% 
+         select(PKparameter, SortOrder) %>% 
+         arrange(SortOrder) %>%
+         pull(PKparameter) %>% unique(), 
+      
+      # user wants a specific order but using default tabs
+      "user specified" = PKparameters)
    
    PKToPull <- factor(PKToPull, levels = PKlevels)
    PKToPull <- sort(unique(PKToPull))
@@ -1512,13 +1509,11 @@ pksummary_table <- function(sim_data_file = NA,
    MyPKResults <- MyPKResults %>%
       select(any_of(c("Statistic", as.character(PKToPull))))
    
-   PKToPull <- unique(as.character(intersect(PKToPull, names(MyPKResults))))
-   
    # Optionally adding final column names
    if(prettify_columns){
       
       # If user specified tab, then need to adjust PK parameters here, too.
-      if(complete.cases(sheet_PKparameters) & 
+      if(any(complete.cases(sheet_PKparameters)) & 
          any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
          AllPKParameters_mod <- 
             AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
@@ -1550,7 +1545,7 @@ pksummary_table <- function(sim_data_file = NA,
                pull(PrettifiedNames)
          )
       } else {
-         suppressMessages(
+         suppressMessages( # FIXME - Need to just go ahead and add dose-numberless PKparameters, including their pretty names, to AllPKParameters. 
             PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
                left_join(AllPKParameters %>% 
                             select(PKparameter, PrettifiedNames)) %>% 
@@ -1578,7 +1573,7 @@ pksummary_table <- function(sim_data_file = NA,
       
       names(MyPKResults) <- c("Statistic", PrettyCol)
       
-   } else if(complete.cases(sheet_PKparameters) & 
+   } else if(any(complete.cases(sheet_PKparameters)) & 
              any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
       # This is when it's a user-defined sheet but we're not prettifying column
       # names. We don't know whether an AUC was actually AUCtau, so make it
@@ -1613,7 +1608,7 @@ pksummary_table <- function(sim_data_file = NA,
                                 "arithmetic" = "mean",
                                 "geometric" = "geomean"))
       
-      if(any(str_detect(PKToPull, "tmax"))){
+      if(length(PKToPull) > 0 && any(str_detect(PKToPull, "tmax"), na.rm = T)){
          ColsToInclude <- c(ColsToInclude, "min", "max", "median")
       }
       

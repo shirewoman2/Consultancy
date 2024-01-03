@@ -110,16 +110,49 @@ extractPK <- function(sim_data_file,
    # Checking on any user-specified sheets b/c that also implies which PK
    # parameters to use. 
    if(any(complete.cases(sheet))){
+      
       if(is.null(names(sheet)) & all(is.na(PKparameters))){
-         # Get all possible PK parameters from user-defined sheet if they have
-         # not specified PK parameters they want.
-         PKparameters <- "all" 
-      } else if(is.null(names(sheet)) == FALSE & all(is.na(PKparameters))){
+         # Scenario 1: User has supplied a specific sheet and has not specified any
+         # PK parameters. They presumably want all available PK from that sheet.
+         
          PKSheets <- data.frame(Sheet = sheet, 
-                                PKparameter = names(sheet))
+                                PKparameter = "all")
+         PKparameters <- "all" 
+         
+      } else if(is.null(names(sheet)) == FALSE & all(is.na(PKparameters))){
+         # Scenario 2: User has supplied a named character vector of sheets to
+         # use, which will include which PK they want, and has NOT specified
+         # anything for PKparameters, which is what we want when they have
+         # supplied that named character vector b/c that already includes which
+         # PK they want and from which tab.
+         
+         PKSheets <- data.frame(Sheet = sheet, 
+                                PKparameter = names(sheet)) %>% 
+            unique()
+         
          PKparameters <- PKSheets$PKparameter
+         
+      } else if(is.null(names(sheet)) & any(complete.cases(PKparameters))){
+         # Scenario 3: User has supplied a single specific sheet and also a
+         # specific set of PK parameters they want.
+         
+         PKSheets <- data.frame(Sheet = sheet, 
+                                PKparameter = PKparameters) %>% 
+            # If they supplied dose suffixes, remove those to make it consistent
+            # w/using custom AUC interval elsewhere.
+            mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
+                   PKparameter = sub("AUCtau", "AUCt", PKparameter)) %>% 
+            unique()
+         
+         PKparameters <- PKSheets$PKparameter
+         
       } else if(is.null(names(sheet)) == FALSE & any(complete.cases(PKparameters))){
-         stop("You have specified some PK parameters with the argument `PKparameters` and some with the argument `sheet`, and we're not sure which set we should use. Please only use one or the other.\n", 
+         # Scenario 4, which is problematic: User supplied named character
+         # vector AND some specific PKparameters, which may or may not match and
+         # which I don't want to have to write a ton of code to check whether
+         # they do and figure out what to do with the mismatches. 
+         
+         stop("You have specified some PK parameters with the argument `PKparameters` and some with the argument `sheet`,\nand we're not sure which set we should use. Please only use one or the other.\n", 
               call. = FALSE)
       }
    } 
@@ -442,6 +475,25 @@ extractPK <- function(sim_data_file,
    # don't waste time reading more sheets than necessary
    PKparameters_orig <- PKparameters
    
+   if(tolower(PKparameters[1]) %in% c("all", "auc tab", "absorption tab", 
+                                      "auc0", "regional adam")){
+      PKparameters <- 
+         switch(tolower(PKparameters[1]), 
+                "all" = AllPKParameters %>% pull(PKparameter) %>% unique(), 
+                "auc tab" = AllPKParameters %>% 
+                   filter(Sheet %in% c("AUC", "AUC0", "AUCX")) %>% 
+                   pull(PKparameter) %>% unique(),
+                "absorption tab" = AllPKParameters %>% 
+                   filter(Sheet %in% c("Absorption", "Overall Fa Fg")) %>% 
+                   pull(PKparameter) %>% unique(),
+                "auc0" = AllPKParameters %>% 
+                   filter(Sheet %in% c("AUC0", "AUCX")) %>% 
+                   pull(PKparameter) %>% unique(), # This will happen if user requests PKparameters = "AUC" but "AUC" tab is not present but a tab for AUC0 *is*.
+                "regional adam" = AllPKParameters %>% 
+                   filter(Sheet %in% c("Regional ADAM Fractions (Sub)")) %>% 
+                   pull(PKparameter) %>% unique())
+   }
+   
    ParamAUC <- intersect(AllPKParameters %>% filter(Sheet == "AUC") %>% 
                             pull(PKparameter) %>% unique(), 
                          PKparameters)
@@ -468,15 +520,6 @@ extractPK <- function(sim_data_file,
                               pull(PKparameter) %>% unique(), 
                            PKparameters)
    
-   PKparameters <- 
-      switch(tolower(PKparameters[1]), 
-             "all" = unique(c(ParamAbsorption, ParamAUC, ParamAUC0,
-                              ParamAUClast, ParamCLTSS)), 
-             "auc tab" = unique(c(ParamAUC, ParamAUC0, ParamAUClast)),
-             "absorption tab" = ParamAbsorption,
-             "auc0" = ParamAUC0, # This will happen if user requests PKparameters = "AUC" but "AUC" tab is not present but a tab for AUC0 *is*.
-             "regional adam" = ParamRegADAM)
-   
    # Checking whether the user had supplied a vector of specific parameters
    # rather than a parameter set name and using those if so.
    if(is.null(PKparameters) & any(complete.cases(PKparameters_orig))){
@@ -486,12 +529,14 @@ extractPK <- function(sim_data_file,
    ParamUserDef <- intersect(setdiff(PKparameters, AllPKParameters$PKparameter), 
                              sub("_dose1|_last", "", AllPKParameters$PKparameter))
    
-   PKSheets <- PKSheets %>% 
-      filter(PKparameter %in% ParamUserDef & 
-                complete.cases(Sheet) & 
-                Sheet %in% {SheetNames})
-   
-   ParamUserDef <- PKSheets$PKparameter
+   if(exists("PKSheets", inherits = FALSE)){
+      PKSheets <- PKSheets %>% 
+         filter(PKparameter %in% ParamUserDef & 
+                   complete.cases(Sheet) & 
+                   Sheet %in% {SheetNames})
+      
+      ParamUserDef <- PKSheets$PKparameter
+   }
    
    MissingPKParam <- setdiff(PKparameters,
                              c(AllPKParameters$PKparameter, 
@@ -512,9 +557,12 @@ extractPK <- function(sim_data_file,
    }
    
    if(is.na(Deets$Inhibitor1)){
+      InhibParams <- AllPKParameters$PKparameter[
+         AllPKParameters$AppliesOnlyWhenPerpPresent == FALSE]
+      
       PKparameters <- 
-         PKparameters[PKparameters %in% 
-                         AllPKParameters$PKparameter[AllPKParameters$AppliesOnlyWhenPerpPresent == FALSE]]
+         PKparameters[PKparameters %in% c(InhibParams, 
+                                          sub("_last|_dose1", "", InhibParams))]
    }
    
    if((compoundToExtract %in% c("substrate", "primary metabolite 1", 
@@ -528,10 +576,12 @@ extractPK <- function(sim_data_file,
         compoundToExtract %in% c("inhibitor 2") && 
         Deets$Regimen_inhib2 == "Single Dose"))){
       
+      SDParams <- AllPKParameters$PKparameter[
+         AllPKParameters$AppliesToSingleDose == TRUE]
+      
       PKparameters <- 
-         PKparameters[PKparameters %in% 
-                         AllPKParameters$PKparameter[
-                            AllPKParameters$AppliesToSingleDose == TRUE]]
+         PKparameters[PKparameters %in% c(SDParams, 
+                                          sub("_last|_dose1", "", SDParams))]
    }
    
    # !!! IMPORTANT!!! If it was a custom-dosing regimen, then any parameters
@@ -1615,7 +1665,7 @@ extractPK <- function(sim_data_file,
    if("aggregate" %in% returnAggregateOrIndiv){
       
       for(i in names(Out_agg)){
-         Statistic_char <- names(Out_agg[[i]])
+         Statistic_char <- tolower(names(Out_agg[[i]]))
          Out_agg[[i]] <- as.data.frame(Out_agg[[i]]) %>%
             mutate(Statistic = Statistic_char,
                    Parameter = i)
