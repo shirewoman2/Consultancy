@@ -43,6 +43,8 @@ harmonize_PK_names <- function(PKparameters){
    PKparameters <- sub("AUCtau_dose1", "AUCt_dose1", PKparameters)
    PKparameters <- sub("AUCt_ratio_last", "AUCtau_ratio_last", PKparameters)
    PKparameters <- sub("_[iI]nhib", "_withInhib", PKparameters)
+   PKparameters <- sub("auc tab", "AUC tab", PKparameters)
+   PKparameters <- sub("absorption tab", "Absorption tab", PKparameters)
    
    return(PKparameters)
 }

@@ -268,12 +268,19 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       mean_type <- "geometric"
    }
    
-   # Harmonizing PK parameter names
-   PKparameters <- harmonize_PK_names(PKparameters)
-   
    # Standardizing input for when they want to specify PK parameters with "/".
    # Making sure they always have a space.
    PKparameters <- sub("( )?/( )?", " / ", PKparameters)
+   
+   # Harmonizing PK parameter names. If the parameters differ between sims, need
+   # to do this in multiple steps to get the correct values.
+   if(any(str_detect(PKparameters, "/"))){
+   PKparameters <- str_split(PKparameters, pattern = " / ")
+   PKparameters <- lapply(PKparameters, harmonize_PK_names)
+   PKparameters <- unlist(lapply(PKparameters, function(x) paste(x[1], x[2], sep = " / ")))
+   } else {
+      PKparameters <- harmonize_PK_names(PKparameters)
+   }
    
    if(tolower(distribution_type) %in% c("z", "t")){
       distribution_type <- ifelse(tolower(distribution_type) == "z", 
@@ -387,10 +394,10 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    # Checking that we can make the correct comparisons
    if(all(Comparisons$PKparam_num == Comparisons$PKparam_denom)){
       
-      if(any(Comparisons$PKparam_num %in% c("AUC tab", "all", "Absorption tab", 
-                                            "Regional ADAM") == TRUE |
-             any(Comparisons$PKparam_denom %in% c("AUC tab", "all", "Absorption tab", 
-                                                  "Regional ADAM") == TRUE))){
+      if(any(Comparisons$PKparam_num %in% 
+             c("AUC tab", "all", "Absorption tab", "Regional ADAM") == TRUE |
+             any(Comparisons$PKparam_denom %in% 
+                 c("AUC tab", "all", "Absorption tab", "Regional ADAM") == TRUE))){
          Comparisons <- data.frame(PKparam_num = intersect(names(PKnumerator$aggregate), 
                                                            names(PKdenominator$aggregate))) %>% 
             unique() %>% 
