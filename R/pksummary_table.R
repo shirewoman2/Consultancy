@@ -1545,10 +1545,14 @@ pksummary_table <- function(sim_data_file = NA,
                pull(PrettifiedNames)
          )
       } else {
-         suppressMessages( # FIXME - Need to just go ahead and add dose-numberless PKparameters, including their pretty names, to AllPKParameters. 
+         suppressMessages( 
             PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
-               left_join(AllPKParameters %>% 
-                            select(PKparameter, PrettifiedNames)) %>% 
+               left_join(
+                  bind_rows(AllPKParameters, 
+                            AllPKParameters %>% 
+                               mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
+                                      PrettifiedNames = sub("Dose 1 |Last dose ", "", PrettifiedNames))) %>% 
+                     select(PKparameter, PrettifiedNames)) %>% 
                unique() %>% 
                pull(PrettifiedNames)
          )
