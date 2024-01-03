@@ -471,7 +471,8 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    # Harmonizing PK parameter syntax
-   if(is.null(names(sheet_PKparameters)) & any(complete.cases(PKparameters))){
+   if(any(complete.cases(sheet_PKparameters)) &&
+      is.null(names(sheet_PKparameters)) & any(complete.cases(PKparameters))){
       # Scenario: User has supplied a single specific sheet and also a specific
       # set of PK parameters they want. We want there to be no dose number
       # suffix for consistency w/extractPK.

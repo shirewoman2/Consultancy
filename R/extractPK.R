@@ -680,17 +680,13 @@ extractPK <- function(sim_data_file,
       
       PKparameters_AUC <- intersect(PKparameters, ParamAUC)
       
-      if(UserAUC){ 
-         AUC_xl <- XL
-      } else {
-         AUC_xl <- suppressMessages(
-            readxl::read_excel(path = sim_data_file, 
-                               # If the user requested the "AUC" tab for PK
-                               # parameters, it's ok to use the tab "AUC_CI"
-                               # if "AUC" is not present.
-                               sheet = Tab_AUC,
-                               col_names = FALSE))
-      }
+      AUC_xl <- suppressMessages(
+         readxl::read_excel(path = sim_data_file, 
+                            # If the user requested the "AUC" tab for PK
+                            # parameters, it's ok to use the tab "AUC_CI"
+                            # if "AUC" is not present.
+                            sheet = Tab_AUC,
+                            col_names = FALSE))
       
       # Finding the last row of the individual data
       EndRow_ind <- which(AUC_xl$...2 == "Statistics")
