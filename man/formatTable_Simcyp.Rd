@@ -9,7 +9,6 @@ formatTable_Simcyp(
   fontsize = 11,
   shading_column,
   merge_shaded_cells = TRUE,
-  merge_columns = NA,
   sort_column,
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
@@ -45,18 +44,6 @@ help file.}
 cells that have the same shade. This only applies when one of the columns
 in the input data.frame is used for deciding when to alternate shading,
 that is, \code{shading_column} has a value.}
-
-\item{merge_columns}{a vector of quoted column names or of numeric column
-positions that should be merged vertically whenever the values are the
-same. For example, \code{merge_columns = c("File", "Tissue")} will cause
-the cells in the columns "File" and "Tissue" to merge vertically whenever
-the same value shows up in consecutive rows. Similarly, \code{merge_columns
-= c(1, 3, 5)} will merge vertically the 1st, 3rd, and 5th columns whenever
-the values are the same. Note: This is different from most other functions
-in the SimcypConsultancy package, which require unquoted column names.
-Honestly, we just don't know how code things for you to supply a variable
-number of unquoted column names for a single argument; we've just hit a
-coding knowledge limitation here!}
 
 \item{sort_column}{optionally specify a column to sort by. If none are
 supplied, the table will not be sorted. If you would like to sort by more

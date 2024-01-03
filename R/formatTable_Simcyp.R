@@ -27,17 +27,6 @@
 #'   cells that have the same shade. This only applies when one of the columns
 #'   in the input data.frame is used for deciding when to alternate shading,
 #'   that is, \code{shading_column} has a value.
-#' @param merge_columns a vector of quoted column names or of numeric column
-#'   positions that should be merged vertically whenever the values are the
-#'   same. For example, \code{merge_columns = c("File", "Tissue")} will cause
-#'   the cells in the columns "File" and "Tissue" to merge vertically whenever
-#'   the same value shows up in consecutive rows. Similarly, \code{merge_columns
-#'   = c(1, 3, 5)} will merge vertically the 1st, 3rd, and 5th columns whenever
-#'   the values are the same. Note: This is different from most other functions
-#'   in the SimcypConsultancy package, which require unquoted column names.
-#'   Honestly, we just don't know how code things for you to supply a variable
-#'   number of unquoted column names for a single argument; we've just hit a
-#'   coding knowledge limitation here!
 #' @param bold_cells optionally specify cells in the table to be in bold-face
 #'   text with a numeric vector where the 1st number is the row number and the
 #'   2nd number is the column number (just like regular row and column
@@ -198,7 +187,6 @@ formatTable_Simcyp <- function(DF,
                                fontsize = 11, 
                                shading_column, 
                                merge_shaded_cells = TRUE,
-                               merge_columns = NA, 
                                sort_column, 
                                bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
@@ -272,29 +260,6 @@ formatTable_Simcyp <- function(DF,
       } 
    }
    
-   if(class(merge_columns) %in% "numeric"){
-      if(all(merge_columns %in% 1:ncol(DF)) == FALSE){
-         warning(paste0("You requested that we vertically merge more columns that are present in your data. Specifically, there is/are no column(s) ", 
-                        str_comma(setdiff(merge_columns, 1:ncol(DF)), conjunction = "or"), 
-                        ". These will be ignored.\n"), 
-                 call. = FALSE)
-         merge_columns <- merge_columns[merge_columns %in% 1:ncol(DF)]   
-      }
-      
-      merge_columns <- names(DF)[merge_columns]
-   }
-   
-   if(class(merge_columns) %in% "character"){
-      BadCols <- setdiff(merge_columns, names(DF))
-      if(length(BadCols) > 0){
-         warning(paste0("You requested that we vertically merge some columns that are not present in your data. Specifically, the column(s) ", 
-                        str_comma(paste0("`", BadCols, "`")), 
-                        " is/are not present. These will be ignored. If you believe that's an error, please carefully check that what you specified for `merge_columns` perfectly matches the spelling of each column name.\n"), 
-                 call. = FALSE)
-         
-         merge_columns <- merge_columns[merge_columns %in% names(DF)]
-      }
-   }
    
    # Setting things up for nonstandard evaluation ----------------------------
    shading_column <- rlang::enquo(shading_column)
@@ -399,15 +364,6 @@ formatTable_Simcyp <- function(DF,
       }
    } else {
       ShadeRows <- c()
-   }
-   
-   ## Merge other columns, too -----------------------------------------------
-   
-   if(any(complete.cases(merge_columns))){
-      for(mc in merge_columns){
-         FT <- FT %>% 
-            flextable::merge_v(j = mc)
-      }
    }
    
    
