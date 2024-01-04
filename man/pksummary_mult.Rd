@@ -42,8 +42,7 @@ pksummary_mult(
 \item{sim_data_files}{a character vector of simulator output files, each in
 quotes and encapsulated with \code{c(...)}, NA to extract PK data for
 \emph{all} the Excel files in the current folder, or "recursive" to extract
-PK data for \emph{all} the Excel files in the current folder and \emph{all}
-subfolders.}
+PK data for all the Excel files in the current folder and all subfolders.}
 
 \item{compoundsToExtract}{For which compound(s) do you want to extract PK
 data? Options are any combination of the following:
@@ -67,7 +66,7 @@ with parentheses, e.g., \code{tissues = c("blood", "plasma")}}
 
   \item{By default, if you have a single-dose simulation, the parameters will
   include AUC and Cmax for dose 1, and, if you have a multiple-dose
-  simulation, AUC and Cmax for the last dose. Also by default, if you have an
+  simulation, AUC and Cmax for the last dose. Also by default, if you have a
   perpetrator present, the parameters will include the AUC and Cmax values with
   and without the perpetrator as well as those ratios.}
 
@@ -76,6 +75,15 @@ with parentheses, e.g., \code{tissues = c("blood", "plasma")}}
   "AUCtau_last").} Be sure to encapsulate the parameters you want with
   \code{c(...)}! To see the full set of possible parameters to extract, enter
   \code{view(PKParameterDefinitions)} into the console.}
+
+  \item{If you would like PK pulled from a specific custom interval, please
+  supply a named character vector where the names are the PK parameters and the
+  values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
+  NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
+  note that we would like the PK parameters that are for either dose 1 or the
+  last dose to have NA listed for the tab. It is also ok to supply this named
+  character vector to the argument \code{sheet_PKparameters} instead, but
+  please do not supply it to both.}
 
   \item{If you supply observed data using either the argument
   \code{report_input_file} or the argument \code{observed_PK} and do not
@@ -102,7 +110,15 @@ like the order to match the order you specified with the argument
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
-here. Most of the time, this should be left as NA.}
+here. Otherwise, this should be left as NA. If you want some parameters
+from a custom-interval tab and others from the regular tabs, please supply
+a named character vector where the names are the PK parameters and the
+values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
+NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
+note that we would like the PK parameters that are for either dose 1 or the
+last dose to have NA listed for the tab. It is also ok to supply this named
+character vector to the argument \code{PKparameters} instead, but
+please do not supply it to both.}
 
 \item{observed_PK}{(optional) If you have a data.frame, a named numeric
   vector, or an Excel or csv file with observed PK parameters, supply the
@@ -225,8 +241,8 @@ the same time. This only applies when the compound to extract is the
 substrate or a substrate metabolite. If set to TRUE, this will return a
 list that includes data formatted for use with the function
 \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
-only works with simulations with perpetrators (at least, for now), this will
-only work for simulations that included a perpetrator.}
+only works with simulations with perpetrators (at least, for now), this
+will only work for simulations that included a perpetrator.}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
@@ -235,8 +251,9 @@ simulator output file. Useful for QCing.}
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
-the table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. (You can also save the table to a
-Word file later with the function \code{\link{formatTable_Simcyp}}.) If you
+the table saved as a Word or csv file.  Do not include any slashes, dollar
+signs, or periods in the file name. (You can also save the table to a Word
+file later with the function \code{\link{formatTable_Simcyp}}.) If you
 supply only the file extension, e.g., \code{save_table = "docx"}, the name
 of the file will be "PK summary table" with that extension. If you supply
 something other than just "docx" or just "csv" for the file name but you
@@ -308,11 +325,11 @@ percentiles and, optionally, comparisons to observed data. This function
 automatically finds the correct tabs and the correct cells in a Simulator
 output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 see the notes at the bottom of this help file for how to supply observed data
-in a standardized fashion that this function can read.}} For detailed
+in a standardized fashion that this function can read.} \item{For detailed
 instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
 R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
 instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
-include a link to it here.)
+include a link to it here.)}}
 }
 \details{
 Because we need to have a standardized way to input observed data, setting up

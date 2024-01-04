@@ -76,6 +76,15 @@ blood".}
   \code{c(...)}. To see the full set of possible parameters to extract, enter
   \code{view(PKParameterDefinitions)} into the console.}
 
+  \item{If you would like PK pulled from a specific custom interval, please
+  supply a named character vector where the names are the PK parameters and the
+  values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
+  NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
+  note that we would like the PK parameters that are for either dose 1 or the
+  last dose to have NA listed for the tab. It is also ok to supply this named
+  character vector to the argument \code{sheet_PKparameters} instead, but
+  please do not supply it to both.}
+
   \item{If you supply observed data using either the argument
   \code{report_input_file} or the argument \code{observed_PK}, those PK
   parameters will be included automatically.}
@@ -100,7 +109,15 @@ like the order to match the order you specified with the argument
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
 pulled from a specific tab in the simulator output file, list that tab
-here. Most of the time, this should be left as NA.}
+here. Otherwise, this should be left as NA. If you want some parameters
+from a custom-interval tab and others from the regular tabs, please supply
+a named character vector where the names are the PK parameters and the
+values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
+NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
+note that we would like the PK parameters that are for either dose 1 or the
+last dose to have NA listed for the tab. It is also ok to supply this named
+character vector to the argument \code{PKparameters} instead, but
+please do not supply it to both.}
 
 \item{observed_PK}{(optional) If you have a data.frame, a named numeric
 vector, or an Excel or csv file with observed PK parameters, supply the

@@ -129,6 +129,15 @@
 #'   \code{c(...)}. To see the full set of possible parameters to extract, enter
 #'   \code{view(PKParameterDefinitions)} into the console.}
 #'
+#'   \item{If you would like PK pulled from a specific custom interval, please
+#'   supply a named character vector where the names are the PK parameters and the
+#'   values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
+#'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
+#'   note that we would like the PK parameters that are for either dose 1 or the
+#'   last dose to have NA listed for the tab. It is also ok to supply this named
+#'   character vector to the argument \code{sheet_PKparameters} instead, but
+#'   please do not supply it to both.}
+#'
 #'   \item{If you supply observed data using either the argument
 #'   \code{report_input_file} or the argument \code{observed_PK}, those PK
 #'   parameters will be included automatically.}
@@ -151,7 +160,15 @@
 #'   \code{PKparameters}? Options are "default" or "user specified".
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
-#'   here. Most of the time, this should be left as NA.
+#'   here. Otherwise, this should be left as NA. If you want some parameters
+#'   from a custom-interval tab and others from the regular tabs, please supply
+#'   a named character vector where the names are the PK parameters and the
+#'   values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
+#'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
+#'   note that we would like the PK parameters that are for either dose 1 or the
+#'   last dose to have NA listed for the tab. It is also ok to supply this named
+#'   character vector to the argument \code{PKparameters} instead, but
+#'   please do not supply it to both.
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
 #'   blood".
@@ -463,6 +480,16 @@ pksummary_table <- function(sim_data_file = NA,
       sheet_PKparameters[sheet_PKparameters %in% c("AUC", "AUC_CI", "AUC_SD")] <- NA
    }
    
+   # If the user supplies named character vectors to BOTH sheet_PKparameters AND
+   # PKparameters, that will be confusing and I bet people will be inconsistent,
+   # too. Only use the ones listed with sheet_PKparameters, and give a warning.
+   if(is.null(names(sheet_PKparameters)) == FALSE &
+      is.null(names(PKparameters)) == FALSE){
+      warning("You supplied a named character vector for both the argument `PKparameters` and the argument `sheet_PKparameters`, so we're not sure which one you want. Please only supply one or the other next time. For now, we'll use what you supplied for `sheet_PKparameters`.\n", 
+              call. = FALSE)
+      PKparameters <- NA
+   }
+   
    # Make sure that input to variability_format is ok
    if(variability_format %in% c("to", "hyphen", "brackets") == FALSE){
       warning("Acceptable input for `variability_format` is only `to` or `brackets`, and you have entered", 
@@ -561,38 +588,6 @@ pksummary_table <- function(sim_data_file = NA,
    # Excel or csv file for observed data, or it came from a report input form.
    # It could be in either wide or long format.
    
-   # Checking on whether user has requested a specific sheet for PK parameters
-   # b/c then we don't know which dose number things were. If they did, then we
-   # need them to have only supplied one value for each suffix-less PK
-   # parameter, e.g., they can't supply both Cmax_dose1 and Cmax_last in the
-   # observed data b/c we don't know which dose the simulated data are for.
-   if("data.frame" %in% class(observed_PK) & 
-      any(complete.cases(sheet_PKparameters))){
-      
-      if("PKparameter" %in% names(observed_PK)){
-         observed_PK <- observed_PK %>% 
-            mutate(PKparameter_rev = sub("_dose1|_last", "", PKparameter)) %>% 
-            filter(File == sim_data_file)
-         
-         if(any(duplicated(observed_PK$PKparameter_rev))){
-            warning("You have provided a specific sheet to use for the simulated PK parameters, which generally means that you are using a user-defined interval, which in turn means that we don't know which dose the simulated PK are for. The observed PK you provided include dose 1 and last-dose PK data, but we don't know which data to use. For now, we won't be able to calculate S/O values here or include observed data in the table.\n", 
-                    call. = FALSE)
-            observed_PK <- NA
-         }
-      } else {
-         
-         # This is when it's probably a wide DF and PK parameters are column names.
-         AllObsPK <- data.frame(OrigNames = names(observed_PK)) %>% 
-            mutate(RevNames = sub("_dose1|_last", "", OrigNames))
-         
-         if(any(duplicated(AllObsPK$RevNames))){
-            warning("You have provided a specific sheet to use for the simulated PK parameters, which generally means that you are using a user-defined interval, which in turn means that we don't know which dose the simulated PK are for. The observed PK you provided include dose 1 and last-dose PK data, but we don't know which data to use. For now, we won't be able to calculate S/O values here or include observed data in the table.\n", 
-                    call. = FALSE)
-            observed_PK <- NA
-         }
-      }
-   }
-   
    # Cleaning up and harmonizing observed data
    if("data.frame" %in% class(observed_PK)){
       # Convert to long format as needed
@@ -607,7 +602,9 @@ pksummary_table <- function(sim_data_file = NA,
          # Set aside variability columns for a moment to pivot correctly
          if(any(str_detect(names(observed_PK), "_CV"))){
             observed_PK_var <- observed_PK %>% 
-               select(any_of(c("File", paste0(AllPKParameters$PKparameter, "_CV")))) %>% 
+               select(any_of(c("File", paste0(c(AllPKParameters$PKparameter, 
+                                                sub("_dose1|_last", "", AllPKParameters$PKparameter)),
+                                              "_CV")))) %>% 
                pivot_longer(cols = -File, 
                             names_to = "PKparameter", 
                             values_to = "CV") %>% 
@@ -651,26 +648,12 @@ pksummary_table <- function(sim_data_file = NA,
       # Harmonizing PK parameter names
       observed_PK$PKparameter <- harmonize_PK_names(observed_PK$PKparameter)
       
-      # If user specified a sheet and/or didn't specify dose number in the PK
-      # parameter name for obs PK, we don't know what dose the PK pertain to and
-      # that messes up everything else. Artificially adding that now and will
-      # remove it later.
-      if(any(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)){
-         observed_PK$PKparameter[
-            which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)] <- 
-            paste0(observed_PK$PKparameter[
-               which(str_detect(observed_PK$PKparameter, "_dose1|_last") == FALSE)], 
-               "_last") 
-         # Using "last" here b/c more flexible; applicable to more PK
-         # parameters. If it were a single-dose sim, that wouldn't
-         # require a user-defined integration interval.
-      }
-      
       observed_PK <- observed_PK %>% 
          select(any_of(c("File", "Tab", "PKparameter", "Value", "CV"))) %>%  
          # Only keeping parameters that we've set up data extraction for,
          # and only keeping complete.cases of obs data
-         filter(PKparameter %in% AllPKParameters$PKparameter &
+         filter(PKparameter %in% c(AllPKParameters$PKparameter, 
+                                   sub("_dose1|_last", "", AllPKParameters$PKparameter)) &
                    complete.cases(Value))
       
       if("File" %in% names(observed_PK)){
@@ -945,13 +928,19 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    ## Getting PK parameters -------------------------------------------------
+   if(is.null(names(sheet_PKparameters))){
+      PKparameters_temp <- unique(c(PKToPull,
+                                    sub("AUCinf_dose1",
+                                        "AUCt_dose1", PKToPull),
+                                    sub("AUCinf$",
+                                        "AUCt$", PKToPull))) 
+   } else {
+      PKparameters_temp <- NA
+   }
+   
    suppressWarnings(
       MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
-                                   PKparameters = unique(c(PKToPull,
-                                                           sub("AUCinf_dose1",
-                                                               "AUCt_dose1", PKToPull),
-                                                           sub("AUCinf$",
-                                                               "AUCt$", PKToPull))),
+                                   PKparameters = PKparameters_temp,
                                    tissue = tissue,
                                    compoundToExtract = compoundToExtract,
                                    sheet = sheet_PKparameters, 
@@ -984,15 +973,6 @@ pksummary_table <- function(sim_data_file = NA,
    if(any(ExtrapCheck == TRUE)){
       MyPKResults_all$aggregate <- MyPKResults_all$aggregate %>% 
          select(-matches("AUCinf"))
-   }
-   
-   # PKToPull must be changed if user specified a tab b/c then the parameters
-   # won't have _last or _dose1 suffixes. HOWEVER, if the sheet matched the AUC
-   # tab in terms of formatting, then we DO know which dose it was, so don't
-   # remove suffixes in that case.
-   if(any(complete.cases(sheet_PKparameters)) &
-      any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
-      PKToPull <- unique(sub("_last|_dose1", "", PKToPull))
    }
    
    # Changing units if user wants. 
@@ -1268,10 +1248,6 @@ pksummary_table <- function(sim_data_file = NA,
                                      "geometric" = "geomean", 
                                      "arithmetic" = "mean"), Stat))
       
-      if(any(complete.cases(sheet_PKparameters))){
-         MyObsPK$PKParam <- sub("_first|_dose1|_last", "", MyObsPK$PKParam)
-      }
-      
       # Calculating S/O
       suppressMessages(
          SOratios <- MyPKResults %>% 
@@ -1490,18 +1466,18 @@ pksummary_table <- function(sim_data_file = NA,
                                 sub("_dose1|_last", "", AllPKParameters$PKparameter))]
    
    PKlevels <- switch(PKorder, 
-      
-      # the default scenario
-      "default" =
-         bind_rows(AllPKParameters, 
-                   AllPKParameters %>% 
-                      mutate(PKparameter = sub("_dose1|_last", "", PKparameter))) %>% 
-         select(PKparameter, SortOrder) %>% 
-         arrange(SortOrder) %>%
-         pull(PKparameter) %>% unique(), 
-      
-      # user wants a specific order but using default tabs
-      "user specified" = PKparameters)
+                      
+                      # the default scenario
+                      "default" =
+                         bind_rows(AllPKParameters, 
+                                   AllPKParameters %>% 
+                                      mutate(PKparameter = sub("_dose1|_last", "", PKparameter))) %>% 
+                         select(PKparameter, SortOrder) %>% 
+                         arrange(SortOrder) %>%
+                         pull(PKparameter) %>% unique(), 
+                      
+                      # user wants a specific order but using default tabs
+                      "user specified" = PKparameters)
    
    PKToPull <- factor(PKToPull, levels = PKlevels)
    PKToPull <- sort(unique(PKToPull))
