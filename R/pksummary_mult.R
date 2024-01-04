@@ -506,7 +506,8 @@ pksummary_mult <- function(sim_data_files = NA,
    if(exists("observed_PKDF", inherits = FALSE)){
       
       # Checking whether data in long or wide format. 
-      Wide <- any(names(observed_PKDF) %in% AllPKParameters$PKparameter)
+      Wide <- any(names(observed_PKDF) %in% c(AllPKParameters$PKparameter, 
+                                              tolower(AllPKParameters$PKparameter)))
       
       if(Wide){
          

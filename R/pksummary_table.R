@@ -591,7 +591,8 @@ pksummary_table <- function(sim_data_file = NA,
    # Cleaning up and harmonizing observed data
    if("data.frame" %in% class(observed_PK)){
       # Convert to long format as needed
-      if(any(AllPKParameters$PKparameter %in% names(observed_PK))){
+      if(any(names(observed_PK) %in% c(AllPKParameters$PKparameter, 
+                                       tolower(AllPKParameters$PKparameter)))){
          
          # If "File" isn't already present as a column, adding it to use for
          # joining later. 
@@ -615,8 +616,10 @@ pksummary_table <- function(sim_data_file = NA,
          }
          
          observed_PK <- observed_PK %>% 
-            select(-any_of(paste0(AllPKParameters$PKparameter, "_CV"))) %>% 
-            pivot_longer(cols = any_of(AllPKParameters$PKparameter), 
+            select(-any_of(paste0(c(AllPKParameters$PKparameter, 
+                                    tolower(AllPKParameters$PKparameter)), "_CV"))) %>% 
+            pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
+                                         tolower(AllPKParameters$PKparameter))), 
                          names_to = "PKparameter", 
                          values_to = "Value") %>% 
             left_join(observed_PK_var, by = c("File", "PKparameter"))
@@ -701,7 +704,7 @@ pksummary_table <- function(sim_data_file = NA,
    GoodPKParam <- intersect(PKparameters, 
                             AllPKParameters %>% pull(PKparameter) %>% unique())
    BadPKParam <- setdiff(PKparameters, GoodPKParam)
-   if(all(is.na(sheet_PKparameters)) & 
+   if(all(is.na(sheet_PKparameters)) & any(complete.cases(PKparameters)) &
       length(BadPKParam) > 0){
       warning(paste0("The PK parameters ", 
                      str_comma(paste0("`", BadPKParam, "`")), 
