@@ -132,11 +132,17 @@
 #'   \item{If you would like PK pulled from a specific custom interval, please
 #'   supply a named character vector where the names are the PK parameters and the
 #'   values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
-#'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
-#'   note that we would like the PK parameters that are for either dose 1 or the
-#'   last dose to have NA listed for the tab. It is also ok to supply this named
-#'   character vector to the argument \code{sheet_PKparameters} instead, but
-#'   please do not supply it to both.}
+#'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)}
+#'   \strong{Please note that we would like the PK parameters that are for either dose 1 or the
+#'   last dose to have NA listed for the tab.} Another note: The code will
+#'   work best if any PK parameters for a custom interval do not have
+#'   a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last". 
+#'   This is because we do not know
+#'   which dose number a custom interval is. This also helps use make sure that
+#'   each PK parameter has only one value so that it's clear which PK data are
+#'   being described. It is ok to supply this named
+#'   character vector to the argument \code{sheet_PKparameters} instead, but please do
+#'   not supply it to both.}
 #'
 #'   \item{If you supply observed data using either the argument
 #'   \code{report_input_file} or the argument \code{observed_PK}, those PK
@@ -154,9 +160,9 @@
 #'   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
 #'   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
 #'   "AUCtau_ratio_last", "Cmax_ratio_last")}.
-#' @param PKorder Would you like the order of the PK parameters to be the the
-#'   order specified in the Consultancy Report Template (default), or would you
-#'   like the order to match the order you specified with the argument
+#' @param PKorder Would you like the order of the PK parameters to be the order
+#'   specified in the Consultancy Report Template (default), or would you like
+#'   the order to match the order you specified with the argument
 #'   \code{PKparameters}? Options are "default" or "user specified".
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
@@ -164,11 +170,18 @@
 #'   from a custom-interval tab and others from the regular tabs, please supply
 #'   a named character vector where the names are the PK parameters and the
 #'   values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
-#'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
-#'   note that we would like the PK parameters that are for either dose 1 or the
-#'   last dose to have NA listed for the tab. It is also ok to supply this named
-#'   character vector to the argument \code{PKparameters} instead, but
-#'   please do not supply it to both.
+#'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)}
+#'   \itemize{\item{\strong{Please note that we would like the PK parameters that are for either dose 1 or the
+#'   last dose to have NA listed for the tab.}} \item{Another note: The code will
+#'   work best if any PK parameters for a custom interval do not have
+#'   a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last". 
+#'   This is because we do not know
+#'   which dose number a custom interval is. This also helps use make sure that
+#'   each PK parameter has only one value so that it's clear which PK data are
+#'   being described.}
+#'   \item{It is ok to supply this named
+#'   character vector to the argument \code{PKparameters} instead, but please do
+#'   not supply it to both.}}
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
 #'   blood".
@@ -273,7 +286,8 @@
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
-#'   metabolites, perpetrators, or perpetrator metabolites are among the standard
+#'   metabolites, perpetrators, or perpetrator metabolites are among the
+#'   standard
 #'   options for the simulator, and leaving \code{prettify_compound_names =
 #'   TRUE} will make the name of those compounds something more human readable.
 #'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
@@ -281,8 +295,9 @@
 #'   you'd prefer to see in your column titles if you would like something
 #'   different. For example, \code{prettify_compound_names = c("perpetrator" =
 #'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
-#'   includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
-#'   you're setting the perpetrator name, you really should use something like this
+#'   includes \emph{all} the perpetrators and perpetrator metabolites present,
+#'   so, if you're setting the perpetrator name, you really should use something
+#'   like this
 #'   if you're including perpetrator metabolites: \code{prettify_compound_names =
 #'   c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
@@ -291,17 +306,18 @@
 #'   substrate or a substrate metabolite. If set to TRUE, this will return a
 #'   list that includes data formatted for use with the function
 #'   \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
-#'   only works with simulations with perpetrators (at least, for now), this will
-#'   only work for simulations that included a perpetrator. This is probably most
-#'   useful for the \code{\link{pksummary_mult}} function since a forest plot
-#'   with only one simulation isn't terribly informative.
+#'   only works with simulations with perpetrators (at least, for now), this
+#'   will only work for simulations that included a perpetrator. This is
+#'   probably most useful for the \code{\link{pksummary_mult}} function since a
+#'   forest plot with only one simulation isn't terribly informative.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the main PK table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. (If you assign the output of
+#'   the main PK table saved as a Word or csv file.  Do not include any slashes,
+#'   dollar signs, or periods in the file name. (If you assign the output of
 #'   \code{pksummary_table} to an R object, you can also save the table later to
 #'   a Word file with the function \code{\link{formatTable_Simcyp}}.) If you
 #'   supply only the file extension, e.g., \code{save_table = "docx"}, the name

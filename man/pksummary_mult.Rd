@@ -103,7 +103,7 @@ with parentheses, e.g., \code{tissues = c("blood", "plasma")}}
   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
   "AUCtau_ratio_last", "Cmax_ratio_last")}.}
 
-\item{PKorder}{Would you like the order of the PK parameters to be the the
+\item{PKorder}{Would you like the order of the PK parameters to be the
 order specified in the Consultancy Report Template (default), or would you
 like the order to match the order you specified with the argument
 \code{PKparameters}? Options are "default" or "user specified".}
