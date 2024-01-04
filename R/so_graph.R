@@ -9,6 +9,16 @@
 #'   \code{\link{pksummary_mult}}; if left as NA, this will make graphs for each
 #'   parameter included in \code{PKtable}. To see the full set of possible
 #'   parameters, enter \code{view(PKParameterDefinitions)} into the console.
+#' @param PKorder optionally specify the order of the graphs. Leaving this as
+#'   "default" puts the graphs in alphabetical order and setting this to "user
+#'   specified" will make the order of the graphs match the order you specified
+#'   with the argument \code{PKparameters}. Graphs are plotted left to right and
+#'   then top to bottom. If you would like a blank space inserted between some
+#'   parameters -- for example, to keep all your Cmax values in the same column
+#'   or something like that -- include "BLANK" in the values you list for
+#'   \code{PKparameters} wherever you want that to happen, e.g.,
+#'   \code{PKparameters = c("Cmax_dose1", "BLANK", "AUCinf_dose1", "BLANK",
+#'   "tmax_dose1")}
 #' @param make_AUC_generic TRUE or FALSE for whether to list just "AUC ratio"
 #'   instead of, e.g., "AUCinf ratio" or "AUCtau ratio" or even instead of "AUCt
 #'   ratio". If TRUE, all AUC values for a given dose number (1st or last or
@@ -181,6 +191,7 @@
 
 so_graph <- function(PKtable, 
                      PKparameters = NA, 
+                     PKorder = "default", 
                      boundaries = c(1.5, 2),
                      boundaries_Guest = 2,
                      boundary_indicator = "lines",
@@ -268,6 +279,8 @@ so_graph <- function(PKtable,
    
    boundary_color_set_orig <- boundary_color_set
    
+   PKwithBlank <- PKparameters
+   PKparameters <- PKparameters[!PKparameters == "BLANK"]
    
    # Will need to figure out what PK parameters are and will need deprettified
    # names when reshaping and organizing data here and lower in function
@@ -294,6 +307,19 @@ so_graph <- function(PKtable,
             filter(complete.cases(PKparameter)) %>% 
             pull(PKparameter)
       }
+   }
+   
+   if(PKorder %in% c("default", "user specified") == FALSE){
+      warning(paste0("PKorder must be either `default` or `user specified`, and you listed `", 
+                     PKorder, "`. We'll set this to default (alphabetical by PK parameter name).\n"), 
+              call. = FALSE)
+      PKorder <- "default"
+   }
+   
+   if(PKorder == "user specified" & all(is.na(PKparameters))){
+      warning("You said that you wanted to specify the order of the graphs by PK parameter but did not list any specific PK parameters with the argument `PKparameters`, so we don't know what order you would like. We'll set the order to the default, which is alphabetical by PK parameter name.\n", 
+              call. = FALSE)
+      PKorder <- "default"
    }
    
    names(axis_titles) <- tolower(names(axis_titles))
@@ -1014,6 +1040,14 @@ so_graph <- function(PKtable,
       # ncol and nrow must both be specified or neither specified. Dealing with
       # that.
       NumCR <- paste(is.null(ncol), is.null(nrow))
+      
+      # Setting the order if user requested that. 
+      
+      if(PKorder == "user specified"){
+         G <- G[PKparameters]
+      } else {
+         G <- G[sort(names(G))]
+      }
       
       G <-  ggpubr::ggarrange(
          plotlist = G, align = "hv", 
