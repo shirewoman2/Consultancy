@@ -10,13 +10,15 @@
 #'   parameter included in \code{PKtable}. To see the full set of possible
 #'   parameters, enter \code{view(PKParameterDefinitions)} into the console.
 #' @param PKorder optionally specify the order of the graphs. Leaving this as
-#'   "default" puts the graphs in alphabetical order and setting this to "user
-#'   specified" will make the order of the graphs match the order you specified
-#'   with the argument \code{PKparameters}. Graphs are plotted left to right and
-#'   then top to bottom. If you would like a blank space inserted between some
-#'   parameters -- for example, to keep all your Cmax values in the same column
-#'   or something like that -- include "BLANK" in the values you list for
-#'   \code{PKparameters} wherever you want that to happen, e.g.,
+#'   "default" puts the graphs in the same order as the columns in the Simcyp
+#'   Consultancy Team template for PK tables (plus some guesses at a good order
+#'   for PK parameters that are not listed in said template table). Setting this
+#'   to "user specified" will make the order of the graphs match the order you
+#'   specified with the argument \code{PKparameters}. Graphs are plotted left to
+#'   right and then top to bottom. If you would like a blank space inserted
+#'   between some parameters -- for example, to keep all your Cmax values in the
+#'   same column or something like that -- include "BLANK" in the values you
+#'   list for \code{PKparameters} wherever you want that to happen, e.g.,
 #'   \code{PKparameters = c("Cmax_dose1", "BLANK", "AUCinf_dose1", "BLANK",
 #'   "tmax_dose1")}
 #' @param make_AUC_generic TRUE or FALSE for whether to list just "AUC ratio"
@@ -279,8 +281,11 @@ so_graph <- function(PKtable,
    
    boundary_color_set_orig <- boundary_color_set
    
-   PKwithBlank <- PKparameters
-   PKparameters <- PKparameters[!PKparameters == "BLANK"]
+   PKwithBlanks <- PKparameters
+   PKwithBlanks[toupper(PKwithBlanks) == "BLANK"] <- 
+      paste0(PKwithBlanks[toupper(PKwithBlanks) == "BLANK"], 
+             1:length(PKwithBlanks[toupper(PKwithBlanks) == "BLANK"]))
+   PKparameters <- PKparameters[!toupper(PKparameters) == "BLANK"]
    
    # Will need to figure out what PK parameters are and will need deprettified
    # names when reshaping and organizing data here and lower in function
@@ -1044,9 +1049,25 @@ so_graph <- function(PKtable,
       # Setting the order if user requested that. 
       
       if(PKorder == "user specified"){
-         G <- G[PKparameters]
+         if(include_dose_num == FALSE){
+            PKwithBlanks <- sub("_dose1|_last", "", PKwithBlanks)
+         }
+         
+         for(blanks in PKwithBlanks[str_detect(PKwithBlanks, "BLANK")]){
+            G[[blanks]] <- ggplot() + theme_void()
+         }
+         
+         G <- G[PKwithBlanks]
+         
       } else {
-         G <- G[sort(names(G))]
+         
+         GoodOrder <- AllPKParameters %>% select(PKparameter, SortOrder) %>% 
+            bind_rows(AllPKParameters %>% select(PKparameter_nodosenum, SortOrder) %>% 
+                         rename(PKparameter = PKparameter_nodosenum)) %>% 
+            arrange(SortOrder) %>% pull(PKparameter) %>% unique()
+         GoodOrder <- GoodOrder[GoodOrder %in% names(G)]
+         
+         G <- G[GoodOrder]
       }
       
       G <-  ggpubr::ggarrange(
