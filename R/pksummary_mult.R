@@ -405,7 +405,7 @@ pksummary_mult <- function(sim_data_files = NA,
    # Harmonizing PK parameter names
    PKparameters <- harmonize_PK_names(PKparameters)
    
-   # Check for appropriate input for arguments
+   # Check for appropriate input for compound ID
    compoundsToExtract <- tolower(compoundsToExtract)
    
    PossCmpd <- c("substrate", "primary metabolite 1", "primary metabolite 2",
@@ -433,15 +433,13 @@ pksummary_mult <- function(sim_data_files = NA,
    
    tissues <- tolower(tissues)
    if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE)){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.
-              ", 
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.\n", 
               call. = FALSE)
       tissues <- intersect(tissues, c("plasma", "unbound plasma", "blood", "unbound blood"))
    }
    
    if(extract_forest_data & includeConfInt == FALSE){
-      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.
-              ", 
+      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.\n", 
               call. = FALSE)
       includeConfInt <- TRUE
    }

@@ -70,7 +70,7 @@ prettify_column_names <- function(PKtable,
    AllPKParameters_mod <- 
       AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
       mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
-             PrettifiedNames = str_trim(sub("Last dose|Dose 1", "", 
+             PrettifiedNames = str_trim(sub("Last dose|Dose 1| for dose 1", "", 
                                             PrettifiedNames))) %>% 
       unique()
    
@@ -87,6 +87,7 @@ prettify_column_names <- function(PKtable,
    AllPKParameters_mod <- bind_rows(AllPKParameters_mod, 
                                     ExtraPKParam)
    
+   # 1st step: This will leave some values as NA for the column PrettifiedNames.
    TableNames <-
       data.frame(OrigColNames = OrigColNames, 
                  PKparameter_orig = names(PKtable), 
@@ -107,14 +108,14 @@ prettify_column_names <- function(PKtable,
    
    TableNamesToPrettify <- TableNames %>% filter(is.na(PrettifiedNames)) %>% 
       select(-PrettifiedNames) %>% 
-      left_join(AllPKParameters %>% 
+      left_join(bind_rows(AllPKParameters, AllPKParameters_mod) %>% 
                    select(PKparameter, PrettifiedNames) %>% 
                    bind_rows(ExtraPKParam), 
                 by = "PKparameter") %>% unique()
    
    TableNamesToUglify <- TableNames %>% filter(is.na(PKparameter)) %>% 
       select(-PKparameter) %>% 
-      left_join(AllPKParameters %>% 
+      left_join(bind_rows(AllPKParameters, AllPKParameters_mod) %>% 
                    select(PKparameter, PrettifiedNames) %>% 
                    bind_rows(ExtraPKParam), 
                 by = "PrettifiedNames") %>% unique()

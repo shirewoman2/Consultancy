@@ -694,6 +694,23 @@ pksummary_table <- function(sim_data_file = NA,
       
    }
    
+   # Now that we have all the possible PK parameters they want, check on whether
+   # they've supplied a value for a custom interval w/out specifying the sheet
+   # it should come from. If they have supplied only NA for the sheet, then only
+   # PKparameters with dose number specifications are valid. Remove any others.
+   GoodPKParam <- intersect(PKparameters, 
+                            AllPKParameters %>% pull(PKparameter) %>% unique())
+   BadPKParam <- setdiff(PKparameters, GoodPKParam)
+   if(all(is.na(sheet_PKparameters)) & 
+      length(BadPKParam) > 0){
+      warning(paste0("The PK parameters ", 
+                     str_comma(paste0("`", BadPKParam, "`")), 
+                     " look like you want them to come from a custom interval tab in the Excel results file because they don't indicate whether they should be for the first dose or the last dose. However, you have not specified the name of the tab with that custom interval, so we don't know where to look for them. They will be omitted.\n"), 
+              call. = FALSE)
+      PKparameters <- GoodPKParam
+   }
+   rm(GoodPKParam, BadPKParam)
+   
    # From here down, function is set up for observed PK to be a data.frame or,
    # if the user did not provide observed PK, then a logical. If something went
    # wrong with the data they supplied for observed PK, making the observed PK
@@ -830,7 +847,7 @@ pksummary_table <- function(sim_data_file = NA,
             # If user supplies an observed file, then pull the parameters
             # they want to match. 
             
-            # FIXME
+            PKToPull <- observed_PK$PKparameter
             
          } else if(any(complete.cases(sheet_PKparameters))){ 
             PKToPull <- NA # This will retrieve all possible parameters from user-defined interval.
@@ -1348,7 +1365,11 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Putting everything together and formatting -------------------------
    
-   # Formatting and selecting only rows where there are data
+   # Formatting and selecting only rows where there are data. Also removing any
+   # PKparameters where we have only observed data, which can happen if user
+   # specifies a PK parameter w/out a dose number but then does not specify a
+   # custom interval tab. That messes up other formatting down the line
+   # w/writing to Word.
    MyPKResults <- MyPKResults %>%
       mutate(Value = if_else(str_detect(Stat, "CV"), 
                              round_opt(100*Value, rounding),
@@ -1357,7 +1378,16 @@ pksummary_table <- function(sim_data_file = NA,
                          "CI90_low", "CI90_high", "CI95_low", "CI95_high",
                          "min", "max", "per5", "per95", 
                          ifelse(MeanType == "geometric", "GCV", "CV"), 
-                         "MinMean", "MaxMean", "S_O", "SD", "median")) %>%
+                         "MinMean", "MaxMean", "S_O", "SD", "median"))
+   
+   # Checking for any PK parameters where there are no simulated data.
+   GoodPKParam <- MyPKResults %>% 
+      filter(Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean") &
+                SorO == "Sim" &
+                complete.cases(Value)) %>% pull(PKParam) %>% unique()
+   
+   MyPKResults <- MyPKResults %>%
+      filter(PKParam %in% GoodPKParam) %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>% 
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O")), 
              Stat = factor(Stat, levels = c("mean", "geomean", "median", "CV", "GCV", 
@@ -1368,10 +1398,6 @@ pksummary_table <- function(sim_data_file = NA,
       arrange(SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) 
-   # If this throws an error for you, try running "tidyverse_update()", copy
-   # whatever it says is out of date, restart your R session (Ctrl Shift
-   # F10), and then paste the output (something like
-   # "install.packages(c("dbplyr", "dplyr", "dtplyr", ... ") and execute.
    
    # Putting trial means into appropriate format
    if(includeTrialMeans){
@@ -1567,6 +1593,15 @@ pksummary_table <- function(sim_data_file = NA,
       # both dose 1 and last-dose data.
       DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
                      "last" = any(str_detect(names(MyPKResults), "Last dose")))
+      
+      # Next, checking whether they have a mix of custom AUC intervals and
+      # regular b/c need to retain dose num in that case.
+      if(any(PKparameters %in% 
+             setdiff(unique(AllPKParameters$PKparameter_nodosenum), 
+                     unique(AllPKParameters$PKparameter)))){
+         DoseCheck <- TRUE
+      }
+      
       include_dose_num <- all(DoseCheck)
    }
    
