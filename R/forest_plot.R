@@ -581,8 +581,8 @@ forest_plot <- function(forest_dataframe,
                               c("file", "tissue", "mean", "median", "min", "max", 
                                 "fold", "substrate", "inhibitor1")] <- 
       str_to_title(names(forest_dataframe)[tolower(names(forest_dataframe)) %in% 
-                                 c("file", "tissue", "mean", "median", "min", "max", 
-                                   "fold", "substrate", "inhibitor1")])
+                                              c("file", "tissue", "mean", "median", "min", "max", 
+                                                "fold", "substrate", "inhibitor1")])
    
    
    if(ObsIncluded){
@@ -1321,14 +1321,14 @@ forest_plot <- function(forest_dataframe,
                                         0.5, as.numeric(VlineParams[["linewidth"]]))
    
    # Graph ----------------------------------------------------------------
-   if(as_label(facet_column_x) == "PKparameter" |
-      FakeFacetOnPK){
+   if(as_label(facet_column_x) == "PKparameter" | FakeFacetOnPK){
       
       # If user wants to facet by the PK parameter, that's a special case
       # b/c we need to change what we're using for the y axis. 
-      
-      Param_exp <- PKexpressions[levels(forest_dataframe$PKparameter)]
-      names(Param_exp) <- levels(forest_dataframe$PKparameter)
+      Param_exp <- expression()
+      for(param in levels(forest_dataframe$PKparameter)){
+         Param_exp[param] <- PKexpressions[[param]]
+      }
       
       forest_dataframe <- forest_dataframe %>% 
          mutate(PKparameter_exp = factor(PKparameter, 
