@@ -99,9 +99,11 @@ prettify_column_names <- function(PKtable,
              IsPKParam = IsPretty | IsNotPretty, 
              NeedsPrettifying = IsPKParam & IsNotPretty, 
              PKparameter = case_when(NeedsPrettifying == TRUE ~ PKparameter_orig, 
-                                     NeedsPrettifying == FALSE & IsPKParam == FALSE ~ PKparameter_orig), 
+                                     NeedsPrettifying == FALSE & IsPKParam == FALSE ~ PKparameter_orig, 
+                                     NeedsPrettifying == FALSE & IsPKParam ~ NA), 
              PrettifiedNames = case_when(NeedsPrettifying == FALSE ~ PKparameter_orig, 
-                                         NeedsPrettifying == FALSE & IsPKParam == FALSE ~ PKparameter_orig))
+                                         NeedsPrettifying == FALSE & IsPKParam == FALSE ~ PKparameter_orig, 
+                                         TRUE ~ NA))
    # Some columns may need prettifying and others may need uglifying. Need to figure
    # out what values to fill in for any NA values in either PrettifiedNames or
    # in PKparameter, so splitting table here.
@@ -134,7 +136,24 @@ prettify_column_names <- function(PKtable,
    # Setting semi-finalized column names. 
    TableNames <- TableNames %>% 
       mutate(FinalNames = case_when({pretty_or_ugly_cols} == "pretty" ~ PrettifiedNames, 
-                                    {pretty_or_ugly_cols} == "ugly" ~ PKparameter))
+                                    {pretty_or_ugly_cols} == "ugly" ~ PKparameter)) %>% 
+      select(OrigColNames, OrigOrder, FinalNames) %>% unique()
+   
+   # Making sure that we don't have duplicates for OrigOrder b/c that would mean
+   # that final column names might be offset. An example of when this can
+   # happen: When you're trying to uglify CL/F b/c could be CLinf or CLt or
+   # CLtau. If there are duplicates here, then it's best to just use original
+   # column names to be safe.
+   if(any(duplicated(TableNames$OrigOrder))){
+      warning(paste0("There's something ambiguous about the input table column names that means that we don't know what value(s) to use for the final column names, so we cannot ", 
+                     switch(pretty_or_ugly_cols, 
+                            "pretty" = "prettify", 
+                            "ugly" = "uglify"), 
+                     " your columns. Please check your input and tell a member of the R Working Group if you're uncertain what the problem might be.\n"), 
+              call. = FALSE)
+      TableNames <- TableNames %>% 
+         mutate(FinalNames = OrigColNames) %>% unique()
+   }
    
    # Check that all column names would be unique.
    if(any(duplicated(TableNames$FinalNames))){

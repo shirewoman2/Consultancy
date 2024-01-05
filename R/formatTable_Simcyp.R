@@ -319,10 +319,6 @@ formatTable_Simcyp <- function(DF,
       DF <- prettify_column_names(DF)
    }
    
-   if(prettify_columns){
-      DF <- prettify_column_names(DF)
-   }
-   
    FT <- flextable::flextable(DF)
    
    # Optionally making things bold face
