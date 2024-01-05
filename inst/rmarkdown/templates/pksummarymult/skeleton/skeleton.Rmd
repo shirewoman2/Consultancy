@@ -71,7 +71,7 @@ if(single_table){
    
    CapText2 <- paste0(sub("; $", ".", CapText2a), 
                       ifelse(Observedincluded, 
-                             "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
+                             " S/O: simulated/observed; source observed data: Clinical Study XXX; ",
                              ""))
    
    AllFiles <- switch(
@@ -127,6 +127,17 @@ if(single_table){
       # both dose 1 and last-dose data.
       DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
                      "last" = any(str_detect(names(MyPKResults), "Last dose")))
+      
+      # Next, checking whether they have a mix of custom AUC intervals and
+      # regular b/c need to retain dose num in that case.
+      if(any(PKpulled$PKpulled %in% 
+             c(setdiff(unique(AllPKParameters$PKparameter_nodosenum), 
+                       unique(AllPKParameters$PKparameter)), 
+               setdiff(unique(AllPKParameters$PrettifiedNames_nodosenum), 
+                       unique(AllPKParameters$PrettifiedNames))))){
+         DoseCheck <- TRUE
+      }
+      
       include_dose_num <- all(DoseCheck)
    }
    

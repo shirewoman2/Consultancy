@@ -633,9 +633,13 @@ pksummary_table <- function(sim_data_file = NA,
          
          observed_PK <- observed_PK %>% 
             select(-any_of(paste0(c(AllPKParameters$PKparameter, 
-                                    tolower(AllPKParameters$PKparameter)), "_CV"))) %>% 
+                                    tolower(AllPKParameters$PKparameter), 
+                                    AllPKParameters$PKparameter_nodosenum, 
+                                    tolower(AllPKParameters$PKparameter_nodosenum)), "_CV"))) %>% 
             pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
-                                         tolower(AllPKParameters$PKparameter))), 
+                                         tolower(AllPKParameters$PKparameter), 
+                                         AllPKParameters$PKparameter_nodosenum, 
+                                         tolower(AllPKParameters$PKparameter_nodosenum))), 
                          names_to = "PKparameter", 
                          values_to = "Value") %>% 
             left_join(observed_PK_var, by = c("File", "PKparameter"))
@@ -1616,8 +1620,10 @@ pksummary_table <- function(sim_data_file = NA,
       # Next, checking whether they have a mix of custom AUC intervals and
       # regular b/c need to retain dose num in that case.
       if(any(PKparameters %in% 
-             setdiff(unique(AllPKParameters$PKparameter_nodosenum), 
-                     unique(AllPKParameters$PKparameter)))){
+             c(setdiff(unique(AllPKParameters$PKparameter_nodosenum), 
+                       unique(AllPKParameters$PKparameter)), 
+               setdiff(unique(AllPKParameters$PrettifiedNames_nodosenum), 
+                       unique(AllPKParameters$PrettifiedNames))))){
          DoseCheck <- TRUE
       }
       
