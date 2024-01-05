@@ -656,8 +656,8 @@ extractConcTime <- function(sim_data_file,
       # maybe when it's single dose, they don't list the compound name, only,
       # e.g., "CPlasma".
       if(all(is.na(CmpdMatches$CompoundID)) & 
-         length(AllCompoundsPresent) == 1){
-         CmpdMatches$CompoundID <- AllCompoundsID
+         length(AllCompoundsInv) == 1){
+         CmpdMatches$CompoundID <- AllCompoundsInv
       }
       
       rm(CmpdMatches1, CmpdMatches2, NApos, StartRow, EndRow, AllCompoundsInv)
@@ -675,6 +675,18 @@ extractConcTime <- function(sim_data_file,
                                 str_c(CmpdMatches$CompoundName[
                                    which(CmpdMatches$CompoundID == cmpd)], 
                                    collapse = "|"))))
+            
+            if(length(PossRows) == 0 & nrow(CmpdMatches) == 1){
+               # In V22, they sometimes don't list the compound name at all --
+               # maybe only when there's only the substrate present? -- so regex
+               # by compound name will result in 0 possible rows.
+               
+               PossRows <- 
+                  which(str_detect(sim_data_xl$...1, 
+                                   str_c(CmpdMatches$CompoundCode[
+                                      which(CmpdMatches$CompoundID == cmpd)], 
+                                      collapse = "|")))
+            }
             
             sim_data_xl$...1[PossRows] <- 
                sub(gsub("\\(|\\)|\\-", ".", 
