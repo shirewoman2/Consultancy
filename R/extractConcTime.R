@@ -574,6 +574,8 @@ extractConcTime <- function(sim_data_file,
       # Each metabolite will be on its own tab. All concs labeled as CSys.
       # Perpetrators: ISys for inhibitor 1 concs, ISys 2 for inhibitor 2 concs, ISys and some other number for inhibitor metabolite concs. Not clear how they pick the number for the metabolite concs.
       
+      # REMINDER TO SELF: As far as I can tell, only substrate and inhibitor concentrations are available for solid tissues. 
+      
       # Scenario 3: Solid tissue, no perpetrator
       # Many concs possible. 
       # Adipose, Bone, Brain (except when AdvBrainModel), Gut, Heart, Kidney, Liver, Lung, Muscle, Skin, Spleen, Pancreas: CTissue
@@ -827,7 +829,7 @@ extractConcTime <- function(sim_data_file,
       # this tissue/compound combination.
       NotAvail <- FALSE
       
-      if(ADAM & cmpd != "substrate"){ # May need to add AdvBrainModel. Not sure.
+      if(ADAM & cmpd != "substrate"){ 
          if(tissue %in% c("faeces", "gut tissue")){
             if(cmpd != "inhibitor 1"){
                if(fromMultFunction){
@@ -1210,6 +1212,14 @@ extractConcTime <- function(sim_data_file,
                   TimeRow <- TimeRow[which(str_detect(sim_data_xl$...1[TimeRow + 1],
                                                       "^I|CTissue"))][1]
                }
+            }
+            
+            # If TimeRow is still NA at this point, then this compound is not
+            # present on this tab. Example: Sometimes the inhibitor
+            # concentrations are available for some solid tissues but not
+            # others. When this happens, skip this compound ID. 
+            if(is.na(TimeRow)){
+               next
             }
             
             # Figuring out which rows contain which data
