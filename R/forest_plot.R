@@ -102,7 +102,7 @@
 #'   "Inhibitor1" is included in your observed PK.}
 #'
 #'   \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
-#'   "Centile_Lower", "Centile_Upper", "GeoCV", "ArithCV", "Min", "Max",
+#'   "Centile_Lower", "Centile_Upper", "GCV", "ArithCV", "Min", "Max",
 #'   "Std Dev"}{these will be used for the error bars and are optional.}
 #'
 #'   \item{whatever column you used for \code{facet_column_x}}{If you broke up the
@@ -557,15 +557,41 @@ forest_plot <- function(forest_dataframe,
            call. = FALSE)
    }
    
+   # Making some guesses about how user might mis-specify variability type.
+   variability_type <- ifelse(variability_type %in% c("5th to 95th", 
+                                                      "percentiles"), 
+                              "5th to 95th percentiles", variability_type)
+   variability_type <- ifelse(str_detect(variability_type, "CI|conf int") 
+                              & !str_detect(variability_type, "95"), 
+                              "90% CI", variability_type)
+   variability_type <- ifelse(variability_type %in% c("CV", "cv") &
+                                 mean_type == "geometric", 
+                              "geometric CV", variability_type)
+   variability_type <- ifelse(variability_type %in% c("CV", "cv") &
+                                 mean_type == "arithmetic", 
+                              "arithmetic CV", variability_type)
+   variability_type <- ifelse(variability_type %in% c("sd", "SD"), 
+                              "standard deviation", variability_type)
+   
+   if(variability_type %in% c("90% CI", "95% CI", "5th to 95th percentiles", 
+                              "range", "geometric CV", "arithmetic CV", 
+                              "standard deviation") == FALSE){
+      warning(paste0("You specified `", 
+                     variability_type, 
+                     "` for the variability type, but that's not among the possible options. We'll use the default of the geometric 90% confidence interval instead.\n"), 
+              call. = FALSE)
+      variability_type <- "90% CI"
+   }
+   
    # Allowing for flexibility in case for input column names. Really, I should
    # just make all the columns lower or upper case but I haven't coded
    # everything else like that, so not fixing that now.
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "geomean"))] <- "GeoMean"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "geocv"))] <- "GeoCV"
+                                            "gcv"))] <- "GCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "arithcv"))] <- "ArithCV"
+                                            "^cv$"))] <- "ArithCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "ci(90|95)?_lower"))] <- "CI_Lower"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
@@ -589,9 +615,9 @@ forest_plot <- function(forest_dataframe,
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "geomean"))] <- "GeoMean"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "geocv"))] <- "GeoCV"
+                                          "gcv"))] <- "GCV"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "arithcv"))] <- "ArithCV"
+                                          "^cv$"))] <- "ArithCV"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "ci(90|95)?_lower"))] <- "CI_Lower"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
@@ -742,7 +768,7 @@ forest_plot <- function(forest_dataframe,
                      levels = c("GeoMean", "Mean", "Median", 
                                 "CI_Lower", "CI_Upper", 
                                 "Centile_Lower","Centile_Upper", 
-                                "Min", "Max", "SD", "GeoCV", "ArithCV"))
+                                "Min", "Max", "SD", "GCV", "ArithCV"))
    FDnames <- sort(FDnames)
    CenterStat <- as.character(
       FDnames[which(FDnames %in% switch(mean_type, 
@@ -772,7 +798,7 @@ forest_plot <- function(forest_dataframe,
          "5th to 95th percentiles" = c("Centile_Lower", "Centile_Upper"), 
          "range" = c("Min", "Max"), 
          "arithmetic CV" = "ArithCV", 
-         "geometric CV" = "GeoCV", 
+         "geometric CV" = "GCV", 
          "sd" = "SD",
          "SD" = "SD", 
          "standard deviation" = "SD"))]
@@ -782,7 +808,7 @@ forest_plot <- function(forest_dataframe,
       VarStat <- FDnames[which(FDnames %in% c("CI_Lower", "CI_Upper", 
                                               "CI_Lower", "CI_Upper", 
                                               "Centile_Lower","Centile_Upper", 
-                                              "Min", "Max", "SD", "GeoCV", "ArithCV"))][1]
+                                              "Min", "Max", "SD", "GCV", "ArithCV"))][1]
       
       if(length(VarStat) == 0){
          stop("You must have variability data included in forest_dataframe to be able to make a forest plot. Please see the help file for acceptable types of variability input.",
@@ -795,7 +821,7 @@ forest_plot <- function(forest_dataframe,
                                "Centile_Lower" = "Xth to Yth percentiles",
                                "range" = "the range",
                                "ArithCV" = "the arithmetic CV",
-                               "GeoCV" = "the geometric CV",
+                               "GCV" = "the geometric CV",
                                "SD" = "the standard deviation", 
                                "standard deviation" = "SD"), 
                         " will be used."), 
@@ -803,15 +829,15 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
-   if(any(VarStat %in% c("GeoCV"))){
+   if(any(VarStat %in% c("GCV"))){
       forest_dataframe <- forest_dataframe %>% 
-         mutate(GeoCV_Lower = GeoMean + GeoMean * GeoCV, 
-                GeoCV_Upper = GeoMean - GeoMean * GeoCV)
+         mutate(GeoCV_Lower = GeoMean + GeoMean * GCV, 
+                GeoCV_Upper = GeoMean - GeoMean * GCV)
       
       if(ObsIncluded){
          observed_PK <- observed_PK %>% 
-            mutate(GeoCV_Lower = GeoMean + GeoMean * GeoCV, 
-                   GeoCV_Upper = GeoMean - GeoMean * GeoCV)
+            mutate(GeoCV_Lower = GeoMean + GeoMean * GCV, 
+                   GeoCV_Upper = GeoMean - GeoMean * GCV)
       }
       
       VarStat <- c("GeoCV_Lower", "GeoCV_Upper")
@@ -1272,8 +1298,8 @@ forest_plot <- function(forest_dataframe,
                           "Centile_Lower" = "(5th to 95th Percentiles)", 
                           "Min" = "(Range)",
                           "SD_Lower" = "(Standard Deviation)", 
-                          "GeoCV" = "GeoCV NOT YET SET UP",
-                          "ArithCV" = "ArithCV NOT YET SET UP"))
+                          "GeoCV_Lower" = "(Geometric CV)",
+                          "ArithCV_Lower" = "(Arithmetic CV)"))
    
    # Assigning shapes
    if(length(point_shape) == 1){

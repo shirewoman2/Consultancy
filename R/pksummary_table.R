@@ -1260,9 +1260,6 @@ pksummary_table <- function(sim_data_file = NA,
    VarOptions <- intersect(VarOptions, MyPKResults$Stat)
    
    MyPKResults <- MyPKResults %>%
-      filter(Stat %in% c(VarOptions, 
-                         switch(MeanType, "geometric" = "geomean", 
-                                "arithmetic" = "mean"))) %>%
       select(-Statistic) %>%
       select(Stat, everything()) %>%
       pivot_longer(cols = -Stat, names_to = "PKParam",
@@ -1345,6 +1342,9 @@ pksummary_table <- function(sim_data_file = NA,
                                          SorO == "Sim")
          
          FD <- FD %>% 
+            # Harmonizing. Yes, some of these look like duplicates, but they
+            # don't show up together, so we shouldn't have duplicated column
+            # names after pivoting wider.
             mutate(Stat = case_match(Stat, 
                                      "Geometric Mean" ~ "GeoMean",
                                      "CI90_low" ~ "CI_Lower", 
@@ -1352,8 +1352,10 @@ pksummary_table <- function(sim_data_file = NA,
                                      "per5" ~ "Centile_Lower", 
                                      "per95" ~ "Centile_Upper",
                                      "geomean" ~ "GeoMean",
+                                     "mean" ~ "Mean", 
                                      "Mean" ~ "Mean", 
                                      "Median" ~ "Median",
+                                     "median" ~ "Median", 
                                      "90% confidence interval around the geometric mean(lower limit)" ~ "CI_Lower", 
                                      "90% confidence interval around the geometric mean(upper limit)" ~ "CI_Upper", 
                                      "95% confidence interval around the geometric mean(lower limit)" ~ "CI_Lower",
@@ -1361,7 +1363,10 @@ pksummary_table <- function(sim_data_file = NA,
                                      "5th centile" ~ "Centile_Lower", 
                                      "95th centile" ~ "Centile_Upper", 
                                      "Min Val" ~ "Min", 
+                                     "min" ~ "Min", 
                                      "Max Val" ~ "Max", 
+                                     "max" ~ "Max", 
+                                     "fold" ~ "Fold", 
                                      "cv" ~ "ArithCV", 
                                      "Geometric CV" ~ "GeoCV", 
                                      "Std Dev" ~ "SD", 

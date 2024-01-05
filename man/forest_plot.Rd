@@ -128,7 +128,7 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
   "Inhibitor1" is included in your observed PK.}
 
   \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
-  "Centile_Lower", "Centile_Upper", "GeoCV", "ArithCV", "Min", "Max",
+  "Centile_Lower", "Centile_Upper", "GCV", "ArithCV", "Min", "Max",
   "Std Dev"}{these will be used for the error bars and are optional.}
 
   \item{whatever column you used for \code{facet_column_x}}{If you broke up the
