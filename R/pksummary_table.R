@@ -1265,6 +1265,15 @@ pksummary_table <- function(sim_data_file = NA,
       pivot_longer(cols = -Stat, names_to = "PKParam",
                    values_to = "Sim")
    
+   # Setting aside data before filtering away some stats and before rounding for
+   # forest data.
+   FD <- MyPKResults
+   
+   MyPKResults <- MyPKResults %>%
+      filter(Stat %in% c(VarOptions, 
+                         switch(MeanType, "geometric" = "geomean", 
+                                "arithmetic" = "mean")))
+   
    
    # observed data -----------------------------------------------------
    
@@ -1338,8 +1347,8 @@ pksummary_table <- function(sim_data_file = NA,
          
          # For forest data, only keeping ratios and removing observed data from
          # here b/c we supply it separately for the forest_plot function.
-         FD <- MyPKResults %>% filter(str_detect(PKParam, "ratio") &
-                                         SorO == "Sim")
+         FD <- FD %>% 
+            filter(str_detect(PKParam, "ratio") & SorO == "Sim")
          
          FD <- FD %>% 
             # Harmonizing. Yes, some of these look like duplicates, but they

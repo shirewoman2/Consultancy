@@ -89,6 +89,16 @@ harmonize_details <- function(existing_exp_details){
          names(append_items) <- itemstoadd
          existing_exp_details <- c(existing_exp_details, append_items)
          
+         # Check whether MainDetails includes SheetNames b/c need it for other
+         # functions now.
+         if("SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+            existing_exp_details$MainDetails$SheetNames <- 
+               str_c(paste0("`", 
+                            tryCatch(readxl::excel_sheets(sim_data_file),
+                                     error = openxlsx::getSheetNames(sim_data_file)), 
+                            "`"), collapse = " ")
+         }
+         
          return(existing_exp_details[ExpDetailListItems])
          
       } else {
@@ -103,6 +113,16 @@ harmonize_details <- function(existing_exp_details){
          
          for(i in ExpDetailListItems[2:length(ExpDetailListItems)]){
             Out[[i]] <- NULL
+         }
+         
+         # Check whether MainDetails includes SheetNames b/c need it for other
+         # functions now.
+         if("SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+            existing_exp_details$MainDetails$SheetNames <- 
+               str_c(paste0("`", 
+                            tryCatch(readxl::excel_sheets(sim_data_file),
+                                     error = openxlsx::getSheetNames(sim_data_file)), 
+                            "`"), collapse = " ")
          }
          
          return(Out)
@@ -129,6 +149,16 @@ harmonize_details <- function(existing_exp_details){
          # function.
          existing_exp_details <- deannotateDetails(existing_exp_details)
          
+      }
+      
+      # Check whether MainDetails includes SheetNames b/c need it for other
+      # functions now.
+      if("SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+         existing_exp_details$MainDetails$SheetNames <- 
+            str_c(paste0("`", 
+                         tryCatch(readxl::excel_sheets(sim_data_file),
+                                  error = openxlsx::getSheetNames(sim_data_file)), 
+                         "`"), collapse = " ")
       }
       
       return(existing_exp_details[ExpDetailListItems])
