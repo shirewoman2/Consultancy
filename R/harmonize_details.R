@@ -92,11 +92,13 @@ harmonize_details <- function(existing_exp_details){
          # Check whether MainDetails includes SheetNames b/c need it for other
          # functions now.
          if("SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+            SheetNames <- as.character(c())
+            for(i in existing_exp_details$MainDetails$File){
+               SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
+                                         error = openxlsx::getSheetNames(i))
+            }
             existing_exp_details$MainDetails$SheetNames <- 
-               str_c(paste0("`", 
-                            tryCatch(readxl::excel_sheets(sim_data_file),
-                                     error = openxlsx::getSheetNames(sim_data_file)), 
-                            "`"), collapse = " ")
+               str_c(paste0("`", SheetNames, "`"), collapse = " ")
          }
          
          return(existing_exp_details[ExpDetailListItems])
@@ -118,11 +120,13 @@ harmonize_details <- function(existing_exp_details){
          # Check whether MainDetails includes SheetNames b/c need it for other
          # functions now.
          if("SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+            SheetNames <- as.character(c())
+            for(i in existing_exp_details$MainDetails$File){
+               SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
+                                         error = openxlsx::getSheetNames(i))
+            }
             existing_exp_details$MainDetails$SheetNames <- 
-               str_c(paste0("`", 
-                            tryCatch(readxl::excel_sheets(sim_data_file),
-                                     error = openxlsx::getSheetNames(sim_data_file)), 
-                            "`"), collapse = " ")
+               str_c(paste0("`", SheetNames, "`"), collapse = " ")
          }
          
          return(Out)
@@ -154,11 +158,14 @@ harmonize_details <- function(existing_exp_details){
       # Check whether MainDetails includes SheetNames b/c need it for other
       # functions now.
       if("SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+         
+         SheetNames <- as.character(c())
+         for(i in existing_exp_details$MainDetails$File){
+            SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
+                                      error = openxlsx::getSheetNames(i))
+         }
          existing_exp_details$MainDetails$SheetNames <- 
-            str_c(paste0("`", 
-                         tryCatch(readxl::excel_sheets(sim_data_file),
-                                  error = openxlsx::getSheetNames(sim_data_file)), 
-                         "`"), collapse = " ")
+            str_c(paste0("`", SheetNames, "`"), collapse = " ")
       }
       
       return(existing_exp_details[ExpDetailListItems])
