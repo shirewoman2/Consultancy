@@ -81,8 +81,8 @@ eCT_harmonize <- function(sim_data_xl,
       EndRow       <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))[1]-1
       EndRow       <- max(which(complete.cases(sim_data_xl$...1[1:EndRow])))
       CmpdMatches2 <- sim_data_xl$...1[StartRow:EndRow]
-      CmpdMatches2 <- CmpdMatches2[which(str_detect(CmpdMatches2, "^(P)?[CM](2)?(II)?(Sys|liver|pv|Tissue| lumen free)(.*[iI]nteraction)?|I(Sys|liver|pv| lumen free) [1-9]?|ITissue.Inh"))]
-      CmpdMatches2 <- str_trim(str_extract(CmpdMatches2, "^(P)?[CM](2)?(II)?(Sys|liver|pv|Tissue| lumen free)(.*[iI]nteraction)?|I(Sys|liver|pv| lumen free) [1-9]?|ITissue.Inh"))
+      CmpdMatches2 <- CmpdMatches2[which(str_detect(CmpdMatches2, "^(P)?[CM](2)?(II)?(Sys|liver|pv|Tissue| lumen free)(.*[iI]nteraction)?|I(Sys|liver|pv| lumen free) [1-9]?|ITissue.Inh|InhM"))]
+      CmpdMatches2 <- str_trim(str_extract(CmpdMatches2, "^(P)?[CM](2)?(II)?(Sys|liver|pv|Tissue| lumen free)(.*[iI]nteraction)?|I(Sys|liver|pv| lumen free) [1-9]?|ITissue.Inh|InhM"))
       CmpdMatches2 <- CmpdMatches2[complete.cases(CmpdMatches2)]
       CmpdMatches2[str_detect(CmpdMatches2, "\\+( )?[iI]nteraction")] <- 
          paste(str_extract(CmpdMatches2[str_detect(CmpdMatches2, "\\+( )?[iI]nteraction")], "(P)?[CIM](2)?(II)?(Sys|liver|pv|Tissue| lumen free)"), 
@@ -146,12 +146,24 @@ eCT_harmonize <- function(sim_data_xl,
       if(any(is.na(CmpdMatches$CompoundID))){
          CmpdMatches <- CmpdMatches %>% 
             mutate(CompoundID = case_when(
-               is.na(CompoundID) & CompoundCode == "CPlasma" ~ CompoundThatShouldBePresent, 
-               is.na(CompoundID) & CompoundCode == "CPlasma interaction" ~ CompoundThatShouldBePresent, 
-               is.na(CompoundID) & CompoundCode == "CSys" ~ CompoundThatShouldBePresent, 
-               is.na(CompoundID) & CompoundCode == "CSys interaction" ~ CompoundThatShouldBePresent, 
-               is.na(CompoundID) & CompoundCode == "CTissue" ~ CompoundThatShouldBePresent, 
-               is.na(CompoundID) & CompoundCode == "CTissue interaction" ~ CompoundThatShouldBePresent, 
+               is.na(CompoundID) & CompoundCode == "CPlasma" ~ 
+                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")], 
+               
+               is.na(CompoundID) & CompoundCode == "CPlasma interaction" ~ 
+                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")], 
+               
+               is.na(CompoundID) & CompoundCode == "CSys" ~ 
+                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")],
+               
+               is.na(CompoundID) & CompoundCode == "CSys interaction" ~ 
+                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")],
+               
+               is.na(CompoundID) & CompoundCode == "CTissue" ~ 
+                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")],
+               
+               is.na(CompoundID) & CompoundCode == "CTissue interaction" ~ 
+                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")],
+               
                is.na(CompoundID) & CompoundCode == "ITissue" ~ "inhibitor 1", 
                is.na(CompoundID) & CompoundCode == "IPlasma" ~ "inhibitor 1", 
                TRUE ~ CompoundID))

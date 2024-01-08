@@ -8,7 +8,6 @@ eCT_readxl(
   sim_data_file,
   Deets,
   compoundToExtract,
-  CompoundType,
   tissue,
   TissueType,
   SheetNames

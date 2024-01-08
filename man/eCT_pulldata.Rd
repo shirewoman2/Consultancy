@@ -7,7 +7,6 @@
 eCT_pulldata(
   sim_data_xl,
   cmpd,
-  CompoundType,
   AllPerpsPresent,
   pull_interaction_data,
   fromMultFunction,
@@ -16,6 +15,7 @@ eCT_pulldata(
   ss,
   AdvBrainModel,
   tissue,
+  SimTimeUnits,
   SimConcUnits,
   returnAggregateOrIndiv
 )
@@ -24,8 +24,6 @@ eCT_pulldata(
 \item{sim_data_xl}{sim_data_xl}
 
 \item{cmpd}{cmpd}
-
-\item{CompoundType}{CompoundType}
 
 \item{AllPerpsPresent}{AllPerpsPresent}
 

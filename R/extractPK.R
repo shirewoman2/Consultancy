@@ -164,27 +164,6 @@ extractPK <- function(sim_data_file,
    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                            sim_data_file, paste0(sim_data_file, ".xlsx"))
    
-   # Checking that the file is, indeed, a simulator output file.
-   SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
-                          error = openxlsx::getSheetNames(sim_data_file))
-   if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
-      # Using "warning" instead of "stop" here b/c I want this to be able to
-      # pass through to other functions and just skip any files that
-      # aren't simulator output.
-      warning(paste("The file", sim_data_file,
-                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-              call. = FALSE)
-      return(list())
-   }
-   
-   if(any(complete.cases(sheet)) &
-      all(sheet[complete.cases(sheet)] %in% SheetNames) == FALSE){
-      warning(paste0("The sheet requested could not be found in the Excel file ",
-                     sim_data_file, "."),
-              call. = FALSE)
-      return(list())
-   }
-   
    if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
       all(returnAggregateOrIndiv %in% c("aggregate", "both", "individual")) == FALSE){
       stop("Options for 'returnAggregateOrIndiv' are 'aggregate', 'individual', or 'both'.",
@@ -247,6 +226,30 @@ extractPK <- function(sim_data_file,
          Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                     exp_details = "Summary and Input")[["MainDetails"]]
       }
+   }
+   
+   
+   ## A bit more error catching w/Deets ---------------------------------------
+   
+   # Checking that the file is, indeed, a simulator output file. 
+   SheetNames <- gsub("`", "", str_split_1(Deets$SheetNames, "` `"))
+   
+   if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
+      # Using "warning" instead of "stop" here b/c I want this to be able to
+      # pass through to other functions and just skip any files that
+      # aren't simulator output.
+      warning(paste("The file", sim_data_file,
+                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+              call. = FALSE)
+      return(list())
+   }
+   
+   if(any(complete.cases(sheet)) &
+      all(sheet[complete.cases(sheet)] %in% SheetNames) == FALSE){
+      warning(paste0("The sheet requested could not be found in the Excel file ",
+                     sim_data_file, "."),
+              call. = FALSE)
+      return(list())
    }
    
    

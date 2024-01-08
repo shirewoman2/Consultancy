@@ -208,19 +208,6 @@ extractConcTime <- function(sim_data_file,
            call. = FALSE)
    }
    
-   # Checking that the file is, indeed, a simulator output file.
-   SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
-                          error = openxlsx::getSheetNames(sim_data_file))
-   if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
-      # Using "warning" instead of "stop" here b/c I want this to be able to
-      # pass through to other functions and just skip any files that
-      # aren't simulator output.
-      warning(paste("The file", sim_data_file,
-                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
-              call. = FALSE)
-      return(data.frame())
-   }
-   
    tissue <- tolower(tissue)
    PossTiss <- c("additional organ", "adipose", "blood", "bone", "brain",
                  "colon", "csf", "cumulative absorption",
@@ -236,14 +223,8 @@ extractConcTime <- function(sim_data_file,
                  "portal vein unbound blood", "portal vein unbound plasma", "skin", 
                  "solid organ", "spleen", "stomach",
                  "tumour volume", 
-                 
-                 # I thought I had this set up for ADCs, but, in looking at an
-                 # example ADC sim from V22, it looks like the output may have
-                 # changed. This is NOT ready to go. Set this up once someone
-                 # asks for it.
-                 
-                 # "total protein", "conjugated protein", 
-                 # "total antibody", "protein-conjugated antibody", 
+                 # "total protein", "conjugated protein",
+                 # "total antibody", "protein-conjugated antibody",
                  "unbound blood", "unbound plasma", "urine")
    
    if(tissue %in% PossTiss == FALSE){
@@ -274,9 +255,9 @@ extractConcTime <- function(sim_data_file,
                          "cumulative fraction released", "gut tissue")
    
    
-   # Main body of function ------------------------------------------------
+   # Main body of function -----------------------------------------------------
    
-   # Getting summary data for the simulation(s)
+   ## Getting exp details ------------------------------------------------------
    if(fromMultFunction || ("logical" %in% class(existing_exp_details) == FALSE)){
       Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>% 
          filter(File == sim_data_file)
@@ -310,6 +291,46 @@ extractConcTime <- function(sim_data_file,
       }
    }
    
+   
+   ## Additional error catching now that we have Deets -------------------------
+   
+   # Checking that the file is, indeed, a simulator output file.
+   SheetNames <- gsub("`", "", str_split_1(Deets$SheetNames, "` `"))
+   
+   if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
+      # Using "warning" instead of "stop" here b/c I want this to be able to
+      # pass through to other functions and just skip any files that
+      # aren't simulator output.
+      warning(paste("The file", sim_data_file,
+                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
+              call. = FALSE)
+      return(data.frame())
+   }
+   
+   if(Deets$SimulatorUsed != "Simcyp Simulator" & 
+      tissue %in% AllTissues$Tissue_input[
+         AllTissues$SimulatorAvailability == "Simcyp Simulator only"]){
+      
+      BadTissue <- setdiff(tissue, c("plasma", "blood"))
+      
+      warning(paste0("The tissue(s) ", 
+                     str_comma(paste0("`", BadTissue, "`")), 
+                     " are not available for Simcyp Discovery files and will be ignored.\n"), 
+              call. = FALSE)
+      
+      tissue <- intersect(tissue, c("plasma", "blood"))
+      
+      if(length(tissue) == 0){
+         warning(paste0("None of the tissues requested could be found in the file ", 
+                        sim_data_file, ".\n"), 
+                 call. = FALSE)
+         
+         return(data.frame())
+      }
+   }
+   
+   
+   ## Checking a few things based on Deets -------------------------------------
    # Noting whether this was animal data
    Animal <- str_detect(tolower(Deets$Species), "monkey|rat|mouse|dog|beagle")
    Animal <- ifelse(is.na(Animal), FALSE, Animal)
@@ -340,38 +361,30 @@ extractConcTime <- function(sim_data_file,
    AllCompoundsID <- names(AllCompoundsPresent)
    
    # Extracting tissue or plasma/blood data? Sheet format differs.
-   TissueType <- ifelse(str_detect(tissue, "plasma|blood|portal|peripheral|liver"),
-                        "systemic", "tissue")
-   if(any(str_detect(compoundToExtract, "metabolite")) & TissueType == "tissue"){
-      warning("You have requested metabolite concentrations in a solid tissue, which the simulator does not provide. Substrate or Inhibitor 1 concentrations will be provided instead, depending on whether you requested a substrate or inhibitor metabolite.\n",
+   TissueType <- case_when(
+      str_detect(tissue, "plasma|blood|peripheral") ~ "systemic",
+      str_detect(tissue, "portal|liver") ~ "liver",
+      str_detect(tissue, "faeces") ~ "faeces", 
+      TRUE ~ "tissue")
+   
+   if(any(str_detect(compoundToExtract, "metabolite|inhibitor 2")) &
+      TissueType %in% c("tissue", "faeces")){
+      warning("You have requested metabolite or inhibitor 2 concentrations in a solid tissue, which the simulator does not provide.\n",
               call. = FALSE)
-      compoundToExtract <- compoundToExtract[!str_detect(compoundToExtract,
-                                                         "metabolite")]
+      compoundToExtract <- 
+         compoundToExtract[!str_detect(compoundToExtract, "metabolite|inhibitor 2")]
    }
    
-   CompoundType <-
-      data.frame(PossCompounds =
-                    c("substrate", "inhibitor 1",
-                      "inhibitor 2", "inhibitor 1 metabolite",
-                      "primary metabolite 1",
-                      "primary metabolite 2",
-                      "secondary metabolite")) %>%
-      mutate(Type = ifelse(
-         PossCompounds %in% c("substrate", "inhibitor 1",
-                              "inhibitor 2", "inhibitor 1 metabolite") |
-         (tissue == "liver" & # FIXME - Check when Simulator switched to listing all compounds on the same tab when it's liver. This happens w/V22. Ex: "mdz-met1-met2-inhib1-inhib2-md-alltissues-v22.xlsx"
-               as.numeric(str_extract(Deets$SimulatorVersion, "[0-9]{2}")) >= 22),
-         "substrate", PossCompounds)) %>%
-      # bind_rows(data.frame(PossCompounds = ADCCompoundIDs, 
-      #                      Type = "ADC")) %>% 
-      filter(PossCompounds %in% compoundToExtract) %>% pull(Type) %>% 
-      unique()
+   ## Determining correct Excel tab and reading it in --------------------------
    
-   # Determining correct Excel tab and reading it in. 
+   # If extractConcTime is called alone, there will be only 1 compound ID. If
+   # it's called from extractConcTime_mult, then we've already filtered to make
+   # sure that that combination of compound ID and tissue are available on the
+   # same tab. 
+   
    sim_data_xl <- eCT_readxl(sim_data_file = sim_data_file, 
                              Deets = Deets, 
                              compoundToExtract = compoundToExtract, 
-                             CompoundType = CompoundType,
                              tissue = tissue, 
                              TissueType = TissueType,
                              SheetNames = SheetNames)
@@ -510,7 +523,6 @@ extractConcTime <- function(sim_data_file,
          sim_data[[cmpd]][[ss]] <- 
             eCT_pulldata(sim_data_xl = sim_data_xl, 
                          cmpd = cmpd, 
-                         CompoundType = CompoundType,
                          AllPerpsPresent = AllPerpsPresent, 
                          pull_interaction_data = FALSE, 
                          fromMultFunction = fromMultFunction, 
@@ -519,7 +531,8 @@ extractConcTime <- function(sim_data_file,
                          ss = ss, 
                          AdvBrainModel = AdvBrainModel, 
                          tissue = tissue, 
-                         SimConcUnits = SimConcUnits, 
+                         SimConcUnits = SimConcUnits,
+                         SimTimeUnits = SimTimeUnits,
                          returnAggregateOrIndiv = returnAggregateOrIndiv)
          
          if(length(AllPerpsPresent) > 0 & cmpd %in% c("substrate", 
@@ -530,7 +543,6 @@ extractConcTime <- function(sim_data_file,
                bind_rows(sim_data[[cmpd]][[ss]], 
                          eCT_pulldata(sim_data_xl = sim_data_xl, 
                                       cmpd = cmpd, 
-                                      CompoundType = CompoundType,
                                       AllPerpsPresent = AllPerpsPresent, 
                                       pull_interaction_data = TRUE, 
                                       fromMultFunction = fromMultFunction, 
@@ -540,6 +552,7 @@ extractConcTime <- function(sim_data_file,
                                       AdvBrainModel = AdvBrainModel, 
                                       tissue = tissue, 
                                       SimConcUnits = SimConcUnits, 
+                                      SimTimeUnits = SimTimeUnits,
                                       returnAggregateOrIndiv = returnAggregateOrIndiv))
          }
       }
@@ -564,12 +577,12 @@ extractConcTime <- function(sim_data_file,
         "secondary metabolite" = Deets$SecondaryMetabolite,
         "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
    
-   if(CompoundType == "ADC"){
-      ObsCompounds <- c(ObsCompounds,
-                        "conjugated protein" = paste("conjugated", Deets$Substrate),
-                        "total protein" = paste("total", Deets$Substrate),
-                        "released payload" = Deets$PrimaryMetabolite1)
-   }
+   # if(CompoundType == "ADC"){
+   #    ObsCompounds <- c(ObsCompounds,
+   #                      "conjugated protein" = paste("conjugated", Deets$Substrate),
+   #                      "total protein" = paste("total", Deets$Substrate),
+   #                      "released payload" = Deets$PrimaryMetabolite1)
+   # }
    
    AllPerps_comma <- ifelse(length(AllPerpsPresent) == 0,
                             NA, str_comma(AllPerpsPresent))
@@ -682,11 +695,11 @@ extractConcTime <- function(sim_data_file,
                                          complete.cases(AllPerps_comma),
                                       AllPerps_comma, Inhibitor))
          
-         if(CompoundType == "ADC"){
-            obs_data <- obs_data %>%
-               mutate(CompoundID = ifelse(CompoundID == "primary metabolite 1",
-                                          "released payload", CompoundID))
-         }
+         # if(CompoundType == "ADC"){
+         #    obs_data <- obs_data %>%
+         #       mutate(CompoundID = ifelse(CompoundID == "primary metabolite 1",
+         #                                  "released payload", CompoundID))
+         # }
          
          obs_data <- obs_data %>% filter(CompoundID == cmpd)
          
@@ -752,7 +765,7 @@ extractConcTime <- function(sim_data_file,
                             "inhibitor 1" = Deets$Regimen_inhib,
                             "inhibitor 2" = Deets$Regimen_inhib2,
                             "inhibitor 1 metabolite" = Deets$Regimen_inhib)
-   DosingScenario <- ifelse(CompoundType == "ADC", Deets$Regimen_sub, DosingScenario)
+   # DosingScenario <- ifelse(CompoundType == "ADC", Deets$Regimen_sub, DosingScenario)
    
    if(adjust_obs_time & DosingScenario == "Multiple Dose" &
       exists("obs_data", inherits = FALSE)){

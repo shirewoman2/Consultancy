@@ -18,14 +18,31 @@
 eCT_readxl <- function(sim_data_file, 
                        Deets, 
                        compoundToExtract, 
-                       CompoundType,
                        tissue, 
                        TissueType,
                        SheetNames){
    
+   CompoundToFind <- case_when(
+      TissueType == "systemic" & 
+         compoundToExtract %in% c("substrate",
+                                  "inhibitor 1", 
+                                  "inhibitor 1 metabolite", 
+                                  "inhibitor 2") ~ "substrate", 
+      
+      TissueType == "systemic" & 
+         compoundToExtract %in% c("substrate",
+                                  "inhibitor 1", 
+                                  "inhibitor 1 metabolite", 
+                                  "inhibitor 2") == FALSE ~ compoundToExtract, 
+      
+      TissueType %in% c("liver", "faeces", "tissue") ~ "substrate") %>% 
+      unique()
+   
    if("SimulatorUsed" %in% names(Deets) && Deets$SimulatorUsed == "Simcyp Discovery"){
-      if(compoundToExtract %in% c("substrate", 
-                                  "primary metabolite 1") == FALSE){
+      # Simcyp Discovery data extraction
+      
+      # Already took care of this situation elsewhere, so we can probably delete this.
+      if(all(compoundToExtract %in% c("substrate", "primary metabolite 1")) == FALSE){
          warning(paste0("This seems to be a Simcyp Discovery simulation, and the only compunds you can extract from that are `substrate` or `primary metabolite 1`, and you requested `", 
                         compoundToExtract, "`. We'll return substrate concentrations instead.\n"), 
                  call. = FALSE)
@@ -49,86 +66,99 @@ eCT_readxl <- function(sim_data_file,
          return(data.frame())
       }
       
-   } else if(TissueType == "systemic"){
+   } else {
+      # Simcyp Simulator output 
       
       # Only looking for only sheets with conc-time data and not AUC, etc.
       PossSheets <- SheetNames[
          !str_detect(tolower(SheetNames), "auc|absorption|summary|ode state|demographic|fm and fe|input|physiology|cl profiles|^cl |^clint|clearance|clinical|cmax|cyp|ugt|population|pk( )?pd parameters|tmax|vss")
       ]
       
-      if(all(CompoundType == "ADC")){
-         PossSheets <- PossSheets[
-            str_detect(PossSheets, 
-                       switch(compoundToExtract, 
-                              "conjugated protein" = "Conc Profiles C[Ss]ys|Protein Conc Trials", 
-                              "total protein" = "Conc Profiles C[Ss]ys|Protein Conc Trials", 
-                              "released payload" = paste0("Sub Pri Met1.*",
-                                                          str_to_title(tissue))
-                       ))]
+      if(TissueType == "systemic"){
          
-         Sheet <- PossSheets[1]
+         if(all(CompoundToFind == "ADC")){ # FIXME - Haven't set this up really
+            PossSheets <- PossSheets[
+               str_detect(PossSheets, 
+                          switch(compoundToExtract, 
+                                 "conjugated protein" = "Conc Profiles C[Ss]ys|Protein Conc Trials", 
+                                 "total protein" = "Conc Profiles C[Ss]ys|Protein Conc Trials", 
+                                 "released payload" = paste0("Sub Pri Met1.*",
+                                                             str_to_title(tissue))
+                          ))]
+            
+         } else {
+            
+            # Searching for correct tissue
+            PossSheets <- PossSheets[
+               str_detect(tolower(PossSheets), 
+                          switch(tissue, 
+                                 "plasma" = "cplasma",
+                                 "unbound plasma" = "cuplasma",
+                                 "peripheral plasma" = "cuplasma",
+                                 "peripheral unbound plasma" = "cuplasma",
+                                 "portal vein plasma" = "cplasma",
+                                 "portal vein unbound plasma" = "cuplasma",
+                                 
+                                 "blood" = "cblood",
+                                 "unbound blood" = "cublood",
+                                 "peripheral blood" = "cblood",
+                                 "peripheral unbound blood" = "cublood"
+                          ))]
+            
+            # add criteria for peripheral when needed
+            if(str_detect(tissue, "peripheral")){
+               Cond1 <- str_extract(tissue, "peripheral")
+               PossSheets <- PossSheets[
+                  str_detect(tolower(PossSheets), "periph")]
+            }
+            
+            # Making sure to get correct compound. 
+            if(any(CompoundToFind %in%  c("primary metabolite 1",
+                                          "primary metabolite 2",
+                                          "secondary metabolite"))){
+               PossSheets <- PossSheets[
+                  switch(CompoundToFind, 
+                         "primary metabolite 1" = 
+                            str_detect(tolower(PossSheets), "sub met|sub pri met1") & 
+                            !str_detect(tolower(PossSheets), "sub met2"),
+                         "primary metabolite 2" = 
+                            str_detect(tolower(PossSheets), "sub met2|sub pri met2"), 
+                         "secondary metabolite" = 
+                            str_detect(tolower(PossSheets), "sub sm|sub sec met")
+                  )]
+            } else {
+               PossSheets <- PossSheets[!str_detect(tolower(PossSheets), 
+                                                    "sub met|sub pri met|sub sm|sub sec met")]
+            }
+         }
          
-      } else {
+      } else if(TissueType == "liver"){
+         # Note that this includes portal vein concs b/c those tabs are set up
+         # the same as liver: they have all possible compounds on a single
+         # sheet.
          
-         # Searching for correct tissue
          PossSheets <- PossSheets[
             str_detect(tolower(PossSheets), 
                        switch(tissue, 
-                              "plasma" = "cplasma",
-                              "unbound plasma" = "cuplasma",
-                              "peripheral plasma" = "cuplasma",
-                              "peripheral unbound plasma" = "cuplasma",
-                              "portal vein plasma" = "cplasma",
-                              "portal vein unbound plasma" = "cuplasma",
-                              
-                              "blood" = "cblood",
-                              "unbound blood" = "cublood",
-                              "peripheral blood" = "cblood",
-                              "peripheral unbound blood" = "cublood",
-                              "portal vein blood" = "cblood",
-                              "portal vein unbound blood" = "cublood", 
-                              
-                              "liver" = "liver" # At least in 1 instance I've found in V22, liver tissue has same format as systemic.
-                       ))]
+                              "liver" = "liver", 
+                              "portal vein plasma" = "^pv.*cplasma", 
+                              "portal vein blood" = "^pv.*cblood", 
+                              "portal vein unbound plasma" = "^pv.*cuplasma", 
+                              "portal vein unbound blood" = "^pv.*cublood"))]
          
-         # add criteria for peripheral, pv when needed
-         if(str_detect(tissue, "peripheral|portal vein")){
-            Cond1 <- str_extract(tissue, "peripheral|portal vein")
-            PossSheets <- PossSheets[
-               str_detect(tolower(PossSheets), 
-                          switch(Cond1,
-                                 "peripheral" = "periph", 
-                                 "portal vein" = "^pv"))]
-         }
+      } else if(TissueType == "faeces"){
          
-         # Searching for correct compound. Substrate, inhibitor 1, inhibitor 1
-         # metabolite, and inhibitor 2 concentrations will all be on the main
-         # concentration-time data tab, but other compounds will be on separate
-         # tabs. 
-         if(any(compoundToExtract %in%  c("primary metabolite 1",
-                                          "primary metabolite 2",
-                                          "secondary metabolite")) &
-            tissue != "liver"){
-            PossSheets <- PossSheets[
-               switch(compoundToExtract[1], 
-                      "primary metabolite 1" = 
-                      str_detect(tolower(PossSheets), "sub met|sub pri met1") & 
-                      !str_detect(tolower(PossSheets), "sub met2"),
-                      "primary metabolite 2" = 
-                      str_detect(tolower(PossSheets), "sub met2|sub pri met2"), 
-                      "secondary metabolite" = 
-                      str_detect(tolower(PossSheets), "sub sm|sub sec met")
-               )]
-         }
+         PossSheets <- PossSheets[
+            str_detect(tolower(PossSheets), 
+                       switch(compoundToExtract, 
+                              "inhibitor 1" = "Faeces Prof. .Inh 1", 
+                              # inhibitor 2 does not appear to be available
+                              "substrate" = "Faeces Prof. .Sub"))
+         ]
          
-         Sheet <- PossSheets[1]
-      }
-      
-      } else {
+      } else if(TissueType == "tissue"){
          
-         # when tissue is not systemic: 
-         
-         SheetToDetect <-
+         PossSheets <-
             switch(tissue,
                    "gi tissue" = "Gut Tissue Conc",
                    "gut tissue" = "Gut Tissue Conc", 
@@ -143,7 +173,6 @@ eCT_readxl <- function(sim_data_file,
                    "skin" = "Skin Conc",
                    "pancreas" = "Pancreas Conc",
                    "brain" = "Brain Conc",
-                   "liver" = "Liver Conc",
                    "spleen" = "Spleen Conc",
                    "feto-placenta" = "Feto-Placenta", # Need to check this one. I don't have an example output file for this yet!
                    "stomach" = "Stomach Prof",
@@ -160,21 +189,18 @@ eCT_readxl <- function(sim_data_file,
                    "cumulative absorption" = "Cumulative Abs",
                    "cumulative fraction released" = "CR Profile",
                    "cumulative dissolution" = paste0("Cum.*Dissolution.*",
-                                                     switch(CompoundType, # FIXME - I don't know where this info is or what sheet names to expect.
+                                                     switch(CompoundToFind, # FIXME - I don't know where this info is or what sheet names to expect.
                                                             "substrate" = "Sub",
                                                             "inhibitor 1" = "Inhib")) # Need to check this for inhibitor 1 ADAM model data. This is just my guess as to what the sheet name will be!
             )
          
-         if(tissue == "faeces"){ 
-            SheetToDetect <- switch(compoundToExtract, 
-                                    "inhibitor 1" = "Faeces Prof. .Inh 1", 
-                                    # inhibitor 2 does not appear to be available
-                                    "substrate" = "Faeces Prof. .Sub")
-         }
-         
-         Sheet <- SheetNames[str_detect(SheetNames, SheetToDetect)][1]
+         PossSheets <- SheetNames[str_detect(SheetNames, PossSheets)]
          
       }
+      
+      Sheet <- PossSheets[1]
+      
+   }
    
    if(length(Sheet) == 0 | is.na(Sheet) | Sheet %in% SheetNames == FALSE){
       warning(paste0("You requested data for ", str_comma(compoundToExtract),
@@ -193,4 +219,5 @@ eCT_readxl <- function(sim_data_file,
    
    return(sim_data_xl)
    
-   }
+}
+

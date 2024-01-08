@@ -3,7 +3,6 @@
 #' INTERNAL USE ONLY.
 #'
 #' @param cmpd cmpd
-#' @param CompoundType CompoundType
 #' @param AllPerpsPresent AllPerpsPresent
 #' @param pull_interaction_data T or F
 #' @param fromMultFunction T or F
@@ -23,7 +22,6 @@
 #' 
 eCT_pulldata <- function(sim_data_xl, 
                          cmpd, 
-                         CompoundType, 
                          AllPerpsPresent, 
                          pull_interaction_data, 
                          fromMultFunction, 
@@ -32,6 +30,7 @@ eCT_pulldata <- function(sim_data_xl,
                          ss, 
                          AdvBrainModel, 
                          tissue, 
+                         SimTimeUnits,
                          SimConcUnits, 
                          returnAggregateOrIndiv){
    
@@ -67,12 +66,17 @@ eCT_pulldata <- function(sim_data_xl,
              "secondary metabolite" = Deets$SecondaryMetabolite) %>%
       as.character()
    
-   if(CompoundType == "ADC"){
-      MyCompound <- switch(cmpd,
-                           "total protein" = paste("total", Deets$Substrate),
-                           "conjugated protein" = paste("conjugated", Deets$Substrate),
-                           "released payload" = Deets$PrimaryMetabolite1)
-   }
+   MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
+                        "secondary metabolite",
+                        "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
+                        "inhibitor 2 metabolite")
+   
+   # if(all(CompoundType == "ADC")){
+   #    MyCompound <- switch(cmpd,
+   #                         "total protein" = paste("total", Deets$Substrate),
+   #                         "conjugated protein" = paste("conjugated", Deets$Substrate),
+   #                         "released payload" = Deets$PrimaryMetabolite1)
+   # }
    
    # Determining rows to use ----------------------------------------------
    
@@ -131,7 +135,7 @@ eCT_pulldata <- function(sim_data_xl,
          which(str_detect(NamesToCheck, temp_regex)), 
          CompoundIndices)
       
-   } else if(CompoundType == "ADC" & cmpd != "released payload" &
+   } else if(all(CompoundType == "ADC") & cmpd != "released payload" &
              length(AllPerpsPresent) == 0){
       
       CompoundIndices <- which(
