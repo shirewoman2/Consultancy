@@ -615,6 +615,11 @@ extractExpDetails <- function(sim_data_file,
       
       
       ## Some overall simulation details -----------------------------------
+      
+      # Noting all sheet names. This saves time for later data extraction and
+      # also helps with debugging and coding in general. 
+      Out[["SheetNames"]] <- str_c(paste0("`", SheetNames, "`"), collapse = " ")
+      
       # Checking whether this was an ADC sim. 
       if("ADCSimulation_sub" %in% MyInputDeets){
          Out[["ADCSimulation_sub"]] <- 
