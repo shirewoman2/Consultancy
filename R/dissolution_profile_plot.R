@@ -355,7 +355,6 @@ dissolution_profile_plot <- function(existing_exp_details,
              # placeholders only
              Inhibitor = "none",
              Trial = "mean",
-             Tissue = "plasma",
              Conc_units = "ng/mL",  
              Time_units = "hours", 
              DoseNum = 1)

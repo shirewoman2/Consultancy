@@ -690,40 +690,70 @@ extractExpDetails <- function(sim_data_file,
          DissoProfs <- list()
          
          for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
-            StartRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution( Mean)? \\(\\%"))[1] - 1
-            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution( Mean)? \\(\\%"))
-            EndRow <- EndRow[which.max(EndRow)] + 1 # Looking for last "Dissolution (%)" row and then the next row will be the CV for that. 
+            # There may be more than one tissue. Checking for this. 
+            DissoTissueRows <- which(str_detect(t(InputTab[, ColLocations[i]]),
+                                                "^Dissolution Profile"))
+            
+            StartRows <- which(str_detect(t(InputTab[, ColLocations[i]]), "^Dissolution Profile")) + 1
             
             # It could be that one compound has dissolution profiles and another
             # compound does not. Checking that here since I did not check it in
-            # the original if statement at the top of this section.
-            if(is.na(StartRow)){
+            # the original "if" statement at the top of this section.
+            if(all(is.na(StartRows))){
                next
             }
             
-            Disso_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
-            names(Disso_temp) <- c("NameCol", "ValCol")
+            LastRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution( Mean)? \\(\\%"))
+            LastRow <- LastRow[which.max(LastRow)] + 1 # Looking for last "Dissolution (%)" row and then the next row will be the CV for that. 
             
-            # Older versions of simulator do not have CV. Checking. 
-            DissoCV <- Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "CV"))]
-            if(all(is.null(DissoCV))){DissoCV <- NA}
+            if(length(StartRows) > 1){
+               EndRows <- c(StartRows[2:length(StartRows)], NA) - 2
+               EndRows[length(StartRows)] <- LastRow
+            } else {
+               EndRows <- LastRow
+            }
             
-            DissoProfs[[i]] <- data.frame(
-               Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
-               Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution( Mean)? \\(\\%"))], 
-               Dissolution_CV = DissoCV) %>% 
-               mutate(across(.cols = everything(), .fns = as.numeric), 
-                      Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
-                      File = sim_data_file, 
-                      CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
-               select(File, CompoundID, Compound, Time, Dissolution_mean, Dissolution_CV)
+            DissoTissues <- gsub("\\(|\\)", "", 
+                                 str_extract(
+                                    t(InputTab[, ColLocations[i]])[DissoTissueRows], 
+                                    "\\(.*\\)"))
             
-            rm(StartRow, EndRow, Disso_temp)
+            DissoProfs[[i]] <- list()
+            
+            for(tiss in 1:length(StartRows)){
+               
+               Disso_temp <- InputTab[StartRows[tiss]:EndRows[tiss],
+                                      ColLocations[i]:(ColLocations[i]+1)]
+               names(Disso_temp) <- c("NameCol", "ValCol")
+               
+               # Older versions of simulator do not have CV. Checking. 
+               DissoCV <- Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "CV"))]
+               if(all(is.null(DissoCV))){DissoCV <- NA}
+               
+               DissoProfs[[i]][[tiss]] <- 
+                  data.frame(
+                     Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
+                     Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution( Mean)? \\(\\%"))], 
+                     Dissolution_CV = DissoCV) %>% 
+                  mutate(across(.cols = everything(), .fns = as.numeric), 
+                         Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
+                         File = sim_data_file, 
+                         Tissue = DissoTissues[[tiss]],
+                         CompoundID = i, 
+                         Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]])
+               
+               rm(Disso_temp, DissoCV)
+               
+            }
+            
+            DissoProfs[[i]] <- bind_rows(DissoProfs[[i]])
             
          }
          
-         DissoProfs <- bind_rows(DissoProfs)
+         DissoProfs <- bind_rows(DissoProfs) %>% 
+            select(File, Tissue, CompoundID, Compound, Time,
+                   Dissolution_mean, Dissolution_CV)
+         
       } else {
          DissoProfs <- NULL
       }
