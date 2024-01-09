@@ -647,25 +647,28 @@ pksummary_table <- function(sim_data_file = NA,
       
       # If they've included several possibilities for mean types, need to get
       # ONLY the appropriate one.
-      if(any(tolower(c("GeoMean", "Mean", "Median")) %in% names(observed_PK))){
+      if("value" %in% tolower(names(observed_PK))){
+         names(observed_PK)[which(tolower(names(observed_PK)) == "value")] <- "Value"
+      } else if(any(tolower(c("GeoMean", "Mean", "Median")) %in% names(observed_PK))){
          observed_PK <- observed_PK %>% 
             # Dealing with any inconsistencies in capitalization. 
             rename_with(.cols = any_of(c("GeoMean", "Mean", "Median")), 
                         .fn = tolower) %>% 
             mutate(Value = case_when(
-               {mean_type} == "geometric" & !str_detect(PKparaemter, "tmax") ~ "geomean", 
-               {mean_type} == "arithmetic" & !str_detect(PKparaemter, "tmax") ~ "mean", 
-               str_detect(PKparaemter, "tmax") ~ "median"))
+               {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ "geomean", 
+               {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ "mean", 
+               str_detect(PKparameter, "tmax") ~ "median"))
       }
       
-      if(any(c("GeoCV", "ArithCV") %in% names(observed_PK))){
+      if(any(tolower(c("GeoCV", "ArithCV")) %in%
+             tolower(names(observed_PK)))){
          observed_PK <- observed_PK %>% 
             # Dealing with any inconsistencies in capitalization. 
             rename_with(.cols = any_of(c("GeoCV", "ArithCV")), 
                         .fn = tolower) %>% 
             mutate(CV = case_when(
-               {mean_type} == "geometric" & !str_detect(PKparaemter, "tmax") ~ "geocv", 
-               {mean_type} == "arithmetic" & !str_detect(PKparaemter, "tmax") ~ "arithcv"))
+               {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ "geocv", 
+               {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ "arithcv"))
       }
       
       # Harmonizing PK parameter names
