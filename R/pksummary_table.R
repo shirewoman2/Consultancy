@@ -1270,7 +1270,7 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Setting aside data before filtering away some stats and before rounding for
    # forest data.
-   FD <- MyPKResults
+   FD <- MyPKResults %>% mutate(SorO = "Sim")
    
    MyPKResults <- MyPKResults %>%
       filter(Stat %in% c(VarOptions, 
@@ -1396,7 +1396,7 @@ pksummary_table <- function(sim_data_file = NA,
                                        Deets$Inhibitor1, NA),
                    Dose_inhib = ifelse("Dose_inhib" %in% names(Deets),
                                        Deets$Dose_inhib, NA)) %>% 
-            pivot_wider(names_from = Stat, values_from = Value) %>% 
+            pivot_wider(names_from = Stat, values_from = Sim) %>% 
             select(File, Substrate, Dose_sub, Inhibitor1, Dose_inhib, 
                    everything())
          
