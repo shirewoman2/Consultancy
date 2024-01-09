@@ -23,6 +23,7 @@
 #'
 #' 
 getReferences <- function(main_directory = ".", 
+                          print_filenames = FALSE, 
                           save_output = NA){
    
    # Error catching ----------------------------------------------------------
@@ -64,6 +65,10 @@ getReferences <- function(main_directory = ".",
          FileName <- paste0(save_output, ".csv")
       }
       write.csv(Refs, FileName, row.names = F)
+   }
+   
+   if(print_filenames){
+      print(str_comma(paste0("\"", Refs$File, "\"")), quote = FALSE)
    }
    
    return(Refs)
