@@ -4,11 +4,7 @@
 \alias{getReferences}
 \title{Pull references from a "DataRec" folder}
 \usage{
-getReferences(
-  main_directory = ".",
-  return_concat_files = FALSE,
-  save_output = NA
-)
+getReferences(main_directory = ".", print_files = FALSE, save_output = NA)
 }
 \arguments{
 \item{main_directory}{the main directory from which you want a list of all
