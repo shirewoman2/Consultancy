@@ -215,7 +215,8 @@ sensitivity_plot <- function(SA_file,
       }
       
       SAdata <- SAdata.xl
-      names(SAdata)[1:2] <- c("SensParameter", "DV")
+      names(SAdata)[1:2] <- c("SensValue", "DV") 
+      
    }
    
    # Graph ----------------------------------------------------------------
@@ -265,26 +266,31 @@ sensitivity_plot <- function(SA_file,
          ind_var_label_char <- SensParam
       }
       
-      if(any(sapply(names(PrettySensParam), function(.) str_detect(SensParam2, .)))){
+      # Adding character labels for facets if needed
+      SAdata <- SAdata %>% 
+         mutate(SensValue_char = paste(ind_var_label_char, "=", SensValue), 
+                SensValue_char = forcats::fct_reorder(.f = SensValue_char, .x = SensValue, .fun = min))
+      
+      # Will need to expand this based on what output names are. Need to make sure
+      # they match.
+      
+      if(complete.cases(SensParam2)){
+         if(any(sapply(names(PrettySensParam), function(.) str_detect(SensParam2, .)))){
+            
+            ind_var_label2 <- PrettySensParam[which(sapply(names(PrettySensParam), function(.) str_detect(SensParam2, .)))][[1]]
+            ind_var_label2_char <- PrettySensParam_char[which(sapply(names(PrettySensParam_char), function(.) str_detect(SensParam2, .)))][[1]]
+            
+         } else {
+            ind_var_label2 <- SensParam2
+            ind_var_label2_char <- SensParam2
+         }
          
-         ind_var_label2 <- PrettySensParam[which(sapply(names(PrettySensParam), function(.) str_detect(SensParam2, .)))][[1]]
-         ind_var_label2_char <- PrettySensParam_char[which(sapply(names(PrettySensParam_char), function(.) str_detect(SensParam2, .)))][[1]]
+         SAdata <- SAdata %>% 
+            mutate(SensValue2_char = paste(ind_var_label2_char, "=", SensValue2), 
+                   SensValue2_char = forcats::fct_reorder(.f = SensValue2_char, .x = SensValue2, .fun = min))
          
-      } else {
-         ind_var_label2 <- SensParam2
-         ind_var_label2_char <- SensParam2
       }
    }
-   
-   # Adding character labels for facets if needed
-   SAdata <- SAdata %>% 
-      mutate(SensValue_char = paste(ind_var_label_char, "=", SensValue), 
-             SensValue_char = forcats::fct_reorder(.f = SensValue_char, .x = SensValue, .fun = min),
-             SensValue2_char = paste(ind_var_label2_char, "=", SensValue2), 
-             SensValue2_char = forcats::fct_reorder(.f = SensValue2_char, .x = SensValue2, .fun = min))
-   
-   # Will need to expand this based on what output names are. Need to make sure
-   # they match.
    
    if(str_detect(dependent_variable, "plasma|conc")){
       
@@ -344,7 +350,7 @@ sensitivity_plot <- function(SA_file,
       
    } else {
       
-      G <- ggplot(SAdata, aes(x = SensParameter, y = DV)) +
+      G <- ggplot(SAdata, aes(x = SensValue, y = DV)) +
          geom_point() + geom_line() + 
          ylab(PrettyDV[[dependent_variable]]) +
          xlab(ind_var_label)
