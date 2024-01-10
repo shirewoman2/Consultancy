@@ -94,11 +94,15 @@ harmonize_details <- function(existing_exp_details){
          if("SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
             SheetNames <- as.character(c())
             for(i in existing_exp_details$MainDetails$File){
-               SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
-                                         error = openxlsx::getSheetNames(i))
+               if(file.exists(i)){
+                  SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
+                                            error = openxlsx::getSheetNames(i))
+               } else { SheetNames[i] <- NA}
+               
+               existing_exp_details$MainDetails$SheetNames[
+                  existing_exp_details$MainDetails$File == i] <- 
+                  str_c(paste0("`", SheetNames, "`"), collapse = " ")
             }
-            existing_exp_details$MainDetails$SheetNames <- 
-               str_c(paste0("`", SheetNames, "`"), collapse = " ")
          }
          
          return(existing_exp_details[ExpDetailListItems])
@@ -122,11 +126,15 @@ harmonize_details <- function(existing_exp_details){
          if("SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
             SheetNames <- as.character(c())
             for(i in existing_exp_details$MainDetails$File){
-               SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
-                                         error = openxlsx::getSheetNames(i))
+               if(file.exists(i)){
+                  SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
+                                            error = openxlsx::getSheetNames(i))
+               } else { SheetNames[i] <- NA}
+               
+               existing_exp_details$MainDetails$SheetNames[
+                  existing_exp_details$MainDetails$File == i] <- 
+                  str_c(paste0("`", SheetNames, "`"), collapse = " ")
             }
-            existing_exp_details$MainDetails$SheetNames <- 
-               str_c(paste0("`", SheetNames, "`"), collapse = " ")
          }
          
          return(Out)
@@ -161,11 +169,15 @@ harmonize_details <- function(existing_exp_details){
          
          SheetNames <- as.character(c())
          for(i in existing_exp_details$MainDetails$File){
-            SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
-                                      error = openxlsx::getSheetNames(i))
+            if(file.exists(i)){
+               SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
+                                         error = openxlsx::getSheetNames(i))
+            } else { SheetNames[i] <- NA}
+            
+            existing_exp_details$MainDetails$SheetNames[
+               existing_exp_details$MainDetails$File == i] <- 
+               str_c(paste0("`", SheetNames, "`"), collapse = " ")
          }
-         existing_exp_details$MainDetails$SheetNames <- 
-            str_c(paste0("`", SheetNames, "`"), collapse = " ")
       }
       
       return(existing_exp_details[ExpDetailListItems])
