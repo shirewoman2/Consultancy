@@ -726,19 +726,8 @@ extractConcTime <- function(sim_data_file,
             
             # As necessary, convert simulated data units to match the
             # observed data
-            if("individual" %in% returnAggregateOrIndiv){
-               sim_data_ind[[cmpd]] <-
-                  match_units(DF_to_adjust = sim_data_ind[[cmpd]],
-                              goodunits = obs_data,
-                              MW = Deets[paste0("MW", AllCompounds$Suffix[AllCompounds$CompoundID == cmpd])])
-            }
-            
-            if("aggregate" %in% returnAggregateOrIndiv){
-               sim_data[[cmpd]] <-
-                  match_units(DF_to_adjust = sim_data[[cmpd]],
-                              goodunits = obs_data,
-                              MW = Deets[paste0("MW", AllCompounds$Suffix[AllCompounds$CompoundID == cmpd])])
-            }
+            sim_data <- match_units(DF_to_adjust = sim_data,
+                                    goodunits = obs_data)
          }
       }
    }

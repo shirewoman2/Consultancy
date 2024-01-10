@@ -157,6 +157,14 @@ eCT_pulldata <- function(sim_data_xl,
                          InteractionIndices)
    }
    
+   # Need to remove trial means from here if they're included. 
+   Include <- setdiff(Include, 
+                      which(str_detect(tolower(sim_data_xl$...1), "trial")))
+   
+   # FIXME - Return to this and add trial means here. 
+   IncludeTrialMeans <- intersect(Include, 
+                                  which(str_detect(tolower(sim_data_xl$...1), "trial")))
+   
    # If Include has length 0, then this particular set of data is not available,
    # e.g., metabolite for a solid tissue or interaction data for Heff data.
    # Return empty data.
