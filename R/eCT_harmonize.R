@@ -142,27 +142,25 @@ eCT_harmonize <- function(sim_data_xl,
       # "ITissue".
       
       CompoundThatShouldBePresent <- compoundToExtract
+      ShouldBeButNotInhib <- CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")]
+      if(length(ShouldBeButNotInhib) == 0){
+         ShouldBeButNotInhib <- NA
+      }
       
       if(any(is.na(CmpdMatches$CompoundID))){
          CmpdMatches <- CmpdMatches %>% 
             mutate(CompoundID = case_when(
-               is.na(CompoundID) & CompoundCode == "CPlasma" ~ 
-                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")], 
+               is.na(CompoundID) & CompoundCode == "CPlasma" ~ ShouldBeButNotInhib, 
                
-               is.na(CompoundID) & CompoundCode == "CPlasma interaction" ~ 
-                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")], 
+               is.na(CompoundID) & CompoundCode == "CPlasma interaction" ~ ShouldBeButNotInhib, 
                
-               is.na(CompoundID) & CompoundCode == "CSys" ~ 
-                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")],
+               is.na(CompoundID) & CompoundCode == "CSys" ~ ShouldBeButNotInhib,
                
-               is.na(CompoundID) & CompoundCode == "CSys interaction" ~ 
-                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")],
+               is.na(CompoundID) & CompoundCode == "CSys interaction" ~ ShouldBeButNotInhib,
                
-               is.na(CompoundID) & CompoundCode == "CTissue" ~ 
-                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")],
+               is.na(CompoundID) & CompoundCode == "CTissue" ~ ShouldBeButNotInhib,
                
-               is.na(CompoundID) & CompoundCode == "CTissue interaction" ~ 
-                  CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")],
+               is.na(CompoundID) & CompoundCode == "CTissue interaction" ~ ShouldBeButNotInhib,
                
                is.na(CompoundID) & CompoundCode == "ITissue" ~ "inhibitor 1", 
                is.na(CompoundID) & CompoundCode == "IPlasma" ~ "inhibitor 1", 
