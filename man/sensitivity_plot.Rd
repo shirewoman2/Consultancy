@@ -9,6 +9,7 @@ sensitivity_plot(
   dependent_variable,
   ind_var_label = NA,
   target_DV = NA,
+  color_by_which_indvar = "1st",
   linear_or_log = "linear",
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
@@ -43,6 +44,13 @@ Shireman!)}
 \item{target_DV}{optionally specify a target value for the dependent
 variable, which will add a horizontal red dotted line to the graph where
 the target lies.}
+
+\item{color_by_which_indvar}{If you have more than one independent variable,
+you can specify which one you want to adjust the colors by. Options are
+"1", "1st", or "first" (all will work, default) to adjust the colors in the
+graph based on the first independent variable listed in the Excel SA file
+or "2", "2nd", or "second" to adjust colors based on the second. If you
+only have one independent variable, this will be ignored.}
 
 \item{linear_or_log}{make the y axis "linear" (default) or "log" for plasma
 concentration-time plots (this is ignored for all other plots)}
@@ -87,12 +95,26 @@ to make the graph}
 a ggplot2 graph
 }
 \description{
-Doesn't detect units yet. Would need to check that sheet names are consistent
-b/c I bet they're not. Would like to add options for axis breaks and limits
-as well as color schemes. Will need to add more options for labeling the
-sensitivity parameter in the graphs. Does not do 3D graphs and I have no
-plans to add option for 3D graphs b/c A) they're just not easy to interpret
-and B) there aren't great R packages out there for 3D graphs.
+\code{sensitivity_plot} will read a sensitivity-analysis Excel file and
+create a graph of the dependent variable of your choice as long as it was
+included in your results. If you ran a sensitivity analysis with more than 1
+independent variable -- e.g., you wanted to see how adjusting both the kp
+scalar and the fa affected Cmax -- the best way we have come up with so far
+to show you how both of those variables affect your dependent variable is to
+break up the graphs into small multiples or facets (like on a gemstone).
+(Side note: We considered a 3D graph, but they're honestly hard to do well in
+a programmatic fashion like this.) This is set up for graphs of plasma
+concentration-time profiles but not yet set up for other dependent variables.
+UNDER CONSTRUCTION.
+}
+\details{
+\strong{Coding notes:} Doesn't detect units yet. Would need to check that
+sheet names are consistent b/c I bet they're not. Would like to add options
+for axis breaks and limits as well as color schemes. Will need to add more
+options for labeling the sensitivity parameter in the graphs. Does not do 3D
+graphs and I have no plans to add option for 3D graphs b/c A) they're just
+not easy to interpret and B) there aren't great R packages out there for 3D
+graphs.
 }
 \examples{
 
