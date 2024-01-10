@@ -554,6 +554,32 @@ extractExpDetails <- function(sim_data_file,
             Val <- InputTab[Row,
                             InputDeets$ValueCol[
                                which(InputDeets$Deet == deet)]] %>% pull()
+            
+            # If it's a kp scalar value other than the main one, then we need to
+            # 1st check whether the value listed is "User" and then get the value
+            # in the cell right below that if it is.
+            kpcheck <- str_detect(deet, "kp_scalar_") & 
+               deet %in% paste0("kp_scalar", AllCompounds$Suffix) == FALSE
+            if(kpcheck){
+               if(complete.cases(Val) && Val == "Predicted"){
+                  Val <- NA
+               } else {
+                  NameColBelow <- InputTab[Row + 1,
+                                           InputDeets$NameCol[
+                                              which(InputDeets$Deet == deet)]] %>% pull()
+                  if(str_detect(NameColBelow,
+                                gsub(paste0("kp_scalar_|",
+                                            str_c(AllCompounds$Suffix, collapse = "|")),
+                                     "", 
+                                     sub("additional_organ", "Additional Organ", deet)))){
+                     Val <- InputTab[Row + 1, InputDeets$ValueCol[
+                        which(InputDeets$Deet == deet)]] %>% pull()
+                     
+                  } else {
+                     Val <- NA
+                  }
+               }
+            }
          }
          
          # If SimStartDayTime is not found, which will happen with animal
