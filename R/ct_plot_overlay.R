@@ -2316,6 +2316,13 @@ ct_plot_overlay <- function(ct_dataframe,
       A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
    }
    
+   # Some bquote text that we use for y axis labels can get clipped if you don't
+   # expand the graph margin. Adjusting as needed.
+   if(YStuff$AdjustGraphBorder){
+      A <- A + theme(axis.title.y = element_text(
+         margin = margin(0, 0, 0, 1.5, unit = "lines")))
+   }
+   
    # If any of the items in the legend have length = 1, don't show that in the
    # legend.
    if(AES %in% c("linetype", "color-linetype") &&

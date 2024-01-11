@@ -377,7 +377,7 @@
 
 ct_plot <- function(ct_dataframe = NA,
                     figure_type = "percentiles",
-                    subsection_ADAM = "free compound in lumen",
+                    subsection_ADAM = NA,
                     mean_type = "arithmetic", 
                     time_range = NA,
                     x_axis_interval = NA,
@@ -472,6 +472,32 @@ ct_plot <- function(ct_dataframe = NA,
                   length(sort(unique(ct_dataframe$CompoundID))), 
                   " compounds. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
            call. = FALSE)
+   }
+   
+   # Check whether they've specified anything for subsection_ADAM or if data
+   # only contain 1 value for subsection_ADAM.
+   if(any(complete.cases(ct_dataframe$subsection_ADAM)) & 
+      complete.cases(subsection_ADAM)){
+      if(length(unique(ct_dataframe$subsection_ADAM)) == 1 &
+         unique(ct_dataframe$subsection_ADAM) != subsection_ADAM){
+         warning(paste0("You requested the subsection_ADAM tissue ", 
+                        subsection_ADAM, 
+                        ", but what's in your data is ", 
+                        unique(ct_dataframe$subsection_ADAM), 
+                        ", so we'll use that instead.\n"), 
+                 call. = FALSE)
+         subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
+      }
+      
+   } else {
+      subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
+   }
+   
+   if(length(subsection_ADAM) > 1){
+      subsection_ADAM <- subsection_ADAM[1]
+      warning(paste0("You requested more than one value for subsection_ADAM, but we can only plot one with the ct_plot function. We'll set it to the 1st value we find in your data: ", 
+                     subsection_ADAM, ".\n"), 
+              call. = FALSE)
    }
    
    # If user wants feces, use the British spelling even if they entered the
@@ -657,6 +683,11 @@ ct_plot <- function(ct_dataframe = NA,
                                       "faeces", "cumulative absorption", 
                                       "cumulative dissolution") &&
       EnzPlot == FALSE
+   
+   AdvBrainModel <- unique(Data$Tissue == "brain") &
+      any(Data$subsection_ADAM %in% 
+             c("intracranial", "brain ICF", "brain ISF", "spinal CSF", "cranial CSF", 
+               "total brain", "Kp,uu,brain", "Kp,uu,ICF", "Kp,uu,ISF"))
    
    # If the tissue was an ADAM tissue, only include the subsection_ADAM they requested. 
    if(any(ADAM)){
@@ -885,14 +916,18 @@ ct_plot <- function(ct_dataframe = NA,
       Ylim_data <- bind_rows(sim_data_trial, obs_dataframe, sim_data_mean)
    }
    
-   YStuff <- ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
-                       EnzPlot = EnzPlot, time_range_relative = time_range_relative,
-                       Ylim_data = Ylim_data, 
+   YStuff <- ct_y_axis(Data = Data,
+                       ADAMorAdvBrain = any(ADAM, AdvBrainModel),
+                       subsection_ADAM = subsection_ADAM,
+                       EnzPlot = EnzPlot,
+                       time_range_relative = time_range_relative,
+                       Ylim_data = Ylim_data,
                        prettify_compound_names = prettify_compound_names,
                        pad_y_axis = pad_y_axis,
-                       y_axis_limits_lin = y_axis_limits_lin, 
+                       y_axis_limits_lin = y_axis_limits_lin,
                        time_range = time_range,
-                       y_axis_limits_log = y_axis_limits_log)
+                       y_axis_limits_log = y_axis_limits_log
+   )
    
    ObsConcUnits <- YStuff$ObsConcUnits
    ylab <- YStuff$ylab
@@ -1262,6 +1297,14 @@ ct_plot <- function(ct_dataframe = NA,
       # Otherwise, make the legend a little wider to actually show any dashes
       A <- A + theme(legend.position = legend_position, 
                      legend.key.width = unit(2, "lines"))
+   }
+   
+   # Some bquote text that we use for y axis labels can get clipped if you don't
+   # expand the graph margin. Adjusting as needed.
+   if(YStuff$AdjustGraphBorder){
+      A <- A + theme(axis.title.y = element_text(
+         margin = margin(0, 0, 0, 1.5, unit = "lines"), 
+         hjust = 0.5))
    }
    
    ## Making semi-log graph ------------------------------------------------
