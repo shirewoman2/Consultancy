@@ -67,6 +67,8 @@ if(is.na(include_dose_num)){
                   "last" = any(str_detect(names(MyPKResults[[i]] %>% purrr::discard(~all(is.na(.)))), "Last dose")))
    include_dose_num_i <- all(DoseCheck)
    rm(DoseCheck)
+} else {
+   include_dose_num_i <- include_dose_num
 }
 
 # include_dose_num now should be either T or F no matter what, so checking

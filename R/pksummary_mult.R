@@ -632,19 +632,6 @@ pksummary_mult <- function(sim_data_files = NA,
       
       message(paste0("Extracting PK data from `", i, "`"))
       
-      # Checking that the file is, indeed, a simulator output file.
-      SheetNames <- tryCatch(readxl::excel_sheets(i),
-                             error = openxlsx::getSheetNames(i))
-      if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
-         # Using "warning" instead of "stop" here b/c I want this to be able to
-         # pass through to other functions and just skip any files that
-         # aren't simulator output.
-         warning(paste("The file", i,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
-                 call. = FALSE)
-         next
-      }
-      
       # Getting experimental details for the simulation(s) as needed. NB:
       # "Deets" in all pksummary functions means ONLY the experimental details
       # for the single file in question -- either the only file for
@@ -710,8 +697,8 @@ pksummary_mult <- function(sim_data_files = NA,
          FD[[i]][[j]] <- list()
          
          for(k in tissues){
-            if(as.character(exists("observed_PKDF", inherits = FALSE) &&
-                            i %in% observed_PKDF$File)){ 
+            if(exists("observed_PKDF", inherits = FALSE) &&
+               i %in% observed_PKDF$File){ 
                ObsPK_temp <- observed_PKDF %>% filter(File == i)
                
                if("Tissue" %in% names(ObsPK_temp)){

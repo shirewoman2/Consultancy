@@ -1284,8 +1284,14 @@ pksummary_table <- function(sim_data_file = NA,
       # Renaming column for PKparameter.
       MyObsPK <- MyObsPK %>% rename(PKParam = PKparameter, Obs = Value)
       
-      if("CV" %in% names(MyObsPK) & MeanType == "geometric"){
-         MyObsPK <- MyObsPK %>% rename(GCV = CV)
+      if("CV" %in% names(MyObsPK)){
+         MyObsPK$CV <- as.numeric(MyObsPK$CV)
+         
+         if(MeanType == "geometric" & "GCV" %in% names(MyObsPK)){
+            MyObsPK <- MyObsPK %>% select(-CV) %>% 
+               rename(GCV = CV) %>% 
+               mutate(CV = as.numeric(CV))
+         }
       }
       
       # Pivoting longer by stat
@@ -1619,7 +1625,15 @@ pksummary_table <- function(sim_data_file = NA,
       }
       
       names(MyPKResults) <- c("Statistic", PrettyCol)
+     
+      # Adding time interval to any data that came from custom AUC interval
+      # sheets.
+      if(any(complete.cases(sheet_PKparameters))){
+         IntToAdd <- MyPKResults_all$TimeInterval %>% 
+            filter(Sheet %in% sheet_PKparameters)
+      }
       
+       
    } else if(any(complete.cases(sheet_PKparameters)) & 
              any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
       # This is when it's a user-defined sheet but we're not prettifying column

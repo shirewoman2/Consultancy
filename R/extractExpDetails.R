@@ -720,29 +720,46 @@ extractExpDetails <- function(sim_data_file,
             DissoTissueRows <- which(str_detect(t(InputTab[, ColLocations[i]]),
                                                 "^Dissolution Profile"))
             
-            StartRows <- which(str_detect(t(InputTab[, ColLocations[i]]), "^Dissolution Profile")) + 1
-            
-            # It could be that one compound has dissolution profiles and another
-            # compound does not. Checking that here since I did not check it in
-            # the original "if" statement at the top of this section.
-            if(all(is.na(StartRows))){
-               next
-            }
-            
+            # If the results do not specify any tissues, then start rows will be
+            # different. Last row will be the same, though.
             LastRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution( Mean)? \\(\\%"))
             LastRow <- LastRow[which.max(LastRow)] + 1 # Looking for last "Dissolution (%)" row and then the next row will be the CV for that. 
             
-            if(length(StartRows) > 1){
-               EndRows <- c(StartRows[2:length(StartRows)], NA) - 2
-               EndRows[length(StartRows)] <- LastRow
+            if(length(DissoTissueRows) > 0){
+               
+               StartRows <- which(str_detect(t(InputTab[, ColLocations[i]]), "^Dissolution Profile")) + 1
+               
+               # It could be that one compound has dissolution profiles and another
+               # compound does not. Checking that here since I did not check it in
+               # the original "if" statement at the top of this section.
+               if(all(is.na(StartRows))){
+                  next
+               }
+               
+               if(length(StartRows) > 1){
+                  EndRows <- c(StartRows[2:length(StartRows)], NA) - 2
+                  EndRows[length(StartRows)] <- LastRow
+               } else {
+                  EndRows <- LastRow
+               }
+               
+               DissoTissues <- gsub("\\(|\\)", "", 
+                                    str_extract(
+                                       t(InputTab[, ColLocations[i]])[DissoTissueRows], 
+                                       "\\(.*\\)"))
             } else {
+               # If the tissue is not specified, then there will be only 1 set of values. 
+               StartRows <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution( Mean)? \\(\\%"))[1] - 1
+               DissoTissues <- "not specified"
                EndRows <- LastRow
+               
+               # It could be that one compound has dissolution profiles and another
+               # compound does not. Checking that here since I did not check it in
+               # the original "if" statement at the top of this section.
+               if(all(is.na(StartRows))){
+                  next
+               }
             }
-            
-            DissoTissues <- gsub("\\(|\\)", "", 
-                                 str_extract(
-                                    t(InputTab[, ColLocations[i]])[DissoTissueRows], 
-                                    "\\(.*\\)"))
             
             DissoProfs[[i]] <- list()
             

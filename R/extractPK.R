@@ -244,12 +244,18 @@ extractPK <- function(sim_data_file,
       return(list())
    }
    
-   if(any(complete.cases(sheet)) &
-      all(sheet[complete.cases(sheet)] %in% SheetNames) == FALSE){
-      warning(paste0("The sheet requested could not be found in the Excel file ",
-                     sim_data_file, "."),
-              call. = FALSE)
-      return(list())
+   if(any(complete.cases(sheet))){
+      GoodSheets <- sheet[complete.cases(sheet) & sheet %in% SheetNames]
+      BadSheets <- setdiff(sheet, GoodSheets)
+      BadSheets <- BadSheets[complete.cases(BadSheets)]
+      
+      if(length(BadSheets) > 0){
+         warning(paste0("Some of the sheets requested could not be found in the Simulator results file. We will skip PK parameters for the sheet `", 
+                        BadSheets, "`.\n"), 
+                 call. = FALSE)
+         
+         sheet <- GoodSheets
+      }
    }
    
    
@@ -654,6 +660,7 @@ extractPK <- function(sim_data_file,
    
    Out_ind <- list()
    Out_agg <- list()
+   TimeInterval <- list()
    DataCheck <- data.frame(PKparam = as.character(NA),
                            Tab = as.character(NA),
                            StartColText = as.character(NA),
@@ -956,6 +963,11 @@ extractPK <- function(sim_data_file,
                   as.data.frame(Out_ind[which(sapply(Out_ind, length) > 0)]))
       }
       
+      TimeInterval[[i]] <- data.frame(
+         File = sim_data_file, 
+         Sheet = Tab_AUC, 
+         Interval = gsub("\\(|\\)", "", str_extract(AUC_xl[1, 1], "from.*")))
+      
    }
    
    # Pulling dose 1 data NOT present on AUC tab ------------------------------
@@ -986,6 +998,7 @@ extractPK <- function(sim_data_file,
       DataCheck <- DataCheck %>% bind_rows(Out_AUC0$DataCheck)
       Out_agg <- c(Out_agg, Out_AUC0$Out_agg)
       Out_ind <- c(Out_ind, Out_AUC0$Out_ind)
+      TimeInterval <- TimeInterval %>% bind_rows(Out_AUC0$TimeInterval)
       
    }
    
@@ -1015,6 +1028,7 @@ extractPK <- function(sim_data_file,
       DataCheck <- DataCheck %>% bind_rows(Out_AUClast$DataCheck)
       Out_agg <- c(Out_agg, Out_AUClast$Out_agg)
       Out_ind <- c(Out_ind, Out_AUClast$Out_ind)
+      TimeInterval <- TimeInterval %>% bind_rows(Out_AUClast$TimeInterval)
       
    }
    
@@ -1046,6 +1060,7 @@ extractPK <- function(sim_data_file,
          DataCheck <- DataCheck %>% bind_rows(Out_AUCX$DataCheck)
          Out_agg <- c(Out_agg, Out_AUCX$Out_agg)
          Out_ind <- c(Out_ind, Out_AUCX$Out_ind)
+         TimeInterval <- TimeInterval %>% bind_rows(Out_AUCX$TimeInterval)
          
          rm(Out_AUCX)
       }
@@ -1681,7 +1696,8 @@ extractPK <- function(sim_data_file,
    }
    
    Out <- list("individual" = Out_ind,
-               "aggregate" = Out_agg)
+               "aggregate" = Out_agg, 
+               "TimeInterval" = TimeInterval)
    
    if(checkDataSource){
       XLCols <- c(LETTERS, paste0("A", LETTERS), paste0("B", LETTERS))
