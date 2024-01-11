@@ -966,7 +966,8 @@ extractPK <- function(sim_data_file,
       TimeInterval[[i]] <- data.frame(
          File = sim_data_file, 
          Sheet = Tab_AUC, 
-         Interval = gsub("\\(|\\)", "", str_extract(AUC_xl[1, 1], "from.*")))
+         Interval = gsub("\\(|\\)", "", str_extract(AUC_xl[1, 1], "from.*"))) %>% 
+         mutate(Interval = sub("\\.00 ", " ", Interval))
       
    }
    

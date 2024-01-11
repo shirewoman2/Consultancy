@@ -1561,6 +1561,10 @@ pksummary_table <- function(sim_data_file = NA,
    # Optionally adding final column names
    if(prettify_columns){
       
+      # Checking position of columns with custom intervals.
+      CustomIntCols <- which(
+         PKToPull %in% sub("_dose1|_last", "", AllPKParameters$PKparameter))
+      
       # If user specified tab, then need to adjust PK parameters here, too.
       if(any(complete.cases(sheet_PKparameters)) & 
          any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
@@ -1607,6 +1611,23 @@ pksummary_table <- function(sim_data_file = NA,
          )
       }
       
+      # Adding time interval to any data that came from custom AUC interval
+      # sheets.
+      if(any(complete.cases(sheet_PKparameters))){
+         IntToAdd <- MyPKResults_all$TimeInterval %>% 
+            filter(Sheet %in% sheet_PKparameters) %>% 
+            pull(Interval)
+         
+         UnitsToAdd <- str_extract(PrettyCol[CustomIntCols], 
+                                   " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)")
+         
+         PrettyCol[CustomIntCols] <- 
+            sub(" \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", "", PrettyCol[CustomIntCols])
+         PrettyCol[CustomIntCols] <- paste0(PrettyCol[CustomIntCols], 
+                                            " for interval ", IntToAdd, 
+                                            UnitsToAdd)
+      }
+      
       if(complete.cases(adjust_conc_units)){
          PrettyCol <- gsub(Deets$Units_Cmax,  adjust_conc_units, PrettyCol)
       }
@@ -1626,13 +1647,6 @@ pksummary_table <- function(sim_data_file = NA,
       
       names(MyPKResults) <- c("Statistic", PrettyCol)
      
-      # Adding time interval to any data that came from custom AUC interval
-      # sheets.
-      if(any(complete.cases(sheet_PKparameters))){
-         IntToAdd <- MyPKResults_all$TimeInterval %>% 
-            filter(Sheet %in% sheet_PKparameters)
-      }
-      
        
    } else if(any(complete.cases(sheet_PKparameters)) & 
              any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
