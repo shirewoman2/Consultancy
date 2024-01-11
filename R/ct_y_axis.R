@@ -167,7 +167,7 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
    }
    
    # Noting when to adjust graph border to add lines to y axis title. 
-   AdjustGraphBorder <- str_detect(ylab1, "\\\n")
+   AdjustGraphBorder <- complete.cases(ylab1) && str_detect(ylab1, "\\\n")
    
    # Per Hannah: If there are observed data included in the simulation, set the
    # y axis limits to show those data well. 
