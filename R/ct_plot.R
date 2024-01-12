@@ -478,7 +478,7 @@ ct_plot <- function(ct_dataframe = NA,
    # only contain 1 value for subsection_ADAM.
    if(any(complete.cases(ct_dataframe$subsection_ADAM)) & 
       complete.cases(subsection_ADAM)){
-      if(length(unique(ct_dataframe$subsection_ADAM)) == 1 &
+      if(length(unique(ct_dataframe$subsection_ADAM)) == 1 &&
          unique(ct_dataframe$subsection_ADAM) != subsection_ADAM){
          warning(paste0("You requested the subsection_ADAM tissue ", 
                         subsection_ADAM, 
@@ -1297,12 +1297,10 @@ ct_plot <- function(ct_dataframe = NA,
                      legend.key.width = unit(2, "lines"))
    }
    
-   # Some bquote text that we use for y axis labels can get clipped if you don't
-   # expand the graph margin. Adjusting as needed.
-   if(YStuff$AdjustGraphBorder){
-      A <- A + theme(axis.title.y = element_text(
-         margin = margin(0, 0, 0, 1.5, unit = "lines"), 
-         hjust = 0.5))
+   # When the y label is an expression, it tends to be a little too small. Make
+   # it 1.25 * larger.
+   if("expression" %in% class(YStuff$Ylab)){
+      A <- A + theme(axis.title.y = element_text(size = A$theme$text$size * 1.25))
    }
    
    ## Making semi-log graph ------------------------------------------------
