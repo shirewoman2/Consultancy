@@ -58,9 +58,6 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
             conjunction = "or")
       }
       
-      # Note to coders: Since we're using bquote to make the y axis title bold
-      # here, if you want there to be 2 lines for the y axis title, you'll need
-      # to expand the graph boundary on the left side.
       if(length(unique(subsection_ADAM)) == 1){
          
          ylab1 <- 
@@ -77,12 +74,12 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
                       paste0("Free ", CompoundLab, " in lumen"),
                    "total compound in lumen" = 
                       paste0("Total ", CompoundLab, " in lumen"),
-                   "Heff" = bquote("Particle"~H[eff]),
+                   "Heff" = expression("Particle"~H[eff]~(mu*m)), 
                    "absorption rate" = 
                       paste0("Absorption rate of ", CompoundLab, "\nin ", unique(Data$Tissue)),
                    "unreleased compound in faeces" = 
                       paste0("Unreleased ", CompoundLab, "\nin faeces"),
-                   "luminal CLint" = bquote("Luminal"~CL[int]), 
+                   "luminal CLint" = expression("Luminal"~CL[int]), 
                    "dissolution rate of solid state" = 
                       paste0("Dissolution rate of ", CompoundLab, "\nin ", unique(Data$Tissue)), 
                    "cumulative fraction of compound absorbed" =
@@ -103,71 +100,51 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
                    "Kp,uu,ICF" = "Unbound intracellular-fluid-to-plasma\ntissue partition coefficient", 
                    "Kp,uu,ISF" = "Unbound intrastitial-fluid-to-plasma\ntissue partition coefficient") 
          
-         # PossConcUnits is slightly different between ADAM, AdvBrain, and
-         # regular tissues, so do NOT interchange them in the code.
-         PossConcUnits <- list("mg/mL" = "(mg/mL)",
-                               "µg/L" = bquote("("*"\u03bc"*g*"/"*L*")"),
-                               "µg/mL" = bquote("("*"\u03bc"*g*"/"*mL*")"),
-                               "ng/mL" = "(ng/mL)",
-                               "ng/L" = "(ng/L)",
-                               "µM" = bquote("("*"\u03bc"*M*")"),
-                               "µm" = bquote("("*"\u03bc"*m*")"),
-                               "nM" = "(nM)",
-                               "mM" = "(mM)",
-                               "mg" = "(mg)",
-                               "µg" = bquote("("*"\u03bc"*"g)"),
-                               "ng" = "(ng)",
-                               "mg/h" = "(mg/h)",
-                               "mg/L" = bquote("("*"\u03bc"*g*"/"*mL*")"),
-                               "mL" = "(mL)", 
-                               "mmol" = "(mmol)", 
-                               "µmol" = bquote("("*"\u03bc"*"mol)"),
-                               "nmol" = "(nmol)")
+         ylab2 <- ifelse(is.na(unique(Data$Conc_units)), 
+                         "", paste0("(", unique(Data$Conc_units), ")"))
          
-         ylab2 <- PossConcUnits[[unique(Data$Conc_units)]]
-         
-         if(subsection_ADAM %in% c("cumulative fraction of compound absorbed", 
-                                   "cumulative fraction of compound dissolved", 
-                                   "cumulative fraction of compound released", 
-                                   "Kp,uu,brain", 
-                                   "Kp,uu,ICF", 
-                                   "Kp,uu,ISF")){
-            ylab <- bquote(bold(.(ylab1)))
-            
+         if("expression" %in% class(ylab1) | is.na(ylab2)){
+            ylab <- ylab1
          } else {
-            ylab <- bquote(bold(.(ylab1)) ~ bold(.(ylab2)))
+            ylab <- paste(ylab1, ylab2)
          }
       } else {
+         # This is when it IS AdvBrain or ADAM model data but there's more than
+         # one type.
          ylab1 <- NA
          ylab <- "Advanced-brain-model or ADAM-model amount"
       }
       
    } else {
+      # This is when it is NOT AdvBrain or ADAM model data. 
       
       ylab1 <- NA
       
       # PossConcUnits is slightly different between ADAM, AdvBrain, and regular
       # tissues, so do NOT interchange them in the code.
       PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
-                            "µg/L" = bquote(Concentration~"("*"\u03bc"*g*"/"*L*")"),
-                            "µg/mL" = bquote(Concentration~"("*"\u03bc"*g*"/"*mL*")"),
+                            "µg/L" = "Concentration (µg/L)", 
+                            "µg/mL" = "Concentration (µg/mL)",
                             "ng/mL" = "Concentration (ng/mL)",
                             "ng/L" = "Concentration (ng/L)",
-                            "µM" = bquote(Concentration~"("*"\u03bc"*M*")"),
+                            "µM" = "Concentration (µM)",
                             "nM" = "Concentration (nM)",
                             "mg" = "Amount (mg)",
                             "mg/h" = "Absorption rate (mg/h)",
-                            "mg/L" = bquote(Concentration~"("*"\u03bc"*g*"/"*mL*")"),
+                            "mg/L" = "Concentration (µg/mL)",
                             "mL" = "Volume (mL)",
                             "PD response" = "PD response",
                             "Relative abundance" = "Relative abundance")
       
-      ylab <- PossConcUnits[[ObsConcUnits]]
+      ylab <- ifelse(length(ObsConcUnits) > 0, 
+                     PossConcUnits[[ObsConcUnits]], "Amount")
       
    }
    
-   # Noting when to adjust graph border to add lines to y axis title. 
-   AdjustGraphBorder <- complete.cases(ylab1) && str_detect(ylab1, "\\\n")
+   # Noting when to adjust graph border to add lines to y axis title. This may
+   # be moot now that we're not using bquote.
+   AdjustGraphBorder <- "expression" %in% class(ylab1) == FALSE &&
+      complete.cases(ylab1) && str_detect(ylab1, "\\\n")
    
    # Per Hannah: If there are observed data included in the simulation, set the
    # y axis limits to show those data well. 
