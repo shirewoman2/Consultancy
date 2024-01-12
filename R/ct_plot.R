@@ -1298,9 +1298,11 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    # When the y label is an expression, it tends to be a little too small. Make
-   # it 1.25 * larger.
-   if("expression" %in% class(YStuff$Ylab)){
-      A <- A + theme(axis.title.y = element_text(size = A$theme$text$size * 1.25))
+   # it 1.25 * larger. If it's an expression, that also means that it can't be
+   # bold. Make the x axis title not bold as well in that case.
+   if("expression" %in% class(ylab)){
+      A <- A + theme(axis.title.y = element_text(size = A$theme$text$size * 1.25), 
+                     axis.title.x = element_text(face = "plain"))
    }
    
    ## Making semi-log graph ------------------------------------------------
