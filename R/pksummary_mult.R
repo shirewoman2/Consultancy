@@ -200,8 +200,11 @@
 #'   values, so this should be set to FALSE for official reports.
 #' @param variability_format formatting used to indicate the variability When
 #'   the variability is concatenated. Options are "to" (default) to get output
-#'   like "X to Y", "brackets" to get output like "[X, Y]", or "hyphen" to get
-#'   output like "X - Y".
+#'   like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
+#'   output like "[X, Y]", or "parentheses" for the eponymous symbol if you're
+#'   an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
+#'   ambiguity; this was written by an American who didn't originally realize
+#'   that there was another name for parentheses.)
 #' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
 #'   the dose number when listing the PK parameter. By default, the parameter
 #'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if

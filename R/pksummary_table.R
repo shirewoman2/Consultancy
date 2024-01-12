@@ -136,7 +136,7 @@
 #'   \strong{Please note that we would like the PK parameters that are for either dose 1 or the
 #'   last dose to have NA listed for the tab.} Another note: The code will
 #'   work best if any PK parameters for a custom interval do not have
-#'   a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last". 
+#'   a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last".
 #'   This is because we do not know
 #'   which dose number a custom interval is. This also helps use make sure that
 #'   each PK parameter has only one value so that it's clear which PK data are
@@ -174,7 +174,7 @@
 #'   \itemize{\item{\strong{Please note that we would like the PK parameters that are for either dose 1 or the
 #'   last dose to have NA listed for the tab.}} \item{Another note: The code will
 #'   work best if any PK parameters for a custom interval do not have
-#'   a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last". 
+#'   a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last".
 #'   This is because we do not know
 #'   which dose number a custom interval is. This also helps use make sure that
 #'   each PK parameter has only one value so that it's clear which PK data are
@@ -244,8 +244,11 @@
 #'   values, so this should be set to FALSE for official reports.
 #' @param variability_format formatting used to indicate the variability When
 #'   the variability is concatenated. Options are "to" (default) to get output
-#'   like "X to Y", "brackets" to get output like "[X, Y]", or "hyphen" to get
-#'   output like "X - Y".
+#'   like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
+#'   output like "[X, Y]", or "parentheses" for the eponymous symbol if you're
+#'   an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
+#'   ambiguity; this was written by an American who didn't originally realize
+#'   that there was another name for parentheses.)
 #' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
 #'   the dose number when listing the PK parameter. By default, the parameter
 #'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
@@ -507,10 +510,10 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    # Make sure that input to variability_format is ok
-   if(variability_format %in% c("to", "hyphen", "brackets") == FALSE){
-      warning("Acceptable input for `variability_format` is only `to` or `brackets`, and you have entered", 
-              variability_format, ". We'll use the default format of `to` for now.", 
+   if(variability_format %in% c("to", "hyphen", "brackets", "parentheses") == FALSE){
+      warning("The input for variability_format is not among the acceptable options, which are `to`, `hyphen`, `brackets` for square brackets, or `parentheses` for the eponymous symbol if you're an American and a bracket if you're British. We'll use the default of `to`.\n", 
               call. = FALSE)
+      variability_format <- "to"
    }
    
    # Harmonizing PK parameter syntax
@@ -1479,7 +1482,8 @@ pksummary_table <- function(sim_data_file = NA,
                                     switch(variability_format, 
                                            "to" = paste(x[1], "to", x[2]),
                                            "hyphen" = paste(x[1], "-", x[2]),
-                                           "brackets" = paste0("[", x[1], ", ", x[2], "]")),
+                                           "brackets" = paste0("[", x[1], ", ", x[2], "]"), 
+                                           "parentheses" = paste0("(", x[1], ", ", x[2], ")")),
                                     NA)}),
                    Stat = switch(j,
                                  "ConfInt90" = "CI90concat",
@@ -1553,6 +1557,26 @@ pksummary_table <- function(sim_data_file = NA,
    
    PKToPull <- factor(PKToPull, levels = PKlevels)
    PKToPull <- sort(unique(PKToPull))
+   
+   # Checking for whether to include AUCinf, AUCt, or both for dose 1 based on
+   # what user requested initiall and whether there were any problems with
+   # extrapolation.
+   if(all(complete.cases(PKparameters_orig))){
+      if("AUCt_dose1" %in% PKparameters_orig == FALSE & 
+         "AUCt_dose1" %in% PKToPull & 
+         "AUCinf_dose1" %in% PKparameters_orig & 
+         "AUCinf_dose1" %in% names(MyPKResults)){
+         MyPKResults <- MyPKResults %>% select(-AUCt_dose1)
+         PKToPull <- setdiff(PKToPull, "AUCt_dose1")
+      }
+   } else {
+      # This is when they did not specify PKparameters originally and got the
+      # defaults. If they got AUCinf_dose1 then they don't need AUCt_dose1 here.
+      if("AUCinf_dose1" %in% names(MyPKResults)){
+         MyPKResults <- MyPKResults %>% select(-AUCt_dose1)
+         PKToPull <- setdiff(PKToPull, "AUCt_dose1")
+      }
+   }
    
    # Getting columns in a good order
    MyPKResults <- MyPKResults %>%
@@ -1646,8 +1670,8 @@ pksummary_table <- function(sim_data_file = NA,
       }
       
       names(MyPKResults) <- c("Statistic", PrettyCol)
-     
-       
+      
+      
    } else if(any(complete.cases(sheet_PKparameters)) & 
              any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
       # This is when it's a user-defined sheet but we're not prettifying column

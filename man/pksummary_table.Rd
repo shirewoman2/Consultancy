@@ -83,7 +83,7 @@ blood".}
   \strong{Please note that we would like the PK parameters that are for either dose 1 or the
   last dose to have NA listed for the tab.} Another note: The code will
   work best if any PK parameters for a custom interval do not have
-  a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last". 
+  a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last".
   This is because we do not know
   which dose number a custom interval is. This also helps use make sure that
   each PK parameter has only one value so that it's clear which PK data are
@@ -123,7 +123,7 @@ NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)}
 \itemize{\item{\strong{Please note that we would like the PK parameters that are for either dose 1 or the
 last dose to have NA listed for the tab.}} \item{Another note: The code will
 work best if any PK parameters for a custom interval do not have
-a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last". 
+a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last".
 This is because we do not know
 which dose number a custom interval is. This also helps use make sure that
 each PK parameter has only one value so that it's clear which PK data are
@@ -208,8 +208,11 @@ values, so this should be set to FALSE for official reports.}
 
 \item{variability_format}{formatting used to indicate the variability When
 the variability is concatenated. Options are "to" (default) to get output
-like "X to Y", "brackets" to get output like "[X, Y]", or "hyphen" to get
-output like "X - Y".}
+like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
+output like "[X, Y]", or "parentheses" for the eponymous symbol if you're
+an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
+ambiguity; this was written by an American who didn't originally realize
+that there was another name for parentheses.)}
 
 \item{adjust_conc_units}{Would you like to adjust the units to something
 other than what was used in the simulation? Default is NA to leave the
