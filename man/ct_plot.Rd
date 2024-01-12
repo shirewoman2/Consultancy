@@ -7,7 +7,7 @@
 ct_plot(
   ct_dataframe = NA,
   figure_type = "percentiles",
-  subsection_ADAM = "free compound in lumen",
+  subsection_ADAM = NA,
   mean_type = "arithmetic",
   time_range = NA,
   x_axis_interval = NA,

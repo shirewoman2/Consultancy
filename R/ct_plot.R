@@ -502,9 +502,7 @@ ct_plot <- function(ct_dataframe = NA,
    
    # If user wants feces, use the British spelling even if they entered the
    # American spelling.
-   if(str_detect(subsection_ADAM, "feces")){
-      subsection_ADAM <- sub("feces", "faeces", subsection_ADAM)
-   }
+   subsection_ADAM <- sub("feces", "faeces", subsection_ADAM)
    
    if(length(obs_color) > 1){
       warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.\n", 

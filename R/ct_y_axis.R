@@ -96,9 +96,10 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
                    "spinal CSF" = "Spinal cerebrospinal fluid\nconcentration", 
                    "cranial CSF" = "Cranial cerebrospinal fluid\nconcentration",
                    "total brain" = "Total brain concentration",
-                   "Kp,uu,brain" = "Unbound brain-to-plasma\ntissue partition coefficient", 
-                   "Kp,uu,ICF" = "Unbound intracellular-fluid-to-plasma\ntissue partition coefficient", 
-                   "Kp,uu,ISF" = "Unbound intrastitial-fluid-to-plasma\ntissue partition coefficient") 
+                   "Kp,uu,brain" = expression(K[p*",uu,brain"]), #"Unbound brain-to-plasma\ntissue partition coefficient", 
+                   "Kp,uu,ICF" = expression(K[p*",uu,intracellular fluid"]), # "Unbound intracellular-fluid-to-plasma\ntissue partition coefficient", 
+                   "Kp,uu,ISF" = expression(K[p*",uu,interstitial fluid"]) #"Unbound intrastitial-fluid-to-plasma\ntissue partition coefficient") 
+            )
          
          ylab2 <- ifelse(is.na(unique(Data$Conc_units)), 
                          "", paste0("(", unique(Data$Conc_units), ")"))
