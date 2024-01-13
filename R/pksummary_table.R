@@ -1448,6 +1448,8 @@ pksummary_table <- function(sim_data_file = NA,
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) 
    
+   rm(GoodPKParam)
+   
    # Putting trial means into appropriate format
    if(includeTrialMeans){
       TM <- MyPKResults %>% filter(Stat %in% c("MinMean", "MaxMean")) %>%
@@ -1555,28 +1557,48 @@ pksummary_table <- function(sim_data_file = NA,
                       # user wants a specific order but using default tabs
                       "user specified" = PKparameters)
    
+   # Checking for whether to include AUCinf, AUCt, or both for dose 1 based on
+   # what user requested initially and whether there were any problems with
+   # extrapolation. If there were problems with extrapolation for either
+   # AUCinf_dose1 OR for AUCinf_dose1_withInhib, then we want only AUCt values
+   # b/c need to be able to make the correct comparison. If there were no
+   # problems, then we only want AUCinf values unless they speicifcally
+   # requested AUCt.
+   
+   AUCParam <- PKToPull[str_detect(PKToPull, "AUC.*_dose1")]
+   NonAUCParam <- setdiff(PKToPull, AUCParam)
+   
+   # Any time AUCinf_dose1 and AUCinf_dose1_withInhib are both included in
+   # PKToPull, only retain any AUCt_X that were specfically requested.
+   if(all(c("AUCinf_dose1", "AUCinf_dose1_withInhib") %in% PKToPull)){
+      if("AUCt_dose1" %in% PKparameters_orig == FALSE){
+         AUCParam <- setdiff(AUCParam, "AUCt_dose1")
+      }
+      
+      if("AUCt_dose1_withInhib" %in% PKparameters_orig == FALSE){
+         AUCParam <- setdiff(AUCParam, "AUCt_dose1_withInhib")
+      }
+      
+   } else if(any(str_detect(PKToPull, "_withInhib|_ratio"))) {
+      # There was a perpetrator but AUCinf and AUCinf with perp are not both
+      # present.
+      
+      # Do nothing here and keep all AUCParam. This is a place holder for
+      # trying to make this code clearer.
+      
+   } else {
+      # If there was no perpetrator, then only need to check whether AUCinf
+      # present and only keep AUCt if it was requested.
+      if("AUCt_dose1" %in% PKparameters_orig == FALSE){
+         AUCParam <- setdiff(AUCParam, "AUCt_dose1")
+      } # Otherwise, just keep all AUCParam.
+      
+   } 
+   PKToPull <- c(AUCParam, NonAUCParam)
+   
    PKToPull <- factor(PKToPull, levels = PKlevels)
    PKToPull <- sort(unique(PKToPull))
    
-   # Checking for whether to include AUCinf, AUCt, or both for dose 1 based on
-   # what user requested initiall and whether there were any problems with
-   # extrapolation.
-   if(all(complete.cases(PKparameters_orig))){
-      if("AUCt_dose1" %in% PKparameters_orig == FALSE & 
-         "AUCt_dose1" %in% PKToPull & 
-         "AUCinf_dose1" %in% PKparameters_orig & 
-         "AUCinf_dose1" %in% names(MyPKResults)){
-         MyPKResults <- MyPKResults %>% select(-AUCt_dose1)
-         PKToPull <- setdiff(PKToPull, "AUCt_dose1")
-      }
-   } else {
-      # This is when they did not specify PKparameters originally and got the
-      # defaults. If they got AUCinf_dose1 then they don't need AUCt_dose1 here.
-      if("AUCinf_dose1" %in% names(MyPKResults)){
-         MyPKResults <- MyPKResults %>% select(-AUCt_dose1)
-         PKToPull <- setdiff(PKToPull, "AUCt_dose1")
-      }
-   }
    
    # Getting columns in a good order
    MyPKResults <- MyPKResults %>%
