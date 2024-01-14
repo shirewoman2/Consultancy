@@ -35,6 +35,14 @@
 #'   This will not affect how any calculations are performed but will be
 #'   included in the output data so that you have a record of which compound the
 #'   data pertain to.
+#' @param ID_match match specific data set IDs. These are the labels that show
+#'   up in graphs of fitted data, e.g., "substrate none plasma 22 10 simulated
+#'   abc1a-10mg-xlsx obsdatafile.xlsx NA 1". That ID is, in order, compound ID,
+#'   what perpetrator was present, tissue, individual, trial, simulated or
+#'   observed data, Simulator file name, observed data file name, and the dose
+#'   number. Presumably, you're recalculating PK because you want to use
+#'   different points for determining the terminal elimination rate, so the dose
+#'   number will probably always be 1 here.
 #' @param compoundID_match any values in the CompoundID column to match in the
 #'   data; matching PK profiles will be recalculated
 #' @param inhibitor_match any values in the Inhibitor column to match in the
@@ -132,6 +140,7 @@ recalc_PK <- function(ct_dataframe,
                       compound_name = NA, 
                       perpetrator_name = NA,
                       existing_PK,
+                      ID_match = NA, 
                       compoundID_match = NA,
                       inhibitor_match = NA, 
                       tissue_match = NA, 
@@ -298,15 +307,17 @@ recalc_PK <- function(ct_dataframe,
                         ifelse(Simulated == TRUE, "simulated", "observed"),
                         File, ObsFile, DoseNum))
    
-   PossMatchCols <- list("CompoundID" = compoundID_match, 
-                         "Inhibitor" = inhibitor_match, 
-                         "Tissue" = tissue_match, 
-                         "Individual" = individual_match,
-                         "Trial" = trial_match, 
-                         "Simulated" = simulated_match, 
-                         "File" = file_match, 
-                         "ObsFile" = obsfile_match, 
-                         "DoseNum" = dosenum_match)
+   PossMatchCols <- list(
+      "ID" = ID_match, 
+      "CompoundID" = compoundID_match, 
+      "Inhibitor" = inhibitor_match, 
+      "Tissue" = tissue_match, 
+      "Individual" = individual_match,
+      "Trial" = trial_match, 
+      "Simulated" = simulated_match, 
+      "File" = file_match, 
+      "ObsFile" = obsfile_match, 
+      "DoseNum" = dosenum_match)
    
    PossMatchCols <- 
       PossMatchCols[sapply(PossMatchCols, 
@@ -345,11 +356,11 @@ recalc_PK <- function(ct_dataframe,
       }
       
       MatchIDs <- unlist(MatchIDs)
-      
       CTsubset <- ct_dataframe %>% filter(ID %in% MatchIDs)
       existing_PK_indiv <- existing_PK_indiv %>% filter(!ID %in% MatchIDs)
       
    } else {
+      MatchIDs <- unique(ct_dataframe$ID)
       CTsubset <- ct_dataframe
    }
    
@@ -358,18 +369,27 @@ recalc_PK <- function(ct_dataframe,
                Simulated, File, ObsFile, DoseNum)
    
    suppressMessages(
-      t0s <- CTsubset %>% filter(complete.cases(Conc)) %>% 
-         group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial, 
-                  Simulated, File, ObsFile, DoseNum, # why the @#$% won't DoseNum be included in group_var() sometimes after this?!?!?!?!?!
-                  .drop = FALSE) %>% 
-         summarize(t0 = min(Time), 
-                   MaxTime = max(Time)) %>% 
-         mutate(MaxTime = 
-                   switch(as.character(complete.cases(dose_interval)), 
-                          "TRUE" = t0 + dose_interval, 
+      t0s <- CTsubset %>% droplevels() %>%
+         filter(complete.cases(Conc)) %>%
+         group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial,
+                  Simulated, File, ObsFile, DoseNum,
+                  .drop = FALSE) %>%
+         summarize(t0 = min(Time, na.rm = T),
+                   MaxTime = max(Time, na.rm = T),
+                   # For reasons that utterly baffle and infuriate me, dplyr
+                   # will invisibly DROP the last grouping variable if the
+                   # result would have only one row. (See help file for
+                   # dplyr::summarize.) Why THAT would EVER be what people
+                   # really want since the function that groups the data is NOT
+                   # summarize and that this occurs even when they have
+                   # specified .drop = FALSE in the function that DOES perform
+                   # the grouping is *beyond me*.
+                   .groups = "keep") %>%
+         mutate(MaxTime =
+                   switch(as.character(complete.cases(dose_interval)),
+                          "TRUE" = t0 + dose_interval,
                           "FALSE" = MaxTime))
    )
-   # Not sure this will be best way to set this up
    
    ## Calculating PK parameters for individual datasets ------------------------
    
@@ -459,7 +479,10 @@ recalc_PK <- function(ct_dataframe,
             AUCextrap_temp <- NA
          } else {
             
-            if(any(is.na(TEMP$Estimates$Beta)) |
+            # Checking for whether any estimates were negative, which we be
+            # nonsensical. If they were, try again. 
+            if("Estimates" %in% names(TEMP) &&
+               any(is.na(TEMP$Estimates$Beta)) |
                any(TEMP$Estimates$Estimate < 0)){
                
                cc <- capture.output(
@@ -478,8 +501,10 @@ recalc_PK <- function(ct_dataframe,
                )
             }
             
+            # Check whether that attempt worked and try again if not.
             if(inherits(TEMP, "try-error") |
                (inherits(TEMP, "try-error") == FALSE && 
+                "Estimates" %in% names(TEMP) &&
                 (any(is.na(TEMP$Estimates$Beta)) |
                  any(TEMP$Estimates$Estimate < 0)))){
                TEMP <- elimFit(DF = CTsubset[[j]], 
@@ -490,7 +515,9 @@ recalc_PK <- function(ct_dataframe,
                                graph = TRUE)
             }
             
-            if((any(is.na(TEMP$Estimates$Beta)) |
+            # Check whether that final attempt worked. 
+            if("Estimates" %in% names(TEMP) &&
+               (any(is.na(TEMP$Estimates$Beta)) |
                 any(TEMP$Estimates$Estimate < 0)) == FALSE){
                ElimFitGraphs[[j]] <- TEMP$Graph +
                   ggtitle(sub("observed ", "observed\n", 
@@ -498,10 +525,16 @@ recalc_PK <- function(ct_dataframe,
                   theme(title = element_text(size = 6))
             } 
             
-            ElimFits[[j]] <- TEMP$Estimates
-            
-            ExtrapProbs <- any(is.na(ElimFits[[j]]$Beta))
-            
+            if("Estimates" %in% names(TEMP)){
+               ElimFits[[j]] <- TEMP$Estimates
+               ExtrapProbs <- FALSE
+            } else {
+               # This is when fitting still failed, so TEMP == "Insufficient
+               # data to create model".
+               ElimFits[[j]] <- NULL
+               ExtrapProbs <- TRUE
+               AUCextrap_temp <- NA
+            }
          }
          
          rm(TEMP)
@@ -594,8 +627,8 @@ recalc_PK <- function(ct_dataframe,
    
    if(any(PKtemp$ExtrapProbs, na.rm = TRUE)){
       warning(paste0(
-         "The following combinations of data had problems with extrapolation to infinity. Data are listed by CompoundID, Inhibitor, Tissue, Individual, Trial, whether the data were simulated or observed, File, ObsFile, and DoseNum:\n", 
-         str_c(unique(PKtemp$ID[PKtemp$ExtrapProbs]), collapse = "\n")), 
+         "There were problems extrapolating to infinity for some data. The sets of data with problems are listed here by CompoundID, Inhibitor, Tissue, Individual, Trial, whether the data were simulated or observed, File, ObsFile, and DoseNum:\n", 
+         str_c(sort(unique(PKtemp$ID[PKtemp$ExtrapProbs])), collapse = "\n")), 
          call. = FALSE)
    }
    

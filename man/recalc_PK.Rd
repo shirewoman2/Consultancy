@@ -10,6 +10,7 @@ recalc_PK(
   compound_name = NA,
   perpetrator_name = NA,
   existing_PK,
+  ID_match = NA,
   compoundID_match = NA,
   inhibitor_match = NA,
   tissue_match = NA,
@@ -68,6 +69,15 @@ included in the output data so that you have a record of which compound the
 data pertain to.}
 
 \item{existing_PK}{the output from \code{\link{calc_PK}}}
+
+\item{ID_match}{match specific data set IDs. These are the labels that show
+up in graphs of fitted data, e.g., "substrate none plasma 22 10 simulated
+abc1a-10mg-xlsx obsdatafile.xlsx NA 1". That ID is, in order, compound ID,
+what perpetrator was present, tissue, individual, trial, simulated or
+observed data, Simulator file name, observed data file name, and the dose
+number. Presumably, you're recalculating PK because you want to use
+different points for determining the terminal elimination rate, so the dose
+number will probably always be 1 here.}
 
 \item{compoundID_match}{any values in the CompoundID column to match in the
 data; matching PK profiles will be recalculated}
