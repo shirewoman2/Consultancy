@@ -259,7 +259,9 @@ extractConcTime <- function(sim_data_file,
    
    ## Getting exp details ------------------------------------------------------
    if(fromMultFunction || ("logical" %in% class(existing_exp_details) == FALSE)){
-      Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>% 
+      
+      Deets <- filter_sims(existing_exp_details, sim_data_file, "include")
+      Deets <- harmonize_details(Deets)[["MainDetails"]] %>% 
          filter(File == sim_data_file)
       
       if(nrow(Deets) == 0){

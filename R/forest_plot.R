@@ -1152,6 +1152,8 @@ forest_plot <- function(forest_dataframe,
    
    ## Setting up other stuff for graphing ----------------------------------
    
+   ### Shading --------------------------------------------------------------
+   
    # Yes, the set of numbers below will introduce infinite values in a
    # continuous x axis, and no, I can't seem to get ggplot2 to stop telling me
    # that, but this works to get the right shading. 
@@ -1192,6 +1194,8 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
+   
+   ### x axis limits and breaks -----------------------------------------------
    if(is.na(x_axis_limits[1])){
       GraphRange <- forest_dataframe %>% ungroup() %>% 
          select(Centre, Lower, Upper) %>% stack()
@@ -1222,6 +1226,9 @@ forest_plot <- function(forest_dataframe,
       names(XBreaks)[length(XBreaks)] <- as.character(x_axis_limits[2])
       XBreaks <- sort(XBreaks)
    }
+   
+   
+   ### y axis adjustments -----------------------------------------------------
    
    # Tweaking y axis positions based on whether obs data included
    forest_dataframe <- forest_dataframe %>%
@@ -1287,6 +1294,9 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
+   
+   ### x axis title -------------------------------------------------------
+   
    # Figuring out what x axis title should be
    XTitle <- paste(switch(CenterStat, 
                           "GeoMean" = "Geometric Mean Ratio", 
@@ -1301,7 +1311,8 @@ forest_plot <- function(forest_dataframe,
                           "GeoCV_Lower" = "(Geometric CV)",
                           "ArithCV_Lower" = "(Arithmetic CV)"))
    
-   # Assigning shapes
+   
+   ### Assigning shapes -------------------------------------------------------
    if(length(point_shape) == 1){
       MyShapes <- c(point_shape, point_shape)
    } else if(length(point_shape > 1)){
@@ -1309,6 +1320,9 @@ forest_plot <- function(forest_dataframe,
    }
    
    names(MyShapes) <- c("observed", "predicted")
+   
+   
+   ### vline at x = 1 ----------------------------------------------------------
    
    # Figuring out what they want for vline at x = 1.
    ShowVLine <- vline_at_1 != "none"

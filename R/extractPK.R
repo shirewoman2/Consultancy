@@ -219,7 +219,8 @@ extractPK <- function(sim_data_file,
       Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                  exp_details = "Summary and Input")[["MainDetails"]]
    } else {
-      Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>% 
+      Deets <- filter_sims(existing_exp_details, sim_data_file, "include")
+      Deets <- harmonize_details(Deets)[["MainDetails"]] %>% 
          filter(File == sim_data_file)
       
       if(nrow(Deets) == 0){

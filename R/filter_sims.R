@@ -27,6 +27,8 @@ filter_sims <- function(which_object,
       # This is when it's probably the output from running extractExpDetails_mult.
       for(i in names(which_object)){
          
+         if(length(which_object[[i]]) == 0){ next }
+         
          if(ncol(which_object[[i]]) > 0){
             which_object[[i]] <- which_object[[i]] %>% 
                filter(File %in% which_sims == switch(include_or_omit, 

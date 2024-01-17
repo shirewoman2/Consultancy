@@ -64,9 +64,10 @@ extractFmFe <- function(sim_data_file,
                                  exp_details = "Summary and Input")[["MainDetails"]]
       
    } else {
-      existing_exp_details <- harmonize_details(existing_exp_details)
       
-      Deets <- existing_exp_details$MainDetails %>% filter(File == sim_data_file)
+      Deets <- filter_sims(existing_exp_details, sim_data_file, "include")
+      Deets <- harmonize_details(Deets)[["MainDetails"]] %>% 
+         filter(File == sim_data_file)
       
       if(nrow(Deets) == 0){
          Deets <- extractExpDetails(sim_data_file,
