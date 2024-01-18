@@ -54,6 +54,7 @@ ct_plot_overlay(
   graph_title = NA,
   graph_title_size = 14,
   legend_position = NA,
+  border = TRUE,
   prettify_compound_names = TRUE,
   qc_graph = FALSE,
   existing_exp_details = NA,
@@ -449,6 +450,9 @@ default is 14. This also determines the font size of the graph labels.}
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
+
+\item{border}{TRUE (default) or FALSE for whether to include a border around
+each graph.}
 
 \item{prettify_compound_names}{set this to a) TRUE (default) or FALSE for
 whether to make the compound names in the legend prettier or b) supply a

@@ -396,6 +396,8 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
+#' @param border TRUE (default) or FALSE for whether to include a border around
+#'   each graph. 
 #' @param prettify_compound_names set this to a) TRUE (default) or FALSE for
 #'   whether to make the compound names in the legend prettier or b) supply a
 #'   named character vector to set it to the exact name you'd prefer to see in
@@ -501,6 +503,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             graph_title = NA,
                             graph_title_size = 14, 
                             legend_position = NA,
+                            border = TRUE, 
                             prettify_compound_names = TRUE,
                             qc_graph = FALSE,
                             existing_exp_details = NA,
@@ -1907,8 +1910,8 @@ ct_plot_overlay <- function(ct_dataframe,
    A <-  A +
       xlab(xlab) +
       ylab(ylab) +
-      theme_consultancy() +
-      theme(panel.border = element_rect(color = "black", fill = NA)) # KEEP THIS
+      theme(panel.border = element_rect(color = "black", fill = NA)) + # KEEP THIS
+      theme_consultancy(border = border)
    
    
    ## Faceting -----------------------------------------------------------------
