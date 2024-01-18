@@ -36,6 +36,12 @@
 #'   sensitivity-analysis scenarios yet, the value will be unchanged. (If you
 #'   have an independent variable you'd like to add to our list, email Laura
 #'   Shireman!)
+#' @param rounding option for what rounding to perform, if any. Options are:
+#'   \describe{\item{"significant X" where "X" is a number
+#'   (default: "significant 3")}{Output will be rounded to X significant figures.
+#'   "signif X" also works fine.} \item{"none"}{No rounding will be performed.} 
+#'   \item{"round X" where "X" is a number}{Output will be
+#'   rounded to X digits}}
 #' @param target_DV optionally specify a target value for the dependent
 #'   variable, which will add a horizontal red dotted line to the graph where
 #'   the target lies.
@@ -63,7 +69,7 @@
 #'   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
 #'   }
 #'
-#' @param title (optional) a title to include on your graph in quotes
+#' @param graph_title (optional) a title to include on your graph in quotes
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -84,7 +90,7 @@
 #'
 #' sensitivity_plot(SA_file = "SA example.xlsx",
 #'                  dependent_variable = "Cmax",
-#'                  title = "My pretty sensitivity-analysis graph that's not pink",
+#'                  graph_title = "My pretty sensitivity-analysis graph that's not pink",
 #'                  save_graph = "SA graph")
 #' 
 
@@ -97,7 +103,8 @@ sensitivity_plot <- function(SA_file,
                              y_axis_limits_lin = NA,
                              y_axis_limits_log = NA,
                              time_range = NA,
-                             title = NA,
+                             rounding = "significant 3", 
+                             graph_title = NA,
                              save_graph = NA,
                              fig_height = 4,
                              fig_width = 5, 
@@ -129,6 +136,11 @@ sensitivity_plot <- function(SA_file,
       color_by_which_indvar <- "1st"
    }
    
+   if(str_detect(rounding, "signif|none|round") == FALSE){
+      warning("You have not entered one of the permissible options for rounding. The only options for rounding are `significant X` (default is to round by 3 sig figs), `round X`, or `none`, so we'll use the default rounding scheme.\n", 
+              call. = FALSE)
+      rounding <- "significant 3"
+   }
    
    # Get data ------------------------------------------------------------
    AllSheets <- readxl::excel_sheets(path = SA_file)
@@ -158,6 +170,12 @@ sensitivity_plot <- function(SA_file,
    # Getting the names of the independent variables
    SensParam <- Summary$X2[which(Summary$X1 == "Run Number")]
    SensParam2 <- Summary$X3[which(Summary$X1 == "Run Number")]
+   
+   if(is.na(SensParam2) & color_by_which_indvar != "1st"){
+      warning("You requested that we color data by the 2nd independent variable, but you only have 1 independent variable present in your data, so we'll color the data by that one.\n", 
+              call. = FALSE)
+      color_by_which_indvar <- "1st"
+   }
    
    RunInfo <- Summary[(which(Summary$X1 == "Run Number") + 1):nrow(Summary), 1:3]
    names(RunInfo) <- c("Run", "SensValue", "SensValue2")
@@ -218,6 +236,12 @@ sensitivity_plot <- function(SA_file,
       names(SAdata)[1:2] <- c("SensValue", "DV") 
       
    }
+   
+   # Rounding for ease of reading legend. Could add an option for what rounding
+   # to use here.
+   SAdata <- SAdata %>% 
+      mutate(across(.cols = any_of(c("SensValue", "SensValue2")), 
+                    .fns = function(x) round_opt(x, rounding)))
    
    # Graph ----------------------------------------------------------------
    
@@ -366,8 +390,9 @@ sensitivity_plot <- function(SA_file,
       theme_consultancy(border = complete.cases(SensParam2)) +
       theme(axis.title = element_text(color = "black", face = "plain")) # Note that this is NOT bold b/c can't make expressions bold and you could thus end up with 1 axis title bold and 1 regular.
    
-   if(complete.cases(title)){
-      G <- G + ggtitle(title)
+   if(complete.cases(graph_title)){
+      G <- G + ggtitle(graph_title) +
+         theme(plot.title = element_text(hjust = 0.5))
    }
    
    if(complete.cases(target_DV)){

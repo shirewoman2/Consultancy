@@ -14,7 +14,8 @@ sensitivity_plot(
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
   time_range = NA,
-  title = NA,
+  rounding = "significant 3",
+  graph_title = NA,
   save_graph = NA,
   fig_height = 4,
   fig_width = 5,
@@ -73,7 +74,14 @@ limits for the semi-log plot will be automatically selected.}
   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
   }}
 
-\item{title}{(optional) a title to include on your graph in quotes}
+\item{rounding}{option for what rounding to perform, if any. Options are:
+\describe{\item{"significant X" where "X" is a number
+(default: "significant 3")}{Output will be rounded to X significant figures.
+"signif X" also works fine.} \item{"none"}{No rounding will be performed.} 
+\item{"round X" where "X" is a number}{Output will be
+rounded to X digits}}}
+
+\item{graph_title}{(optional) a title to include on your graph in quotes}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -120,7 +128,7 @@ graphs.
 
 sensitivity_plot(SA_file = "SA example.xlsx",
                  dependent_variable = "Cmax",
-                 title = "My pretty sensitivity-analysis graph that's not pink",
+                 graph_title = "My pretty sensitivity-analysis graph that's not pink",
                  save_graph = "SA graph")
 
 }
