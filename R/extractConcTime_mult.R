@@ -438,19 +438,17 @@ extractConcTime_mult <- function(sim_data_files = NA,
          
       } else {
          
+         existing_exp_details <- filter_sims(existing_exp_details, 
+                                             sim_data_files, "include")
          existing_exp_details <- harmonize_details(existing_exp_details)
-         Deets <- existing_exp_details[["MainDetails"]] %>% 
-            filter(File %in% sim_data_files)
          
-         if(all(sim_data_files %in% Deets$File) == FALSE){
+         if(all(sim_data_files %in% existing_exp_details$MainDetails$File) == FALSE){
             existing_exp_details <- extractExpDetails_mult(sim_data_files = sim_data_files, 
                                                            existing_exp_details = existing_exp_details,
                                                            exp_details = "Summary and Input")
-            Deets <- existing_exp_details[["MainDetails"]] %>% 
-               filter(File %in% sim_data_files)
          }
          
-         if("ObsOverlayFile" %in% names(Deets) == FALSE){
+         if("ObsOverlayFile" %in% names(existing_exp_details$MainDetails) == FALSE){
             warning("The observed data overlay file was not included in `existing_exp_details`, so we don't know which observed data files to use for the simulated files. We cannot extract any observed data.\n", 
                     call. = FALSE)
             ObsAssign <- data.frame()
@@ -459,12 +457,13 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             # Make this work for whoever the current user is, even if the XML
             # obs file path was for someone else.
-            Deets$ObsOverlayFile <- 
+            existing_exp_details$MainDetails$ObsOverlayFile <- 
                sub("Users\\\\.*\\\\Certara", 
                    paste0("Users\\\\", Sys.info()["user"], "\\\\Certara"), 
-                   Deets$ObsOverlayFile)
+                   existing_exp_details$MainDetails$ObsOverlayFile)
             
-            ObsAssign <- Deets %>% select(File, ObsOverlayFile) %>% 
+            ObsAssign <- existing_exp_details$MainDetails %>% 
+               select(File, ObsOverlayFile) %>% 
                rename(ObsFile = ObsOverlayFile) %>% 
                mutate(ObsFile = sub("\\.xml$", ".xlsx", ObsFile), 
                       ObsFile = gsub("\\\\", "/", ObsFile), 
@@ -636,7 +635,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
       message(paste("Extracting concentration-time data from file =", ff))
       MultData[[ff]] <- list()
       
-      Deets <- existing_exp_details[["MainDetails"]] %>% filter(File == ff)
+      Deets <- filter_sims(existing_exp_details, ff, "include")$MainDetails
       
       # Probably don't need this any more since we now filter out non-Simulator
       # files earlier than here, but it shouldn't hurt anything.
@@ -691,6 +690,10 @@ extractConcTime_mult <- function(sim_data_files = NA,
                  call. = FALSE)
       }
       
+      # Determining obs file to use as applicable
+      MyObsFile <- ObsAssign$ObsFile[ObsAssign$File == ff]
+      if(length(MyObsFile) == 0){MyObsFile <- NA}
+      
       # Each tissue will be on its own sheet in the Excel file, so each
       # will need their own iterations of the loop for reading different
       # sheets.
@@ -736,7 +739,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             MultData[[ff]][[j]] <- extractConcTime(
                sim_data_file = ff,
-               obs_data_file = NA, # add this later when applicable
+               obs_data_file = MyObsFile, 
                compoundToExtract = intersect(compoundsToExtract_n,
                                              c("substrate", "inhibitor 1")),
                tissue = j,
@@ -750,7 +753,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             if("substrate" %in% compoundsToExtract_n){
                MultData[[ff]][[j]][["substrate"]] <- extractConcTime(
                   sim_data_file = ff,
-                  obs_data_file = NA, # will add this later
+                  obs_data_file = MyObsFile, 
                   compoundToExtract = "substrate",
                   tissue = j,
                   returnAggregateOrIndiv = returnAggregateOrIndiv, 
@@ -761,7 +764,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             if("inhibitor 1" %in% compoundsToExtract_n){
                MultData[[ff]][[j]][["inhibitor 1"]] <- extractConcTime(
                   sim_data_file = ff,
-                  obs_data_file = NA, # will add this later
+                  obs_data_file = MyObsFile, 
                   compoundToExtract = "inhibitor 1",
                   tissue = j,
                   returnAggregateOrIndiv = returnAggregateOrIndiv, 
@@ -777,7 +780,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             MultData[[ff]][[j]] <-
                extractConcTime(
                   sim_data_file = ff,
-                  obs_data_file = NA, # will add this later
+                  obs_data_file = MyObsFile, 
                   compoundToExtract = compoundsToExtract_n,
                   tissue = j,
                   returnAggregateOrIndiv = returnAggregateOrIndiv, 
@@ -810,7 +813,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                MultData[[ff]][[j]][[k]] <-
                   extractConcTime(
                      sim_data_file = ff,
-                     obs_data_file = NA, # will add this later
+                     obs_data_file = MyObsFile, 
                      compoundToExtract = compoundsToExtract_k,
                      tissue = j,
                      returnAggregateOrIndiv = returnAggregateOrIndiv, 
@@ -919,31 +922,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    MultData <- bind_rows(MultData)
    
-   if(nrow(MultData) > 0 & any(complete.cases(obs_to_sim_assignment))){
-      # If they specified observed data files, it's better to use those than
-      # to use the data included with the simulation. There's more information
-      # that way.
-      MultData <- MultData %>% filter(Simulated == TRUE)
-   }
-   
-   # Observed data ------------------------------------------------------
-   
-   if(nrow(ObsAssign) > 0 & nrow(MultData) > 0){
-      
-      obs_dataframe <- extractObsConcTime_mult(
-         obs_data_files = ObsAssign %>% 
-            filter(File %in% unique(MultData$File)) %>% 
-            pull(ObsFile)) %>% 
-         filter(CompoundID %in% compoundsToExtract &
-                   Tissue %in% tissues)
-      
-      if(nrow(obs_dataframe) > 0){
-         MultData <- match_obs_to_sim(ct_dataframe = MultData, 
-                                      obs_dataframe = obs_dataframe, 
-                                      obs_to_sim_assignment = ObsAssign, 
-                                      existing_exp_details = existing_exp_details)
-      }
-   }
    
    # all data together -------------------------------------------------
    

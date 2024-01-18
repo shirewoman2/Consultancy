@@ -20,6 +20,10 @@ determine_myperpetrator <- function(Deets, prettify_compound_names){
       c("Inhibitor1" = switch(as.character("Inhibitor1" %in% names(Deets)), 
                               "TRUE" = str_comma(Deets$Inhibitor1), 
                               "FALSE" = as.character(NA)), 
+        "Inhibitor1Metabolite" = switch(as.character("Inhibitor1Metabolite") %in%
+                                           names(Deets), 
+                                        "TRUE" = str_comma(Deets$Inhibitor1Metabolite), 
+                                        "FALSE" = as.character(NA)), 
         "Inhibitor2" = switch(as.character("Inhibitor2" %in% names(Deets)), 
                               "TRUE" = str_comma(Deets$Inhibitor2), 
                               "FALSE" = as.character(NA)))
