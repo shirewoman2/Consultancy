@@ -28,6 +28,7 @@ forest_plot(
   table_title = NA,
   rel_widths = c(5, 1),
   prettify_ylabel = NA,
+  PK_labels = NA,
   include_dose_num = NA,
   include_ratio_in_labels = TRUE,
   error_bar_height = NA,
@@ -263,6 +264,13 @@ For example, "SV-Rifampicin-MD" will become "rifampicin", and
 prettify if you supply a column name for \code{y_axis_labels} and we
 *won't* prettify if you supply a named character vector there.}
 
+\item{PK_labels}{optionally specify what you would like to have appear on the
+y axis for labels for each PK parameter with a named vector of expressions,
+e.g., \code{PK_labels = c("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
+"Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}. 
+To see examples of PK parameters set up as expressions for use in graph 
+labels, try running \code{PKexpressions}.}
+
 \item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
 the dose number when listing the PK parameter. By default, the parameter
 will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
@@ -395,7 +403,7 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             mean_type = "median",
             variability_type = "range")
 
-# Here's how to include a table of the numbers used for the centre 
+# Here's how to include a table of the numbers used for the centre
 # statistic and variability along the right side of the graph.
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = Inhibitor1,

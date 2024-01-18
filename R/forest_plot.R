@@ -132,6 +132,12 @@
 #' @param y_axis_title optionally specify a vertical title to be displayed to
 #'   the left of the y axis. Example: \code{y_axis_title = "Perpetrator
 #'   co-administered with Drug X"}. Default ("none") leaves off any y-axis title.
+#' @param PK_labels optionally specify what you would like to have appear on the
+#'   y axis for labels for each PK parameter with a named vector of expressions,
+#'   e.g., \code{PK_labels = c("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
+#'   "Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}. 
+#'   To see examples of PK parameters set up as expressions for use in graph 
+#'   labels, try running \code{PKexpressions}.
 #' @param x_axis_limits the x axis limits to use; default is 0.06 to 12.
 #' @param x_axis_number_type set the x axis number type to be "ratios"
 #'   (default), "percents" (converts the ratios to a percent), or "keep trailing
@@ -322,7 +328,7 @@
 #'             mean_type = "median",
 #'             variability_type = "range")
 #'
-#' # Here's how to include a table of the numbers used for the centre 
+#' # Here's how to include a table of the numbers used for the centre
 #' # statistic and variability along the right side of the graph.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = Inhibitor1,
@@ -447,6 +453,7 @@ forest_plot <- function(forest_dataframe,
                         table_title = NA,
                         rel_widths = c(5, 1),
                         prettify_ylabel = NA, 
+                        PK_labels = NA, 
                         include_dose_num = NA,
                         include_ratio_in_labels = TRUE, 
                         error_bar_height = NA,
@@ -637,6 +644,39 @@ forest_plot <- function(forest_dataframe,
                                               "fold", "substrate", "inhibitor1")])
    }
    
+   # Checking for acceptable input for PK_labels
+   if(is.logical(PK_labels) == FALSE){ # NB: Can't use any(complete.cases(PK_labels)) b/c complete.cases doesn't work for expressions. 
+      if("list" %in% class(PK_labels) == FALSE){
+         warning("You supplied something other than a list of expressions for the argument PK_labels, and we need a list of expressions to make this work. Did you perhaps use `c()` instead of `list()` for specifying PK_labels? We'll use the default PK labels instead.\n", 
+                 call. = FALSE)
+         PK_labels <- NA
+      } else if(all(sapply(PK_labels, "class") == "expression") == FALSE){
+         warning("You supplied something other than a list of expressions for the argument PK_labels, and we need a list of expressions to make this work. Did you perhaps use `c()` instead of `list()` for specifying PK_labels? We'll use the default PK labels instead.\n", 
+                 call. = FALSE)
+         PK_labels <- NA
+      } else if(all(is.null(names(PK_labels)))){
+         warning("Each value supplied for the argument PK_labels must have a name so we know which PK parameter it should be used to label. You supplied expressions without labels, so we don't know which label applies to which PK parameter. We'll ignore PK_labels and use the defaults.\n", 
+                 call. = FALSE)
+         PK_labels <- NA
+      } else {
+         
+         BadNames <- setdiff(names(PK_labels), 
+                             c(AllPKParameters$PKparameter, 
+                               AllPKParameters$PKparameter_nodosenum, 
+                               levels(forest_dataframe$PKparameter)))
+         
+         if(length(BadNames) > 0){
+            warning(paste0("Some of the names of the expressions supplied for the argument PK_labels are not among the possible options for naming PK parameters or are not found in your data. Specifically, these names will not work:\n", 
+                           paste0(BadNames, "\n"), 
+                           "These will be ignored.\n"), 
+                    call. = FALSE)
+            PK_labels <- PK_labels[names(PK_labels) %in% c(AllPKParameters$PKparameter, 
+                                                           AllPKParameters$PKparameter_nodosenum)]
+         }
+      }
+   }
+   
+   
    # Reshaping data as needed ------------------------------------------------
    
    # Getting data into the shape needed. Earlier versions of the
@@ -713,6 +753,7 @@ forest_plot <- function(forest_dataframe,
    
    if(include_dose_num == FALSE){
       PKparameters <- sub("_dose1|_last", "", PKparameters)
+      names(PK_labels) <- sub("_dose1|_last", "", names(PK_labels))
       
       forest_dataframe <- forest_dataframe %>% 
          mutate(PKparameter = sub("_dose1|_last", "", PKparameter))
@@ -727,6 +768,8 @@ forest_plot <- function(forest_dataframe,
       if(include_dose_num){
          PKparameters <- sub("_ratio_dose1", "_dose1_nounits", PKparameters)
          PKparameters <- sub("_ratio_last", "_last_nounits", PKparameters)
+         names(PK_labels) <- sub("_ratio_dose1", "_dose1_nounits", names(PK_labels))
+         names(PK_labels) <- sub("_ratio_last", "_last_nounits", names(PK_labels))
          
          forest_dataframe <- forest_dataframe %>% 
             mutate(PKparameter = sub("_ratio_dose1", "_dose1_nounits", PKparameter), 
@@ -1360,15 +1403,45 @@ forest_plot <- function(forest_dataframe,
    VlineParams[["linewidth"]] <- ifelse(is.na(as.numeric(VlineParams[["linewidth"]])), 
                                         0.5, as.numeric(VlineParams[["linewidth"]]))
    
+   
+   ### Setting PK parameter labels --------------------------------------------
+   
+   if(as_label(facet_column_x) == "PKparameter" | FakeFacetOnPK){
+      # When faceting on PK parameter, Param_exp must be an expression and NOT a
+      # list of expressions. This seems to be the best way to make that happen.
+      
+      PKexpressions_mod <- PKexpressions
+      
+      if("logical" %in% class(PK_labels) == FALSE){
+         for(param in names(PK_labels)){
+            PKexpressions_mod[[param]] <- PK_labels[[param]]
+         }
+      }
+      
+      Param_exp <- PKexpressions_mod[levels(forest_dataframe$PKparameter)]
+      names(Param_exp) <- levels(forest_dataframe$PKparameter)
+      
+   } else {
+      Param_exp <- list()
+      
+      for(param in setdiff(levels(forest_dataframe$PKparameter), 
+                           names(PK_labels))){
+         Param_exp[[param]] <- PKexpressions[[param]]
+      }
+      
+      # Replacing any that user specified. 
+      if("logical" %in% class(PK_labels) == FALSE){
+         for(param in names(PK_labels)){
+            Param_exp[[param]] <- PK_labels[[param]]
+         }
+      }
+   }
+   
    # Graph ----------------------------------------------------------------
    if(as_label(facet_column_x) == "PKparameter" | FakeFacetOnPK){
       
       # If user wants to facet by the PK parameter, that's a special case
       # b/c we need to change what we're using for the y axis. 
-      Param_exp <- expression()
-      for(param in levels(forest_dataframe$PKparameter)){
-         Param_exp[param] <- PKexpressions[[param]]
-      }
       
       forest_dataframe <- forest_dataframe %>% 
          mutate(PKparameter_exp = factor(PKparameter, 
@@ -1443,7 +1516,7 @@ forest_plot <- function(forest_dataframe,
          geom_point(size = 2.5, fill = "white") +
          scale_shape_manual(values = MyShapes) +
          scale_y_continuous(breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
-                            labels = sapply(PKexpressions[levels(forest_dataframe$PKparameter)], FUN = `[`), 
+                            labels = sapply(Param_exp[levels(forest_dataframe$PKparameter)], FUN = `[`), 
                             expand = expansion(mult = pad_y_num)) +
          labs(fill = "Interaction level", shape = NULL)
       
