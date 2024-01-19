@@ -517,15 +517,20 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    # Harmonizing PK parameter syntax
-   if(any(complete.cases(sheet_PKparameters)) &&
-      is.null(names(sheet_PKparameters)) & any(complete.cases(PKparameters))){
-      # Scenario: User has supplied a single specific sheet and also a specific
-      # set of PK parameters they want. We want there to be no dose number
-      # suffix for consistency w/extractPK.
-      
-      PKparameters <- sub("_dose1|_last", "", PKparameters)
-      PKparameters <- sub("AUCtau", "AUCt", PKparameters)
-      
+   if(any(complete.cases(sheet_PKparameters))){
+      if(is.null(names(sheet_PKparameters))){
+         # Scenario: User has supplied a single specific sheet and also a specific
+         # set of PK parameters they want. We want there to be no dose number
+         # suffix for consistency w/extractPK.
+         PKparameters <- sub("_dose1|_last", "", PKparameters)
+         PKparameters <- sub("AUCtau", "AUCt", PKparameters)
+         PKparameters <- unique(PKparameters)
+         
+      } else {
+         # If they specified a named character vector for sheet_PKparameters,
+         # we need to make sure that we get all the parameters they requested.
+         PKparameters <- names(sheet_PKparameters)
+      }
    }
    
    PKparameters <- harmonize_PK_names(PKparameters)
@@ -974,6 +979,10 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    ## Getting PK parameters -------------------------------------------------
+   
+   # If they have not requested specific sheets for specific PK parameters, then
+   # just add AUCt_dose1 to the set of parameters to pull in case of trouble
+   # with extrapolation.
    if(is.null(names(sheet_PKparameters))){
       PKparameters_temp <- unique(c(PKToPull,
                                     sub("AUCinf_dose1",
@@ -981,6 +990,9 @@ pksummary_table <- function(sim_data_file = NA,
                                     sub("AUCinf$",
                                         "AUCt$", PKToPull))) 
    } else {
+      # If they *have* requested specific sheets, then we want the PKparameters
+      # argument in extractPK to be NA b/c sheet_PKparameters will be contain
+      # the info on which PK parameters to pull.
       PKparameters_temp <- NA
    }
    
