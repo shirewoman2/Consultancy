@@ -457,9 +457,9 @@ extractConcTime <- function(sim_data_file,
                               "CTissue" ~ "tissue concentration",
                               "ITissue" ~ "tissue concentration",
                               "CIntracranial" ~ "intracranial",
-                              "CBrainICF" ~ "brain ICF", # ICF = intracellular fluid?
-                              "CBrainISF" ~ "brain ISF", # ISF = interstitial fluid?
-                              "CCSFSpinal" ~ "spinal CSF", # CSF = cerebrospinal fluid, I assume
+                              "CBrainICF" ~ "brain ICF", # ICF = intracellular fluid
+                              "CBrainISF" ~ "brain ISF", # ISF = interstitial fluid
+                              "CCSFSpinal" ~ "spinal CSF", # CSF = cerebrospinal fluid
                               "CCSFCranial" ~ "cranial CSF",
                               "CTotalBrain" ~ "total brain",
                               "Kpuu_BrainMass" ~ "Kp,uu,brain", # unbound brain-to-plasma partition coefficient

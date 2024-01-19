@@ -593,19 +593,19 @@ pksummary_mult <- function(sim_data_files = NA,
                  call. = FALSE)
          observed_PKDF <- NA
       }
-   }
-   
-   # Specifying CompoundID and Tissue in ObsPK if possible
-   if(("CompoundID" %in% names(observed_PKDF) == FALSE ||
-       all(is.na(observed_PKDF$CompoundID))) &
-      length(sort(unique(compoundsToExtract))) == 1){
-      observed_PKDF$CompoundID <- sort(unique(compoundsToExtract))
-   }
-   
-   if(("Tissue" %in% names(observed_PKDF) == FALSE ||
-       all(is.na(observed_PKDF$Tissue))) &
-      length(sort(unique(tissues))) == 1){
-      observed_PKDF$Tissue <- sort(unique(tissues))
+      
+      # Specifying CompoundID and Tissue in ObsPK if possible
+      if(("CompoundID" %in% names(observed_PKDF) == FALSE ||
+          all(is.na(observed_PKDF$CompoundID))) &
+         length(sort(unique(compoundsToExtract))) == 1){
+         observed_PKDF$CompoundID <- sort(unique(compoundsToExtract))
+      }
+      
+      if(("Tissue" %in% names(observed_PKDF) == FALSE ||
+          all(is.na(observed_PKDF$Tissue))) &
+         length(sort(unique(tissues))) == 1){
+         observed_PKDF$Tissue <- sort(unique(tissues))
+      }
    }
    
    # If user has not included "xlsx" in file name, add that.
