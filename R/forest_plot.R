@@ -1404,41 +1404,14 @@ forest_plot <- function(forest_dataframe,
                                         0.5, as.numeric(VlineParams[["linewidth"]]))
    
    
-   ### Setting PK parameter labels --------------------------------------------
-   
+   # Graph ----------------------------------------------------------------
    if(as_label(facet_column_x) == "PKparameter" | FakeFacetOnPK){
+      
       # When faceting on PK parameter, Param_exp must be an expression and NOT a
       # list of expressions. This seems to be the best way to make that happen.
       
-      PKexpressions_mod <- PKexpressions
-      
-      if("logical" %in% class(PK_labels) == FALSE){
-         for(param in names(PK_labels)){
-            PKexpressions_mod[[param]] <- PK_labels[[param]]
-         }
-      }
-      
-      Param_exp <- PKexpressions_mod[levels(forest_dataframe$PKparameter)]
+      Param_exp <- PKexpressions[levels(forest_dataframe$PKparameter)]
       names(Param_exp) <- levels(forest_dataframe$PKparameter)
-      
-   } else {
-      Param_exp <- list()
-      
-      for(param in setdiff(levels(forest_dataframe$PKparameter), 
-                           names(PK_labels))){
-         Param_exp[[param]] <- PKexpressions[[param]]
-      }
-      
-      # Replacing any that user specified. 
-      if("logical" %in% class(PK_labels) == FALSE){
-         for(param in names(PK_labels)){
-            Param_exp[[param]] <- PK_labels[[param]]
-         }
-      }
-   }
-   
-   # Graph ----------------------------------------------------------------
-   if(as_label(facet_column_x) == "PKparameter" | FakeFacetOnPK){
       
       # If user wants to facet by the PK parameter, that's a special case
       # b/c we need to change what we're using for the y axis. 
@@ -1492,6 +1465,22 @@ forest_plot <- function(forest_dataframe,
    } else {
       
       # This is when they're NOT faceting on the PK parameter. 
+      
+      # Setting PK parameter labels 
+      Param_exp <- list()
+      
+      for(param in setdiff(levels(forest_dataframe$PKparameter), 
+                           names(PK_labels))){
+         Param_exp[[param]] <- PKexpressions[[param]]
+      }
+      
+      # Replacing any that user specified. 
+      if("logical" %in% class(PK_labels) == FALSE){
+         for(param in names(PK_labels)){
+            Param_exp[[param]] <- PK_labels[[param]]
+         }
+      }
+      
       G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
                                         y = PKParam_num, shape = SimOrObs)) +
          geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, 
