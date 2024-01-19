@@ -90,15 +90,15 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
                       paste0("cumulative fraction of\n", CompoundLab, " released"), 
                    
                    ## AdvBrainModel
-                   "intracranial" = "Intracranial concentration",
+                   "intracranial" = "Intracranial\nconcentration",
                    "brain ICF" = "Brain intracellular fluid\nconcentration", 
                    "brain ISF" = "Brain intrastitial fluid\nconcentration",
                    "spinal CSF" = "Spinal cerebrospinal fluid\nconcentration", 
                    "cranial CSF" = "Cranial cerebrospinal fluid\nconcentration",
-                   "total brain" = "Total brain concentration",
-                   "Kp,uu,brain" = expression(K[p*",uu,brain"]), #"Unbound brain-to-plasma\ntissue partition coefficient", 
-                   "Kp,uu,ICF" = expression(K[p*",uu,intracellular fluid"]), # "Unbound intracellular-fluid-to-plasma\ntissue partition coefficient", 
-                   "Kp,uu,ISF" = expression(K[p*",uu,interstitial fluid"]) #"Unbound intrastitial-fluid-to-plasma\ntissue partition coefficient") 
+                   "total brain" = "Total brain\nconcentration",
+                   "Kp,uu,brain" = expression(K[p*",uu,brain"]), #"Unbound-brain-to-unbound-plasma\ntissue partition coefficient", 
+                   "Kp,uu,ICF" = expression(K[p*",uu,intracellular fluid"]), # "Unbound-intracellular-fluid-to-unbound-plasma\ntissue partition coefficient", 
+                   "Kp,uu,ISF" = expression(K[p*",uu,interstitial fluid"]) #"Unbound-intrastitial-fluid-to-unbound-plasma\ntissue partition coefficient") 
             )
          
          ylab2 <- ifelse(is.na(unique(Data$Conc_units)), 

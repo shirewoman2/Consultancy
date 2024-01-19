@@ -476,29 +476,32 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Check whether they've specified anything for subsection_ADAM or if data
    # only contain 1 value for subsection_ADAM.
-   if(any(complete.cases(ct_dataframe$subsection_ADAM)) & 
-      complete.cases(subsection_ADAM)){
-      if(length(unique(ct_dataframe$subsection_ADAM)) == 1 &&
-         unique(ct_dataframe$subsection_ADAM) != subsection_ADAM){
-         warning(paste0("You requested the subsection_ADAM tissue ", 
-                        subsection_ADAM, 
-                        ", but what's in your data is ", 
-                        unique(ct_dataframe$subsection_ADAM), 
-                        ", so we'll use that instead.\n"), 
-                 call. = FALSE)
+   if(EnzPlot == FALSE){
+      if(any(complete.cases(ct_dataframe$subsection_ADAM)) & 
+         complete.cases(subsection_ADAM)){
+         if(length(unique(ct_dataframe$subsection_ADAM)) == 1 &&
+            unique(ct_dataframe$subsection_ADAM) != subsection_ADAM){
+            warning(paste0("You requested the subsection_ADAM tissue ", 
+                           subsection_ADAM, 
+                           ", but what's in your data is ", 
+                           unique(ct_dataframe$subsection_ADAM), 
+                           ", so we'll use that instead.\n"), 
+                    call. = FALSE)
+            subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
+         }
+         
+      } else {
          subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
       }
       
-   } else {
-      subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
+      if(length(subsection_ADAM) > 1){
+         subsection_ADAM <- subsection_ADAM[1]
+         warning(paste0("You requested more than one value for subsection_ADAM, but we can only plot one with the ct_plot function. We'll set it to the 1st value we find in your data: ", 
+                        subsection_ADAM, ".\n"), 
+                 call. = FALSE)
+      }
    }
    
-   if(length(subsection_ADAM) > 1){
-      subsection_ADAM <- subsection_ADAM[1]
-      warning(paste0("You requested more than one value for subsection_ADAM, but we can only plot one with the ct_plot function. We'll set it to the 1st value we find in your data: ", 
-                     subsection_ADAM, ".\n"), 
-              call. = FALSE)
-   }
    
    # If user wants feces, use the British spelling even if they entered the
    # American spelling.
@@ -662,6 +665,7 @@ ct_plot <- function(ct_dataframe = NA,
          rename(Conc = Abundance) %>%
          mutate(Simulated = TRUE,
                 Compound = Enzyme, 
+                subsection_ADAM = NA, # This avoids some annoying warnings later, and it's easiest to just add it here. 
                 # putting "conc" into decimal format b/c it works better with
                 # using percents on y axis labels
                 Conc = Conc / 100) 
@@ -682,7 +686,8 @@ ct_plot <- function(ct_dataframe = NA,
                                       "cumulative dissolution") &&
       EnzPlot == FALSE
    
-   AdvBrainModel <- unique(Data$Tissue == "brain") &
+   AdvBrainModel <- "subsection_ADAM" %in% names(Data) && 
+      unique(Data$Tissue == "brain") &
       any(Data$subsection_ADAM %in% 
              c("intracranial", "brain ICF", "brain ISF", "spinal CSF", "cranial CSF", 
                "total brain", "Kp,uu,brain", "Kp,uu,ICF", "Kp,uu,ISF"))
