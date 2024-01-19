@@ -17,7 +17,7 @@ if("logical" %in% class(existing_exp_details)){
 }
 
 MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
-                                   prettify_compound_names = TRUE)
+                                         prettify_compound_names = TRUE)
 
 if(FromCalcPKRatios){
    MyAnnotations <- 
@@ -35,7 +35,7 @@ if(FromCalcPKRatios){
 } else {
    
    PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
-   if(any(str_detect(PKpulled_i, " "))){
+   if(any(str_detect(PKpulled_i, " "), na.rm = T)){
       PKpulled_i <- data.frame(PrettifiedNames = PKpulled_i) %>% 
          left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
          pull(PKparameter) %>% unique()
@@ -90,11 +90,15 @@ TempTable <- MyPKResults[[i]] %>% ungroup() %>%
 names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
 
 formatTable_Simcyp(TempTable,
+                   # sort_column = sort_column,
+                   merge_columns = merge_columns, 
+                   merge_shaded_cells = merge_shaded_cells, 
                    fontsize = fontsize,
-                   prettify_columns = prettify_columns,
+                   bold_cells = bold_cells,
+                   prettify_columns = TRUE, 
+                   center_1st_column = center_1st_column, 
                    highlight_so_cutoffs = highlight_so_cutoffs, 
-                   highlight_so_colors = highlight_so_colors, 
-                   highlight_gmr_colors = highlight_gmr_colors)
+                   highlight_so_colors = highlight_so_colors)
 
 ```
 

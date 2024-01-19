@@ -13,6 +13,10 @@ save_table_to_Word(
   include_dose_num = NA,
   prettify_columns = TRUE,
   fontsize = 11,
+  merge_columns = NA,
+  bold_cells = list(c(0, NA), c(NA, 1)),
+  center_1st_column = FALSE,
+  merge_shaded_cells = TRUE,
   highlight_so_cutoffs = NA,
   highlight_so_colors = NA,
   highlight_gmr_colors = NA
@@ -111,14 +115,6 @@ c("green", "red")}. This only applies when you save the table as a Word file.}
   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
-
-\item{PKpulled}{PK that are included in the table. All must be included in
-AllPKParameters$PKparameter or AllPKParameters$PrettifiedNames (although
-the latter is buggy and not working atm). If left as NA, no changes at all
-will be done to the table in terms of formatting, layout, etc., but that
-includes that it will be saved as a single table regardless of input for
-\code{single_table}. (Saving as multiple tables with the argument
-\code{single_table} requires a very specific layout here.)}
 }
 \value{
 saves a table to a Word file
