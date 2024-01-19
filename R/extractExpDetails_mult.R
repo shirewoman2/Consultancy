@@ -205,7 +205,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    }
    
    MyDeets <- list()
-   CustomDosing <- c()
    
    for(i in sim_data_files_topull){ 
       message(paste("Extracting simulation experimental details from file =", i))
