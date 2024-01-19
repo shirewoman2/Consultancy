@@ -1409,9 +1409,15 @@ forest_plot <- function(forest_dataframe,
       
       # When faceting on PK parameter, Param_exp must be an expression and NOT a
       # list of expressions. This seems to be the best way to make that happen.
-      
-      Param_exp <- PKexpressions[levels(forest_dataframe$PKparameter)]
-      names(Param_exp) <- levels(forest_dataframe$PKparameter)
+      Param_exp <- as.expression(c())
+      for(i in levels(forest_dataframe$PKparameter)){
+         Param_exp[i] <- PKexpressions[[i]]
+      }
+      # This will leave a NULL as the 1st item in Param_exp, but that doesn't
+      # seem to affect the graph. I tried making this other ways, but they all
+      # resulted in a list of expressions -- class(Param_exp) would be a list --
+      # rather than an expression with multiple items -- class(Param_exp) should
+      # be "expression". This works, though. 
       
       # If user wants to facet by the PK parameter, that's a special case
       # b/c we need to change what we're using for the y axis. 
