@@ -393,6 +393,69 @@ recalc_PK <- function(ct_dataframe,
    
    ## Calculating PK parameters for individual datasets ------------------------
    
+   # FIXME - This is the code I used for Poonam when she had multiple dosing
+   # intervals and simulation durations. Adapt this approach into the function
+   # at some point.
+   
+   # # Checking for simulations that end in the middle of a dosing interval. 
+   # SimEndCheck <- Details_DDI$MainDetails %>% 
+   #    select(File, SimDuration, DoseInt_sub) %>% 
+   #    mutate(IntervalRemaining = SimDuration %% DoseInt_sub, 
+   #           BestEndTime = SimDuration - IntervalRemaining)
+   # 
+   # PK_DDI <- list("individual" = data.frame(), 
+   #                "aggregate" = data.frame(), 
+   #                "graphs" = list())
+   # 
+   # for(i in unique(Details_DDI$MainDetails$DoseInt_sub)){
+   #    # Making a temporary data.frame to contain conc-time data where a) everything
+   #    # has the same dosing interval and b) things end at the end of one of those
+   #    # dosing intervals.
+   #    CT_temp <- CT_DDI %>%
+   #       filter(!Trial %in% c("mean", "geomean", "per5", "per95", "median", 
+   #                            "per10", "per90")) %>% 
+   #       filter(File %in% Details_DDI$MainDetails$File[
+   #          Details_DDI$MainDetails$DoseInt_sub == i]) %>% 
+   #       left_join(SimEndCheck, by = "File") %>% 
+   #       filter(Time <= BestEndTime)
+   #    
+   #    # Next, only looking at things that have the same maximum dose number so that
+   #    # we're looking at the same times for each.
+   #    MaxDoseNum <- CT_temp %>% 
+   #       group_by(File) %>% 
+   #       summarize(MaxDoseNum = max(DoseNum))
+   #    
+   #    for(j in unique(MaxDoseNum$MaxDoseNum)){
+   #       CT_temp2 <- CT_temp %>% 
+   #          filter(File %in% MaxDoseNum$File[
+   #             MaxDoseNum$MaxDoseNum == j])
+   #       
+   #       # Step 4: Calculate the PK. Start w/pretty generic parameters. 
+   #       PK_ij <-
+   #          calc_PK(ct_dataframe = CT_temp2, 
+   #                  first_dose_time = NA,
+   #                  last_dose_time = NA,
+   #                  fit_points_after_x_time = 12, # !!!!!!!! After inspecting some graphs, I thought that it seemed best to fit only the later parts of the data! Adjust this as you see fit!
+   #                  weights = "1/y^2")
+   #       
+   #       PK_DDI[["individual"]] <- 
+   #          bind_rows(PK_DDI[["individual"]], PK_ij[["individual"]])
+   #       
+   #       PK_DDI[["aggregate"]] <- 
+   #          bind_rows(PK_DDI[["aggregate"]], PK_ij[["aggregate"]])
+   #       
+   #       PK_DDI[["graphs"]] <- c(PK_DDI[["graphs"]], PK_ij[["graphs"]])
+   #       
+   #       rm(CT_temp2, PK_ij)
+   #       
+   #    }
+   #    
+   #    rm(CT_temp, MaxDoseNum)
+   # }
+   # 
+   
+   
+   
    Keys_CT <- CTsubset %>%
       select(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial, 
              Simulated, File, ObsFile, DoseNum) %>% unique() %>% 
