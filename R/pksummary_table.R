@@ -533,6 +533,23 @@ pksummary_table <- function(sim_data_file = NA,
       }
    }
    
+   # Checking mean type syntax
+   if(mean_type %in% c("geometric", "arithmetic") == FALSE){
+      if(mean_type == "mean"){
+         warning("Technically, the input for mean_type should be either `geometric` (default) or `arithmetic`. You specified a mean type of `mean`, so we think you want arithmetic means and that is what will be reported. If that's incorrect, please set mean_type to `geometric`.\n", 
+                 call. = FALSE)
+      }
+      mean_type <- case_when(str_detect(tolower(mean_type), "geo") ~ "geometric", 
+                             mean_type == "mean" ~ "arithmetic")
+      
+      if(mean_type %in% c("geometric", "arithmetic") == FALSE){
+         warning("You specified something other than `geometric` (default) or `arithmetic` for the mean type, so we're not sure what you would like. We'll use the default of geometric means.\n", 
+                 call. = FALSE)
+         
+         mean_type <- "geometric"
+      }
+   }
+   
    PKparameters <- harmonize_PK_names(PKparameters)
    PKparameters_orig <- PKparameters
    
