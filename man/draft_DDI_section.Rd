@@ -160,22 +160,23 @@ will include one that was.}
 
 \item{clin_study_name}{the name of the clinical study for any observed data;
 this only shows up in the text describing the table and graph. Any quoted
-value is fine here.}
+value is fine here. It will be listed as "Clinical Study X" where "X" is
+the value you supply for \code{clin_study_name}.}
 
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in legend entries and in any Word output files.
 This was designed for simulations where the substrate and any metabolites,
-perpetrators, or perpetrator metabolites are among the standard options for the
-simulator, and leaving \code{prettify_compound_names = TRUE} will make the
-name of those compounds something more human readable. For example,
+perpetrators, or perpetrator metabolites are among the standard options for
+the simulator, and leaving \code{prettify_compound_names = TRUE} will make
+the name of those compounds something more human readable. For example,
 "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 become "midazolam". Set each of "substrate" and "perpetrator" to the names
 you'd prefer to see in your legend and Word output if you would like
 something different. For example, \code{prettify_compound_names =
 c("substrate" = "superstatin", "perpetrator" = "teeswiftavir")}. Please note
-that "perpetrator" includes \emph{all} the perpetrators and perpetrator metabolites
-present, so, if you're setting the perpetrator name, you really should use
-something like this if you're including perpetrator metabolites:
+that "perpetrator" includes \emph{all} the perpetrators and perpetrator
+metabolites present, so, if you're setting the perpetrator name, you really
+should use something like this if you're including perpetrator metabolites:
 \code{prettify_compound_names = c("perpetrator" = "teeswiftavir and
 1-OH-teeswiftavir", "substrate" = "superstatin")}. (Order doesn't matter.)}
 
@@ -189,8 +190,8 @@ of the perpetrator. If not, it will replace "XXX" with the name of the
 substrate.}
 
 \item{default_cmpd_file}{Was one of the default compound files used for the
-substrate (if this was a perpetrator simulation) or the perpetrator (if this
-was a victim simulation)? TRUE (default) or FALSE. The only thing this
+substrate (if this was a perpetrator simulation) or the perpetrator (if
+this was a victim simulation)? TRUE (default) or FALSE. The only thing this
 affects is the sentence in the template report text, "The default compound
 library file for XXX was used."}
 
@@ -357,17 +358,19 @@ to aesthetically pleasing and PK-relevant intervals.}
 to use for the y axis label for the graph of the enzyme abundance}
 
 \item{legend_label_enz}{optionally indicate on the legend of the graph of the
-enzyme abundance whether the perpetrator is an inhibitor, inducer, activator,
-or suppressor. Input will be used as the label in the legend for the line
-style and the shape. If left as the default NA when a legend is included
-and a perpetrator is present, the label in the legend will be "Inhibitor".}
+enzyme abundance whether the perpetrator is an inhibitor, inducer,
+activator, or suppressor. Input will be used as the label in the legend for
+the line style and the shape. If left as the default NA when a legend is
+included and a perpetrator is present, the label in the legend will be
+"Inhibitor".}
 
 \item{linear_or_log_enz}{the type of enzyme-abundance graph to be returned.
 Options are the same as for the substrate plot.}
 
-\item{save_draft}{the name of the Word file to use for saving the output. Do not include any slashes, dollar signs, or periods in the file name. If
-left as NA, this will be set to "Draft DDI report section for XXXX.docx"
-where "XXXX" is the name of the simulator output Excel file.}
+\item{save_draft}{the name of the Word file to use for saving the output. Do
+not include any slashes, dollar signs, or periods in the file name. If left
+as NA, this will be set to "Draft DDI report section for XXXX.docx" where
+"XXXX" is the name of the simulator output Excel file.}
 }
 \value{
 a Word file

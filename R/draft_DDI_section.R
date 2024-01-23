@@ -30,8 +30,8 @@
 #'   of the perpetrator. If not, it will replace "XXX" with the name of the
 #'   substrate.
 #' @param default_cmpd_file Was one of the default compound files used for the
-#'   substrate (if this was a perpetrator simulation) or the perpetrator (if this
-#'   was a victim simulation)? TRUE (default) or FALSE. The only thing this
+#'   substrate (if this was a perpetrator simulation) or the perpetrator (if
+#'   this was a victim simulation)? TRUE (default) or FALSE. The only thing this
 #'   affects is the sentence in the template report text, "The default compound
 #'   library file for XXX was used."
 #' @param PKparameters (optional) the PK parameters to include as a character
@@ -224,7 +224,8 @@
 #'
 #' @param clin_study_name the name of the clinical study for any observed data;
 #'   this only shows up in the text describing the table and graph. Any quoted
-#'   value is fine here.
+#'   value is fine here. It will be listed as "Clinical Study X" where "X" is
+#'   the value you supply for \code{clin_study_name}.
 #' @param include_enz_plot TRUE or FALSE (default) for whether to include a
 #'   graph of enzyme abundance data
 #' @param enzyme the enzyme whose abundance should be shown in an
@@ -232,22 +233,23 @@
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in legend entries and in any Word output files.
 #'   This was designed for simulations where the substrate and any metabolites,
-#'   perpetrators, or perpetrator metabolites are among the standard options for the
-#'   simulator, and leaving \code{prettify_compound_names = TRUE} will make the
-#'   name of those compounds something more human readable. For example,
+#'   perpetrators, or perpetrator metabolites are among the standard options for
+#'   the simulator, and leaving \code{prettify_compound_names = TRUE} will make
+#'   the name of those compounds something more human readable. For example,
 #'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 #'   become "midazolam". Set each of "substrate" and "perpetrator" to the names
 #'   you'd prefer to see in your legend and Word output if you would like
 #'   something different. For example, \code{prettify_compound_names =
 #'   c("substrate" = "superstatin", "perpetrator" = "teeswiftavir")}. Please note
-#'   that "perpetrator" includes \emph{all} the perpetrators and perpetrator metabolites
-#'   present, so, if you're setting the perpetrator name, you really should use
-#'   something like this if you're including perpetrator metabolites:
+#'   that "perpetrator" includes \emph{all} the perpetrators and perpetrator
+#'   metabolites present, so, if you're setting the perpetrator name, you really
+#'   should use something like this if you're including perpetrator metabolites:
 #'   \code{prettify_compound_names = c("perpetrator" = "teeswiftavir and
 #'   1-OH-teeswiftavir", "substrate" = "superstatin")}. (Order doesn't matter.)
-#' @param save_draft the name of the Word file to use for saving the output. Do not include any slashes, dollar signs, or periods in the file name. If
-#'   left as NA, this will be set to "Draft DDI report section for XXXX.docx"
-#'   where "XXXX" is the name of the simulator output Excel file.
+#' @param save_draft the name of the Word file to use for saving the output. Do
+#'   not include any slashes, dollar signs, or periods in the file name. If left
+#'   as NA, this will be set to "Draft DDI report section for XXXX.docx" where
+#'   "XXXX" is the name of the simulator output Excel file.
 #' @param includeCV TRUE or FALSE (default) for whether to include rows for CV
 #'   in the table
 #' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
@@ -281,10 +283,11 @@
 #' @param linear_or_log_enz the type of enzyme-abundance graph to be returned.
 #'   Options are the same as for the substrate plot.
 #' @param legend_label_enz optionally indicate on the legend of the graph of the
-#'   enzyme abundance whether the perpetrator is an inhibitor, inducer, activator,
-#'   or suppressor. Input will be used as the label in the legend for the line
-#'   style and the shape. If left as the default NA when a legend is included
-#'   and a perpetrator is present, the label in the legend will be "Inhibitor".
+#'   enzyme abundance whether the perpetrator is an inhibitor, inducer,
+#'   activator, or suppressor. Input will be used as the label in the legend for
+#'   the line style and the shape. If left as the default NA when a legend is
+#'   included and a perpetrator is present, the label in the legend will be
+#'   "Inhibitor".
 #'
 #' @return a Word file
 #' @export
@@ -402,12 +405,18 @@ draft_DDI_section <- function(sim_data_file,
                            annotate_output = FALSE), 
          error = function(x) "missing file")
    } else {
-      Deets <- switch(as.character("File" %in% names(existing_exp_details)), 
-                      "TRUE" = existing_exp_details, 
-                      "FALSE" = deannotateDetails(existing_exp_details))
+      Deets <- filter_sims(existing_exp_details, sim_data_file, "include")
+      Deets <- harmonize_details(Deets)[["MainDetails"]] %>% 
+         filter(File == sim_data_file)
       
-      Deets <- as.data.frame(Deets) %>% filter(File == sim_data_file)
+      if(nrow(Deets) == 0){
+         existing_exp_details <- extractExpDetails(sim_data_file = sim_data_file, 
+                                                   exp_details = "Summary and Input")
+         Deets <- existing_exp_details[["MainDetails"]]
+      }
       
+      # Yes, we should check whether nrow(Deets) is *still* 0 here even though
+      # we just did that.
       if(nrow(Deets) == 0){
          Deets <- tryCatch(
             extractExpDetails(sim_data_file = sim_data_file, 
@@ -422,25 +431,13 @@ draft_DDI_section <- function(sim_data_file,
           names(Deets)) == FALSE){
       warning("It appears that, when you generated `existing_exp_details`, you set the argument `exp_details` to something other than `all`. The draft_DDI_section function does not work when there are missing experimental design details. We will re-extract the simulation experimental details using extractExpDetails and set `exp_details = 'all'`.", 
               call. = FALSE)
-      Deets <- extractExpDetails(sim_data_file, exp_details = "all") %>% 
-         as.data.frame()
+      Deets <- extractExpDetails(sim_data_file,
+                                 exp_details = "Summary and Input")[["MainDetails"]]
    }
-   
-   Deets <- as.data.frame(Deets) %>% filter(File == sim_data_file) 
-   
+
    if(is.na(Deets$Inhibitor1)){
       stop("You do not appear to have a perpetrator present in this simulation. This function is for drafting DDI methods and results only.", 
            call. = FALSE)
-   }
-   
-   # If they used a custom dosing regimen for either the substrate or the
-   # inhibitor, this simply will not work. It's just not set up to extract data
-   # in the right places.
-   if(any(c(Deets$Regimen_sub, Deets$Regimen_inhib, 
-            Deets$Regimen_inhib2) == "custom dosing")){
-      stop("At least one of the compounds in this simulation had a custom dosing regimen, and the draft_DDI_section function is just not set up to find the correct data in that scenario. We cannot generate draft methods and results sections here.", 
-           call. = FALSE)
-      
    }
    
    

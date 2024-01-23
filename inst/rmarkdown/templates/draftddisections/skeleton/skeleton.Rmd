@@ -33,7 +33,7 @@ SingMult_inhib <- ifelse(Deets$Regimen_inhib %in% c("custom dosing",
 SDMD_sub_txt <- paste(ifelse(SingMult_sub == "single", "a single", "multiple"),
                       
                       switch(Deets$DoseRoute_sub,
-                             "custom dosing" = "CUSTOM DOSING - FILL IN MANUALLY",
+                             "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY**",
                              "Oral" = "oral",
                              "IV" = "IV"),
                       
@@ -49,13 +49,13 @@ DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
                        "NA" = "single dose")
 DoseFreq_sub <- ifelse(is.null(DoseFreq_sub),
                        # paste("Q", DoseFreq_sub, "H"),
-                       "CUSTOM DOSING - FILL IN MANUALLY",
+                       "**CUSTOM DOSING - FILL IN MANUALLY**",
                        DoseFreq_sub)
 
 SDMD_inhib_txt <- paste(ifelse(SingMult_inhib == "single", "a single", "multiple"),
                         
                         switch(Deets$DoseRoute_inhib,
-                               "custom dosing" = "CUSTOM DOSING - FILL IN MANUALLY",
+                               "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY**",
                                "Oral" = "oral",
                                "IV" = "IV"),
                         
@@ -71,12 +71,12 @@ DoseFreq_inhib <- switch(as.character(Deets$DoseInt_inhib),
                          "NA" = "single dose")
 DoseFreq_inhib <- ifelse(is.null(DoseFreq_inhib),
                          # paste("Q", DoseFreq_inhib, "H"),
-                         "CUSTOM DOSING - FILL IN MANUALLY",
+                         "**CUSTOM DOSING - FILL IN MANUALLY**",
                          DoseFreq_inhib)
 
 NumDaysInhib <- suppressWarnings(
    Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
-NumDaysInhib <- ifelse(is.na(NumDaysInhib), "CUSTOM DOSING - FILL IN MANUALLY",
+NumDaysInhib <- ifelse(is.na(NumDaysInhib), "**CUSTOM DOSING - FILL IN MANUALLY**",
                        NumDaysInhib)
 
 numbers <- c("one", "two", "three", "four", "five", "six", "seven", "eight",
@@ -87,10 +87,11 @@ Numbers <- str_to_title(numbers)
 
 DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
 LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
-DoseDay <- paste0(DoseDay, ifelse(LastDig %in% c(0, 4:9),
-                                  "th",
-                                  ifelse(LastDig == 1, "st",
-                                         ifelse(LastDig == 2, "nd", "rd"))))
+DoseDay <- paste0(DoseDay, 
+                  case_when(LastDig %in% c(0, 4:9) ~ "^th^",
+                            LastDig == 1 ~ "^st^",
+                            LastDig == 2~ "^nd^",
+                            LastDig == 3 ~ "^rd^"))
 
 DefaultCompound_txt <- ifelse(default_cmpd_file, 
                               paste("The default compound library file for",
@@ -101,17 +102,17 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 # METHODS
 
-#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(ifelse(prettify_compound_names, str_to_title(MySubstrate), MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyPerpetrator)` in `r tidyPop(Deets$Population)$PopulationCap` 
+#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(MySubstrate, ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyPerpetrator)` in `r tidyPop(Deets$Population)$PopulationCap` 
 
-`r ifelse(Deets$NumTrials %in% 1:20, Numbers[Deets$NumTrials], Deets$NumTrials)` virtual trials of `r Deets$NumSubjTrial` `r tidyPop(Deets$Population)$Population` (`r Deets$PercFemale*100`% female) aged `r Deets$Age_min` to `r Deets$Age_max` years receiving `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyPerpetrator` and `r ifelse(SingMult_sub == "multiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyPerpetrator` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) were generated. `r DefaultCompound_txt` Performance verification of the `r ifelse(victim_sim, MyPerpetrator, MySubstrate)` model is provided in Appendix A – Performance Verification of CYP3A Substrates, Inhibitors and Inducers.
+`r ifelse(Deets$NumTrials %in% 1:20, Numbers[Deets$NumTrials], Deets$NumTrials)` virtual trials of `r Deets$NumSubjTrial` `r tidyPop(Deets$Population)$Population` (`r Deets$PercFemale*100`% female) aged `r Deets$Age_min` to `r Deets$Age_max` years receiving `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyPerpetrator` and `r ifelse(SingMult_sub == "multiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyPerpetrator` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) were generated. `r DefaultCompound_txt` Performance verification of the `r ifelse(victim_sim, MyPerpetrator, MySubstrate)` model is provided in **Appendix A** – Performance Verification of CYP3A Substrates, Inhibitors and Inducers.
 
 
 
 # RESULTS
 
-### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(ifelse(prettify_compound_names, str_to_title(MySubstrate), MySubstrate), ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyPerpetrator)` in `r tidyPop(Deets$Population)$PopulationCap` 
+### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(MySubstrate, ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyPerpetrator)` in `r tidyPop(Deets$Population)$PopulationCap` 
 
-Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyPerpetrator` and `r ifelse(SingMult_sub == "mMultiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyPerpetrator` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) are illustrated in Figure XXX. Simulated plasma concentrations of `r MyPerpetrator` are depicted in Figure XXX. `r ifelse(include_enz_plot, paste0("Simulated hepatic ", enzyme, " levels in the absence and during administration of ", MyPerpetrator, " are indicated in Figure XXX. "), "")`The simulated geometric mean `r ifelse(SingMult_sub == "single", "AUC~inf~", "AUC~tau~")` and C~max~ values and corresponding GMRs for `r MySubstrate` in the absence and presence of `r MyPerpetrator` are listed in Table XXX.
+Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyPerpetrator` and `r ifelse(SingMult_sub == "mMultiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyPerpetrator` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) are illustrated in **Figure XXX**. Simulated plasma concentrations of `r MyPerpetrator` are depicted in **Figure XXX**. `r ifelse(include_enz_plot, paste0("Simulated hepatic ", enzyme, " levels in the absence and during administration of ", MyPerpetrator, " are indicated in Figure XXX. "), "")`The simulated geometric mean `r ifelse(SingMult_sub == "single", "AUC~inf~", "AUC~tau~")` and C~max~ values and corresponding GMRs for `r MySubstrate` in the absence and presence of `r MyPerpetrator` are listed in **Table XXX**.
 
 
 ```{r pullPK}
@@ -144,24 +145,25 @@ ugfun <- function(X){
    return(X)
 }
 
+MyPKResults <- PKsum$Table
+
 if((class(prettify_compound_names) == "logical" && prettify_compound_names) |
    (class(prettify_compound_names) == "character")){
-   PKToPull_DF <- data.frame(
-      PrettifiedNames = sub(MyPerpetrator, "perpetrator", names(PKsum$Table)))
+   
+   names(MyPKResults) <- sub(MyPerpetrator, "perpetrator", names(MyPKResults))
+   
 } else {
-   PKToPull_DF <- data.frame(
-      PrettifiedNames = sapply(names(PKsum$Table), pretfun)) 
+   
+   names(MyPKResults) <- sapply(names(MyPKResults), pretfun)
 }
 
-PKToPull_DF <- PKToPull_DF %>% 
-   left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames),
-             multiple = "all", by = "PrettifiedNames") %>%
-   filter(complete.cases(PKparameter) &
-             !str_detect(PKparameter, "PercExtrap")) %>% 
-   unique()
+OrigPKnames <- names(MyPKResults)
 
-Dose1included <- any(str_detect(PKToPull_DF$PKparameter, "_dose1"))
-LastDoseincluded <- any(str_detect(PKToPull_DF$PKparameter, "_last"))
+PKToPull <- prettify_column_names(MyPKResults, pretty_or_ugly_cols = "ugly")
+PKToPull <- names(PKToPull)
+
+Dose1included <- any(str_detect(PKToPull, "_dose1"))
+LastDoseincluded <- any(str_detect(PKToPull, "_last"))
 Observedincluded <- any(complete.cases(observed_PK))
 
 FigText2 <- ifelse(Dose1included & LastDoseincluded, 
@@ -183,8 +185,6 @@ FigText3 <- ifelse(any(complete.cases(MyPerpetrator)),
 
 MeanTypePK <- ifelse(is.na(mean_type_PK), "geometric", mean_type_PK)
 
-MyPKResults <- PKsum$Table
-
 # If not all the pk parameters were able to be pulled, then we get trouble when
 # formatting the table in the next chunk. Adding columns with blank values if
 # they're not there.
@@ -195,7 +195,7 @@ PKWeShouldHave <- switch(SingMult_sub,
                                         "Cmax_last_withInhib", 
                                         "AUCtau_ratio_last",
                                         "Cmax_ratio_last"),
-                         "single" = switch(as.character(any(str_detect(PKToPull_DF$PKparameter, "AUCt_dose1"))), 
+                         "single" = switch(as.character(any(str_detect(PKToPull, "AUCt_dose1"))), 
                                            "TRUE" = c("AUCinf_dose1",
                                                       "AUCt_dose1",
                                                       "Cmax_dose1", 
@@ -211,7 +211,7 @@ PKWeShouldHave <- switch(SingMult_sub,
                                                        "Cmax_dose1_withInhib", 
                                                        "AUCinf_ratio_dose1",
                                                        "Cmax_ratio_dose1")))
-MissingPK <- setdiff(PKWeShouldHave, PKToPull_DF$PKparameter)
+MissingPK <- setdiff(PKWeShouldHave, PKToPull)
 
 if(length(MissingPK) > 0){
    ToAdd <- as.data.frame(matrix(NA, nrow = nrow(MyPKResults), ncol = length(MissingPK)))
@@ -221,14 +221,14 @@ if(length(MissingPK) > 0){
 }
 
 # Getting the right order of columns
-TempNames <- PKToPull_DF %>% 
-   bind_rows(data.frame(PrettifiedNames = "Statistic", 
-                        PKparameter = "Statistic")) %>% 
-   mutate(PKparameter = factor(PKparameter, levels = c("Statistic", 
-                                                       PKWeShouldHave))) %>% 
-   arrange(PKparameter)
-
-MyPKResults <- MyPKResults[, ugfun(TempNames$PrettifiedNames)]
+TempNames <- data.frame(PKparameter = union(PKWeShouldHave, PKToPull)) %>% 
+   left_join(AllPKParameters %>% select(PKparameter, SortOrder), 
+             by = "PKparameter") %>% 
+   arrange(SortOrder) %>% pull(PKparameter) %>% unique()
+   
+MyPKResults <- prettify_column_names(MyPKResults, 
+                                     pretty_or_ugly_cols = "ugly") %>% 
+   select(any_of(c("Statistic", TempNames)))
 
 if(is.na(include_dose_num)){
    # Dropping dose number depending on input. First, checking whether they have
@@ -247,7 +247,7 @@ if(is.logical(include_dose_num) == FALSE){
 }
 
 if(include_dose_num == FALSE){
-   names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
+   OrigPKnames <- sub("Dose 1 |Last dose |_dose1|_last", "", OrigPKnames)
 }
 
 
@@ -258,7 +258,6 @@ if(include_dose_num == FALSE){
 
 ```{r makeTablePKSummaryOutput, fig.width = 7}
 
-TableSubHead <- as.data.frame(t(names(MyPKResults)))
 names(MyPKResults) <- paste0("V", 1:ncol(MyPKResults))
 
 FT <- flextable::flextable(
@@ -270,100 +269,38 @@ FT <- flextable::flextable(
    flextable::set_table_properties(layout = "fixed") %>%
    flextable::width(width = 1) %>%
    
+   # Setting up to make merged header
    flextable::delete_part(part = "header")
 
-if(ncol(MyPKResults) == 7){
-   
-   FT <- FT %>%
-      flextable::add_header(
-         # Statistic
-         V1 = "",
-         
-         # AUCinf_dose1 or AUCtau_last
-         V2 = ifelse(is.logical(prettify_compound_names) && 
-                        prettify_compound_names == TRUE,
-                     str_to_title(MySubstrate), MySubstrate),
-         
-         # Cmax
-         V3 = ifelse(is.logical(prettify_compound_names) && 
-                        prettify_compound_names == TRUE,
-                     str_to_title(MySubstrate), MySubstrate),
-         
-         # AUC with perpetrator
-         V4 = paste(ifelse(is.logical(prettify_compound_names) && 
-                              prettify_compound_names == TRUE,
-                           str_to_title(MySubstrate), MySubstrate), "plus", 
-                    ifelse(is.logical(prettify_compound_names) && 
-                              prettify_compound_names == TRUE,
-                           str_to_title(MyPerpetrator), MyPerpetrator)),
-         
-         # Cmax with perpetrator
-         V5 = paste(ifelse(is.logical(prettify_compound_names) && 
-                              prettify_compound_names == TRUE,
-                           str_to_title(MySubstrate), MySubstrate), "plus", 
-                    ifelse(is.logical(prettify_compound_names) && 
-                              prettify_compound_names == TRUE,
-                           str_to_title(MyPerpetrator), MyPerpetrator)),
-         
-         # GMRs
-         V6 = "GMR",
-         V7 = "GMR") 
-   
-} else if(ncol(MyPKResults) == 10){
-   FT <- FT %>% 
-      flextable::add_header(
-         # Statistic
-         V1 = "",
-         
-         # AUCinf_dose1
-         V2 = ifelse(is.logical(prettify_compound_names) && 
-                        prettify_compound_names == TRUE,
-                     str_to_title(MySubstrate), MySubstrate),
-         
-         # AUCt_dose1
-         V3 = ifelse(is.logical(prettify_compound_names) && 
-                        prettify_compound_names == TRUE,
-                     str_to_title(MySubstrate), MySubstrate),
-         
-         # Cmax_dose1
-         V4 = ifelse(is.logical(prettify_compound_names) && 
-                        prettify_compound_names == TRUE,
-                     str_to_title(MySubstrate), MySubstrate),
-         
-         # AUCinf_dose1_withInhib
-         V5 = paste(ifelse(is.logical(prettify_compound_names) && 
-                              prettify_compound_names == TRUE,
-                           str_to_title(MySubstrate), MySubstrate), "plus", 
-                    ifelse(is.logical(prettify_compound_names) && 
-                              prettify_compound_names == TRUE,
-                           str_to_title(MyPerpetrator), MyPerpetrator)),
-         
-         # AUCt_dose1_withInhib
-         V6 = paste(ifelse(is.logical(prettify_compound_names) && 
-                              prettify_compound_names == TRUE,
-                           str_to_title(MySubstrate), MySubstrate), "plus", 
-                    ifelse(is.logical(prettify_compound_names) && 
-                              prettify_compound_names == TRUE,
-                           str_to_title(MyPerpetrator), MyPerpetrator)),
-         
-         # Cmax_dose1_withInhib
-         V7 = paste(ifelse(is.logical(prettify_compound_names) && 
-                              prettify_compound_names == TRUE,
-                           str_to_title(MySubstrate), MySubstrate), "plus", 
-                    ifelse(is.logical(prettify_compound_names) && 
-                              prettify_compound_names == TRUE,
-                           str_to_title(MyPerpetrator), MyPerpetrator)),
-         
-         # GMRs
-         V8 = "GMR",
-         V9 = "GMR", 
-         V10 = "GMR") 
-   
-}
+Header <- MyPKResults[1, ]
+
+# Baseline cols
+Header[, which(str_detect(PKToPull, "_withInhib|_ratio") == FALSE)] <- 
+   ifelse(is.logical(prettify_compound_names) && 
+             prettify_compound_names == TRUE,
+          str_to_title(MySubstrate), MySubstrate)
+
+# + perp cols
+Header[, which(str_detect(PKToPull, "_withInhib"))] <-  
+   paste(ifelse(is.logical(prettify_compound_names) && 
+                   prettify_compound_names == TRUE,
+                str_to_title(MySubstrate), MySubstrate), "plus", 
+         ifelse(is.logical(prettify_compound_names) && 
+                   prettify_compound_names == TRUE,
+                str_to_title(MyPerpetrator), MyPerpetrator))
+
+# ratio cols
+Header[, which(str_detect(PKToPull, "_ratio"))] <- "GMR"
+
+# Statistic should be blank
+Header[, 1] <- "" 
 
 FT <- FT %>%
+   flextable::add_header(values = as.list(Header)) %>% 
    flextable::merge_h(part = "header") %>%
-   flextable::add_body(values = TableSubHead) %>%
+   flextable::add_body(values = as.data.frame(t(
+      # need to remove "with perpetrator" b/c redundant
+      sub(" with perpetrator", "", OrigPKnames)))) %>%
    
    # center text
    flextable::align(align = "center", part = "all") %>%
@@ -390,7 +327,7 @@ FT <- FT %>%
 # Dealing with subscripts
 NamePattern <- " AUCt | AUCinf | AUCtau | Cmax | Cmin | tmax | fa| fg| fh| ka| tlag"
 
-ColNames <- data.frame(OrigName = as.character(TableSubHead)) %>% 
+ColNames <- data.frame(OrigName = as.character(OrigPKnames)) %>% 
    mutate(Part1 = sapply(OrigName, 
                          FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][1]}), 
           Part2 = sub("inf|tau|max|min|a|g|h|lag", "", str_trim(str_extract(OrigName, NamePattern))), 
@@ -404,7 +341,7 @@ for(i in 1:nrow(ColNames)){
    if(complete.cases(ColNames$Subscript[i])){
       FT <- FT %>% 
          flextable::compose(part = "body", i = 1,
-                            j = which(TableSubHead == ColNames$OrigName[i]),
+                            j = which(OrigPKnames == ColNames$OrigName[i]),
                             value = flextable::as_paragraph(ColNames$Part1[i], " ",
                                                             ColNames$Part2[i],
                                                             flextable::as_sub(ColNames$Subscript[i]), 
@@ -414,7 +351,7 @@ for(i in 1:nrow(ColNames)){
 
 FT
 
-names(MyPKResults) <- as.character(TableSubHead)
+names(MyPKResults) <- as.character(OrigPKnames)
 
 ```
 
@@ -530,7 +467,7 @@ NextChunkHeight <- ifelse(figure_type_inhib %in% c("both", "both vertical"), 6, 
 
 ```
 
-*Depicted are `r CapText1`. `r CapText2` of the simulated population (n = `r Deets$NumTrials * Deets$NumSubjTrial`)`r ifelse(figure_type == "Freddy", ". The dashed lines represent the 5th and 95th percentiles", "")`. Source simulated data: `r sim_data_file`.*
+*Depicted are simulated `r CapText1`. `r CapText2` of the simulated population (n = `r Deets$NumTrials * Deets$NumSubjTrial`)`r ifelse(figure_type == "Freddy", ". The dashed lines represent the 5th and 95th percentiles", "")`. Source simulated data: `r sim_data_file`.*
 
 
 
