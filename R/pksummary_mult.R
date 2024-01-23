@@ -68,6 +68,10 @@
 #'   quotes and encapsulated with \code{c(...)}, NA to extract PK data for
 #'   \emph{all} the Excel files in the current folder, or "recursive" to extract
 #'   PK data for all the Excel files in the current folder and all subfolders.
+#'   If you do want specific simulations, please take pity on your poor R coders
+#'   and do not request PK parameters for the same simulation file names in
+#'   different subfolders in the same function call; it's too confusing and we
+#'   might give you incorrect results.
 #' @param compoundsToExtract For which compound(s) do you want to extract PK
 #'   data? Options are any combination of the following:
 #'   \itemize{\item{"substrate" (default),} \item{"primary metabolite 1",}
@@ -124,9 +128,9 @@
 #'   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
 #'   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
 #'   "AUCtau_ratio_last", "Cmax_ratio_last")}.
-#' @param PKorder Would you like the order of the PK parameters to be the
-#'   order specified in the Consultancy Report Template (default), or would you
-#'   like the order to match the order you specified with the argument
+#' @param PKorder Would you like the order of the PK parameters to be the order
+#'   specified in the Consultancy Report Template (default), or would you like
+#'   the order to match the order you specified with the argument
 #'   \code{PKparameters}? Options are "default" or "user specified".
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
@@ -137,8 +141,8 @@
 #'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
 #'   note that we would like the PK parameters that are for either dose 1 or the
 #'   last dose to have NA listed for the tab. It is also ok to supply this named
-#'   character vector to the argument \code{PKparameters} instead, but
-#'   please do not supply it to both.
+#'   character vector to the argument \code{PKparameters} instead, but please do
+#'   not supply it to both.
 #' @param observed_PK (optional) If you have a data.frame, a named numeric
 #'   vector, or an Excel or csv file with observed PK parameters, supply the
 #'   full file name in quotes or supply the unquoted name of the the data.frame
@@ -164,6 +168,11 @@
 #'   parameters, you can omit the column "File" and the PK data will be compared
 #'   to ALL the simulated files included in \code{sim_data_files}. Please see
 #'   the "Example" section of this help file for examples of how to set this up.
+#'   One last warning: It is extremely difficult to accommodate things code-wise
+#'   when the same simulation file names appear in multiple subfolders. Please
+#'   take pity on your poor R coders and do not request PK parameters for the
+#'   same simulation file names in different subfolders in the same function
+#'   call; it's too confusing and we might give you incorrect results.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =

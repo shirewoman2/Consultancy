@@ -204,7 +204,7 @@
 #'   \code{PKParameterDefinitions}. If you would like the output table to
 #'   include the observed data CV for any of the parameters, add "_CV" to the
 #'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
-#'   "Example" section of this help file for examples of how to set this up.
+#'   "Example" section of this help file for examples of how to set this up. 
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
 #'   get all the details from the "Input Sheet" (e.g., when you ran
@@ -709,8 +709,11 @@ pksummary_table <- function(sim_data_file = NA,
                    complete.cases(Value))
       
       if("File" %in% names(observed_PK)){
+         # Need to adjust a few things b/c of challenges w/file path when this
+         # is called from rmarkdown files.
          observed_PK <- observed_PK %>%
-            filter(str_detect(File, sim_data_file)) # ok for user to drop file extension; this should still work
+            mutate(BaseNameFile = basename(File)) %>% 
+            filter(str_detect(BaseNameFile, basename(sim_data_file))) # ok for user to drop file extension; this should still work
       } else {
          # If File is not in the column names, then assume that it's the
          # same as sim_data_file anyway.
