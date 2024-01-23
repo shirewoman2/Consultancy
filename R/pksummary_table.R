@@ -534,7 +534,8 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    # Checking mean type syntax
-   if(mean_type %in% c("geometric", "arithmetic") == FALSE){
+   if(complete.cases(mean_type) &&
+      mean_type %in% c("geometric", "arithmetic") == FALSE){
       if(mean_type == "mean"){
          warning("Technically, the input for mean_type should be either `geometric` (default) or `arithmetic`. You specified a mean type of `mean`, so we think you want arithmetic means and that is what will be reported. If that's incorrect, please set mean_type to `geometric`.\n", 
                  call. = FALSE)

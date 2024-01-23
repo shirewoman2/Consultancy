@@ -92,7 +92,7 @@ harmonize_details <- function(existing_exp_details){
          # Check whether MainDetails includes SheetNames b/c need it for other
          # functions now.
          if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-             existing_exp_details$MainDetails$SheetNames == "`NA`") | 
+             any(existing_exp_details$MainDetails$SheetNames == "`NA`")) | 
             "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
             for(i in existing_exp_details$MainDetails$File){
                if(file.exists(i)){
@@ -126,7 +126,7 @@ harmonize_details <- function(existing_exp_details){
          # Check whether MainDetails includes SheetNames b/c need it for other
          # functions now.
          if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-             existing_exp_details$MainDetails$SheetNames == "`NA`") | 
+             any(existing_exp_details$MainDetails$SheetNames == "`NA`")) | 
             "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
             SheetNames <- as.character(c())
             for(i in existing_exp_details$MainDetails$File){
@@ -170,7 +170,7 @@ harmonize_details <- function(existing_exp_details){
       # Check whether MainDetails includes SheetNames b/c need it for other
       # functions now.
       if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-          existing_exp_details$MainDetails$SheetNames == "`NA`") | 
+          any(existing_exp_details$MainDetails$SheetNames == "`NA`")) | 
          "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
          
          SheetNames <- as.character(c())
