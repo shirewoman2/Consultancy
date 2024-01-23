@@ -6,7 +6,7 @@
 #' AUCinf (ng/mL.h)" or "Last dose Cmax (ng/mL)"
 #'
 #' @param PKtable a table of PK data with column names such as "AUCinf_dose1" or
-#'   "Cmax_last"
+#'   "Cmax_last" or a vector of the names of a PK table
 #' @param prettify_compound_names Do you want to prettify your compound
 #'   names? Options: \describe{
 #'
@@ -51,7 +51,11 @@ prettify_column_names <- function(PKtable,
    }
    
    # Check for appropriate input for arguments
-   if("data.frame" %in% class(PKtable) == FALSE){
+   if("data.frame" %in% class(PKtable)){
+      PKtable_class <- "data.frame"
+   } else if("character" %in% class(PKtable)){
+      PKtable_class <- "character"
+   } else {
       stop("PKtable must be a data.frame for this to work, and it doesn't appear to be.", 
            call. = FALSE)
    }
@@ -60,7 +64,11 @@ prettify_column_names <- function(PKtable,
    
    # calc_PK_ratios columns will include "DenominatorSim" and "NumeratorSim".
    # Noting that and saving original column names.
-   OrigColNames <- names(PKtable)
+   if(PKtable_class == "data.frame"){
+      OrigColNames <- names(PKtable)
+   } else {
+      OrigColNames <- PKtable
+   }
    if(any(str_detect(OrigColNames, "NumeratorSim|DenominatorSim"))){
       names(PKtable) <- sub(" NumeratorSim| DenominatorSim", "", names(PKtable))
       names(PKtable) <- sub("_dose1 Ratio", "_ratio_dose1", names(PKtable))
@@ -90,8 +98,12 @@ prettify_column_names <- function(PKtable,
    # 1st step: This will leave some values as NA for the column PrettifiedNames.
    TableNames <-
       data.frame(OrigColNames = OrigColNames, 
-                 PKparameter_orig = names(PKtable), 
-                 OrigOrder = 1:ncol(PKtable)) %>% 
+                 PKparameter_orig = switch(PKtable_class, 
+                                           "data.frame" = names(PKtable), 
+                                           "character" = PKtable), 
+                 OrigOrder = switch(PKtable_class, 
+                                    "data.frame" = 1:ncol(PKtable), 
+                                    "character" = 1:length(PKtable))) %>% 
       mutate(IsPretty = PKparameter_orig %in% c(AllPKParameters$PrettifiedNames, 
                                                 AllPKParameters_mod$PrettifiedNames), 
              IsNotPretty = PKparameter_orig %in% c(AllPKParameters_mod$PKparameter, 
@@ -205,7 +217,11 @@ prettify_column_names <- function(PKtable,
    #    PrettyCol <- sub("perpetrator", MyPerpetrator, PrettyCol)
    # }
    
-   names(PKtable) <- TableNames$FinalNames
+   if(PKtable_class == "data.frame"){
+      names(PKtable) <- TableNames$FinalNames
+   } else {
+      PKtable <- TableNames$FinalNames
+   }
    
    # } else if(complete.cases(sheet_PKparameters) & 
    #           any(str_detect(names(PKtable_all[[1]]), "_dose1|_last")) == FALSE){

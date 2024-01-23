@@ -13,7 +13,7 @@ prettify_column_names(
 }
 \arguments{
 \item{PKtable}{a table of PK data with column names such as "AUCinf_dose1" or
-"Cmax_last"}
+"Cmax_last" or a vector of the names of a PK table}
 
 \item{prettify_compound_names}{Do you want to prettify your compound
   names? Options: \describe{
