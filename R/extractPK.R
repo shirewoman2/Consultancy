@@ -743,7 +743,7 @@ extractPK <- function(sim_data_file,
       AUC_xl <- AUC_xl[, c(1, 2, ColStart[tissue]:ColEnd[tissue])]
       
       # Finding the aggregate data rows 
-      StartRow_agg <- which(AUC_xl$...2 == "Statistics") + 2
+      StartRow_agg <- which(AUC_xl$...2 == "Statistics")[1] + 2 # Need to only get the 1st instance b/c people will sometimes copy and paste additional data -- usually obs -- below!
       EndRow_agg <- which(AUC_xl$...2 == "Std Dev")
       EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1]
       EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUC_xl), EndRow_agg)
