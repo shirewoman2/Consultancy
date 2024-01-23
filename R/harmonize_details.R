@@ -92,8 +92,10 @@ harmonize_details <- function(existing_exp_details){
          # Check whether MainDetails includes SheetNames b/c need it for other
          # functions now.
          if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-             any(existing_exp_details$MainDetails$SheetNames == "`NA`")) | 
+             any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+             any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
             "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+            
             for(i in existing_exp_details$MainDetails$File){
                if(file.exists(i)){
                   SheetNames <- tryCatch(readxl::excel_sheets(i),
@@ -126,8 +128,10 @@ harmonize_details <- function(existing_exp_details){
          # Check whether MainDetails includes SheetNames b/c need it for other
          # functions now.
          if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-             any(existing_exp_details$MainDetails$SheetNames == "`NA`")) | 
+             any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+             any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
             "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+            
             SheetNames <- as.character(c())
             for(i in existing_exp_details$MainDetails$File){
                if(file.exists(i)){
@@ -170,7 +174,8 @@ harmonize_details <- function(existing_exp_details){
       # Check whether MainDetails includes SheetNames b/c need it for other
       # functions now.
       if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-          any(existing_exp_details$MainDetails$SheetNames == "`NA`")) | 
+          any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+          any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
          "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
          
          SheetNames <- as.character(c())
