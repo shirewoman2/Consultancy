@@ -681,6 +681,7 @@ ct_plot_overlay <- function(ct_dataframe,
             ct_dataframe <- ct_dataframe %>% 
                mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
                       Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function 
+            names(color_labels) <- prettify_compound_name(names(color_labels))
          }
       } 
       # If prettify_compound_names is FALSE, then don't do anything.
@@ -701,6 +702,10 @@ ct_plot_overlay <- function(ct_dataframe,
          
          ct_dataframe <- ct_dataframe %>% 
             mutate(Inhibitor = prettify_compound_names[Inhibitor])
+         
+         # FIXME - Need to adjust this for color_labels. 
+         # unique(ct_dataframe$CompoundID[ct_dataframe$Compound %in% names(color_labels)])
+         
       } else {
          MissingNames <- setdiff(sort(unique(c(ct_dataframe$Compound,
                                                ct_dataframe$Inhibitor))), 
@@ -791,7 +796,7 @@ ct_plot_overlay <- function(ct_dataframe,
       any(complete.cases(color_labels)) && 
       all(names(color_labels) %in% sort(t(unique(
          ct_dataframe[, as_label(colorBy_column)])))) == FALSE){
-      BadLabs <- setdiff(names(color_labels), sort(unique(ct_dataframe[, as_label(colorBy_column)])))
+      BadLabs <- setdiff(names(color_labels), sort(t(unique(ct_dataframe[, as_label(colorBy_column)]))))
       
       warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
                      as_label(colorBy_column), 
@@ -806,7 +811,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                         1:length(unique(ct_dataframe$File)))))
       color_labels[which(names(color_labels) %in% BadLabs)] <-
          WarningLabel[1:length(BadLabs)]
-      NewNames <- setdiff(sort(unique(ct_dataframe[, as_label(colorBy_column)])),
+      NewNames <- setdiff(sort(t(unique(ct_dataframe[, as_label(colorBy_column)]))),
                           names(color_labels))
       
       if(length(NewNames) == 0){
