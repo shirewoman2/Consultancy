@@ -11,7 +11,9 @@
 #' @examples
 #' # None yet
 #' 
-determine_myperpetrator <- function(Deets, prettify_compound_names){
+determine_myperpetrator <- function(Deets, 
+                                    prettify_compound_names, 
+                                    parent_only = FALSE){
    
    Deets <- harmonize_details(Deets)
    Deets <- Deets$MainDetails
@@ -29,7 +31,13 @@ determine_myperpetrator <- function(Deets, prettify_compound_names){
                               "FALSE" = as.character(NA)))
    
    if(any(complete.cases(MyPerpetrator))){
-      MyPerpetrator <- str_comma(MyPerpetrator[complete.cases(MyPerpetrator)])
+      
+      if(parent_only){
+         MyPerpetrator <- MyPerpetrator[c("Inhibitor1", "Inhibitor2")]
+         MyPerpetrator <- str_comma(MyPerpetrator[complete.cases(MyPerpetrator)])
+      } else {
+         MyPerpetrator <- str_comma(MyPerpetrator[complete.cases(MyPerpetrator)])
+      }
       
       if(class(prettify_compound_names) == "logical" &&
          prettify_compound_names){
