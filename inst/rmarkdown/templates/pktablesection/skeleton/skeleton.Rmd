@@ -95,7 +95,7 @@ formatTable_Simcyp(TempTable,
                    merge_shaded_cells = merge_shaded_cells, 
                    fontsize = fontsize,
                    # bold_cells = bold_cells,
-                   prettify_columns = TRUE, 
+                   prettify_columns = prettify_columns, 
                    # center_1st_column = center_1st_column, 
                    highlight_so_cutoffs = highlight_so_cutoffs, 
                    highlight_so_colors = highlight_so_colors)

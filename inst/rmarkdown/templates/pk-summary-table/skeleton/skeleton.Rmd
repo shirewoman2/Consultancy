@@ -70,7 +70,8 @@ formatTable_Simcyp(MyPKResults,
                    fontsize = fontsize,
                    prettify_columns = TRUE,
                    highlight_so_cutoffs = highlight_so_cutoffs, 
-                   highlight_so_colors = highlight_so_colors)
+                   highlight_so_colors = highlight_so_colors, 
+                   highlight_gmr_colors = highlight_gmr_colors)
 
 ```
 
