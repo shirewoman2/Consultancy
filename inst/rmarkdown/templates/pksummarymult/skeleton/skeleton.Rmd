@@ -156,7 +156,7 @@ if(single_table){
    formatTable_Simcyp(MyPKResults,
                       shading_column = File, #shading_column, 
                       # sort_column = sort_column,
-                      merge_columns = merge_columns, 
+                      # merge_columns = merge_columns, 
                       merge_shaded_cells = merge_shaded_cells, 
                       fontsize = fontsize,
                       # bold_cells = bold_cells,
