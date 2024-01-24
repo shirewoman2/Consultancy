@@ -17,7 +17,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 ```{r SetupVars2}
 
 MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
-                                   prettify_compound_names = prettify_compound_names)
+                                         prettify_compound_names = prettify_compound_names)
 MySubstrate <- ifelse(class(prettify_compound_names) == "logical", 
                       ifelse(prettify_compound_names, 
                              prettify_compound_name(Deets$Substrate), Deets$Substrate), 
@@ -102,15 +102,15 @@ DefaultCompound_txt <- ifelse(default_cmpd_file,
 
 # METHODS
 
-#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(MySubstrate, ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyPerpetrator)` in `r tidyPop(Deets$Population)$PopulationCap` 
+#### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(MySubstrate, ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyPerpetrator)` in `r sub("Healthy Volunteers", "Healthy Subjects", tidyPop(Deets$Population)$PopulationCap)` 
 
-`r ifelse(Deets$NumTrials %in% 1:20, Numbers[Deets$NumTrials], Deets$NumTrials)` virtual trials of `r Deets$NumSubjTrial` `r tidyPop(Deets$Population)$Population` (`r Deets$PercFemale*100`% female) aged `r Deets$Age_min` to `r Deets$Age_max` years receiving `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyPerpetrator` and `r ifelse(SingMult_sub == "multiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyPerpetrator` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) were generated. `r DefaultCompound_txt` Performance verification of the `r ifelse(victim_sim, MyPerpetrator, MySubstrate)` model is provided in **Appendix A** – Performance Verification of CYP3A Substrates, Inhibitors and Inducers.
+`r ifelse(Deets$NumTrials %in% 1:20, Numbers[Deets$NumTrials], Deets$NumTrials)` virtual trials of `r Deets$NumSubjTrial` `r sub("healthy volunteers", "healthy subjects", tidyPop(Deets$Population)$Population)` (`r Deets$PercFemale*100`% female) aged `r Deets$Age_min` to `r Deets$Age_max` years receiving `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyPerpetrator` and `r ifelse(SingMult_sub == "multiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyPerpetrator` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) were generated. `r DefaultCompound_txt` Performance verification of the `r ifelse(victim_sim, MyPerpetrator, MySubstrate)` model is provided in **Appendix A** – Performance Verification of CYP3A Substrates, Inhibitors and Inducers.
 
 
 
 # RESULTS
 
-### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(MySubstrate, ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyPerpetrator)` in `r tidyPop(Deets$Population)$PopulationCap` 
+### Simulation of `r sub("^A", "a", str_to_title(SDMD_sub_txt))` of `r Deets$Dose_sub` mg `r paste(MySubstrate, ifelse(SingMult_sub == "multiple", DoseFreq_sub, ""))` Administered with `r str_to_title(MyPerpetrator)` in `r sub("Healthy Volunteers", "Healthy Subjects", tidyPop(Deets$Population)$PopulationCap)` 
 
 Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` of `r Deets$Dose_sub` mg `r MySubstrate` in the absence of `r MyPerpetrator` and `r ifelse(SingMult_sub == "mMultiple", "with", paste("on the", DoseDay, "day of"))` `r NumDaysInhib` days of dosing of `r MyPerpetrator` (`r Deets$Dose_inhib` mg `r DoseFreq_inhib`) are illustrated in **Figure XXX**. Simulated plasma concentrations of `r MyPerpetrator` are depicted in **Figure XXX**. `r ifelse(include_enz_plot, paste0("Simulated hepatic ", enzyme, " levels in the absence and during administration of ", MyPerpetrator, " are indicated in Figure XXX. "), "")`The simulated geometric mean `r ifelse(SingMult_sub == "single", "AUC~inf~", "AUC~tau~")` and C~max~ values and corresponding GMRs for `r MySubstrate` in the absence and presence of `r MyPerpetrator` are listed in **Table XXX**.
 
@@ -137,11 +137,6 @@ pretfun <- function(X){
    } else {
       X <- sub(MyPerpetrator, "perpetrator", X)
    }
-   return(X)
-}
-
-ugfun <- function(X){
-   X <- sub("perpetrator", MyPerpetrator, X)
    return(X)
 }
 
@@ -225,7 +220,7 @@ TempNames <- data.frame(PKparameter = union(PKWeShouldHave, PKToPull)) %>%
    left_join(AllPKParameters %>% select(PKparameter, SortOrder), 
              by = "PKparameter") %>% 
    arrange(SortOrder) %>% pull(PKparameter) %>% unique()
-   
+
 MyPKResults <- prettify_column_names(MyPKResults, 
                                      pretty_or_ugly_cols = "ugly") %>% 
    select(any_of(c("Statistic", TempNames)))
@@ -254,7 +249,7 @@ if(include_dose_num == FALSE){
 ```
 
 
-*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanTypePK` mean `r tissue` PK parameters for `r MySubstrate` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", MySubstrate)` `r FigText3`in `r tidyPop(Deets$Population)$Population`.*
+*Table XXX. Simulated`r ifelse(Observedincluded, " and observed", "")` `r MeanTypePK` mean `r tissue` PK parameters for `r MySubstrate` after `r FigText2` of `r paste(Deets$Dose_sub, "mg", MySubstrate)` `r FigText3`in `r sub("healthy volunteers", "healthy subjects", tidyPop(Deets$Population)$Population)`.*
 
 ```{r makeTablePKSummaryOutput, fig.width = 7}
 
@@ -325,16 +320,31 @@ FT <- FT %>%
                     part = "body", i = 1)
 
 # Dealing with subscripts
-NamePattern <- " AUCt | AUCinf | AUCtau | Cmax | Cmin | tmax | fa| fg| fh| ka| tlag"
-
-ColNames <- data.frame(OrigName = as.character(OrigPKnames)) %>% 
-   mutate(Part1 = sapply(OrigName, 
-                         FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][1]}), 
-          Part2 = sub("inf|tau|max|min|a|g|h|lag", "", str_trim(str_extract(OrigName, NamePattern))), 
-          Part2 = sub("AUCt", "AUC", Part2),
-          Subscript = sub(" AUC| C| t| f| k", "", str_extract(OrigName, NamePattern)), 
-          Part3 = sapply(OrigName, 
-                         FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][2]})) 
+# Dealing with subscripts
+if(include_dose_num){
+   NamePattern <- " AUCt | AUCinf | AUCtau | Cmax | Cmin | tmax | fa| fg| fh| ka| tlag"
+   
+   ColNames <- data.frame(OrigName = OrigPKnames) %>% 
+      mutate(Part1 = sapply(OrigName, 
+                            FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][1]}), 
+             Part2 = sub("inf|tau|max|min|a|g|h|lag", "", str_trim(str_extract(OrigName, NamePattern))), 
+             Part2 = sub("AUCt", "AUC", Part2),
+             Subscript = sub(" AUC| C| t| f| k", "", str_extract(OrigName, NamePattern)), 
+             Part3 = sapply(OrigName, 
+                            FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][2]})) 
+   
+} else {
+   NamePattern <- "^AUCt |^AUCinf |^AUCtau |^Cmax |^Cmin |^tmax |^fa|^fg|^fh|^ka|^tlag"
+   
+   ColNames <- data.frame(OrigName = OrigPKnames) %>% 
+      mutate(Part1 = ifelse(str_detect(OrigName, NamePattern), 
+                            "", OrigName), 
+             Part2 = sub("inf|tau|max|min|a|g|h|lag", "", str_trim(str_extract(OrigName, NamePattern))), 
+             Part2 = sub("AUCt", "AUC", Part2),
+             Subscript = sub("^AUC|^C|^t|^f|^k", "", str_extract(OrigName, NamePattern)), 
+             Part3 = sapply(OrigName, 
+                            FUN = function(x) {str_split(x, pattern = NamePattern)[[1]][2]})) 
+}
 
 for(i in 1:nrow(ColNames)){
    
@@ -381,7 +391,7 @@ CapText2 <- paste0(sub("; $", ".", CapText2a),
 
 *Simulated values listed are `r CapText1`. `r CapText2` Source simulated data: `r basename(sim_data_file)`* 
 
-`r ifelse(exists("PKWeShouldHave", inherits = FALSE), "WARNING: There were problems extracting some PK values, e.g., problems with extrapolation to infinity. Please check your results.", "")`
+`r ifelse(length(MissingPK) > 0, "***WARNING: There were problems extracting some PK values, e.g., problems with extrapolation to infinity. Please check your results.***", "")`
 
 
 ```{r ctplotheading}
@@ -403,7 +413,7 @@ Text1 <- "Linear (A) and log-linear (B)"
 
 ```
 
-*Figure XXX. `r Text1` simulated `r tissue` concentration-time profiles of `r MySubstrate` `r Text2`in `r tidyPop(Deets$Population)$Population`.*
+*Figure XXX. `r Text1` simulated `r tissue` concentration-time profiles of `r MySubstrate` `r Text2`in `r sub("healthy volunteers", "healthy subjects", tidyPop(Deets$Population)$Population)`.*
 
 ```{r ctplot, fig.width = 5, fig.height = 6}
 
@@ -416,9 +426,13 @@ ct_plot(ct_dataframe %>% filter(File == sim_data_file & Tissue == tissue,
         y_axis_limits_log = y_axis_limits_log_sub, 
         legend_position = "none", 
         legend_label = legend_label_sub,
-        prettify_compound_names = c("substrate" = MySubstrate, 
-                                    "inhibitor" = MyPerpetrator),
-        linear_or_log = linear_or_log_sub)
+        prettify_compound_names = FALSE,
+        linear_or_log = linear_or_log_sub, 
+        line_width = line_width_sub, 
+        hline_position = hline_position_sub,
+        hline_style = hline_style_sub, 
+        vline_position = vline_position_sub, 
+        vline_style = vline_style_sub)
 
 ```
 
@@ -447,11 +461,11 @@ CapText2 <- switch(
             mean_type_graph, 
             "mean data"), 
    "percentiles" = 
-      paste("The lighter lines represent the 5th and 95th percentiles and the darker lines the",
+      paste("The lighter lines represent the 5^th^ and 95^th^ percentiles and the darker lines the",
             mean_type_graph, 
             "mean data"), 
    "percentile ribbon" = 
-      paste("The shaded regions represent the 5th to the 95th percentiles and the lines the",
+      paste("The shaded regions represent the 5^th^ to the 95^th^ percentiles and the lines the",
             mean_type_graph, "mean data"), 
    "means only" = 
       paste("The lines represent the", 
@@ -463,15 +477,15 @@ CapText2 <- switch(
             mean_type_graph, 
             "mean data"))
 
-NextChunkHeight <- ifelse(figure_type_inhib %in% c("both", "both vertical"), 6, 3)
+NextChunkHeight <- ifelse(linear_or_log_inhib %in% c("both", "both vertical"), 6, 3)
 
 ```
 
-*Depicted are simulated `r CapText1`. `r CapText2` of the simulated population (n = `r Deets$NumTrials * Deets$NumSubjTrial`)`r ifelse(figure_type == "Freddy", ". The dashed lines represent the 5th and 95th percentiles", "")`. Source simulated data: `r sim_data_file`.*
+*Depicted are simulated `r CapText1`. `r CapText2` of the simulated population (n = `r Deets$NumTrials * Deets$NumSubjTrial`)`r ifelse(figure_type == "Freddy", ". The dashed lines represent the 5^th^ and 95^th^ percentiles", "")`. Source simulated data: `r basename(sim_data_file)`.*
 
 
 
-*Figure XXX. Simulated `r tissue` concentration-time profiles of `r paste(Deets$Dose_inhib, "mg", DoseFreq_inhib, MyPerpetrator)` in `r tidyPop(Deets$Population)$Population`.*
+*Figure XXX. Simulated `r tissue` concentration-time profiles of `r paste(Deets$Dose_inhib, "mg", DoseFreq_inhib, MyPerpetrator)` in `r sub("healthy volunteers", "healthy subjects", tidyPop(Deets$Population)$Population)`.*
 
 
 ```{r ctplotInhib, fig.width=5, fig.height=NextChunkHeight}
@@ -483,10 +497,14 @@ ct_plot(ct_dataframe %>% filter(File == sim_data_file & Tissue == tissue,
         y_axis_label = y_axis_label_inhib,
         x_axis_interval = x_axis_interval_inhib, 
         y_axis_limits_log = y_axis_limits_log_inhib, 
+        prettify_compound_names = FALSE, 
         legend_position = "bottom", 
-        prettify_compound_names = c("substrate" = MySubstrate, 
-                                    "inhibitor" = MyPerpetrator),
-        linear_or_log = linear_or_log_inhib)
+        linear_or_log = linear_or_log_inhib, 
+        line_width = line_width_inhib, 
+        hline_position = hline_position_inhib,
+        hline_style = hline_style_inhib, 
+        vline_position = vline_position_inhib, 
+        vline_style = vline_style_inhib)
 
 CapText3 <- switch(
    figure_type_inhib, 
@@ -497,11 +515,11 @@ CapText3 <- switch(
             mean_type_graph, 
             "mean data"), 
    "percentiles" = 
-      paste("The lighter lines represent the 5th and 95th percentiles and the darker lines the",
+      paste("The lighter lines represent the 5^th^ and 95^th^ percentiles and the darker lines the",
             mean_type_graph, 
             "mean data"), 
    "percentile ribbon" = 
-      paste("The shaded regions represent the 5th to the 95th percentiles and the lines the",
+      paste("The shaded regions represent the 5^th^ to the 95^th^ percentiles and the lines the",
             mean_type_graph, "mean data"), 
    "means only" = 
       paste("The lines represent the", 
@@ -516,7 +534,7 @@ CapText3 <- switch(
 
 ```
 
-*Depicted are simulated `r tissue` concentration-time profiles of `r MyPerpetrator` with administration of `r MySubstrate` on the `r DoseDay` day of `r NumDaysInhib` days of dosing. `r CapText3` for the simulated population (n = `r Deets$NumTrials * Deets$NumSubjTrial`). Source simulated data: `r sim_data_file`.*
+*Depicted are simulated `r tissue` concentration-time profiles of `r MyPerpetrator` with administration of `r MySubstrate` on the `r DoseDay` day of `r NumDaysInhib` days of dosing. `r CapText3` for the simulated population (n = `r Deets$NumTrials * Deets$NumSubjTrial`). Source simulated data: `r basename(sim_data_file)`.*
 
 
 ```{r OptionalEnz, echo = FALSE, results = "asis"}

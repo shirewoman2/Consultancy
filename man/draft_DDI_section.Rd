@@ -25,18 +25,28 @@ draft_DDI_section(
   victim_sim = FALSE,
   default_cmpd_file = TRUE,
   figure_type_sub = "means only",
-  time_range_sub = NA,
+  time_range_sub = "last dose",
   x_axis_interval_sub = NA,
   y_axis_label_sub = NA,
   y_axis_limits_log_sub = NA,
   legend_label_sub = NA,
   linear_or_log_sub = "both vertical",
+  line_width_sub = NA,
+  hline_position_sub = NA,
+  hline_style_sub = "red dotted",
+  vline_position_sub = NA,
+  vline_style_sub = "red dotted",
   figure_type_inhib = "means only",
   time_range_inhib = NA,
   x_axis_interval_inhib = NA,
   y_axis_label_inhib = NA,
   y_axis_limits_log_inhib = NA,
   linear_or_log_inhib = "linear",
+  line_width_inhib = NA,
+  hline_position_inhib = NA,
+  hline_style_inhib = "red dotted",
+  vline_position_inhib = NA,
+  vline_style_inhib = "red dotted",
   include_enz_plot = FALSE,
   sim_enz_dataframe = NA,
   enzyme = "CYP3A4",
@@ -237,14 +247,14 @@ library file for XXX was used."}
 \item{time_range_sub}{time range to show relative to the start of the
   simulation for the graph of the substrate. Options: \describe{
 
-  \item{NA}{(default) entire time range of data}
+  \item{NA}{entire time range of data}
 
   \item{a start time and end time in hours}{only data in that time range,
   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
 
   \item{"first dose"}{only the time range of the first dose}
 
-  \item{"last dose"}{only the time range of the last dose}
+  \item{"last dose"}{(default) only the time range of the last dose}
 
   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
   which can be useful for BID data where the end of the simulation extended
@@ -309,6 +319,16 @@ and a perpetrator is present, the label in the legend will be "Inhibitor".}
   request Word output, only the vertical plot will be saved in Word format;
   the horizontal plot will be saved as a png file.}}}
 
+\item{line_width_sub}{see help file for ct_plot}
+
+\item{hline_position_sub}{see help file for ct_plot}
+
+\item{hline_style_sub}{see help file for ct_plot}
+
+\item{vline_position_sub}{see help file for ct_plot}
+
+\item{vline_style_sub}{see help file for ct_plot}
+
 \item{figure_type_inhib}{type of figure to plot for the substrate. Options
 are the same as for the substrate.}
 
@@ -332,6 +352,16 @@ automatically selected.}
 
 \item{linear_or_log_inhib}{the type of graph to be returned. Options are the
 same as for the substrate plot.}
+
+\item{line_width_inhib}{see help file for ct_plot}
+
+\item{hline_position_inhib}{see help file for ct_plot}
+
+\item{hline_style_inhib}{see help file for ct_plot}
+
+\item{vline_position_inhib}{see help file for ct_plot}
+
+\item{vline_style_inhib}{see help file for ct_plot}
 
 \item{include_enz_plot}{TRUE or FALSE (default) for whether to include a
 graph of enzyme abundance data}
