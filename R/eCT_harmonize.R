@@ -179,7 +179,21 @@ eCT_harmonize <- function(sim_data_xl,
             # then, later, the regex will match both "PERPETRATOR1" and
             # "PERPETRATOR1METABOLITE".
             
-            sim_data_xl$...1 <- 
+            # Challenging scenario: Sometimes people have to hack the simulator
+            # and have the same compound in multiple positions in the Simulator,
+            # making it extremely challenging to make sure to match the right
+            # compound IDs with the right compounds b/c one compound will have
+            # multiple matches. For that reason, only doing regex ONE COMPOUNDID
+            # AT A TIME and only for the subset of rows that apply to that
+            # compound ID.
+            
+            CmpdRows <- which(str_detect(sim_data_xl$...1, 
+                                         CmpdMatches %>% 
+                                            filter(CompoundID == cmpd & 
+                                                      Interaction == FALSE) %>% 
+                                            pull(CompoundCode)))
+            
+            sim_data_xl$...1[CmpdRows] <- 
                sub(pattern = 
                       str_c(c(
                          CmpdMatches$CompoundCode[
@@ -197,7 +211,7 @@ eCT_harmonize <- function(sim_data_xl,
                              "inhibitor 2" = "PERPETRATOR2", 
                              "inhibitor 1 metabolite" = "PERPETRATOR1MET"), 
                    x = 
-                      sim_data_xl$...1)
+                      sim_data_xl$...1[CmpdRows])
             
          } else if(cmpd %in% compoundToExtract){
             compoundToExtract <- setdiff(compoundToExtract, cmpd)

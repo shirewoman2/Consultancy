@@ -109,7 +109,6 @@ eCT_pulldata <- function(sim_data_xl,
                                                  "inhibitor 2" = "PERPETRATOR2", 
                                                  "inhibitor 1 metabolite" = "PERPETRATOR1MET")))
       
-      
    } else if(ADAM|AdvBrainModel){
       # cmpd is ADAM model compound
       

@@ -301,8 +301,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # Main body of function -----------------------------------------------
    
-   sim_data_files <- unique(sim_data_files)
-   
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx" or in all subfolders if they wanted it to be
    # recursive.
@@ -318,6 +316,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
    sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE] <-
       paste0(sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE], 
              ".xlsx")
+   
+   sim_data_files <- unique(sim_data_files)
    
    # Checking on what combinations of data the user has requested and what
    # data are already present in ct_dataframe.
