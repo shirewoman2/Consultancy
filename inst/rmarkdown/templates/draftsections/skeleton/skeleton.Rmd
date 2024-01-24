@@ -1,0 +1,52 @@
+---
+title: "Methods and results section study-design text - draft"
+author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setupResultsSection, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600, 
+                      fig.width = 6, 
+                      fig.height = 5)
+
+```
+
+# METHODS
+
+```{r methodstext, echo = FALSE, results = "asis"}
+
+for(sim in names(DraftText)){
+   
+   MethodsSection <- knitr::knit_child(
+      system.file("rmarkdown/templates/methodstext/skeleton/skeleton.Rmd",
+                  package="SimcypConsultancy"), 
+      envir = environment(), 
+      quiet = TRUE)
+   
+   cat(MethodsSection, sep = "\n")
+   
+}
+
+```
+
+
+# RESULTS
+
+```{r resultsstext, echo = FALSE, results = "asis"}
+
+for(sim in names(DraftText)){
+   
+   ResultsSection <- knitr::knit_child(
+      system.file("rmarkdown/templates/resultstext/skeleton/skeleton.Rmd",
+                  package="SimcypConsultancy"), 
+      envir = environment(), 
+      quiet = TRUE)
+   
+   cat(ResultsSection, sep = "\n")
+   
+}
+
+```
