@@ -784,6 +784,8 @@ forest_plot <- function(forest_dataframe,
       } else {
          PKparameters <- sub("_ratio", "_nounits", PKparameters)
          
+         names(PK_labels) <- sub("_ratio", "_nounits", names(PK_labels))
+         
          forest_dataframe <- forest_dataframe %>% 
             mutate(PKparameter = sub("_ratio", "_nounits", PKparameter))
          
