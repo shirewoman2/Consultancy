@@ -1,12 +1,35 @@
-#' Title
+#' Create some draft text to insert into the methods and results sections of a
+#' report describing the trial design of several simulations at once
 #'
-#' @param sim_data_files files
-#' @param existing_exp_details details
-#' @param prettify_compound_names T or F
-#' @param default_cmpd_file T or F
-#' @param victim_sim T or F
-#' @param mean_type geometric or arithmetic
-#' @param save_text word doc file name
+#' @param sim_data_file names of the Excel files containing the simulator
+#'   output, in quotes
+#' @param existing_exp_details the output from running either
+#'   \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} --
+#'   either is fine as long as it contains details for \code{sim_data_file}.
+#' @param prettify_compound_names TRUE (default) or FALSE for whether to make
+#'   compound names prettier in legend entries and in any Word output files.
+#'   This was designed for simulations where the substrate and any metabolites,
+#'   perpetrators, or perpetrator metabolites are among the standard options for
+#'   the simulator, and leaving \code{prettify_compound_names = TRUE} will make
+#'   the name of those compounds something more human readable. For example,
+#'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
+#'   become "midazolam".
+#' @param default_cmpd_file Was one of the default compound files used for the
+#'   substrate (if this was a perpetrator simulation) or the perpetrator (if
+#'   this was a victim simulation)? TRUE (default) or FALSE. The only thing this
+#'   affects is the sentence in the template report text, "The default compound
+#'   library file for XXX was used."
+#' @param victim_sim TRUE (default) or FALSE for whether this was a victim DDI
+#'   simulation, so "TRUE" means that the client's drug was the victim. The only
+#'   thing this affects is the sentence in the template report text "Performance
+#'   verification of the XXX model is provided in Appendix B - Performance
+#'   Verification of CYP3A Substrates, Inhibitors and Inducers." If this was a
+#'   victim DDI simulation, then this sentence will replace "XXX" with the name
+#'   of the perpetrator. If not, it will replace "XXX" with the name of the
+#'   substrate.
+#' @param mean_type "arithmetic" or "geometric" (default) means in PK tables
+#' @param save_text optionally save the output as a Word document, which is what
+#'   we recommend, by providing a Word file name here. 
 #'
 #' @return list of study design info for a report and, optionall, a Word
 #'   document with that info

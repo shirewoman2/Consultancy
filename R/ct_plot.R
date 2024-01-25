@@ -273,7 +273,7 @@
 #'   the label in the legend for the line style and the shape. If left as the
 #'   default NA when a legend is included and a perpetrator is present, the
 #'   label in the legend will be "Inhibitor".
-#' @param prettify_compound_names TRUE (default) or FALSE on whether to make
+#' @param prettify_compound_names TRUE (default) or FALSE for whether to make
 #'   compound names prettier in legend entries and in any Word output files.
 #'   This was designed for simulations where the substrate and any metabolites,
 #'   perpetrators, or perpetrator metabolites are among the standard options for
