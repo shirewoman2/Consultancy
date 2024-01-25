@@ -1,4 +1,4 @@
-#### `r DraftText[[sim]][["Results"]][["Heading"]]` 
+### `r DraftText[[sim]][["Results"]][["Heading"]]` 
 
 Simulation: `r sim`
 

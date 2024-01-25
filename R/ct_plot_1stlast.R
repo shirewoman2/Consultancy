@@ -238,37 +238,6 @@
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
 #'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
 #'   should not be in quotes.)
-#' @param time_range time range to display. Options: \describe{
-#'
-#'   \item{NA}{entire time range of data; default}
-#'
-#'   \item{a start time and end time in hours}{only data in that time range,
-#'   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
-#'
-#'   \item{"first dose"}{only the time range of the first dose}
-#'
-#'   \item{"last dose"}{only the time range of the last dose}
-#'
-#'   \item{"penultimate dose"}{only the time range of the 2nd-to-last dose,
-#'   which can be useful for BID data where the end of the simulation extended
-#'   past the dosing interval or data when the substrate was dosed BID and the
-#'   perpetrator was dosed QD}
-#'
-#'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
-#'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
-#'   for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}
-#'
-#'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
-#'   range will be limited to only times when observed data are present.}
-#'
-#'   \item{"last dose to last observed" or "last obs" for short}{Time range will
-#'   be limited to the start of the last dose until the last observed data
-#'   point.} }
-#'
-#' @param x_axis_interval set the x-axis major tick-mark interval. Acceptable
-#'   input: any number or leave as NA to accept default values, which are
-#'   generally reasonable guesses as to aesthetically pleasing and PK-relevant
-#'   intervals.
 #' @param x_axis_label optionally supply a character vector or an expression to
 #'   use for the x axis label
 #' @param pad_x_axis optionally add a smidge of padding to the x axis (default
@@ -361,6 +330,20 @@
 #'   saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
+#' @param time_range_1st time range for the "1st" dose, really, the first panel
+#'   in the set of graphs (in other words, it doesn't \emph{have} to be exactly
+#'   the 1st dose)
+#' @param x_axis_interval_1st x axis interval to use for the 1st panel in the
+#'   set of graphs
+#' @param time_range_last time range for the "last" dose, really, the second
+#'   panel in the set of graphs (in other words, it doesn't \emph{have} to be
+#'   exactly the 1st dose)
+#' @param x_axis_interval_last x axis interval to use for the 1st panel in the
+#'   set of graphs
+#' @param existing_exp_details output from \code{\link{extractExpDetails}} or
+#'   \code{\link{extractExpDetails_mult}} to be used for creating figure
+#'   headings and captions tailored to the specific simulation when saving to a
+#'   Word file or for use with \code{qc_graph}
 #'
 #' @return a ggplot2 graphs or a set of arranged ggplot2 graphs
 #' @export

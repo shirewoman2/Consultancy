@@ -268,24 +268,25 @@
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
 #'   default is 14. This also determines the font size of the graph labels.
-#' @param legend_label optionally indicate on the legend whether the perpetrator is
-#'   an inhibitor, inducer, activator, or suppressor. Input will be used as the
-#'   label in the legend for the line style and the shape. If left as the
-#'   default NA when a legend is included and a perpetrator is present, the label
-#'   in the legend will be "Inhibitor".
+#' @param legend_label optionally indicate on the legend whether the perpetrator
+#'   is an inhibitor, inducer, activator, or suppressor. Input will be used as
+#'   the label in the legend for the line style and the shape. If left as the
+#'   default NA when a legend is included and a perpetrator is present, the
+#'   label in the legend will be "Inhibitor".
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in legend entries and in any Word output files.
 #'   This was designed for simulations where the substrate and any metabolites,
-#'   perpetrators, or perpetrator metabolites are among the standard options for the
-#'   simulator, and leaving \code{prettify_compound_names = TRUE} will make the
-#'   name of those compounds something more human readable. For example,
+#'   perpetrators, or perpetrator metabolites are among the standard options for
+#'   the simulator, and leaving \code{prettify_compound_names = TRUE} will make
+#'   the name of those compounds something more human readable. For example,
 #'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 #'   become "midazolam". Set each compound to the name you'd prefer to see in
 #'   your legend and Word output if you would like something different. For
 #'   example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
 #'   "substrate" = "superstatin")}. Please note that "inhibitor" includes
-#'   \emph{all} the perpetrators and perpetrator metabolites present, so, if you're
-#'   setting the perpetrator name, you really should use something like this if
+#'   \emph{all} the perpetrators and perpetrator metabolites present, so, if
+#'   you're setting the perpetrator name, you really should use something like
+#'   this if
 #'   you're including perpetrator metabolites: \code{prettify_compound_names =
 #'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
@@ -322,7 +323,9 @@
 #'   information about how your simulation or simulations were set up and supply
 #'   that object to the argument \code{existing_exp_details}.
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
-#'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
+#'   \code{\link{extractExpDetails_mult}} to be used for creating figure
+#'   headings and captions tailored to the specific simulation when saving to a
+#'   Word file or for use with \code{qc_graph}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". The nice thing about saving to Word is that the figure title
@@ -445,6 +448,39 @@ ct_plot <- function(ct_dataframe = NA,
                   length(sort(unique(ct_dataframe$Tissue))), 
                   " tissues. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
            call. = FALSE)
+   }
+   
+   # Checking for good input for prettify_compound_names. 
+   if("character" %in% class(prettify_compound_names) &&
+      any(is.null(names(prettify_compound_names)))){
+      if(length(unique(ct_dataframe$CompoundID)) == 1){
+         names(prettify_compound_names) <- unique(ct_dataframe$CompoundID)
+      } else {
+         warning("We're not sure what you wanted for the argument `prettify_compound_names` because we were expecting a TRUE or FALSE or a named character vector, and that's not what you have supplied. Please check the help file for appropriate values for `prettify_compound_names`. For now, we'll set this to TRUE, the default.\n", 
+                 call. = FALSE)
+         prettify_compounds_names <- TRUE
+      }
+   }
+   
+   if("character" %in% class(prettify_compound_names)){
+      
+      names(prettify_compound_names) <- tolower(names(prettify_compound_names))
+      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "perpetrator")] <- "inhibitor"
+      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "inhib")] <- "inhibitor"
+      if("inhibitor" %in% names(prettify_compound_names) == FALSE & 
+         any(ct_dataframe$Inhibitor != "none")){
+         prettify_compound_names <-
+            c(prettify_compound_names, 
+              "inhibitor" = prettify_compound_name(
+                 unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])))
+      }
+      if("substrate" %in% names(prettify_compound_names) == FALSE & 
+         any(ct_dataframe$CompoundID == "substrate")){
+         prettify_compound_names <-
+            c(prettify_compound_names, 
+              "inhibitor" = prettify_compound_name(
+                 unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])))
+      }
    }
    
    # Noting whether this is an enzyme-abundance plot b/c some options change
@@ -577,9 +613,9 @@ ct_plot <- function(ct_dataframe = NA,
             error = function(x) "missing file")
       } else {
          Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
-            filter(unique(ct_dataframe$File) %in% File)
+            filter(File %in% unique(ct_dataframe$File))
          
-         if(nrow(Deets == 0)){
+         if(nrow(Deets) == 0){
             Deets <- tryCatch(
                extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
                                  exp_details = "Summary and Input", 
@@ -1497,6 +1533,11 @@ ct_plot <- function(ct_dataframe = NA,
                               quiet = TRUE)
             
          } else {
+            
+            if(exists("Deets", inherits = FALSE) &&
+               "character" %in% class(Deets)){
+               rm(Deets)
+            }
             
             rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
