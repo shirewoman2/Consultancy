@@ -1,8 +1,6 @@
 #' Create some draft text to insert into the methods and results sections of a
 #' report describing the trial design of several simulations at once
 #'
-#' @param sim_data_file names of the Excel files containing the simulator
-#'   output, in quotes
 #' @param existing_exp_details the output from running either
 #'   \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} --
 #'   either is fine as long as it contains details for \code{sim_data_file}.
@@ -19,17 +17,16 @@
 #'   this was a victim simulation)? TRUE (default) or FALSE. The only thing this
 #'   affects is the sentence in the template report text, "The default compound
 #'   library file for XXX was used."
-#' @param victim_sim TRUE (default) or FALSE for whether this was a victim DDI
-#'   simulation, so "TRUE" means that the client's drug was the victim. The only
-#'   thing this affects is the sentence in the template report text "Performance
-#'   verification of the XXX model is provided in Appendix B - Performance
-#'   Verification of CYP3A Substrates, Inhibitors and Inducers." If this was a
-#'   victim DDI simulation, then this sentence will replace "XXX" with the name
-#'   of the perpetrator. If not, it will replace "XXX" with the name of the
-#'   substrate.
 #' @param mean_type "arithmetic" or "geometric" (default) means in PK tables
 #' @param save_text optionally save the output as a Word document, which is what
-#'   we recommend, by providing a Word file name here. 
+#'   we recommend, by providing a Word file name here.
+#' @param sim_data_files name of the Excel file containing the simulator output,
+#'   in quotes or leave as the default "use existing_exp_details" to get all the
+#'   files included in the object provided for \code{existing_exp_details}.
+#' @param client_drug_regex fill in a string of text that will match your client
+#'   drug, and that will be used to check whether the client drug is in the
+#'   substrate position or inhibitor 1 position in the simulation. Which
+#'   position it is affects the wording of the output text.
 #'
 #' @return list of study design info for a report and, optionall, a Word
 #'   document with that info
@@ -37,13 +34,18 @@
 #'
 #' @examples
 #' none yet
-draft_text_mult <- function(sim_data_files, 
+draft_text_mult <- function(sim_data_files = "use existing_exp_details", 
                             existing_exp_details, 
                             prettify_compound_names = TRUE, 
                             default_cmpd_file = TRUE, 
                             client_drug_regex = NA, 
                             mean_type = "geometric", 
                             save_text = NA){
+   
+   if("character" %in% class(sim_data_files) &&
+      all(sim_data_files == "use existing_exp_details")){
+      sim_data_files <- existing_exp_details$MainDetails$File
+   }
    
    DraftText <- list()
    

@@ -6,7 +6,7 @@
 report describing the trial design of several simulations at once}
 \usage{
 draft_text_mult(
-  sim_data_files,
+  sim_data_files = "use existing_exp_details",
   existing_exp_details,
   prettify_compound_names = TRUE,
   default_cmpd_file = TRUE,
@@ -16,6 +16,10 @@ draft_text_mult(
 )
 }
 \arguments{
+\item{sim_data_files}{name of the Excel file containing the simulator output,
+in quotes or leave as the default "use existing_exp_details" to get all the
+files included in the object provided for \code{existing_exp_details}.}
+
 \item{existing_exp_details}{the output from running either
 \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} --
 either is fine as long as it contains details for \code{sim_data_file}.}
@@ -35,22 +39,15 @@ this was a victim simulation)? TRUE (default) or FALSE. The only thing this
 affects is the sentence in the template report text, "The default compound
 library file for XXX was used."}
 
+\item{client_drug_regex}{fill in a string of text that will match your client
+drug, and that will be used to check whether the client drug is in the
+substrate position or inhibitor 1 position in the simulation. Which
+position it is affects the wording of the output text.}
+
 \item{mean_type}{"arithmetic" or "geometric" (default) means in PK tables}
 
 \item{save_text}{optionally save the output as a Word document, which is what
 we recommend, by providing a Word file name here.}
-
-\item{sim_data_file}{names of the Excel files containing the simulator
-output, in quotes}
-
-\item{victim_sim}{TRUE (default) or FALSE for whether this was a victim DDI
-simulation, so "TRUE" means that the client's drug was the victim. The only
-thing this affects is the sentence in the template report text "Performance
-verification of the XXX model is provided in Appendix B - Performance
-Verification of CYP3A Substrates, Inhibitors and Inducers." If this was a
-victim DDI simulation, then this sentence will replace "XXX" with the name
-of the perpetrator. If not, it will replace "XXX" with the name of the
-substrate.}
 }
 \value{
 list of study design info for a report and, optionall, a Word

@@ -34,19 +34,56 @@ draft_results_text <- function(sim_data_file,
    MySubstrate <- ifelse(prettify_compound_names, 
                          prettify_compound_name(Deets$Substrate), Deets$Substrate)
    
+   MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
+                                            prettify_compound_names = prettify_compound_names, 
+                                            parent_only = TRUE)
+   
    SDorMD <- tolower(Deets$Regimen_sub)
    
+   SingMult_sub <- ifelse(Deets$Regimen_sub %in% c("custom dosing",
+                                                   "Multiple Dose"),
+                          "multiple", "single")
+   
+   SDMD_sub_txt <- paste(ifelse(SingMult_sub == "single", "a single", "multiple"),
+                         
+                         switch(Deets$DoseRoute_sub,
+                                "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY**",
+                                "Oral" = "oral",
+                                "IV" = "IV"),
+                         
+                         ifelse(SingMult_sub == "single", "dose", "doses")
+   )
+   
+   DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
+                          "12" = "BID",
+                          "24" = "QD",
+                          "8" = "three times per day",
+                          "6" = "four times per day",
+                          "48" = "every other day",
+                          "NA" = "single dose")
+   DoseFreq_sub <- ifelse(is.null(DoseFreq_sub),
+                          # paste("Q", DoseFreq_sub, "H"),
+                          "**CUSTOM DOSING - FILL IN MANUALLY**",
+                          DoseFreq_sub)
+   
+   Heading_DDI <- ifelse(MyPerpetrator == "none", 
+                         "", 
+                         paste0("Administered with ",
+                                str_to_title(MyPerpetrator), " "))
+   
    Heading <- paste0("Simulation of ", 
-                     switch(SDorMD, "single dose" = "a Single ", 
-                            "multiple dose" = "Multiple Doses ", 
-                            "custom dosing" = "Multiple Doses "), 
-                     Deets$DoseRoute_sub, " ",
-                     "Dose of ", 
-                     Deets$Dose_sub, " ", 
+                     sub("^A", "a", str_to_title(SDMD_sub_txt)), 
+                     " of ", Deets$Dose_sub, " ", 
                      Deets$Units_dose_sub, " ", 
-                     MySubstrate, " in ", 
-                     sub("Healthy Volunteers", "Healthy Subjects", 
-                         tidyPop(Deets$Population)$PopulationSimpleCap))
+                     ifelse(class(prettify_compound_names) == "logical" &&
+                               prettify_compound_names == TRUE, 
+                            str_to_title(MySubstrate), MySubstrate),
+                     " ",
+                     ifelse(SingMult_sub == "multiple", 
+                            paste0(DoseFreq_sub, " "), ""), 
+                     Heading_DDI, "in ",
+                     sub("Healthy Volunteers", "Healthy Subjects",
+                         tidyPop(Deets$Population)$PopulationCap))
    
    Body <- paste0("The simulated profile of ", 
                   MySubstrate, " was comparable to the clinical data (**Figure XXX**). The simulated ", 

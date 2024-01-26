@@ -129,16 +129,20 @@ draft_methods_text <- function(sim_data_file,
    
    Heading_DDI <- ifelse(MyPerpetrator == "none", 
                          "", 
-                         paste0(" Administered with ", str_to_title(MyPerpetrator)))
+                         paste0(" Administered with ",
+                                str_to_title(MyPerpetrator), " "))
    
    Heading <- paste0("Simulation of ", 
                      sub("^A", "a", str_to_title(SDMD_sub_txt)), 
                      " of ", Deets$Dose_sub, " ", 
                      Deets$Units_dose_sub, " ", 
-                     str_to_title(MySubstrate), " ",
+                     ifelse(class(prettify_compound_names) == "logical" &&
+                               prettify_compound_names == TRUE, 
+                            str_to_title(MySubstrate), MySubstrate),
+                     " ",
                      ifelse(SingMult_sub == "multiple", 
                             paste0(DoseFreq_sub, " "), ""), 
-                     Heading_DDI, "in ",
+                     Heading_DDI, " in ",
                      sub("Healthy Volunteers", "Healthy Subjects",
                          tidyPop(Deets$Population)$PopulationCap))
    
