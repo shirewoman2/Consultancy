@@ -27,77 +27,106 @@ draft_results_text <- function(sim_data_file,
                                prettify_compound_names = TRUE, 
                                mean_type = "geometric"){
    
-   Deets <- filter_sims(existing_exp_details, 
-                        sim_data_file, 
-                        "include")$MainDetails
+   # Text to match from report template:
    
-   MySubstrate <- ifelse(prettify_compound_names, 
-                         prettify_compound_name(Deets$Substrate), Deets$Substrate)
+   # Dev or ver with obs data
    
-   MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
-                                            prettify_compound_names = prettify_compound_names, 
-                                            parent_only = TRUE)
+   # The simulated single and multiple dose data as illustrated in Figure 11 for
+   # Day 1 and in Figure 12 for Day ** are comparable to the clinical data. In
+   # addition, the simulated geometric/arithmetic mean AUC0-x, AUCtau, Cmax and
+   # median tmax values for [drug] on Day 1 and on Day ** were within **-fold of
+   # the observed values (Table 8).
    
-   SDorMD <- tolower(Deets$Regimen_sub)
    
-   SingMult_sub <- ifelse(Deets$Regimen_sub %in% c("custom dosing",
-                                                   "Multiple Dose"),
-                          "multiple", "single")
+   # Application DDI
    
-   SDMD_sub_txt <- paste(ifelse(SingMult_sub == "single", "a single", "multiple"),
-                         
-                         switch(Deets$DoseRoute_sub,
-                                "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY**",
-                                "Oral" = "oral",
-                                "IV" = "IV"),
-                         
-                         ifelse(SingMult_sub == "single", "dose", "doses")
+   # Mean simulated plasma concentrations following multiple oral doses of
+   # [drug] in the absence of [perpetrator] and on the **th day of ** days of
+   # administration with [perpetrator] (** mg QD/BID/TID) to healthy subjects /
+   # patients are illustrated in Figure 22. Simulated plasma concentrations of
+   # [perpetrator] are depicted in Figure 23. Simulated hepatic [CYP**] levels
+   # in the absence and during administration of [perpetrator] are indicated in
+   # Figure 24. The simulated geometric mean AUCtau and Cmax values and
+   # corresponding GMRs for [drug] in the presence and absence of [perpetrator]
+   # are listed in Table X.
+   
+   
+   TextPieces <- make_text_legos(sim_data_file = sim_data_file, 
+                                 existing_exp_details = existing_exp_details, 
+                                 prettify_compound_names = prettify_compound_names)
+   
+   Deets <- TextPieces$Deets
+   MySubstrate <- TextPieces$MySubstrate
+   MyPerpetrator <- TextPieces$MyPerpetrator
+   SDorMD <- TextPieces$SDorMD
+   SingMult_sub <- TextPieces$SingMult_sub
+   Pop <- TextPieces$Pop
+   Body_DDI1 <- TextPieces$Body_DDI1
+   Heading <- TextPieces$Heading
+   SDMD_sub_txt <- TextPieces$SDMD_sub_txt
+   
+   
+   Body_dev_ver <- paste0(
+      "The simulated profile of ", 
+      MySubstrate, " as illustrated in **Figure XXX*** ", 
+      switch(SDorMD, 
+             "single dose" = "was ", 
+             "multiple dose" = paste0("for Day 1 and **Figure XXX** for Day ", 
+                                      Deets$SimDuration %/% 24, 
+                                      " were "),
+             "custom dosing" = paste0("for Day 1 and **Figure XXX** for Day ", 
+                                      Deets$SimDuration %/% 24, 
+                                      " were ")), 
+      "comparable to the clinical data (**Figure XXX**). In addition, the simulated ", 
+      mean_type, switch(SDorMD, 
+                        "single dose" = " AUC~inf~, ", 
+                        "multiple dose" = " AUC~inf~, AUC~tau~, ", 
+                        "custom dosing" = " AUC~inf~, AUC~tau~, "),
+      "CL/F, C~max~, and half life values and the median t~max~ value for ", 
+      MySubstrate, 
+      " administered to ", 
+      Pop, 
+      " were within **XXX fold** of the observed values (**Table XXX**)", 
+      switch(SDorMD, 
+             "single dose" = ".", 
+             "multiple dose" = paste0(" on Day 1 and Day ", 
+                                      Deets$SimDuration %/% 24, "."),
+             "custom dosing" = paste0(" on Day 1 and Day ", 
+                                      Deets$SimDuration %/% 24, ".")) 
+      )
+   
+   Body_DDI2 <- ifelse(MyPerpetrator == "none", 
+                       "", 
+                       paste0("Simulated plasma concentrations of ", 
+                              MyPerpetrator, 
+                              " are depicted in **Figure XXX**. Simulcated hepatic **CYPXXX** levels in the absence and during administration of ", 
+                              MyPerpetrator, " are indicated in **Figure XXX**. "))
+   
+   Body_app <- paste0("Mean simulated plasma concentrations following ", 
+                      SDMD_sub_txt, " of ", 
+                      MySubstrate, " ", 
+                      Body_DDI1, "to ", Pop, 
+                      " are illustrated in **Figure XXX**. ", 
+                      Body_DDI2, 
+                      "The simulated ",
+                      mean_type, switch(SDorMD, 
+                                        "single dose" = " AUC~inf~ ", 
+                                        "multiple dose" = " AUC~inf~, AUC~tau~, ", 
+                                        "custom dosing" = " AUC~inf~, AUC~tau~, "),
+                      "and C~max~ values ", 
+                      ifelse(MyPerpetrator == "none", 
+                             "", 
+                             paste0("and corresponding GMRs for ", 
+                                    MySubstrate, 
+                                    " in the presence and absence of ", 
+                                    MyPerpetrator, " ")),
+                      "are listed in **Table XXX**."
    )
    
-   DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
-                          "12" = "BID",
-                          "24" = "QD",
-                          "8" = "three times per day",
-                          "6" = "four times per day",
-                          "48" = "every other day",
-                          "NA" = "single dose")
-   DoseFreq_sub <- ifelse(is.null(DoseFreq_sub),
-                          # paste("Q", DoseFreq_sub, "H"),
-                          "**CUSTOM DOSING - FILL IN MANUALLY**",
-                          DoseFreq_sub)
-   
-   Heading_DDI <- ifelse(MyPerpetrator == "none", 
-                         "", 
-                         paste0("Administered with ",
-                                str_to_title(MyPerpetrator), " "))
-   
-   Heading <- paste0("Simulation of ", 
-                     sub("^A", "a", str_to_title(SDMD_sub_txt)), 
-                     " of ", Deets$Dose_sub, " ", 
-                     Deets$Units_dose_sub, " ", 
-                     ifelse(class(prettify_compound_names) == "logical" &&
-                               prettify_compound_names == TRUE, 
-                            str_to_title(MySubstrate), MySubstrate),
-                     " ",
-                     ifelse(SingMult_sub == "multiple", 
-                            paste0(DoseFreq_sub, " "), ""), 
-                     Heading_DDI, "in ",
-                     sub("Healthy Volunteers", "Healthy Subjects",
-                         tidyPop(Deets$Population)$PopulationCap))
-   
-   Body <- paste0("The simulated profile of ", 
-                  MySubstrate, " was comparable to the clinical data (**Figure XXX**). The simulated ", 
-                  mean_type, switch(SDorMD, 
-                                    "single dose" = " AUC~inf~, ", 
-                                    "multiple dose" = " AUC~tau~, ", 
-                                    "custom dosing" = " AUC~tau~, "),
-                  "CL/F, C~max~, and half life values and the median t~max~ value for ", 
-                  MySubstrate, 
-                  " administered to ", 
-                  sub("healthy volunteers", "healthy subjects", 
-                      tidyPop(Deets$Population)$Population), 
-                  " were within **XXX fold** of the observed values (**Table XXX**).")
-   
    return(list(Heading = Heading, 
-               Body = Body))
+               Body_dev_ver = Body_dev_ver, 
+               Body_app = Body_app))
+   
 }
+
+

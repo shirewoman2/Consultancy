@@ -2,5 +2,5 @@
 
 Simulation: `r sim`
 
-`r DraftText[[sim]][["Results"]][["Body"]]` 
+`r DraftText[[sim]][["Results"]][[SectionType]]` 
 

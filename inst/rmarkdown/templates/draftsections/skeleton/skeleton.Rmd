@@ -35,7 +35,11 @@ for(sim in names(DraftText)){
 
 # RESULTS
 
-```{r resultsstext, echo = FALSE, results = "asis"}
+## Development or verification simulations 
+
+```{r resultstextdevver, echo = FALSE, results = "asis"}
+
+SectionType <- "Body_dev_ver"
 
 for(sim in names(DraftText)){
    
@@ -50,3 +54,25 @@ for(sim in names(DraftText)){
 }
 
 ```
+
+## Application simulations 
+
+```{r resultstextapp, echo = FALSE, results = "asis"}
+
+SectionType <- "Body_app"
+
+for(sim in names(DraftText)){
+   
+   ResultsSection <- knitr::knit_child(
+      system.file("rmarkdown/templates/resultstext/skeleton/skeleton.Rmd",
+                  package="SimcypConsultancy"), 
+      envir = environment(), 
+      quiet = TRUE)
+   
+   cat(ResultsSection, sep = "\n")
+   
+}
+
+```
+
+
