@@ -523,6 +523,16 @@ ct_plot_overlay <- function(ct_dataframe,
            call. = FALSE)
    }
    
+   # NB: A lot of error catching has to happen AFTER setting things up for
+   # nonstandard evaluation, so look underneath that heading if you can't find
+   # an error catch here.
+   
+   # Ungrouping anything that came pre-grouped b/c it messes things up.
+   ct_dataframe <- ungroup(ct_dataframe)
+   
+   # Making sure the data.frame contains unique observations and no unnecessary levels.
+   ct_dataframe <- unique(ct_dataframe) %>% droplevels()
+   
    # Checking whether this is an enzyme abundance plot
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
@@ -668,77 +678,6 @@ ct_plot_overlay <- function(ct_dataframe,
    obs_color_user <- obs_color
    obs_shape_user <- obs_shape
    
-   # Making sure the data.frame contains unique observations and no unnecessary levels.
-   ct_dataframe <- unique(ct_dataframe) %>% droplevels()
-   
-   # Prettifying compound names 
-   if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
-      if(prettify_compound_names){
-         if(EnzPlot){ 
-            ct_dataframe <- ct_dataframe %>% 
-               mutate(Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
-         } else {
-            ct_dataframe <- ct_dataframe %>% 
-               mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
-                      Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function 
-            names(color_labels) <- prettify_compound_name(names(color_labels))
-         }
-      } 
-      # If prettify_compound_names is FALSE, then don't do anything.
-      
-   } else {
-      # This is when the user has requested specific value for prettifying. 
-      if(EnzPlot){ 
-         # Any compounds that the user omitted from prettify_compound_names
-         # should be added to that and kept as their original values.
-         MissingNames <- setdiff(unique(ct_dataframe$Inhibitor), 
-                                 names(prettify_compound_names))
-         OrigPrettyNames <- prettify_compound_names
-         prettify_compound_names <- c(prettify_compound_names, MissingNames)
-         if(length(MissingNames) > 0){
-            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-               MissingNames
-         }
-         
-         ct_dataframe <- ct_dataframe %>% 
-            mutate(Inhibitor = prettify_compound_names[Inhibitor])
-         
-         # FIXME - Need to adjust this for color_labels. 
-         # unique(ct_dataframe$CompoundID[ct_dataframe$Compound %in% names(color_labels)])
-         
-      } else {
-         MissingNames <- setdiff(sort(unique(c(ct_dataframe$Compound,
-                                               ct_dataframe$Inhibitor))), 
-                                 names(prettify_compound_names))
-         MissingNames <- MissingNames[!MissingNames == "none"]
-         OrigPrettyNames <- prettify_compound_names
-         prettify_compound_names <- c(prettify_compound_names, MissingNames)
-         if(length(MissingNames) > 0){
-            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-               MissingNames
-         }
-         
-         ct_dataframe <- ct_dataframe %>% 
-            mutate(Compound = prettify_compound_names[Compound], 
-                   Inhibitor = prettify_compound_names[Inhibitor])
-      }
-   }
-   
-   # Unless the user specifically set the levels for the Inhibitor column, we
-   # always want "none" to be the 1st item on the legend for that, and we need
-   # there to be some value present for "Inhibitor" for function to work
-   # correctly.
-   ct_dataframe <- ct_dataframe %>%
-      mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
-   
-   MyPerpetrator <- unique(ct_dataframe$Inhibitor) %>% as.character()
-   MyPerpetrator <- MyPerpetrator[!MyPerpetrator == "none"]
-   
-   if(length(MyPerpetrator) > 0 & class(ct_dataframe$Inhibitor) != "factor"){
-      ct_dataframe <- ct_dataframe %>%
-         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
-   }
-   
    # Things will be more consistent and easier to code if Individual is a
    # factor and is not NA. Adjusting that as needed.
    if("Invididual" %in% names(ct_dataframe) &&
@@ -789,6 +728,88 @@ ct_plot_overlay <- function(ct_dataframe,
                      "\nand we can only work with unique values here. We won't be able to use anything for `color_labels`. Please check your input."), 
               call. = FALSE)
       color_labels <- NA
+   }
+   
+   # Prettifying compound names 
+   if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
+      if(prettify_compound_names){
+         if(EnzPlot){ 
+            ct_dataframe <- ct_dataframe %>% 
+               mutate(Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
+         } else {
+            ct_dataframe <- ct_dataframe %>% 
+               mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
+                      Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function 
+            
+            # ONLY prettify color_labels when the colorBy_column is Compound or
+            # Inhibitor!!!!
+            if(as_label(colorBy_column) %in% c("Inhibitor", "Compound")){ 
+               names(color_labels) <- prettify_compound_name(names(color_labels))   
+            } 
+         }
+      } 
+      # If prettify_compound_names is FALSE, then don't do anything.
+      
+   } else {
+      # This is when the user has requested specific value for prettifying. 
+      if(EnzPlot){ 
+         # Any compounds that the user omitted from prettify_compound_names
+         # should be added to that and kept as their original values.
+         MissingNames <- setdiff(unique(ct_dataframe$Inhibitor), 
+                                 names(prettify_compound_names))
+         OrigPrettyNames <- prettify_compound_names
+         prettify_compound_names <- c(prettify_compound_names, MissingNames)
+         if(length(MissingNames) > 0){
+            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+               MissingNames
+         }
+         
+         ct_dataframe <- ct_dataframe %>% 
+            mutate(Inhibitor = prettify_compound_names[Inhibitor])
+         
+         # ONLY prettify color_labels when the colorBy_column is Compound or
+         # Inhibitor!!!!
+         if(as_label(colorBy_column) %in% c("Inhibitor", "Compound")){ 
+            names(color_labels) <- prettify_compound_name(names(color_labels))   
+         } 
+         
+      } else {
+         MissingNames <- setdiff(sort(unique(c(ct_dataframe$Compound,
+                                               ct_dataframe$Inhibitor))), 
+                                 names(prettify_compound_names))
+         MissingNames <- MissingNames[!MissingNames == "none"]
+         OrigPrettyNames <- prettify_compound_names
+         prettify_compound_names <- c(prettify_compound_names, MissingNames)
+         if(length(MissingNames) > 0){
+            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+               MissingNames
+         }
+         
+         ct_dataframe <- ct_dataframe %>% 
+            mutate(Compound = prettify_compound_names[Compound], 
+                   Inhibitor = prettify_compound_names[Inhibitor])
+         
+         # ONLY prettify color_labels when the colorBy_column is Compound or
+         # Inhibitor!!!!
+         if(as_label(colorBy_column) %in% c("Inhibitor", "Compound")){ 
+            names(color_labels) <- prettify_compound_name(names(color_labels))   
+         } 
+      }
+   }
+   
+   # Unless the user specifically set the levels for the Inhibitor column, we
+   # always want "none" to be the 1st item on the legend for that, and we need
+   # there to be some value present for "Inhibitor" for function to work
+   # correctly.
+   ct_dataframe <- ct_dataframe %>%
+      mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
+   
+   MyPerpetrator <- unique(ct_dataframe$Inhibitor) %>% as.character()
+   MyPerpetrator <- MyPerpetrator[!MyPerpetrator == "none"]
+   
+   if(length(MyPerpetrator) > 0 & class(ct_dataframe$Inhibitor) != "factor"){
+      ct_dataframe <- ct_dataframe %>%
+         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
    }
    
    # If the color labels don't match the files available, give a warning.
@@ -1332,15 +1353,16 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    MyUniqueData <- sim_dataframe %>% 
-      filter(Trial == MyMeanType) %>% 
+      filter(Trial == MyMeanType) %>% ungroup() %>% 
       select(any_of(union(UniqueAES, 
                           c("File", "Tissue", "CompoundID", "Compound", "Enzyme", "Inhibitor")))) %>% 
       unique()
    
-   UniqueGroups1 <- sim_dataframe %>% 
+   UniqueGroups1 <- sim_dataframe %>% ungroup() %>% 
       summarize(across(.cols = any_of(union(UniqueAES, 
                                             c("File", "Tissue", "CompoundID",
-                                              "Compound", "Inhibitor"))),
+                                              "Compound", "Inhibitor", 
+                                              "Species"))),
                        .fns = function(x) length(unique(x)))) 
    
    UniqueGroups <- UniqueGroups1 %>% 
