@@ -68,7 +68,7 @@ draft_results_text <- function(sim_data_file,
    
    Body_dev_ver <- paste0(
       "The simulated profile of ", 
-      MySubstrate, " as illustrated in **Figure XXX*** ", 
+      MySubstrate, " as illustrated in **Figure XXX** ", 
       switch(SDorMD, 
              "single dose" = "was ", 
              "multiple dose" = paste0("for Day 1 and **Figure XXX** for Day ", 
@@ -93,7 +93,7 @@ draft_results_text <- function(sim_data_file,
                                       Deets$SimDuration %/% 24, "."),
              "custom dosing" = paste0(" on Day 1 and Day ", 
                                       Deets$SimDuration %/% 24, ".")) 
-      )
+   )
    
    Body_DDI2 <- ifelse(MyPerpetrator == "none", 
                        "", 
@@ -102,26 +102,33 @@ draft_results_text <- function(sim_data_file,
                               " are depicted in **Figure XXX**. Simulcated hepatic **CYPXXX** levels in the absence and during administration of ", 
                               MyPerpetrator, " are indicated in **Figure XXX**. "))
    
-   Body_app <- paste0("Mean simulated plasma concentrations following ", 
-                      SDMD_sub_txt, " of ", 
-                      MySubstrate, " ", 
-                      Body_DDI1, "to ", Pop, 
-                      " are illustrated in **Figure XXX**. ", 
-                      Body_DDI2, 
-                      "The simulated ",
-                      mean_type, switch(SDorMD, 
-                                        "single dose" = " AUC~inf~ ", 
-                                        "multiple dose" = " AUC~inf~, AUC~tau~, ", 
-                                        "custom dosing" = " AUC~inf~, AUC~tau~, "),
-                      "and C~max~ values ", 
-                      ifelse(MyPerpetrator == "none", 
-                             "", 
-                             paste0("and corresponding GMRs for ", 
-                                    MySubstrate, 
-                                    " in the presence and absence of ", 
-                                    MyPerpetrator, " ")),
-                      "are listed in **Table XXX**."
-   )
+   Body_app <- 
+      paste0("Mean simulated plasma concentrations following ", 
+             ifelse(SDorMD == "single dose", 
+                    SDMD_sub_txt, 
+                    paste0("a single and ", SDMD_sub_txt)), 
+             " of ", 
+             MySubstrate, " ", 
+             Body_DDI1, "to ", Pop, 
+             " are illustrated in **Figure XXX**", 
+             ifelse(SDorMD == "single dose", 
+                    ". ", 
+                    " and **Figure XXX**, respectively. "),
+             Body_DDI2, 
+             "The simulated ",
+             mean_type, switch(SDorMD, 
+                               "single dose" = " AUC~inf~ ", 
+                               "multiple dose" = " AUC~inf~, AUC~tau~, ", 
+                               "custom dosing" = " AUC~inf~, AUC~tau~, "),
+             "and C~max~ values ", 
+             ifelse(MyPerpetrator == "none", 
+                    "", 
+                    paste0("and corresponding GMRs for ", 
+                           MySubstrate, 
+                           " in the presence and absence of ", 
+                           MyPerpetrator, " ")),
+             "are listed in **Table XXX**."
+      )
    
    return(list(Heading = Heading, 
                Body_dev_ver = Body_dev_ver, 
