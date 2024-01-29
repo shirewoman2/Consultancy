@@ -680,7 +680,7 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # Things will be more consistent and easier to code if Individual is a
    # factor and is not NA. Adjusting that as needed.
-   if("Invididual" %in% names(ct_dataframe) &&
+   if("Individual" %in% names(ct_dataframe) &&
       any(is.na(ct_dataframe$Individual))){
       ct_dataframe <- ct_dataframe %>%
          mutate(Individual = ifelse(is.na(Individual), 
@@ -689,8 +689,14 @@ ct_plot_overlay <- function(ct_dataframe,
    
    if("Individual" %in% names(ct_dataframe) &&
       class(ct_dataframe$Individual) != "factor"){
+      
+      AggStats <- unique(ct_dataframe$Individual)
+      AggStats <- AggStats[AggStats %in% c("mean", "geomean")]
+      
       ct_dataframe <- ct_dataframe %>% 
-         mutate(Individual = as.factor(Individual))
+         mutate(Individual = as.factor(Individual), 
+                Individual = fct_relevel(Individual,
+                                         AggStats, after = Inf))
    }
    
    # Setting things up for nonstandard evaluation ----------------------------
@@ -2226,8 +2232,8 @@ ct_plot_overlay <- function(ct_dataframe,
          }
          
          suppressWarnings(
-            A <-  A + scale_color_manual(values = MyColors) +
-               scale_fill_manual(values = MyColors)
+            A <-  A + scale_color_manual(values = MyColors, drop = FALSE) +
+               scale_fill_manual(values = MyColors, drop = FALSE)
          )
       }
    }
@@ -2435,14 +2441,16 @@ ct_plot_overlay <- function(ct_dataframe,
    
    if(complete.cases(graph_title)){
       A <- A + ggtitle(graph_title) +
-         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+               plot.title.position = "panel")
       B <- B + ggtitle(graph_title) +
-         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+               plot.title.position = "panel")
       AB <- ggpubr::annotate_figure(
-         AB, top = ggpubr::text_grob(graph_title, hjust = 0.15, # <- Something is amuck here w/hjust b/c 0.5 is NOT centered. 
+         AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
                                      face = "bold", size = graph_title_size))
       ABhoriz <- ggpubr::annotate_figure(
-         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.15, # <- Something is amuck here w/hjust b/c 0.5 is NOT centered. 
+         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
                                           face = "bold", size = graph_title_size))
    }
    
