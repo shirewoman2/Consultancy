@@ -1440,9 +1440,11 @@ ct_plot <- function(ct_dataframe = NA,
    
    if(complete.cases(graph_title)){
       A <- A + ggtitle(graph_title) +
-         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+               plot.title.position = "panel")
       B <- B + ggtitle(graph_title) +
-         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+               plot.title.position = "panel")
       AB <- ggpubr::annotate_figure(
          AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
                                      face = "bold", size = graph_title_size))
