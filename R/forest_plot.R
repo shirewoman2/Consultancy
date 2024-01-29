@@ -49,9 +49,13 @@
 #'   input data \code{forest_dataframe}, then setting \code{y_order = "as is"}
 #'   will keep things in exactly the same order.}
 #'
-#'   \item{a character vector of file names}{e.g., \code{y_order =
-#'   c("myfile1.xlsx", "myfile2.xlsx")}. The file names will be automatically
-#'   replaced with whatever you specified for \code{y_axis_labels}.}
+#'   \item{a character vector of whatever you want for y axis labels}{e.g., 
+#'   \code{y_order = c("myfile1.xlsx", "myfile2.xlsx")} if the y axis is just 
+#'   going to show file names or, if, say, you've got it set to show specific 
+#'   labels for those file names, then those labels, e.g., if you set 
+#'   y_axis_labels like this: \code{y_axis_labels = ("myfile1.xlsx" = 
+#'   "itraconazole", "myfile2.xlsx" = "efavirenz")} then you would set the 
+#'   y_order like this: \code{y_order = c("itraconazole", "efavirenz")}}
 #'
 #'   \item{"strongest inhibitor to strongest inducer"}{Sort the simulations
 #'   from top to bottom by AUC ratio from the strongest inhibitor (largest AUC
@@ -135,8 +139,8 @@
 #' @param PK_labels optionally specify what you would like to have appear on the
 #'   y axis for labels for each PK parameter with a named vector of expressions,
 #'   e.g., \code{PK_labels = c("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
-#'   "Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}. 
-#'   To see examples of PK parameters set up as expressions for use in graph 
+#'   "Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}.
+#'   To see examples of PK parameters set up as expressions for use in graph
 #'   labels, try running \code{PKexpressions}.
 #' @param x_axis_limits the x axis limits to use; default is 0.06 to 12.
 #' @param x_axis_number_type set the x axis number type to be "ratios"
@@ -1559,6 +1563,8 @@ forest_plot <- function(forest_dataframe,
                                                           linewidth = 0.25)), 
          # legend.key = element_rect(colour="black", size = 0.5), # <-- Alternate attempt to add borders around legend boxes, but this one results in a box with a little bit of space between the rectangle glyph and the border. The "guides" option earlier works better.
          legend.position = legend_position, ### KEEP THIS
+         legend.box = ifelse(legend_position == "bottom", "vertical", "horizontal"),
+         legend.margin = margin(0, 0, 0, 0), 
          strip.text = element_text(face = "bold"),
          strip.text.y.left = element_text(angle = 0),
          strip.placement = "outside",

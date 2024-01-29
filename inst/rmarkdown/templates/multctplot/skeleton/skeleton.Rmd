@@ -28,7 +28,7 @@ Text1 <- switch(linear_or_log,
 
 # How could I do this w/out nested ifelse statements?
 PlotType <- ifelse(EnzPlot, 
-                   "Enz", 
+                   "EnzPlot", 
                    ifelse(ReleaseProfPlot, 
                           "RelProf", "CTPlot"))
 
