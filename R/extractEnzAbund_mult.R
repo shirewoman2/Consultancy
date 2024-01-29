@@ -151,11 +151,13 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       sim_enz_dataframe <- sim_enz_dataframe %>%
          mutate(ID = paste(File, Tissue, Enzyme))
       
-      DataToFetch <- sim_enz_dataframe %>% select(File, Tissue, Enzyme) %>%
-         unique() %>% mutate(ExistsAlready = TRUE) %>%
-         right_join(Requested) %>%
-         filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
-         mutate(ID = paste(File, Tissue, Enzyme))
+      suppressMessages(
+         DataToFetch <- sim_enz_dataframe %>% select(File, Tissue, Enzyme) %>%
+            unique() %>% mutate(ExistsAlready = TRUE) %>%
+            right_join(Requested) %>%
+            filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
+            mutate(ID = paste(File, Tissue, Enzyme))
+      )
       
       if(overwrite == FALSE){
          sim_data_files_topull <- unique(DataToFetch$File)
@@ -191,7 +193,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
          Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>% 
             filter(File == ff)
          
-         if(nrow(Deets == 0)){
+         if(nrow(Deets) == 0){
             Deets <- extractExpDetails(ff, exp_details = "Summary and Input")[["MainDetails"]]
          }
       }
