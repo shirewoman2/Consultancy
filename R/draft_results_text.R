@@ -99,7 +99,7 @@ draft_results_text <- function(sim_data_file,
                        "", 
                        paste0("Simulated plasma concentrations of ", 
                               MyPerpetrator, 
-                              " are depicted in **Figure XXX**. Simulcated hepatic **CYPXXX** levels in the absence and during administration of ", 
+                              " are depicted in **Figure XXX**. Simulated hepatic **CYPXXX** levels in the absence and during administration of ", 
                               MyPerpetrator, " are indicated in **Figure XXX**. "))
    
    Body_app <- 

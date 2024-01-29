@@ -494,8 +494,6 @@ ct_plot_obs <- function(ct_dataframe,
                              File = ObsFile, 
                              Simulated = ifelse(
                                 Trial %in% c("mean", "geomean", "median"), TRUE, FALSE)), 
-                   # NSE trouble: not enquo alone, not quo, not
-                   # substitute, but enquo plus !! here
                    colorBy_column = !!colorBy_column,
                    linetype_column = !!linetype_column,
                    facet1_column = !!facet1_column,
