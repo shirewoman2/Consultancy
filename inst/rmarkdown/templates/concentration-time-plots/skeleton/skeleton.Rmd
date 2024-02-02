@@ -14,118 +14,6 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```{r ctplotheading}
 
-InhibPresent <- length(MyPerpetrator) > 0 && complete.cases(MyPerpetrator)
-SubstrateInGraph <- unique(Data$Compound[Data$CompoundID == "substrate"])
-MyTissue <- unique(ct_dataframe$Tissue)
-MyCompoundID <- unique(ct_dataframe$CompoundID)
-
-# If they supplied existing_exp_details to ct_plot, then we already filtered
-# to get only the applicable sim_data_file and also only have the
-# item MainDetails from that list.
-if(exists("Deets", inherits = FALSE)){
-   N_indiv_obs <- Deets$NumSubjTrial
-   N_indiv <- Deets$NumTrials * Deets$NumSubjTrial
-   
-   SingMult_sub <- ifelse(Deets$Regimen_sub %in% c("custom dosing",
-                                                   "Multiple Dose"),
-                          "multiple", "single")
-   
-   SDMD_sub_txt <- paste(ifelse(SingMult_sub == "single", "a single", "multiple"),
-                         switch(Deets$DoseRoute_sub,
-                                "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY**",
-                                "Oral" = "oral",
-                                "IV" = "IV"),
-                         ifelse(SingMult_sub == "single", "dose", "doses")
-   )
-   
-   Substrate <- case_when(
-      "logical" %in% class(prettify_compound_names) &&
-         prettify_compound_names == TRUE ~ prettify_compound_name(Deets$Substrate), 
-      "character" %in% class(prettify_compound_names) ~ prettify_compound_names["substrate"], 
-      TRUE ~ Deets$Substrate)
-   
-   DoseFreq_inhib <- switch(as.character(Deets$DoseInt_inhib),
-                            "12" = "BID",
-                            "24" = "QD",
-                            "8" = "three times per day",
-                            "6" = "four times per day",
-                            "48" = "every other day",
-                            "NA" = "single dose")
-   DoseFreq_inhib <- ifelse(is.null(DoseFreq_inhib),
-                            # paste("Q", DoseFreq_inhib, "H"),
-                            "**CUSTOM DOSING - FILL IN MANUALLY**",
-                            DoseFreq_inhib)
-   
-   NumDaysInhib <- suppressWarnings(
-      Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
-   NumDaysInhib <- ifelse(is.na(NumDaysInhib), "**CUSTOM DOSING - FILL IN MANUALLY**",
-                          NumDaysInhib)
-   
-   DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
-   LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
-   DoseDay <- paste0(DoseDay, 
-                     case_when(LastDig %in% c(0, 4:9) ~ "^th^",
-                               LastDig == 1 ~ "^st^",
-                               LastDig == 2~ "^nd^",
-                               LastDig == 3 ~ "^rd^"))
-   
-   Dose_inhib <- Deets$Dose_inhib
-   DoseUnits_inhib <- Deets$Units_dose_inhib
-   Pop <- sub("healthy volunteers", "healthy subjects", 
-              tidyPop(Deets$Population)$Population)
-   
-} else {
-   N_indiv_obs <- "**XXX**"
-   N_indiv <- "**XXX**"
-   SDMD_sub_txt <- "a SINGLE/MULTIPLE ORAL/IV DOSES"
-   NumDaysInhib <- "**XXX**"
-   DoseDay <- "**XXth**"
-   Dose_inhib <- "**XX**"
-   DoseUnits_inhib <- "mg"
-   DoseFreq_inhib <- "**QD/BID/TID**"
-   Substrate <- "**substrate XXX**"
-   Pop <- "healthy subjects / patients with [complaint]"
-}
-
-
-if(length(SubstrateInGraph) > 0){
-   # This is when it's a plot of the substrate. 
-   
-   if(class(prettify_compound_names) == "logical" &&
-      # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
-      prettify_compound_names){
-      SubstrateInGraph <- prettify_compound_name(SubstrateInGraph)
-   } else if(class(prettify_compound_names) == "character"){
-      SubstrateInGraph <- prettify_compound_names["substrate"]
-   } 
-   
-   SubstrateInGraph <- ifelse(length(SubstrateInGraph) == 0, "substrate", SubstrateInGraph)
-   MyCompound <- SubstrateInGraph
-   
-   Text2 <- ifelse(InhibPresent, 
-                   paste0("co-administered with ", MyPerpetrator, " "), "")
-   
-} else {
-   
-  MyCompound <- case_when(
-      "logical" %in% class(prettify_compound_names) &&
-         prettify_compound_names == TRUE ~ 
-         prettify_compound_name(unique(ct_dataframe$Compound)), 
-      "character" %in% class(prettify_compound_names) &&
-         unique(ct_dataframe$CompoundID) %in% names(prettify_compound_names) ~ 
-         prettify_compound_names[unique(ct_dataframe$CompoundID)], 
-      "character" %in% class(prettify_compound_names) &&
-         unique(ct_dataframe$CompoundID) %in% c("inhibitor 1", 
-                                                "inhibitor 2", 
-                                                "inhibitor 1 metabolite") &
-         "inhibitor" %in% names(prettify_compound_names) ~ 
-         prettify_compound_names["inhibitor"], 
-      TRUE ~ unique(ct_dataframe$CompoundID))
-   
-   Text2 <- "" # Text chunk already has MyCompound included; this is correct.
-   
-}
-
 Text1 <- switch(linear_or_log, 
                 "both" = "Linear (A) and log-linear (B)",
                 "both horizontal" ="Linear (A) and log-linear (B)",
@@ -135,12 +23,87 @@ Text1 <- switch(linear_or_log,
                 "semi-log" = "Log-linear", 
                 "horizontal and vertical" = "Linear (A) and log-linear (B)")
 
+# SubstrateInGraph <- unique(Data$Compound[Data$CompoundID == "substrate"])
+MyTissue <- unique(ct_dataframe$Tissue)
+MyCompoundID <- unique(ct_dataframe$CompoundID)
+MyCompound <- case_when(
+   "logical" %in% class(prettify_compound_names) &&
+      prettify_compound_names == TRUE ~ 
+      prettify_compound_name(unique(ct_dataframe$Compound)), 
+   
+   "logical" %in% class(prettify_compound_names) &&
+      prettify_compound_names == FALSE ~ 
+      unique(ct_dataframe$Compound), 
+   
+   "character" %in% class(prettify_compound_names) & 
+      MyCompoundID %in% names(prettify_compound_names) ~ 
+      prettify_compound_names[MyCompoundID], 
+   
+   TRUE ~ unique(ct_dataframe$Compound)
+)
+DDI <- length(MyPerpetrator) > 0 && complete.cases(MyPerpetrator)
+DDI <- ifelse(MyCompoundID %in% c("inhibitor 1", "inhibitor 2", 
+                                  "inhibitor 1 metabolite"), 
+              FALSE, DDI)
+
+if(class(existing_exp_details) == "logical"){
+   
+   Pop <- "**healthy subjects / patients with [complaint]**"
+   
+   DosingText_sub_lower <- "a **single oral** dose of **XXX** mg **Drug XXX**"
+   DosingText_inhib_lower <- "**multiple oral** doses of **XXX** mg **Perpetrator XXX**"
+   DoseDay_ordinal <- "**XXXth**"
+   NumDaysInhib <- "**XXX**"
+   Dose_inhib <- "**XXX**"
+   Units_dose_inhib <- "**mg**"
+   DoseFreq_inhib <- "**QD/BID**"
+   
+   N_indiv_obs <- "**XXX**"
+   N_indiv <- "**XXX**"
+   # SDMD_sub_txt <- "a SINGLE/MULTIPLE ORAL/IV DOSES"
+   # NumDaysInhib <- "**XXX**"
+   # DoseDay <- "**XXth**"
+   # Dose_inhib <- "**XX**"
+   # DoseUnits_inhib <- "mg"
+   # DoseFreq_inhib <- "**QD/BID/TID**"
+   # Substrate <- "**substrate XXX**"
+   
+} else {
+   
+   TextPieces <- make_text_legos(sim_data_file = unique(ct_dataframe$File),
+                                 existing_exp_details = existing_exp_details, 
+                                 prettify_compound_names = prettify_compound_names)
+   
+   Pop <- TextPieces$Pop
+   DosingText_sub_lower <- TextPieces$DosingText_sub_lower
+   DosingText_inhib_lower <- TextPieces$DosingText_inhib_lower
+   DoseDay_ordinal <- TextPieces$DoseDay_ordinal
+   NumDaysInhib <- TextPieces$NumDaysInhib
+   Dose_inhib <- Deets$Dose_inhib
+   Units_dose_inhib <- Deets$Units_dose_inhib
+   DoseFreq_inhib <- TextPieces$DoseFreq_inhib
+   N_indiv_obs <- Deets$NumSubjTrial
+   N_indiv <- Deets$NumSubjTrial * Deets$NumTrials
+   MyPerpetrator <- TextPieces$MyPerpetrator
+   
+   DDItext1 <- ifelse(DDI, 
+                      paste0("co-administered with ", MyPerpetrator, " "), 
+                      "")
+   
+}
+
 fig_width <- ifelse(linear_or_log == "horizontal and vertical", 5, fig_width)
 fig_height <- ifelse(linear_or_log == "horizontal and vertical", 6, fig_height)
 
+Heading <- paste0("***Figure XXX***. *", 
+                  Text1, " simulated ", MyTissue, 
+                  " concentration-time profiles of ", 
+                  MyCompound, " ", DDItext1, "in ", 
+                  Pop, "*")
+
 ```
 
-*Figure XXX. `r Text1` simulated `r MyTissue` concentration-time profiles of `r MyCompound` `r Text2`in `r Pop`*
+`r Heading`
 
 ```{r ctplot, fig.width = fig_width, fig.height = fig_height}
 
@@ -154,62 +117,52 @@ if(qc_graph){
 
 ```{r ctplotCaption}
 
-if(length(SubstrateInGraph) > 0){
-   # This is when it's a graph of substrate concentrations. 
+ObsIncluded <- nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0
+ObsShowsMean <- all(c(exists("obs_dataframe", inherits = FALSE), 
+                      exists("check", inherits = FALSE))) &&
+   nrow(obs_dataframe) > 0 && any(check$N > 1)
+
+if(DDI){
    
-   ObsIncluded <- nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0
-   
-   ObsShowsMean <- all(c(exists("obs_dataframe", inherits = FALSE), 
-                         exists("check", inherits = FALSE))) &&
-      nrow(obs_dataframe) > 0 && any(check$N > 1)
-   
-   if(InhibPresent){
-      
-      CapText1 <- paste0(
-         "Depicted are ", MyTissue,
-         " concentration-time profiles of ", 
-         SubstrateInGraph, " following ", 
-         SDMD_sub_txt, " of ", SubstrateInGraph, 
-         " in the absence of ", MyPerpetrator, 
-         " (solid line) and on the ", DoseDay, 
-         " day of ", NumDaysInhib, 
-         " days of dosing of ", 
-         MyPerpetrator, " (dashed line).")
-      
-   } else {
-      
-      CapText1 <- paste0(
-         "Depicted are ", MyTissue, " concentration-time profiles of ", 
-         ifelse(ObsIncluded, 
-                paste0("simulated (lines) and observed data (circles; ",  
-                       ifelse(ObsShowsMean, 
-                              paste0(mean_type, 
-                                     " mean of n = ", N_indiv_obs, 
-                                     " individuals; "), 
-                              ""),
-                       "Clinical Study **XXX**) "), 
-                "simulated data (lines) "), 
-         "for ", SubstrateInGraph, ".") 
+   if(complete.cases(Deets$Inhibitor2)){
+      warning("The figure heading and caption text have not been set up for when there are two perpetrators in a DDI simulation. Please check and adjust the text carefull.\n", 
+              call. =)
    }
    
+   CapText1 <- paste0(
+      "Depicted are ", MyTissue,
+      " concentration-time profiles of ", 
+      MyCompound, " following ", 
+      case_when(MyCompoundID %in% c("substrate", "primary metabolite 1", 
+                                    "primary metabolite 2",
+                                    "secondary metabolite") ~ DosingText_sub_lower, 
+                MyCompoundID %in% c("inhibitor 1", 
+                                    "inhibitor 1 metabolite") ~ DosingText_inhib_lower, 
+                TRUE ~ "**multiple oral doses of XXX**"), 
+      " in the absence of ", MyPerpetrator, 
+      " (solid line) and on the ", 
+      DoseDay_ordinal, " day of ",
+      NumDaysInhib, " days of dosing of ",
+      MyPerpetrator, " ", Dose_inhib, " ",
+      Units_dose_inhib, " ",
+      DoseFreq_inhib, " (dashed line).")
    
 } else {
-   # This is when it's a graph of a compound other than substrate. 
    
-   if(InhibPresent){
-      CapText1 <- paste0("Depicted are ", 
-                         MyTissue, " concentration-time profiles of ", MyCompound, 
-                         " with administration of ", Substrate, " on the ", 
-                         DoseDay, 
-                         " day of ", NumDaysInhib, 
-                         " days of dosing of ", 
-                         MyPerpetrator, 
-                         ".")
-   } else {
-      CapText1 <- paste0("Depicted are ", 
-                         MyTissue, " concentration-time profiles of ", 
-                         MyCompound, ".")
-   }
+   CapText1 <- paste0(
+      "Depicted are ", 
+      ifelse(ObsIncluded, 
+             paste0("simulated (lines) and observed (circles; ",  
+                    ifelse(ObsShowsMean, 
+                           paste0(mean_type, 
+                                  " mean of n = ", N_indiv_obs, 
+                                  " individuals; "), 
+                           ""),
+                    "Clinical Study **XXX**) "),
+             "simulated "), 
+      MyTissue, " concentration-time profiles of ", 
+      MyCompound, ".") 
+   
 }
 
 CapText2 <- switch(
@@ -238,7 +191,6 @@ CapText2 <- switch(
              " mean values of simulated individual trials and the black lines portray the ",
              mean_type, 
              " mean data of the simulated population (n = ", N_indiv, "). The dashed lines represent the 5^th^ and 95^th^ percentiles."))
-
 
 ```
 

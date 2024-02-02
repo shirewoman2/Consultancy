@@ -58,77 +58,194 @@ draft_results_text <- function(sim_data_file,
    Deets <- TextPieces$Deets
    MySubstrate <- TextPieces$MySubstrate
    MyPerpetrator <- TextPieces$MyPerpetrator
-   SDorMD <- TextPieces$SDorMD
    SingMult_sub <- TextPieces$SingMult_sub
    Pop <- TextPieces$Pop
-   Body_DDI1 <- TextPieces$Body_DDI1
    Heading <- TextPieces$Heading
-   SDMD_sub_txt <- TextPieces$SDMD_sub_txt
+   DosingText_sub_lower <- TextPieces$DosingText_sub_lower
+   LastDoseDay_sub <- TextPieces$LastDoseDay_sub
+   DoseDay_ordinal <- TextPieces$DoseDay_ordinal
+   NumDaysInhib <- TextPieces$NumDaysInhib
+   DoseFreq_inhib <- TextPieces$DoseFreq_inhib
    
+   # Development or verification ----------------------------------------------
    
-   Body_dev_ver <- paste0(
-      "The simulated profile of ", 
-      MySubstrate, " as illustrated in **Figure XXX** ", 
-      switch(SDorMD, 
-             "single dose" = "was ", 
-             "multiple dose" = paste0("for Day 1 and **Figure XXX** for Day ", 
-                                      Deets$SimDuration %/% 24, 
-                                      " were "),
-             "custom dosing" = paste0("for Day 1 and **Figure XXX** for Day ", 
-                                      Deets$SimDuration %/% 24, 
-                                      " were ")), 
-      "comparable to the clinical data (**Figure XXX**). In addition, the simulated ", 
-      mean_type, switch(SDorMD, 
-                        "single dose" = " AUC~inf~, ", 
-                        "multiple dose" = " AUC~inf~, AUC~tau~, ", 
-                        "custom dosing" = " AUC~inf~, AUC~tau~, "),
-      "CL/F, C~max~, and half life values and the median t~max~ value for ", 
+   Body_dev_ver_noDDI <- paste0(
+      "The simulated ", 
+      switch(SingMult_sub, 
+             "single" = "single-", 
+             "multiple" = "single- and multiple-"), 
+      "dose data as illustrated in **Figure XXX** ", 
+      switch(SingMult_sub, 
+             "single" = "", 
+             "multiple" = paste0("for Day 1 and in **Figure XXX** for Day ", 
+                                 LastDoseDay_sub, " ")), 
+      "were comparable to the clinical data. In addition, the simulated ", 
+      mean_type, " mean ", 
+      switch(SingMult_sub, 
+             "single" = "AUC~inf~ and C~max~ ", 
+             "multiple" = "AUC~inf~, AUC~tau~, and C~max~ "), 
+      "and median t~max~ values for ", 
       MySubstrate, 
-      " administered to ", 
-      Pop, 
-      " were within **XXX fold** of the observed values (**Table XXX**)", 
-      switch(SDorMD, 
-             "single dose" = ".", 
-             "multiple dose" = paste0(" on Day 1 and Day ", 
-                                      Deets$SimDuration %/% 24, "."),
-             "custom dosing" = paste0(" on Day 1 and Day ", 
-                                      Deets$SimDuration %/% 24, ".")) 
+      switch(SingMult_sub, 
+             "single" = " ", 
+             "multiple" = paste0(" on Day 1 and on Day ", 
+                                 LastDoseDay_sub, " ")), 
+      "were within **XXX** fold of the observed values (**Table XXX**)."
    )
    
-   Body_DDI2 <- ifelse(MyPerpetrator == "none", 
-                       "", 
-                       paste0("Simulated plasma concentrations of ", 
-                              MyPerpetrator, 
-                              " are depicted in **Figure XXX**. Simulated hepatic **CYPXXX** levels in the absence and during administration of ", 
-                              MyPerpetrator, " are indicated in **Figure XXX**. "))
    
-   Body_app <- 
-      paste0("Mean simulated plasma concentrations following ", 
-             ifelse(SDorMD == "single dose", 
-                    SDMD_sub_txt, 
-                    paste0("a single and ", SDMD_sub_txt)), 
-             " of ", 
-             MySubstrate, " ", 
-             Body_DDI1, "to ", Pop, 
-             " are illustrated in **Figure XXX**", 
-             ifelse(SDorMD == "single dose", 
-                    ". ", 
-                    " and **Figure XXX**, respectively. "),
-             Body_DDI2, 
-             "The simulated ",
-             mean_type, switch(SDorMD, 
-                               "single dose" = " AUC~inf~ ", 
-                               "multiple dose" = " AUC~inf~, AUC~tau~, ", 
-                               "custom dosing" = " AUC~inf~, AUC~tau~, "),
-             "and C~max~ values ", 
-             ifelse(MyPerpetrator == "none", 
-                    "", 
-                    paste0("and corresponding GMRs for ", 
-                           MySubstrate, 
-                           " in the presence and absence of ", 
-                           MyPerpetrator, " ")),
-             "are listed in **Table XXX**."
-      )
+   Body_DDI1 <-
+      ifelse(MyPerpetrator == "none",
+             "",
+             paste0("in the absence of ",
+                    MyPerpetrator, " and ",
+                    ifelse(SingMult_sub == "multiple", "with",
+                           paste("on the", DoseDay_ordinal, "day of")),
+                    " ", NumDaysInhib, " days of dosing of ",
+                    MyPerpetrator, " (", Deets$Dose_inhib, " ",
+                    Deets$Units_dose_inhib, " ",
+                    DoseFreq_inhib, ")"))
+   
+   
+   Body_dev_ver_DDI <- paste0(
+      "The simulated ", 
+      case_match(Deets$DoseRoute_sub, 
+                 "Oral" ~ "oral", 
+                 "IV" ~ "IV", 
+                 .default = Deets$DoseRoute_sub), 
+      switch(SingMult_sub, 
+             "single" = "single- ", 
+             "multiple" = "single- and multiple-"), 
+      "dose data ", Body_DDI1, " to ", Pop, 
+      " are illustrated in **Figure XXX**. Simulated ", 
+      MyPerpetrator, " plasma concentations are depicted in **Figure XXX**. ", 
+      "Simulated **hepatic  and gut CYPXXX** levels in the absence and during administration of ", 
+      MyPerpetrator, " are provided in **Figure XXX**. Simulated and observed ", 
+      mean_type, " mean ",
+      switch(SingMult_sub, 
+             "single" = "AUC~inf~ and C~max~ ", 
+             "multiple" = "AUC~tau~ and C~max~ "), 
+      "values and corresponding geometric mean ratios (GMR) for ", 
+      MySubstrate, " in the absence or presence of ", 
+      MyPerpetrator, " are listed in **Table XXX**. The simulated profiles of ", 
+      MySubstrate, " were comparable to the clinical data. In addition, the simulated ", 
+      mean_type, " mean ",
+      switch(SingMult_sub, 
+             "single" = "AUC~inf~ and C~max~ ", 
+             "multiple" = "AUC~tau~ and C~max~ "), 
+      "ratios for ", MySubstrate, " in the presence of ", 
+      MyPerpetrator, " were within **XXX** fold of the observed values. Thus, a ", 
+      MySubstrate, " **fm~CYPXXX~** of **XXX** was assumed in all further simulations."
+   )
+   
+   
+   
+   Body_dev_ver <- ifelse(MyPerpetrator == "none",
+                          Body_dev_ver_noDDI, 
+                          Body_dev_ver_DDI)
+   
+   
+   #    MySubstrate, " as illustrated in **Figure XXX** ", 
+   #    switch(SDorMD, 
+   #           "single dose" = "was ", 
+   #           "multiple dose" = paste0("for Day 1 and **Figure XXX** for Day ", 
+   #                                    Deets$SimDuration %/% 24, 
+   #                                    " were "),
+   #           "custom dosing" = paste0("for Day 1 and **Figure XXX** for Day ", 
+   #                                    Deets$SimDuration %/% 24, 
+   #                                    " were ")), 
+   #    "comparable to the clinical data (**Figure XXX**). In addition, the simulated ", 
+   #    mean_type, switch(SDorMD, 
+   #                      "single dose" = " AUC~inf~, ", 
+   #                      "multiple dose" = " AUC~inf~, AUC~tau~, ", 
+   #                      "custom dosing" = " AUC~inf~, AUC~tau~, "),
+   #    "CL/F, C~max~, and half life values and the median t~max~ value for ", 
+   #    MySubstrate, 
+   #    " administered to ", 
+   #    Pop, 
+   #    " were within **XXX fold** of the observed values (**Table XXX**)", 
+   #    switch(SDorMD, 
+   #           "single dose" = ".", 
+   #           "multiple dose" = paste0(" on Day 1 and Day ", 
+   #                                    Deets$SimDuration %/% 24, "."),
+   #           "custom dosing" = paste0(" on Day 1 and Day ", 
+   #                                    Deets$SimDuration %/% 24, ".")) 
+   # )
+   
+   
+   
+   # Body_DDI2 <- ifelse(MyPerpetrator == "none", 
+   #                     "", 
+   #                     paste0("Simulated plasma concentrations of ", 
+   #                            MyPerpetrator, 
+   #                            " are depicted in **Figure XXX**. Simulated hepatic **CYPXXX** levels in the absence and during administration of ", 
+   #                            MyPerpetrator, " are indicated in **Figure XXX**. "))
+   
+   # Body_app <- 
+   #    paste0("Mean simulated plasma concentrations following ", 
+   #           ifelse(SDorMD == "single dose", 
+   #                  SDMD_sub_txt, 
+   #                  paste0("a single and ", SDMD_sub_txt)), 
+   #           " of ", 
+   #           MySubstrate, " ", 
+   #           Body_DDI1, "to ", Pop, 
+   #           " are illustrated in **Figure XXX**", 
+   #           ifelse(SDorMD == "single dose", 
+   #                  ". ", 
+   #                  " and **Figure XXX**, respectively. "),
+   #           Body_DDI2, 
+   #           "The simulated ",
+   #           mean_type, switch(SDorMD, 
+   #                             "single dose" = " AUC~inf~ ", 
+   #                             "multiple dose" = " AUC~inf~, AUC~tau~, ", 
+   #                             "custom dosing" = " AUC~inf~, AUC~tau~, "),
+   #           "and C~max~ values ", 
+   #           ifelse(MyPerpetrator == "none", 
+   #                  "", 
+   #                  paste0("and corresponding GMRs for ", 
+   #                         MySubstrate, 
+   #                         " in the presence and absence of ", 
+   #                         MyPerpetrator, " ")),
+   #           "are listed in **Table XXX**."
+   #    )
+   
+   
+   # Application --------------------------------------------------------------
+   
+   Body_app_noDDI <- 
+      paste0("Mean simulated plasma ", 
+             MySubstrate, 
+             " concentrations following ", 
+             DosingText_sub_lower, 
+             " to ", Pop, " are illustrated in **Figure XXX**. The simulated ", 
+             mean_type, " mean ", 
+             switch(SingMult_sub, 
+                    "single" = "AUC~inf~ and C~max~ ", 
+                    "multiple" = "AUC~tau~ and C~max~ "), 
+             "values are listed in **Table XXX**.")
+   
+   Body_app_DDI <- 
+      paste0("Mean simulated plasma ", 
+             MySubstrate, 
+             " concentrations following ", 
+             DosingText_sub_lower, " ",
+             Body_DDI1, 
+             " to ", Pop, 
+             " are illustrated in **Figure XXX**. Simulated ", 
+             MyPerpetrator, " plasma concentations are depicted in **Figure XXX**. ", 
+             "Simulated **hepatic  and gut CYPXXX** levels in the absence and during administration of ", 
+             MyPerpetrator, " are provided in **Figure XXX**. Simulated and observed ", 
+             mean_type, " mean ",
+             switch(SingMult_sub, 
+                    "single" = "AUC~inf~ and C~max~ ", 
+                    "multiple" = "AUC~tau~ and C~max~ "), 
+             "values and corresponding geometric mean ratios (GMR) for ", 
+             MySubstrate, " in the absence or presence of ", 
+             MyPerpetrator, " are listed in **Table XXX**.")
+   
+   Body_app <- ifelse(MyPerpetrator == "none", 
+                      Body_app_noDDI, 
+                      Body_app_DDI)
    
    return(list(Heading = Heading, 
                Body_dev_ver = Body_dev_ver, 

@@ -46,33 +46,9 @@ make_text_legos <- function(sim_data_file,
    
    # Dosing regimens ----------------------------------------------------------
    
-   SDorMD <- tolower(Deets$Regimen_sub)
-   
    SingMult_sub <- ifelse(Deets$Regimen_sub %in% c("custom dosing",
                                                    "Multiple Dose"),
                           "multiple", "single")
-   
-   SingMult_inhib <- ifelse(Deets$Regimen_inhib %in% c("custom dosing",
-                                                       "Multiple Dose"),
-                            "multiple", "single")
-   
-   SDMD_sub_txt <- paste(ifelse(SingMult_sub == "single", "a single", "multiple"),
-                         switch(Deets$DoseRoute_sub,
-                                "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY**",
-                                "Oral" = "oral",
-                                "IV" = "IV"),
-                         ifelse(SingMult_sub == "single", "dose", "doses")
-   )
-   
-   SDMD_inhib_txt <- paste(ifelse(SingMult_inhib == "single", "a single", "multiple"),
-                           
-                           switch(Deets$DoseRoute_inhib,
-                                  "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY**",
-                                  "Oral" = "oral",
-                                  "IV" = "IV"),
-                           
-                           ifelse(SingMult_inhib == "single", "dose", "doses")
-   )
    
    DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
                           "12" = "BID",
@@ -86,43 +62,108 @@ make_text_legos <- function(sim_data_file,
                           "**CUSTOM DOSING - FILL IN MANUALLY**",
                           DoseFreq_sub)
    
-   DoseFreq_inhib <- switch(as.character(Deets$DoseInt_inhib),
-                            "12" = "BID",
-                            "24" = "QD",
-                            "8" = "three times per day",
-                            "6" = "four times per day",
-                            "48" = "every other day",
-                            "NA" = "single dose")
-   DoseFreq_inhib <- ifelse(is.null(DoseFreq_inhib),
-                            # paste("Q", DoseFreq_inhib, "H"),
-                            "**CUSTOM DOSING - FILL IN MANUALLY**",
-                            DoseFreq_inhib)
+   DosingText_sub_lower <- 
+      paste0(ifelse(SingMult_sub == "single", "a single ", "multiple "),
+             switch(Deets$DoseRoute_sub,
+                    "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY** ",
+                    "Oral" = "oral ",
+                    "IV" = "IV "),
+             ifelse(SingMult_sub == "single", "dose", "doses"), 
+             " of ", Deets$Dose_sub, " ", 
+             ifelse(is.na(Deets$Units_dose_sub), 
+                    "", paste0(Deets$Units_dose_sub, " ")),
+             MySubstrate,
+             ifelse(SingMult_sub == "multiple", 
+                    paste0(" ", DoseFreq_sub), ""))
    
-   NumDaysInhib <- suppressWarnings(
-      Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
-   NumDaysInhib <- ifelse(is.na(NumDaysInhib), "**CUSTOM DOSING - FILL IN MANUALLY**",
-                          NumDaysInhib)
+   DosingText_sub_upper <- 
+      paste0(ifelse(SingMult_sub == "single", "a Single ", "Multiple "),
+             switch(Deets$DoseRoute_sub,
+                    "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY** ",
+                    "Oral" = "Oral ",
+                    "IV" = "IV "),
+             ifelse(SingMult_sub == "single", "Dose", "Doses"), 
+             " of ", Deets$Dose_sub, " ", 
+             ifelse(is.na(Deets$Units_dose_sub), 
+                    "", paste0(Deets$Units_dose_sub, " ")),
+             ifelse(class(prettify_compound_names) == "logical" &&
+                       prettify_compound_names == TRUE, 
+                    str_to_title(MySubstrate), MySubstrate),
+             ifelse(SingMult_sub == "multiple", 
+                    paste0(" ", DoseFreq_sub), ""))
    
-   DoseDay <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
-   LastDig <- as.numeric(str_sub(DoseDay, start = -1, end = -1))
-   DoseDay <- paste0(DoseDay, 
-                     case_when(LastDig %in% c(0, 4:9) ~ "^th^",
-                               LastDig == 1 ~ "^st^",
-                               LastDig == 2~ "^nd^",
-                               LastDig == 3 ~ "^rd^"))
    
-   Body_DDI1 <- 
-      ifelse(MyPerpetrator == "none", 
-             "", 
-             paste0("in the absence of ", 
-                    MyPerpetrator, " and ", 
-                    ifelse(SingMult_sub == "multiple", "with",
-                           paste("on the", DoseDay, "day of")), 
-                    " ", NumDaysInhib, " days of dosing of ", 
-                    MyPerpetrator, " (", Deets$Dose_inhib, " ", 
-                    Deets$Units_dose_inhib, " ", 
-                    DoseFreq_inhib, ") "))
+   if(MyPerpetrator != "none"){
+      
+      SingMult_inhib <- ifelse(Deets$Regimen_inhib %in% c("custom dosing",
+                                                          "Multiple Dose"),
+                               "multiple", "single")
+      
+      DoseFreq_inhib <- switch(as.character(Deets$DoseInt_inhib),
+                               "12" = "BID",
+                               "24" = "QD",
+                               "8" = "three times per day",
+                               "6" = "four times per day",
+                               "48" = "every other day",
+                               "NA" = "single dose")
+      DoseFreq_inhib <- ifelse(is.null(DoseFreq_inhib),
+                               # paste("Q", DoseFreq_inhib, "H"),
+                               "**CUSTOM DOSING - FILL IN MANUALLY**",
+                               DoseFreq_inhib)
+      
+      DosingText_inhib_lower <- 
+         paste0(ifelse(SingMult_inhib == "single", "a single ", "multiple "),
+                switch(Deets$DoseRoute_inhib,
+                       "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY** ",
+                       "Oral" = "oral ",
+                       "IV" = "IV "),
+                ifelse(SingMult_inhib == "single", "dose", "doses"), 
+                " of ", Deets$Dose_inhib, " ", 
+                ifelse(is.na(Deets$Units_dose_inhib), 
+                       "", paste0(Deets$Units_dose_inhib, " ")),
+                MyPerpetrator,
+                ifelse(SingMult_inhib == "multiple", 
+                       paste0(" ", DoseFreq_inhib), ""))
+      
+      DosingText_inhib_upper <- 
+         paste0(ifelse(SingMult_inhib == "single", "a Single ", "Multiple "),
+                switch(Deets$DoseRoute_inhib,
+                       "custom dosing" = "**CUSTOM DOSING - FILL IN MANUALLY** ",
+                       "Oral" = "Oral ",
+                       "IV" = "IV "),
+                ifelse(SingMult_inhib == "single", "Dose", "Doses"), 
+                " of ", Deets$Dose_inhib, " ", 
+                ifelse(is.na(Deets$Units_dose_inhib), 
+                       "", paste0(Deets$Units_dose_inhib, " ")),
+                ifelse(class(prettify_compound_names) == "logical" &&
+                          prettify_compound_names == TRUE, 
+                       str_to_title(MyPerpetrator), MyPerpetrator),
+                ifelse(SingMult_inhib == "multiple", 
+                       paste0(" ", DoseFreq_inhib), ""))
+      
+      NumDaysInhib <- suppressWarnings(
+         Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
+      NumDaysInhib <- ifelse(is.na(NumDaysInhib), "**CUSTOM DOSING - FILL IN MANUALLY**",
+                             NumDaysInhib)
+      
+      DoseDay_ordinal <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
+      LastDig <- as.numeric(str_sub(DoseDay_ordinal, start = -1, end = -1))
+      DoseDay_ordinal <- paste0(DoseDay_ordinal,
+                        case_when(LastDig %in% c(0, 4:9) ~ "^th^",
+                                  LastDig == 1 ~ "^st^",
+                                  LastDig == 2~ "^nd^",
+                                  LastDig == 3 ~ "^rd^"))
+      
+   } else {
+      DosingText_inhib_lower <- NA
+      DosingText_inhib_upper <- NA
+      NumDaysInhib <- NA
+      DoseFreq_inhib <- NA
+      DoseDay_ordinal <- NA
+   }
    
+   # LastDoseDay_sub <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
+   LastDoseDay_sub <- (Deets$StartHr_sub + Deets$NumDoses_sub * Deets$DoseInt_sub) %/% 24
    
    # Population ---------------------------------------------------------------
    
@@ -136,24 +177,11 @@ make_text_legos <- function(sim_data_file,
    
    Heading_DDI <- ifelse(MyPerpetrator == "none", 
                          "", 
-                         paste0(" Administered with ",
-                                ifelse(class(prettify_compound_names) == "logical" &&
-                                          prettify_compound_names == TRUE, 
-                                       str_to_title(MyPerpetrator), MyPerpetrator),
-                                " "))
+                         paste0(" with ", DosingText_inhib_upper))
    
    Heading <- paste0("Simulation of ", 
-                     sub("^A", "a", str_to_title(SDMD_sub_txt)), 
-                     " of ", Deets$Dose_sub, " ", 
-                     Deets$Units_dose_sub, " ", 
-                     ifelse(class(prettify_compound_names) == "logical" &&
-                               prettify_compound_names == TRUE, 
-                            str_to_title(MySubstrate), MySubstrate),
-                     " ",
-                     ifelse(SingMult_sub == "multiple", 
-                            paste0(DoseFreq_sub, " "), ""), 
-                     Heading_DDI, "in ", PopCap)
-   
+                     DosingText_sub_upper, 
+                     Heading_DDI, " in ", PopCap)
    
    
    # Output -------------------------------------------------------------------
@@ -162,11 +190,17 @@ make_text_legos <- function(sim_data_file,
       Deets = Deets, 
       MySubstrate = MySubstrate, 
       MyPerpetrator = MyPerpetrator, 
-      SDorMD = SDorMD, 
-      SDMD_sub_txt = SDMD_sub_txt, 
       SingMult_sub = SingMult_sub, 
+      DoseFreq_sub = DoseFreq_sub, 
+      DoseFreq_inhib = DoseFreq_inhib, 
+      DosingText_sub_lower = DosingText_sub_lower, 
+      DosingText_sub_upper = DosingText_sub_upper,
+      DosingText_inhib_lower = DosingText_inhib_lower, 
+      DosingText_inhib_upper = DosingText_inhib_upper,
       Pop = Pop,
-      Body_DDI1 = Body_DDI1,
+      LastDoseDay_sub = LastDoseDay_sub,
+      DoseDay_ordinal = DoseDay_ordinal,
+      NumDaysInhib = NumDaysInhib, 
       Heading = Heading
    ))
    
