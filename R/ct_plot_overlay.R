@@ -813,7 +813,8 @@ ct_plot_overlay <- function(ct_dataframe,
    MyPerpetrator <- unique(ct_dataframe$Inhibitor) %>% as.character()
    MyPerpetrator <- MyPerpetrator[!MyPerpetrator == "none"]
    
-   if(length(MyPerpetrator) > 0 & class(ct_dataframe$Inhibitor) != "factor"){
+   if(length(MyPerpetrator) > 0 & class(ct_dataframe$Inhibitor) != "factor" &
+      "none" %in% ct_dataframe$Inhibitor){
       ct_dataframe <- ct_dataframe %>%
          mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
    }
