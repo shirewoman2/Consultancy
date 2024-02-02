@@ -163,7 +163,7 @@ make_text_legos <- function(sim_data_file,
    }
    
    # LastDoseDay_sub <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
-   LastDoseDay_sub <- (Deets$StartHr_sub + Deets$NumDoses_sub * Deets$DoseInt_sub) %/% 24
+   LastDoseDay_sub <- (Deets$StartHr_sub + Deets$NumDoses_sub * as.numeric(Deets$DoseInt_sub)) %/% 24
    
    # Population ---------------------------------------------------------------
    

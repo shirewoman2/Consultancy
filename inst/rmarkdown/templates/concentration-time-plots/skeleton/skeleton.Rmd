@@ -46,7 +46,7 @@ DDI <- ifelse(MyCompoundID %in% c("inhibitor 1", "inhibitor 2",
                                   "inhibitor 1 metabolite"), 
               FALSE, DDI)
 
-if(class(existing_exp_details) == "logical"){
+if("logical" %in% class(existing_exp_details)){
    
    Pop <- "**healthy subjects / patients with [complaint]**"
    
@@ -58,7 +58,8 @@ if(class(existing_exp_details) == "logical"){
    Units_dose_inhib <- "**mg**"
    DoseFreq_inhib <- "**QD/BID**"
    
-   N_indiv_obs <- "**XXX**"
+   N_trials <- "**XXX**"
+   N_subjpertrial <- "**XXX**"
    N_indiv <- "**XXX**"
    # SDMD_sub_txt <- "a SINGLE/MULTIPLE ORAL/IV DOSES"
    # NumDaysInhib <- "**XXX**"
@@ -82,15 +83,16 @@ if(class(existing_exp_details) == "logical"){
    Dose_inhib <- Deets$Dose_inhib
    Units_dose_inhib <- Deets$Units_dose_inhib
    DoseFreq_inhib <- TextPieces$DoseFreq_inhib
-   N_indiv_obs <- Deets$NumSubjTrial
+   N_subjpertrial <- Deets$NumSubjTrial
+   N_trials <- Deets$NumTrials
    N_indiv <- Deets$NumSubjTrial * Deets$NumTrials
    MyPerpetrator <- TextPieces$MyPerpetrator
    
-   DDItext1 <- ifelse(DDI, 
-                      paste0("co-administered with ", MyPerpetrator, " "), 
-                      "")
-   
 }
+
+DDItext1 <- ifelse(DDI, 
+                   paste0("co-administered with ", MyPerpetrator, " "), 
+                   "")
 
 fig_width <- ifelse(linear_or_log == "horizontal and vertical", 5, fig_width)
 fig_height <- ifelse(linear_or_log == "horizontal and vertical", 6, fig_height)
@@ -124,7 +126,8 @@ ObsShowsMean <- all(c(exists("obs_dataframe", inherits = FALSE),
 
 if(DDI){
    
-   if(complete.cases(Deets$Inhibitor2)){
+   if("logical" %in% class(existing_exp_details) == FALSE && 
+      complete.cases(Deets$Inhibitor2)){
       warning("The figure heading and caption text have not been set up for when there are two perpetrators in a DDI simulation. Please check and adjust the text carefull.\n", 
               call. =)
    }
@@ -155,7 +158,7 @@ if(DDI){
              paste0("simulated (lines) and observed (circles; ",  
                     ifelse(ObsShowsMean, 
                            paste0(mean_type, 
-                                  " mean of n = ", N_indiv_obs, 
+                                  " mean of n = ", N_subjpertrial, 
                                   " individuals; "), 
                            ""),
                     "Clinical Study **XXX**) "),
@@ -172,7 +175,7 @@ CapText2 <- switch(
              mean_type, 
              " mean values of simulated individual trials and the black lines portray the ",
              mean_type, 
-             " mean data of the simulated population (n = ", N_indiv, ")."), 
+             " mean data of the simulated population (n = ", N_trials, " trials of ", N_subjpertrial, " subjects per trial)."), 
    "percentiles" = 
       paste0("The grey lines represent the 5^th^ and 95^th^ percentiles and the solid black line the ",
              mean_type, 
