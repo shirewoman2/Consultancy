@@ -17,7 +17,7 @@ ct_plot_obs(
   obs_color = NA,
   obs_size = NA,
   obs_fill_trans = NA,
-  obs_line_trans = NA,
+  obs_line_trans = 0.5,
   connect_obs_points = TRUE,
   indiv_on_top = FALSE,
   include_errorbars = FALSE,
@@ -203,12 +203,11 @@ Acceptable values are from 0 (fully transparent, so no fill at all) to 1
 points will be 50 percent transparent, so the same as if this were set to
 0.5.}
 
-\item{obs_line_trans}{optionally specify the transparency for the outline of
-the observed data points, which can be helpful when you have a lot of
-points overlapping. Acceptable values are from 0 (fully transparent, so no
-line at all) to 1 (completely opaque or black). If left as the default NA,
-the observed data points will be opaque, so the same as if this were set to
-1.}
+\item{obs_line_trans}{specify the transparency for the outline of the
+observed data points, which can be helpful when you have a lot of points
+overlapping. Acceptable values are from 0 (fully transparent, so no line at
+all) to 1 (completely opaque or black), and the default is 0.5 for 50%
+transparent.}
 
 \item{connect_obs_points}{TRUE (default) or FALSE for whether to add
 connecting lines between observed data points from the same individual}
