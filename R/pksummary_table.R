@@ -1582,7 +1582,8 @@ pksummary_table <- function(sim_data_file = NA,
                       "default" =
                          bind_rows(AllPKParameters, 
                                    AllPKParameters %>% 
-                                      mutate(PKparameter = sub("_dose1|_last", "", PKparameter))) %>% 
+                                      mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
+                                             SortOrder = SortOrder + 25)) %>% # This should work based on how I've got the SortOrder set up in AllPKParameters.
                          select(PKparameter, SortOrder) %>% 
                          arrange(SortOrder) %>%
                          pull(PKparameter) %>% unique(), 
@@ -1603,35 +1604,24 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Any time AUCinf_dose1 and AUCinf_dose1_withInhib are both included in
    # PKToPull, only retain any AUCt_X that were specfically requested.
-   if(all(c("AUCinf_dose1", "AUCinf_dose1_withInhib") %in% PKToPull)){
-      if("AUCt_dose1" %in% PKparameters_orig == FALSE){
-         AUCParam <- setdiff(AUCParam, "AUCt_dose1")
-      }
-      
-      if("AUCt_dose1_withInhib" %in% PKparameters_orig == FALSE){
-         AUCParam <- setdiff(AUCParam, "AUCt_dose1_withInhib")
-      }
-      
-   } else if(any(str_detect(PKToPull, "_withInhib|_ratio"))) {
-      # There was a perpetrator but AUCinf and AUCinf with perp are not both
-      # present.
-      
-      # Do nothing here and keep all AUCParam. This is a place holder for
-      # trying to make this code clearer.
-      
-   } else {
-      # If there was no perpetrator, then only need to check whether AUCinf
-      # present and only keep AUCt if it was requested.
-      if("AUCt_dose1" %in% PKparameters_orig == FALSE){
-         AUCParam <- setdiff(AUCParam, "AUCt_dose1")
-      } # Otherwise, just keep all AUCParam.
-      
-   } 
-   PKToPull <- c(AUCParam, NonAUCParam)
+   if("AUCinf_dose1" %in% PKToPull & 
+      "AUCt_dose1" %in% PKparameters_orig == FALSE){
+      AUCParam <- setdiff(AUCParam, "AUCt_dose1")
+   }
    
+   if("AUCinf_dose1_withInhib" %in% PKToPull & 
+      "AUCt_dose1_withInhib" %in% PKparameters_orig == FALSE){
+      AUCParam <- setdiff(AUCParam, "AUCt_dose1_withInhib")
+   }
+   
+   if("AUCinf_ratio_dose1" %in% PKToPull & 
+      "AUCt_ratio_dose1" %in% PKparameters_orig == FALSE){
+      AUCParam <- setdiff(AUCParam, "AUCt_ratio_dose1")
+   }
+   
+   PKToPull <- c(AUCParam, NonAUCParam)
    PKToPull <- factor(PKToPull, levels = PKlevels)
    PKToPull <- sort(unique(PKToPull))
-   
    
    # Getting columns in a good order
    MyPKResults <- MyPKResults %>%

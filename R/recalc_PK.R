@@ -393,6 +393,9 @@ recalc_PK <- function(ct_dataframe,
    
    ## Calculating PK parameters for individual datasets ------------------------
    
+   # FIXME - Add check_doseint here. Also add option to trim to the last full
+   # dosing interval for calculations.
+   
    # FIXME - This is the code I used for Poonam when she had multiple dosing
    # intervals and simulation durations. Adapt this approach into the function
    # at some point.
