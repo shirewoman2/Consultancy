@@ -1307,6 +1307,12 @@ ct_plot <- function(ct_dataframe = NA,
    if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
       (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
       ylab <- y_axis_label
+   } else if(EnzPlot){
+      ylab <- paste("Relative",
+                    ifelse(unique(ct_dataframe$Tissue) == "liver", 
+                           "hepatic", unique(ct_dataframe$Tissue)),
+                    unique(ct_dataframe$Enzyme), 
+                    "abundance")
    }
    
    if((class(x_axis_label) == "character" && complete.cases(x_axis_label)) |
@@ -1527,6 +1533,11 @@ ct_plot <- function(ct_dataframe = NA,
          
          FileName <- basename(FileName)
          
+         if(exists("Deets", inherits = FALSE) &&
+            "character" %in% class(Deets)){
+            rm(Deets)
+         }
+         
          if(EnzPlot){
             rmarkdown::render(system.file("rmarkdown/templates/enzyme-abundance-plot/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
@@ -1535,11 +1546,6 @@ ct_plot <- function(ct_dataframe = NA,
                               quiet = TRUE)
             
          } else {
-            
-            if(exists("Deets", inherits = FALSE) &&
-               "character" %in% class(Deets)){
-               rm(Deets)
-            }
             
             rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 

@@ -23,7 +23,6 @@ Text1 <- switch(linear_or_log,
                 "semi-log" = "Log-linear", 
                 "horizontal and vertical" = "Linear (A) and log-linear (B)")
 
-# SubstrateInGraph <- unique(Data$Compound[Data$CompoundID == "substrate"])
 MyTissue <- unique(ct_dataframe$Tissue)
 MyCompoundID <- unique(ct_dataframe$CompoundID)
 MyCompound <- case_when(
@@ -41,12 +40,22 @@ MyCompound <- case_when(
    
    TRUE ~ unique(ct_dataframe$Compound)
 )
+
+
 DDI <- length(MyPerpetrator) > 0 && complete.cases(MyPerpetrator)
 DDI <- ifelse(MyCompoundID %in% c("inhibitor 1", "inhibitor 2", 
                                   "inhibitor 1 metabolite"), 
               FALSE, DDI)
 
-if("logical" %in% class(existing_exp_details)){
+if("logical" %in% class(existing_exp_details) ||
+   unique(ct_dataframe$File) %in% existing_exp_details$MainDetails$File == FALSE){
+   
+   if("logical" %in% class(existing_exp_details) == FALSE && 
+      unique(ct_dataframe$File) %in% existing_exp_details$MainDetails$File == FALSE){
+      WarningText <- "**WARNING:** The object that you supplied for the argument `existing_exp_details` does not contain the file in your concentration-time data, so we can't use it."
+   } else {
+      WarningText <- NA
+   }
    
    Pop <- "**healthy subjects / patients with [complaint]**"
    
@@ -61,15 +70,10 @@ if("logical" %in% class(existing_exp_details)){
    N_trials <- "**XXX**"
    N_subjpertrial <- "**XXX**"
    N_indiv <- "**XXX**"
-   # SDMD_sub_txt <- "a SINGLE/MULTIPLE ORAL/IV DOSES"
-   # NumDaysInhib <- "**XXX**"
-   # DoseDay <- "**XXth**"
-   # Dose_inhib <- "**XX**"
-   # DoseUnits_inhib <- "mg"
-   # DoseFreq_inhib <- "**QD/BID/TID**"
-   # Substrate <- "**substrate XXX**"
    
 } else {
+   
+   WarningText <- NA
    
    TextPieces <- make_text_legos(sim_data_file = unique(ct_dataframe$File),
                                  existing_exp_details = existing_exp_details, 
@@ -105,6 +109,8 @@ Heading <- paste0("***Figure XXX***. *",
 
 ```
 
+`r ifelse(is.na(WarningText), "", WarningText)`
+
 `r Heading`
 
 ```{r ctplot, fig.width = fig_width, fig.height = fig_height}
@@ -128,8 +134,8 @@ if(DDI){
    
    if("logical" %in% class(existing_exp_details) == FALSE && 
       complete.cases(Deets$Inhibitor2)){
-      warning("The figure heading and caption text have not been set up for when there are two perpetrators in a DDI simulation. Please check and adjust the text carefull.\n", 
-              call. =)
+      warning("The figure heading and caption text have not been set up for when there are two perpetrators in a DDI simulation. Please check and adjust the text carefully.\n", 
+              call. = FALSE)
    }
    
    CapText1 <- paste0(

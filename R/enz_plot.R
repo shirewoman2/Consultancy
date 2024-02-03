@@ -216,7 +216,9 @@
 #'   information about how your simulation or simulations were set up and supply
 #'   that object to the argument \code{existing_exp_details}.
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
-#'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
+#'   \code{\link{extractExpDetails_mult}} to be used for creating figure
+#'   headings and captions tailored to the specific simulation when saving to a
+#'   Word file or for use with \code{qc_graph}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will

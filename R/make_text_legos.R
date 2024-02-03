@@ -29,8 +29,10 @@ make_text_legos <- function(sim_data_file,
                         "include")$MainDetails
    
    if(nrow(Deets) == 0){
-      stop("We can't find the sim_data_file requested in what you supplied for existing_exp_details. We can't return any info here.", 
-           call. = FALSE)
+      warning("We can't find the sim_data_file requested in what you supplied for existing_exp_details. We can't return any info here.\n", 
+              call. = FALSE)
+      
+      return(list())
    }
    
    # Compounds involved -------------------------------------------------------
