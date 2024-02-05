@@ -93,15 +93,16 @@ check_doseint <- function(sim_data_file,
              OneDoseIntRemaining = IntervalRemaining == DoseInt_X |
                 IntervalRemaining == 0) 
    
-   IntCheck <- ifelse(IntCheck$OneDoseIntRemaining == TRUE, 
+   IntCheckMessage <- ifelse(IntCheck$OneDoseIntRemaining == TRUE, 
                       "good", "mismatch")
    
-   if(IntCheck == "mismatch"){
-      warning("The last interval for integrating the AUC was NOT the same amount of time as one dosing interval.\n", 
+   if(IntCheckMessage == "mismatch"){
+      warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n", 
               call. = FALSE)
    }
    
-   return(IntCheck)
+   return(list("message" = IntCheckMessage, 
+               "interval" = IntCheck))
    
 }
 

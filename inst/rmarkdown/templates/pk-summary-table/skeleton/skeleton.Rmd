@@ -55,10 +55,25 @@ Annotations <- make_table_annotations(MyPKResults = MyPKResults,
                                       MeanType = MeanType, 
                                       tissue = tissue)
 
+# Adding a warning if there was a mismatch between the last dosing interval and
+# the AUC interval if any of the PK included last dose.
+if(CheckDoseInt$message == "mismatch" & any(str_detect(PKpulled, "_last"))){
+   DoseIntWarning <- paste0(
+      "***The time used for integrating the AUC for the last dose was not the same as the dosing interval. The last dose started at t = ", 
+      CheckDoseInt$interval$LastDoseTime, 
+      ", and the simulation ended at t = ", 
+      CheckDoseInt$interval$SimDuration, 
+      ", so the interval for integrating the last-dose AUC was ", 
+      CheckDoseInt$interval$IntervalRemaining, 
+      " rather than the dosing interval of ", 
+      CheckDoseInt$interval$DoseInt_X, ". Please check these results carefully.***")
+}
+
 ```
 
 `r Annotations[["TableHeading"]]`
 
+`r DoseIntWarning`
 
 ```{r makeTablePKSummaryOutput}
 

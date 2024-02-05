@@ -1039,6 +1039,11 @@ pksummary_table <- function(sim_data_file = NA,
       return()
    }
    
+   CheckDoseInt <- check_doseint(sim_data_file = sim_data_file, 
+                                 existing_exp_details = existing_exp_details,
+                                 compoundID = compoundToExtract,
+                                 stop_or_warn = "warn")
+   
    # Sometimes missing problems with extrapolation to infinity. Checking for
    # that here. I thought that there wouldn't be any values for AUCinf, but
    # there definitely are. If any of the AUCinf_X parameters have trouble with
