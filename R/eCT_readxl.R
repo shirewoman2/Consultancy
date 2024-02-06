@@ -49,7 +49,7 @@ eCT_readxl <- function(sim_data_file,
          compoundToExtract <- "substrate"
       }
       
-      Sheet <- switch(compoundToExtract, 
+      Sheet <- switch(CompoundToFind, 
                       "substrate" = 
                          switch(tissue, 
                                 "plasma" = "Conc Profiles", 
