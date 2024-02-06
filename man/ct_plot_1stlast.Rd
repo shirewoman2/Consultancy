@@ -410,8 +410,7 @@ To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 into the console.}
 
 \item{graph_labels}{TRUE or FALSE (default) for whether to include labels (A,
-B, C, etc.) for each of the small graphs. (Not applicable if only
-outputting linear or only semi-log graphs.)}
+B, C, etc.) for each of the small graphs.}
 
 \item{graph_title}{optionally specify a title that will be centered across
 your graph or set of graphs}

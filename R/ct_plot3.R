@@ -121,12 +121,16 @@
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 #'   be saved as a png file, but if you specify a different graphical file
 #'   extension, it will be saved as that file format. Acceptable graphical file
-#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name.
+#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+#'   Do not include any slashes, dollar signs, or periods in the file name.
 #'   Leaving this as NA means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param ... arguments that pass through to \code{\link{ct_plot}} or
 #'   \code{\link{ct_plot_overlay}}
+#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C) for
+#'   each of the small graphs.
+
 #'
 #' @return a set of 3 arranged ggplot2 graphs
 #' @export
@@ -154,6 +158,7 @@ ct_plot3 <- function(ct_dataframe,
                      time_range_LR = "last dose",
                      x_axis_interval_LR = NA,
                      legend_position = "none",
+                     graph_labels = FALSE, 
                      qc_graph = FALSE,
                      existing_exp_details = NA,
                      save_graph = NA,
@@ -217,6 +222,12 @@ ct_plot3 <- function(ct_dataframe,
    
    # main body of function -------------------------------------------
    
+   if(graph_labels){
+      labels <- "AUTO"
+   } else {
+      labels <- NULL
+   }
+   
    if(overlay){
       
       A <- ct_plot_overlay(ct_dataframe = ct_dataframe,
@@ -227,6 +238,7 @@ ct_plot3 <- function(ct_dataframe,
                            x_axis_interval = x_axis_interval_U,
                            graph_title = graph_title_U,
                            qc_graph = FALSE,
+                           graph_labels = FALSE, 
                            ..., 
                            save_graph = NA)
       
@@ -240,6 +252,7 @@ ct_plot3 <- function(ct_dataframe,
                               x_axis_interval = x_axis_interval_LL,
                               graph_title = graph_title_LL,
                               qc_graph = FALSE,
+                              graph_labels = FALSE, 
                               ..., 
                               save_graph = NA)))
       
@@ -252,11 +265,21 @@ ct_plot3 <- function(ct_dataframe,
                               graph_title = graph_title_LR,
                               x_axis_interval = x_axis_interval_LR,
                               qc_graph = FALSE,
+                              graph_labels = FALSE, 
                               ..., 
                               save_graph = NA)))
       
-      Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
-                               nrow = 2, common.legend = TRUE, legend = "bottom")
+      Out <- ggpubr::ggarrange(A, 
+                               ggpubr::ggarrange(
+                                  B, C, 
+                                  labels = switch(as.character(graph_labels), 
+                                                  "TRUE" = list("", "C"), 
+                                                  "FALSE" = NULL), 
+                                  legend = "none"), 
+                               
+                               nrow = 2, 
+                               labels = labels, 
+                               common.legend = TRUE, legend = "bottom")
       
    } else {
       
@@ -275,8 +298,9 @@ ct_plot3 <- function(ct_dataframe,
                    graph_title = graph_title_U,
                    save_graph = NA, 
                    qc_graph = FALSE,
+                   graph_labels = FALSE, 
                    ...)
-         
+      
       suppressWarnings(suppressMessages(
          B <- ct_plot(ct_dataframe = ct_dataframe,
                       figure_type = figure_type,
@@ -288,6 +312,7 @@ ct_plot3 <- function(ct_dataframe,
                       x_axis_interval = x_axis_interval_LL,
                       graph_title = graph_title_LL,
                       qc_graph = FALSE,
+                      graph_labels = FALSE, 
                       save_graph = NA)))
       
       suppressWarnings(suppressMessages(
@@ -301,15 +326,32 @@ ct_plot3 <- function(ct_dataframe,
                       time_range = time_range_LR, 
                       x_axis_interval = x_axis_interval_LR,
                       graph_title = graph_title_LR,
+                      graph_labels = FALSE, 
                       save_graph = NA)))
       
       if(legend_position == "none"){
-         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
-                                  nrow = 2, legend = "none")
+         Out <- ggpubr::ggarrange(
+            A, 
+            ggpubr::ggarrange(
+               B, C, 
+               labels = switch(as.character(graph_labels), 
+                               "TRUE" = list("", "C"), 
+                               "FALSE" = NULL), 
+               legend = "none"), 
+            labels = labels, 
+            nrow = 2, legend = "none")
          
       } else {
-         Out <- ggpubr::ggarrange(A, ggpubr::ggarrange(B, C, legend = "none"), 
-                                  nrow = 2, common.legend = TRUE, legend = "bottom")
+         Out <- ggpubr::ggarrange(
+            A, 
+            ggpubr::ggarrange(
+               B, C, 
+               labels = switch(as.character(graph_labels), 
+                               "TRUE" = list("", "C"), 
+                               "FALSE" = NULL), 
+               legend = "none"), 
+            labels = labels, 
+            nrow = 2, common.legend = TRUE, legend = "bottom")
       }
    }
    

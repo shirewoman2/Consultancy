@@ -298,8 +298,7 @@
 #'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 #'   into the console.
 #' @param graph_labels TRUE or FALSE (default) for whether to include labels (A,
-#'   B, C, etc.) for each of the small graphs. (Not applicable if only
-#'   outputting linear or only semi-log graphs.)
+#'   B, C, etc.) for each of the small graphs. 
 #' @param graph_title optionally specify a title that will be centered across
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
@@ -505,7 +504,7 @@ ct_plot_1stlast <- function(ct_dataframe,
                       hline_style = hline_style, 
                       vline_position = vline_position, 
                       vline_style = vline_style,
-                      graph_labels = graph_labels,
+                      graph_labels = FALSE,
                       graph_title = ifelse(firstorlast == "1st", 
                                            "Dose 1", "Last dose"),
                       graph_title_size = graph_title_size, 
