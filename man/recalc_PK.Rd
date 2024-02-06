@@ -7,9 +7,11 @@
 \usage{
 recalc_PK(
   ct_dataframe,
+  which_dose = c("first", "last"),
   compound_name = NA,
   perpetrator_name = NA,
   existing_PK,
+  existing_exp_details = NA,
   ID_match = NA,
   compoundID_match = NA,
   inhibitor_match = NA,
@@ -22,7 +24,7 @@ recalc_PK(
   dosenum_match = NA,
   first_dose_time = NA,
   last_dose_time = NA,
-  dose_interval = NA,
+  dosing_interval = NA,
   fit_points_after_x_time = NA,
   fit_last_x_number_of_points = NA,
   omit_0_concs = TRUE,
@@ -40,12 +42,17 @@ recalc_PK(
 \item{ct_dataframe}{a data.frame of concentration-time data in the same
 format as those created by running \code{extractConcTime},
 \code{extractConcTime_mult}, \code{extractObsConcTime}, or
-\code{extractObsConcTime_mult}. NB: This was only set up to calculate PK
-for the 1st and last doses; all other doses will be ignored. If you want PK
-for a dose other than those two, we recommend subsetting your data to
-include only the 1st dose and whatever dose number you do want and perhaps
-running this multiple times in a loop to get all the PK you need. A member
-of the R Working Group can help you set this up if you'd like.}
+\code{extractObsConcTime_mult}.}
+
+\item{which_dose}{character vector specifying which dose you want the PK for.
+Default is \code{which_dose = c("first", "last")} to get the PK for the
+first and last doses. If you only want one of those, just specify the one
+you want. If you want a specific interval that may or may not match the
+first or last dose, then you can specify it here and everything in that
+dosing interval will be integrated. For example, say you want PK for the
+first dose, the last dose, and also the interval from 24 to
+36 hours. Here's how you would specify that: \code{which_dose = c("first",
+"last", "24 to 36")}.}
 
 \item{compound_name}{the name of the compound for which PK are being
 calculated, e.g., "midazolam". If you already have a column titled
@@ -69,6 +76,16 @@ included in the output data so that you have a record of which compound the
 data pertain to.}
 
 \item{existing_PK}{the output from \code{\link{calc_PK}}}
+
+\item{existing_exp_details}{optionally include the output from
+running\code{\link{extractExpDetails_mult}} if these data are simulated. If
+you include this, we'll use existing_exp_details to do some data checking,
+including checking when each dose starts, what the dosing interval is, and
+making sure that, if you ask for the last-dose PK, you only get PK for that
+dosing interval and not any washout period that may also have been included
+in the data. If these are observed data and you still want those checks,
+you can supply the following, where you substitute your scenario's dosing
+interval, start time, etc.: # FIXME - left off here.}
 
 \item{ID_match}{match specific data set IDs. These are the labels that show
 up in graphs of fitted data, e.g., "substrate none plasma 22 10 simulated
@@ -115,7 +132,7 @@ administered at the earliest time included in the data for the highest dose
 number included in the data. It bears repeating here that this function
 only works well if all the data included have the same dosing regimen.}
 
-\item{dose_interval}{the dosing interval; default is NA which assumes that
+\item{dosing_interval}{the dosing interval; default is NA which assumes that
 all data assigned with a given dose number should be used in calculating PK
 values. Cases where this wouldn't necessarily be true: When there's a
 washout period included in the data that is longer than the dosing
@@ -123,9 +140,9 @@ interval. In that situation, this will assume that only data within the
 dosing interval should be used. For example, say that the last QD dose
 occurred at 168 h but the washout period lasted until 336 h. For
 calculating the last-dose AUCtau, you'd only want the time from 168 to 192
-h, so if you set \code{dose_interval = 24}, that will only calculate AUCtau
-using data from 168 to 192 h rather than from 168 to 336 h. This is only
-set up to accommodate a single dosing interval and not custom dosing
+h, so if you set \code{dosing_interval = 24}, that will only calculate
+AUCtau using data from 168 to 192 h rather than from 168 to 336 h. This is
+only set up to accommodate a single dosing interval and not custom dosing
 regimens.}
 
 \item{fit_points_after_x_time}{optionally specify that you want to fit only
@@ -192,9 +209,14 @@ returns a list of individual and/or aggregate PK data
 }
 \description{
 \code{recalc_PK} takes as input the output from \code{\link{calc_PK}} and
-recalculates the PK for any concentration-time profiles specified. Please
-note that the aggregated PK will be recalculated to include the newly
-calculated individual PK parameters.
+recalculates the PK for any concentration-time profiles specified. A few
+notes about the output and calculations: \enumerate{\item{Aggregated PK
+will be recalculated to include the newly calculated individual PK
+parameters.} \item{AUCs calculated with the trapezoidal rule are calculated with the
+linear-up/log-down method. If anyone needs that to be linear up and linear
+down for some reason, please contact Laura Shireman.} \item{Graphs show the
+time since the start of the dosing interval on the x axis rather than the time since the
+first dose.}}
 }
 \examples{
 # None yet
