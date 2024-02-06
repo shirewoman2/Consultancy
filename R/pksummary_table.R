@@ -1039,10 +1039,12 @@ pksummary_table <- function(sim_data_file = NA,
       return()
    }
    
-   CheckDoseInt <- check_doseint(sim_data_file = sim_data_file, 
-                                 existing_exp_details = existing_exp_details,
-                                 compoundID = compoundToExtract,
-                                 stop_or_warn = "warn")
+   suppressWarnings(
+      CheckDoseInt <- check_doseint(sim_data_file = sim_data_file, 
+                                    existing_exp_details = existing_exp_details,
+                                    compoundID = compoundToExtract,
+                                    stop_or_warn = "warn")
+   )
    
    # Sometimes missing problems with extrapolation to infinity. Checking for
    # that here. I thought that there wouldn't be any values for AUCinf, but
@@ -1908,6 +1910,11 @@ pksummary_table <- function(sim_data_file = NA,
    
    if(length(Out) == 1){
       Out <- Out[["Table"]]
+   }
+   
+   if(CheckDoseInt$message == "mismatch" & any(str_detect(PKpulled, "_last"))){
+      warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n", 
+              call. = FALSE)
    }
    
    return(Out)
