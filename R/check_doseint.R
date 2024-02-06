@@ -53,10 +53,9 @@ check_doseint <- function(sim_data_file,
    
    # Dealing with custom dosing
    if(nrow(CustomDosing > 0)){
-      
       return("custom dosing")
-      
    }
+   
    IntCheck <- Deets %>% 
       mutate(across(.cols = matches("DoseInt|NumDoses|StartHr"), 
                     .fns = as.numeric),
@@ -93,7 +92,10 @@ check_doseint <- function(sim_data_file,
              OneDoseIntRemaining = IntervalRemaining == DoseInt_X |
                 IntervalRemaining == 0) 
    
-   IntCheckMessage <- ifelse(IntCheck$OneDoseIntRemaining == TRUE, 
+   # DoseInt_x will be NA when it's a single-dose simulation, in which case,
+   # the dosing interval is fine.
+   IntCheckMessage <- ifelse(IntCheck$OneDoseIntRemaining == TRUE |
+                                is.na(IntCheck$DoseInt_X), 
                       "good", "mismatch")
    
    if(IntCheckMessage == "mismatch"){

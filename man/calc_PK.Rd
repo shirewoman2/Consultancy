@@ -10,6 +10,7 @@ calc_PK(
   which_dose = c("first", "last"),
   compound_name = NA,
   perpetrator_name = NA,
+  existing_exp_details = NA,
   first_dose_time = NA,
   last_dose_time = NA,
   dosing_interval = NA,
@@ -63,14 +64,28 @@ This will not affect how any calculations are performed but will be
 included in the output data so that you have a record of which compound the
 data pertain to.}
 
+\item{existing_exp_details}{optionally include the output from
+running\code{\link{extractExpDetails_mult}} if these data are simulated. If
+you include this, we'll use existing_exp_details to do some data checking,
+including checking when each dose starts, what the dosing interval is, and
+making sure that, if you ask for the last-dose PK, you only get PK for that
+dosing interval and not any washout period that may also have been included
+in the data. This is not yet set up to check observed data in this manner.}
+
 \item{first_dose_time}{the time at which the first dose was administered. If
-this is left as NA, the default value, this will be set to 0.}
+this is left as NA, the default value, this will be set to the minimum time
+included in your data unless you have supplied something for
+\code{existing_exp_details} (only applicable with simulated data). When
+that's the case and you leave this as NA, we'll get the start time for each
+compound from that information.}
 
 \item{last_dose_time}{the time at which the last dose was administered. If
 this is left as NA, the default value, we'll assume that the last dose was
 administered at the earliest time included in the data for the highest dose
-number included in the data. It bears repeating here that this function
-only works well if all the data included have the same dosing regimen.}
+number included in the data unless you have supplied something for
+\code{existing_exp_details} (only applicable with simulated data). When
+that's the case and you leave this as NA, we'll calculate the last-dose
+time for each compound from that information.}
 
 \item{dosing_interval}{the dosing interval; default is NA which assumes that
 all data assigned with a given dose number should be used in calculating PK

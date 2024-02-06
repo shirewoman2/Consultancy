@@ -83,9 +83,7 @@ you include this, we'll use existing_exp_details to do some data checking,
 including checking when each dose starts, what the dosing interval is, and
 making sure that, if you ask for the last-dose PK, you only get PK for that
 dosing interval and not any washout period that may also have been included
-in the data. If these are observed data and you still want those checks,
-you can supply the following, where you substitute your scenario's dosing
-interval, start time, etc.: # FIXME - left off here.}
+in the data. This is not yet set up to check observed data in this manner.}
 
 \item{ID_match}{match specific data set IDs. These are the labels that show
 up in graphs of fitted data, e.g., "substrate none plasma 22 10 simulated
@@ -124,13 +122,19 @@ matching PK profiles will be recalculated}
 matching PK profiles will be recalculated}
 
 \item{first_dose_time}{the time at which the first dose was administered. If
-this is left as NA, the default value, this will be set to 0.}
+this is left as NA, the default value, this will be set to the minimum time
+included in your data unless you have supplied something for
+\code{existing_exp_details} (only applicable with simulated data). When
+that's the case and you leave this as NA, we'll get the start time for each
+compound from that information.}
 
 \item{last_dose_time}{the time at which the last dose was administered. If
 this is left as NA, the default value, we'll assume that the last dose was
 administered at the earliest time included in the data for the highest dose
-number included in the data. It bears repeating here that this function
-only works well if all the data included have the same dosing regimen.}
+number included in the data unless you have supplied something for
+\code{existing_exp_details} (only applicable with simulated data). When
+that's the case and you leave this as NA, we'll calculate the last-dose
+time for each compound from that information.}
 
 \item{dosing_interval}{the dosing interval; default is NA which assumes that
 all data assigned with a given dose number should be used in calculating PK
