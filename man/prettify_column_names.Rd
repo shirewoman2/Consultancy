@@ -5,28 +5,42 @@
 \title{Convert the column names in a table of PK parameters into more human-readable
 names}
 \usage{
-prettify_column_names(PKtable, prettify_compound_names = TRUE)
+prettify_column_names(
+  PKtable,
+  prettify_compound_names = TRUE,
+  pretty_or_ugly_cols = "pretty"
+)
 }
 \arguments{
 \item{PKtable}{a table of PK data with column names such as "AUCinf_dose1" or
-"Cmax_last"}
+"Cmax_last" or a vector of the names of a PK table}
 
-\item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
-compound names prettier in the prettified column titles and in any Word
-output files. This was designed for simulations where the substrate and any
-metabolites, perpetrators, or perpetrator metabolites are among the standard
-options for the simulator, and leaving \code{prettify_compound_names =
-TRUE} will make the name of those compounds something more human readable.
-For example, "SV-Rifampicin-MD" will become "rifampicin", and
-"Sim-Midazolam" will become "midazolam". Set each compound to the name
-you'd prefer to see in your column titles if you would like something
-different. For example, \code{prettify_compound_names = c("perpetrator" =
-"teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
-includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
-you're setting the perpetrator name, you really should use something like this
-if you're including perpetrator metabolites: \code{prettify_compound_names =
-c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
-"superstatin")}.}
+\item{prettify_compound_names}{Do you want to prettify your compound
+  names? Options: \describe{
+
+  \item{TRUE (default)}{Make the compound names pretty in column titles and
+  in any Word output files. This was designed for simulations where the
+  substrate and any metabolites, perpetrators, or perpetrator metabolites
+  are among the standard options for the simulator, and leaving
+  \code{prettify_compound_names = TRUE} will make the name of those compounds
+  something more human readable. For example, "SV-Rifampicin-MD" will become
+  "rifampicin", and "Sim-Midazolam" will become "midazolam".}
+
+  \item{FALSE}{Don't change any compound names.}
+
+  \item{a named character vector of compound IDs and what each should be
+  prettified to}{For example, \code{prettify_compound_names = c("perpetrator" =
+  "teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
+  includes \emph{any} of inhibitor 1, inhibitor 2, and inhibitor 1 metabolite,
+  so, if you're setting the perpetrator name, you really should use something
+  like this if you're including perpetrator metabolites:
+  \code{prettify_compound_names = c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir",
+  "substrate" = "superstatin")}.}
+  }}
+
+\item{pretty_or_ugly_cols}{Do you want "pretty" column names such as "Dose 1
+AUCinf (ng/mL.h)" or do you want "ugly" but R friendly column names such as
+"AUCinf_dose1"? Options are "pretty" (default) or "ugly".}
 }
 \value{
 a PK table with prettier column names

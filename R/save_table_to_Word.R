@@ -16,13 +16,6 @@
 #'   \href{https://davidgohel.github.io/flextable/}{eponymous package} if you
 #'   don't know what we're talking about), we also won't touch the formatting
 #'   and will return your flextable as is in the Word document.
-#' @param PKpulled PK that are included in the table. All must be included in
-#'   AllPKParameters$PKparameter or AllPKParameters$PrettifiedNames (although
-#'   the latter is buggy and not working atm). If left as NA, no changes at all
-#'   will be done to the table in terms of formatting, layout, etc., but that
-#'   includes that it will be saved as a single table regardless of input for
-#'   \code{single_table}. (Saving as multiple tables with the argument
-#'   \code{single_table} requires a very specific layout here.)
 #' @param save_table save the output table by supplying a file name in quotes
 #'   here, e.g., "My nicely formatted table.docx".  Do not include any slashes,
 #'   dollar signs, or periods in the file name.
@@ -117,6 +110,12 @@ save_table_to_Word <- function(
       include_dose_num = NA,
       prettify_columns = TRUE, # want to add prettify compound names but haven't yet
       fontsize = 11, 
+      # shading_column, 
+      merge_columns = NA, 
+      # sort_column, 
+      bold_cells = list(c(0, NA), c(NA, 1)),
+      center_1st_column = FALSE,
+      merge_shaded_cells = TRUE, 
       highlight_so_cutoffs = NA, 
       highlight_so_colors = NA, 
       highlight_gmr_colors = NA){

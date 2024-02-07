@@ -9,11 +9,13 @@ sensitivity_plot(
   dependent_variable,
   ind_var_label = NA,
   target_DV = NA,
+  color_by_which_indvar = "1st",
   linear_or_log = "linear",
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
   time_range = NA,
-  title = NA,
+  rounding = "significant 3",
+  graph_title = NA,
   save_graph = NA,
   fig_height = 4,
   fig_width = 5,
@@ -44,6 +46,13 @@ Shireman!)}
 variable, which will add a horizontal red dotted line to the graph where
 the target lies.}
 
+\item{color_by_which_indvar}{If you have more than one independent variable,
+you can specify which one you want to adjust the colors by. Options are
+"1", "1st", or "first" (all will work, default) to adjust the colors in the
+graph based on the first independent variable listed in the Excel SA file
+or "2", "2nd", or "second" to adjust colors based on the second. If you
+only have one independent variable, this will be ignored.}
+
 \item{linear_or_log}{make the y axis "linear" (default) or "log" for plasma
 concentration-time plots (this is ignored for all other plots)}
 
@@ -65,7 +74,14 @@ limits for the semi-log plot will be automatically selected.}
   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
   }}
 
-\item{title}{(optional) a title to include on your graph in quotes}
+\item{rounding}{option for what rounding to perform, if any. Options are:
+\describe{\item{"significant X" where "X" is a number
+(default: "significant 3")}{Output will be rounded to X significant figures.
+"signif X" also works fine.} \item{"none"}{No rounding will be performed.} 
+\item{"round X" where "X" is a number}{Output will be
+rounded to X digits}}}
+
+\item{graph_title}{(optional) a title to include on your graph in quotes}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -87,18 +103,32 @@ to make the graph}
 a ggplot2 graph
 }
 \description{
-Doesn't detect units yet. Would need to check that sheet names are consistent
-b/c I bet they're not. Would like to add options for axis breaks and limits
-as well as color schemes. Will need to add more options for labeling the
-sensitivity parameter in the graphs. Does not do 3D graphs and I have no
-plans to add option for 3D graphs b/c A) they're just not easy to interpret
-and B) there aren't great R packages out there for 3D graphs.
+\code{sensitivity_plot} will read a sensitivity-analysis Excel file and
+create a graph of the dependent variable of your choice as long as it was
+included in your results. If you ran a sensitivity analysis with more than 1
+independent variable -- e.g., you wanted to see how adjusting both the kp
+scalar and the fa affected Cmax -- the best way we have come up with so far
+to show you how both of those variables affect your dependent variable is to
+break up the graphs into small multiples or facets (like on a gemstone).
+(Side note: We considered a 3D graph, but they're honestly hard to do well in
+a programmatic fashion like this.) This is set up for graphs of plasma
+concentration-time profiles but not yet set up for other dependent variables.
+UNDER CONSTRUCTION.
+}
+\details{
+\strong{Coding notes:} Doesn't detect units yet. Would need to check that
+sheet names are consistent b/c I bet they're not. Would like to add options
+for axis breaks and limits as well as color schemes. Will need to add more
+options for labeling the sensitivity parameter in the graphs. Does not do 3D
+graphs and I have no plans to add option for 3D graphs b/c A) they're just
+not easy to interpret and B) there aren't great R packages out there for 3D
+graphs.
 }
 \examples{
 
 sensitivity_plot(SA_file = "SA example.xlsx",
                  dependent_variable = "Cmax",
-                 title = "My pretty sensitivity-analysis graph that's not pink",
+                 graph_title = "My pretty sensitivity-analysis graph that's not pink",
                  save_graph = "SA graph")
 
 }

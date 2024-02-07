@@ -6,11 +6,11 @@
 #' automatically finds the correct tabs and the correct cells in a Simulator
 #' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
 #' see the notes at the bottom of this help file for how to supply observed data
-#' in a standardized fashion that this function can read.}} For detailed
+#' in a standardized fashion that this function can read.} \item{For detailed
 #' instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
 #' R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
 #' instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
-#' include a link to it here.)
+#' include a link to it here.)}}
 #'
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires creating a data.frame of the observed PK
@@ -67,8 +67,11 @@
 #' @param sim_data_files a character vector of simulator output files, each in
 #'   quotes and encapsulated with \code{c(...)}, NA to extract PK data for
 #'   \emph{all} the Excel files in the current folder, or "recursive" to extract
-#'   PK data for \emph{all} the Excel files in the current folder and \emph{all}
-#'   subfolders.
+#'   PK data for all the Excel files in the current folder and all subfolders.
+#'   If you do want specific simulations, please take pity on your poor R coders
+#'   and do not request PK parameters for the same simulation file names in
+#'   different subfolders in the same function call; it's too confusing and we
+#'   might give you incorrect results.
 #' @param compoundsToExtract For which compound(s) do you want to extract PK
 #'   data? Options are any combination of the following:
 #'   \itemize{\item{"substrate" (default),} \item{"primary metabolite 1",}
@@ -89,7 +92,7 @@
 #'
 #'   \item{By default, if you have a single-dose simulation, the parameters will
 #'   include AUC and Cmax for dose 1, and, if you have a multiple-dose
-#'   simulation, AUC and Cmax for the last dose. Also by default, if you have an
+#'   simulation, AUC and Cmax for the last dose. Also by default, if you have a
 #'   perpetrator present, the parameters will include the AUC and Cmax values with
 #'   and without the perpetrator as well as those ratios.}
 #'
@@ -98,6 +101,15 @@
 #'   "AUCtau_last").} Be sure to encapsulate the parameters you want with
 #'   \code{c(...)}! To see the full set of possible parameters to extract, enter
 #'   \code{view(PKParameterDefinitions)} into the console.}
+#'
+#'   \item{If you would like PK pulled from a specific custom interval, please
+#'   supply a named character vector where the names are the PK parameters and the
+#'   values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
+#'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
+#'   note that we would like the PK parameters that are for either dose 1 or the
+#'   last dose to have NA listed for the tab. It is also ok to supply this named
+#'   character vector to the argument \code{sheet_PKparameters} instead, but
+#'   please do not supply it to both.}
 #'
 #'   \item{If you supply observed data using either the argument
 #'   \code{report_input_file} or the argument \code{observed_PK} and do not
@@ -116,13 +128,21 @@
 #'   An example of acceptable input here: \code{PKparameters = c("AUCtau_last",
 #'   "AUCtau_last_withInhib", "Cmax_last", "Cmax_last_withInhib",
 #'   "AUCtau_ratio_last", "Cmax_ratio_last")}.
-#' @param PKorder Would you like the order of the PK parameters to be the the
-#'   order specified in the Consultancy Report Template (default), or would you
-#'   like the order to match the order you specified with the argument
+#' @param PKorder Would you like the order of the PK parameters to be the order
+#'   specified in the Consultancy Report Template (default), or would you like
+#'   the order to match the order you specified with the argument
 #'   \code{PKparameters}? Options are "default" or "user specified".
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
-#'   here. Most of the time, this should be left as NA.
+#'   here. Otherwise, this should be left as NA. If you want some parameters
+#'   from a custom-interval tab and others from the regular tabs, please supply
+#'   a named character vector where the names are the PK parameters and the
+#'   values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
+#'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)} Please
+#'   note that we would like the PK parameters that are for either dose 1 or the
+#'   last dose to have NA listed for the tab. It is also ok to supply this named
+#'   character vector to the argument \code{PKparameters} instead, but please do
+#'   not supply it to both.
 #' @param observed_PK (optional) If you have a data.frame, a named numeric
 #'   vector, or an Excel or csv file with observed PK parameters, supply the
 #'   full file name in quotes or supply the unquoted name of the the data.frame
@@ -148,6 +168,11 @@
 #'   parameters, you can omit the column "File" and the PK data will be compared
 #'   to ALL the simulated files included in \code{sim_data_files}. Please see
 #'   the "Example" section of this help file for examples of how to set this up.
+#'   One last warning: It is extremely difficult to accommodate things code-wise
+#'   when the same simulation file names appear in multiple subfolders. Please
+#'   take pity on your poor R coders and do not request PK parameters for the
+#'   same simulation file names in different subfolders in the same function
+#'   call; it's too confusing and we might give you incorrect results.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
@@ -184,8 +209,11 @@
 #'   values, so this should be set to FALSE for official reports.
 #' @param variability_format formatting used to indicate the variability When
 #'   the variability is concatenated. Options are "to" (default) to get output
-#'   like "X to Y", "brackets" to get output like "[X, Y]", or "hyphen" to get
-#'   output like "X - Y".
+#'   like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
+#'   output like "[X, Y]", or "parentheses" for the eponymous symbol if you're
+#'   an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
+#'   ambiguity; this was written by an American who didn't originally realize
+#'   that there was another name for parentheses.)
 #' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
 #'   the dose number when listing the PK parameter. By default, the parameter
 #'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
@@ -228,16 +256,17 @@
 #'   substrate or a substrate metabolite. If set to TRUE, this will return a
 #'   list that includes data formatted for use with the function
 #'   \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
-#'   only works with simulations with perpetrators (at least, for now), this will
-#'   only work for simulations that included a perpetrator.
+#'   only works with simulations with perpetrators (at least, for now), this
+#'   will only work for simulations that included a perpetrator.
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the table saved as a Word or csv file.  Do not include any slashes, dollar signs, or periods in the file name. (You can also save the table to a
-#'   Word file later with the function \code{\link{formatTable_Simcyp}}.) If you
+#'   the table saved as a Word or csv file.  Do not include any slashes, dollar
+#'   signs, or periods in the file name. (You can also save the table to a Word
+#'   file later with the function \code{\link{formatTable_Simcyp}}.) If you
 #'   supply only the file extension, e.g., \code{save_table = "docx"}, the name
 #'   of the file will be "PK summary table" with that extension. If you supply
 #'   something other than just "docx" or just "csv" for the file name but you
@@ -373,8 +402,22 @@ pksummary_mult <- function(sim_data_files = NA,
       save_table <- sys.call()$save_output
    }
    
+   # Check whether they supplied a named character vector for PKparameters
+   # instead of for sheet_PKparameters.
+   if(is.null(names(sheet_PKparameters)) & all(is.na(sheet_PKparameters)) & # sheet_PKparameters = NA
+      is.null(names(PKparameters)) == FALSE){ # PKparameters = named character vector that includes sheet names
+      # warning("You supplied a named character vector for the argument `PKparameters` rather than for the argument `sheet_PKparameters`, which is what we had intended but which we also understand has a really similar name. We think we can accommodate this anyway. If you run into trouble, though, please tell Laura Shireman.\n", 
+      #         call. = FALSE)
+      
+      sheet_PKparameters <- PKparameters
+      PKparameters <- NA
+      
+   }
    
-   # Check for appropriate input for arguments
+   # Harmonizing PK parameter names
+   PKparameters <- harmonize_PK_names(PKparameters)
+   
+   # Check for appropriate input for compound ID
    compoundsToExtract <- tolower(compoundsToExtract)
    
    PossCmpd <- c("substrate", "primary metabolite 1", "primary metabolite 2",
@@ -402,15 +445,13 @@ pksummary_mult <- function(sim_data_files = NA,
    
    tissues <- tolower(tissues)
    if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE)){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.
-              ", 
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.\n", 
               call. = FALSE)
       tissues <- intersect(tissues, c("plasma", "unbound plasma", "blood", "unbound blood"))
    }
    
    if(extract_forest_data & includeConfInt == FALSE){
-      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.
-              ", 
+      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.\n", 
               call. = FALSE)
       includeConfInt <- TRUE
    }
@@ -463,12 +504,22 @@ pksummary_mult <- function(sim_data_files = NA,
    
    if("data.frame" %in% class(observed_PK)){
       observed_PKDF <- unique(observed_PK)
+      
+      # Harmonizing col names
+      names(observed_PKDF) <- tolower(names(observed_PKDF))
+      names(observed_PKDF) <- sub("compoundid", "CompoundID", names(observed_PKDF))
+      names(observed_PKDF) <- sub("tissue", "Tissue", names(observed_PKDF))
+      names(observed_PKDF) <- sub("file", "File", names(observed_PKDF))
+      names(observed_PKDF) <- sub("pkparameter", "PKparameter", names(observed_PKDF))
+      names(observed_PKDF) <- sub("value", "Value", names(observed_PKDF))
+      
    }
    
    if(exists("observed_PKDF", inherits = FALSE)){
       
       # Checking whether data in long or wide format. 
-      Wide <- any(names(observed_PKDF) %in% AllPKParameters$PKparameter)
+      Wide <- any(names(observed_PKDF) %in% c(AllPKParameters$PKparameter, 
+                                              tolower(AllPKParameters$PKparameter)))
       
       if(Wide){
          
@@ -551,6 +602,19 @@ pksummary_mult <- function(sim_data_files = NA,
                  call. = FALSE)
          observed_PKDF <- NA
       }
+      
+      # Specifying CompoundID and Tissue in ObsPK if possible
+      if(("CompoundID" %in% names(observed_PKDF) == FALSE ||
+          all(is.na(observed_PKDF$CompoundID))) &
+         length(sort(unique(compoundsToExtract))) == 1){
+         observed_PKDF$CompoundID <- sort(unique(compoundsToExtract))
+      }
+      
+      if(("Tissue" %in% names(observed_PKDF) == FALSE ||
+          all(is.na(observed_PKDF$Tissue))) &
+         length(sort(unique(tissues))) == 1){
+         observed_PKDF$Tissue <- sort(unique(tissues))
+      }
    }
    
    # If user has not included "xlsx" in file name, add that.
@@ -592,19 +656,6 @@ pksummary_mult <- function(sim_data_files = NA,
       FD[[i]] <- list()
       
       message(paste0("Extracting PK data from `", i, "`"))
-      
-      # Checking that the file is, indeed, a simulator output file.
-      SheetNames <- tryCatch(readxl::excel_sheets(i),
-                             error = openxlsx::getSheetNames(i))
-      if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
-         # Using "warning" instead of "stop" here b/c I want this to be able to
-         # pass through to other functions and just skip any files that
-         # aren't simulator output.
-         warning(paste("The file", i,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
-                 call. = FALSE)
-         next
-      }
       
       # Getting experimental details for the simulation(s) as needed. NB:
       # "Deets" in all pksummary functions means ONLY the experimental details
@@ -671,17 +722,34 @@ pksummary_mult <- function(sim_data_files = NA,
          FD[[i]][[j]] <- list()
          
          for(k in tissues){
+            if(exists("observed_PKDF", inherits = FALSE) &&
+               i %in% observed_PKDF$File){ 
+               ObsPK_temp <- observed_PKDF %>% filter(File == i)
+               
+               if("Tissue" %in% names(ObsPK_temp)){
+                  ObsPK_temp <- ObsPK_temp %>% 
+                     filter(Tissue == k)
+               }
+               
+               if("CompoundID" %in% names(ObsPK_temp)){
+                  ObsPK_temp <- ObsPK_temp %>% 
+                     filter(CompoundID == j)
+               }
+               
+               if(nrow(ObsPK_temp) == 0){
+                  ObsPK_temp <- NA
+               }
+            } else {
+               ObsPK_temp <- NA
+            }
+            
             message(paste("Extracting data for tissue =", k))
             suppressWarnings(
                temp <- pksummary_table(
                   sim_data_file = i,
                   compoundToExtract = j,
                   tissue = k, 
-                  observed_PK = switch(
-                     as.character(exists("observed_PKDF", inherits = FALSE) &&
-                                     i %in% observed_PKDF$File), 
-                     "TRUE" = observed_PKDF %>% filter(File == i), 
-                     "FALSE" = NA),
+                  observed_PK = ObsPK_temp,
                   PKparameters = PKparameters, 
                   PKorder = PKorder, 
                   sheet_PKparameters = sheet_PKparameters, 
@@ -748,7 +816,7 @@ pksummary_mult <- function(sim_data_files = NA,
                FD[[i]][[j]][[k]] <- temp$ForestData
             }
             
-            rm(temp)
+            rm(temp, ObsPK_temp)
          }
          
          MyPKResults[[i]][[j]] <- bind_rows(MyPKResults[[i]][[j]])

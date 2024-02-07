@@ -5,8 +5,8 @@
 #' extractExpDetails, extractExpDetails_mult, annotateDetails, or
 #' deannotateDetails and makes it conform to the data structure the rest of the
 #' package needs: a list with the following items, which can be added to in the
-#' future: 1) MainDetails, 2) CustomDosing, 3) DissolutionProfiles, and 4)
-#' ReleaseProfiles.
+#' future: 1) MainDetails, 2) CustomDosing, 3) DissolutionProfiles, 4)
+#' ReleaseProfiles, 5) ConcDependent_fup, and 6) ConcDependent_BP. 
 #'
 #' @param existing_exp_details an object created from running extractExpDetails,
 #'   extractExpDetails_mult, annotateDetails, or deannotateDetails
@@ -89,6 +89,26 @@ harmonize_details <- function(existing_exp_details){
          names(append_items) <- itemstoadd
          existing_exp_details <- c(existing_exp_details, append_items)
          
+         # Check whether MainDetails includes SheetNames b/c need it for other
+         # functions now.
+         if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
+             any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+             any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
+            "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+            
+            for(i in existing_exp_details$MainDetails$File){
+               if(file.exists(i)){
+                  SheetNames <- tryCatch(readxl::excel_sheets(i),
+                                         error = openxlsx::getSheetNames(i))
+               } else { SheetNames <- NA}
+               
+               existing_exp_details$MainDetails$SheetNames[
+                  existing_exp_details$MainDetails$File == i] <- 
+                  str_c(paste0("`", SheetNames, "`"), collapse = " ")
+               rm(SheetNames)
+            }
+         }
+         
          return(existing_exp_details[ExpDetailListItems])
          
       } else {
@@ -97,11 +117,35 @@ harmonize_details <- function(existing_exp_details){
          # extractExpDetails from package versions < 2.8.0, which is when I
          # changed the output from extractExpDetails from sometimes being a list
          # & sometimes being a data.frame to ALWAYS being a list.
-         return(list(Main = as.data.frame(existing_exp_details[which(sapply(existing_exp_details, length) == 1)]), 
-                     CustomDosing = NULL,
-                     DissolutionProfiles = NULL,
-                     ReleaseProfiles = NULL, 
-                     ConcDependent_fup = NULL))
+         
+         Out <- list(Main = as.data.frame(existing_exp_details[
+            which(sapply(existing_exp_details, length) == 1)]))
+         
+         for(i in ExpDetailListItems[2:length(ExpDetailListItems)]){
+            Out[[i]] <- NULL
+         }
+         
+         # Check whether MainDetails includes SheetNames b/c need it for other
+         # functions now.
+         if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
+             any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+             any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
+            "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+            
+            SheetNames <- as.character(c())
+            for(i in existing_exp_details$MainDetails$File){
+               if(file.exists(i)){
+                  SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
+                                            error = openxlsx::getSheetNames(i))
+               } else { SheetNames[i] <- NA}
+               
+               existing_exp_details$MainDetails$SheetNames[
+                  existing_exp_details$MainDetails$File == i] <- 
+                  str_c(paste0("`", SheetNames, "`"), collapse = " ")
+            }
+         }
+         
+         return(Out)
          
       }
       
@@ -125,6 +169,26 @@ harmonize_details <- function(existing_exp_details){
          # function.
          existing_exp_details <- deannotateDetails(existing_exp_details)
          
+      }
+      
+      # Check whether MainDetails includes SheetNames b/c need it for other
+      # functions now.
+      if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
+          any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+          any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
+         "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+         
+         SheetNames <- as.character(c())
+         for(i in existing_exp_details$MainDetails$File){
+            if(file.exists(i)){
+               SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
+                                         error = openxlsx::getSheetNames(i))
+            } else { SheetNames[i] <- NA}
+            
+            existing_exp_details$MainDetails$SheetNames[
+               existing_exp_details$MainDetails$File == i] <- 
+               str_c(paste0("`", SheetNames, "`"), collapse = " ")
+         }
       }
       
       return(existing_exp_details[ExpDetailListItems])

@@ -7,6 +7,7 @@
 so_graph(
   PKtable,
   PKparameters = NA,
+  PKorder = "default",
   boundaries = c(1.5, 2),
   boundaries_Guest = 2,
   boundary_indicator = "lines",
@@ -39,6 +40,19 @@ so_graph(
 \code{\link{pksummary_mult}}; if left as NA, this will make graphs for each
 parameter included in \code{PKtable}. To see the full set of possible
 parameters, enter \code{view(PKParameterDefinitions)} into the console.}
+
+\item{PKorder}{optionally specify the order of the graphs. Leaving this as
+"default" puts the graphs in the same order as the columns in the Simcyp
+Consultancy Team template for PK tables (plus some guesses at a good order
+for PK parameters that are not listed in said template table). Setting this
+to "user specified" will make the order of the graphs match the order you
+specified with the argument \code{PKparameters}. Graphs are plotted left to
+right and then top to bottom. If you would like a blank space inserted
+between some parameters -- for example, to keep all your Cmax values in the
+same column or something like that -- include "BLANK" in the values you
+list for \code{PKparameters} wherever you want that to happen, e.g.,
+\code{PKparameters = c("Cmax_dose1", "BLANK", "AUCinf_dose1", "BLANK",
+"tmax_dose1")}}
 
 \item{boundaries}{Numerical boundaries to show on the graph. Defaults to the
 1.5- and 2-fold boundaries. Indicate boundaries you want like this:
