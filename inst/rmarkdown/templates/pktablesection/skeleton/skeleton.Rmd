@@ -17,7 +17,7 @@ if("logical" %in% class(existing_exp_details)){
 }
 
 MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
-                                   prettify_compound_names = TRUE)
+                                         prettify_compound_names = TRUE)
 
 if(FromCalcPKRatios){
    MyAnnotations <- 
@@ -35,7 +35,7 @@ if(FromCalcPKRatios){
 } else {
    
    PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
-   if(any(str_detect(PKpulled_i, " "))){
+   if(any(str_detect(PKpulled_i, " "), na.rm = T)){
       PKpulled_i <- data.frame(PrettifiedNames = PKpulled_i) %>% 
          left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
          pull(PKparameter) %>% unique()
@@ -67,6 +67,8 @@ if(is.na(include_dose_num)){
                   "last" = any(str_detect(names(MyPKResults[[i]] %>% purrr::discard(~all(is.na(.)))), "Last dose")))
    include_dose_num_i <- all(DoseCheck)
    rm(DoseCheck)
+} else {
+   include_dose_num_i <- include_dose_num
 }
 
 # include_dose_num now should be either T or F no matter what, so checking
@@ -79,6 +81,7 @@ if(is.logical(include_dose_num_i) == FALSE){
 
 if(include_dose_num_i == FALSE){
    names(MyPKResults[[i]]) <- sub("Dose 1 |Last dose ", "", names(MyPKResults[[i]]))
+   names(MyPKResults[[i]]) <- sub("_dose1|_last", "", names(MyPKResults[[i]]))
 }
 
 TempTable <- MyPKResults[[i]] %>% ungroup() %>% 
@@ -87,11 +90,15 @@ TempTable <- MyPKResults[[i]] %>% ungroup() %>%
 names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
 
 formatTable_Simcyp(TempTable,
+                   # sort_column = sort_column,
+                   # merge_columns = merge_columns, 
+                   merge_shaded_cells = merge_shaded_cells, 
                    fontsize = fontsize,
-                   prettify_columns = TRUE,
+                   # bold_cells = bold_cells,
+                   prettify_columns = prettify_columns, 
+                   # center_1st_column = center_1st_column, 
                    highlight_so_cutoffs = highlight_so_cutoffs, 
-                   highlight_so_colors = highlight_so_colors, 
-                   highlight_gmr_colors = highlight_gmr_colors)
+                   highlight_so_colors = highlight_so_colors)
 
 ```
 

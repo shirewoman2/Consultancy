@@ -9,6 +9,7 @@ annotateDetails(
   compoundID = NA,
   compound = NA,
   template_sim = NA,
+  sims_to_include = NA,
   show_only_diff_from_template = FALSE,
   simulator_section = NA,
   detail_set = "all",
@@ -57,6 +58,12 @@ match any compound names that include the letters "midaz" and is NOT case
 sensitive), and set \code{show_compound_col = FALSE}. This will result in a
 much clearer Excel file.}
 
+\item{sims_to_include}{optionally specify which simulation files you'd like
+to include in the annotated output. Must be a character vector of the file
+names \emph{exactly} as they appear in the column "File" of the
+"MainDetails" item in \code{existing_exp_details}. Leave as default NA to
+get all the simulations included in \code{existing_exp_details}.}
+
 \item{show_only_diff_from_template}{TRUE or FALSE (default) to show only the
 details that differ from the template simulation, which reduces the number
 of rows in your output and can make it easier to find what has changed
@@ -75,7 +82,7 @@ one, enclose them with \code{c(...)}}
   \code{\link{extractExpDetails_mult}}: \describe{
 
   \item{"all"}{all possible details (default). If you select this option, you will also
-  get additional tabs in the output Excel file for any custom dosing regimens 
+  get additional tabs in the output Excel file for any custom dosing regimens
   and any drug-release profiles.}
 
   \item{"Summary tab"}{details available from the "Summary tab"}

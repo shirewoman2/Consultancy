@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```
 
-*Figure XXX. Comparisons of simulated and observed geometric mean PK parameters for DRUG XXX*
+*Figure XXX. Comparisons of simulated and observed geometric mean PK parameters for* ***DRUG XXX***
 
 ```{r, fig.width = fig_height, fig.height = fig_width}
 
@@ -22,26 +22,34 @@ G
 
 ```{r}
 
-Cap1 <- paste0("The dashed black line indicates unity",
+Cap1 <- paste0("*The dashed black line indicates unity",
                ifelse(length(boundaries[boundaries != 1]) == 0, 
-                      ".", ","))
+                      ".*", ",*"))
+
 Cap2 <- ifelse(boundary_indicator == "lines", 
                # switch(str_extract(ColorChoices, "0,1|1,2|2,3|3,Inf"), 
                #        "0,1" = "solid lines", 
                #        "1,2" = "solid lines")
-               paste0("solid lines indicate the boundaries for simulated/observed values within ", 
+               paste0(" *and solid lines indicate the boundaries for simulated/observed values within ", 
                       str_comma(boundaries[boundaries != 1]), 
-                      " fold."), 
-               paste0("shaded regions indicate the boundaries for simulated/observed values within ", 
+                      " fold.*"), 
+               paste0(" *and shaded regions indicate the boundaries for simulated/observed values within ", 
                       str_comma(boundaries[boundaries != 1]), 
-                      " fold."))
+                      " fold.*"))
 
-Cap3 <- paste("Source observed data: XXX. Source simulated data:", 
-              str_comma(sort(unique(PKtable$File))))
+# Only include Cap2 if they had more than one boundary.
+Cap2 <- ifelse(length(boundaries[boundaries != 1]) == 0, 
+               "", Cap2)
+
+Cap3 <- ifelse(any(str_detect(names(SO), "ratio")), 
+               " *For parameters that are the geometric mean ratio of the value in the presence of a perpetrator drug over the value at baseline, the criteria described in Guest* et al.*, 2011* **ADD REFERENCE TO DOI: 10.1124/dmd.110.036103** *are used to show boundaries.* ", "")
+
+Cap4 <- paste0("*Source observed data:* **XXX**. *Source simulated data: ", 
+              str_comma(sort(basename(unique(PKtable$File)))), "*")
                
 ```
 
-*`r paste(Cap1, Cap2, Cap3)`*
+`r paste0(Cap1, Cap2, Cap3, Cap4)`
 
 
 

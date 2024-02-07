@@ -26,17 +26,18 @@ Text1 <- switch(linear_or_log,
                 "log" = "Log-linear",
                 "semi-log" = "Log-linear")
 
-# How could I do this w/out nested ifelse statements?
-PlotType <- ifelse(EnzPlot, 
-                   "Enz", 
-                   ifelse(ReleaseProfPlot, 
-                          "RelProf", "CTPlot"))
+PlotType <- case_when(EnzPlot == TRUE ~ "EnzPlot", 
+                      ReleaseProfPlot == TRUE ~ "RelProf",
+                      DissolutionProfPlot == TRUE ~ "DissoPlot", 
+                      TRUE ~ "CTPlot")
 
 Text2 <- switch(PlotType, 
                 "EnzPlot" = paste0("simulated enzyme-abundance profiles of ",
                                    str_comma(unique(ct_dataframe$Enzyme)), 
                                    " in ", str_comma(unique(ct_dataframe$Tissue)), "."),
                 "RelProf" = paste0("release profiles of ",
+                                   str_comma(unique(prettify_compound_name(ct_dataframe$Compound))), "."),
+                "DissoPlot" = paste0("dissolution profiles of ",
                                    str_comma(unique(prettify_compound_name(ct_dataframe$Compound))), "."),
                 "CTPlot" = paste0(str_comma(unique(ct_dataframe$Tissue)), 
                                   " simulated concentration-time profiles of ", # keep 1st and last spaces here
@@ -71,6 +72,8 @@ CapText1 <-
           "NoInhibPresent EnzPlot" = "simulated data", 
           
           "NoInhibPresent RelProf" = "release profile data", 
+          
+          "NoInhibPresent DissoPlot" = "dissolution profile data", 
           
           "InhibPresent CTPlot" = paste0(
              ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
