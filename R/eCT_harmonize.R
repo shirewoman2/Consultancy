@@ -96,8 +96,7 @@ eCT_harmonize <- function(sim_data_xl,
       # Last step: Find the unique versions of the coding.
       CmpdMatches2 <- unique(CmpdMatches2)
       
-      if(PerpPresent == FALSE &
-         tissue %in% c("plasma", "blood", "unbound plasma", "unbound blood") == FALSE){
+      if(PerpPresent == FALSE & str_detect(tissue, "plasma|blood") == FALSE){
          CmpdMatches2 <- CmpdMatches1
       }
       
