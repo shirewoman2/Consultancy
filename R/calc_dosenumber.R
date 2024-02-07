@@ -135,6 +135,16 @@ calc_dosenumber <- function(ct_dataframe,
                                              1, Deets[[i]]$NumDoses_inhib), 
            "UNKNOWN" = NA)
       
+      MyDose <- 
+         c("substrate" = Deets[[i]]$Dose_sub,
+           "primary metabolite 1" = NA,
+           "primarymetabolite 2" = NA,
+           "secondary metabolite" = NA,
+           "inhibitor 1" = Deets[[i]]$Dose_inhib,
+           "inhibitor 2" = Deets[[i]]$Dose_inhib2,
+           "inhibitor 1 metabolite" = NA, 
+           "UNKNOWN" = NA)
+      
       # Converting data to numeric while also retaining names
       suppressWarnings(
          MyIntervals <- sapply(MyIntervals, FUN = as.numeric))
@@ -142,6 +152,8 @@ calc_dosenumber <- function(ct_dataframe,
          MyStartTimes <- sapply(MyStartTimes, FUN = as.numeric))
       suppressWarnings(
          MyMaxDoseNum <- sapply(MyMaxDoseNum, FUN = as.numeric))
+      suppressWarnings(
+         MyDose <- sapply(MyDose, FUN = as.numeric))
       
       ct_dataframe[[i]] <- ct_dataframe[[i]] %>%
          mutate(StartHr = MyStartTimes[CompoundID],
@@ -156,7 +168,10 @@ calc_dosenumber <- function(ct_dataframe,
                 # 1 and everything before StartHr dose 0. If it was a single
                 # dose, then DoseInt is NA.
                 DoseNum = ifelse(is.na(DoseInt),
-                                 ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
+                                 ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum), 
+                Dose_sub = MyDose["substrate"],
+                Dose_inhib = MyDose["inhibitor 1"], 
+                Dose_inhib2 = MyDose["inhibitor 2"])
       
       # Checking for any custom dosing
       if(is.null(existing_exp_details$CustomDosing) == FALSE &&
@@ -178,7 +193,14 @@ calc_dosenumber <- function(ct_dataframe,
          ct_dataframe[[i]] <- split(ct_dataframe[[i]],
                                     f = ct_dataframe[[i]]$DosedCompoundID)
          
-         CD_i <- existing_exp_details$CustomDosing %>% filter(File == i)
+         CD_i <- existing_exp_details$CustomDosing %>% filter(File == i) %>% 
+            mutate(Dose_sub = case_when(complete.cases(Dose) & 
+                                           CompoundID == "substrate" ~ Dose), 
+                   Dose_inhib = case_when(complete.cases(Dose) & 
+                                             CompoundID == "inhibitor 1" ~ Dose), 
+                   Dose_inhib2 = case_when(complete.cases(Dose) & 
+                                              CompoundID == "inhibitor 2" ~ Dose)) %>% 
+            select(-Dose)
          
          if(nrow(CD_i) > 0){
             
@@ -218,9 +240,11 @@ calc_dosenumber <- function(ct_dataframe,
                                    right = FALSE))
                
                ct_dataframe[[i]][[j]] <- ct_dataframe[[i]][[j]] %>% 
-                  left_join(CD_i[[j]] %>% select(Breaks, DoseNum), 
+                  select(-Dose_sub, -Dose_inhib, -Dose_inhib2) %>% 
+                  left_join(CD_i[[j]] %>% 
+                               select(Breaks, DoseNum, Dose_units,
+                                      Dose_sub, Dose_inhib, Dose_inhib2), 
                             by = "Breaks")
-               
             }
          }
          
@@ -240,7 +264,8 @@ calc_dosenumber <- function(ct_dataframe,
                                     MyMaxDoseNum - 1, DoseNum))
       }
       
-      ct_dataframe[[i]] <- ct_dataframe[[i]] %>% select(-any_of(c("MaxDoseNum", "Breaks")))
+      ct_dataframe[[i]] <- ct_dataframe[[i]] %>%
+         select(-any_of(c("MaxDoseNum", "Breaks")))
       
       rm(MyIntervals, MyStartTimes, MyMaxDoseNum)
       

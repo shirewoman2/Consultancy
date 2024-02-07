@@ -216,22 +216,51 @@ match_units <- function(DF_to_adjust,
            call. = FALSE)
    }
    
-   ConvFactor_conc <-
-      ConvTable_conc$Factor[
-         which(ConvTable_conc$OrigUnits == unique(DF_to_adjust$Conc_units) &
-                  ConvTable_conc$RevUnits == unique(goodunits$Conc_units))]
+   ConvTable_conc <- ConvTable_conc %>% 
+      filter(OrigUnits %in% unique(DF_to_adjust$Conc_units) &
+                RevUnits %in% unique(goodunits$Conc_units))
    
-   if(length(ConvFactor_conc) < 1){
-      stop(paste0("You supplied concentration units of ",
-                  str_comma(unique(DF_to_adjust$Conc_units)), 
-                  ", but we were not able to convert them to the desired units of ", 
-                  unique(goodunits$Conc_units), 
-                  ". No adjustment of units was possible and thus no data can be returned here."),
-           call. = FALSE)
+   # If there are multiple compound IDs in DF_to_adjust, then there can be
+   # multiple CompoundIDs in ConvTable_conc. For some applications, though, s/a
+   # PK tables, there might not be any compuond IDs.
+   
+   if("CompoundID" %in% names(DF_to_adjust) & 
+      "CompoundID" %in% names(ConvTable_conc)){
+      
+      if(any(ConvTable_conc %>% filter(CompoundID %in% DF_to_adjust$CompoundID) %>% 
+             group_by(CompoundID) %>% summarize(N = n()) %>% 
+             pull(N) < 1)){
+         stop(paste0("You supplied concentration units of ",
+                     str_comma(unique(DF_to_adjust$Conc_units)), 
+                     ", but we were not able to convert them to the desired units of ", 
+                     unique(goodunits$Conc_units), 
+                     ". No adjustment of units was possible and thus no data can be returned here."),
+              call. = FALSE)
+      }
+      
+      DF_to_adjust <- DF_to_adjust %>% 
+         left_join(ConvTable_conc, by = "CompoundID") %>% 
+         mutate(Conc = Conc*Factor,
+                Conc_units = RevUnits)
+      
+   } else {
+      ConvFactor_conc <-
+         ConvTable_conc$Factor[
+            which(ConvTable_conc$OrigUnits == unique(DF_to_adjust$Conc_units) &
+                     ConvTable_conc$RevUnits == unique(goodunits$Conc_units))]
+      
+      if(length(ConvFactor_conc) < 1){
+         stop(paste0("You supplied concentration units of ",
+                     str_comma(unique(DF_to_adjust$Conc_units)), 
+                     ", but we were not able to convert them to the desired units of ", 
+                     unique(goodunits$Conc_units), 
+                     ". No adjustment of units was possible and thus no data can be returned here."),
+              call. = FALSE)
+      }
+      
+      DF_to_adjust <- DF_to_adjust %>% mutate(Conc = Conc*ConvFactor_conc,
+                                              Conc_units = unique(goodunits$Conc_units))
    }
-   
-   DF_to_adjust <- DF_to_adjust %>% mutate(Conc = Conc*ConvFactor_conc,
-                                           Conc_units = unique(goodunits$Conc_units))
    
    ## Matching time units -------------------------------------------------
    

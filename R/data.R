@@ -329,14 +329,19 @@
 
 #' Example simulated vs. observed PK data for use with the so_graph function
 #'
-#' @format A data.frame 
+#' @format a data.frame 
 "SOdata"
 
 
 #' All possible compound IDs, suffixes, etc.
 #'
-#' @format A data.frame 
+#' @format a data.frame 
 "AllCompounds"
 
+
+#' All possible tissues and tissue subtypes
+#' 
+#' @format a data.frame
+"AllTissues"
 
 

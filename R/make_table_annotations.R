@@ -133,7 +133,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    DoseFreq_sub <- ifelse(is.null(DoseFreq_sub), 
                           # paste("Q", DoseFreq_sub, "H"), 
-                          "CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY",
+                          "**CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY**",
                           DoseFreq_sub)
    
    
@@ -168,12 +168,12 @@ make_table_annotations <- function(MyPKResults, # only PK table
       
       DoseFreq_inhib <- ifelse(is.null(DoseFreq_inhib), 
                                # paste("Q", DoseFreq_inhib, "H"), 
-                               "CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY",
+                               "**CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY**",
                                DoseFreq_inhib)
       
       NumDaysInhib <- suppressWarnings(
          Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
-      NumDaysInhib <- ifelse(is.na(NumDaysInhib), "CUSTOM DOSING - FILL IN MANUALLY",
+      NumDaysInhib <- ifelse(is.na(NumDaysInhib), "**CUSTOM DOSING - FILL IN MANUALLY**",
                              NumDaysInhib)
       
       DoseDay_sub <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
@@ -242,7 +242,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    CapText2 <- paste0(sub("; $", ". ", CapText2a), 
                       ifelse(Observedincluded, 
-                             "S/O: simulated/observed; source observed data: Clinical Study XXX; ",
+                             "S/O: simulated/observed; source observed data: **Clinical Study XXX**; ",
                              ""))
    
    Caption <- paste0("*Simulated values listed are ", 

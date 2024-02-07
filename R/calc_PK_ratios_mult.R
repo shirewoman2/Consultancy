@@ -278,6 +278,9 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
       includeConfInt <- TRUE
    }
    
+   # Harmonizing PK parameter names
+   PKparameters <- harmonize_PK_names(PKparameters)
+   
    # Standardizing input for when they want to specify PK parameters with "/".
    # Making sure they always have a space.
    PKparameters <- sub("( )?/( )?", " / ", PKparameters)

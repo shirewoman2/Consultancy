@@ -16,9 +16,13 @@
 #' 
 renameStats <- function(OrigStat){
     StatNames <- c("Mean" = "mean", 
+                   "mean" = "mean", 
                    "Geometric Mean" = "geomean",
+                   "geometric mean" = "geomean",
                    "Median" = "median",
+                   "median" = "median",
                    "Geometric CV" = "GCV",
+                   "geometric cv" = "GCV",
                    "90% confidence interval around the geometric mean(lower limit)" = "CI90_low",
                    "90% confidence interval around the geometric mean(upper limit)" = "CI90_high",
                    "95% confidence interval around the geometric mean(lower limit)" = "CI95_low",
@@ -26,14 +30,22 @@ renameStats <- function(OrigStat){
                    "5th centile" = "per5",
                    "95th centile" = "per95",
                    "Skewness" = "skewness", 
+                   "skewness" = "skewness", 
                    "cv" = "CV",
                    "Min Val" = "min",
+                   "min val" = "min",
                    "Max Val" = "max",
+                   "max val" = "max",
                    "Fold" = "fold",
+                   "fold" = "fold",
                    "Std Dev" = "SD", 
-                   # These next ones are only for inside the so_table function
-                   # and apply to trial-mean min and trial-mean max
+                   "std dev" = "SD", 
+                   # These next ones are only for inside the PKsummary_table
+                   # function and apply to trial-mean min and trial-mean max
                    "MinMean" = "MinMean", 
+                   "minmMean" = "MinMean", 
+                   "maxmean" = "MaxMean", 
                    "MaxMean" = "MaxMean")
+    
     StatNames[OrigStat]
 }

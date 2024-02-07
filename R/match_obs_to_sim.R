@@ -193,13 +193,14 @@ match_obs_to_sim <- function(ct_dataframe,
       for(k in names(ObsAssign[[j]])){
          # k = File
          ObsData_j[[k]] <- obs_dataframe[[j]] %>% 
+            select(-Compound) %>% 
             mutate(File = k) %>% 
             left_join(ct_dataframe[[k]] %>% 
                          select(any_of(c("File", "CompoundID", "Compound",
                                          "Dose_sub"))) %>% 
                          unique(), 
                       relationship = "many-to-many", 
-                      by = c("CompoundID", "File"))
+                      by = c("CompoundID", "File", "Dose_sub"))
          
          # Observed files often only include the 1st dose, even if it was
          # a multiple-dose simulation, so we can't trust the obs file to
