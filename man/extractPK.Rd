@@ -6,7 +6,7 @@
 \usage{
 extractPK(
   sim_data_file,
-  PKparameters = "AUC tab",
+  PKparameters = NA,
   sheet = NA,
   compoundToExtract = "substrate",
   tissue = "plasma",

@@ -268,24 +268,25 @@
 #'   your graph or set of graphs
 #' @param graph_title_size the font size for the graph title if it's included;
 #'   default is 14. This also determines the font size of the graph labels.
-#' @param legend_label optionally indicate on the legend whether the perpetrator is
-#'   an inhibitor, inducer, activator, or suppressor. Input will be used as the
-#'   label in the legend for the line style and the shape. If left as the
-#'   default NA when a legend is included and a perpetrator is present, the label
-#'   in the legend will be "Inhibitor".
-#' @param prettify_compound_names TRUE (default) or FALSE on whether to make
+#' @param legend_label optionally indicate on the legend whether the perpetrator
+#'   is an inhibitor, inducer, activator, or suppressor. Input will be used as
+#'   the label in the legend for the line style and the shape. If left as the
+#'   default NA when a legend is included and a perpetrator is present, the
+#'   label in the legend will be "Inhibitor".
+#' @param prettify_compound_names TRUE (default) or FALSE for whether to make
 #'   compound names prettier in legend entries and in any Word output files.
 #'   This was designed for simulations where the substrate and any metabolites,
-#'   perpetrators, or perpetrator metabolites are among the standard options for the
-#'   simulator, and leaving \code{prettify_compound_names = TRUE} will make the
-#'   name of those compounds something more human readable. For example,
+#'   perpetrators, or perpetrator metabolites are among the standard options for
+#'   the simulator, and leaving \code{prettify_compound_names = TRUE} will make
+#'   the name of those compounds something more human readable. For example,
 #'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 #'   become "midazolam". Set each compound to the name you'd prefer to see in
 #'   your legend and Word output if you would like something different. For
 #'   example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
 #'   "substrate" = "superstatin")}. Please note that "inhibitor" includes
-#'   \emph{all} the perpetrators and perpetrator metabolites present, so, if you're
-#'   setting the perpetrator name, you really should use something like this if
+#'   \emph{all} the perpetrators and perpetrator metabolites present, so, if
+#'   you're setting the perpetrator name, you really should use something like
+#'   this if
 #'   you're including perpetrator metabolites: \code{prettify_compound_names =
 #'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
@@ -322,7 +323,9 @@
 #'   information about how your simulation or simulations were set up and supply
 #'   that object to the argument \code{existing_exp_details}.
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
-#'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
+#'   \code{\link{extractExpDetails_mult}} to be used for creating figure
+#'   headings and captions tailored to the specific simulation when saving to a
+#'   Word file or for use with \code{qc_graph}
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". The nice thing about saving to Word is that the figure title
@@ -377,7 +380,7 @@
 
 ct_plot <- function(ct_dataframe = NA,
                     figure_type = "percentiles",
-                    subsection_ADAM = "free compound in lumen",
+                    subsection_ADAM = NA,
                     mean_type = "arithmetic", 
                     time_range = NA,
                     x_axis_interval = NA,
@@ -447,6 +450,39 @@ ct_plot <- function(ct_dataframe = NA,
            call. = FALSE)
    }
    
+   # Checking for good input for prettify_compound_names. 
+   if("character" %in% class(prettify_compound_names) &&
+      any(is.null(names(prettify_compound_names)))){
+      if(length(unique(ct_dataframe$CompoundID)) == 1){
+         names(prettify_compound_names) <- unique(ct_dataframe$CompoundID)
+      } else {
+         warning("We're not sure what you wanted for the argument `prettify_compound_names` because we were expecting a TRUE or FALSE or a named character vector, and that's not what you have supplied. Please check the help file for appropriate values for `prettify_compound_names`. For now, we'll set this to TRUE, the default.\n", 
+                 call. = FALSE)
+         prettify_compounds_names <- TRUE
+      }
+   }
+   
+   if("character" %in% class(prettify_compound_names)){
+      
+      names(prettify_compound_names) <- tolower(names(prettify_compound_names))
+      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "perpetrator")] <- "inhibitor"
+      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "inhib")] <- "inhibitor"
+      if("inhibitor" %in% names(prettify_compound_names) == FALSE & 
+         any(ct_dataframe$Inhibitor != "none")){
+         prettify_compound_names <-
+            c(prettify_compound_names, 
+              "inhibitor" = prettify_compound_name(
+                 unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])))
+      }
+      if("substrate" %in% names(prettify_compound_names) == FALSE & 
+         any(ct_dataframe$CompoundID == "substrate")){
+         prettify_compound_names <-
+            c(prettify_compound_names, 
+              "inhibitor" = prettify_compound_name(
+                 unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])))
+      }
+   }
+   
    # Noting whether this is an enzyme-abundance plot b/c some options change
    # then.
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
@@ -474,11 +510,38 @@ ct_plot <- function(ct_dataframe = NA,
            call. = FALSE)
    }
    
+   # Check whether they've specified anything for subsection_ADAM or if data
+   # only contain 1 value for subsection_ADAM.
+   if(EnzPlot == FALSE){
+      if(any(complete.cases(ct_dataframe$subsection_ADAM)) & 
+         complete.cases(subsection_ADAM)){
+         if(length(unique(ct_dataframe$subsection_ADAM)) == 1 &&
+            unique(ct_dataframe$subsection_ADAM) != subsection_ADAM){
+            warning(paste0("You requested the subsection_ADAM tissue ", 
+                           subsection_ADAM, 
+                           ", but what's in your data is ", 
+                           unique(ct_dataframe$subsection_ADAM), 
+                           ", so we'll use that instead.\n"), 
+                    call. = FALSE)
+            subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
+         }
+         
+      } else {
+         subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
+      }
+      
+      if(length(subsection_ADAM) > 1){
+         subsection_ADAM <- subsection_ADAM[1]
+         warning(paste0("You requested more than one value for subsection_ADAM, but we can only plot one with the ct_plot function. We'll set it to the 1st value we find in your data: ", 
+                        subsection_ADAM, ".\n"), 
+                 call. = FALSE)
+      }
+   }
+   
+   
    # If user wants feces, use the British spelling even if they entered the
    # American spelling.
-   if(str_detect(subsection_ADAM, "feces")){
-      subsection_ADAM <- sub("feces", "faeces", subsection_ADAM)
-   }
+   subsection_ADAM <- sub("feces", "faeces", subsection_ADAM)
    
    if(length(obs_color) > 1){
       warning("The argument `obs_color` can only take one color, and you've specified more than that. Only the first color will be used.\n", 
@@ -550,9 +613,9 @@ ct_plot <- function(ct_dataframe = NA,
             error = function(x) "missing file")
       } else {
          Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
-            filter(unique(ct_dataframe$File) %in% File)
+            filter(File %in% unique(ct_dataframe$File))
          
-         if(nrow(Deets == 0)){
+         if(nrow(Deets) == 0){
             Deets <- tryCatch(
                extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
                                  exp_details = "Summary and Input", 
@@ -638,6 +701,7 @@ ct_plot <- function(ct_dataframe = NA,
          rename(Conc = Abundance) %>%
          mutate(Simulated = TRUE,
                 Compound = Enzyme, 
+                subsection_ADAM = NA, # This avoids some annoying warnings later, and it's easiest to just add it here. 
                 # putting "conc" into decimal format b/c it works better with
                 # using percents on y axis labels
                 Conc = Conc / 100) 
@@ -657,6 +721,12 @@ ct_plot <- function(ct_dataframe = NA,
                                       "faeces", "cumulative absorption", 
                                       "cumulative dissolution") &&
       EnzPlot == FALSE
+   
+   AdvBrainModel <- "subsection_ADAM" %in% names(Data) && 
+      unique(Data$Tissue == "brain") &
+      any(Data$subsection_ADAM %in% 
+             c("intracranial", "brain ICF", "brain ISF", "spinal CSF", "cranial CSF", 
+               "total brain", "Kp,uu,brain", "Kp,uu,ICF", "Kp,uu,ISF"))
    
    # If the tissue was an ADAM tissue, only include the subsection_ADAM they requested. 
    if(any(ADAM)){
@@ -885,14 +955,18 @@ ct_plot <- function(ct_dataframe = NA,
       Ylim_data <- bind_rows(sim_data_trial, obs_dataframe, sim_data_mean)
    }
    
-   YStuff <- ct_y_axis(Data = Data, ADAM = ADAM, subsection_ADAM = subsection_ADAM,
-                       EnzPlot = EnzPlot, time_range_relative = time_range_relative,
-                       Ylim_data = Ylim_data, 
+   YStuff <- ct_y_axis(Data = Data,
+                       ADAMorAdvBrain = any(ADAM, AdvBrainModel),
+                       subsection_ADAM = subsection_ADAM,
+                       EnzPlot = EnzPlot,
+                       time_range_relative = time_range_relative,
+                       Ylim_data = Ylim_data,
                        prettify_compound_names = prettify_compound_names,
                        pad_y_axis = pad_y_axis,
-                       y_axis_limits_lin = y_axis_limits_lin, 
+                       y_axis_limits_lin = y_axis_limits_lin,
                        time_range = time_range,
-                       y_axis_limits_log = y_axis_limits_log)
+                       y_axis_limits_log = y_axis_limits_log
+   )
    
    ObsConcUnits <- YStuff$ObsConcUnits
    ylab <- YStuff$ylab
@@ -1233,6 +1307,12 @@ ct_plot <- function(ct_dataframe = NA,
    if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
       (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
       ylab <- y_axis_label
+   } else if(EnzPlot){
+      ylab <- paste("Relative",
+                    ifelse(unique(ct_dataframe$Tissue) == "liver", 
+                           "hepatic", unique(ct_dataframe$Tissue)),
+                    unique(ct_dataframe$Enzyme), 
+                    "abundance")
    }
    
    if((class(x_axis_label) == "character" && complete.cases(x_axis_label)) |
@@ -1262,6 +1342,14 @@ ct_plot <- function(ct_dataframe = NA,
       # Otherwise, make the legend a little wider to actually show any dashes
       A <- A + theme(legend.position = legend_position, 
                      legend.key.width = unit(2, "lines"))
+   }
+   
+   # When the y label is an expression, it tends to be a little too small. Make
+   # it 1.25 * larger. If it's an expression, that also means that it can't be
+   # bold. Make the x axis title not bold as well in that case.
+   if("expression" %in% class(ylab)){
+      A <- A + theme(axis.title.y = element_text(size = A$theme$text$size * 1.25), 
+                     axis.title.x = element_text(face = "plain"))
    }
    
    ## Making semi-log graph ------------------------------------------------
@@ -1358,9 +1446,11 @@ ct_plot <- function(ct_dataframe = NA,
    
    if(complete.cases(graph_title)){
       A <- A + ggtitle(graph_title) +
-         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+               plot.title.position = "panel")
       B <- B + ggtitle(graph_title) +
-         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+               plot.title.position = "panel")
       AB <- ggpubr::annotate_figure(
          AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
                                      face = "bold", size = graph_title_size))
@@ -1442,6 +1532,11 @@ ct_plot <- function(ct_dataframe = NA,
          }
          
          FileName <- basename(FileName)
+         
+         if(exists("Deets", inherits = FALSE) &&
+            "character" %in% class(Deets)){
+            rm(Deets)
+         }
          
          if(EnzPlot){
             rmarkdown::render(system.file("rmarkdown/templates/enzyme-abundance-plot/skeleton/skeleton.Rmd",

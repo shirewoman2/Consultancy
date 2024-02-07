@@ -17,7 +17,7 @@ ct_plot_obs(
   obs_color = NA,
   obs_size = NA,
   obs_fill_trans = NA,
-  obs_line_trans = NA,
+  obs_line_trans = 0.5,
   connect_obs_points = TRUE,
   indiv_on_top = FALSE,
   include_errorbars = FALSE,
@@ -29,7 +29,9 @@ ct_plot_obs(
   line_transparency = NA,
   legend_label_linetype = NA,
   facet1_column,
+  facet1_title = NA,
   facet2_column,
+  facet2_title = NA,
   facet_ncol = NA,
   facet_nrow = NA,
   floating_facet_scale = FALSE,
@@ -64,12 +66,15 @@ the function \code{\link{extractConcObsTime_mult}} or
 
 \item{mean_type}{plot "arithmetic" (default) or "geometric" mean
 concentrations or "median" concentrations as the main (thickest or only)
-line for each data set. If you haven't included mean data in
-\code{ct_dataframe}, the mean will be calculated for you using our best
-guess as to what the groups should be. In other words, you may want to
-calculate the means yourself just to be sure you're getting what you
-expect. Talk to Laura Sh. if you would like help here. If you don't want to
-show the means, set this to "none".}
+line for each data set. If you don't want to show the means, set this to
+"none". If you \emph{only} want to show the mean data and not the
+individual, set this to whatever mean type you want plus "only", e.g.,
+\code{"arithmetic only"} to show only the arithmetic mean data and none of
+the individuals. If you haven't included mean data in \code{ct_dataframe},
+the mean will be calculated for you using our best guess as to what the
+groups should be. In other words, you may want to calculate the means
+yourself just to be sure you're getting what you expect. Talk to Laura Sh.
+if you would like help here.}
 
 \item{nominal_times}{optionally specify what the nominal times were for the
 concentration-time data. If left as NA, when we calculate the means, we'll
@@ -198,12 +203,11 @@ Acceptable values are from 0 (fully transparent, so no fill at all) to 1
 points will be 50 percent transparent, so the same as if this were set to
 0.5.}
 
-\item{obs_line_trans}{optionally specify the transparency for the outline of
-the observed data points, which can be helpful when you have a lot of
-points overlapping. Acceptable values are from 0 (fully transparent, so no
-line at all) to 1 (completely opaque or black). If left as the default NA,
-the observed data points will be opaque, so the same as if this were set to
-1.}
+\item{obs_line_trans}{specify the transparency for the outline of the
+observed data points, which can be helpful when you have a lot of points
+overlapping. Acceptable values are from 0 (fully transparent, so no line at
+all) to 1 (completely opaque or black), and the default is 0.5 for 50%
+transparent.}
 
 \item{connect_obs_points}{TRUE (default) or FALSE for whether to add
 connecting lines between observed data points from the same individual}
@@ -269,12 +273,20 @@ Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
 \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
 designate the rows of the output graphs.}
 
+\item{facet1_title}{optionally specify a title to describe facet 1. This is
+ignored if \code{floating_facet_scale} is TRUE or if you have specified
+\code{facet_ncol} or \code{facet_nrow}.}
+
 \item{facet2_column}{optionally break up the graph into small multiples; this
 specifies the second of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet2_column =
 CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
 specified \code{facet_ncol} or  \code{facet_nrow}, then
 \code{facet2_column} will designate the columns of the output graphs.}
+
+\item{facet2_title}{optionally specify a title to describe facet 2. This is
+ignored if \code{floating_facet_scale} is TRUE or if you have specified
+\code{facet_ncol} or \code{facet_nrow}.}
 
 \item{facet_ncol}{optionally specify the number of columns of facetted graphs
 you would like to have. This only applies when you have specified a column

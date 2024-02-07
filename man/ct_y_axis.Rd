@@ -6,7 +6,7 @@
 \usage{
 ct_y_axis(
   Data,
-  ADAM,
+  ADAMorAdvBrain,
   subsection_ADAM,
   EnzPlot,
   y_axis_limits_lin,
@@ -23,9 +23,10 @@ ct_y_axis(
 \item{Data}{the data.frame containing conc-time data; this is the output from
 extractConcTime}
 
-\item{ADAM}{T or F for whether ADAM model used}
+\item{ADAMorAdvBrain}{T or F for whether ADAM or advanced brain model used}
 
-\item{subsection_ADAM}{which ADAM-model subsection the data include}
+\item{subsection_ADAM}{which ADAM-model or advanced-brain-model subsection
+the data include}
 
 \item{EnzPlot}{T or F for whether this was a plot of enzyme abundance}
 

@@ -30,7 +30,9 @@ ct_plot_overlay(
   line_transparency = NA,
   legend_label_linetype = NA,
   facet1_column,
+  facet1_title = NA,
   facet2_column,
+  facet2_title = NA,
   facet_ncol = NA,
   facet_nrow = NA,
   floating_facet_scale = FALSE,
@@ -52,6 +54,7 @@ ct_plot_overlay(
   graph_title = NA,
   graph_title_size = 14,
   legend_position = NA,
+  border = TRUE,
   prettify_compound_names = TRUE,
   qc_graph = FALSE,
   existing_exp_details = NA,
@@ -294,12 +297,20 @@ Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
 \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
 designate the rows of the output graphs.}
 
+\item{facet1_title}{optionally specify a title to describe facet 1. This is
+ignored if \code{floating_facet_scale} is TRUE or if you have specified
+\code{facet_ncol} or \code{facet_nrow}.}
+
 \item{facet2_column}{optionally break up the graph into small multiples; this
 specifies the second of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet2_column =
 CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
 specified \code{facet_ncol} or  \code{facet_nrow}, then
 \code{facet2_column} will designate the columns of the output graphs.}
+
+\item{facet2_title}{optionally specify a title to describe facet 2. This is
+ignored if \code{floating_facet_scale} is TRUE or if you have specified
+\code{facet_ncol} or \code{facet_nrow}.}
 
 \item{facet_ncol}{optionally specify the number of columns of facetted graphs
 you would like to have. This only applies when you have specified a column
@@ -439,6 +450,9 @@ default is 14. This also determines the font size of the graph labels.}
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
+
+\item{border}{TRUE (default) or FALSE for whether to include a border around
+each graph.}
 
 \item{prettify_compound_names}{set this to a) TRUE (default) or FALSE for
 whether to make the compound names in the legend prettier or b) supply a

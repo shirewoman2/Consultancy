@@ -265,6 +265,12 @@
 #'   Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
 #'   \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
 #'   designate the rows of the output graphs.
+#' @param facet1_title optionally specify a title to describe facet 1. This is
+#'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
+#'   \code{facet_ncol} or \code{facet_nrow}.
+#' @param facet2_title optionally specify a title to describe facet 2. This is
+#'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
+#'   \code{facet_ncol} or \code{facet_nrow}.
 #' @param facet2_column optionally break up the graph into small multiples; this
 #'   specifies the second of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet2_column =
@@ -390,6 +396,8 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
+#' @param border TRUE (default) or FALSE for whether to include a border around
+#'   each graph. 
 #' @param prettify_compound_names set this to a) TRUE (default) or FALSE for
 #'   whether to make the compound names in the legend prettier or b) supply a
 #'   named character vector to set it to the exact name you'd prefer to see in
@@ -471,7 +479,9 @@ ct_plot_overlay <- function(ct_dataframe,
                             line_transparency = NA,
                             legend_label_linetype = NA,
                             facet1_column,
+                            facet1_title = NA,
                             facet2_column, 
+                            facet2_title = NA, 
                             facet_ncol = NA, 
                             facet_nrow = NA,
                             floating_facet_scale = FALSE,
@@ -493,6 +503,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             graph_title = NA,
                             graph_title_size = 14, 
                             legend_position = NA,
+                            border = TRUE, 
                             prettify_compound_names = TRUE,
                             qc_graph = FALSE,
                             existing_exp_details = NA,
@@ -511,6 +522,16 @@ ct_plot_overlay <- function(ct_dataframe,
       stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
            call. = FALSE)
    }
+   
+   # NB: A lot of error catching has to happen AFTER setting things up for
+   # nonstandard evaluation, so look underneath that heading if you can't find
+   # an error catch here.
+   
+   # Ungrouping anything that came pre-grouped b/c it messes things up.
+   ct_dataframe <- ungroup(ct_dataframe)
+   
+   # Making sure the data.frame contains unique observations and no unnecessary levels.
+   ct_dataframe <- unique(ct_dataframe) %>% droplevels()
    
    # Checking whether this is an enzyme abundance plot
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe)) &
@@ -545,14 +566,8 @@ ct_plot_overlay <- function(ct_dataframe,
    # Checking for more than one tissue or ADAM data type b/c there's only one y
    # axis and it should have only one concentration type.
    if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
-      stop(paste("This function can only deal with one type of concentration unit at a time, and the supplied data.frame contains more than one non-convertable concentration unit. (Supplying some data in ng/mL and other data in mg/L is fine; supplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.) Please supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:\n", 
+      stop(paste("This function can only deal with one type of concentration unit at a time,\nand the supplied data.frame contains more than one non-convertable concentration unit.\n(Supplying some data in ng/mL and other data in mg/L is fine;\nsupplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.)\nPlease supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:\n", 
                  deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
-           call. = FALSE)
-   }
-   
-   if(length(unique(ct_dataframe$subsection_ADAM)) > 1){
-      stop(paste("This function can only deal with one type of ADAM-model tissue at a time, and the supplied data.frame contains more than one. To see what you've got, try this:\n", 
-                 deparse(substitute(ct_dataframe)), "%>% select(subsection_ADAM) %>% unique()"),
            call. = FALSE)
    }
    
@@ -663,75 +678,9 @@ ct_plot_overlay <- function(ct_dataframe,
    obs_color_user <- obs_color
    obs_shape_user <- obs_shape
    
-   # Making sure the data.frame contains unique observations and no unnecessary levels.
-   ct_dataframe <- unique(ct_dataframe) %>% droplevels()
-   
-   # Prettifying compound names 
-   if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
-      if(prettify_compound_names){
-         if(EnzPlot){ 
-            ct_dataframe <- ct_dataframe %>% 
-               mutate(Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
-         } else {
-            ct_dataframe <- ct_dataframe %>% 
-               mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
-                      Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function 
-         }
-      } 
-      # If prettify_compound_names is FALSE, then don't do anything.
-      
-   } else {
-      # This is when the user has requested specific value for prettifying. 
-      if(EnzPlot){ 
-         # Any compounds that the user omitted from prettify_compound_names
-         # should be added to that and kept as their original values.
-         MissingNames <- setdiff(unique(ct_dataframe$Inhibitor), 
-                                 names(prettify_compound_names))
-         OrigPrettyNames <- prettify_compound_names
-         prettify_compound_names <- c(prettify_compound_names, MissingNames)
-         if(length(MissingNames) > 0){
-            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-               MissingNames
-         }
-         
-         ct_dataframe <- ct_dataframe %>% 
-            mutate(Inhibitor = prettify_compound_names[Inhibitor])
-      } else {
-         MissingNames <- setdiff(sort(unique(c(ct_dataframe$Compound,
-                                               ct_dataframe$Inhibitor))), 
-                                 names(prettify_compound_names))
-         MissingNames <- MissingNames[!MissingNames == "none"]
-         OrigPrettyNames <- prettify_compound_names
-         prettify_compound_names <- c(prettify_compound_names, MissingNames)
-         if(length(MissingNames) > 0){
-            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
-               MissingNames
-         }
-         
-         ct_dataframe <- ct_dataframe %>% 
-            mutate(Compound = prettify_compound_names[Compound], 
-                   Inhibitor = prettify_compound_names[Inhibitor])
-      }
-   }
-   
-   # Unless the user specifically set the levels for the Inhibitor column, we
-   # always want "none" to be the 1st item on the legend for that, and we need
-   # there to be some value present for "Inhibitor" for function to work
-   # correctly.
-   ct_dataframe <- ct_dataframe %>%
-      mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
-   
-   MyPerpetrator <- unique(ct_dataframe$Inhibitor) %>% as.character()
-   MyPerpetrator <- MyPerpetrator[!MyPerpetrator == "none"]
-   
-   if(length(MyPerpetrator) > 0 & class(ct_dataframe$Inhibitor) != "factor"){
-      ct_dataframe <- ct_dataframe %>%
-         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
-   }
-   
    # Things will be more consistent and easier to code if Individual is a
    # factor and is not NA. Adjusting that as needed.
-   if("Invididual" %in% names(ct_dataframe) &&
+   if("Individual" %in% names(ct_dataframe) &&
       any(is.na(ct_dataframe$Individual))){
       ct_dataframe <- ct_dataframe %>%
          mutate(Individual = ifelse(is.na(Individual), 
@@ -740,8 +689,14 @@ ct_plot_overlay <- function(ct_dataframe,
    
    if("Individual" %in% names(ct_dataframe) &&
       class(ct_dataframe$Individual) != "factor"){
+      
+      AggStats <- unique(ct_dataframe$Individual)
+      AggStats <- AggStats[AggStats %in% c("mean", "geomean")]
+      
       ct_dataframe <- ct_dataframe %>% 
-         mutate(Individual = as.factor(Individual))
+         mutate(Individual = as.factor(Individual), 
+                Individual = fct_relevel(Individual,
+                                         AggStats, after = Inf))
    }
    
    # Setting things up for nonstandard evaluation ----------------------------
@@ -781,12 +736,95 @@ ct_plot_overlay <- function(ct_dataframe,
       color_labels <- NA
    }
    
+   # Prettifying compound names 
+   if(class(prettify_compound_names) == "logical"){ # NB: "prettify_compound_names" is the argument value
+      if(prettify_compound_names){
+         if(EnzPlot){ 
+            ct_dataframe <- ct_dataframe %>% 
+               mutate(Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function
+         } else {
+            ct_dataframe <- ct_dataframe %>% 
+               mutate(Compound = prettify_compound_name(Compound), # NB: "prettify_compound_name" is the function
+                      Inhibitor = prettify_compound_name(Inhibitor)) # NB: "prettify_compound_name" is the function 
+            
+            # ONLY prettify color_labels when the colorBy_column is Compound or
+            # Inhibitor!!!!
+            if(as_label(colorBy_column) %in% c("Inhibitor", "Compound")){ 
+               names(color_labels) <- prettify_compound_name(names(color_labels))   
+            } 
+         }
+      } 
+      # If prettify_compound_names is FALSE, then don't do anything.
+      
+   } else {
+      # This is when the user has requested specific value for prettifying. 
+      if(EnzPlot){ 
+         # Any compounds that the user omitted from prettify_compound_names
+         # should be added to that and kept as their original values.
+         MissingNames <- setdiff(unique(ct_dataframe$Inhibitor), 
+                                 names(prettify_compound_names))
+         OrigPrettyNames <- prettify_compound_names
+         prettify_compound_names <- c(prettify_compound_names, MissingNames)
+         if(length(MissingNames) > 0){
+            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+               MissingNames
+         }
+         
+         ct_dataframe <- ct_dataframe %>% 
+            mutate(Inhibitor = prettify_compound_names[Inhibitor])
+         
+         # ONLY prettify color_labels when the colorBy_column is Compound or
+         # Inhibitor!!!!
+         if(as_label(colorBy_column) %in% c("Inhibitor", "Compound")){ 
+            names(color_labels) <- prettify_compound_name(names(color_labels))   
+         } 
+         
+      } else {
+         MissingNames <- setdiff(sort(unique(c(ct_dataframe$Compound,
+                                               ct_dataframe$Inhibitor))), 
+                                 names(prettify_compound_names))
+         MissingNames <- MissingNames[!MissingNames == "none"]
+         OrigPrettyNames <- prettify_compound_names
+         prettify_compound_names <- c(prettify_compound_names, MissingNames)
+         if(length(MissingNames) > 0){
+            names(prettify_compound_names)[length(OrigPrettyNames) + 1] <- 
+               MissingNames
+         }
+         
+         ct_dataframe <- ct_dataframe %>% 
+            mutate(Compound = prettify_compound_names[Compound], 
+                   Inhibitor = prettify_compound_names[Inhibitor])
+         
+         # ONLY prettify color_labels when the colorBy_column is Compound or
+         # Inhibitor!!!!
+         if(as_label(colorBy_column) %in% c("Inhibitor", "Compound")){ 
+            names(color_labels) <- prettify_compound_name(names(color_labels))   
+         } 
+      }
+   }
+   
+   # Unless the user specifically set the levels for the Inhibitor column, we
+   # always want "none" to be the 1st item on the legend for that, and we need
+   # there to be some value present for "Inhibitor" for function to work
+   # correctly.
+   ct_dataframe <- ct_dataframe %>%
+      mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
+   
+   MyPerpetrator <- unique(ct_dataframe$Inhibitor) %>% as.character()
+   MyPerpetrator <- MyPerpetrator[!MyPerpetrator == "none"]
+   
+   if(length(MyPerpetrator) > 0 & class(ct_dataframe$Inhibitor) != "factor" &
+      "none" %in% ct_dataframe$Inhibitor){
+      ct_dataframe <- ct_dataframe %>%
+         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
+   }
+   
    # If the color labels don't match the files available, give a warning.
    if(as_label(colorBy_column) != "<empty>" && 
       any(complete.cases(color_labels)) && 
       all(names(color_labels) %in% sort(t(unique(
          ct_dataframe[, as_label(colorBy_column)])))) == FALSE){
-      BadLabs <- setdiff(names(color_labels), sort(unique(ct_dataframe[, as_label(colorBy_column)])))
+      BadLabs <- setdiff(names(color_labels), sort(t(unique(ct_dataframe[, as_label(colorBy_column)]))))
       
       warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
                      as_label(colorBy_column), 
@@ -801,7 +839,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                         1:length(unique(ct_dataframe$File)))))
       color_labels[which(names(color_labels) %in% BadLabs)] <-
          WarningLabel[1:length(BadLabs)]
-      NewNames <- setdiff(sort(unique(ct_dataframe[, as_label(colorBy_column)])),
+      NewNames <- setdiff(sort(t(unique(ct_dataframe[, as_label(colorBy_column)]))),
                           names(color_labels))
       
       if(length(NewNames) == 0){
@@ -965,12 +1003,12 @@ ct_plot_overlay <- function(ct_dataframe,
       
       # for enzyme abundance data
       ct_dataframe <- ct_dataframe %>%
+         mutate(Abundance = Abundance / 100) %>% 
+         rename(Conc = Abundance) %>% 
          unite(col = Group, any_of(c("File", "Trial", "Tissue", "Enzyme",
                                      "Inhibitor", "Individual",
                                      "colorBy_column", "FC1", "FC2")), 
-               sep = " ", remove = FALSE) %>% 
-         mutate(Abundance = Abundance / 100) %>% 
-         rename(Conc = Abundance)
+               sep = " ", remove = FALSE)
       
       sim_dataframe <- ct_dataframe
       
@@ -1291,7 +1329,7 @@ ct_plot_overlay <- function(ct_dataframe,
          warning("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. ", 
                  "If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame: 
                     MyEnzData <- MyEnzData %>% mutate(Tissue2 = Tissue)
-                    ct_plot_overlay(ct_dataframe = MyEnzData, colorBy_column = Tissue2, ...)\nReplace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.\n",
+                    enz_plot_overlay(sim_enz_dataframe = MyEnzData, colorBy_column = Tissue2, ...)\nReplace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.\n",
                  call. = FALSE)
          
          sim_dataframe <- sim_dataframe %>% filter(Tissue != "colon") %>% 
@@ -1322,15 +1360,16 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    MyUniqueData <- sim_dataframe %>% 
-      filter(Trial == MyMeanType) %>% 
+      filter(Trial == MyMeanType) %>% ungroup() %>% 
       select(any_of(union(UniqueAES, 
                           c("File", "Tissue", "CompoundID", "Compound", "Enzyme", "Inhibitor")))) %>% 
       unique()
    
-   UniqueGroups1 <- sim_dataframe %>% 
+   UniqueGroups1 <- sim_dataframe %>% ungroup() %>% 
       summarize(across(.cols = any_of(union(UniqueAES, 
                                             c("File", "Tissue", "CompoundID",
-                                              "Compound", "Inhibitor"))),
+                                              "Compound", "Inhibitor", 
+                                              "Species"))),
                        .fns = function(x) length(unique(x)))) 
    
    UniqueGroups <- UniqueGroups1 %>% 
@@ -1439,6 +1478,11 @@ ct_plot_overlay <- function(ct_dataframe,
                        y_axis_limits_lin = y_axis_limits_lin, 
                        y_axis_limits_log = y_axis_limits_log, 
                        y_axis_interval = y_axis_interval)
+   
+   if(length(unique(sim_dataframe$subsection_ADAM)) > 1){
+      warning("You have more than one subtype of tissue in the column subsection_ADAM, which is fine but does make it challenging to come up with a universally workable y axis label. We'll supply a generic one, but we recommend setting it yourself with `y_axis_label`.\n", 
+              call. = FALSE)
+   }
    
    ObsConcUnits <- YStuff$ObsConcUnits
    ylab <- YStuff$ylab
@@ -1554,6 +1598,55 @@ ct_plot_overlay <- function(ct_dataframe,
       obs_shape <- obs_shape[1:NumShapes] 
    }
    
+   ## Setting up for faceting later -----------------------------------------
+   
+   # If the user wants to title their facets, check whether ggh4x is installed
+   # and ask user if they want to install it if not.
+   if(any(c(complete.cases(facet1_title), complete.cases(facet2_title))) & 
+      length(find.package("ggh4x", quiet = TRUE)) == 0){
+      message("\nYou requested a title for facet1 or facet 2. Adding a title to facets requires the package ggh4x,\nwhich the R Working Group will ask IT to install next time VDIs are rebuilt but which we didn't\nthink of this go 'round.")
+      Install <- readline(prompt = "Is it ok to install ggh4x for you? (y or n)   ")
+      
+      if(tolower(str_sub(Install, 1, 1)) == "y"){
+         install.packages("ggh4x")
+      } else {
+         message("Ok, we will not install ggh4x for you, but we also won't be able to add facet titles to your graph.\n")
+         facet1_title <- NA
+         facet2_title <- NA
+      }
+   }
+   
+   # Adjusting input data.frame for facet titles
+   if(complete.cases(facet1_title)){
+      sim_dataframe$Facet1Title <- facet1_title
+      if(nrow(obs_dataframe) > 0){
+         obs_dataframe$Facet1Title <- facet1_title
+      }
+   }
+   
+   if(complete.cases(facet2_title)){
+      sim_dataframe$Facet2Title <- facet2_title
+      if(nrow(obs_dataframe) > 0){
+         obs_dataframe$Facet2Title <- facet2_title
+      }
+   }
+   
+   # Here are the options for faceting: 
+   FacetOpts <- paste(ifelse(as_label(facet1_column) == "<empty>", 
+                             "NoFC1", 
+                             ifelse(complete.cases(facet1_title), 
+                                    "FC1PlusTitle", "FC1")),
+                      ifelse(as_label(facet2_column) == "<empty>", 
+                             "NoFC2", 
+                             ifelse(complete.cases(facet2_title), 
+                                    "FC2PlusTitle", "FC2")))
+   # If there are no facet columns or if there are just no titles for those
+   # columns, those scenarios all work the same.
+   FacetOpts <- ifelse(FacetOpts %in% c("NoFC1 NoFC2", "FC1 FC2", 
+                                        "NoFC1 FC2", "FC1 NoFC2"), 
+                       "ggplot2 facets", FacetOpts)
+   
+   
    ## Setting up ggplot and aes bases for the graph -----------------------
    
    if(figure_type == "percentile ribbon"){
@@ -1606,6 +1699,8 @@ ct_plot_overlay <- function(ct_dataframe,
       )
    } 
    
+   
+   # Making the skeleton of the graph ----------------------------------------
    A <- switch(
       figure_type, 
       "means only" = ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
@@ -1849,8 +1944,11 @@ ct_plot_overlay <- function(ct_dataframe,
    A <-  A +
       xlab(xlab) +
       ylab(ylab) +
-      theme_consultancy() +
-      theme(panel.border = element_rect(color = "black", fill = NA)) # KEEP THIS
+      theme(panel.border = element_rect(color = "black", fill = NA)) + # KEEP THIS
+      theme_consultancy(border = border)
+   
+   
+   ## Faceting -----------------------------------------------------------------
    
    # Error catching
    if((complete.cases(facet_ncol) | complete.cases(facet_nrow)) == TRUE & 
@@ -1924,16 +2022,71 @@ ct_plot_overlay <- function(ct_dataframe,
       }
       
    } else {
-      A <- A +
-         coord_cartesian(xlim = time_range_relative, 
-                         ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                         0, y_axis_limits_lin[1]),
-                                  YmaxRnd)) +
+      
+      # Setting up theme for facet titles
+      FacetTitleTheme_XY <- ggh4x::strip_nested(
+         text_x = ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_x = TRUE, 
+         
+         text_y = ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_y = TRUE)
+      
+      FacetTitleTheme_Y <- ggh4x::strip_nested(
+         text_x = ggh4x::elem_list_text(face = "plain", 
+                                        size = calc_element("strip.text.x", theme_consultancy())$size), 
+         by_layer_x = TRUE, 
+         
+         text_y = ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_y = TRUE)
+      
+      FacetTitleTheme_X <- ggh4x::strip_nested(
+         text_x =             ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                                    size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                             calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_x = TRUE, 
+         
+         text_y = ggh4x::elem_list_text(face = "plain", 
+                                        size = calc_element("strip.text.x", theme_consultancy())$size), 
+         by_layer_y = TRUE)
+      
+      
+      A <- A + coord_cartesian(xlim = time_range_relative, 
+                               ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                               0, y_axis_limits_lin[1]),
+                                        YmaxRnd)) +
          scale_x_time(time_units = TimeUnits, 
                       time_range = time_range_relative,
                       x_axis_interval = x_axis_interval, 
                       pad_x_axis = pad_x_axis) +
-         facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
+         switch(FacetOpts, 
+                "ggplot2 facets" = facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)), 
+                "FC1PlusTitle FC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ FC2, 
+                                                         strip = FacetTitleTheme_Y), 
+                "FC1PlusTitle NoFC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ ., 
+                                                           strip = FacetTitleTheme_Y), 
+                "FC1 FC2PlusTitle" = ggh4x::facet_nested(FC1 ~ Facet2Title + FC2, 
+                                                         strip = FacetTitleTheme_X), 
+                "FC1PlusTitle FC2PlusTitle" = ggh4x::facet_nested(Facet1Title + FC1 ~ Facet2Title + FC2, 
+                                                                  strip = FacetTitleTheme_XY), 
+                "NoFC1 FC2PlusTitle" = ggh4x::facet_nested(. ~ Facet2Title + FC2, 
+                                                           strip = FacetTitleTheme_X))
+      
+      # A <- A +
+      #    coord_cartesian(xlim = time_range_relative, 
+      #                    ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+      #                                    0, y_axis_limits_lin[1]),
+      #                             YmaxRnd)) +
+      #    scale_x_time(time_units = TimeUnits, 
+      #                 time_range = time_range_relative,
+      #                 x_axis_interval = x_axis_interval, 
+      #                 pad_x_axis = pad_x_axis) +
+      #    facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
       
       if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
          A <- suppressWarnings(suppressMessages(
@@ -2080,8 +2233,8 @@ ct_plot_overlay <- function(ct_dataframe,
          }
          
          suppressWarnings(
-            A <-  A + scale_color_manual(values = MyColors) +
-               scale_fill_manual(values = MyColors)
+            A <-  A + scale_color_manual(values = MyColors, drop = FALSE) +
+               scale_fill_manual(values = MyColors, drop = FALSE)
          )
       }
    }
@@ -2200,6 +2353,14 @@ ct_plot_overlay <- function(ct_dataframe,
       A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
    }
    
+   # When the y label is an expression, it tends to be a little too small. Make
+   # it 1.25 * larger. If it's an expression, that also means that it can't be
+   # bold. Make the x axis title not bold as well in that case.
+   if("expression" %in% class(ylab)){
+      A <- A + theme(axis.title.y = element_text(size = A$theme$text$size * 1.25), 
+                     axis.title.x = element_text(face = "plain"))
+   }
+   
    # If any of the items in the legend have length = 1, don't show that in the
    # legend.
    if(AES %in% c("linetype", "color-linetype") &&
@@ -2281,14 +2442,16 @@ ct_plot_overlay <- function(ct_dataframe,
    
    if(complete.cases(graph_title)){
       A <- A + ggtitle(graph_title) +
-         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+               plot.title.position = "panel")
       B <- B + ggtitle(graph_title) +
-         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size))
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+               plot.title.position = "panel")
       AB <- ggpubr::annotate_figure(
-         AB, top = ggpubr::text_grob(graph_title, hjust = 0.15, # <- Something is amuck here w/hjust b/c 0.5 is NOT centered. 
+         AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
                                      face = "bold", size = graph_title_size))
       ABhoriz <- ggpubr::annotate_figure(
-         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.15, # <- Something is amuck here w/hjust b/c 0.5 is NOT centered. 
+         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
                                           face = "bold", size = graph_title_size))
    }
    

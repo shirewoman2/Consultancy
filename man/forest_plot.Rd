@@ -28,6 +28,7 @@ forest_plot(
   table_title = NA,
   rel_widths = c(5, 1),
   prettify_ylabel = NA,
+  PK_labels = NA,
   include_dose_num = NA,
   include_ratio_in_labels = TRUE,
   error_bar_height = NA,
@@ -74,9 +75,13 @@ vector, e.g.,
   input data \code{forest_dataframe}, then setting \code{y_order = "as is"}
   will keep things in exactly the same order.}
 
-  \item{a character vector of file names}{e.g., \code{y_order =
-  c("myfile1.xlsx", "myfile2.xlsx")}. The file names will be automatically
-  replaced with whatever you specified for \code{y_axis_labels}.}
+  \item{a character vector of whatever you want for y axis labels}{e.g., 
+  \code{y_order = c("myfile1.xlsx", "myfile2.xlsx")} if the y axis is just 
+  going to show file names or, if, say, you've got it set to show specific 
+  labels for those file names, then those labels, e.g., if you set 
+  y_axis_labels like this: \code{y_axis_labels = ("myfile1.xlsx" = 
+  "itraconazole", "myfile2.xlsx" = "efavirenz")} then you would set the 
+  y_order like this: \code{y_order = c("itraconazole", "efavirenz")}}
 
   \item{"strongest inhibitor to strongest inducer"}{Sort the simulations
   from top to bottom by AUC ratio from the strongest inhibitor (largest AUC
@@ -128,7 +133,7 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
   "Inhibitor1" is included in your observed PK.}
 
   \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
-  "Centile_Lower", "Centile_Upper", "GeoCV", "ArithCV", "Min", "Max",
+  "Centile_Lower", "Centile_Upper", "GCV", "ArithCV", "Min", "Max",
   "Std Dev"}{these will be used for the error bars and are optional.}
 
   \item{whatever column you used for \code{facet_column_x}}{If you broke up the
@@ -263,6 +268,13 @@ For example, "SV-Rifampicin-MD" will become "rifampicin", and
 prettify if you supply a column name for \code{y_axis_labels} and we
 *won't* prettify if you supply a named character vector there.}
 
+\item{PK_labels}{optionally specify what you would like to have appear on the
+y axis for labels for each PK parameter with a named vector of expressions,
+e.g., \code{PK_labels = c("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
+"Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}.
+To see examples of PK parameters set up as expressions for use in graph
+labels, try running \code{PKexpressions}.}
+
 \item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
 the dose number when listing the PK parameter. By default, the parameter
 will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
@@ -395,7 +407,7 @@ forest_plot(forest_dataframe = BufForestData_20mg,
             mean_type = "median",
             variability_type = "range")
 
-# Here's how to include a table of the numbers used for the centre 
+# Here's how to include a table of the numbers used for the centre
 # statistic and variability along the right side of the graph.
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = Inhibitor1,

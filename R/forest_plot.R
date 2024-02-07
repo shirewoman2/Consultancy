@@ -49,9 +49,13 @@
 #'   input data \code{forest_dataframe}, then setting \code{y_order = "as is"}
 #'   will keep things in exactly the same order.}
 #'
-#'   \item{a character vector of file names}{e.g., \code{y_order =
-#'   c("myfile1.xlsx", "myfile2.xlsx")}. The file names will be automatically
-#'   replaced with whatever you specified for \code{y_axis_labels}.}
+#'   \item{a character vector of whatever you want for y axis labels}{e.g., 
+#'   \code{y_order = c("myfile1.xlsx", "myfile2.xlsx")} if the y axis is just 
+#'   going to show file names or, if, say, you've got it set to show specific 
+#'   labels for those file names, then those labels, e.g., if you set 
+#'   y_axis_labels like this: \code{y_axis_labels = ("myfile1.xlsx" = 
+#'   "itraconazole", "myfile2.xlsx" = "efavirenz")} then you would set the 
+#'   y_order like this: \code{y_order = c("itraconazole", "efavirenz")}}
 #'
 #'   \item{"strongest inhibitor to strongest inducer"}{Sort the simulations
 #'   from top to bottom by AUC ratio from the strongest inhibitor (largest AUC
@@ -102,7 +106,7 @@
 #'   "Inhibitor1" is included in your observed PK.}
 #'
 #'   \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
-#'   "Centile_Lower", "Centile_Upper", "GeoCV", "ArithCV", "Min", "Max",
+#'   "Centile_Lower", "Centile_Upper", "GCV", "ArithCV", "Min", "Max",
 #'   "Std Dev"}{these will be used for the error bars and are optional.}
 #'
 #'   \item{whatever column you used for \code{facet_column_x}}{If you broke up the
@@ -132,6 +136,12 @@
 #' @param y_axis_title optionally specify a vertical title to be displayed to
 #'   the left of the y axis. Example: \code{y_axis_title = "Perpetrator
 #'   co-administered with Drug X"}. Default ("none") leaves off any y-axis title.
+#' @param PK_labels optionally specify what you would like to have appear on the
+#'   y axis for labels for each PK parameter with a named vector of expressions,
+#'   e.g., \code{PK_labels = c("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
+#'   "Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}.
+#'   To see examples of PK parameters set up as expressions for use in graph
+#'   labels, try running \code{PKexpressions}.
 #' @param x_axis_limits the x axis limits to use; default is 0.06 to 12.
 #' @param x_axis_number_type set the x axis number type to be "ratios"
 #'   (default), "percents" (converts the ratios to a percent), or "keep trailing
@@ -322,7 +332,7 @@
 #'             mean_type = "median",
 #'             variability_type = "range")
 #'
-#' # Here's how to include a table of the numbers used for the centre 
+#' # Here's how to include a table of the numbers used for the centre
 #' # statistic and variability along the right side of the graph.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = Inhibitor1,
@@ -447,6 +457,7 @@ forest_plot <- function(forest_dataframe,
                         table_title = NA,
                         rel_widths = c(5, 1),
                         prettify_ylabel = NA, 
+                        PK_labels = NA, 
                         include_dose_num = NA,
                         include_ratio_in_labels = TRUE, 
                         error_bar_height = NA,
@@ -557,15 +568,41 @@ forest_plot <- function(forest_dataframe,
            call. = FALSE)
    }
    
+   # Making some guesses about how user might mis-specify variability type.
+   variability_type <- ifelse(variability_type %in% c("5th to 95th", 
+                                                      "percentiles"), 
+                              "5th to 95th percentiles", variability_type)
+   variability_type <- ifelse(str_detect(variability_type, "CI|conf int") 
+                              & !str_detect(variability_type, "95"), 
+                              "90% CI", variability_type)
+   variability_type <- ifelse(variability_type %in% c("CV", "cv") &
+                                 mean_type == "geometric", 
+                              "geometric CV", variability_type)
+   variability_type <- ifelse(variability_type %in% c("CV", "cv") &
+                                 mean_type == "arithmetic", 
+                              "arithmetic CV", variability_type)
+   variability_type <- ifelse(variability_type %in% c("sd", "SD"), 
+                              "standard deviation", variability_type)
+   
+   if(variability_type %in% c("90% CI", "95% CI", "5th to 95th percentiles", 
+                              "range", "geometric CV", "arithmetic CV", 
+                              "standard deviation") == FALSE){
+      warning(paste0("You specified `", 
+                     variability_type, 
+                     "` for the variability type, but that's not among the possible options. We'll use the default of the geometric 90% confidence interval instead.\n"), 
+              call. = FALSE)
+      variability_type <- "90% CI"
+   }
+   
    # Allowing for flexibility in case for input column names. Really, I should
    # just make all the columns lower or upper case but I haven't coded
    # everything else like that, so not fixing that now.
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "geomean"))] <- "GeoMean"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "geocv"))] <- "GeoCV"
+                                            "gcv"))] <- "GCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "arithcv"))] <- "ArithCV"
+                                            "^cv$"))] <- "ArithCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "ci(90|95)?_lower"))] <- "CI_Lower"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
@@ -581,17 +618,17 @@ forest_plot <- function(forest_dataframe,
                               c("file", "tissue", "mean", "median", "min", "max", 
                                 "fold", "substrate", "inhibitor1")] <- 
       str_to_title(names(forest_dataframe)[tolower(names(forest_dataframe)) %in% 
-                                 c("file", "tissue", "mean", "median", "min", "max", 
-                                   "fold", "substrate", "inhibitor1")])
+                                              c("file", "tissue", "mean", "median", "min", "max", 
+                                                "fold", "substrate", "inhibitor1")])
    
    
    if(ObsIncluded){
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "geomean"))] <- "GeoMean"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "geocv"))] <- "GeoCV"
+                                          "gcv"))] <- "GCV"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "arithcv"))] <- "ArithCV"
+                                          "^cv$"))] <- "ArithCV"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "ci(90|95)?_lower"))] <- "CI_Lower"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
@@ -610,6 +647,39 @@ forest_plot <- function(forest_dataframe,
                                             c("file", "tissue", "mean", "median", "min", "max", 
                                               "fold", "substrate", "inhibitor1")])
    }
+   
+   # Checking for acceptable input for PK_labels
+   if(is.logical(PK_labels) == FALSE){ # NB: Can't use any(complete.cases(PK_labels)) b/c complete.cases doesn't work for expressions. 
+      if("list" %in% class(PK_labels) == FALSE){
+         warning("You supplied something other than a list of expressions for the argument PK_labels, and we need a list of expressions to make this work. Did you perhaps use `c()` instead of `list()` for specifying PK_labels? We'll use the default PK labels instead.\n", 
+                 call. = FALSE)
+         PK_labels <- NA
+      } else if(all(sapply(PK_labels, "class") == "expression") == FALSE){
+         warning("You supplied something other than a list of expressions for the argument PK_labels, and we need a list of expressions to make this work. Did you perhaps use `c()` instead of `list()` for specifying PK_labels? We'll use the default PK labels instead.\n", 
+                 call. = FALSE)
+         PK_labels <- NA
+      } else if(all(is.null(names(PK_labels)))){
+         warning("Each value supplied for the argument PK_labels must have a name so we know which PK parameter it should be used to label. You supplied expressions without labels, so we don't know which label applies to which PK parameter. We'll ignore PK_labels and use the defaults.\n", 
+                 call. = FALSE)
+         PK_labels <- NA
+      } else {
+         
+         BadNames <- setdiff(names(PK_labels), 
+                             c(AllPKParameters$PKparameter, 
+                               AllPKParameters$PKparameter_nodosenum, 
+                               levels(forest_dataframe$PKparameter)))
+         
+         if(length(BadNames) > 0){
+            warning(paste0("Some of the names of the expressions supplied for the argument PK_labels are not among the possible options for naming PK parameters or are not found in your data. Specifically, these names will not work:\n", 
+                           paste0(BadNames, "\n"), 
+                           "These will be ignored.\n"), 
+                    call. = FALSE)
+            PK_labels <- PK_labels[names(PK_labels) %in% c(AllPKParameters$PKparameter, 
+                                                           AllPKParameters$PKparameter_nodosenum)]
+         }
+      }
+   }
+   
    
    # Reshaping data as needed ------------------------------------------------
    
@@ -687,6 +757,7 @@ forest_plot <- function(forest_dataframe,
    
    if(include_dose_num == FALSE){
       PKparameters <- sub("_dose1|_last", "", PKparameters)
+      names(PK_labels) <- sub("_dose1|_last", "", names(PK_labels))
       
       forest_dataframe <- forest_dataframe %>% 
          mutate(PKparameter = sub("_dose1|_last", "", PKparameter))
@@ -701,6 +772,8 @@ forest_plot <- function(forest_dataframe,
       if(include_dose_num){
          PKparameters <- sub("_ratio_dose1", "_dose1_nounits", PKparameters)
          PKparameters <- sub("_ratio_last", "_last_nounits", PKparameters)
+         names(PK_labels) <- sub("_ratio_dose1", "_dose1_nounits", names(PK_labels))
+         names(PK_labels) <- sub("_ratio_last", "_last_nounits", names(PK_labels))
          
          forest_dataframe <- forest_dataframe %>% 
             mutate(PKparameter = sub("_ratio_dose1", "_dose1_nounits", PKparameter), 
@@ -714,6 +787,8 @@ forest_plot <- function(forest_dataframe,
          
       } else {
          PKparameters <- sub("_ratio", "_nounits", PKparameters)
+         
+         names(PK_labels) <- sub("_ratio", "_nounits", names(PK_labels))
          
          forest_dataframe <- forest_dataframe %>% 
             mutate(PKparameter = sub("_ratio", "_nounits", PKparameter))
@@ -742,7 +817,7 @@ forest_plot <- function(forest_dataframe,
                      levels = c("GeoMean", "Mean", "Median", 
                                 "CI_Lower", "CI_Upper", 
                                 "Centile_Lower","Centile_Upper", 
-                                "Min", "Max", "SD", "GeoCV", "ArithCV"))
+                                "Min", "Max", "SD", "GCV", "ArithCV"))
    FDnames <- sort(FDnames)
    CenterStat <- as.character(
       FDnames[which(FDnames %in% switch(mean_type, 
@@ -772,7 +847,7 @@ forest_plot <- function(forest_dataframe,
          "5th to 95th percentiles" = c("Centile_Lower", "Centile_Upper"), 
          "range" = c("Min", "Max"), 
          "arithmetic CV" = "ArithCV", 
-         "geometric CV" = "GeoCV", 
+         "geometric CV" = "GCV", 
          "sd" = "SD",
          "SD" = "SD", 
          "standard deviation" = "SD"))]
@@ -782,7 +857,7 @@ forest_plot <- function(forest_dataframe,
       VarStat <- FDnames[which(FDnames %in% c("CI_Lower", "CI_Upper", 
                                               "CI_Lower", "CI_Upper", 
                                               "Centile_Lower","Centile_Upper", 
-                                              "Min", "Max", "SD", "GeoCV", "ArithCV"))][1]
+                                              "Min", "Max", "SD", "GCV", "ArithCV"))][1]
       
       if(length(VarStat) == 0){
          stop("You must have variability data included in forest_dataframe to be able to make a forest plot. Please see the help file for acceptable types of variability input.",
@@ -795,7 +870,7 @@ forest_plot <- function(forest_dataframe,
                                "Centile_Lower" = "Xth to Yth percentiles",
                                "range" = "the range",
                                "ArithCV" = "the arithmetic CV",
-                               "GeoCV" = "the geometric CV",
+                               "GCV" = "the geometric CV",
                                "SD" = "the standard deviation", 
                                "standard deviation" = "SD"), 
                         " will be used."), 
@@ -803,15 +878,15 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
-   if(any(VarStat %in% c("GeoCV"))){
+   if(any(VarStat %in% c("GCV"))){
       forest_dataframe <- forest_dataframe %>% 
-         mutate(GeoCV_Lower = GeoMean + GeoMean * GeoCV, 
-                GeoCV_Upper = GeoMean - GeoMean * GeoCV)
+         mutate(GeoCV_Lower = GeoMean + GeoMean * GCV, 
+                GeoCV_Upper = GeoMean - GeoMean * GCV)
       
       if(ObsIncluded){
          observed_PK <- observed_PK %>% 
-            mutate(GeoCV_Lower = GeoMean + GeoMean * GeoCV, 
-                   GeoCV_Upper = GeoMean - GeoMean * GeoCV)
+            mutate(GeoCV_Lower = GeoMean + GeoMean * GCV, 
+                   GeoCV_Upper = GeoMean - GeoMean * GCV)
       }
       
       VarStat <- c("GeoCV_Lower", "GeoCV_Upper")
@@ -1126,6 +1201,8 @@ forest_plot <- function(forest_dataframe,
    
    ## Setting up other stuff for graphing ----------------------------------
    
+   ### Shading --------------------------------------------------------------
+   
    # Yes, the set of numbers below will introduce infinite values in a
    # continuous x axis, and no, I can't seem to get ggplot2 to stop telling me
    # that, but this works to get the right shading. 
@@ -1166,6 +1243,8 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
+   
+   ### x axis limits and breaks -----------------------------------------------
    if(is.na(x_axis_limits[1])){
       GraphRange <- forest_dataframe %>% ungroup() %>% 
          select(Centre, Lower, Upper) %>% stack()
@@ -1196,6 +1275,9 @@ forest_plot <- function(forest_dataframe,
       names(XBreaks)[length(XBreaks)] <- as.character(x_axis_limits[2])
       XBreaks <- sort(XBreaks)
    }
+   
+   
+   ### y axis adjustments -----------------------------------------------------
    
    # Tweaking y axis positions based on whether obs data included
    forest_dataframe <- forest_dataframe %>%
@@ -1261,6 +1343,9 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
+   
+   ### x axis title -------------------------------------------------------
+   
    # Figuring out what x axis title should be
    XTitle <- paste(switch(CenterStat, 
                           "GeoMean" = "Geometric Mean Ratio", 
@@ -1272,10 +1357,11 @@ forest_plot <- function(forest_dataframe,
                           "Centile_Lower" = "(5th to 95th Percentiles)", 
                           "Min" = "(Range)",
                           "SD_Lower" = "(Standard Deviation)", 
-                          "GeoCV" = "GeoCV NOT YET SET UP",
-                          "ArithCV" = "ArithCV NOT YET SET UP"))
+                          "GeoCV_Lower" = "(Geometric CV)",
+                          "ArithCV_Lower" = "(Arithmetic CV)"))
    
-   # Assigning shapes
+   
+   ### Assigning shapes -------------------------------------------------------
    if(length(point_shape) == 1){
       MyShapes <- c(point_shape, point_shape)
    } else if(length(point_shape > 1)){
@@ -1283,6 +1369,9 @@ forest_plot <- function(forest_dataframe,
    }
    
    names(MyShapes) <- c("observed", "predicted")
+   
+   
+   ### vline at x = 1 ----------------------------------------------------------
    
    # Figuring out what they want for vline at x = 1.
    ShowVLine <- vline_at_1 != "none"
@@ -1320,15 +1409,24 @@ forest_plot <- function(forest_dataframe,
    VlineParams[["linewidth"]] <- ifelse(is.na(as.numeric(VlineParams[["linewidth"]])), 
                                         0.5, as.numeric(VlineParams[["linewidth"]]))
    
+   
    # Graph ----------------------------------------------------------------
-   if(as_label(facet_column_x) == "PKparameter" |
-      FakeFacetOnPK){
+   if(as_label(facet_column_x) == "PKparameter" | FakeFacetOnPK){
+      
+      # When faceting on PK parameter, Param_exp must be an expression and NOT a
+      # list of expressions. This seems to be the best way to make that happen.
+      Param_exp <- as.expression(c())
+      for(i in levels(forest_dataframe$PKparameter)){
+         Param_exp[i] <- PKexpressions[[i]]
+      }
+      # This will leave a NULL as the 1st item in Param_exp, but that doesn't
+      # seem to affect the graph. I tried making this other ways, but they all
+      # resulted in a list of expressions -- class(Param_exp) would be a list --
+      # rather than an expression with multiple items -- class(Param_exp) should
+      # be "expression". This works, though. 
       
       # If user wants to facet by the PK parameter, that's a special case
       # b/c we need to change what we're using for the y axis. 
-      
-      Param_exp <- PKexpressions[levels(forest_dataframe$PKparameter)]
-      names(Param_exp) <- levels(forest_dataframe$PKparameter)
       
       forest_dataframe <- forest_dataframe %>% 
          mutate(PKparameter_exp = factor(PKparameter, 
@@ -1379,6 +1477,22 @@ forest_plot <- function(forest_dataframe,
    } else {
       
       # This is when they're NOT faceting on the PK parameter. 
+      
+      # Setting PK parameter labels 
+      Param_exp <- list()
+      
+      for(param in setdiff(levels(forest_dataframe$PKparameter), 
+                           names(PK_labels))){
+         Param_exp[[param]] <- PKexpressions[[param]]
+      }
+      
+      # Replacing any that user specified. 
+      if("logical" %in% class(PK_labels) == FALSE){
+         for(param in names(PK_labels)){
+            Param_exp[[param]] <- PK_labels[[param]]
+         }
+      }
+      
       G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
                                         y = PKParam_num, shape = SimOrObs)) +
          geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, 
@@ -1403,7 +1517,7 @@ forest_plot <- function(forest_dataframe,
          geom_point(size = 2.5, fill = "white") +
          scale_shape_manual(values = MyShapes) +
          scale_y_continuous(breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
-                            labels = sapply(PKexpressions[levels(forest_dataframe$PKparameter)], FUN = `[`), 
+                            labels = sapply(Param_exp[levels(forest_dataframe$PKparameter)], FUN = `[`), 
                             expand = expansion(mult = pad_y_num)) +
          labs(fill = "Interaction level", shape = NULL)
       
@@ -1449,6 +1563,8 @@ forest_plot <- function(forest_dataframe,
                                                           linewidth = 0.25)), 
          # legend.key = element_rect(colour="black", size = 0.5), # <-- Alternate attempt to add borders around legend boxes, but this one results in a box with a little bit of space between the rectangle glyph and the border. The "guides" option earlier works better.
          legend.position = legend_position, ### KEEP THIS
+         legend.box = ifelse(legend_position == "bottom", "vertical", "horizontal"),
+         legend.margin = margin(0, 0, 0, 0), 
          strip.text = element_text(face = "bold"),
          strip.text.y.left = element_text(angle = 0),
          strip.placement = "outside",

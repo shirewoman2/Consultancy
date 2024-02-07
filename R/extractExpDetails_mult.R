@@ -116,7 +116,7 @@
 #'  
 extractExpDetails_mult <- function(sim_data_files = NA, 
                                    exp_details = "all", 
-                                   existing_exp_details = "none", 
+                                   existing_exp_details = NA, 
                                    overwrite = FALSE,
                                    annotate_output = FALSE,
                                    save_output = NA, 
@@ -160,6 +160,27 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
    }
    
+   # Make it so that, if they supply NA, NULL, or "none" for
+   # existing_exp_details, all of those will work. Note to coders: It was REALLY
+   # HARD to get this to work with just the perfect magical combination of
+   # exists and suppressWarnings, etc.
+   
+   
+   # If user supplied an unquoted object, this checks whether that object
+   # exists. However, if they supplied NA or NULL, this throws an error. 
+   Recode_existing_exp_details <- suppressWarnings(
+      try(exists(deparse(substitute(existing_exp_details))) == FALSE, silent = TRUE))
+   
+   # If they got an error, then the class of Recode_X will be "try-error", and
+   # then we want Recode_X to be TRUE.
+   if(suppressWarnings("try-error" %in% class(Recode_existing_exp_details))){
+      Recode_existing_exp_details <- TRUE
+   }
+   
+   if(Recode_existing_exp_details){
+      existing_exp_details <- "none"
+   }
+   
    
    # Main body of function ---------------------------------------------------
    
@@ -184,7 +205,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    }
    
    MyDeets <- list()
-   CustomDosing <- c()
    
    for(i in sim_data_files_topull){ 
       message(paste("Extracting simulation experimental details from file =", i))

@@ -19,6 +19,7 @@ ct_plot3(
   time_range_LR = "last dose",
   x_axis_interval_LR = NA,
   legend_position = "none",
+  graph_labels = FALSE,
   qc_graph = FALSE,
   existing_exp_details = NA,
   save_graph = NA,
@@ -142,6 +143,9 @@ some graphs do not (e.g., some have perpetrators and some do not so there's
 nothing to put in a legend), the alignment between sets of graphs will be a
 bit off.}
 
+\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C) for
+each of the small graphs.}
+
 \item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
 the graph where the left panel shows the original graph and the right panel
 shows information about the simulation trial design. This works MUCH faster
@@ -157,7 +161,8 @@ in quotes here, e.g., "My conc time graph.png" or "My conc time
 graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 be saved as a png file, but if you specify a different graphical file
 extension, it will be saved as that file format. Acceptable graphical file
-extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name.
+extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+Do not include any slashes, dollar signs, or periods in the file name.
 Leaving this as NA means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}

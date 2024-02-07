@@ -9,8 +9,8 @@
 #' subscripted, and the table will automatically expand to fit the contents. You
 #' can save the output to a Word file with the argument \code{save_table}.
 #'
-#' @param DF a data.frame, usually output from \code{\link{pksummary_table}} or
-#'   \code{\link{pksummary_mult}}
+#' @param DF a data.frame or a flextable, usually output from
+#'   \code{\link{pksummary_table}} or \code{\link{pksummary_mult}}
 #' @param fontsize the numeric font size for the output table. Default is 11
 #'   point.
 #' @param shading_column If you would like to alternate the shading of the rows
@@ -218,10 +218,50 @@ formatTable_Simcyp <- function(DF,
            call. = FALSE)
    }
    
+   if("flextable" %in% class(DF)){
+      
+      FT <- DF
+      
+      # Format the file name appropriately, including making the extension be
+      # docx, even if they specified something else.
+      save_table <- ifelse(str_detect(save_table, "\\..*$"), 
+                           sub("\\..*", ".docx", save_table), 
+                           paste0(save_table, ".docx"))
+      
+      # Now that the file should have an appropriate extension, check what
+      # the path and basename should be.
+      OutPath <- dirname(save_table)
+      save_table <- basename(save_table)
+      
+      # May need to change the working directory temporarily, so
+      # determining what it is now
+      CurrDir <- getwd()
+      
+      OutPath <- dirname(save_table)
+      if(OutPath == "."){
+         OutPath <- getwd()
+      }
+      
+      FileName <- basename(save_table)
+      
+      rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
+                                    package="SimcypConsultancy"), 
+                        output_dir = OutPath, 
+                        output_file = FileName, 
+                        quiet = TRUE)
+      # Note: The "system.file" part of the call means "go to where the
+      # package is installed, search for the file listed, and return its
+      # full path.
+      
+      return(FT)
+      
+   }
+   
    if("data.frame" %in% class(DF) == FALSE){
-      stop("Please check your input. The `formatTable_Simcyp` function only works with data.frames, and it looks like you have supplied some other type of data.", 
+      stop("Please check your input. The `formatTable_Simcyp` function only works with data.frames or flextables, and it looks like you have supplied some other type of data.", 
            call. = FALSE)
    }
+   
    
    if(nrow(DF) == 0){
       stop("Please check your input. The data.frame you supplied doesn't have any rows.", 
@@ -314,10 +354,6 @@ formatTable_Simcyp <- function(DF,
    PKregex <- str_c(unique(PKregex), collapse = "|")
    PKCols <- which(sapply(names(DF), 
                           FUN = function(x){str_detect(x, PKregex)}))
-   
-   if(prettify_columns){
-      DF <- prettify_column_names(DF)
-   }
    
    if(prettify_columns){
       DF <- prettify_column_names(DF)

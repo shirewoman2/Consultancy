@@ -5,20 +5,21 @@
 #'
 #' @param Data the data.frame containing conc-time data; this is the output from
 #'   extractConcTime
-#' @param ADAM T or F for whether ADAM model used
-#' @param subsection_ADAM which ADAM-model subsection the data include
+#' @param ADAMorAdvBrain T or F for whether ADAM or advanced brain model used
+#' @param subsection_ADAM which ADAM-model or advanced-brain-model subsection
+#'   the data include
 #' @param EnzPlot T or F for whether this was a plot of enzyme abundance
 #' @param y_axis_limits_lin user input for y axis limits for a linear plot
 #' @param y_axis_limits_log user input for y axis limits for a semi-log plot
 #' @param y_axis_interval user input for y axis tick-mark interval
-#' @param time_range user-specified time range 
+#' @param time_range user-specified time range
 #' @param Ylim_data data used for determining y axis limits
 #' @param pad_y_axis user-specified value for pad_y_axis
 #' @param time_range_relative relative time range
 #'
 #' @return values to use for ct_plots
 
-ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot, 
+ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot, 
                       y_axis_limits_lin, 
                       time_range,
                       y_axis_interval = NA,
@@ -32,7 +33,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
       ObsConcUnits <- sort(unique(Data$Conc_units))
    }
    
-   if(any(ADAM, na.rm = TRUE)){
+   if(any(ADAMorAdvBrain, na.rm = TRUE)){
       
       # # ADAM options available (this is for my reference and was copied from ct_plot.R)
       # ADAMoptions <- c("undissolved compound", "enterocyte concentration",
@@ -57,87 +58,94 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
             conjunction = "or")
       }
       
-      ylab1 <- 
-         switch(subsection_ADAM, 
-                "dissolved compound" = 
-                   paste("Dissolved", CompoundLab, "in", unique(Data$Tissue)),
-                "undissolved compound" = 
-                   paste0("Undissolved ", CompoundLab, " in ", unique(Data$Tissue)),
-                "enterocyte concentration" = 
-                   # bquote(atop("Enterocyte concentration of", bquote(CompoundLab))), # can't get this to work
-                   paste("Enterocyte concentration of", CompoundLab),
-                "free compound in lumen" = 
-                   paste0("Free ", CompoundLab, " in lumen"),
-                "total compound in lumen" = 
-                   paste0("Total ", CompoundLab, " in lumen"),
-                "Heff" = bquote("Particle"~H[eff]),
-                "absorption rate" = 
-                   paste0("Absorption rate of ", CompoundLab, " in ", unique(Data$Tissue)),
-                "unreleased compound in faeces" = 
-                   paste("Unreleased", CompoundLab, "in faeces"),
-                "luminal CLint" = bquote("Luminal"~CL[int]), 
-                "dissolution rate of solid state" = 
-                   paste0("Dissolution rate of ", CompoundLab, " in ", unique(Data$Tissue)), 
-                "cumulative fraction of compound absorbed" =
-                   paste0("Cumulative fraction of ", CompoundLab, " absorbed"), 
-                "cumulative fraction of compound dissolved" =
-                   paste0("Cumulative fraction of ", CompoundLab, " dissolved"), 
-                "cumulative fraction of compound released" = 
-                   paste0("cumulative fraction of ", CompoundLab, " released")) 
-      
-      # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
-      # so do NOT interchange them in the code.
-      PossConcUnits <- list("mg/mL" = "(mg/mL)",
-                            "µg/L" = bquote("("*"\u03bc"*g*"/"*L*")"),
-                            "µg/mL" = bquote("("*"\u03bc"*g*"/"*mL*")"),
-                            "ng/mL" = "(ng/mL)",
-                            "ng/L" = "(ng/L)",
-                            "µM" = bquote("("*"\u03bc"*M*")"),
-                            "µm" = bquote("("*"\u03bc"*m*")"),
-                            "nM" = "(nM)",
-                            "mM" = "(mM)",
-                            "mg" = "(mg)",
-                            "µg" = bquote("("*"\u03bc"*"g)"),
-                            "ng" = "(ng)",
-                            "mg/h" = "(mg/h)",
-                            "mg/L" = bquote("("*"\u03bc"*g*"/"*mL*")"),
-                            "mL" = "(mL)", 
-                            "mmol" = "(mmol)", 
-                            "µmol" = bquote("("*"\u03bc"*"mol)"),
-                            "nmol" = "(nmol)")
-      
-      ylab2 <- PossConcUnits[[unique(Data$Conc_units)]]
-      
-      if(subsection_ADAM %in% c("cumulative fraction of compound absorbed", 
-                                "cumulative fraction of compound dissolved", 
-                                "cumulative fraction of compound released")){
-         ylab <- bquote(bold(.(ylab1)))
+      if(length(unique(subsection_ADAM)) == 1){
          
+         ylab1 <- 
+            switch(subsection_ADAM, 
+                   
+                   ## ADAM 
+                   "dissolved compound" = 
+                      paste0("Dissolved ", CompoundLab, "\nin ", unique(Data$Tissue)),
+                   "undissolved compound" = 
+                      paste0("Undissolved ", CompoundLab, "\nin ", unique(Data$Tissue)),
+                   "enterocyte concentration" = 
+                      paste("Enterocyte concentration\nof", CompoundLab),
+                   "free compound in lumen" = 
+                      paste0("Free ", CompoundLab, " in lumen"),
+                   "total compound in lumen" = 
+                      paste0("Total ", CompoundLab, " in lumen"),
+                   "Heff" = expression("Particle"~H[eff]~(mu*m)), 
+                   "absorption rate" = 
+                      paste0("Absorption rate of ", CompoundLab, "\nin ", unique(Data$Tissue)),
+                   "unreleased compound in faeces" = 
+                      paste0("Unreleased ", CompoundLab, "\nin faeces"),
+                   "luminal CLint" = expression("Luminal"~CL[int]), 
+                   "dissolution rate of solid state" = 
+                      paste0("Dissolution rate of ", CompoundLab, "\nin ", unique(Data$Tissue)), 
+                   "cumulative fraction of compound absorbed" =
+                      paste0("Cumulative fraction of\n", CompoundLab, " absorbed"), 
+                   "cumulative fraction of compound dissolved" =
+                      paste0("Cumulative fraction of\n", CompoundLab, " dissolved"), 
+                   "cumulative fraction of compound released" = 
+                      paste0("cumulative fraction of\n", CompoundLab, " released"), 
+                   
+                   ## AdvBrainModel
+                   "intracranial" = "Intracranial\nconcentration",
+                   "brain ICF" = "Brain intracellular fluid\nconcentration", 
+                   "brain ISF" = "Brain intrastitial fluid\nconcentration",
+                   "spinal CSF" = "Spinal cerebrospinal fluid\nconcentration", 
+                   "cranial CSF" = "Cranial cerebrospinal fluid\nconcentration",
+                   "total brain" = "Total brain\nconcentration",
+                   "Kp,uu,brain" = expression(K[p*",uu,brain"]), #"Unbound-brain-to-unbound-plasma\ntissue partition coefficient", 
+                   "Kp,uu,ICF" = expression(K[p*",uu,intracellular fluid"]), # "Unbound-intracellular-fluid-to-unbound-plasma\ntissue partition coefficient", 
+                   "Kp,uu,ISF" = expression(K[p*",uu,interstitial fluid"]) #"Unbound-intrastitial-fluid-to-unbound-plasma\ntissue partition coefficient") 
+            )
+         
+         ylab2 <- ifelse(is.na(unique(Data$Conc_units)), 
+                         "", paste0("(", unique(Data$Conc_units), ")"))
+         
+         if("expression" %in% class(ylab1) | is.na(ylab2)){
+            ylab <- ylab1
+         } else {
+            ylab <- paste(ylab1, ylab2)
+         }
       } else {
-         ylab <- bquote(bold(.(ylab1)) ~ bold(.(ylab2)))
+         # This is when it IS AdvBrain or ADAM model data but there's more than
+         # one type.
+         ylab1 <- NA
+         ylab <- "Advanced-brain-model or ADAM-model amount"
       }
       
    } else {
+      # This is when it is NOT AdvBrain or ADAM model data. 
       
-      # PossConcUnits is slightly different between ADAM and non-ADAM tissues,
-      # so do NOT interchange them in the code.
+      ylab1 <- NA
+      
+      # PossConcUnits is slightly different between ADAM, AdvBrain, and regular
+      # tissues, so do NOT interchange them in the code.
       PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
-                            "µg/L" = bquote(Concentration~"("*"\u03bc"*g*"/"*L*")"),
-                            "µg/mL" = bquote(Concentration~"("*"\u03bc"*g*"/"*mL*")"),
+                            "µg/L" = "Concentration (µg/L)", 
+                            "µg/mL" = "Concentration (µg/mL)",
                             "ng/mL" = "Concentration (ng/mL)",
                             "ng/L" = "Concentration (ng/L)",
-                            "µM" = bquote(Concentration~"("*"\u03bc"*M*")"),
+                            "µM" = "Concentration (µM)",
                             "nM" = "Concentration (nM)",
                             "mg" = "Amount (mg)",
                             "mg/h" = "Absorption rate (mg/h)",
-                            "mg/L" = bquote(Concentration~"("*"\u03bc"*g*"/"*mL*")"),
+                            "mg/L" = "Concentration (µg/mL)",
                             "mL" = "Volume (mL)",
                             "PD response" = "PD response",
                             "Relative abundance" = "Relative abundance")
       
-      ylab <- PossConcUnits[[ObsConcUnits]]
+      ylab <- ifelse(length(ObsConcUnits) > 0, 
+                     PossConcUnits[[ObsConcUnits]], "Amount")
       
    }
+   
+   # Noting when to adjust graph border to add lines to y axis title. This may
+   # be moot now that we're not using bquote.
+   AdjustGraphBorder <- "expression" %in% class(ylab1) == FALSE &&
+      complete.cases(ylab1) && str_detect(ylab1, "\\\n")
    
    # Per Hannah: If there are observed data included in the simulation, set the
    # y axis limits to show those data well. 
@@ -348,6 +356,7 @@ ct_y_axis <- function(Data, ADAM, subsection_ADAM, EnzPlot,
                "Ylim_log" = Ylim_log,
                "YmaxRnd" = YmaxRnd, 
                "pad_y_num" = pad_y_num, 
-               "pad_y_axis" = pad_y_axis)
+               "pad_y_axis" = pad_y_axis, 
+               "AdjustGraphBorder" = AdjustGraphBorder)
 }
 

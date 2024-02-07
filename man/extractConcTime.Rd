@@ -33,14 +33,15 @@ Other options are "blood" or any tissues included in "Sheet Options",
 "Tissues" in the simulator. All possible options:\describe{
 \item{First-order absorption models}{"plasma", "blood", "unbound blood",
 "unbound plasma", "additional organ", "adipose", "bone", "brain",
-"feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung", "muscle",
+"feto-placenta", "gut tissue", "heart", "kidney", "liver", "lung", "muscle",
 "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
 blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-released", or "cumulative dissolution".}} Not case sensitive.}
+released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET 
+SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
 concentration-time data? Options are: \itemize{\item{"substrate"
@@ -151,14 +152,15 @@ include a link to it here.)
 \details{
 \strong{A note on observed data:} When observed data are included in a
 simulator output file, because the simulator output does not explicitly say
-whether those observed data were in the presence of an inhibitor or perpetrator,
-this function cannot tell the difference and will thus assume all observed
-data included in the simulator output were for the substrate in the
-\emph{absence} of any perpetrator. It will further assume that the compound --
-substrate or inhibitor 1 or primary metabolite 1 or whatever -- is the same
-as \code{compoundToExtract}. If \code{compoundToExtract} was an inhibitor or
-inhibitor metabolite, the observed data from the simulator output will NOT be
-pulled since it is unlikely to be inhibitor concentrations.
+whether those observed data were in the presence of an inhibitor or
+perpetrator, this function cannot tell the difference and will thus assume
+all observed data included in the simulator output were for the substrate in
+the \emph{absence} of any perpetrator. It will further assume that the
+compound -- substrate or inhibitor 1 or primary metabolite 1 or whatever --
+is the same as \code{compoundToExtract}. If \code{compoundToExtract} was an
+inhibitor or inhibitor metabolite, the observed data from the simulator
+output will NOT be pulled since it is unlikely to be inhibitor
+concentrations.
 
 For best results, we recommend supplying an observed data file here, which
 contains more information, to make sure the data are what you're expecting.

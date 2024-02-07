@@ -270,9 +270,14 @@ ct_x_axis <- function(Data, time_range, t0,
    
    # Setting the time range if it's not already set 
    if(is.na(time_range_input[1])){
-      time_range <- round_up_nice(switch(as.character(EnzPlot), 
-                                         "TRUE" = range(Data$Time, na.rm = T),
-                                         "FALSE" = range(Data$Time[complete.cases(Data$Conc)], na.rm = T)))
+      
+      TEMP_range <- switch(as.character(EnzPlot), 
+                           "TRUE" = range(Data$Time, na.rm = T),
+                           "FALSE" = range(Data$Time[complete.cases(Data$Conc)], na.rm = T))
+      
+      time_range <- c(round_down_unit(TEMP_range[1], 1), 
+                      round_up_unit(TEMP_range[2], 1))
+      
    }
    
    # If t0 isn't "simulation start", need to adjust x axis.

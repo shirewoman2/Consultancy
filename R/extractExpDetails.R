@@ -554,6 +554,32 @@ extractExpDetails <- function(sim_data_file,
             Val <- InputTab[Row,
                             InputDeets$ValueCol[
                                which(InputDeets$Deet == deet)]] %>% pull()
+            
+            # If it's a kp scalar value other than the main one, then we need to
+            # 1st check whether the value listed is "User" and then get the value
+            # in the cell right below that if it is.
+            kpcheck <- str_detect(deet, "kp_scalar_") & 
+               deet %in% paste0("kp_scalar", AllCompounds$Suffix) == FALSE
+            if(kpcheck){
+               if(complete.cases(Val) && Val == "Predicted"){
+                  Val <- NA
+               } else {
+                  NameColBelow <- InputTab[Row + 1,
+                                           InputDeets$NameCol[
+                                              which(InputDeets$Deet == deet)]] %>% pull()
+                  if(str_detect(NameColBelow,
+                                gsub(paste0("kp_scalar_|",
+                                            str_c(AllCompounds$Suffix, collapse = "|")),
+                                     "", 
+                                     sub("additional_organ", "Additional Organ", deet)))){
+                     Val <- InputTab[Row + 1, InputDeets$ValueCol[
+                        which(InputDeets$Deet == deet)]] %>% pull()
+                     
+                  } else {
+                     Val <- NA
+                  }
+               }
+            }
          }
          
          # If SimStartDayTime is not found, which will happen with animal
@@ -615,6 +641,11 @@ extractExpDetails <- function(sim_data_file,
       
       
       ## Some overall simulation details -----------------------------------
+      
+      # Noting all sheet names. This saves time for later data extraction and
+      # also helps with debugging and coding in general. 
+      Out[["SheetNames"]] <- str_c(paste0("`", SheetNames, "`"), collapse = " ")
+      
       # Checking whether this was an ADC sim. 
       if("ADCSimulation_sub" %in% MyInputDeets){
          Out[["ADCSimulation_sub"]] <- 
@@ -654,11 +685,12 @@ extractExpDetails <- function(sim_data_file,
             
             # Older versions of simulator do not have CV. Checking. 
             ReleaseCV <- Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "CV"))]
+            if(all(is.null(ReleaseCV))){ReleaseCV <- NA}
             
             ReleaseProfs[[i]] <- data.frame(
                Time = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Time"))], 
                Release_mean = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Release Mean"))], 
-               Release_CV = ifelse(is.null(ReleaseCV), NA, ReleaseCV)) %>% 
+               Release_CV = ReleaseCV) %>% 
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
                       File = sim_data_file, 
@@ -678,48 +710,93 @@ extractExpDetails <- function(sim_data_file,
       ### Checking on dissolution profiles ------------------------------------
       if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
          exists("InputTab", inherits = FALSE) &&
-         any(str_detect(unlist(c(InputTab[, ColLocations])), "Dissolution Profile"),
+         any(str_detect(unlist(c(InputTab[, ColLocations])), "Dissolution( Mean)? \\(\\%"),
              na.rm = TRUE)){
          
          DissoProfs <- list()
          
          for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
-            StartRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution Profile"))[1] + 1
-            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution \\(\\%"))
-            EndRow <- EndRow[which.max(EndRow)] + 1 # Looking for last "Dissolution (%)" row and then the next row will be the CV for that. 
+            # There may be more than one tissue. Checking for this. 
+            DissoTissueRows <- which(str_detect(t(InputTab[, ColLocations[i]]),
+                                                "^Dissolution Profile"))
             
-            # It could be that one compound has dissolution profiles and another
-            # compound does not. Checking that here since I did not check it in
-            # the original if statement at the top of this section.
-            if(is.na(StartRow)){
-               next
+            # If the results do not specify any tissues, then start rows will be
+            # different. Last row will be the same, though.
+            LastRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution( Mean)? \\(\\%"))
+            LastRow <- LastRow[which.max(LastRow)] + 1 # Looking for last "Dissolution (%)" row and then the next row will be the CV for that. 
+            
+            if(length(DissoTissueRows) > 0){
+               
+               StartRows <- which(str_detect(t(InputTab[, ColLocations[i]]), "^Dissolution Profile")) + 1
+               
+               # It could be that one compound has dissolution profiles and another
+               # compound does not. Checking that here since I did not check it in
+               # the original "if" statement at the top of this section.
+               if(all(is.na(StartRows))){
+                  next
+               }
+               
+               if(length(StartRows) > 1){
+                  EndRows <- c(StartRows[2:length(StartRows)], NA) - 2
+                  EndRows[length(StartRows)] <- LastRow
+               } else {
+                  EndRows <- LastRow
+               }
+               
+               DissoTissues <- gsub("\\(|\\)", "", 
+                                    str_extract(
+                                       t(InputTab[, ColLocations[i]])[DissoTissueRows], 
+                                       "\\(.*\\)"))
+            } else {
+               # If the tissue is not specified, then there will be only 1 set of values. 
+               StartRows <- which(str_detect(t(InputTab[, ColLocations[i]]), "Dissolution( Mean)? \\(\\%"))[1] - 1
+               DissoTissues <- "not specified"
+               EndRows <- LastRow
+               
+               # It could be that one compound has dissolution profiles and another
+               # compound does not. Checking that here since I did not check it in
+               # the original "if" statement at the top of this section.
+               if(all(is.na(StartRows))){
+                  next
+               }
             }
             
-            Disso_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
-            names(Disso_temp) <- c("NameCol", "ValCol")
+            DissoProfs[[i]] <- list()
             
-            # Older versions of simulator do not have CV. Checking. 
-            DissoCV <- Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "CV"))]
+            for(tiss in 1:length(StartRows)){
+               
+               Disso_temp <- InputTab[StartRows[tiss]:EndRows[tiss],
+                                      ColLocations[i]:(ColLocations[i]+1)]
+               names(Disso_temp) <- c("NameCol", "ValCol")
+               
+               # Older versions of simulator do not have CV. Checking. 
+               DissoCV <- Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "CV"))]
+               if(all(is.null(DissoCV))){DissoCV <- NA}
+               
+               DissoProfs[[i]][[tiss]] <- 
+                  data.frame(
+                     Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
+                     Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution( Mean)? \\(\\%"))], 
+                     Dissolution_CV = DissoCV) %>% 
+                  mutate(across(.cols = everything(), .fns = as.numeric), 
+                         Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
+                         File = sim_data_file, 
+                         Tissue = DissoTissues[[tiss]],
+                         CompoundID = i, 
+                         Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]])
+               
+               rm(Disso_temp, DissoCV)
+               
+            }
             
-            DissoProfs[[i]] <- data.frame(
-               Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
-               Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution \\(\\%"))], 
-               Dissolution_CV = ifelse(is.null(DissoCV), NA, DissoCV)) %>% 
-               mutate(across(.cols = everything(), .fns = as.numeric), 
-                      Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
-                      File = sim_data_file, 
-                      CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]],
-                      PrandialSt = sort(unique(tolower(
-                         str_extract(Disso_temp$NameCol, "Fasted|Fed"))))) %>% 
-               select(File, CompoundID, Compound, PrandialSt, 
-                      Time, Dissolution_mean, Dissolution_CV)
-            
-            rm(StartRow, EndRow, Disso_temp)
+            DissoProfs[[i]] <- bind_rows(DissoProfs[[i]])
             
          }
          
-         DissoProfs <- bind_rows(DissoProfs)
+         DissoProfs <- bind_rows(DissoProfs) %>% 
+            select(File, Tissue, CompoundID, Compound, Time,
+                   Dissolution_mean, Dissolution_CV)
+         
       } else {
          DissoProfs <- NULL
       }
@@ -768,6 +845,50 @@ extractExpDetails <- function(sim_data_file,
          CDfupProfs <- NULL
       }
       
+      
+      ### Concentration-dependent B/P -----------------------------------------
+      if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
+         exists("InputTab", inherits = FALSE) &&
+         any(str_detect(unlist(c(InputTab[, ColLocations + 1])), 
+                        "Concentration-dependent B/P profile"),
+             na.rm = TRUE)){
+         
+         CDBPProfs <- list()
+         
+         for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
+            StartRow <- which(str_detect(t(InputTab[, ColLocations[i] + 1]), 
+                                         "Concentration-dependent B/P profile"))[1] + 2
+            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), 
+                                       "B/P [0-9]"))
+            EndRow <- EndRow[which.max(EndRow)]
+            
+            # It could be that one compound has conc-dependent B/P profiles and
+            # another compound does not. Checking that here since I did not check it
+            # in the original if statement at the top of this section.
+            if(is.na(StartRow)){
+               next
+            }
+            
+            CDBP_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
+            names(CDBP_temp) <- c("NameCol", "ValCol")
+            
+            CDBPProfs[[i]] <- data.frame(
+               Conc = CDBP_temp$ValCol[which(str_detect(CDBP_temp$NameCol, "Conc"))], 
+               BP = CDBP_temp$ValCol[which(str_detect(CDBP_temp$NameCol, "B/P [0-9]"))]) %>%  
+               mutate(across(.cols = everything(), .fns = as.numeric), 
+                      File = sim_data_file, 
+                      CompoundID = i, 
+                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+               select(File, CompoundID, Compound, Conc, BP)
+            
+            rm(StartRow, EndRow, CDBP_temp)
+            
+         }
+         
+         CDBPProfs <- bind_rows(CDBPProfs)
+      } else {
+         CDBPProfs <- NULL
+      }
       
       
       ## Pulling CL info ----------------------------------------------------
@@ -1712,7 +1833,8 @@ extractExpDetails <- function(sim_data_file,
                                         Out$CustomDosing_inhib2), 
                DissolutionProfiles = DissoProfs,
                ReleaseProfiles = ReleaseProfs, 
-               ConcDependent_fup = CDfupProfs)
+               ConcDependent_fup = CDfupProfs, 
+               ConcDependent_BP = CDBPProfs)
    
    for(j in names(Out)[unlist(lapply(Out, is.null)) == FALSE]){
       Out[[j]] <- Out[[j]] %>% 

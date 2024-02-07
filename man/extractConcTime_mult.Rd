@@ -119,16 +119,19 @@ Other options are "blood" or any tissues included in "Sheet Options",
 "Tissues" in the simulator. All possible options:\describe{
 \item{First-order absorption models}{"plasma", "blood", "unbound blood",
 "unbound plasma", "additional organ", "adipose", "bone", "brain",
-"feto-placenta", "GI tissue", "heart", "kidney", "liver", "lung", "muscle",
+"feto-placenta", "gut tissue", "heart", "kidney", "liver", "lung", "muscle",
 "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
 blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-released", or "cumulative dissolution".}} Not case sensitive. Acceptable
+released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET 
+SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive. Acceptable
 input is all tissues desired as a character vector, e.g., \code{tissues =
-c("plasma", "blood", "liver")}.}
+c("plasma", "blood", "liver")} or, if you want all possible tissues and
+you've got some time to kill, "all". That will make R check for all sorts
+of possible permutations of tab names, so it does take a while.}
 
 \item{compoundsToExtract}{For which compound do you want to extract
 concentration-time data? Options are: \itemize{\item{"all" (default) for

@@ -5,7 +5,7 @@
 \title{Determine the (optionally pretty) name of all perpetrators included in a
 simulation, all concatenated nicely}
 \usage{
-determine_myperpetrator(Deets, prettify_compound_names)
+determine_myperpetrator(Deets, prettify_compound_names, parent_only = FALSE)
 }
 \arguments{
 \item{Deets}{experimental details for only the single sim_data_file in
