@@ -37,7 +37,10 @@ format_obs_for_XML(
 \item{obs_dataframe}{observed concentration-time data.frame}
 
 \item{subject_column}{the column in the observed concentration-time
-data.frame that contains the subject ID}
+data.frame and in the optional demographic data.frame that contains the
+subject ID. Note that this means that the subject ID column in the
+concentration-time data.frame and in the demographic data.frame \emph{must
+match}.}
 
 \item{DVID_column}{the column in the observed concentration-time data.frame
 that indicates any time the DV number in the PE file should change. It's
