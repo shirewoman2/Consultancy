@@ -125,6 +125,22 @@
 #'   want this to be huge if there are a lot of profiles). Defaults to 11.
 #' @param ncol number of columns to use for graphing the fitted data
 #' @param nrow number of rows to use for graphing the fitted data
+#' @param effort_to_get_elimination_rate How hard should we try to get the
+#'   terminal elimination rate for dose 1? Default, "try really hard", means
+#'   that first try a nonlinear regression using the base R function
+#'   \code{\link[stats]{nls}}, then, if that fails, we'll try expanding the
+#'   boundaries for the regression and use the nls2 package function
+#'   \code{\link[nls2]{nls2}} and we'll attempt that twice -- the second time
+#'   with some minor variations. That takes a while to run, so, if you
+#'   \emph{don't} want us to try that hard, other options are "try hard" (we'll
+#'   only try the regular nls fit and then one variation on the nls2 fit), "try"
+#'   (we'll only try the regular nls fit and then give up if it doesn't work),
+#'   or "don't try" to just \emph{not} get the AUCinf or terminal elimination
+#'   rates at all.
+#' @param report_progress "yes", "no" (default), or "some" for whether to print
+#'   messages saying when each combination of file, observed file, trial,
+#'   individual, perpetrator, etc. has been completed. This can fill up your
+#'   console but can also be reassuring that things are, in fact, progressing.
 #'
 #' @return returns a list of individual and/or aggregate PK data
 #' @export
@@ -144,6 +160,8 @@ calc_PK <- function(ct_dataframe,
                     fit_last_x_number_of_points = NA, 
                     omit_0_concs = TRUE,
                     weights = NULL, 
+                    effort_to_get_elimination_rate = "try really hard",
+                    report_progress = "no", 
                     returnAggregateOrIndiv = "both", 
                     return_graphs_of_fits = TRUE,
                     save_graphs_of_fits = FALSE, 
@@ -181,6 +199,7 @@ calc_PK <- function(ct_dataframe,
                     fit_last_x_number_of_points = fit_last_x_number_of_points, 
                     omit_0_concs = omit_0_concs,
                     weights = weights, 
+                    report_progress = report_progress, 
                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
                     return_graphs_of_fits = return_graphs_of_fits,
                     save_graphs_of_fits = save_graphs_of_fits, 

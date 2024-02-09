@@ -18,6 +18,8 @@ calc_PK(
   fit_last_x_number_of_points = NA,
   omit_0_concs = TRUE,
   weights = NULL,
+  effort_to_get_elimination_rate = "try really hard",
+  report_progress = "no",
   returnAggregateOrIndiv = "both",
   return_graphs_of_fits = TRUE,
   save_graphs_of_fits = FALSE,
@@ -134,6 +136,24 @@ any regression of the elimination phase anyway.}
 numeric vector of weights to use or choose from "1/x", "1/x^2", "1/y" or
 "1/y^2". If left as NULL, no weighting scheme will be used. Be careful that
 you don't have any infinite values or this will fail!}
+
+\item{effort_to_get_elimination_rate}{How hard should we try to get the
+terminal elimination rate for dose 1? Default, "try really hard", means
+that first try a nonlinear regression using the base R function
+\code{\link[stats]{nls}}, then, if that fails, we'll try expanding the
+boundaries for the regression and use the nls2 package function
+\code{\link[nls2]{nls2}} and we'll attempt that twice -- the second time
+with some minor variations. That takes a while to run, so, if you
+\emph{don't} want us to try that hard, other options are "try hard" (we'll
+only try the regular nls fit and then one variation on the nls2 fit), "try"
+(we'll only try the regular nls fit and then give up if it doesn't work),
+or "don't try" to just \emph{not} get the AUCinf or terminal elimination
+rates at all.}
+
+\item{report_progress}{"yes", "no" (default), or "some" for whether to print
+messages saying when each combination of file, observed file, trial,
+individual, perpetrator, etc. has been completed. This can fill up your
+console but can also be reassuring that things are, in fact, progressing.}
 
 \item{returnAggregateOrIndiv}{return aggregate and/or individual PK
 parameters? Options are "aggregate", "individual", or "both" (default).}
