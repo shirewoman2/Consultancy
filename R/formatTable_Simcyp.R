@@ -125,6 +125,10 @@
 #'   were included.
 #' @param title_document optionally specify a title for the Word document
 #'   output. If you don't save the table, this will be ignored.
+#' @param table_caption optionally add some text for a table caption. If the
+#'   table you supply contains a column titled "File", there will already be a
+#'   caption listing the source files; this would add some additional text
+#'   before that.
 #'
 #' @return a formatted table
 #' @export
@@ -209,7 +213,8 @@ formatTable_Simcyp <- function(DF,
                                highlight_cells = NA, 
                                highlight_color = "yellow",
                                save_table = NA, 
-                               title_document = NA){
+                               title_document = NA, 
+                               table_caption = NA){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
