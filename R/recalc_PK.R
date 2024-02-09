@@ -160,7 +160,7 @@
 #' @param nrow number of rows to use for graphing the fitted data
 #' @param effort_to_get_elimination_rate How hard should we try to get the
 #'   terminal elimination rate for dose 1? Default, "try really hard", means
-#'   that first try a nonlinear regression using the base R function
+#'   that we'll first try a nonlinear regression using the base R function
 #'   \code{\link[stats]{nls}}, then, if that fails, we'll try expanding the
 #'   boundaries for the regression and use the nls2 package function
 #'   \code{\link[nls2]{nls2}} and we'll attempt that twice -- the second time
@@ -170,10 +170,11 @@
 #'   (we'll only try the regular nls fit and then give up if it doesn't work),
 #'   or "don't try" to just \emph{not} get the AUCinf or terminal elimination
 #'   rates at all.
-#' @param report_progress "yes", "no" (default), or "some" for whether to print
+#' @param report_progress "yes", "no", or "some" (default) for whether to print
 #'   messages saying when each combination of file, observed file, trial,
-#'   individual, perpetrator, etc. has been completed. This can fill up your
-#'   console but can also be reassuring that things are, in fact, progressing.
+#'   individual, perpetrator, etc. has been completed. Setting this to "yes" can
+#'   fill up your console pretty rapidly but can also be reassuring that things
+#'   are, in fact, progressing.
 #'
 #' @return returns a list of individual and/or aggregate PK data
 #' @export
@@ -206,7 +207,7 @@ recalc_PK <- function(ct_dataframe,
                       omit_0_concs = TRUE,
                       weights = NULL, 
                       effort_to_get_elimination_rate = "try really hard",
-                      report_progress = "no", 
+                      report_progress = "some", 
                       returnAggregateOrIndiv = "both", 
                       return_graphs_of_fits = TRUE,
                       save_graphs_of_fits = FALSE, 
@@ -246,6 +247,12 @@ recalc_PK <- function(ct_dataframe,
          
          SpecialInterval <- SpecialInterval[which(lapply(SpecialInterval, length) == 2)]
       }
+   }
+   
+   report_progress <- tolower(report_progress)
+   if(report_progress %in% c("yes", "no", "some") == FALSE){
+      warning("The options for report_progress are `yes`, `no`, or `some`, and you've entered something else. We'll set this to the default value of `some`.\n", 
+              call. = FALSE)
    }
    
    if(complete.cases(fit_points_after_x_time) & complete.cases(fit_last_x_number_of_points)){
@@ -1114,8 +1121,7 @@ recalc_PK <- function(ct_dataframe,
             pivot_wider(names_from = Inhibitor, 
                         values_from = Value) %>% 
             mutate(Value = inhibitorX / none, 
-                   PKparameter = sub("_dose1", "_ratio_dose1", PKparameter), 
-                   PKparameter = sub("_last", "_ratio_last", PKparameter)) %>% 
+                   PKparameter = sub("_", "_ratio_", PKparameter)) %>% 
             select(Compound, CompoundID, Tissue, Individual, Trial,
                    Simulated, File, ObsFile, DoseNum, PKparameter, Value) %>% 
             # Remove any instances where there weren't matching data
@@ -1129,7 +1135,7 @@ recalc_PK <- function(ct_dataframe,
                               ifelse(Simulated == TRUE, "simulated", "observed"),
                               File, ObsFile, DoseNum)) %>% 
             # Removing some artifacts that are nonsensical PK parameters
-            filter(PKparameter != "AUCinf_fraction_extrapolated_ratio_dose1")
+            filter(!str_detect(PKparameter, "fraction_extrapolated_ratio"))
       )
       
       PKtemp <- bind_rows(PKtemp, PKDDI) %>% 
