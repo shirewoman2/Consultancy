@@ -712,7 +712,7 @@ pksummary_table <- function(sim_data_file = NA,
          # Need to adjust a few things b/c of challenges w/file path when this
          # is called from rmarkdown files.
          observed_PK <- observed_PK %>%
-            mutate(BaseNameFile = basename(File)) %>% 
+            mutate(BaseNameFile = basename(as.character(File))) %>% 
             filter(str_detect(BaseNameFile, basename(sim_data_file))) # ok for user to drop file extension; this should still work
       } else {
          # If File is not in the column names, then assume that it's the
