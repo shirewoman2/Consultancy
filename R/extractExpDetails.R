@@ -1144,7 +1144,7 @@ extractExpDetails <- function(sim_data_file,
                         Out[[paste0("CLiv_InVivoCL", Suffix)]] <- 
                            as.numeric(InputTab[
                               which(str_detect(MyNames,
-                                               "CL.*iv.*[(]mL")) + i - 1,
+                                               "CL.*iv.*[(](m)?L")) + i - 1,
                               ValueCol])
                      )
                      

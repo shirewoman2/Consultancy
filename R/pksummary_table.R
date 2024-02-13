@@ -643,15 +643,19 @@ pksummary_table <- function(sim_data_file = NA,
          }
          
          # Set aside variability columns for a moment to pivot correctly
-         if(any(str_detect(names(observed_PK), "_CV"))){
+         if(any(str_detect(names(observed_PK), "_CV|_GCV"))){
             observed_PK_var <- observed_PK %>% 
-               select(any_of(c("File", paste0(c(AllPKParameters$PKparameter, 
-                                                sub("_dose1|_last", "", AllPKParameters$PKparameter)),
-                                              "_CV")))) %>% 
+               select(any_of(c("File",
+                               paste0(c(AllPKParameters$PKparameter, 
+                                        sub("_dose1|_last", "", AllPKParameters$PKparameter)),
+                                      "_CV"), 
+                               paste0(c(AllPKParameters$PKparameter, 
+                                        sub("_dose1|_last", "", AllPKParameters$PKparameter)),
+                                      "_GCV")))) %>% 
                pivot_longer(cols = -File, 
                             names_to = "PKparameter", 
                             values_to = "CV") %>% 
-               mutate(PKparameter = sub("_CV", "",  PKparameter))
+               mutate(PKparameter = sub("_CV|_GCV", "",  PKparameter))
          } else {
             observed_PK_var <- data.frame(File = sim_data_file, 
                                           PKparameter = NA)
@@ -712,7 +716,7 @@ pksummary_table <- function(sim_data_file = NA,
          # Need to adjust a few things b/c of challenges w/file path when this
          # is called from rmarkdown files.
          observed_PK <- observed_PK %>%
-            mutate(BaseNameFile = basename(File)) %>% 
+            mutate(BaseNameFile = basename(as.character(File))) %>% 
             filter(str_detect(BaseNameFile, basename(sim_data_file))) # ok for user to drop file extension; this should still work
       } else {
          # If File is not in the column names, then assume that it's the
@@ -1334,6 +1338,13 @@ pksummary_table <- function(sim_data_file = NA,
             MyObsPK <- MyObsPK %>% select(-CV) %>% 
                rename(GCV = CV) %>% 
                mutate(CV = as.numeric(CV))
+         } else {
+            # Assuming here that if they provided CV for obs data and requested
+            # geometric means that they know what they're doing and they meant
+            # to specify GCV. Just assuming that user's observed data stats
+            # match the simulated stats they requested.
+            MyObsPK <- MyObsPK %>% 
+               rename(GCV = CV)
          }
       }
       
@@ -1361,7 +1372,7 @@ pksummary_table <- function(sim_data_file = NA,
       
       suppressMessages(
          MyPKResults <- MyPKResults %>% 
-            full_join(MyObsPK) %>% 
+            full_join(MyObsPK %>% select(-BaseNameFile)) %>% 
             pivot_longer(names_to = "SorO", values_to = "Value", 
                          cols = c(Sim, Obs)) %>% 
             full_join(SOratios)

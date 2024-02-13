@@ -12,7 +12,10 @@
 #' @param time_column the column in the observed concentration-time data.frame
 #'   that contains time data
 #' @param subject_column the column in the observed concentration-time
-#'   data.frame that contains the subject ID
+#'   data.frame and in the optional demographic data.frame that contains the
+#'   subject ID. Note that this means that the subject ID column in the
+#'   concentration-time data.frame and in the demographic data.frame \emph{must
+#'   match}.
 #' @param DVID_column the column in the observed concentration-time data.frame
 #'   that indicates any time the DV number in the PE file should change. It's
 #'   fine to omit this if everything should be "1". If you haven't already
@@ -315,6 +318,11 @@ format_obs_for_XML <- function(obs_dataframe,
       message("DV IDs in the output file are:\n",
               str_c(MyDVIDs$Message, separate = "\n"))
    }
+   
+   # Only keeping demographic data for subjects who are included in the
+   # conc-time data.
+   demog_dataframe <- demog_dataframe %>% 
+      filter(Subject %in% unique(FinalObsDF$`Subject ID`))
    
    Out <- create_doses(
       dose_interval = dose_interval,

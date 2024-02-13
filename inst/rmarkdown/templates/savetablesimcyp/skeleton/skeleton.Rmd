@@ -23,11 +23,16 @@ FT
 
 ```{r captionPKSummary}
 
-CapText1 <- ifelse("File" %in% names(DF), 
+CapText1 <- ifelse(complete.cases(table_caption), 
+                   paste0("*", table_caption, "* "), "")
+
+CapText2 <- ifelse("File" %in% names(DF), 
                    paste0("*Source simulated data: ", str_comma(unique(DF$File)), "*"), 
                    "")
 
+CapText <- paste0(CapText1, CapText2)
+
 ```
 
-`r CapText1`
+`r CapText`
 

@@ -595,14 +595,14 @@ extractConcTime <- function(sim_data_file,
    if(TissueType == "systemic" &
       (fromMultFunction == FALSE | (fromMultFunction & complete.cases(obs_data_file)))){
       
-      # If the user did not specify a file to use for observed data, use
-      # the observed data that they included for the simulation. Note that
-      # this will NOT pull the observed data if the user asked for an
-      # inhibitor-related compound b/c it's unlikely that that's what
-      # observed data they supplied when they set up their simulation.
+      # If the user did not specify a file to use for observed data, use the
+      # observed data that they included for the simulation. Note that this will
+      # NOT pull the observed data if the user asked for an inhibitor-related
+      # compound b/c it's unlikely that that's what observed data they supplied
+      # when they set up their simulation.
       if(is.na(obs_data_file)){
          
-         if(str_detect(compoundToExtract, "inhibitor") == FALSE){
+         if(any(str_detect(compoundToExtract, "inhibitor") == FALSE)){ # FIXME - check on this
             
             StartRow_obs <- which(sim_data_xl$...1 == "Observed Data") + 1
             
@@ -703,7 +703,7 @@ extractConcTime <- function(sim_data_file,
          #                                  "released payload", CompoundID))
          # }
          
-         obs_data <- obs_data %>% filter(CompoundID == cmpd)
+         obs_data <- obs_data %>% filter(CompoundID %in% compoundToExtract)
          
          if(nrow(obs_data) == 0){
             rm(obs_data)
