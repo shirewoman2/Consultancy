@@ -91,8 +91,18 @@ check_doseint <- function(sim_data_file,
              # administered OR there should be no time left.
              OneDoseIntRemaining = IntervalRemaining == DoseInt_X |
                 IntervalRemaining == 0, 
-             CompoundID = compoundID) %>% 
+             CompoundID = compoundID, 
+             EndsOnLastDose = IntervalRemaining == 0 & OneDoseIntRemaining == TRUE, 
+             LastDoseTime = ifelse(EndsOnLastDose, 
+                                   StartHr_X + (NumDoses_X - 1) * DoseInt_X, 
+                                   LastDoseTime), 
+             NumDoses_X = ifelse(EndsOnLastDose, 
+                                 NumDoses_X - 1, NumDoses_X), 
+             IntervalRemaining = ifelse(EndsOnLastDose, 
+                                        DoseInt_X, IntervalRemaining)) %>% 
+      select(-EndsOnLastDose) %>% 
       select(File, CompoundID, everything())
+
    
    # DoseInt_x will be NA when it's a single-dose simulation, in which case,
    # the dosing interval is fine.
