@@ -1772,7 +1772,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                                         ymin = per5, ymax = per95, 
                                                         color = colorBy_column, 
                                                         fill = colorBy_column), 
-                                          "none" = aes(x = Time, y = MyMean, 
+                                          "none" = aes(x = Time, y = MyMean, group = File, # at the very least, this should be grouped by file all the time, I think... 
                                                        ymin = per5, ymax = per95)))
    )
    
