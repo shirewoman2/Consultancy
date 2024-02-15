@@ -19,27 +19,28 @@
 #' Because we need to have a standardized way to input observed data, setting up
 #' the input for this function requires creating a data.frame or named vector of
 #' the observed PK data, supplying a csv or Excel file with observed PK data, or
-#' filling out an Excel form.
+#' filling out an Excel form. The data can be set up so that the columns are the
+#' name of the PK parameter or, for a little more flexibility, the data can be
+#' set up with a single column listing the PK parameters and a separate column
+#' listing their values. This second approach also allows you to include another
+#' column specifying which tab you want to use to find those parameters when you
+#' have a user-defined interval. Here are all the options in more detail:
 #'
-#' \strong{OPTION A: Supply a data.frame or a named vector.} If you supply a
-#' data.frame, the column names will indicate which PK parameter you want, and
-#' if you supply a named numeric vector, the names of the vector will perform
-#' the same task. If you have CV values for any observed data that you'd like to
-#' include in the table, make the name be the PK parameter with a suffix of
-#' "_CV".
-#'
-#' An example of specifying a data.frame: \code{observed_PK =
-#' data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38, Cmax_dose1 = 22,
-#' Cmax_dose1_CV = 0.24)}
-#'
-#' An example of specifying a named vector: \code{observed_PK = c("AUCinf_dose1"
+#' \strong{OPTION A: Supply a named vector.} Make the names of the vector the PK
+#' parameters you want. If you have CV values for any observed data that you'd
+#' like to include in the table, make the name be the PK parameter with a suffix
+#' of "_CV". An example: \code{observed_PK = c("AUCinf_dose1"
 #' = 60, "AUCinf_dose1_CV" = 0.38, "Cmax_dose1" = 22, "Cmax_dose1_CV" = 0.24)}.
 #'
-#' \strong{OPTION B: Use a csv file of observed PK data.} In Excel, create a csv
-#' file where the first row is the PK parameters you want and the second row
-#' lists the values for each. This should look the same as the examples for
-#' Option A. To see an example of how this should look, run this in the console
-#' and then open the csv file:
+#' \strong{OPTION B: Use a csv file or a data.frame of observed PK data with a
+#' column for the PK
+#' parameter and a separate column for the value.} In Excel or in R, create a 
+#' table 
+#' 
+#' Alternatively, set this up so that thethe first row is the
+#' PK parameters you want and the second row lists the values for each. This
+#' should look the same as the examples for Option A. To see an example of how
+#' this should look, run this in the console and then open the csv file:
 #'
 #' \code{write.csv(data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38,
 #' Cmax_dose1 = 22, Cmax_dose1_CV = 0.24), file = "Example observed PK
@@ -204,7 +205,7 @@
 #'   \code{PKParameterDefinitions}. If you would like the output table to
 #'   include the observed data CV for any of the parameters, add "_CV" to the
 #'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
-#'   "Example" section of this help file for examples of how to set this up. 
+#'   "Example" section of this help file for examples of how to set this up.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
 #'   get all the details from the "Input Sheet" (e.g., when you ran
@@ -633,17 +634,17 @@ pksummary_table <- function(sim_data_file = NA,
    # Cleaning up and harmonizing observed data
    if("data.frame" %in% class(observed_PK)){
       # Convert to long format as needed
-      if(any(names(observed_PK) %in% c(AllPKParameters$PKparameter, 
-                                       tolower(AllPKParameters$PKparameter)))){
+      if(any(tolower(names(observed_PK)) %in% 
+             tolower(AllPKParameters$PKparameter))){
          
          # If "File" isn't already present as a column, adding it to use for
          # joining later. 
-         if("File" %in% names(observed_PK) == FALSE){
+         if("File" %in% str_to_title(names(observed_PK)) == FALSE){
             observed_PK$File <- sim_data_file
          }
          
-         # Set aside variability columns for a moment to pivot correctly
-         if(any(str_detect(names(observed_PK), "_CV|_GCV"))){
+         # Set aside variability columns for a moment to pivot correctly 
+         if(any(str_detect(names(observed_PK), "_CV|_GCV"))){ # FIXME - need to harmonize and then check for CV or GV, I think. 
             observed_PK_var <- observed_PK %>% 
                select(any_of(c("File",
                                paste0(c(AllPKParameters$PKparameter, 
