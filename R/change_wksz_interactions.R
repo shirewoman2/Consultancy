@@ -141,12 +141,6 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   # FIXME - Need to include some checks that user has supplied everthing
-   # needed. I messed up b/c I forgot I needed to include tissue, for example,
-   # and then I had a typo in new_workspace_files in my supplied data.frame for
-   # interactions_to_set. CHECK THIS for the user and also add some notes on
-   # what's required in the help file.
-   
    # If they left sim_workspace_files as NA and did not supply something for
    # that in interactions_to_set, then they want to apply this function to all
    # the workspaces in the current folder. Getting the names of the workspaces.
@@ -262,6 +256,10 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                    by = "sim_workspace_files")
    }
    
+   if("tissues" %in% names(Changes) == FALSE){
+      Changes$tissues <- tissues
+   }
+   
    # Expanding DF for tissues if they listed tissues = "all".
    if(all(tissues == "all")){
       Changes <- Changes %>% rename(tissues_orig = tissues) %>% 
@@ -271,7 +269,7 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                    by = "tissues_orig") %>% 
          # no tissue specification for DME. Removing that to avoid duplicates.
          mutate(tissues = ifelse(enzymes %in% c("P-gp", "BCRP"), 
-                                tissues, NA)) %>% 
+                                 tissues, NA)) %>% 
          select(-tissues_orig) %>% 
          unique()
    }
