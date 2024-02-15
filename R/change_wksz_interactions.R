@@ -141,6 +141,12 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
+   # FIXME - Need to include some checks that user has supplied everthing
+   # needed. I messed up b/c I forgot I needed to include tissue, for example,
+   # and then I had a typo in new_workspace_files in my supplied data.frame for
+   # interactions_to_set. CHECK THIS for the user and also add some notes on
+   # what's required in the help file.
+   
    # If they left sim_workspace_files as NA and did not supply something for
    # that in interactions_to_set, then they want to apply this function to all
    # the workspaces in the current folder. Getting the names of the workspaces.
@@ -429,20 +435,40 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                                 "intestine" = "GutTransporterSet"))
          
          EnzNum <- switch(Changes[[i]]$enzymes[j],
-                          "CYP1A2" = 1, 
-                          "CYP2A6" = 2, 
-                          "CYP2B6" = 3,
-                          "CYP2C8" = 4, 
-                          "CYP2C9" = 5, 
-                          "CYP2C18" = 6, 
-                          "CYP2C19" = 7,
-                          "CYP2D6" = 8, 
-                          "CYP2E1" = 9, 
-                          "CYP2J2" = 10,
-                          "CYP3A4" = 11, 
-                          "CYP3A5" = 12, 
-                          "CYP3A7" = 13, 
+                          # !!! WARNING: I have checked this for V22. Double
+                          # check that this applies for other versions. -LSh
+                          
+                          "CYP1A1" = 13,
+                          "CYP1A2" = 0, 
+                          "CYP2A6" = 1, 
+                          "CYP2B6" = 2,
+                          "CYP2C18" = 5, 
+                          "CYP2C19" = 6,
+                          "CYP2C8" = 3, 
+                          "CYP2C9" = 4, 
+                          "CYP2D6" = 7, 
+                          "CYP2E1" = 8, 
+                          "CYP2J2" = 9,
+                          "CYP3A4" = 10, 
+                          "CYP3A5" = 11, 
+                          "CYP3A7" = 12, 
+                          
                           "UGT1A1" = 1, 
+                          "UGT1A3" = 2, 
+                          "UGT1A4" = 3, 
+                          "UGT1A5" = 4, 
+                          "UGT1A6" = 5, 
+                          "UGT1A7" = 6, 
+                          "UGT1A8" = 7, 
+                          "UGT1A9" = 8, 
+                          "UGT1A10" = 9, 
+                          "UGT2B4" = 10, 
+                          "UGT2B7" = 11, 
+                          "UGT2B10" = 12, 
+                          "UGT2B11" = 13, 
+                          "UGT2B15" = 14, 
+                          "UGT2B17" = 15, 
+                          "UGT2B28" = 16, 
                           "User UGT1" = 17, 
                           "Pgp" =  switch(Changes[[i]]$tissues[j], 
                                           "liver" = 18, 
