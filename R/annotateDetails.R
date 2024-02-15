@@ -373,6 +373,11 @@ annotateDetails <- function(existing_exp_details,
       template_sim <- NA
    }
    
+   # Setting up ways to detect elimination and interaction parameters since we
+   # won't know what they're called in advance.
+   EliminationRegex <- "^fu_mic|Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)|^CL_|^HalfLife"
+   InteractionRegex <- "^Ki_|^kinact|^Kapp|^MBI|^Ind"
+   
    Main <- existing_exp_details$MainDetails %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
       pivot_longer(cols = -File,
@@ -476,15 +481,15 @@ annotateDetails <- function(existing_exp_details,
    Main <- Main %>% unique() %>% 
       mutate(
          # Elimination details
-         Sheet = ifelse(str_detect(Detail, "^fu_mic|^Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)|^CL_"), 
+         Sheet = ifelse(str_detect(Detail, EliminationRegex), 
                         "Input Sheet", Sheet), 
-         SimulatorSection = ifelse(str_detect(Detail, "^fu_mic|Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)|^CL_"), 
+         SimulatorSection = ifelse(str_detect(Detail, EliminationRegex), 
                                    "Elimination", SimulatorSection), 
          
          # Interaction details
-         Sheet = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
+         Sheet = ifelse(str_detect(Detail, InteractionRegex), 
                         "Input Sheet", Sheet),
-         SimulatorSection = ifelse(str_detect(Detail, "^Ki_|^kinact|^Kapp|^MBI|^Ind"), 
+         SimulatorSection = ifelse(str_detect(Detail, InteractionRegex), 
                                    "Interaction", SimulatorSection), 
          
          # Transport details   
@@ -715,7 +720,7 @@ annotateDetails <- function(existing_exp_details,
                            pull(Detail)), 
             Main %>% 
                filter(str_detect(Detail, 
-                                 "^fu_mic|^Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)|^Ki_|^kinact|^Kapp|^MBI|^Ind")) %>% 
+                                 str_c(c(EliminationRegex, InteractionRegex), collapse = "|"))) %>% 
                pull(Detail),
             "SimulatorVersion", "Substrate", 
             "PrimaryMetabolite1", "PrimaryMetabolite2",

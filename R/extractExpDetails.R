@@ -1025,6 +1025,9 @@ extractExpDetails <- function(sim_data_file,
                   # CL for a specific enzyme
                   if(str_detect(as.character(InputTab[i, NameCol]), "Enzyme")){
                      
+                     LastRow_i <- which(is.na(InputTab[, NameCol]))
+                     LastRow_i <- LastRow_i[LastRow_i > i][1] - 1
+                     
                      Enzyme <- gsub(" ", "", InputTab[i, NameCol + 1])
                      Pathway <- gsub(" |-", "", InputTab[i - 1, NameCol + 1])
                      if(as.character(InputTab[i+1, NameCol]) == "Genotype"){
@@ -1065,6 +1068,47 @@ extractExpDetails <- function(sim_data_file,
                               as.numeric(InputTab[CLrow+1, NameCol + 1])
                         )
                         
+                        # Check for any UGT-specific CL parameters
+                        if(str_detect(Enzyme, "UGT") & 
+                           any(str_detect(t(InputTab[i:LastRow_i, NameCol]),
+                                          "rUGT"))){
+                           
+                           rUGTSysInfo <- InputTab[i:LastRow_i, c(NameCol, ValueCol)] %>% 
+                              rename(NameCol = 1, ValueCol = 2) %>% 
+                              filter(str_detect(NameCol, "rUGT"))
+                           
+                           Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTSystem",
+                                       Suffix)]] <-
+                              rUGTSysInfo[which(str_detect(rUGTSysInfo$NameCol, 
+                                                           "rUGTSystem")), ValueCol] %>% 
+                              pull(ValueCol)
+                           
+                           suppressWarnings(
+                              Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTScalar_liver",
+                                          Suffix)]] <-
+                                 rUGTSysInfo[which(
+                                    str_detect(tolower(rUGTSysInfo$NameCol), 
+                                               "rugtscalar.*liver")), ValueCol] %>% 
+                                 pull(ValueCol) %>% as.numeric())
+                           
+                           suppressWarnings(
+                              Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTScalar_intestine",
+                                          Suffix)]] <-
+                                 rUGTSysInfo[which(
+                                    str_detect(tolower(rUGTSysInfo$NameCol), 
+                                               "rugtscalar.*intestine")), ValueCol] %>% 
+                                 pull(ValueCol) %>% as.numeric())
+                           
+                           suppressWarnings(
+                              Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTScalar_kidney",
+                                          Suffix)]] <-
+                                 rUGTSysInfo[which(
+                                    str_detect(tolower(rUGTSysInfo$NameCol), 
+                                               "rugtscalar.*kidney")), ValueCol] %>% 
+                                 pull(ValueCol) %>% as.numeric())
+                           
+                           rm(rUGTSysInfo)
+                        }
                         
                         rm(Enzyme, Pathway, CLType)
                         next
@@ -1112,7 +1156,6 @@ extractExpDetails <- function(sim_data_file,
                         rm(Enzyme, Pathway, CLType)
                         next
                      }
-                     
                   } 
                   
                   # Biliary CL
