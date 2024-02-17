@@ -759,7 +759,8 @@ pksummary_table <- function(sim_data_file = NA,
    # it should come from. If they have supplied only NA for the sheet, then only
    # PKparameters with dose number specifications are valid. Remove any others.
    GoodPKParam <- intersect(PKparameters, 
-                            AllPKParameters %>% pull(PKparameter) %>% unique())
+                            c(AllPKParameters$PKparameter, 
+                              sub("_dose1|_last", "", AllPKParameters$PKparameter)))
    BadPKParam <- setdiff(PKparameters, GoodPKParam)
    if(all(is.na(sheet_PKparameters)) & any(complete.cases(PKparameters)) &
       length(BadPKParam) > 0){
@@ -967,7 +968,7 @@ pksummary_table <- function(sim_data_file = NA,
    
    # If dose regimen were single-dose, then only pull dose 1 data.
    if(DoseRegimen == "Single Dose"){
-      PKToPull <- PKToPull[PKToPull %in% SDParam]
+      PKToPull <- PKToPull[PKToPull %in% c(SDParam, sub("_dose1", "", SDParam))]
    } else if(DoseRegimen == "Multiple Dose"){
       
       # If it were multiple dose *and* if they did not specify PK parameters to
