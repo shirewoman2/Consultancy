@@ -61,6 +61,16 @@ eCT_harmonize <- function(sim_data_xl,
       CmpdMatches1 <- sim_data_xl$...1[(NApos[1] + 1):(NApos[2]-1)] 
       CmpdMatches1 <- CmpdMatches1[!str_detect(CmpdMatches1, "Trial")]
       
+      # For some pediatric simulations, subjects are binned by age, and there
+      # will be at least 1 extra row for the age bin. This should not be
+      # included for CmpdMatches1, I'm pretty sure. I have only encountered one
+      # example of this so far. If there is a "bin", then any row that has
+      # "mean" and also "bin" should have the "mean" deleted or we end up with
+      # two "mean" rows and that messes everything up.
+      CmpdMatches1 <- CmpdMatches1[!str_detect(CmpdMatches1, " \\(Bin [0-9]")]
+      BinRows <- which(str_detect(sim_data_xl$...1, " Bin [0-9]| \\(Bin [0-9]"))
+      sim_data_xl$...1[BinRows] <- sub("[Mm]ean", "", sim_data_xl$...1[BinRows])
+      
       # # If the compound is not on the same tab as the substrate, then removing
       # # all the "Trial" rows removes all the rows with the compound name.
       # # Adjusting for that. Also adjusting for the weird situation with some

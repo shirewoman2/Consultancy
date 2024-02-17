@@ -20,7 +20,7 @@ harmonize_PK_names <- function(PKparameters){
    PKparameters <- data.frame(Orig = tolower(PKparameters)) %>% 
       left_join(
          data.frame(Rev = unique(c(AllPKParameters$PKparameter,
-                                   AllPKParameters$BasePKparameter))) %>% 
+                                   sub("_dose1|_last", "", AllPKParameters$PKparameter)))) %>% 
             mutate(Orig = tolower(Rev)), 
          by = "Orig") %>% 
       mutate(NoCaseProbs = ifelse(complete.cases(Rev), 
