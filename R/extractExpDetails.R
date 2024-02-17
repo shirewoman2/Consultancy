@@ -891,6 +891,51 @@ extractExpDetails <- function(sim_data_file,
       }
       
       
+      ### pH-dependent solubility -----------------------------------------
+      if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
+         exists("InputTab", inherits = FALSE) &&
+         any(str_detect(unlist(c(InputTab[, ColLocations + 1])), 
+                        "Solubility-pH profile"),
+             na.rm = TRUE)){
+         
+         pHSol <- list()
+         
+         for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
+            StartRow <- which(str_detect(t(InputTab[, ColLocations[i] + 1]), 
+                                         "Solubility-pH profile"))[1] + 1
+            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), 
+                                       "Entry [0-9]{1,} Solubility"))
+            EndRow <- EndRow[which.max(EndRow)]
+            
+            # It could be that one compound has pH-dependent fu,p profiles and
+            # another compound does not. Checking that here since I did not check it
+            # in the original if statement at the top of this section.
+            if(is.na(StartRow)){
+               next
+            }
+            
+            pHSol_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
+            names(pHSol_temp) <- c("NameCol", "ValCol")
+            
+            pHSol[[i]] <- data.frame(
+               pH = pHSol_temp$ValCol[which(str_detect(pHSol_temp$NameCol, "pH"))], 
+               Solubility = pHSol_temp$ValCol[which(str_detect(pHSol_temp$NameCol, "Entry [0-9]{1,} Solubility"))]) %>%  
+               mutate(across(.cols = everything(), .fns = as.numeric), 
+                      File = sim_data_file, 
+                      CompoundID = i, 
+                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+               select(File, CompoundID, Compound, pH, Solubility)
+            
+            rm(StartRow, EndRow, pHSol_temp)
+            
+         }
+         
+         pHSol <- bind_rows(pHSol)
+      } else {
+         pHSol <- NULL
+      }
+      
+      
       ## Pulling CL info ----------------------------------------------------
       MyInputDeets2 <- MyInputDeets[str_detect(MyInputDeets, "CLint_")]
       
@@ -1074,38 +1119,38 @@ extractExpDetails <- function(sim_data_file,
                                           "rUGT"))){
                            
                            rUGTSysInfo <- InputTab[i:LastRow_i, c(NameCol, ValueCol)] %>% 
-                              rename(NameCol = 1, ValueCol = 2) %>% 
-                              filter(str_detect(NameCol, "rUGT"))
+                              rename(Name = 1, Value = 2) %>% 
+                              filter(str_detect(Name, "rUGT"))
                            
                            Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTSystem",
                                        Suffix)]] <-
-                              rUGTSysInfo[which(str_detect(rUGTSysInfo$NameCol, 
-                                                           "rUGTSystem")), ValueCol] %>% 
-                              pull(ValueCol)
+                              rUGTSysInfo[which(str_detect(rUGTSysInfo$Name, 
+                                                           "rUGTSystem")), ] %>% 
+                              pull(Value)
                            
                            suppressWarnings(
                               Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTScalar_liver",
                                           Suffix)]] <-
                                  rUGTSysInfo[which(
-                                    str_detect(tolower(rUGTSysInfo$NameCol), 
-                                               "rugtscalar.*liver")), ValueCol] %>% 
-                                 pull(ValueCol) %>% as.numeric())
+                                    str_detect(tolower(rUGTSysInfo$Name), 
+                                               "rugtscalar.*liver")), ] %>% 
+                                 pull(Value) %>% as.numeric())
                            
                            suppressWarnings(
                               Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTScalar_intestine",
                                           Suffix)]] <-
                                  rUGTSysInfo[which(
-                                    str_detect(tolower(rUGTSysInfo$NameCol), 
-                                               "rugtscalar.*intestine")), ValueCol] %>% 
-                                 pull(ValueCol) %>% as.numeric())
+                                    str_detect(tolower(rUGTSysInfo$Name), 
+                                               "rugtscalar.*intestine")), ] %>% 
+                                 pull(Value) %>% as.numeric())
                            
                            suppressWarnings(
                               Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTScalar_kidney",
                                           Suffix)]] <-
                                  rUGTSysInfo[which(
-                                    str_detect(tolower(rUGTSysInfo$NameCol), 
-                                               "rugtscalar.*kidney")), ValueCol] %>% 
-                                 pull(ValueCol) %>% as.numeric())
+                                    str_detect(tolower(rUGTSysInfo$Name), 
+                                               "rugtscalar.*kidney")), ] %>% 
+                                 pull(Value) %>% as.numeric())
                            
                            rm(rUGTSysInfo)
                         }
@@ -1877,7 +1922,8 @@ extractExpDetails <- function(sim_data_file,
                DissolutionProfiles = DissoProfs,
                ReleaseProfiles = ReleaseProfs, 
                ConcDependent_fup = CDfupProfs, 
-               ConcDependent_BP = CDBPProfs)
+               ConcDependent_BP = CDBPProfs, 
+               pH_dependend_solubility = pHSol)
    
    for(j in names(Out)[unlist(lapply(Out, is.null)) == FALSE]){
       Out[[j]] <- Out[[j]] %>% 

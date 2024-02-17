@@ -383,27 +383,28 @@ include a link to it here.)
 Because we need to have a standardized way to input observed data, setting up
 the input for this function requires creating a data.frame or named vector of
 the observed PK data, supplying a csv or Excel file with observed PK data, or
-filling out an Excel form.
+filling out an Excel form. The data can be set up so that the columns are the
+name of the PK parameter or, for a little more flexibility, the data can be
+set up with a single column listing the PK parameters and a separate column
+listing their values. This second approach also allows you to include another
+column specifying which tab you want to use to find those parameters when you
+have a user-defined interval. Here are all the options in more detail:
 
-\strong{OPTION A: Supply a data.frame or a named vector.} If you supply a
-data.frame, the column names will indicate which PK parameter you want, and
-if you supply a named numeric vector, the names of the vector will perform
-the same task. If you have CV values for any observed data that you'd like to
-include in the table, make the name be the PK parameter with a suffix of
-"_CV".
-
-An example of specifying a data.frame: \code{observed_PK =
-data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38, Cmax_dose1 = 22,
-Cmax_dose1_CV = 0.24)}
-
-An example of specifying a named vector: \code{observed_PK = c("AUCinf_dose1"
+\strong{OPTION A: Supply a named vector.} Make the names of the vector the PK
+parameters you want. If you have CV values for any observed data that you'd
+like to include in the table, make the name be the PK parameter with a suffix
+of "_CV". An example: \code{observed_PK = c("AUCinf_dose1"
 = 60, "AUCinf_dose1_CV" = 0.38, "Cmax_dose1" = 22, "Cmax_dose1_CV" = 0.24)}.
 
-\strong{OPTION B: Use a csv file of observed PK data.} In Excel, create a csv
-file where the first row is the PK parameters you want and the second row
-lists the values for each. This should look the same as the examples for
-Option A. To see an example of how this should look, run this in the console
-and then open the csv file:
+\strong{OPTION B: Use a csv file or a data.frame of observed PK data with a
+column for the PK
+parameter and a separate column for the value.} In Excel or in R, create a 
+table 
+
+Alternatively, set this up so that thethe first row is the
+PK parameters you want and the second row lists the values for each. This
+should look the same as the examples for Option A. To see an example of how
+this should look, run this in the console and then open the csv file:
 
 \code{write.csv(data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38,
 Cmax_dose1 = 22, Cmax_dose1_CV = 0.24), file = "Example observed PK
