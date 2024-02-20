@@ -1047,7 +1047,7 @@ pksummary_table <- function(sim_data_file = NA,
    
    suppressWarnings(
       CheckDoseInt <- check_doseint(sim_data_file = sim_data_file, 
-                                    existing_exp_details = existing_exp_details,
+                                    existing_exp_details = Deets,
                                     compoundID = compoundToExtract,
                                     stop_or_warn = "warn")
    )
