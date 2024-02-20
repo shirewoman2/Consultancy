@@ -118,11 +118,11 @@ harmonize_details <- function(existing_exp_details){
          # changed the output from extractExpDetails from sometimes being a list
          # & sometimes being a data.frame to ALWAYS being a list.
          
-         Out <- list(Main = as.data.frame(existing_exp_details[
+         Out <- list(MainDetails = as.data.frame(existing_exp_details[
             which(sapply(existing_exp_details, length) == 1)]))
          
          for(i in ExpDetailListItems[2:length(ExpDetailListItems)]){
-            Out[[i]] <- NULL
+            Out[[i]] <- data.frame()
          }
          
          # Check whether MainDetails includes SheetNames b/c need it for other
