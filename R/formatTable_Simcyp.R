@@ -481,6 +481,10 @@ formatTable_Simcyp <- function(DF,
          }
       }
       
+      # Columns must be numeric for this to work correctly. 
+      DF <- DF %>% 
+         mutate(across(.cols = matches("ratio"), .fns = as.numeric))
+      
       # Finding each cell that should be colored according to each level of interaction
       for(j in which(str_detect(tolower(names(DF)), "ratio"))){
          
@@ -657,6 +661,11 @@ formatTable_Simcyp <- function(DF,
       StatCol <- which(str_detect(names(DF), "[Ss]tat$|[Ss]tatistic"))
       SOrows <- which(str_detect(t(DF[, StatCol[1]]),
                                  "S/O|[Ss]simulated.*[Oo]bserved"))
+      
+      # Columns must be numeric for this to work correctly. 
+      DF <- DF %>% 
+         mutate(across(.cols = matches("S/O|[Ss]simulated.*[Oo]bserved"), .fns = as.numeric))
+      
       for(i in SOrows){
          for(j in 1:length(highlight_so_cutoffs)){
             suppressWarnings(
