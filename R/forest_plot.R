@@ -319,7 +319,14 @@
 #'             y_axis_labels = Inhibitor1,
 #'             facet_column_x = Dose_sub)
 #'
-#' # Or break up your graph by the PK parameter shown.
+#' # You can add a title to the facets to indicate what they are with 
+#' # facet_title_x. 
+#' forest_plot(forest_dataframe = BufForestData,
+#'             y_axis_labels = Inhibitor1,
+#'             facet_column_x = Dose_sub, 
+#'             facet_title_x = "Dose bufuralol")
+#'
+#' # Or you can break up your graph by the PK parameter shown.
 #' forest_plot(forest_dataframe = BufForestData_20mg,
 #'             y_axis_labels = Inhibitor1,
 #'             facet_column_x = PKparameter)
@@ -440,6 +447,7 @@ forest_plot <- function(forest_dataframe,
                         PKparameters = NA, 
                         observed_PK = NA,
                         facet_column_x, 
+                        facet_title_x = NA, 
                         show_numbers_on_right = FALSE,
                         mean_type = "geometric",
                         variability_type = "90% CI", 
@@ -1198,6 +1206,26 @@ forest_plot <- function(forest_dataframe,
    # wouldn't work if they had more than one PK parameter.
    FakeFacetOnPK <- length(unique(forest_dataframe$PKparameter)) == 1
    
+   # If the user wants to title their facets, check whether ggh4x is installed
+   # and ask user if they want to install it if not.
+   if(any(complete.cases(facet_title_x)) & 
+      length(find.package("ggh4x", quiet = TRUE)) == 0){
+      message("\nYou requested a title for the facets, which requires the package ggh4x.\n")
+      Install <- readline(prompt = "Is it ok to install ggh4x for you? (y or n)   ")
+      
+      if(tolower(str_sub(Install, 1, 1)) == "y"){
+         install.packages("ggh4x")
+      } else {
+         message("Ok, we will not install ggh4x for you, but we also won't be able to add facet titles to your graph.\n")
+         facet_title_x <- NA
+      }
+   }
+   
+   # Adjusting input data.frame for facet titles
+   if(complete.cases(facet_title_x)){
+      forest_dataframe$FacetTitleX <- facet_title_x
+   }
+   
    
    ## Setting up other stuff for graphing ----------------------------------
    
@@ -1522,7 +1550,29 @@ forest_plot <- function(forest_dataframe,
          labs(fill = "Interaction level", shape = NULL)
       
       if(as_label(facet_column_x) != "<empty>"){
-         G <- G + facet_grid(YCol ~ FCX, switch = "y") 
+         
+         if(is.na(facet_title_x)){
+            G <- G + facet_grid(YCol ~ FCX, switch = "y") 
+         } else {
+            
+            FacetTitleTheme_X <- ggh4x::strip_nested(
+               text_x = ggh4x::elem_list_text(
+                  face = c("bold", "plain"), 
+                  size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                           calc_element("strip.text.x", theme_consultancy())$size)), 
+               by_layer_x = TRUE, 
+               
+               text_y = ggh4x::elem_list_text(
+                  face = "plain", 
+                  size = calc_element("strip.text.x", theme_consultancy())$size), 
+               by_layer_y = TRUE)
+            
+            G <- G + ggh4x::facet_nested(YCol ~ FacetTitleX + FCX, 
+                                         strip = FacetTitleTheme_X, 
+                                         switch = "y")
+            
+         }
+         
       } else {
          G <- G + facet_grid(YCol ~ ., switch = "y") 
       }
