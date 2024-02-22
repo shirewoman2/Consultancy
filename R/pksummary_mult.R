@@ -414,6 +414,13 @@ pksummary_mult <- function(sim_data_files = NA,
       
    }
    
+   # Kahina requested that we give a warning that you don't need to specify the
+   # sheet if it's for standard dose 1 or last dose PK.
+   if(all(complete.cases(sheet_PKparameters))){
+      warning("You requested a specific sheet for extracting PK parameters; just fyi, you only need to specify the sheet if it's for a custom AUC interval.\n", 
+              call. = FALSE)
+   }
+   
    # Harmonizing PK parameter names
    PKparameters <- harmonize_PK_names(PKparameters)
    

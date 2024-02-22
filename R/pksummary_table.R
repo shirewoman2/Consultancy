@@ -510,6 +510,13 @@ pksummary_table <- function(sim_data_file = NA,
       PKparameters <- NA
    }
    
+   # Kahina requested that we give a warning that you don't need to specify the
+   # sheet if it's for standard dose 1 or last dose PK.
+   if(all(complete.cases(sheet_PKparameters))){
+      warning("You requested a specific sheet for extracting PK parameters; just fyi, you only need to specify the sheet if it's for a custom AUC interval.\n", 
+              call. = FALSE)
+   }
+   
    # Make sure that input to variability_format is ok
    if(variability_format %in% c("to", "hyphen", "brackets", "parentheses") == FALSE){
       warning("The input for variability_format is not among the acceptable options, which are `to`, `hyphen`, `brackets` for square brackets, or `parentheses` for the eponymous symbol if you're an American and a bracket if you're British. We'll use the default of `to`.\n", 
@@ -910,8 +917,8 @@ pksummary_table <- function(sim_data_file = NA,
             
             PKToPull <- observed_PK$PKparameter
             
-         } else if(any(complete.cases(sheet_PKparameters))){ 
-            PKToPull <- NA # This will retrieve all possible parameters from user-defined interval.
+         #} else if(any(complete.cases(sheet_PKparameters))){ # This isn't working correctly. I think I should not include this. 
+            # PKToPull <- NA # This will retrieve all possible parameters from user-defined interval.
          } else {
             # If the user didn't specify an observed file, didn't list
             # specific parameters they want, and didn't fill out a report

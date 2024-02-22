@@ -472,6 +472,10 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
          PKToPull <- PKparameters
          MeanType <- mean_type
          FromCalcPKRatios <- TRUE
+         highlight_gmr_colors <- NA
+         highlight_so_cutoffs = NA
+         highlight_so_colors = "yellow to red"
+         prettify_columns <- TRUE
          
          rmarkdown::render(system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 
