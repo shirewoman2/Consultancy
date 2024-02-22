@@ -275,9 +275,9 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    # Harmonizing PK parameter names. If the parameters differ between sims, need
    # to do this in multiple steps to get the correct values.
    if(any(str_detect(PKparameters, "/"))){
-   PKparameters <- str_split(PKparameters, pattern = " / ")
-   PKparameters <- lapply(PKparameters, harmonize_PK_names)
-   PKparameters <- unlist(lapply(PKparameters, function(x) paste(x[1], x[2], sep = " / ")))
+      PKparameters <- str_split(PKparameters, pattern = " / ")
+      PKparameters <- lapply(PKparameters, harmonize_PK_names)
+      PKparameters <- unlist(lapply(PKparameters, function(x) paste(x[1], x[2], sep = " / ")))
    } else {
       PKparameters <- harmonize_PK_names(PKparameters)
    }
@@ -507,7 +507,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       Stats <- names(PKdenominator$aggregate[[1]])
       Vals <- PKdenominator$aggregate[[1]]
       temp <- data.frame(Statistic = Stats, 
-                 Val = Vals)
+                         Val = Vals)
       names(temp)[2] <- names(PKdenominator$aggregate)
       
       PKdenominator$aggregate <- temp
@@ -711,40 +711,50 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       
       if(include_num_denom_columns){
          
+         PKnum_agg <- PKnumerator$aggregate %>%
+            pivot_longer(cols = -Statistic, 
+                         names_to = "PKparameter", values_to = "Value") %>% 
+            mutate(ValType = "NumeratorSim", 
+                   Value = round_opt(Value, rounding))
+         
+         # Earlier, had to change column names of denominator results for
+         # matching w/numerator results when joining data.frames. Now, need to
+         # change names back to what the values *actually are* so that things
+         # don't get any further confused.
+         PKdenom_agg <- PKdenominator$aggregate %>%
+            pivot_longer(cols = -Statistic, 
+                         names_to = "PKparam_num", values_to = "Value") %>% 
+            left_join(Comparisons %>% select(PKparam_num, PKparam_denom), 
+                      by = "PKparam_num") %>% 
+            rename(PKparameter = PKparam_denom) %>% select(-PKparam_num) %>% 
+            mutate(ValType = "DenominatorSim", 
+                   Value = round_opt(Value, rounding))
+         
+         # Binding the numerator and denominator data together and
+         # formatting to match ratio data
+         PKnum_denom_agg <- bind_rows(PKnum_agg, PKdenom_agg) %>% 
+            filter(Statistic %in% 
+                      switch(mean_type,
+                             "geometric" = c("geometric mean", 
+                                             "90% confidence interval around the geometric mean(lower limit)", 
+                                             "90% confidence interval around the geometric mean(upper limit)"),
+                             # I'm not even sure the arithmetic means
+                             # would ever come up for the ratios for
+                             # the way I've set things up, so this is
+                             # probably mooot.
+                             "arithmetic" = c("mean"))) %>% 
+            mutate(PKparameter = paste(PKparameter, ValType), 
+                   Statistic = case_when(
+                      # NB: MUST put 90% CI stuff 1st or it matches "mean" and
+                      # replaces the CI with that.
+                      Statistic == "90% confidence interval around the geometric mean(lower limit)" ~ "CI_l", 
+                      Statistic == "90% confidence interval around the geometric mean(upper limit)" ~ "CI_u", 
+                      str_detect(Statistic, "mean") ~ "Mean", 
+                      TRUE ~ Statistic))
+         
          suppressMessages(
             MyPKResults <- MyPKResults %>% 
-               bind_rows(
-                  PKnumerator$aggregate %>%
-                     pivot_longer(cols = -Statistic, 
-                                  names_to = "PKparameter", values_to = "Value") %>% 
-                     mutate(ValType = "NumeratorSim", 
-                            Value = round_opt(Value, rounding)) %>% 
-                     
-                     bind_rows(
-                        # Earlier, had to change column names of denominator results for
-                        # matching w/numerator results when joining data.frames. Now, need
-                        # to change names back to what the values *actually are* so that
-                        # things don't get any further confused.
-                        PKdenominator$aggregate %>%
-                           pivot_longer(cols = -Statistic, 
-                                        names_to = "PKparam_num", values_to = "Value") %>% 
-                           left_join(Comparisons %>% select(PKparam_num, PKparam_denom), 
-                                     by = "PKparam_num") %>% 
-                           rename(PKparameter = PKparam_denom) %>% select(-PKparam_num) %>% 
-                           mutate(ValType = "DenominatorSim", 
-                                  Value = round_opt(Value, rounding))) %>% 
-                     
-                     filter(Statistic %in% 
-                               switch(mean_type,
-                                      "geometric" = c("Geometric Mean", "Geometric CV", 
-                                                      "90% confidence interval around the geometric mean(lower limit)", 
-                                                      "90% confidence interval around the geometric mean(upper limit)"),
-                                      "arithmetic" = c("Mean", "cv"))) %>% 
-                     mutate(PKparameter = paste(PKparameter, ValType), 
-                            Statistic = sub("Geometric ", "", Statistic), 
-                            Statistic = recode(Statistic, 
-                                               "90% confidence interval around the geometric mean(lower limit)" = "CI_l", 
-                                               "90% confidence interval around the geometric mean(upper limit)" = "CI_u"))) %>% 
+               bind_rows(PKnum_denom_agg) %>% 
                select(-ValType) %>% 
                pivot_wider(names_from = PKparameter,
                            values_from = Value)
@@ -879,7 +889,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    
    # Checking on possible perpetrators to prettify
    MyPerpetrator <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
-                   Deets$Inhibitor2)
+                      Deets$Inhibitor2)
    if(length(MyPerpetrator) > 0){
       MyPerpetrator <- str_comma(MyPerpetrator[complete.cases(MyPerpetrator)])
       MyPerpetrator <- ifelse(MyPerpetrator == "", NA, MyPerpetrator)
@@ -994,6 +1004,11 @@ calc_PK_ratios <- function(sim_data_file_numerator,
          MeanType <- mean_type
          sim_data_file <- str_comma(c(basename(sim_data_file_numerator),
                                       basename(sim_data_file_denominator)))
+         highlight_gmr_colors <- NA
+         highlight_so_cutoffs = NA
+         highlight_so_colors = "yellow to red"
+         prettify_columns <- TRUE
+         
          FromCalcPKRatios <- TRUE
          
          PKpulled <- Comparisons$PKparam_denom
