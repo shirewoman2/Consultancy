@@ -23,7 +23,7 @@ if(FromCalcPKRatios){
    MyAnnotations <- 
       list("TableHeading" = 
               paste0(
-                 "*Table XXX. Simulated ", MeanType, " mean ", 
+                 "***Table XXX.*** *Simulated ", MeanType, " mean ", 
                  unique(MyPKResults[[i]]$Tissue),  " PK parameters for the file pair ", 
                  str_comma(MyFiles), "*"), 
            
