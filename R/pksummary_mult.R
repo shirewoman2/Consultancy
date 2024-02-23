@@ -655,6 +655,23 @@ pksummary_mult <- function(sim_data_files = NA,
    OutQC <- list()
    FD <- list()
    
+   # Getting experimental details for the simulation(s) as needed. NB:
+   # "Deets" in all pksummary functions means ONLY the experimental details
+   # for the single file in question -- either the only file for
+   # pksummary_table or the specific file we're dealing with in that
+   # iteration of the loop in pksummary_mult. By contrast,
+   # existing_exp_details will include ALL experimental details provided or
+   # extracted inside the function.
+   if("logical" %in% class(existing_exp_details) == FALSE){ # logical when user has supplied NA
+      existing_exp_details <- harmonize_details(existing_exp_details)
+   }
+   
+   # This will get details for any files that weren't already included. 
+   existing_exp_details <- extractExpDetails_mult(
+      sim_data_files = sim_data_files,
+      exp_details = "Summary and Input", 
+      existing_exp_details = existing_exp_details)
+   
    for(i in sim_data_files){
       
       MyPKResults[[i]] <- list()
@@ -664,28 +681,7 @@ pksummary_mult <- function(sim_data_files = NA,
       
       message(paste0("Extracting PK data from `", i, "`"))
       
-      # Getting experimental details for the simulation(s) as needed. NB:
-      # "Deets" in all pksummary functions means ONLY the experimental details
-      # for the single file in question -- either the only file for
-      # pksummary_table or the specific file we're dealing with in that
-      # iteration of the loop in pksummary_mult. By contrast,
-      # existing_exp_details will include ALL experimental details provided or
-      # extracted inside the function.
-      if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-         existing_exp_details <- extractExpDetails(i, exp_details = "Summary and Input", 
-                                                   annotate_output = FALSE)
-      } else {
-         existing_exp_details <- harmonize_details(existing_exp_details)
-      }
-      
       Deets <- existing_exp_details$MainDetails %>% filter(File == i)
-      
-      if(nrow(Deets) == 0){
-         Deets <- 
-            extractExpDetails(sim_data_file = i, 
-                              exp_details = "Summary and Input", 
-                              annotate_output = FALSE)[["MainDetails"]]
-      }
       
       # Checking that the file is, indeed, a simulator output file.
       if(length(Deets) == 0){

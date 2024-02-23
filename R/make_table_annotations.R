@@ -47,7 +47,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
    # There are some situations where we want to just pass through generic info,
    # so that's why I'm returning things here rather than stopping.
    if("logical" %in% class(Deets) || nrow(Deets) == 0){
-      return(list(TableHeading = paste0("*Table XXX. Simulated ",
+      return(list(TableHeading = paste0("***Table XXX.*** *Simulated ",
                                         ifelse(Observedincluded, "and observed ", ""),
                                         "PK data*"),
                   TableCaption = paste0("*Source simulated data: ",
@@ -219,7 +219,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
             MyPerpetrator, DoseFreq_inhib),
       "")
    
-   Heading <- paste0("*Table XXX. Simulated ",
+   Heading <- paste0("***Table XXX.*** *Simulated ",
                      ifelse(Observedincluded, "and observed ", ""),
                      MeanType, " mean ", 
                      str_comma(tissue), " PK parameters for ",
@@ -242,11 +242,11 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    CapText2 <- paste0(sub("; $", ". ", CapText2a), 
                       ifelse(Observedincluded, 
-                             "S/O: simulated/observed; source observed data: **Clinical Study XXX**; ",
+                             "S/O: simulated/observed. Source observed data: **Clinical Study XXX**; ",
                              ""))
    
    Caption <- paste0("*Simulated values listed are ", 
-                     CapText1, ". ", CapText2, "source simulated data: ",
+                     CapText1, ". ", CapText2, "Source simulated data: ",
                      basename(MyFile), "*")
    
    
