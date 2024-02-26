@@ -673,7 +673,7 @@ extractConcTime <- function(sim_data_file,
                                   Compound = ifelse(tissue == "plasma" &
                                                        compoundToExtract == "substrate" &
                                                        all(AllCompoundsID == "substrate"),
-                                                    MyCompound, "UNKNOWN"),
+                                                    AllCompoundsPresent["substrate"], "UNKNOWN"),
                                   ObsFile = NA,
                                   Species = ifelse(is.na(Deets$Species),
                                                    "human",
