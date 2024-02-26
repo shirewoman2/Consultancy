@@ -545,6 +545,10 @@ extractPK <- function(sim_data_file,
                     filter(Sheet == "AUCX" & !str_detect(PKparameter, "_dose1")) %>% 
                     pull(PKparameter) %>% unique()), 
              
+             SheetDrugPop = PKparameter %in% 
+                (AllPKParameters %>% filter(Sheet == "Drug-Population Parameters") %>% 
+                    pull(PKparameter) %>% unique()), 
+             
              SheetCLTSS = PKparameter %in% 
                 (AllPKParameters %>% filter(Sheet == "Clearance Trials SS") %>% 
                     pull(PKparameter) %>% unique()))
@@ -684,7 +688,7 @@ extractPK <- function(sim_data_file,
    # Removing any rows where all sheets are labeled as FALSE, i.e., it is not
    # going to be found on any of those sheets.
    PKparamDF <- PKparamDF %>% 
-      mutate(AnyTRUE = any(SheetAUC, SheetAbsorption, SheetRegADAM, 
+      mutate(AnyTRUE = any(SheetAUC, SheetAbsorption, SheetRegADAM, SheetDrugPop, 
                            SheetAUC0, SheetAUClast, SheetCLTSS, SheetUser)) %>% 
       filter(AnyTRUE == TRUE) %>% select(-AnyTRUE)
    
@@ -1161,8 +1165,8 @@ extractPK <- function(sim_data_file,
                # i. For the absorption tab, there are columns for the substrate
                # and columns for Inhibitor 1. (There are also columns for
                # Inhibitor 2 and 3 but I've never seen them filled in. -LSh)
-               StartCol <- ifelse(str_detect(i, "sub"),
-                                  SubCols, WithInhibCols)
+               StartCol <- ifelse(str_detect(i, "withInhib"),
+                                  WithInhibCols, SubCols)
                
                ColNum <- which(str_detect(
                   as.character(FaFg_xl[2, StartCol:(StartCol+2)]),
@@ -1365,6 +1369,102 @@ extractPK <- function(sim_data_file,
          }
       }
    }
+   
+   
+   # Pulling data from the "Drug-Population Parameters" tab --------------------
+   
+   # Some PK parameters show up on multiple sheets. No need to pull
+   # those here if they've already been pulled from another sheet.
+   PKparameters_DrugPop <-
+      setdiff(PKparamDF$PKparameter[PKparamDF$SheetDrugPop == TRUE], 
+              names(Out_agg))
+   
+   if(length(PKparameters_DrugPop) > 0 &
+      any(PKparameters_orig %in% c("AUC tab", "Absorption tab")) == FALSE){
+      
+      if("Drug-Population Parameters" %in% SheetNames == FALSE){
+         # Error catching
+         warning(paste0("The sheet `Drug-Population Parameters` was not present in the Excel simulated data file to extract the parameters ",
+                        str_comma(PKparameters_DrugPop), "."),
+                 call. = FALSE)
+      } else {
+         
+         DrugPop_xl <- suppressMessages(
+            readxl::read_excel(path = sim_data_file, sheet = "Drug-Population Parameters",
+                               col_names = FALSE))
+         
+         StartRow_ind <- which(DrugPop_xl$...1 == "Index")
+         EndRow_agg <- which(is.na(DrugPop_xl$...3))[2] - 1
+         
+         # Looping through parameters and extracting values
+         for(i in PKparameters_DrugPop){
+            
+            # Using regex to find the correct column. See
+            # data(AllPKParameters) for all the possible parameters as well
+            # as what regular expressions are being searched for each. 
+            ToDetect <- AllPKParameters %>% 
+               filter(Sheet == "Drug-Population Parameters" & PKparameter == i) %>% 
+               select(PKparameter, SearchText)
+            
+            # Looking for the regular expression specific to this parameter
+            # i. 
+            ColNum <- which(str_detect(as.vector(t(DrugPop_xl[2, ])),
+                                       ToDetect$SearchText))
+            
+            if(length(ColNum) == 0 | is.na(ColNum)){
+               if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
+                  warning(paste0("The column with information for ", i,
+                                 " on the tab 'Drug-Population Parameters' cannot be found in the file ", 
+                                 sim_data_file, "."), 
+                          call. = FALSE)
+               }
+               suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
+               PKparameters_DrugPop <- setdiff(PKparameters_DrugPop, i)
+               next
+            }
+            
+            suppressWarnings(
+               Out_ind[[i]] <- DrugPop_xl[StartRow_ind:nrow(DrugPop_xl), ColNum] %>%
+                  pull(1) %>% as.numeric
+            )
+            
+            suppressWarnings(
+               Out_agg[[i]] <- DrugPop_xl[3:EndRow_agg, ColNum] %>%
+                  pull(1) %>% as.numeric
+            )
+            names(Out_agg[[i]]) <- DrugPop_xl[3:EndRow_agg, 3] %>%
+               pull(1)
+            
+            
+            if(checkDataSource){
+               DataCheck <- DataCheck %>%
+                  bind_rows(data.frame(PKparam = i, 
+                                       Tab = "Drug-Population Parameters",
+                                       SearchText = ToDetect$SearchText,
+                                       Column = ColNum, 
+                                       StartRow_agg = 3,
+                                       EndRow_agg = EndRow_agg,
+                                       StartRow_ind = StartRow_ind,
+                                       EndRow_ind = nrow(DrugPop_xl)))
+            }
+         }   
+         
+         if(includeTrialInfo & length(PKparameters_DrugPop) > 0){
+            # Subject and trial info
+            SubjTrial_DrugPop <- DrugPop_xl[StartRow_ind:nrow(DrugPop_xl), 1:2] %>%
+               rename("Individual" = ...1, "Trial" = ...2)
+            
+            Out_ind[["DrugPoptab"]] <- cbind(SubjTrial_DrugPop,
+                                             as.data.frame(Out_ind[PKparameters_DrugPop]))
+         }
+         
+         rm(ColNum, ToDetect)
+         
+      }
+      
+      suppressWarnings(rm(EndRow_agg, StartRow_ind))
+   }
+   
    
    # Pulling data from the "Clearance Trials SS" sheet ------------------------------------------
    
