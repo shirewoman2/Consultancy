@@ -261,7 +261,7 @@ recalc_PK <- function(ct_dataframe,
    }
    
    if(is.na(first_dose_time) & "logical" %in% class(existing_exp_details)){
-      warning("You have not specified the time of the 1st dose. We'll assume it's the minimum time included in your data.\n", 
+      warning("IMPORTANT: You have not specified the time of the 1st dose. We'll assume it's the minimum time included in your data. Please make SURE that this is correct as incorrect t0 specification can mess up calculations.\n", 
               call. = FALSE)
    }
    
@@ -359,7 +359,7 @@ recalc_PK <- function(ct_dataframe,
    
    if(omit_0_concs){
       ct_dataframe <- ct_dataframe %>%
-         filter((Time != 0 & Conc > 0) | Time == 0)
+         filter((Time != first_dose_time & Conc > 0) | Time == first_dose_time)
    }
    
    # Adjusting time to be time since most-recent dose. Only keeping 1st and
@@ -538,7 +538,7 @@ recalc_PK <- function(ct_dataframe,
                             switch(as.character(complete.cases(dosing_interval)),
                                    "TRUE" = t0 + dosing_interval,
                                    "FALSE" = MaxTime)) %>% 
-                  filter(complete.cases(File))
+                  filter(complete.cases(File) | complete.cases(ObsFile))
             ))
             
             if(complete.cases(first_dose_time)){
@@ -758,7 +758,9 @@ recalc_PK <- function(ct_dataframe,
       
       #### last dose -----------------------------------------------------------
       
-      if("last" %in% which_dose){
+      if("last" %in% which_dose & 
+         # if only single dose, nothing will have a name other than 1
+         length(CTsubset[setdiff(names(CTsubset), "1")]) > 0){
          
          if(report_progress %in% c("yes", "some")){message("Calculating last-dose PK")}
          
@@ -977,10 +979,9 @@ recalc_PK <- function(ct_dataframe,
    
    #### special interval ------------------------------------------------------
    
-   if(report_progress %in% c("yes", "some")){message("Calculating PK for user-defined interval")}
-   
-   
    if(length(SpecialInterval) > 0){
+      
+      if(report_progress %in% c("yes", "some")){message("Calculating PK for user-defined interval")}
       
       # NB: There may be more than one user-specified interval and that should be
       # fine.
