@@ -282,7 +282,7 @@ format_obs_for_XML <- function(obs_dataframe,
    
    if(set_t0_concs_to_0){
       obs_dataframe <- obs_dataframe %>% 
-         mutate(Conc = ifelse(Time == 0, 0, Conc))
+         mutate(Conc = ifelse(Time == dosing_start_time, 0, Conc))
    }
    
    # Setting up final column names
