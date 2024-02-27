@@ -12,6 +12,9 @@
 #' 
 harmonize_PK_names <- function(PKparameters){
    
+   # hyphens instead of underscores
+   PKparameters <- gsub("-", "_", PKparameters)
+   
    # suffix challenges
    PKparameters <- sub("_ss", "_last", PKparameters)
    PKparameters <- sub("_first", "_dose1", PKparameters)
