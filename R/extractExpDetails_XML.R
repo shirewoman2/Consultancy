@@ -152,6 +152,31 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       Deets[[i]] <- list()
       
       Deets[[i]]$Workspace_TimeLastModified <- as.character(file.info(i)$mtime)
+      Deets[[i]]$SimulatorUsed <- ifelse(str_detect(i, "wksz"), 
+                                         "Simcyp Simulator", "Simcyp Discovery")
+      
+      # Adjusting which details to pull based on which simulator was used.
+      if(Deets[[i]]$SimulatorUsed == "Simcyp Simulator"){
+         exp_details <- intersect(
+            exp_details, 
+            
+            AllExpDetails %>% 
+               filter(Sheet == "workspace XML file" & 
+                         DiscoveryParameter %in% c("Simulator and Discovery", 
+                                                   "Simulator only")) %>% 
+               pull(Detail)
+            )
+      } else if(Deets[[i]]$SimulatorUsed == "Simcyp Discovery"){
+         exp_details <- intersect(
+            exp_details, 
+            
+            AllExpDetails %>% 
+               filter(Sheet == "workspace XML file" & 
+                         DiscoveryParameter %in% c("Simulator and Discovery", 
+                                                   "Discovery only")) %>% 
+               pull(Detail)
+         )
+      }
       
       workspace_xml <- XML::xmlTreeParse(i, useInternal = TRUE)
       RootNode <- XML::xmlRoot(workspace_xml)
@@ -232,12 +257,23 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                    "character" = as.character(DeetValue))
                
                # Decoding as necessary. Add to the options for k as needed.
-               if(k %in% c("DistributionModel")){
-                  DeetValue <- switch(k, 
-                                      "DistributionModel" = 
-                                         switch(DeetValue, 
-                                                "1" = "Full PBPK Model", 
-                                                "0" = "Minimal PBPK Model"))
+               if(str_detect(k, "DistributionModel|Abs_model")){
+                  DeetValue <- case_when(
+                     str_detect(k, "DistributionModel") ~  
+                        switch(DeetValue, 
+                               "1" = "Full PBPK Model", 
+                               "0" = "Minimal PBPK Model"), 
+                     
+                     str_detect(k, "Abs_model") ~  
+                        switch(DeetValue, 
+                               "0" = "1st order", 
+                               "2" = "ADAM")) 
+               }
+               
+               # Adjusting when things need to be set to NA when they don't apply
+               if(str_detect(k, "Qgut_userinput") & 
+                  XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["QGutSwitch"]]) == "1"){
+                  DeetValue <- NA
                }
                
                Deets[[i]][[k]] <- DeetValue 
