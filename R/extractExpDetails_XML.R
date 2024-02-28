@@ -252,23 +252,23 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                             DeetInfo$Level3]][[DeetInfo$Level4]][[
                                DeetInfo$Level5]]))
                
+               # Decoding as necessary. Add to the options for k as needed.
+               DeetValue <- case_when(
+                  str_detect(k, "DistributionModel") ~ 
+                     case_match(DeetValue, 
+                                "1" ~ "Full PBPK Model", 
+                                "0" ~ "Minimal PBPK Model"), 
+                  
+                  str_detect(k, "Abs_model") ~  
+                     case_match(DeetValue, 
+                                "0" ~ "1st order", 
+                                "2" ~ "ADAM"), 
+                  
+                  TRUE ~ DeetValue)
+               
                DeetValue <- switch(DeetInfo$Class, 
                                    "numeric" = as.numeric(DeetValue), 
                                    "character" = as.character(DeetValue))
-               
-               # Decoding as necessary. Add to the options for k as needed.
-               if(str_detect(k, "DistributionModel|Abs_model")){
-                  DeetValue <- case_when(
-                     str_detect(k, "DistributionModel") ~  
-                        switch(DeetValue, 
-                               "1" = "Full PBPK Model", 
-                               "0" = "Minimal PBPK Model"), 
-                     
-                     str_detect(k, "Abs_model") ~  
-                        switch(DeetValue, 
-                               "0" = "1st order", 
-                               "2" = "ADAM")) 
-               }
                
                # Adjusting when things need to be set to NA when they don't apply
                if(str_detect(k, "Qgut_userinput") & 
