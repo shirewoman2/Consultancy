@@ -23,6 +23,15 @@ filter_sims <- function(which_object,
                         which_sims, 
                         include_or_omit){
    
+   # Error catching ----------------------------------------------------------
+   
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # Main body of function ----------------------------------------------------
+   
    if("list" %in% class(which_object)){
       # This is when it's probably the output from running extractExpDetails_mult.
       for(i in names(which_object)){
