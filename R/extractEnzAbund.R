@@ -126,7 +126,7 @@ extractEnzAbund <- function(sim_data_file,
       Deets <- harmonize_details(Deets)[["MainDetails"]] %>% 
          filter(File == sim_data_file)
       
-      if(nrow(Deets == 0)){
+      if(nrow(Deets) == 0){
          Deets <- extractExpDetails(sim_data_file, exp_details = "Summary and Input")[["MainDetails"]]
       }
    }
@@ -140,7 +140,7 @@ extractEnzAbund <- function(sim_data_file,
    
    # Figuring out which sheet to extract and dealing with case since that
    # apparently changes between Simulator versions.
-   AllSheets <- readxl::excel_sheets(sim_data_file)
+   AllSheets <- gsub("`", "", str_split_1(Deets$SheetNames, pattern = "` `"))
    SheetToExtract <- data.frame(Sheet = AllSheets, 
                                 SheetLower = tolower(AllSheets)) %>% 
       filter(SheetLower == paste(tolower(enzyme), 

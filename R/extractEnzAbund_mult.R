@@ -116,6 +116,26 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       tissues <- sys.call()$tissue
    }
    
+   # Make it so that, if they supply NA, NULL, or "none" for sim_enz_dataframe, all
+   # of those will work. Note to coders: It was REALLY HARD to get this to work
+   # with just the perfect magical combination of exists and suppressWarnings,
+   # etc.
+   
+   # If user supplied an unquoted object, this checks whether that object
+   # exists. However, if they supplied NA or NULL, this throws an error. 
+   Recode_sim_enz_dataframe <- suppressWarnings(
+      try(exists(deparse(substitute(sim_enz_dataframe))) == FALSE, silent = TRUE))
+   
+   # If they got an error, then the class of Recode_X will be "try-error", and
+   # then we want Recode_X to be TRUE.
+   if(suppressWarnings("try-error" %in% class(Recode_sim_enz_dataframe))){
+      Recode_sim_enz_dataframe <- TRUE
+   }
+   
+   if(Recode_sim_enz_dataframe){
+      sim_enz_dataframe <- "none"
+   }
+   
    
    # Main body of function -----------------------------------------------
    
@@ -138,12 +158,15 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
    # data are already present in sim_enz_dataframe.
    Requested <- expand.grid(Tissue = tissues,
                             Enzyme = enzymesToExtract,
-                            File = sim_data_files)
+                            File = sim_data_files) %>% 
+      mutate(ID = paste(File, Tissue, Enzyme))
    
-   if("logical" %in% class(sim_enz_dataframe) == FALSE &&
-      exists(substitute(sim_enz_dataframe)) && 
+   # Checking for existing conc-time data
+   if(exists(deparse(substitute(sim_enz_dataframe))) && 
+      "logical" %in% class(sim_enz_dataframe) == FALSE &&
       "data.frame" %in% class(sim_enz_dataframe) && 
       nrow(sim_enz_dataframe) > 0){
+      
       if("File" %in% names(sim_enz_dataframe) == FALSE){
          sim_enz_dataframe$File <- "unknown file"
       }
@@ -151,25 +174,29 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       sim_enz_dataframe <- sim_enz_dataframe %>%
          mutate(ID = paste(File, Tissue, Enzyme))
       
-      suppressMessages(
-         DataToFetch <- sim_enz_dataframe %>% select(File, Tissue, Enzyme) %>%
-            unique() %>% mutate(ExistsAlready = TRUE) %>%
-            right_join(Requested) %>%
-            filter(is.na(ExistsAlready)) %>% select(-ExistsAlready) %>%
-            mutate(ID = paste(File, Tissue, Enzyme))
-      )
-      
       if(overwrite == FALSE){
-         sim_data_files_topull <- unique(DataToFetch$File)
+         
+         DataToFetch <- Requested %>% 
+            filter(!File %in% sim_enz_dataframe$File)
+         
+         sim_data_files_topull <- unique(as.character(DataToFetch$File))
+         
       } else {
-         sim_data_files_topull <- sim_data_files
+         
+         DataToFetch <- Requested
+         
+         sim_data_files_topull <- unique(sim_data_files)
          sim_enz_dataframe <- sim_enz_dataframe %>%
-            filter(!ID %in% DataToFetch$ID)
+            filter(!File %in% DataToFetch$File)
       }
+      
    } else {
+      
+      # This is when there's no existing data, so we're just getting everything. 
       DataToFetch <- Requested
       sim_data_files_topull <- sim_data_files
       sim_enz_dataframe <- data.frame()
+      
    }
    
    if(length(sim_data_files_topull) == 0){
