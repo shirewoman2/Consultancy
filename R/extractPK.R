@@ -1,8 +1,8 @@
 #' Extract PK data for specific parameters from a simulator output Excel file
 #'
 #' Pull calculated PK parameters from a Simcyp simulation output Excel file. A
-#' data.frame of all possible PK parameters may be found by typing 
-#' \code{view(PKParameterDefinitions)} into the console. 
+#' data.frame of all possible PK parameters may be found by typing
+#' \code{view(PKParameterDefinitions)} into the console.
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output,
 #'   in quotes
@@ -18,8 +18,12 @@
 #'
 #'   \item{"all"}{all possible parameters}
 #'
-#'   \item{"AUC tab"}{only those parameters on the "AUC" tab (default). The
-#'   "AUC_CI" tab or "AUC_SD" tab will be used if "AUC" tab is not present.}
+#'   \item{"AUC tab"}{only those parameters on the "AUC" tab (default). For V21
+#'   or later, this will look for tabs named something like 
+#'   "Int AUC 1st_CI(Sub)(CPlasma)" for the 1st dose of the substrate, for 
+#'   example, and pull all possible parameters there. For V21, 
+#'   and earlier, this will pull data from the tab literally named "AUC"
+#'   or the "AUC_CI" tab or "AUC_SD" tab if a tab named "AUC"is not present.}
 #'
 #'   \item{"Absorption tab"}{only those parameters on the "Absorption" or
 #'   "Overall Fa Fg" tab}
