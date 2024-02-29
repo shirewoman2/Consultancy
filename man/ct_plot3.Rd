@@ -185,10 +185,53 @@ of the options available for those functions will work here.
 }
 \examples{
 
-data(LMVct)
-ct_plot3(ct_dataframe = LMVct, linear_or_log = "log")
+# We'll use the objects LMVct and MDZ_Keto for these examples. They're
+# included in the package. 
 
-data(MDZ_Keto)
-ct_plot3(ct_dataframe = MDZ_Keto, overlay = TRUE, colorBy_column = CompoundID)
+# Examples with a single compound, tissue, and simulation ----------------------
+
+# These are all graphs where, if you made one of the panels on its own, you
+# would use the function ct_plot.
+
+# Simplest option:
+ct_plot3(ct_dataframe = LMVct)
+
+# Change the 3 graph titles
+ct_plot3(ct_dataframe = LMVct, 
+         graph_title_U = "Full time range for letermovir", 
+         graph_title_LL = "Dose 1 of letermovir", 
+         graph_title_LR = "Dose 8 of letermovir")
+
+# Tweak the time intervals for the bottom row graphs
+ct_plot3(ct_dataframe = LMVct, 
+         graph_title_LL = "Dose 1 & 2", 
+         time_range_LL = "doses 1 to 2", 
+         graph_title_LR = "Dose 7 & 8", 
+         time_range_LR = "doses 7 to 8")
+
+# Make any other adjustments that you would typically make with ct_plot. 
+
+
+# Examples with multiple compounds, tissues, and/or simulations overlaid -------
+
+# These are all graphs where, if you made one of the panels on its own, you
+# would use the function ct_plot_overlay.
+ct_plot3(ct_dataframe = MDZ_Keto \%>\% 
+            filter(CompoundID == "substrate" & 
+                      Tissue == "plasma"), 
+         overlay = TRUE, colorBy_column = Inhibitor)
+
+# Make any other adjustments that you would typically make with ct_plot_overlay.
+# This option might be a bit much! But at least it shows how it would be
+# done. :)
+ct_plot3(ct_dataframe = MDZ_Keto, 
+         overlay = TRUE,
+         colorBy_column = Inhibitor, 
+         facet1_column = Tissue, 
+         facet2_column = Compound)
+
+
+# You can adjust the graph titles and time ranges the same way as with a single
+# simulation.
 
 }

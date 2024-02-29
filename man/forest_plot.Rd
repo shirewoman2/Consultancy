@@ -11,6 +11,7 @@ forest_plot(
   PKparameters = NA,
   observed_PK = NA,
   facet_column_x,
+  facet_title_x = NA,
   show_numbers_on_right = FALSE,
   mean_type = "geometric",
   variability_type = "90\% CI",
@@ -394,7 +395,14 @@ forest_plot(forest_dataframe = BufForestData,
             y_axis_labels = Inhibitor1,
             facet_column_x = Dose_sub)
 
-# Or break up your graph by the PK parameter shown.
+# You can add a title to the facets to indicate what they are with 
+# facet_title_x. 
+forest_plot(forest_dataframe = BufForestData,
+            y_axis_labels = Inhibitor1,
+            facet_column_x = Dose_sub, 
+            facet_title_x = "Dose bufuralol")
+
+# Or you can break up your graph by the PK parameter shown.
 forest_plot(forest_dataframe = BufForestData_20mg,
             y_axis_labels = Inhibitor1,
             facet_column_x = PKparameter)
