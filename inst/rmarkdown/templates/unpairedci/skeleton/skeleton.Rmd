@@ -7,7 +7,7 @@ where N is the number of observations in that simulation and variance (Var) is c
 
 3. Calculate the standard deviation of the difference. $$\text{standard deviation of the difference} = \sqrt{\text{variance of the log-transformed ratio from step 2}}$$
 
-```{r}
+```{r critval}
 
 CriticalVal <- ifelse(distribution_type == "Z", 
                       round(qnorm(1-(1-conf_int)/2), 3), 
