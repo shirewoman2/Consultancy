@@ -1287,12 +1287,11 @@ extractExpDetails <- function(sim_data_file,
             # "interaction", but "interaction" hasn't always been
             # listed in the output files I've found.
             IntRowStart <- which(str_detect(InputTab[, NameCol] %>%
-                                               pull(), "Ind max|Ind slope|^Ki |^MBI"))[1] - 1
+                                               pull(), "Ind [mM]ax|Ind [sS]lope|^Ki |^MBI"))[1] - 1
             
             if(complete.cases(IntRowStart)){
                
                IntRows <- IntRows[IntRows >= IntRowStart]
-               
                
                for(i in IntRows){
                   Enzyme <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
