@@ -99,25 +99,21 @@ get_obs_PK <- function(observed_PK,
          names(observed_PK)[which(tolower(names(observed_PK)) == "arithcv")] <- "CV"
       }
       
-      if(all(tolower(c("var", "variability", "cv")) %in% 
-             tolower(names(observed_PK)))){
+      # Checking for variability names
+      VarNames <- c("var", "variability", "cv")
+      VarNames <- VarNames %in% tolower(names(observed_PK))
+      names(VarNames) <- c("var", "variability", "cv")
+      
+      if(length(VarNames[VarNames]) > 1){
          warning("In your observed data, more than one thing is labeled as being the observed variability, so we don't know which do use. We'll ignore anything that looks like it is the observed CV or variability.\n", 
                  call. = FALSE)
          
          observed_PK <- observed_PK %>% 
             select(-any_of(c("[vV]ar|[vV]ariability|cv|CV")))
-      }
-      
-      if(any(tolower(c("var", "variability", "cv")) %in% 
-             tolower(names(observed_PK)))){
          
-         observed_PK <- observed_PK %>% 
-            # Dealing with any inconsistencies in capitalization. 
-            rename_with(.cols = any_of(c("GeoCV", "ArithCV")), 
-                        .fn = tolower) %>% 
-            mutate(CV = case_when(
-               {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ geocv, 
-               {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ arithcv))
+         VarNames <- FALSE
+      } else {
+         names(observed_PK)[which(tolower(names(observed_PK)) %in% names(VarNames))] <- "CV"
       }
       
       observed_PK <- observed_PK %>% filter(complete.cases(Value))
