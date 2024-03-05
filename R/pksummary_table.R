@@ -1185,7 +1185,7 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Adding trial means since they're not part of the default output
    if(includeTrialMeans){
-      # FIXME - haven't addressed situation where user doesn't want tmax medians
+      
       TrialMeans <- MyPKResults_all$individual %>%
          group_by(Trial) %>%
          summarize(across(.cols = -Individual,
@@ -1197,11 +1197,21 @@ pksummary_table <- function(sim_data_file = NA,
          pivot_longer(cols = -Trial, names_to = "Parameter",
                       values_to = "Value") %>%
          separate(col = Parameter, into = c("Parameter", "Stat"), 
-                  sep = "-") %>% 
-         filter((str_detect(Parameter, "tmax") & Stat == "median") |
-                   (!str_detect(Parameter, "tmax") & 
-                       Stat == switch(MeanType, "geometric" = "geomean", 
-                                      "arithmetic" = "mean"))) %>% 
+                  sep = "-") 
+      
+      if(use_median_for_tmax){
+         TrialMeans <- TrialMeans %>% 
+            filter((str_detect(Parameter, "tmax") & Stat == "median") |
+                      (!str_detect(Parameter, "tmax") & 
+                          Stat == switch(MeanType, "geometric" = "geomean", 
+                                         "arithmetic" = "mean")))
+      } else {
+         TrialMeans <- TrialMeans %>% 
+            filter(Stat == switch(MeanType, "geometric" = "geomean", 
+                                  "arithmetic" = "mean"))
+      }
+      
+      TrialMeans <- TrialMeans %>% 
          group_by(Parameter) %>%
          summarize(MinMean = min(Value),
                    MaxMean = max(Value)) %>%
@@ -1355,7 +1365,10 @@ pksummary_table <- function(sim_data_file = NA,
       }
       
       # Pivoting longer by stat
-      MyObsPK <- MyObsPK %>% pivot_longer(cols = any_of(c("Obs", "CV", "GCV")),
+      MyObsPK <- MyObsPK %>% 
+         mutate(across(.cols = matches("Obs|CV|GCV|value|mean|geomean|median"), 
+                       .fns = as.numeric)) %>% 
+         pivot_longer(cols = any_of(c("Obs", "CV", "GCV")),
                                           names_to = "Stat",
                                           values_to = "Obs") %>% 
          mutate(Stat = ifelse(Stat == "Obs", 
@@ -1375,6 +1388,28 @@ pksummary_table <- function(sim_data_file = NA,
                    SorO = "S_O") %>%
             select(PKParam, Stat, Value, SorO)
       )
+      
+      if(includeTrialMeans){
+         
+         suppressMessages(
+            SOratios_TM <- MyPKResults %>% 
+               filter(Stat %in% c("MinMean", "MaxMean")) %>%
+               left_join(MyObsPK %>% 
+                            filter(Stat == switch(MeanType, 
+                                                  "geometric" = "geomean", 
+                                                  "arithmetic" = "mean")) %>% 
+                            select(-Stat)) %>%
+               mutate(Value = Sim / Obs) %>% 
+               select(-Sim, -Obs) %>% 
+               mutate(Stat = paste0("S_O_TM_", Stat), 
+                      SorO = "S_O_TM") %>%
+               select(PKParam, Stat, Value, SorO)
+         )
+         
+         SOratios <- bind_rows(SOratios, 
+                               SOratios_TM)
+         
+      }
       
       suppressMessages(
          MyPKResults <- MyPKResults %>% 
@@ -1480,27 +1515,41 @@ pksummary_table <- function(sim_data_file = NA,
       mutate(Value = if_else(str_detect(Stat, "CV"), 
                              round_opt(100*Value, rounding),
                              round_opt(Value, rounding))) %>%
-      filter(Stat %in% c(ifelse(MeanType == "geometric", "geomean", "mean"),
+      filter(Stat %in% c(case_match(MeanType, 
+                                    "geometric" ~ "geomean",
+                                    "arithmetic" ~ "mean", 
+                                    "median" ~ "median"),
                          "CI90_low", "CI90_high", "CI95_low", "CI95_high",
                          "min", "max", "per5", "per95", 
-                         ifelse(MeanType == "geometric", "GCV", "CV"), 
-                         "MinMean", "MaxMean", "S_O", "SD", "median"))
+                         case_match(MeanType, 
+                                    "geometric" ~ "GCV",
+                                    "arithmetic" ~ "CV", 
+                                    "median" ~ NA),
+                         "MinMean", "MaxMean", 
+                         "S_O_TM_MinMean", "S_O_TM_MaxMean",
+                         "S_O", "SD", "median"))
    
    # Checking for any PK parameters where there are no simulated data.
    GoodPKParam <- MyPKResults %>% 
-      filter(Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean") &
+      filter(Stat == switch(MeanType, 
+                            "geometric" = "geomean", 
+                            "arithmetic" = "mean") &
                 SorO == "Sim" &
                 complete.cases(Value)) %>% pull(PKParam) %>% unique()
    
    MyPKResults <- MyPKResults %>%
       filter(PKParam %in% GoodPKParam) %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>% 
-      mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O")), 
-             Stat = factor(Stat, levels = c("mean", "geomean", "median", "CV", "GCV", 
+      mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
+             Stat = factor(Stat, levels = c("mean", "geomean", "median",
+                                            "CV", "GCV", 
                                             "min", "max",
                                             "CI90_low", "CI90_high", "CI95_low", 
                                             "CI95_high", "per5", "per95",
-                                            "MinMean", "MaxMean", "SD", "S_O"))) %>% 
+                                            "MinMean", "MaxMean", 
+                                            "SD", "S_O", 
+                                            "S_O_TM_MinMean", 
+                                            "S_O_TM_MaxMean"))) %>% 
       arrange(SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) 
@@ -1509,14 +1558,30 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Putting trial means into appropriate format
    if(includeTrialMeans){
-      TM <- MyPKResults %>% filter(Stat %in% c("MinMean", "MaxMean")) %>%
+      TM <- MyPKResults %>% 
+         filter(Stat %in% c("MinMean", "MaxMean")) %>%
          summarize(across(.cols = -c(Stat, SorO),
                           .fns = function(x) {paste(x[1], "to", x[2])}))
+      
       MyPKResults <- MyPKResults %>%
          filter(Stat != "MaxMean")
+      
       MyPKResults[which(MyPKResults$Stat == "MinMean"), 
-                  3:ncol(MyPKResults)] <-
-         TM
+                  3:ncol(MyPKResults)] <- TM
+      
+      
+      TM_SO <- MyPKResults %>% 
+         filter(Stat %in% c("S_O_TM_MinMean", "S_O_TM_MaxMean")) %>%
+         summarize(across(.cols = -c(Stat, SorO),
+                          .fns = function(x) {paste(x[1], "to", x[2])}))
+      
+      if(nrow(TM_SO) > 0){
+         MyPKResults <- MyPKResults %>%
+            filter(Stat != "S_O_TM_MaxMean")
+         
+         MyPKResults[which(MyPKResults$Stat == "S_O_TM_MinMean"), 
+                     3:ncol(MyPKResults)] <- TM_SO
+      }
    }
    
    # Concatenating the rows w/lower and upper limits of variability when
@@ -1583,6 +1648,7 @@ pksummary_table <- function(sim_data_file = NA,
                   # "CIU_obs" = "observed CI - Upper",
                   # "CIobsconcat" = "Observed CI",
                   "S_O" = "S/O",
+                  "S_O_TM_MinMean" = "S/O range for trial means",
                   "MinMean" = "Range of trial means")
    
    MyPKResults <- MyPKResults %>%
