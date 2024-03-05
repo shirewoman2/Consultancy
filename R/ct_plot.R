@@ -336,8 +336,8 @@
 #'   "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
 #'   or periods in the file name. Leaving this as NA means the file will not be
 #'   saved to disk.
-#' @param fig_height figure height in inches; default is 6
-#' @param fig_width figure width in inches; default is 5
+#' @param fig_height figure height in inches
+#' @param fig_width figure width in inches
 #'
 #' @return Output is a ggplot2 graph or two ggplot2 graphs arranged with
 #'   ggpubr::ggarrange()
@@ -420,8 +420,8 @@ ct_plot <- function(ct_dataframe = NA,
                     qc_graph = FALSE,
                     existing_exp_details = NA,
                     save_graph = NA,
-                    fig_height = 6,
-                    fig_width = 5){
+                    fig_height = NA,
+                    fig_width = NA){
    
    # Error catching ----------------------------------------------------------
    
@@ -1488,6 +1488,30 @@ ct_plot <- function(ct_dataframe = NA,
    # Saving -----------------------------------------------------------------
    
    if(complete.cases(save_graph)){
+      
+      # Checking for NA for fig_height and width
+      if(is.na(fig_height)){
+         fig_height <- switch(linear_or_log, 
+                              "linear" = 4, 
+                              "log" = 4, 
+                              "semi-log" = 4, 
+                              "both" = 6, 
+                              "both vertical" = 6,
+                              "both horizontal" = 3.5, 
+                              "horizontal and vertical" = 3.5)
+      }
+      
+      if(is.na(fig_width)){
+         fig_width <- switch(linear_or_log, 
+                              "linear" = 4.75, 
+                              "log" = 4.75, 
+                              "semi-log" = 4.75, 
+                              "both" = 5, 
+                              "both vertical" = 5,
+                              "both horizontal" = 8, 
+                              "horizontal and vertical" = 8)
+      }
+      
       FileName <- save_graph
       if(str_detect(FileName, "\\.")){
          # Making sure they've got a good extension

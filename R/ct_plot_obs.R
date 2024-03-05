@@ -347,8 +347,8 @@
 #'   "bmp", or "svg". Do not include any slashes, dollar signs, or periods in
 #'   the file name. Leaving this as NA means the file will not be automatically
 #'   saved to disk.
-#' @param fig_height figure height in inches; default is 6
-#' @param fig_width figure width in inches; default is 5
+#' @param fig_height figure height in inches
+#' @param fig_width figure width in inches
 #'
 #' @return returns a ggplot2 graph
 #' @export
@@ -406,8 +406,8 @@ ct_plot_obs <- function(ct_dataframe,
                         legend_position = NA,
                         prettify_compound_names = TRUE,
                         save_graph = NA,
-                        fig_height = 6,
-                        fig_width = 5){
+                        fig_height = NA,
+                        fig_width = NA){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded

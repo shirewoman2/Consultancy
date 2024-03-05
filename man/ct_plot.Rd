@@ -47,8 +47,8 @@ ct_plot(
   qc_graph = FALSE,
   existing_exp_details = NA,
   save_graph = NA,
-  fig_height = 6,
-  fig_width = 5
+  fig_height = NA,
+  fig_width = NA
 )
 }
 \arguments{
@@ -395,9 +395,9 @@ Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
 or periods in the file name. Leaving this as NA means the file will not be
 saved to disk.}
 
-\item{fig_height}{figure height in inches; default is 6}
+\item{fig_height}{figure height in inches}
 
-\item{fig_width}{figure width in inches; default is 5}
+\item{fig_width}{figure width in inches}
 }
 \value{
 Output is a ggplot2 graph or two ggplot2 graphs arranged with

@@ -128,8 +128,8 @@
 #' @param fig_width figure width in inches; default is 5
 #' @param ... arguments that pass through to \code{\link{ct_plot}} or
 #'   \code{\link{ct_plot_overlay}}
-#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C) for
-#'   each of the small graphs.
+#' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
+#'   B, C) for each of the small graphs.
 
 #'
 #' @return a set of 3 arranged ggplot2 graphs
@@ -201,7 +201,7 @@ ct_plot3 <- function(ct_dataframe,
                      time_range_LR = "last dose",
                      x_axis_interval_LR = NA,
                      legend_position = "none",
-                     graph_labels = FALSE, 
+                     graph_labels = TRUE, 
                      qc_graph = FALSE,
                      existing_exp_details = NA,
                      save_graph = NA,

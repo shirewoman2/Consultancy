@@ -201,9 +201,34 @@ CapText2 <- switch(
              mean_type, 
              " mean data of the simulated population (n = ", N_indiv, "). The dashed lines represent the 5^th^ and 95^th^ percentiles."))
 
+if(any(complete.cases(hline_position))){
+   CapText2 <- paste0(CapText2, "* ",
+                      paste("*The", HLineAES[1], HLineAES[2], "horizontal",
+                            ifelse(length(hline_position) > 1, 
+                                   "lines indicate*", "line indicates*"), 
+                            "***XXX.*** "))
+}
+
+if(any(complete.cases(vline_position))){
+   CapText2 <- paste0(CapText2, ifelse(any(complete.cases(hline_position)), 
+                                       " ", "* "),
+                      paste("*The", VLineAES[1], VLineAES[2], "vertical",
+                            ifelse(length(hline_position) > 1, 
+                                   "lines indicate*", "line indicates*"), 
+                            "***XXX.*** "))
+}
+
+if(any(complete.cases(hline_position)) |
+   any(complete.cases(vline_position))){
+   CapText2 <- paste0(CapText2, "*")
+} else {
+   CapText2 <- paste0(CapText2, " ")
+}
+
+
 ```
 
-*`r CapText1` `r CapText2` Source simulated data: `r basename(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))`.*
+*`r CapText1` `r CapText2`Source simulated data: `r basename(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))`.*
 
 ```{r QC, echo = FALSE, results = "asis"}
 
