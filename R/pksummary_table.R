@@ -34,13 +34,13 @@
 #'
 #' \strong{OPTION B: Use a csv file or a data.frame of observed PK data with a
 #' column for the PK
-#' parameter and a separate column for the value.} In Excel or in R, create a 
-#' table 
-#' 
-#' Alternatively, set this up so that thethe first row is the
-#' PK parameters you want and the second row lists the values for each. This
-#' should look the same as the examples for Option A. To see an example of how
-#' this should look, run this in the console and then open the csv file:
+#' parameter and a separate column for the value.} In Excel or in R, create a
+#' table
+#'
+#' Alternatively, set this up so that thethe first row is the PK parameters you
+#' want and the second row lists the values for each. This should look the same
+#' as the examples for Option A. To see an example of how this should look, run
+#' this in the console and then open the csv file:
 #'
 #' \code{write.csv(data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38,
 #' Cmax_dose1 = 22, Cmax_dose1_CV = 0.24), file = "Example observed PK
@@ -134,8 +134,8 @@
 #'   supply a named character vector where the names are the PK parameters and the
 #'   values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
 #'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)}
-#'   \strong{Please note that we would like the PK parameters that are for either dose 1 or the
-#'   last dose to have NA listed for the tab.} Another note: The code will
+#'   \strong{Please note that the PK parameters that are for either dose 1 or the
+#'   last dose must have NA listed for the tab.} Another note: The code will
 #'   work best if any PK parameters for a custom interval do not have
 #'   a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last".
 #'   This is because we do not know
@@ -172,8 +172,8 @@
 #'   a named character vector where the names are the PK parameters and the
 #'   values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
 #'   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)}
-#'   \itemize{\item{\strong{Please note that we would like the PK parameters that are for either dose 1 or the
-#'   last dose to have NA listed for the tab.}} \item{Another note: The code will
+#'   \itemize{\item{\strong{Please note that PK parameters that are for either dose 1 or the
+#'   last dose should have NA listed for the tab.}} \item{Another note: The code will
 #'   work best if any PK parameters for a custom interval do not have
 #'   a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last".
 #'   This is because we do not know
@@ -195,17 +195,20 @@
 #'   simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
 #'   inhibitor 1}}
 #' @param observed_PK (optional) If you have a data.frame, a named numeric
-#'   vector, or an Excel or csv file with observed PK parameters, supply the
-#'   full file name in quotes or the data.frame or vector here, and the
-#'   simulated-to-observed mean ratios will be calculated. If you supply an
-#'   Excel file, it \emph{must} have a tab titled "observed PK", and that's what
-#'   will be read. The supplied data.frame or file must include columns for each
-#'   of the PK parameters you would like to compare, and those column names
-#'   \emph{must} be among the PK parameter options listed in
-#'   \code{PKParameterDefinitions}. If you would like the output table to
-#'   include the observed data CV for any of the parameters, add "_CV" to the
-#'   end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
-#'   "Example" section of this help file for examples of how to set this up.
+#'   vector, or an xlsx or csv file with observed PK parameters, supply the full
+#'   file name in quotes or the data.frame or vector here, and the
+#'   simulated-to-observed mean ratios will be calculated. If you supply an xlsx
+#'   file, it \emph{must} have a tab titled "observed PK", which is what will be
+#'   read. The supplied data.frame or file can be long (one column named
+#'   "PKparameter", one column named "Value", and optionally a column called
+#'   "CV") or it can be wide (one column for each PK parameter). Whether it's
+#'   long or wide, the PK parameters you list \emph{must} be among the PK
+#'   parameter options listed in \code{PKParameterDefinitions}. If you would
+#'   like the output table to include the observed data CV for any of the
+#'   parameters and you've got your data in a wide format (one column per
+#'   parameter), add "_CV" to the end of the parameter name, e.g.,
+#'   "AUCinf_dose1_CV". Please see the "Example" section of this help file for
+#'   examples of how to set this up.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
 #'   get all the details from the "Input Sheet" (e.g., when you ran
@@ -490,6 +493,22 @@ pksummary_table <- function(sim_data_file = NA,
       }
    }
    
+   # User can specify sheet names w/PKparameters instead of sheet_PKparameters.
+   if(any(is.null(names(PKparameters))) == FALSE){
+      if(any(complete.cases(sheet_PKparameters))){
+         # Save this for warning user later if they specified sheet names in
+         # multiple places.
+         DoubleSheetSpecification <- TRUE
+      } else {
+         sheet_PKparameters <- PKparameters
+         DoubleSheetSpecification <- FALSE
+      }
+      PKparameters <- names(PKparameters)
+      
+   } else {
+      DoubleSheetSpecification <- FALSE
+   }
+   
    # If user asked for a specific sheet and that sheet is the same thing as the
    # AUC tab, then set sheet_PKparameters to NA b/c a) it will automatically
    # look there 1st for the PK and b) it won't mess up anything for knowing
@@ -500,15 +519,16 @@ pksummary_table <- function(sim_data_file = NA,
       sheet_PKparameters[sheet_PKparameters %in% c("AUC", "AUC_CI", "AUC_SD")] <- NA
    }
    
-   # If the user supplies named character vectors to BOTH sheet_PKparameters AND
-   # PKparameters, that will be confusing and I bet people will be inconsistent,
-   # too. Only use the ones listed with sheet_PKparameters, and give a warning.
-   if(is.null(names(sheet_PKparameters)) == FALSE &
-      is.null(names(PKparameters)) == FALSE){
-      warning("You supplied a named character vector for both the argument `PKparameters` and the argument `sheet_PKparameters`, so we're not sure which one you want. Please only supply one or the other next time. For now, we'll use what you supplied for `sheet_PKparameters`.\n", 
-              call. = FALSE)
-      PKparameters <- NA
-   }
+   # Addressing this elsewhere. PRobably can delete this.
+   # # If the user supplies named character vectors to BOTH sheet_PKparameters AND
+   # # PKparameters, that will be confusing and I bet people will be inconsistent,
+   # # too. Only use the ones listed with sheet_PKparameters, and give a warning.
+   # if(is.null(names(sheet_PKparameters)) == FALSE &
+   #    is.null(names(PKparameters)) == FALSE){
+   #    warning("You supplied a named character vector for both the argument `PKparameters` and the argument `sheet_PKparameters`, so we're not sure which one you want. Please only supply one or the other next time. For now, we'll use what you supplied for `sheet_PKparameters`.\n", 
+   #            call. = FALSE)
+   #    PKparameters <- NA
+   # }
    
    # Kahina requested that we give a warning that you don't need to specify the
    # sheet if it's for standard dose 1 or last dose PK.
@@ -522,23 +542,6 @@ pksummary_table <- function(sim_data_file = NA,
       warning("The input for variability_format is not among the acceptable options, which are `to`, `hyphen`, `brackets` for square brackets, or `parentheses` for the eponymous symbol if you're an American and a bracket if you're British. We'll use the default of `to`.\n", 
               call. = FALSE)
       variability_format <- "to"
-   }
-   
-   # Harmonizing PK parameter syntax
-   if(any(complete.cases(sheet_PKparameters))){
-      if(is.null(names(sheet_PKparameters))){
-         # Scenario: User has supplied a single specific sheet and also a specific
-         # set of PK parameters they want. We want there to be no dose number
-         # suffix for consistency w/extractPK.
-         PKparameters <- sub("_dose1|_last", "", PKparameters)
-         PKparameters <- sub("AUCtau", "AUCt", PKparameters)
-         PKparameters <- unique(PKparameters)
-         
-      } else {
-         # If they specified a named character vector for sheet_PKparameters,
-         # we need to make sure that we get all the parameters they requested.
-         PKparameters <- names(sheet_PKparameters)
-      }
    }
    
    # Checking mean type syntax
@@ -557,14 +560,17 @@ pksummary_table <- function(sim_data_file = NA,
          
          mean_type <- "geometric"
       }
+   } else {
+      mean_type <- "geometric"
    }
    
-   PKparameters <- harmonize_PK_names(PKparameters)
-   PKparameters_orig <- PKparameters
    
-   # Main body of function --------------------------------------------------
+   # Main body of function -----------------------------------------------------
    
-   ## Reading in all data and tidying ------------------------------------
+   # Reading in any observed data, tidying those data, and harmonizing all the
+   # possible places they could have specified which PK parameters they want and
+   # which sheets they want those PK data to come from.
+   
    if(complete.cases(report_input_file)){
       
       # If they didn't include ".xlsx" at the end of whatever they supplied for
@@ -612,8 +618,8 @@ pksummary_table <- function(sim_data_file = NA,
       # logical when it doesn't apply. 
       sectionInfo <- FALSE
       
-      # If they supplied observed_PK, get sim_data_file from that. 
-      if(any(complete.cases(observed_PK)) && "character" %in% class(observed_PK)){
+      if(any(complete.cases(observed_PK)) && 
+         "character" %in% class(observed_PK)){
          observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
                                "csv" = read.csv(observed_PK), 
                                "xlsx" = xlsx::read.xlsx(observed_PK, 
@@ -637,129 +643,16 @@ pksummary_table <- function(sim_data_file = NA,
    # either was a data.frame at the outset, it has been created by reading an
    # Excel or csv file for observed data, or it came from a report input form.
    # It could be in either wide or long format.
+   MyObsPK <- get_obs_PK(observed_PK, mean_type, sim_data_file, PKparameters)
    
-   # Cleaning up and harmonizing observed data
-   if("data.frame" %in% class(observed_PK)){
-      # Convert to long format as needed
-      if(any(tolower(names(observed_PK)) %in% 
-             tolower(AllPKParameters$PKparameter))){
-         
-         # If "File" isn't already present as a column, adding it to use for
-         # joining later. 
-         if("File" %in% str_to_title(names(observed_PK)) == FALSE){
-            observed_PK$File <- sim_data_file
-         }
-         
-         # Set aside variability columns for a moment to pivot correctly 
-         if(any(str_detect(names(observed_PK), "_CV|_GCV"))){ # FIXME - need to harmonize and then check for CV or GV, I think. 
-            observed_PK_var <- observed_PK %>% 
-               select(any_of(c("File",
-                               paste0(c(AllPKParameters$PKparameter, 
-                                        sub("_dose1|_last", "", AllPKParameters$PKparameter)),
-                                      "_CV"), 
-                               paste0(c(AllPKParameters$PKparameter, 
-                                        sub("_dose1|_last", "", AllPKParameters$PKparameter)),
-                                      "_GCV")))) %>% 
-               pivot_longer(cols = -File, 
-                            names_to = "PKparameter", 
-                            values_to = "CV") %>% 
-               mutate(PKparameter = sub("_CV|_GCV", "",  PKparameter))
-         } else {
-            observed_PK_var <- data.frame(File = sim_data_file, 
-                                          PKparameter = NA)
-         }
-         
-         observed_PK <- observed_PK %>% 
-            select(-any_of(paste0(c(AllPKParameters$PKparameter, 
-                                    tolower(AllPKParameters$PKparameter), 
-                                    AllPKParameters$PKparameter_nodosenum, 
-                                    tolower(AllPKParameters$PKparameter_nodosenum)), "_CV"))) %>% 
-            pivot_longer(cols = any_of(c(AllPKParameters$PKparameter, 
-                                         tolower(AllPKParameters$PKparameter), 
-                                         AllPKParameters$PKparameter_nodosenum, 
-                                         tolower(AllPKParameters$PKparameter_nodosenum))), 
-                         names_to = "PKparameter", 
-                         values_to = "Value") %>% 
-            left_join(observed_PK_var, by = c("File", "PKparameter"))
-      } 
-      
-      # If they've included several possibilities for mean types, need to get
-      # ONLY the appropriate one.
-      if("value" %in% tolower(names(observed_PK))){
-         names(observed_PK)[which(tolower(names(observed_PK)) == "value")] <- "Value"
-      } else if(any(tolower(c("GeoMean", "Mean", "Median")) %in% names(observed_PK))){
-         observed_PK <- observed_PK %>% 
-            # Dealing with any inconsistencies in capitalization. 
-            rename_with(.cols = any_of(c("GeoMean", "Mean", "Median")), 
-                        .fn = tolower) %>% 
-            mutate(Value = case_when(
-               {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ "geomean", 
-               {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ "mean", 
-               str_detect(PKparameter, "tmax") ~ "median"))
-      }
-      
-      if(any(tolower(c("GeoCV", "ArithCV")) %in%
-             tolower(names(observed_PK)))){
-         observed_PK <- observed_PK %>% 
-            # Dealing with any inconsistencies in capitalization. 
-            rename_with(.cols = any_of(c("GeoCV", "ArithCV")), 
-                        .fn = tolower) %>% 
-            mutate(CV = case_when(
-               {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ "geocv", 
-               {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ "arithcv"))
-      }
-      
-      # Harmonizing PK parameter names
-      observed_PK$PKparameter <- harmonize_PK_names(observed_PK$PKparameter)
-      
-      observed_PK <- observed_PK %>% 
-         select(any_of(c("File", "Tab", "PKparameter", "Value", "CV"))) %>%  
-         # Only keeping parameters that we've set up data extraction for,
-         # and only keeping complete.cases of obs data
-         filter(PKparameter %in% c(AllPKParameters$PKparameter, 
-                                   sub("_dose1|_last", "", AllPKParameters$PKparameter)) &
-                   complete.cases(Value))
-      
-      if("File" %in% names(observed_PK)){
-         # Need to adjust a few things b/c of challenges w/file path when this
-         # is called from rmarkdown files.
-         observed_PK <- observed_PK %>%
-            mutate(BaseNameFile = basename(as.character(File))) %>% 
-            filter(str_detect(BaseNameFile, basename(sim_data_file))) # ok for user to drop file extension; this should still work
-      } else {
-         # If File is not in the column names, then assume that it's the
-         # same as sim_data_file anyway.
-         observed_PK$File <- sim_data_file
-      }
-      
-      # Checking that they haven't provided more than one value for a given PK
-      # parameter for this sim_data_file. If they have, we don't know which
-      # observed data to compare.
-      ObsFileCheck <- observed_PK %>% 
-         unique() %>% group_by(File, PKparameter) %>% 
-         summarize(NVals = n())
-      
-      if(any(ObsFileCheck$NVals > 1)){
-         warning("You have supplied more than one value for a given PK parameter for this simulator output file, so we don't know which one to use. We will not be able to include observed data in your table.", 
-                 call. = FALSE)
-         observed_PK <- data.frame()
-      } 
-      
-      if(nrow(observed_PK) < 1){
-         warning("None of the supplied observed PK were for the supplied sim_data_file. We cannot make any comparisons between simulated and observed PK.", 
-                 call. = FALSE)
-         observed_PK <- NA
-      }  
-      
-      # Removing file name here. We should have already filtered to get only the
-      # appropriate files, and it's messing up joining with sim data later.
-      MyObsPK <- observed_PK %>% select(-File)
-      
-      # If user provided observed PK, then make sure those PK parameters are
-      # included in the PK to extract.
-      PKparameters <- sort(unique(union(PKparameters, MyObsPK$PKparameter)))
-      
-   }
+   # Make sure any observed PK parameters are included in the PK to extract and
+   # make sure that PK names are all nice and harmonized.
+   PKparameters <- harmonize_PK_names(sort(unique(union(PKparameters, 
+                                                        MyObsPK$PKparameter))))
+   # If they didn't supply anything for PKparameters, sheet_PKparameters, or
+   # observed_PK, then this will be empty. Need this to be NA instead. 
+   if(length(PKparameters) == 0){PKparameters <- NA}
+   PKparameters_orig <- PKparameters
    
    # Now that we have all the possible PK parameters they want, check on whether
    # they've supplied a value for a custom interval w/out specifying the sheet
@@ -779,18 +672,117 @@ pksummary_table <- function(sim_data_file = NA,
    }
    rm(GoodPKParam, BadPKParam)
    
-   # From here down, function is set up for observed PK to be a data.frame or,
-   # if the user did not provide observed PK, then a logical. If something went
-   # wrong with the data they supplied for observed PK, making the observed PK
-   # data.frame just have a single column, "File".
-   if("data.frame" %in% class(observed_PK) && ncol(observed_PK) == 1){
-      observed_PK <- NA
+   
+   # Setting up sheet_PKparameters to be a data.frame. 
+   if(any(complete.cases(sheet_PKparameters))){
+      
+      # Harmonizing PK parameter syntax
+      if(is.null(names(sheet_PKparameters))){
+         # Scenario: This is when user has supplied a single specific sheet and
+         # also a specific set of PK parameters they want. We want there to be
+         # no dose number suffix for consistency w/extractPK.
+         PKparameters <- sub("_dose1|_last", "", PKparameters)
+         PKparameters <- sub("AUCtau", "AUCt", PKparameters)
+         PKparameters <- unique(PKparameters)
+         
+         sheet_PKparameters <- data.frame(PKparameter = PKparameters, 
+                                          Tab = sheet_PKparameters)
+         
+      } else {
+         # If they specified a named character vector for sheet_PKparameters,
+         # we need to make sure that we get all the parameters they requested.
+         PKparameters <- sort(unique(names(sheet_PKparameters), PKparameters))
+         
+         sheet_PKparameters <- data.frame(PKparameter = names(sheet_PKparameters), 
+                                          Tab = sheet_PKparameters)
+         
+      } 
+      
+   } else {
+      sheet_PKparameters <- data.frame(PKparameter = PKparameters, 
+                                       Tab = NA)
    }
+   
+   
+   ## Making the data.frame MyPK here ------------------------------------------
+   
+   # There are 3 possible places that a user can specify which tab they want to
+   # get data from: sheet_PKparameters, PKparameters, or observed_PK. Prioritize
+   # them in that order, i.e., if they specified a tab for sheet_PKparameters,
+   # then ignore anything that they specified in PKparameters or observed_PK.
+   # Give user a message about which sheet will be used if they supplied more
+   # than 1.
+   TabWithSheet <- any(complete.cases(sheet_PKparameters))
+   TabWithPKparameters <- any(is.null(names(PKparameters)) == FALSE) |
+      DoubleSheetSpecification == TRUE
+   TabWithObs <- "Tab" %in% names(observed_PK)
+   
+   TabSpecification <- c(TabWithSheet, 
+                         TabWithPKparameters, 
+                         TabWithObs)
+   
+   if(length(TabSpecification[which(TabSpecification)]) > 1){
+      warning("You have specified which tab to use for pulling PK data in multiple places: \n1) with the argument `sheet_PKparameters`,\n2) with the argument `PKparameters`, and/or\n3) with the argument `observed_PK`.\nWhile we love overachievers like you, we can only easily look in one of those places for which PK parameters to use. This function prioritizes looking for which sheet to use from `sheet_PKparameters` first, then from `PKparameters`, and last from `observed_PK`. Any duplicate specifications will be ignored.\n", 
+              call. = FALSE)
+   }
+   
+   TabSpecification <- which(TabSpecification)[1]
+   if(any(complete.cases(TabSpecification))){
+      if(TabSpecification == 1){
+         if(is.null(names(PKparameters)) == FALSE){
+            PKparameters <- names(PKparameters)
+         }
+      } else if(TabSpecification == 2){
+         MyObsPK$Tab <- NULL
+      } else if(TabSpecification == 3){
+         # Need to delete tab column b/c it will be all NA
+         sheet_PKparameters$Tab <- NULL
+      }
+   } else {
+      sheet_PKparameters <- data.frame(PKparameter = NA)
+   }
+   
+   # Everything should be harmonized, tidy, and ready to be combined into one
+   # central place now.
+   
+   suppressMessages(
+      MyPK <- data.frame(File = sim_data_file, 
+                         PKparameter = PKparameters) %>% 
+         full_join(sheet_PKparameters, by = "PKparameter") %>% 
+         full_join(MyObsPK) %>% 
+         filter(complete.cases(PKparameter))
+   )
+   
+   # Need to have columns of NA values for Tab, Value, PKparameter.
+   MissingCols <- setdiff(c("Tab", "Value", "PKparameter"), 
+                          names(MyPK))
+   
+   MyPK <- MyPK %>% 
+      bind_cols(as.data.frame(matrix(data = NA, 
+                                     ncol = length(MissingCols),
+                                     dimnames = list(NULL, MissingCols))))
+   
+   
+   if(nrow(MyPK) == 0){
+      MyPK <- data.frame(File = sim_data_file, 
+                         Tab = NA, 
+                         PKparameter = NA, 
+                         Value = NA)
+   }
+   
+   # # From here down, function is set up for observed PK to be a data.frame or,
+   # # if the user did not provide observed PK, then a logical. If something went
+   # # wrong with the data they supplied for observed PK, making the observed PK
+   # # data.frame just have a single column, "File".
+   # if("data.frame" %in% class(observed_PK) && ncol(observed_PK) == 1){
+   #    observed_PK <- NA
+   # }
    
    # If user specified PKorder, then use *either* PKparameters OR observed PK
    # to set the order. Not setting order here; just checking whether user input
    # is acceptable based on whether observed_PK exists.
-   if(PKorder != "default" & is.na(PKparameters_orig[1]) & "logical" %in% class(observed_PK)){
+   if(PKorder != "default" & is.na(PKparameters_orig[1]) &
+      "logical" %in% class(observed_PK)){
       warning("You have requested `user specified` for the argument 'PKorder', which sets the order of columns in the table, but you have not specified what that order should be with the argument `PKparameters` or by supplying observed PK data. The order will be the default order from the Consultancy Report Template.", 
               call. = FALSE)
       PKorder <- "default"
@@ -903,42 +895,24 @@ pksummary_table <- function(sim_data_file = NA,
       return(list())
    }
    
+   
    ## Determining which PK parameters to pull --------------------------------
-   if(any(complete.cases(PKparameters))){
-      
-      PKToPull <- PKparameters
-      
-   } else {
-      
-      if("logical" %in% class(sectionInfo)){ # sectionInfo is logical if they did not supply a report input form
-         if("data.frame" %in% class(observed_PK)){
-            # If user supplies an observed file, then pull the parameters
-            # they want to match. 
-            
-            PKToPull <- observed_PK$PKparameter
-            
-         #} else if(any(complete.cases(sheet_PKparameters))){ # This isn't working correctly. I think I should not include this. 
-            # PKToPull <- NA # This will retrieve all possible parameters from user-defined interval.
-         } else {
-            # If the user didn't specify an observed file, didn't list
-            # specific parameters they want, and didn't fill out a report
-            # input form, then pull the most commonly requested PK
-            # parameters.
-            PKToPull <- AllPKParameters %>%
-               # Per Hannah and template: Only include CL/F, t1/2, or tmax
-               # if there's a specific reason to.
-               filter(str_detect(PKparameter, "AUCinf_[^P]|AUCt|Cmax")) %>%
-               filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
-               pull(PKparameter) %>% unique()
-         }
-         
-      } else {
-         # Pull the PK parameters that match the observed data in the report
-         # input form if one was provided.
-         PKToPull <- AllPKParameters %>% 
-            filter(PKparameter %in% names(sectionInfo$ObsData)) %>% 
-            pull(PKparameter) %>% unique()
-      }
+   
+   # If they have specified anything for PKparameters, sheet_PKparameters, or
+   # observed_PK, then PKToPull should come from MyPK b/c that is harmonized and
+   # tidy.
+   PKToPull <- MyPK$PKparameter
+   
+   if(all(is.na(PKToPull))){
+      # If the user didn't specify an observed file, didn't list specific
+      # parameters they want, and didn't fill out a report input form, then pull
+      # the most commonly requested PK parameters.
+      PKToPull <- AllPKParameters %>%
+         # Per Hannah and template: Only include CL/F, t1/2, or tmax
+         # if there's a specific reason to.
+         filter(str_detect(PKparameter, "AUCinf_[^P]|AUCt|Cmax")) %>%
+         filter(!str_detect(PKparameter, "_hepatic|CLpo")) %>%
+         pull(PKparameter) %>% unique()
    }
    
    # !!! IMPORTANT!!! If it was a custom-dosing regimen, then any parameters
@@ -961,7 +935,7 @@ pksummary_table <- function(sim_data_file = NA,
         Deets$DoseInt_inhib2 == "custom dosing")) &
       
       (length(PKToPull) > 0 && any(str_detect(PKToPull, "_last"), na.rm = T)) &
-      all(is.na(sheet_PKparameters))){
+      all(is.na(MyPK$Tab))){
       warning(paste0("The file `",
                      sim_data_file,
                      "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.\nWe cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet_PKparameters`."), 
@@ -983,7 +957,7 @@ pksummary_table <- function(sim_data_file = NA,
       # interval, then only pull last dose parameters.
       if(all(is.na(PKparameters_orig)) &
          class(sectionInfo) == "logical" & 
-         "logical" %in% class(observed_PK) & all(is.na(sheet_PKparameters))){
+         "logical" %in% class(observed_PK) & all(is.na(MyPK$Tab))){
          PKToPull <- PKToPull[!str_detect(PKToPull, "_dose1")]
       }
    }
@@ -1016,18 +990,24 @@ pksummary_table <- function(sim_data_file = NA,
    
    # If they have not requested specific sheets for specific PK parameters, then
    # just add AUCt_dose1 to the set of parameters to pull in case of trouble
-   # with extrapolation.
-   if(is.null(names(sheet_PKparameters))){
+   # with extrapolation. If they specified sheets anywhere, then MyPK will have
+   # "Tab" as a column name.
+   if(all(is.na(MyPK$Tab))){
       PKparameters_temp <- unique(c(PKToPull,
                                     sub("AUCinf_dose1",
                                         "AUCt_dose1", PKToPull),
                                     sub("AUCinf$",
                                         "AUCt$", PKToPull))) 
+      sheet_temp <- NA
+      
    } else {
       # If they *have* requested specific sheets, then we want the PKparameters
       # argument in extractPK to be NA b/c sheet_PKparameters will be contain
       # the info on which PK parameters to pull.
       PKparameters_temp <- NA
+      sheet_temp <- MyPK$Tab
+      names(sheet_temp) <- MyPK$PKparameter
+      
    }
    
    suppressWarnings(
@@ -1035,7 +1015,7 @@ pksummary_table <- function(sim_data_file = NA,
                                    PKparameters = PKparameters_temp,
                                    tissue = tissue,
                                    compoundToExtract = compoundToExtract,
-                                   sheet = sheet_PKparameters, 
+                                   sheet = sheet_temp, 
                                    existing_exp_details = existing_exp_details,
                                    returnAggregateOrIndiv =
                                       switch(as.character(includeTrialMeans),
@@ -1336,7 +1316,7 @@ pksummary_table <- function(sim_data_file = NA,
    
    # observed data -----------------------------------------------------
    
-   if(exists("MyObsPK", inherits = FALSE)){
+   if("Value" %in% names(MyObsPK)){
       # Renaming column for PKparameter.
       MyObsPK <- MyObsPK %>% rename(PKParam = PKparameter, Obs = Value)
       
@@ -1662,7 +1642,7 @@ pksummary_table <- function(sim_data_file = NA,
          PKToPull %in% sub("_dose1|_last", "", AllPKParameters$PKparameter))
       
       # If user specified tab, then need to adjust PK parameters here, too.
-      if(any(complete.cases(sheet_PKparameters)) & 
+      if(any(complete.cases(MyPK$Tab)) & 
          any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
          AllPKParameters_mod <- 
             AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
@@ -1709,9 +1689,9 @@ pksummary_table <- function(sim_data_file = NA,
       
       # Adding time interval to any data that came from custom AUC interval
       # sheets.
-      if(any(complete.cases(sheet_PKparameters))){
+      if(any(complete.cases(MyPK$Tab))){
          IntToAdd <- MyPKResults_all$TimeInterval %>% 
-            filter(Sheet %in% sheet_PKparameters) %>% 
+            filter(Sheet %in% MyPK$Tab) %>% 
             pull(Interval)
          
          UnitsToAdd <- str_extract(PrettyCol[CustomIntCols], 
@@ -1744,7 +1724,7 @@ pksummary_table <- function(sim_data_file = NA,
       names(MyPKResults) <- c("Statistic", PrettyCol)
       
       
-   } else if(any(complete.cases(sheet_PKparameters)) & 
+   } else if(any(complete.cases(MyPK$Tab)) & 
              any(str_detect(names(MyPKResults_all[[1]]), "_dose1|_last")) == FALSE){
       # This is when it's a user-defined sheet but we're not prettifying column
       # names. We don't know whether an AUC was actually AUCtau, so make it

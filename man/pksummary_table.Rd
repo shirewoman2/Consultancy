@@ -80,8 +80,8 @@ blood".}
   supply a named character vector where the names are the PK parameters and the
   values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
   NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)}
-  \strong{Please note that we would like the PK parameters that are for either dose 1 or the
-  last dose to have NA listed for the tab.} Another note: The code will
+  \strong{Please note that the PK parameters that are for either dose 1 or the
+  last dose must have NA listed for the tab.} Another note: The code will
   work best if any PK parameters for a custom interval do not have
   a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last".
   This is because we do not know
@@ -120,8 +120,8 @@ from a custom-interval tab and others from the regular tabs, please supply
 a named character vector where the names are the PK parameters and the
 values are the tabs. Example: \code{sheet_PKparameters = c("AUCinf_dose1" =
 NA, "AUCt" = "Int AUC userT(1)(Sub)(CPlasma)", "AUCtau_last" = NA)}
-\itemize{\item{\strong{Please note that we would like the PK parameters that are for either dose 1 or the
-last dose to have NA listed for the tab.}} \item{Another note: The code will
+\itemize{\item{\strong{Please note that PK parameters that are for either dose 1 or the
+last dose should have NA listed for the tab.}} \item{Another note: The code will
 work best if any PK parameters for a custom interval do not have
 a suffix indicating the dose number. Good: "AUCt". Bad: "AUCtau_last".
 This is because we do not know
@@ -133,17 +133,20 @@ character vector to the argument \code{PKparameters} instead, but please do
 not supply it to both.}}}
 
 \item{observed_PK}{(optional) If you have a data.frame, a named numeric
-vector, or an Excel or csv file with observed PK parameters, supply the
-full file name in quotes or the data.frame or vector here, and the
-simulated-to-observed mean ratios will be calculated. If you supply an
-Excel file, it \emph{must} have a tab titled "observed PK", and that's what
-will be read. The supplied data.frame or file must include columns for each
-of the PK parameters you would like to compare, and those column names
-\emph{must} be among the PK parameter options listed in
-\code{PKParameterDefinitions}. If you would like the output table to
-include the observed data CV for any of the parameters, add "_CV" to the
-end of the parameter name, e.g., "AUCinf_dose1_CV". Please see the
-"Example" section of this help file for examples of how to set this up.}
+vector, or an xlsx or csv file with observed PK parameters, supply the full
+file name in quotes or the data.frame or vector here, and the
+simulated-to-observed mean ratios will be calculated. If you supply an xlsx
+file, it \emph{must} have a tab titled "observed PK", which is what will be
+read. The supplied data.frame or file can be long (one column named
+"PKparameter", one column named "Value", and optionally a column called
+"CV") or it can be wide (one column for each PK parameter). Whether it's
+long or wide, the PK parameters you list \emph{must} be among the PK
+parameter options listed in \code{PKParameterDefinitions}. If you would
+like the output table to include the observed data CV for any of the
+parameters and you've got your data in a wide format (one column per
+parameter), add "_CV" to the end of the parameter name, e.g.,
+"AUCinf_dose1_CV". Please see the "Example" section of this help file for
+examples of how to set this up.}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
@@ -398,13 +401,13 @@ of "_CV". An example: \code{observed_PK = c("AUCinf_dose1"
 
 \strong{OPTION B: Use a csv file or a data.frame of observed PK data with a
 column for the PK
-parameter and a separate column for the value.} In Excel or in R, create a 
-table 
+parameter and a separate column for the value.} In Excel or in R, create a
+table
 
-Alternatively, set this up so that thethe first row is the
-PK parameters you want and the second row lists the values for each. This
-should look the same as the examples for Option A. To see an example of how
-this should look, run this in the console and then open the csv file:
+Alternatively, set this up so that thethe first row is the PK parameters you
+want and the second row lists the values for each. This should look the same
+as the examples for Option A. To see an example of how this should look, run
+this in the console and then open the csv file:
 
 \code{write.csv(data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38,
 Cmax_dose1 = 22, Cmax_dose1_CV = 0.24), file = "Example observed PK
