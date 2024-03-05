@@ -357,11 +357,6 @@ recalc_PK <- function(ct_dataframe,
    
    # Main body of function -------------------------------------------------
    
-   if(omit_0_concs){
-      ct_dataframe <- ct_dataframe %>%
-         filter((Time != first_dose_time & Conc > 0) | Time == first_dose_time)
-   }
-   
    # Adjusting time to be time since most-recent dose. Only keeping 1st and
    # last-dose data for main PK calculations, but also keeping original
    # data.frame so that we can retain any data requested by user for a specific
@@ -578,6 +573,13 @@ recalc_PK <- function(ct_dataframe,
                   # the same t0 for dose 1.
                   mutate(Time = Time - t0)
             )
+            
+            if(omit_0_concs){
+               # NB: It's appropriate to set this to 0 rather t0 b/c we have
+               # already subtracted t0. t0 = 0 now.
+               CT_temp <- CT_temp %>%
+                  filter((Time != 0 & Conc > 0) | Time == 0)
+            }
             
             # Subsetting the data if there are lots of points b/c fitting takes
             # a lot longer. When there are thousands of points, there are
@@ -920,6 +922,15 @@ recalc_PK <- function(ct_dataframe,
                      mutate(Time = Time - t0)
                )
                
+               if(omit_0_concs){
+                  # NB: Here, since this will NOT include any true t0 data (t =
+                  # 0 for dose 1 b/c  CTsubset[[i]][[j]] does not include dose 1
+                  # data), all concentrations should be above 0 if that's what
+                  # the user requested.
+                  CTsubset[[i]][[j]] <- CTsubset[[i]][[j]] %>%
+                     filter(Conc > 0)
+               }
+               
                # Make a graph of the last-dose data so that user can check that they're
                # integrating what they *think* they're integrating.
                ElimFitGraphs[[j]] <- 
@@ -986,6 +997,67 @@ recalc_PK <- function(ct_dataframe,
       # NB: There may be more than one user-specified interval and that should be
       # fine.
       for(i in 1:length(SpecialInterval)){
+         
+         if("logical" %in% class(existing_exp_details) == FALSE){
+            suppressMessages(
+               FirstDoseTime <- existing_exp_details$MainDetails %>% 
+                  select(File, StartHr_sub, StartHr_inhib, StartHr_inhib2, 
+                         DoseInt_sub, DoseInt_inhib, DoseInt_inhib2) %>% 
+                  left_join(CTsubset[["1"]] %>% select(File, CompoundID) %>% unique()) %>% 
+                  mutate(t0 = case_when(
+                     CompoundID %in% c("substrate", 
+                                       "primary metabolite 1", 
+                                       "primary metabolite 2", 
+                                       "secondary metabolite") ~ StartHr_sub, 
+                     CompoundID %in% c("inhibitor 1", 
+                                       "inhibitor 1 metabolite") ~ StartHr_inhib, 
+                     CompoundID %in% "inhibitor 2" ~ StartHr_inhib2), 
+                     
+                     MaxTime = case_when(
+                        CompoundID %in% c("substrate", 
+                                          "primary metabolite 1", 
+                                          "primary metabolite 2", 
+                                          "secondary metabolite") ~ StartHr_sub + DoseInt_sub, 
+                        
+                        CompoundID %in% c("inhibitor 1", 
+                                          "inhibitor 1 metabolite") ~ StartHr_inhib + DoseInt_inhib, 
+                        
+                        CompoundID %in% "inhibitor 2" ~ StartHr_inhib2 + DoseInt_inhib2))
+            )
+         } else {
+            suppressMessages(suppressWarnings(
+               FirstDoseTime <- CTsubset[["1"]] %>% ungroup() %>%
+                  filter(complete.cases(Conc)) %>%
+                  group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial,
+                           Simulated, File, ObsFile, DoseNum, ID) %>%
+                  summarize(t0 = min(Time, na.rm = T),
+                            MaxTime = max(Time, na.rm = T),
+                            # For reasons that utterly baffle and infuriate me, dplyr
+                            # will invisibly DROP the last grouping variable if the
+                            # result would have only one row. (See help file for
+                            # dplyr::summarize.) Why THAT would EVER be what people
+                            # really want since the function that groups the data is NOT
+                            # summarize and that this occurs even when they have
+                            # specified .drop = FALSE in the function that DOES perform
+                            # the grouping is *beyond me*.
+                            .groups = "keep") %>%
+                  mutate(MaxTime =
+                            switch(as.character(complete.cases(dosing_interval)),
+                                   "TRUE" = t0 + dosing_interval,
+                                   "FALSE" = MaxTime)) %>% 
+                  filter(complete.cases(File) | complete.cases(ObsFile))
+            ))
+            
+            if(complete.cases(first_dose_time)){
+               FirstDoseTime$t0 <- first_dose_time
+            }
+         }
+         
+         if(omit_0_concs){
+            CTsubset[[i]][[j]] <- CTsubset[[i]][[j]] %>%
+               filter((Time > FirstDoseTime$t0 & Conc > 0) |
+                         (Time == FirstDoseTime$t0))
+         }
          
          CTtemp <- ct_dataframe_orig %>% 
             filter(Time >= SpecialInterval[[i]][1] & 
