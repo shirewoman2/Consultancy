@@ -757,11 +757,12 @@ pksummary_table <- function(sim_data_file = NA,
    MissingCols <- setdiff(c("Tab", "Value", "PKparameter"), 
                           names(MyPK))
    
-   MyPK <- MyPK %>% 
-      bind_cols(as.data.frame(matrix(data = NA, 
-                                     ncol = length(MissingCols),
-                                     dimnames = list(NULL, MissingCols))))
-   
+   if(length(MissingCols) > 0){
+      MyPK <- MyPK %>% 
+         bind_cols(as.data.frame(matrix(data = NA, 
+                                        ncol = length(MissingCols),
+                                        dimnames = list(NULL, MissingCols))))
+   }
    
    if(nrow(MyPK) == 0){
       MyPK <- data.frame(File = sim_data_file, 

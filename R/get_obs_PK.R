@@ -75,10 +75,14 @@ get_obs_PK <- function(observed_PK,
          MissingCols <- setdiff(c("Geomean", "Mean", "Median"), 
                                 names(observed_PK))
          
+         if(length(MissingCols) > 0){
+            observed_PK <- observed_PK %>% 
+               bind_cols(as.data.frame(matrix(data = NA, 
+                                              ncol = length(MissingCols),
+                                              dimnames = list(NULL, MissingCols))))
+         }
+         
          observed_PK <- observed_PK %>% 
-            bind_cols(as.data.frame(matrix(data = NA, 
-                                           ncol = length(MissingCols),
-                                           dimnames = list(NULL, MissingCols)))) %>% 
             mutate(Value = case_when(
                {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ Geomean, 
                {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ Mean, 
@@ -112,8 +116,8 @@ get_obs_PK <- function(observed_PK,
             rename_with(.cols = any_of(c("GeoCV", "ArithCV")), 
                         .fn = tolower) %>% 
             mutate(CV = case_when(
-               {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ "geocv", 
-               {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ "arithcv"))
+               {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ geocv, 
+               {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ arithcv))
       }
       
       observed_PK <- observed_PK %>% filter(complete.cases(Value))
