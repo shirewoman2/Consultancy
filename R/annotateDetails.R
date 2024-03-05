@@ -336,7 +336,9 @@ annotateDetails <- function(existing_exp_details,
    if(any(is.na(file_order))){
       FileOrder <- existing_exp_details$MainDetails$File
    } else {
-      FileOrder <- unique(c(file_order, existing_exp_details$MainDetails$File))
+      FileOrder <- unique(c(intersect(file_order,
+                                      existing_exp_details$MainDetails$File), 
+                            existing_exp_details$MainDetails$File))
    }
    
    if(complete.cases(filename_text)){
@@ -918,7 +920,7 @@ annotateDetails <- function(existing_exp_details,
    
    if(complete.cases(template_sim)){
       Main <- Main %>% 
-         select(-UniqueVal) %>% 
+         select(-any_of("UniqueVal")) %>% 
          select(any_of(c("SimulatorSection", "Sheet", "Notes",
                          "CompoundID", "Compound", "Detail")), 
                 template_sim,
@@ -978,9 +980,8 @@ annotateDetails <- function(existing_exp_details,
                     intersect(FileOrder, names(Main)))] # files in the order requested
    
    # Checking for differences from template sim
-   if(complete.cases(template_sim)){
+   if(complete.cases(template_sim) & length(FileOrder) > 1){
       Diffs <- list()
-      MyStyles <- list()
       NontempFiles <- setdiff(FileOrder, template_sim)
       
       for(i in 1:length(NontempFiles)){
@@ -995,6 +996,8 @@ annotateDetails <- function(existing_exp_details,
                  font = list(color = "#9B030C"))
       }
    }
+   
+   MyStyles <- list()
    
    # Only showing differences from template sim if that's what user requested
    if(show_only_diff_from_template){
@@ -1032,7 +1035,7 @@ annotateDetails <- function(existing_exp_details,
       if(Ext == "csv"){
          write.csv(Main, FileName, row.names = F)
       } else if(Ext == "xlsx"){
-         if(is.na(template_sim)){
+         if(is.na(template_sim) | length(FileOrder) == 1){
             # This is when there is no template simulation, but we are
             # including a column noting when a given value was the same for
             # all simulations.
