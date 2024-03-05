@@ -14,6 +14,7 @@ pksummary_mult(
   observed_PK = NA,
   existing_exp_details = NA,
   mean_type = NA,
+  use_median_for_tmax = TRUE,
   includeCV = TRUE,
   includeSD = FALSE,
   includeConfInt = TRUE,
@@ -165,6 +166,14 @@ information about your experimental set up.}
 
 \item{mean_type}{What kind of means and CVs do you want listed in the output
 table? Options are "arithmetic" or "geometric" (default).}
+
+\item{use_median_for_tmax}{TRUE (default) or FALSE for whether to use median
+for tmax values, regardless of what the other summary statistics are. This
+is typically the case, but, if you've got client data where they actually
+gave you tmax using the same summary statistic as the other PK parameters
+(like geometric mean, for example), then set this to FALSE and whatever
+mean type you specified with the argument \code{mean_type} will also be
+used for tmax.}
 
 \item{includeCV}{TRUE (default) or FALSE for whether to include rows for CV
 in the table}

@@ -4,14 +4,24 @@
 \alias{get_obs_PK}
 \title{INTERNAL - For use w/pksummary_table.}
 \usage{
-get_obs_PK(observed_PK, mean_type, sim_data_file, PKparameters)
+get_obs_PK(
+  observed_PK,
+  mean_type,
+  use_median_for_tmax,
+  sim_data_file,
+  PKparameters
+)
 }
 \arguments{
 \item{observed_PK}{observed_PK}
 
 \item{mean_type}{mean_type}
 
+\item{use_median_for_tmax}{use_median_for_tmax}
+
 \item{sim_data_file}{sim_data_file}
+
+\item{PKparameters}{PKparameters}
 }
 \value{
 data.frame

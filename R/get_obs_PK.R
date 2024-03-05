@@ -3,6 +3,8 @@
 #' @param observed_PK observed_PK
 #' @param mean_type mean_type
 #' @param sim_data_file sim_data_file
+#' @param use_median_for_tmax use_median_for_tmax
+#' @param PKparameters PKparameters
 #'
 #' @return data.frame
 #'
@@ -10,6 +12,7 @@
 #' # NA
 get_obs_PK <- function(observed_PK, 
                        mean_type, 
+                       use_median_for_tmax, 
                        sim_data_file, 
                        PKparameters){
    
@@ -83,10 +86,16 @@ get_obs_PK <- function(observed_PK,
          }
          
          observed_PK <- observed_PK %>% 
-            mutate(Value = case_when(
-               {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ Geomean, 
-               {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ Mean, 
-               str_detect(PKparameter, "tmax") ~ Median))
+            mutate(Value = switch(
+               as.character(use_median_for_tmax), 
+               "TRUE" = case_when(
+                  {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ Geomean, 
+                  {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ Mean, 
+                  str_detect(PKparameter, "tmax") ~ Median), 
+               
+               "FALSE" = case_when(
+                  {mean_type} == "geometric" ~ Geomean, 
+                  {mean_type} == "arithmetic" ~ Mean)))
       }
       
       if(tolower("GeoCV") %in% tolower(names(observed_PK)) &

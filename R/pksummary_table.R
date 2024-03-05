@@ -221,6 +221,13 @@
 #'   table? Options are "arithmetic" or "geometric" (default). If you supplied a
 #'   report input form, only specify this if you'd like to override the value
 #'   listed there.
+#' @param use_median_for_tmax TRUE (default) or FALSE for whether to use median
+#'   for tmax values, regardless of what the other summary statistics are. This
+#'   is typically the case, but, if you've got client data where they actually
+#'   gave you tmax using the same summary statistic as the other PK parameters
+#'   (like geometric mean, for example), then set this to FALSE and whatever
+#'   mean type you specified with the argument \code{mean_type} will also be
+#'   used for tmax.
 #' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
 #'   range of trial means for a given parameter. Note: This is calculated from
 #'   individual values rather than being pulled directly from the output.
@@ -425,6 +432,7 @@ pksummary_table <- function(sim_data_file = NA,
                             report_input_file = NA,
                             sheet_report = NA,
                             mean_type = NA,
+                            use_median_for_tmax = TRUE, 
                             includeCV = TRUE,
                             includeSD = FALSE,
                             includeConfInt = TRUE,
@@ -643,7 +651,8 @@ pksummary_table <- function(sim_data_file = NA,
    # either was a data.frame at the outset, it has been created by reading an
    # Excel or csv file for observed data, or it came from a report input form.
    # It could be in either wide or long format.
-   MyObsPK <- get_obs_PK(observed_PK, mean_type, sim_data_file, PKparameters)
+   MyObsPK <- get_obs_PK(observed_PK, mean_type, use_median_for_tmax, 
+                         sim_data_file, PKparameters)
    
    # Make sure any observed PK parameters are included in the PK to extract and
    # make sure that PK names are all nice and harmonized.
@@ -1176,7 +1185,7 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Adding trial means since they're not part of the default output
    if(includeTrialMeans){
-      
+      # FIXME - haven't addressed situation where user doesn't want tmax medians
       TrialMeans <- MyPKResults_all$individual %>%
          group_by(Trial) %>%
          summarize(across(.cols = -Individual,
@@ -1206,81 +1215,88 @@ pksummary_table <- function(sim_data_file = NA,
    # Renaming stats for ease of coding
    MyPKResults <- MyPKResults %>% mutate(Stat = renameStats(Statistic))
    
-   # Adjusting tmax values since the mean row will actually be the median, the
-   # lower range of conf interval and percentiles will be the min, and the
-   # upper range will be the max.
-   if("tmax_dose1" %in% names(MyPKResults)){
-      MyPKResults$tmax_dose1[
-         which(MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean"))] <-
-         MyPKResults$tmax_dose1[which(MyPKResults$Stat == "median")]
+   # Most of the time, people want median for tmax, but, if they don't want the
+   # median, don't change anything and skip this next section. 
+   
+   if(use_median_for_tmax){
       
-      MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-         MyPKResults$tmax_dose1[MyPKResults$Stat == "min"]
-      
-      MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-         MyPKResults$tmax_dose1[MyPKResults$Stat == "max"]
-      
-      if(PerpPresent & "tmax_dose1_withInhib" %in% names(MyPKResults)){
-         MyPKResults$tmax_dose1_withInhib[
-            MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "median"]
+      # Adjusting tmax values since the mean row will actually be the median, the
+      # lower range of conf interval and percentiles will be the min, and the
+      # upper range will be the max.
+      if("tmax_dose1" %in% names(MyPKResults)){
+         MyPKResults$tmax_dose1[
+            which(MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean"))] <-
+            MyPKResults$tmax_dose1[which(MyPKResults$Stat == "median")]
          
-         MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "min"]
+         MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
+            MyPKResults$tmax_dose1[MyPKResults$Stat == "min"]
          
-         MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "max"]
+         MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
+            MyPKResults$tmax_dose1[MyPKResults$Stat == "max"]
+         
+         if(PerpPresent & "tmax_dose1_withInhib" %in% names(MyPKResults)){
+            MyPKResults$tmax_dose1_withInhib[
+               MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
+               MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "median"]
+            
+            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
+               MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "min"]
+            
+            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
+               MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "max"]
+         }
       }
-   }
-   
-   if("tmax_last" %in% names(MyPKResults)){
-      MyPKResults$tmax_last[
-         MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-         MyPKResults$tmax_last[MyPKResults$Stat == "median"]
-      MyPKResults$tmax_last[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-         MyPKResults$tmax_last[MyPKResults$Stat == "min"]
-      MyPKResults$tmax_last[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-         MyPKResults$tmax_last[MyPKResults$Stat == "max"]
       
-      if(PerpPresent & "tmax_last_withInhib" %in% names(MyPKResults)){
-         MyPKResults$tmax_last_withInhib[
+      if("tmax_last" %in% names(MyPKResults)){
+         MyPKResults$tmax_last[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-            MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "median"]
-         MyPKResults$tmax_last_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-            MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "min"]
-         MyPKResults$tmax_last_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-            MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "max"]
+            MyPKResults$tmax_last[MyPKResults$Stat == "median"]
+         MyPKResults$tmax_last[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
+            MyPKResults$tmax_last[MyPKResults$Stat == "min"]
+         MyPKResults$tmax_last[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
+            MyPKResults$tmax_last[MyPKResults$Stat == "max"]
+         
+         if(PerpPresent & "tmax_last_withInhib" %in% names(MyPKResults)){
+            MyPKResults$tmax_last_withInhib[
+               MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
+               MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "median"]
+            MyPKResults$tmax_last_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
+               MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "min"]
+            MyPKResults$tmax_last_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
+               MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "max"]
+         }
+         
       }
       
-   }
-   
-   # For scenario where user specifies which tab to get data from
-   if("tmax" %in% names(MyPKResults)){
-      MyPKResults$tmax[
-         MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-         MyPKResults$tmax[MyPKResults$Stat == "median"]
-      MyPKResults$tmax[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-         MyPKResults$tmax[MyPKResults$Stat == "min"]
-      MyPKResults$tmax[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-         MyPKResults$tmax[MyPKResults$Stat == "max"]
-      
-      if(PerpPresent & "tmax_withInhib" %in% names(MyPKResults)){
-         MyPKResults$tmax_withInhib[
+      # For scenario where user specifies which tab to get data from
+      if("tmax" %in% names(MyPKResults)){
+         MyPKResults$tmax[
             MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-            MyPKResults$tmax_withInhib[MyPKResults$Stat == "median"]
-         MyPKResults$tmax_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-            MyPKResults$tmax_withInhib[MyPKResults$Stat == "min"]
-         MyPKResults$tmax_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-            MyPKResults$tmax_withInhib[MyPKResults$Stat == "max"]
+            MyPKResults$tmax[MyPKResults$Stat == "median"]
+         MyPKResults$tmax[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
+            MyPKResults$tmax[MyPKResults$Stat == "min"]
+         MyPKResults$tmax[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
+            MyPKResults$tmax[MyPKResults$Stat == "max"]
+         
+         if(PerpPresent & "tmax_withInhib" %in% names(MyPKResults)){
+            MyPKResults$tmax_withInhib[
+               MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
+               MyPKResults$tmax_withInhib[MyPKResults$Stat == "median"]
+            MyPKResults$tmax_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
+               MyPKResults$tmax_withInhib[MyPKResults$Stat == "min"]
+            MyPKResults$tmax_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
+               MyPKResults$tmax_withInhib[MyPKResults$Stat == "max"]
+         }
+         
       }
       
+      # CV and SD should be NA for all tmax values b/c we're reporting medians and
+      # range and NOT reporting a mean or geometric mean. Setting that.
+      MyPKResults <- MyPKResults %>% 
+         mutate(across(.cols = matches("tmax"), 
+                       ~replace(., Stat %in% c("CV", "GCV", "SD"), NA)))
+      
    }
-   
-   # CV and SD should be NA for all tmax values b/c we're reporting medians and
-   # range and NOT reporting a mean or geometric mean. Setting that.
-   MyPKResults <- MyPKResults %>% 
-      mutate(across(.cols = matches("tmax"), 
-                    ~replace(., Stat %in% c("CV", "GCV", "SD"), NA)))
    
    VarOptions <- c("CV" = includeCV & MeanType == "arithmetic", 
                    "GCV" = includeCV & MeanType == "geometric",
