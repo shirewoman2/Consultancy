@@ -155,11 +155,16 @@
 #'   use for the x axis label
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
-#'   limits for the linear plot will be automatically selected.
+#'   limits for the linear plot will be automatically selected. (Setting up
+#'   semi-log plot y axis intervals manually is a bit tricky and is not
+#'   currently supported.)
 #' @param y_axis_limits_log optionally set the Y axis limits for the semi-log
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to a round number. If left as the default NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
+#' @param y_axis_interval set the linear y-axis major tick-mark interval.
+#'   Acceptable input: any number or leave as NA to accept default values, which
+#'   are generally reasonable guesses as to aesthetically pleasing intervals.
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
 #' @param obs_color If you would like the observed data points to be in color,
@@ -391,6 +396,7 @@ ct_plot <- function(ct_dataframe = NA,
                     t0 = "simulation start",
                     y_axis_limits_lin = NA,
                     y_axis_limits_log = NA,
+                    y_axis_interval = NA, 
                     y_axis_label = NA,
                     obs_color = NA,
                     obs_shape = NA,
@@ -427,7 +433,7 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
            call. = FALSE)
    }
    
@@ -965,7 +971,8 @@ ct_plot <- function(ct_dataframe = NA,
                        pad_y_axis = pad_y_axis,
                        y_axis_limits_lin = y_axis_limits_lin,
                        time_range = time_range,
-                       y_axis_limits_log = y_axis_limits_log
+                       y_axis_limits_log = y_axis_limits_log, 
+                       y_axis_interval = y_axis_interval
    )
    
    ObsConcUnits <- YStuff$ObsConcUnits

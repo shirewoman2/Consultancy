@@ -405,13 +405,13 @@ ct_plot_1stlast <- function(ct_dataframe,
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n     ...and then try again.", 
            call. = FALSE)
    }
    
    # Check whether patchwork is loaded
    if("package:patchwork" %in% search() == FALSE){
-      stop("This particular function requires the package `patchwork` to be loaded, and it doesn't appear to be loaded yet. Please run `library(patchwork)` and then try again.", 
+      stop("This particular function requires the package `patchwork` to be loaded, and it doesn't appear to be loaded yet. Please run:\nlibrary(patchwork)\n     ...and then try again.", 
            call. = FALSE)
    }
    
@@ -585,6 +585,12 @@ ct_plot_1stlast <- function(ct_dataframe,
       }
       
       if(Ext == "docx"){
+         
+         # Setting some values that don't make sense for this scenario but are
+         # needed for making the Rmd file work.
+         EnzPlot <- FALSE
+         ReleaseProfPlot <- FALSE
+         DissolutionProfPlot <- FALSE
          
          # This is when they want a Word file as output
          OutPath <- dirname(FileName)

@@ -18,6 +18,7 @@ ct_plot(
   t0 = "simulation start",
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  y_axis_interval = NA,
   y_axis_label = NA,
   obs_color = NA,
   obs_shape = NA,
@@ -183,12 +184,18 @@ dose is administered at time 0.}
 
 \item{y_axis_limits_lin}{optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
-limits for the linear plot will be automatically selected.}
+limits for the linear plot will be automatically selected. (Setting up
+semi-log plot y axis intervals manually is a bit tricky and is not
+currently supported.)}
 
 \item{y_axis_limits_log}{optionally set the Y axis limits for the semi-log
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to a round number. If left as the default NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
+
+\item{y_axis_interval}{set the linear y-axis major tick-mark interval.
+Acceptable input: any number or leave as NA to accept default values, which
+are generally reasonable guesses as to aesthetically pleasing intervals.}
 
 \item{y_axis_label}{optionally supply a character vector or an expression to
 use for the y axis label}
