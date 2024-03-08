@@ -606,7 +606,7 @@ forest_plot <- function(forest_dataframe,
    # just make all the columns lower or upper case but I haven't coded
    # everything else like that, so not fixing that now.
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "geomean"))] <- "GeoMean"
+                                            "geomean|geometric"))] <- "GeoMean"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "gcv"))] <- "GCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
@@ -632,7 +632,7 @@ forest_plot <- function(forest_dataframe,
    
    if(ObsIncluded){
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "geomean"))] <- "GeoMean"
+                                          "geomean|geometric"))] <- "GeoMean"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "gcv"))] <- "GCV"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
@@ -1191,12 +1191,49 @@ forest_plot <- function(forest_dataframe,
       if(any(complete.cases(x_order))){
          forest_dataframe <- forest_dataframe %>% 
             mutate(FCX = factor(FCX, levels = x_order))
+         
+         # If they're faceting on PK parameter, need to change the factor levels
+         # for that column, too.
+         if(as_label(facet_column_x) == "PKparameter"){
+            # Have to make data character 1st or it will mess up which actual PK
+            # parameter corresponds to which numeric level.
+            forest_dataframe$PKparameter <- 
+               as.character(forest_dataframe$PKparameter)
+            
+            forest_dataframe$PKparameter <- 
+               factor(forest_dataframe$PKparameter, 
+                      levels = x_order)
+         }
+         
       } else if(as_label(facet_column_x) %in% c("Dose_sub", "Dose_inhib")){
+         # If the facet column was Dose_x, then make it prettier. 
          forest_dataframe <- forest_dataframe %>% 
             mutate(FCX = paste(FCX, {{dose_units}}), 
                    FCX = forcats::fct_reorder(.f = FCX, 
                                               .x = !!facet_column_x,
                                               .fun = min))
+      } else if(as_label(facet_column_x) == "PKparameter"){
+         # If the facet column as PKparameter and they don't specify what order
+         # they want with x_order, then make it a reasonable order for PK
+         # parameters. Note that PKparameters already was set up as factor
+         # earlier b/c, if you're *not* faceting the x direction on PKparameter,
+         # then the PKparameter order should be reversed in order to get the
+         # right order on the y axis. Since they *are* faceting the x axis by PK
+         # parameter, then we want the normal order of PK parameters w/the 1st
+         # dose stuff 1st, etc.
+         
+         # Getting original PK levels and reversing them.
+         OrigLevels <- rev(levels(forest_dataframe$PKparameter))
+         
+         # Have to make data character 1st or it will mess up which actual PK
+         # parameter corresponds to which numeric level.
+         forest_dataframe$PKparameter <- 
+            as.character(forest_dataframe$PKparameter)
+         
+         forest_dataframe$PKparameter <- 
+            factor(forest_dataframe$PKparameter, 
+                   levels = OrigLevels)
+         
       }
    }
    
