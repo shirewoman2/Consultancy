@@ -44,11 +44,31 @@ forest_plot(
 }
 \arguments{
 \item{forest_dataframe}{a data.frame with extracted forest-plot data,
-generated from running \code{\link{extractForestData}} or
-\code{\link{pksummary_mult}} with the argument \code{extract_forest_data}
-set to TRUE on Simulator output files. Alternatively, if you already have
-some saved forest-plot data, supply a csv or Excel file with the same data.
-(If it's an Excel file, it must have only one tab.)}
+  generated from running \code{\link{extractForestData}} or
+  \code{\link{pksummary_mult}} with the argument \code{extract_forest_data}
+  set to TRUE on Simulator output files. Alternatively, if you already have
+  some saved forest-plot data, supply a csv or Excel file with the same data.
+  (If it's an Excel file, it must have only one tab.) The following columns
+  are required:
+  
+  \describe{\item{File}{Simulation file name. You can hack this and set the values to
+  whatever you want rather than simulation file names, but this column is
+  what will be used for grouping simulations on the y axis.}
+
+  \item{PKparameter}{the specific PK parameter being compared. This
+  \emph{must} be one of the standardized, coded options that you can see by
+  running \code{view(PKParameterDefinitions)} and looking in the column
+  "PKparameter".}
+
+  \item{at least one of Mean, Median, or GeoMean (not case sensitive)}{This
+  column will be used for the center statistic.}
+
+  \item{at least one pair of CI_Lower and CI_Upper, Centile_Lower and
+  Centile_Upper, Min and Max, or at least one of GeoCV, ArithCV, or SD (not
+  case sensitive)}{These columns will be used for the whiskers.}
+
+  \item{any column you want to facet by}{If you want to break up your graphs
+  along the x axis, you must include the column you want to use to do that.}}}
 
 \item{y_axis_labels}{a column in \code{forest_dataframe} (unquoted) or a
 named character vector (each item in quotes) to use for labeling the
@@ -76,12 +96,12 @@ vector, e.g.,
   input data \code{forest_dataframe}, then setting \code{y_order = "as is"}
   will keep things in exactly the same order.}
 
-  \item{a character vector of whatever you want for y axis labels}{e.g., 
-  \code{y_order = c("myfile1.xlsx", "myfile2.xlsx")} if the y axis is just 
-  going to show file names or, if, say, you've got it set to show specific 
-  labels for those file names, then those labels, e.g., if you set 
-  y_axis_labels like this: \code{y_axis_labels = ("myfile1.xlsx" = 
-  "itraconazole", "myfile2.xlsx" = "efavirenz")} then you would set the 
+  \item{a character vector of whatever you want for y axis labels}{e.g.,
+  \code{y_order = c("myfile1.xlsx", "myfile2.xlsx")} if the y axis is just
+  going to show file names or, if, say, you've got it set to show specific
+  labels for those file names, then those labels, e.g., if you set
+  y_axis_labels like this: \code{y_axis_labels = ("myfile1.xlsx" =
+  "itraconazole", "myfile2.xlsx" = "efavirenz")} then you would set the
   y_order like this: \code{y_order = c("itraconazole", "efavirenz")}}
 
   \item{"strongest inhibitor to strongest inducer"}{Sort the simulations
@@ -395,11 +415,11 @@ forest_plot(forest_dataframe = BufForestData,
             y_axis_labels = Inhibitor1,
             facet_column_x = Dose_sub)
 
-# You can add a title to the facets to indicate what they are with 
-# facet_title_x. 
+# You can add a title to the facets to indicate what they are with
+# facet_title_x.
 forest_plot(forest_dataframe = BufForestData,
             y_axis_labels = Inhibitor1,
-            facet_column_x = Dose_sub, 
+            facet_column_x = Dose_sub,
             facet_title_x = "Dose bufuralol")
 
 # Or you can break up your graph by the PK parameter shown.
