@@ -147,7 +147,8 @@ get_obs_PK <- function(observed_PK,
       if("File" %in% names(observed_PK)){
          observed_PK <- observed_PK %>%
             # If they didn't include ".xlsx" at the end, add that.
-            mutate(File = ifelse(str_detect(File, "xlsx$"), 
+            mutate(File = as.character(File), 
+                   File = ifelse(str_detect(File, "xlsx$"), 
                                  File, paste0(File, ".xlsx")), 
                    # Need to adjust a few things b/c of challenges w/file path when this
                    # is called from rmarkdown files.
