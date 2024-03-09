@@ -19,7 +19,7 @@ ct_plot3(
   time_range_LR = "last dose",
   x_axis_interval_LR = NA,
   legend_position = "none",
-  graph_labels = FALSE,
+  graph_labels = TRUE,
   qc_graph = FALSE,
   existing_exp_details = NA,
   save_graph = NA,
@@ -143,8 +143,8 @@ some graphs do not (e.g., some have perpetrators and some do not so there's
 nothing to put in a legend), the alignment between sets of graphs will be a
 bit off.}
 
-\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C) for
-each of the small graphs.}
+\item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
+B, C) for each of the small graphs.}
 
 \item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
 the graph where the left panel shows the original graph and the right panel

@@ -84,7 +84,11 @@ check_doseint <- function(sim_data_file,
                                     "inhibitor 1 metabolite" ~ StartHr_inhib,
                                     "inhibitor 2" ~ StartHr_inhib2)) %>% 
       select(File, SimDuration, DoseInt_X, StartHr_X, NumDoses_X) %>% 
-      mutate(LastDoseTime = StartHr_X + DoseInt_X * NumDoses_X, 
+      mutate(
+         # For calculating LastDoseTime, note that it must be NumDoses_X - 1 b/c
+         # the 1st dose doesn't start at DoseInt_x * 1 but at DoseInt_x * (1 -
+         # 1) = 0.
+         LastDoseTime = StartHr_X + DoseInt_X * (NumDoses_X - 1), 
              IntervalRemaining = SimDuration - LastDoseTime, 
              # If things were set up correctly, then there should be one
              # dosing interval of time left when the last dose is

@@ -182,6 +182,13 @@
 #'   information about your experimental set up.
 #' @param mean_type What kind of means and CVs do you want listed in the output
 #'   table? Options are "arithmetic" or "geometric" (default).
+#' @param use_median_for_tmax TRUE (default) or FALSE for whether to use median
+#'   for tmax values, regardless of what the other summary statistics are. This
+#'   is typically the case, but, if you've got client data where they actually
+#'   gave you tmax using the same summary statistic as the other PK parameters
+#'   (like geometric mean, for example), then set this to FALSE and whatever
+#'   mean type you specified with the argument \code{mean_type} will also be
+#'   used for tmax.
 #' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
 #'   range of trial means for a given parameter. Note: This is calculated from
 #'   individual values rather than being pulled directly from the output.
@@ -351,6 +358,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            observed_PK = NA,
                            existing_exp_details = NA, 
                            mean_type = NA, 
+                           use_median_for_tmax = TRUE, 
                            includeCV = TRUE,
                            includeSD = FALSE,
                            includeConfInt = TRUE,
@@ -759,6 +767,7 @@ pksummary_mult <- function(sim_data_files = NA,
                   return_PK_pulled = TRUE,
                   existing_exp_details = Deets,
                   mean_type = mean_type,
+                  use_median_for_tmax = use_median_for_tmax,
                   includeCV = includeCV,
                   includeSD = includeSD, 
                   includeMedian = includeMedian,
@@ -898,6 +907,38 @@ pksummary_mult <- function(sim_data_files = NA,
          relocate(c(CompoundID, Tissue, File), .after = last_col())
    }
    
+   if(is.na(include_dose_num)){
+      # Dropping dose number depending on input. First, checking whether they have
+      # both dose 1 and last-dose data.
+      DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
+                     "last" = any(str_detect(names(MyPKResults), "Last dose")))
+      
+      # Next, checking whether they have a mix of custom AUC intervals and
+      # regular b/c need to retain dose num in that case.
+      if(any(PKparameters %in% 
+             c(setdiff(unique(AllPKParameters$PKparameter_nodosenum), 
+                       unique(AllPKParameters$PKparameter)), 
+               setdiff(unique(AllPKParameters$PrettifiedNames_nodosenum), 
+                       unique(AllPKParameters$PrettifiedNames))))){
+         DoseCheck <- TRUE
+      }
+      
+      include_dose_num <- all(DoseCheck)
+   }
+   
+   # include_dose_num now should be either T or F no matter what, so checking
+   # that.
+   if(is.logical(include_dose_num) == FALSE){
+      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+              call. = FALSE)
+      include_dose_num <- TRUE
+   }
+   
+   if(include_dose_num == FALSE){
+      names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
+   }
+   
+   
    ## Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
       
@@ -929,7 +970,7 @@ pksummary_mult <- function(sim_data_files = NA,
       
       if(str_detect(save_table, "\\.csv")){
          
-         MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
+         MeanTypeCSV <- ifelse(is.na(mean_type), "geometric", mean_type)
          
          # This is when they want a csv file as output. In this scenario,
          # changing the value "simulated" in the list of stats to include
@@ -937,7 +978,7 @@ pksummary_mult <- function(sim_data_files = NA,
          # in the Word file but not in the table itself.
          MyPKResults <- MyPKResults %>% 
             mutate(Statistic = sub("Simulated", 
-                                   paste("Simulated", MeanType, "mean"), Statistic))
+                                   paste("Simulated", MeanTypeCSV, "mean"), Statistic))
          
          WarningDF <- data.frame(Col1 = "WARNING:",
                                  Col2 = "This table was saved to a csv file, and Excel automatically drops any trailing zeroes. Please check your sig figs to make sure you haven't inadvertently dropped a trailing zero.")

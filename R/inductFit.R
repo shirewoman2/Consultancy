@@ -23,7 +23,7 @@
 #' @param DF the data.frame containing induction data with a column for the drug
 #'   concentration, a column for the fold induction observed, and, if you want
 #'   to fit the data by individual, a column for the donor ID. For an example,
-#'   please see \code{data(IndData)}. This should not be in quotes.
+#'   please run \code{view(IndData)}. 
 #' @param conc_column the name of the column within DF that contains
 #'   concentration data. This should be unquoted.
 #' @param fold_change_column the name of the column within DF that contains
@@ -285,7 +285,9 @@ inductFit <- function(DF,
    # Making the model be case insensitive
    model <- switch(tolower(model), 
                    "emax" = "Emax",
+                   "indmax" = "Emax",
                    "emaxslope" = "EmaxSlope", 
+                   "indmaxslope" = "EmaxSlope",
                    "slope" = "Slope", 
                    "sig3param" = "Sig3Param", 
                    "all" = "all")

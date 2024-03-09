@@ -388,20 +388,17 @@ is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
 to the top of the y axis. If you only specify one number, padding is added
 to the bottom.}
 
-\item{y_axis_limits_lin}{Optionally set the Y axis limits for the linear
-plot, e.g., \code{c(10, 1000)}. If left as NA, the Y axis limits for the
-linear plot will be automatically selected. This only applies when you have
-requested a linear plot with \code{linear_or_log}.}
+\item{y_axis_limits_lin}{optionally set the Y axis limits for the linear
+plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
+limits for the linear plot will be automatically selected. (Setting up
+semi-log plot y axis intervals manually is a bit tricky and is not
+currently supported.)}
 
 \item{y_axis_limits_log}{Optionally set the Y axis limits for the semi-log
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected. This only
 applies when you have requested a semi-log plot with \code{linear_or_log}.}
-
-\item{y_axis_interval}{set the y-axis major tick-mark interval. Acceptable
-input: any number or leave as NA to accept default values, which are
-generally reasonable guesses as to aesthetically pleasing intervals.}
 
 \item{y_axis_label}{optionally supply a character vector or an expression to
 use for the y axis label}

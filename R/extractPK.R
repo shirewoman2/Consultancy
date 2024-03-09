@@ -223,8 +223,7 @@ extractPK <- function(sim_data_file,
       Deets <- extractExpDetails(sim_data_file = sim_data_file, 
                                  exp_details = "Summary and Input")[["MainDetails"]]
    } else {
-      Deets <- filter_sims(existing_exp_details, sim_data_file, "include")
-      Deets <- harmonize_details(Deets)[["MainDetails"]] %>% 
+      Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>% 
          filter(File == sim_data_file)
       
       if(nrow(Deets) == 0){
@@ -510,11 +509,13 @@ extractPK <- function(sim_data_file,
                    pull(PKparameter) %>% unique())
    }
    
-   # For when user specified a sheet but not the parameters they want
-   if(all(is.null(names(sheet))) & 
-      all(complete.cases(sheet))){
-      PKparameters <- unique(sub("_dose1|_last", "", PKparameters))
-   }
+   # This shouldn't be necessary b/c we already dealt w/this up higher
+   
+   # # For when user specified a sheet but not the parameters they want
+   # if(all(is.null(names(sheet))) & 
+   #    all(complete.cases(sheet))){
+   #    PKparameters <- unique(sub("_dose1|_last", "", PKparameters))
+   # }
    
    # Checking whether the user had supplied a vector of specific parameters
    # rather than a parameter set name and using those if so.
@@ -730,9 +731,10 @@ extractPK <- function(sim_data_file,
    # c) They requested a specific sheet for pulling the PK parameters and that
    # sheet was formatted like the AUC tab.
    
-   if((length(Tab_AUC) > 0 && complete.cases(Tab_AUC))){
-      
-      PKparameters_AUC <- PKparamDF$PKparameter[PKparamDF$SheetAUC == TRUE]
+   PKparameters_AUC <- PKparamDF$PKparameter[PKparamDF$SheetAUC == TRUE]
+   
+   if((length(Tab_AUC) > 0 && complete.cases(Tab_AUC)) &
+      length(PKparameters_AUC) > 0){
       
       AUC_xl <- suppressMessages(
          readxl::read_excel(path = sim_data_file, 
@@ -1007,10 +1009,12 @@ extractPK <- function(sim_data_file,
                   as.data.frame(Out_ind[which(sapply(Out_ind, length) > 0)]))
       }
       
+      # NB: Time interval is in a different location on AUC tab than on AUCX
+      # tab. This is correct.
       TimeInterval[[i]] <- data.frame(
          File = sim_data_file, 
          Sheet = Tab_AUC, 
-         Interval = gsub("\\(|\\)", "", str_extract(AUC_xl[1, 1], "from.*"))) %>% 
+         Interval = gsub("\\(|\\)", "", str_extract(AUC_xl[2, 3], "from.*"))) %>% 
          mutate(Interval = sub("\\.00 ", " ", Interval))
       
    }

@@ -297,12 +297,10 @@
 #'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 #'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 #'   into the console.
-#' @param graph_labels TRUE or FALSE (default) for whether to include labels (A,
-#'   B, C, etc.) for each of the small graphs. 
-#' @param graph_title optionally specify a title that will be centered across
-#'   your graph or set of graphs
-#' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14. This also determines the font size of the graph labels.
+#' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
+#'   B, C, etc.) for each of the small graphs.
+#' @param graph_title_size the font size for the graph titles; default is 14.
+#'   This also determines the font size of the graph labels.
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
@@ -327,8 +325,8 @@
 #'   "bmp", or "svg". Do not include any slashes, dollar signs, or periods in
 #'   the file name. Leaving this as NA means the file will not be automatically
 #'   saved to disk.
-#' @param fig_height figure height in inches; default is 6
-#' @param fig_width figure width in inches; default is 5
+#' @param fig_height figure height in inches
+#' @param fig_width figure width in inches
 #' @param time_range_1st time range for the "1st" dose, really, the first panel
 #'   in the set of graphs (in other words, it doesn't \emph{have} to be exactly
 #'   the 1st dose)
@@ -396,25 +394,24 @@ ct_plot_1stlast <- function(ct_dataframe,
                             hline_style = "red dotted", 
                             vline_position = NA, 
                             vline_style = "red dotted",
-                            graph_labels = FALSE,
-                            graph_title = NA,
+                            graph_labels = TRUE,
                             graph_title_size = 14, 
                             legend_position = NA,
                             prettify_compound_names = TRUE,
                             save_graph = NA,
-                            fig_height = 6,
-                            fig_width = 8){
+                            fig_height = NA,
+                            fig_width = NA){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n     ...and then try again.", 
            call. = FALSE)
    }
    
    # Check whether patchwork is loaded
    if("package:patchwork" %in% search() == FALSE){
-      stop("This particular function requires the package `patchwork` to be loaded, and it doesn't appear to be loaded yet. Please run `library(patchwork)` and then try again.", 
+      stop("This particular function requires the package `patchwork` to be loaded, and it doesn't appear to be loaded yet. Please run:\nlibrary(patchwork)\n     ...and then try again.", 
            call. = FALSE)
    }
    
@@ -543,6 +540,30 @@ ct_plot_1stlast <- function(ct_dataframe,
    }
    
    if(complete.cases(save_graph)){
+      
+      # Checking for NA for fig_height and width
+      if(is.na(fig_height)){
+         fig_height <- switch(linear_or_log, 
+                              "linear" = 3.5, 
+                              "log" = 3.5, 
+                              "semi-log" = 3.5, 
+                              "both" = 6, 
+                              "both vertical" = 6,
+                              "both horizontal" = 6, 
+                              "horizontal and vertical" = 6)
+      }
+      
+      if(is.na(fig_width)){
+         fig_width <- switch(linear_or_log, 
+                             "linear" = 8, 
+                             "log" = 8, 
+                             "semi-log" = 8, 
+                             "both" = 8, 
+                             "both vertical" = 8,
+                             "both horizontal" = 8, 
+                             "horizontal and vertical" = 8)
+      }
+      
       FileName <- save_graph
       if(str_detect(FileName, "\\.")){
          # Making sure they've got a good extension
@@ -564,6 +585,12 @@ ct_plot_1stlast <- function(ct_dataframe,
       }
       
       if(Ext == "docx"){
+         
+         # Setting some values that don't make sense for this scenario but are
+         # needed for making the Rmd file work.
+         EnzPlot <- FALSE
+         ReleaseProfPlot <- FALSE
+         DissolutionProfPlot <- FALSE
          
          # This is when they want a Word file as output
          OutPath <- dirname(FileName)

@@ -165,7 +165,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                          DiscoveryParameter %in% c("Simulator and Discovery", 
                                                    "Simulator only")) %>% 
                pull(Detail)
-            )
+         )
       } else if(Deets[[i]]$SimulatorUsed == "Simcyp Discovery"){
          exp_details <- intersect(
             exp_details, 
@@ -195,6 +195,9 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                   "inhibitor 1" = 2,
                                   "inhibitor 2" = 3, 
                                   "inhibitor 1 metabolite" = 6)
+            
+            Suffix <- AllCompounds %>% filter(CompoundID == j) %>% 
+               pull(Suffix)
             
             # Check whether that compound was activated and skip if not. 
             if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
@@ -270,7 +273,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                    "numeric" = as.numeric(DeetValue), 
                                    "character" = as.character(DeetValue))
                
-               # Adjusting when things need to be set to NA when they don't apply
+               # Adjusting when things need to be set to NA when they don't
+               # apply. Peff is complicated, so it's separate from this.
                if(str_detect(k, "Qgut_userinput") & 
                   XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["QGutSwitch"]]) == "1"){
                   DeetValue <- NA
@@ -281,6 +285,61 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                rm(DeetInfo, DeetLevels, DeetValue)
             }
             rm(CompoundNum)
+            
+            # Peff and its complications... 
+            
+            # predicted or user input?
+            if(paste0("Peff_pred_or_user", Suffix) %in% names(Deets[[i]]) &&
+               Deets[[i]][[paste0("Peff_pred_or_user", Suffix)]] == "1"){
+               Deets[[i]][[paste0("Peff_pred_or_user", Suffix)]] <- "predicted"
+               
+               Deets[[i]][[paste0("Peff_human", Suffix)]] <- 
+                  paste("NOT SURE IF THIS VALUE IS RELIABLE:", 
+                        Deets[[i]][[paste0("Peff_human", Suffix)]], 
+                        "We're having trouble finding this number reliably in the workspace.")
+               
+               # predicted with Papp or MechPeff?
+               if(paste0("Peff_prediction_method", Suffix) %in% names(Deets[[i]]) &&
+                  Deets[[i]][[paste0("Peff_prediction_method", Suffix)]] == "5"){
+                  Deets[[i]][[paste0("Peff_prediction_method", Suffix)]] <- 
+                     "predicted with Papp"
+                  
+                  # Not currently including anything on whether it was passive
+                  # or passive and active or anything on the slope and
+                  # intercept, but that info would go here. 
+                  
+                  Deets[[i]][[paste0("Peff_user_input_Ptrans0", Suffix)]] <- as.character(NA)
+                  Deets[[i]][[paste0("Peff_MechPeff_totalvsfree", Suffix)]] <- as.character(NA)
+                  
+               } else if(paste0("Peff_prediction_method", Suffix) %in% names(Deets[[i]]) &&
+                         Deets[[i]][[paste0("Peff_prediction_method", Suffix)]] == "6"){
+                  Deets[[i]][[paste0("Peff_prediction_method", Suffix)]] <- 
+                     "predicted with MechPeff"
+                  
+                  Deets[[i]][[paste0("Peff_MechPeff_totalvsfree", Suffix)]] <- 
+                     ifelse(Deets[[i]][[paste0("Peff_MechPeff_totalvsfree", Suffix)]] == "0", 
+                            "total", "free")
+                  
+               } else {
+                  Deets[[i]][[paste0("Peff_prediction_method", Suffix)]] <- 
+                     paste("Apologies, but you have a value we don't know how to decode. Value listed in workspace XML file:", 
+                           Deets[[i]][[paste0("Peff_prediction_method", Suffix)]])
+                  
+                  Deets[[i]][[paste0("Peff_user_input_Ptrans0", Suffix)]] <- as.character(NA)
+                  Deets[[i]][[paste0("Peff_MechPeff_totalvsfree", Suffix)]] <- as.character(NA)
+               }
+               
+            } else if(all(c(paste0("Peff_pred_or_user", Suffix), 
+                            paste0("Peff_prediction_method", Suffix), 
+                            paste0("Peff_user_input_Ptrans0", Suffix), 
+                            paste0("Peff_MechPeff_totalvsfree", Suffix)) %in% names(Deets[[i]]))){
+               
+               Deets[[i]][[paste0("Peff_pred_or_user", Suffix)]] <- "user input"
+               Deets[[i]][[paste0("Peff_prediction_method", Suffix)]] <- as.character(NA)
+               Deets[[i]][[paste0("Peff_user_input_Ptrans0", Suffix)]] <- as.character(NA)
+               Deets[[i]][[paste0("Peff_MechPeff_totalvsfree", Suffix)]] <- as.character(NA)
+               
+            }
          }
       }
       

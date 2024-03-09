@@ -282,6 +282,14 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       PKparameters <- harmonize_PK_names(PKparameters)
    }
    
+   # If the user specified a sheet, then the PK parameter names will NOT include
+   # dose number, and AUCtau should become AUCt. Addressing that.
+   if(any(complete.cases(c(sheet_PKparameters_denom, 
+                           sheet_PKparameters_num)))){
+      PKparameters <- gsub("_dose1|_last", "", PKparameters)
+      PKparameters <- gsub("AUCtau", "AUCt", PKparameters)
+   }
+   
    if(tolower(distribution_type) %in% c("z", "t")){
       distribution_type <- ifelse(tolower(distribution_type) == "z", 
                                   "Z", "t")
@@ -470,25 +478,6 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                 DenomCheck = PKparam_denom %in% names(PKdenominator$aggregate)) %>% 
          filter(NumCheck == TRUE & DenomCheck == TRUE) %>% 
          select(-NumCheck, -DenomCheck)
-   }
-   
-   # If user specified the sheet, then they're likely to get both AUCt and
-   # AUCtau as well as CLt and CLtau b/c extractPK doesn't know what dose
-   # number this is for b/c that's not included in the Excel output. When that
-   # happens, we don't want to have BOTH show up in the results b/c they'll be
-   # duplicates. Remove the AUCt and CLt columns from both sets of PK results
-   # and just keep AUCtau and CLtau. User will be able to figure out what it
-   # should be called and change that column name if they want.
-   if(all(c("AUCt", "AUCtau") %in% names(PKnumerator$individual)) |
-      all(c("AUCt", "AUCtau") %in% names(PKdenominator$individual))){
-      PKnumerator$individual <- PKnumerator$individual %>% 
-         select(-any_of(c("AUCt", "CLt")))
-      PKdenominator$individual <- PKdenominator$individual %>% 
-         select(-any_of(c("AUCt", "CLt")))
-      
-      Comparisons <- Comparisons %>% 
-         filter(!PKparam_num %in% c("AUCt", "CLt")) %>% 
-         filter(!PKparam_denom %in% c("AUCt", "CLt"))
    }
    
    # !!!!!!!!!!!!!!! CHANGING COL NAMES FOR DENOMINATOR !!!!!!!!!!!!!!!!!!!!!!
@@ -790,6 +779,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    
    
    # Tidying up names of columns, etc. ------------------------------------
+   
    StatNames <- c(
       "Mean" = "Simulated", 
       "CV" = "CV",

@@ -55,8 +55,8 @@ ct_plot_obs(
   legend_position = NA,
   prettify_compound_names = TRUE,
   save_graph = NA,
-  fig_height = 6,
-  fig_width = 5
+  fig_height = NA,
+  fig_width = NA
 )
 }
 \arguments{
@@ -450,9 +450,9 @@ graphical file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png",
 the file name. Leaving this as NA means the file will not be automatically
 saved to disk.}
 
-\item{fig_height}{figure height in inches; default is 6}
+\item{fig_height}{figure height in inches}
 
-\item{fig_width}{figure width in inches; default is 5}
+\item{fig_width}{figure width in inches}
 }
 \value{
 returns a ggplot2 graph

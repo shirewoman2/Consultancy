@@ -44,6 +44,10 @@ make_table_annotations <- function(MyPKResults, # only PK table
    LastDoseincluded <- any(str_detect(names(MyPKResults), "_last|Last dose"))
    Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
    
+   MeanType <- ifelse(MeanType == "arithmetic for most, geometric for ratios", 
+                      "arithmetic (except for DDI ratios, which are geometric)", 
+                      MeanType)
+   
    # There are some situations where we want to just pass through generic info,
    # so that's why I'm returning things here rather than stopping.
    if("logical" %in% class(Deets) || nrow(Deets) == 0){

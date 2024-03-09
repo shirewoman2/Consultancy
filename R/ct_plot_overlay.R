@@ -354,9 +354,11 @@
 #'   respectively, to the nearest order of magnitude. If left as NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected. This only
 #'   applies when you have requested a semi-log plot with \code{linear_or_log}.
-#' @param y_axis_interval set the y-axis major tick-mark interval. Acceptable
-#'   input: any number or leave as NA to accept default values, which are
-#'   generally reasonable guesses as to aesthetically pleasing intervals.
+#' @param y_axis_limits_lin optionally set the Y axis limits for the linear
+#'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
+#'   limits for the linear plot will be automatically selected. (Setting up
+#'   semi-log plot y axis intervals manually is a bit tricky and is not
+#'   currently supported.)
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
 #' @param hline_position numerical position(s) of any horizontal lines to add to
@@ -397,7 +399,7 @@
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
 #' @param border TRUE (default) or FALSE for whether to include a border around
-#'   each graph. 
+#'   each graph.
 #' @param prettify_compound_names set this to a) TRUE (default) or FALSE for
 #'   whether to make the compound names in the legend prettier or b) supply a
 #'   named character vector to set it to the exact name you'd prefer to see in
@@ -514,7 +516,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
            call. = FALSE)
    }
    

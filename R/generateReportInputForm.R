@@ -57,8 +57,6 @@ generateReportInputForm <- function(filename){
     }
     
     # Main body of function ------------------------------------------------
-    # Loading the forms
-    data("ReportInputForm")
     
     Path <- dirname(filename)
     File <- basename(filename)
@@ -69,9 +67,7 @@ generateReportInputForm <- function(filename){
     # it DOESN'T do that when you just set the path first and then write.
     setwd(Path)
     
-    # data(ReportInputForm)
     HowTo <- ReportInputForm[["how to use this file"]]
-    # Overall <- ReportInputForm[["overall report info"]]
     StudyNoDDI <- ReportInputForm[["study info - no DDI"]]
     StudyDDI <- ReportInputForm[["study info - DDI"]]
     
@@ -82,7 +78,7 @@ generateReportInputForm <- function(filename){
              colWidth = list(colNum = 1,
                              width = 250),
              styles = list(
-                 list(rows = c(0, 5, 17), font = list(bold = TRUE, size = 16)),
+                 list(rows = c(0, 4, 11, 17), font = list(bold = TRUE, size = 16)),
                  list(rows = 19, font = list(color = "red", bold = TRUE))
              ))
     

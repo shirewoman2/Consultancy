@@ -155,11 +155,16 @@
 #'   use for the x axis label
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
-#'   limits for the linear plot will be automatically selected.
+#'   limits for the linear plot will be automatically selected. (Setting up
+#'   semi-log plot y axis intervals manually is a bit tricky and is not
+#'   currently supported.)
 #' @param y_axis_limits_log optionally set the Y axis limits for the semi-log
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to a round number. If left as the default NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
+#' @param y_axis_interval set the linear y-axis major tick-mark interval.
+#'   Acceptable input: any number or leave as NA to accept default values, which
+#'   are generally reasonable guesses as to aesthetically pleasing intervals.
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
 #' @param obs_color If you would like the observed data points to be in color,
@@ -336,8 +341,8 @@
 #'   "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
 #'   or periods in the file name. Leaving this as NA means the file will not be
 #'   saved to disk.
-#' @param fig_height figure height in inches; default is 6
-#' @param fig_width figure width in inches; default is 5
+#' @param fig_height figure height in inches
+#' @param fig_width figure width in inches
 #'
 #' @return Output is a ggplot2 graph or two ggplot2 graphs arranged with
 #'   ggpubr::ggarrange()
@@ -391,6 +396,7 @@ ct_plot <- function(ct_dataframe = NA,
                     t0 = "simulation start",
                     y_axis_limits_lin = NA,
                     y_axis_limits_log = NA,
+                    y_axis_interval = NA, 
                     y_axis_label = NA,
                     obs_color = NA,
                     obs_shape = NA,
@@ -420,14 +426,14 @@ ct_plot <- function(ct_dataframe = NA,
                     qc_graph = FALSE,
                     existing_exp_details = NA,
                     save_graph = NA,
-                    fig_height = 6,
-                    fig_width = 5){
+                    fig_height = NA,
+                    fig_width = NA){
    
    # Error catching ----------------------------------------------------------
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
            call. = FALSE)
    }
    
@@ -965,7 +971,8 @@ ct_plot <- function(ct_dataframe = NA,
                        pad_y_axis = pad_y_axis,
                        y_axis_limits_lin = y_axis_limits_lin,
                        time_range = time_range,
-                       y_axis_limits_log = y_axis_limits_log
+                       y_axis_limits_log = y_axis_limits_log, 
+                       y_axis_interval = y_axis_interval
    )
    
    ObsConcUnits <- YStuff$ObsConcUnits
@@ -1488,6 +1495,30 @@ ct_plot <- function(ct_dataframe = NA,
    # Saving -----------------------------------------------------------------
    
    if(complete.cases(save_graph)){
+      
+      # Checking for NA for fig_height and width
+      if(is.na(fig_height)){
+         fig_height <- switch(linear_or_log, 
+                              "linear" = 4, 
+                              "log" = 4, 
+                              "semi-log" = 4, 
+                              "both" = 6, 
+                              "both vertical" = 6,
+                              "both horizontal" = 3.5, 
+                              "horizontal and vertical" = 3.5)
+      }
+      
+      if(is.na(fig_width)){
+         fig_width <- switch(linear_or_log, 
+                              "linear" = 4.75, 
+                              "log" = 4.75, 
+                              "semi-log" = 4.75, 
+                              "both" = 5, 
+                              "both vertical" = 5,
+                              "both horizontal" = 8, 
+                              "horizontal and vertical" = 8)
+      }
+      
       FileName <- save_graph
       if(str_detect(FileName, "\\.")){
          # Making sure they've got a good extension

@@ -50,14 +50,13 @@ ct_plot_1stlast(
   hline_style = "red dotted",
   vline_position = NA,
   vline_style = "red dotted",
-  graph_labels = FALSE,
-  graph_title = NA,
+  graph_labels = TRUE,
   graph_title_size = 14,
   legend_position = NA,
   prettify_compound_names = TRUE,
   save_graph = NA,
-  fig_height = 6,
-  fig_width = 8
+  fig_height = NA,
+  fig_width = NA
 )
 }
 \arguments{
@@ -409,14 +408,11 @@ acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 into the console.}
 
-\item{graph_labels}{TRUE or FALSE (default) for whether to include labels (A,
+\item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
 B, C, etc.) for each of the small graphs.}
 
-\item{graph_title}{optionally specify a title that will be centered across
-your graph or set of graphs}
-
-\item{graph_title_size}{the font size for the graph title if it's included;
-default is 14. This also determines the font size of the graph labels.}
+\item{graph_title_size}{the font size for the graph titles; default is 14.
+This also determines the font size of the graph labels.}
 
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
@@ -445,9 +441,9 @@ graphical file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png",
 the file name. Leaving this as NA means the file will not be automatically
 saved to disk.}
 
-\item{fig_height}{figure height in inches; default is 6}
+\item{fig_height}{figure height in inches}
 
-\item{fig_width}{figure width in inches; default is 5}
+\item{fig_width}{figure width in inches}
 
 \item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}} to be used for creating figure

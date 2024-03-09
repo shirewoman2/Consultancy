@@ -23,7 +23,28 @@
 #'   \code{\link{pksummary_mult}} with the argument \code{extract_forest_data}
 #'   set to TRUE on Simulator output files. Alternatively, if you already have
 #'   some saved forest-plot data, supply a csv or Excel file with the same data.
-#'   (If it's an Excel file, it must have only one tab.)
+#'   (If it's an Excel file, it must have only one tab.) The following columns
+#'   are required:
+#'   
+#'   \describe{\item{File}{Simulation file name. You can hack this and set the values to
+#'   whatever you want rather than simulation file names, but this column is
+#'   what will be used for grouping simulations on the y axis.}
+#'
+#'   \item{PKparameter}{the specific PK parameter being compared. This
+#'   \emph{must} be one of the standardized, coded options that you can see by
+#'   running \code{view(PKParameterDefinitions)} and looking in the column
+#'   "PKparameter".}
+#'
+#'   \item{at least one of Mean, Median, or GeoMean (not case sensitive)}{This
+#'   column will be used for the center statistic.}
+#'
+#'   \item{at least one pair of CI_Lower and CI_Upper, Centile_Lower and
+#'   Centile_Upper, Min and Max, or at least one of GeoCV, ArithCV, or SD (not
+#'   case sensitive)}{These columns will be used for the whiskers.}
+#'
+#'   \item{any column you want to facet by}{If you want to break up your graphs
+#'   along the x axis, you must include the column you want to use to do that.}}
+#'
 #' @param y_axis_labels a column in \code{forest_dataframe} (unquoted) or a
 #'   named character vector (each item in quotes) to use for labeling the
 #'   simulations on the y axis. In all forest plots, the y axis will be broken
@@ -49,12 +70,12 @@
 #'   input data \code{forest_dataframe}, then setting \code{y_order = "as is"}
 #'   will keep things in exactly the same order.}
 #'
-#'   \item{a character vector of whatever you want for y axis labels}{e.g., 
-#'   \code{y_order = c("myfile1.xlsx", "myfile2.xlsx")} if the y axis is just 
-#'   going to show file names or, if, say, you've got it set to show specific 
-#'   labels for those file names, then those labels, e.g., if you set 
-#'   y_axis_labels like this: \code{y_axis_labels = ("myfile1.xlsx" = 
-#'   "itraconazole", "myfile2.xlsx" = "efavirenz")} then you would set the 
+#'   \item{a character vector of whatever you want for y axis labels}{e.g.,
+#'   \code{y_order = c("myfile1.xlsx", "myfile2.xlsx")} if the y axis is just
+#'   going to show file names or, if, say, you've got it set to show specific
+#'   labels for those file names, then those labels, e.g., if you set
+#'   y_axis_labels like this: \code{y_axis_labels = ("myfile1.xlsx" =
+#'   "itraconazole", "myfile2.xlsx" = "efavirenz")} then you would set the
 #'   y_order like this: \code{y_order = c("itraconazole", "efavirenz")}}
 #'
 #'   \item{"strongest inhibitor to strongest inducer"}{Sort the simulations
@@ -319,11 +340,11 @@
 #'             y_axis_labels = Inhibitor1,
 #'             facet_column_x = Dose_sub)
 #'
-#' # You can add a title to the facets to indicate what they are with 
-#' # facet_title_x. 
+#' # You can add a title to the facets to indicate what they are with
+#' # facet_title_x.
 #' forest_plot(forest_dataframe = BufForestData,
 #'             y_axis_labels = Inhibitor1,
-#'             facet_column_x = Dose_sub, 
+#'             facet_column_x = Dose_sub,
 #'             facet_title_x = "Dose bufuralol")
 #'
 #' # Or you can break up your graph by the PK parameter shown.
@@ -480,7 +501,7 @@ forest_plot <- function(forest_dataframe,
    # Error catching and data tidying ------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
            call. = FALSE)
    }
    
@@ -606,7 +627,7 @@ forest_plot <- function(forest_dataframe,
    # just make all the columns lower or upper case but I haven't coded
    # everything else like that, so not fixing that now.
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "geomean"))] <- "GeoMean"
+                                            "geomean|geometric"))] <- "GeoMean"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "gcv"))] <- "GCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
@@ -623,16 +644,16 @@ forest_plot <- function(forest_dataframe,
                                             "pkparameter"))] <- "PKparameter"
    
    names(forest_dataframe)[tolower(names(forest_dataframe)) %in% 
-                              c("file", "tissue", "mean", "median", "min", "max", 
+                              c("file", "mean", "median", "min", "max", 
                                 "fold", "substrate", "inhibitor1")] <- 
       str_to_title(names(forest_dataframe)[tolower(names(forest_dataframe)) %in% 
-                                              c("file", "tissue", "mean", "median", "min", "max", 
+                                              c("file", "mean", "median", "min", "max", 
                                                 "fold", "substrate", "inhibitor1")])
    
    
    if(ObsIncluded){
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "geomean"))] <- "GeoMean"
+                                          "geomean|geometric"))] <- "GeoMean"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "gcv"))] <- "GCV"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
@@ -649,10 +670,10 @@ forest_plot <- function(forest_dataframe,
                                           "pkparameter"))] <- "PKparameter"
       
       names(observed_PK)[tolower(names(observed_PK)) %in% 
-                            c("file", "tissue", "mean", "median", "min", "max", 
+                            c("file", "mean", "median", "min", "max", 
                               "fold", "substrate", "inhibitor1")] <- 
          str_to_title(names(observed_PK)[tolower(names(observed_PK)) %in% 
-                                            c("file", "tissue", "mean", "median", "min", "max", 
+                                            c("file", "mean", "median", "min", "max", 
                                               "fold", "substrate", "inhibitor1")])
    }
    
@@ -810,15 +831,6 @@ forest_plot <- function(forest_dataframe,
    
    forest_dataframe <- forest_dataframe %>% 
       mutate(SimOrObs = "predicted")
-   
-   # If the column Tissue isn't included, then assume that the tissue was
-   # plasma.
-   if("Tissue" %in% names(forest_dataframe) == FALSE){
-      forest_dataframe$Tissue <- "plasma"
-   }
-   if(ObsIncluded && "Tissue" %in% names(observed_PK) == FALSE){
-      observed_PK$Tissue <- "plasma"
-   }
    
    # Checking that the stats requested are available
    FDnames <- factor(names(forest_dataframe), 
@@ -1191,12 +1203,49 @@ forest_plot <- function(forest_dataframe,
       if(any(complete.cases(x_order))){
          forest_dataframe <- forest_dataframe %>% 
             mutate(FCX = factor(FCX, levels = x_order))
+         
+         # If they're faceting on PK parameter, need to change the factor levels
+         # for that column, too.
+         if(as_label(facet_column_x) == "PKparameter"){
+            # Have to make data character 1st or it will mess up which actual PK
+            # parameter corresponds to which numeric level.
+            forest_dataframe$PKparameter <- 
+               as.character(forest_dataframe$PKparameter)
+            
+            forest_dataframe$PKparameter <- 
+               factor(forest_dataframe$PKparameter, 
+                      levels = x_order)
+         }
+         
       } else if(as_label(facet_column_x) %in% c("Dose_sub", "Dose_inhib")){
+         # If the facet column was Dose_x, then make it prettier. 
          forest_dataframe <- forest_dataframe %>% 
             mutate(FCX = paste(FCX, {{dose_units}}), 
                    FCX = forcats::fct_reorder(.f = FCX, 
                                               .x = !!facet_column_x,
                                               .fun = min))
+      } else if(as_label(facet_column_x) == "PKparameter"){
+         # If the facet column as PKparameter and they don't specify what order
+         # they want with x_order, then make it a reasonable order for PK
+         # parameters. Note that PKparameters already was set up as factor
+         # earlier b/c, if you're *not* faceting the x direction on PKparameter,
+         # then the PKparameter order should be reversed in order to get the
+         # right order on the y axis. Since they *are* faceting the x axis by PK
+         # parameter, then we want the normal order of PK parameters w/the 1st
+         # dose stuff 1st, etc.
+         
+         # Getting original PK levels and reversing them.
+         OrigLevels <- rev(levels(forest_dataframe$PKparameter))
+         
+         # Have to make data character 1st or it will mess up which actual PK
+         # parameter corresponds to which numeric level.
+         forest_dataframe$PKparameter <- 
+            as.character(forest_dataframe$PKparameter)
+         
+         forest_dataframe$PKparameter <- 
+            factor(forest_dataframe$PKparameter, 
+                   levels = OrigLevels)
+         
       }
    }
    
