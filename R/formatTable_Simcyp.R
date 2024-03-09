@@ -304,6 +304,11 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
+   if(complete.cases(highlight_gmr_colors) && 
+      tolower(highlight_gmr_colors[1]) == "lisa"){highlight_gmr_colors = "traffic"}
+   if(complete.cases(highlight_so_colors) &&
+      tolower(highlight_so_colors[1]) == "lisa"){highlight_so_colors = "traffic"}
+   
    if(any(complete.cases(highlight_gmr_colors)) &&
       highlight_gmr_colors[1] %in% c("yellow to red", "green to red", "traffic") == FALSE){
       if(length(highlight_gmr_colors) != 4){
@@ -316,6 +321,15 @@ formatTable_Simcyp <- function(DF,
          highlight_gmr_colors <- "yellow to red"
       } 
    }
+   
+   if(any(complete.cases(highlight_so_colors)) &&
+      highlight_so_colors[1] %in% c("yellow to red", "green to red", "traffic") == FALSE &&
+      is.matrix(col2rgb(highlight_so_colors)) == FALSE){
+      warning("The values you used for highlighting S/O values are not all valid colors in R. We'll used the default colors instead.\n", 
+              call. = FALSE)
+      highlight_so_colors <- "yellow to red"
+   } 
+   
    
    if(class(merge_columns) %in% "numeric"){
       if(all(merge_columns %in% 1:ncol(DF)) == FALSE){
