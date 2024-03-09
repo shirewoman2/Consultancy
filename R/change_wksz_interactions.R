@@ -1,16 +1,17 @@
 #' Change interaction parameters in Simcyp Simulator workspace files
 #'
-#' \code{change_wksz_interactions} changes interaction parameters such as Kapp
-#' or Ki or IndMax in workspace files (.wksz files) for then running with the
-#' Simcyp Simulator. This will change \emph{all} the workspace files provided to
-#' have the \emph{same} interaction parameters you list here. Currently only set
-#' up to change CYP, P-gp, and a few UGT parameters, but we'll add more options
-#' soon. \strong{Pay attention to the "switch" arguments, which are set up just
-#' like in the Simulator but are easy to overlook.} Also, this will
+#' \code{change_wksz_interactions} changes interaction parameters such as Kapp,
+#' Ki, or IndMax in Simulator workspace files. Currently only set up to change
+#' CYP, P-gp, and a few UGT parameters, but we can add more options upon
+#' request. A few notes: 1. Pay attention to the "switch" arguments, which are
+#' set up just like in the Simulator but are easy to overlook. 2. This will
 #' automatically fix any XML file paths such as observed data overlay files or
 #' fixed trial design XML files to match the current user's path on SharePoint.
-#' If you don't want that, set \code{fix_xml_paths} to FALSE. UNDER
-#' CONSTRUCTION.
+#' If you don't want that, set \code{fix_xml_paths} to FALSE. 3.
+#' \strong{WARNING:} Do NOT mix Simulator versions in a single call. If you need
+#' more than one Simulator version, run this separately for each. It seems to
+#' have trouble otherwise, and I haven't discerned exactly where that trouble
+#' arises. - LSh
 #'
 #' @param sim_workspace_files the set of workspace files to modify; must end in
 #'   ".wksz" if you're specifying individual files. Leave as NA to change all
@@ -261,7 +262,10 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
    }
    
    # Expanding DF for tissues if they listed tissues = "all".
-   if(all(tissues == "all")){
+   if(("tissues" %in% names(Changes) &&
+       all(Changes$tissues == "all")) | 
+      (all(tissues == "all") & 
+       "tissues" %in% names(Changes) == FALSE)){
       Changes <- Changes %>% rename(tissues_orig = tissues) %>% 
          left_join(data.frame(tissues_orig = "all", 
                               tissues = c("kidney", "liver", "intestine")), 
@@ -354,9 +358,9 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                    str_detect(enzymes, "Pgp") ~ "Ind_max_switch",
                                 
                                 Parameter == "Ind_slope" &
-                                   str_detect(enzymes, "CYP|UGT") ~ "Y",
+                                   str_detect(enzymes, "CYP|UGT") ~ "IndSlope",
                                 Parameter == "induction_IndMax_switch" &
-                                   str_detect(enzymes, "Pgp") ~ "Induction_Hill",
+                                   str_detect(enzymes, "Pgp") ~ "Ind_slope",
                                 
                                 Parameter == "induction_IndC50_switch" &
                                    str_detect(enzymes, "CYP|UGT") ~ "IndC50Switch",
@@ -432,7 +436,7 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                                 "kidney" = "KidneyTransporterSet",
                                                 "intestine" = "GutTransporterSet"))
          
-         EnzNum <- switch(Changes[[i]]$enzymes[j],
+         EnzNum_Enzyme <- switch(Changes[[i]]$enzymes[j],
                           # !!! WARNING: I have checked this for V22. Double
                           # check that this applies for other versions. -LSh
                           
@@ -477,6 +481,19 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                           "kidney" = 22,
                                           "intestine" = 12))
          
+         # Need to check what the index is for each enzyme b/c sometimes, for
+         # reasons that utterly mystify and infuriate me, the index and the
+         # enzyme number DON'T MATCH. Why use an enzyme number if you're going
+         # to move around the position?!?
+         EnzymeIndex <- 1:length(
+            names(RootNode[["Compounds"]][[CompoundIDnum]][[EnzIntRoutes]]))
+         
+         for(enz_i in EnzymeIndex){
+            names(EnzymeIndex)[enz_i] <- 
+               XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[EnzIntRoutes]][[enz_i]][["Enzyme"]])
+         }
+         
+         EnzNum <- EnzymeIndex[as.character(EnzNum_Enzyme)]
          
          XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
             EnzIntRoutes]][[EnzNum]][[Changes[[i]]$Level5[j]]]) <-
