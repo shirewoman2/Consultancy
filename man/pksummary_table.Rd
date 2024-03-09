@@ -173,9 +173,9 @@ an Excel file name for \code{report_input_file}. If you're supplying a
 simulator output Excel file for \code{sim_data_file}, ignore this.}
 
 \item{mean_type}{What kind of means and CVs do you want listed in the output
-table? Options are "arithmetic" or "geometric" (default). If you supplied a
-report input form, only specify this if you'd like to override the value
-listed there.}
+table? Options are "arithmetic", "geometric" (default), or "arithmetic for
+most, geometric for ratios". If you supplied a report input form, only
+specify this if you'd like to override the value listed there.}
 
 \item{use_median_for_tmax}{TRUE (default) or FALSE for whether to use median
 for tmax values, regardless of what the other summary statistics are. This

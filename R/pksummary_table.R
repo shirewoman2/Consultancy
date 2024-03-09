@@ -218,9 +218,9 @@
 #'   \code{extractExpDetails} behind the scenes to figure out some information
 #'   about your experimental set up.
 #' @param mean_type What kind of means and CVs do you want listed in the output
-#'   table? Options are "arithmetic" or "geometric" (default). If you supplied a
-#'   report input form, only specify this if you'd like to override the value
-#'   listed there.
+#'   table? Options are "arithmetic", "geometric" (default), or "arithmetic for
+#'   most, geometric for ratios". If you supplied a report input form, only
+#'   specify this if you'd like to override the value listed there.
 #' @param use_median_for_tmax TRUE (default) or FALSE for whether to use median
 #'   for tmax values, regardless of what the other summary statistics are. This
 #'   is typically the case, but, if you've got client data where they actually
@@ -554,17 +554,23 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Checking mean type syntax
    if(complete.cases(mean_type)){
-      if(mean_type %in% c("geometric", "arithmetic") == FALSE){
+      if(mean_type %in% c("geometric", "arithmetic", 
+                          "arithmetic for most, geometric for ratios") == FALSE){
          if(mean_type == "mean"){
-            warning("Technically, the input for mean_type should be either `geometric` (default) or `arithmetic`. You specified a mean type of `mean`, so we think you want arithmetic means and that is what will be reported. If that's incorrect, please set mean_type to `geometric`.\n", 
+            warning("Technically, the input for mean_type should be `geometric` (default), `arithmetic`, or `arithmetic for most, geometric for ratios`. You specified a mean type of `mean`, so we think you want arithmetic means. If that's incorrect, please set mean_type to `geometric`.\n", 
                     call. = FALSE)
          }
          
-         mean_type <- case_when(str_detect(tolower(mean_type), "geo") ~ "geometric", 
-                                mean_type == "mean" ~ "arithmetic")
+         mean_type <- case_when(str_detect(tolower(mean_type), "geo") & 
+                                   !(str_detect(tolower(mean_type), "arith") &
+                                        str_detect(tolower(mean_type), "geo")) ~ "geometric", 
+                                mean_type == "mean" ~ "arithmetic", 
+                                str_detect(tolower(mean_type), "arith") &
+                                   str_detect(tolower(mean_type), "geo") ~ "arithmetic for most, geometric for ratios")
          
-         if(mean_type %in% c("geometric", "arithmetic") == FALSE){
-            warning("You specified something other than `geometric` (default) or `arithmetic` for the mean type, so we're not sure what you would like. We'll use the default of geometric means.\n", 
+         if(mean_type %in% c("geometric", "arithmetic", 
+                             "arithmetic for most, geometric for ratios") == FALSE){
+            warning("You specified something other than `geometric` (default) `arithmetic`, or `arithmetic for most, geometric for ratios` for the mean type, so we're not sure what you would like. We'll use the default of geometric means.\n", 
                     call. = FALSE)
             
             mean_type <- "geometric"
@@ -833,14 +839,14 @@ pksummary_table <- function(sim_data_file = NA,
       # And second, the scenario where user has not supplied a filled-out
       # report form.
       
-      MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
-      GMR_mean_type <- MeanType
-      # NB re. GMR_mean_type: I originally had this set to "geometric" all the
-      # time because that's nearly always what we report. However, the more I
-      # thought about it, the more I realized that people will probably expect
-      # this to be whatever mean type they set for the main mean type and it's
-      # just going to be confusing to change it. If it turns out to be an
-      # issue, revisit this. - LSh
+      MeanType <- 
+         ifelse(mean_type %in% c("arithmetic", 
+                                 "arithmetic for most, geometric for ratios"),
+                "arithmetic", "geometric")
+      GMR_mean_type <- 
+         ifelse(mean_type %in% c("geometric", 
+                                 "arithmetic for most, geometric for ratios"),
+                "geometric", "arithmetic")
       
       # Checking experimental details to only pull details that apply. NB:
       # "Deets" in all pksummary functions means ONLY the experimental details

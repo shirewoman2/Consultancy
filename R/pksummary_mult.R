@@ -970,7 +970,7 @@ pksummary_mult <- function(sim_data_files = NA,
       
       if(str_detect(save_table, "\\.csv")){
          
-         MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
+         MeanTypeCSV <- ifelse(is.na(mean_type), "geometric", mean_type)
          
          # This is when they want a csv file as output. In this scenario,
          # changing the value "simulated" in the list of stats to include
@@ -978,7 +978,7 @@ pksummary_mult <- function(sim_data_files = NA,
          # in the Word file but not in the table itself.
          MyPKResults <- MyPKResults %>% 
             mutate(Statistic = sub("Simulated", 
-                                   paste("Simulated", MeanType, "mean"), Statistic))
+                                   paste("Simulated", MeanTypeCSV, "mean"), Statistic))
          
          WarningDF <- data.frame(Col1 = "WARNING:",
                                  Col2 = "This table was saved to a csv file, and Excel automatically drops any trailing zeroes. Please check your sig figs to make sure you haven't inadvertently dropped a trailing zero.")
