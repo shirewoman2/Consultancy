@@ -991,9 +991,7 @@ annotateDetails <- function(existing_exp_details,
                                  (complete.cases(Main[ , NontempFiles[i]]) &
                                      is.na(Main[, TSim])) |
                                  (is.na(Main[ , NontempFiles[i]]) & 
-                                     complete.cases(Main[, TSim]))), 
-                 fill = "#FFC7CE", 
-                 font = list(color = "#9B030C"))
+                                     complete.cases(Main[, TSim]))))
       }
    }
    
@@ -1035,59 +1033,112 @@ annotateDetails <- function(existing_exp_details,
       if(Ext == "csv"){
          write.csv(Main, FileName, row.names = F)
       } else if(Ext == "xlsx"){
+         
+         # Using openxlsx to format things. NB: Version 2.12.17 used the xlsx
+         # package to save, but openxlsx allows you to insert graphs and also
+         # seems to have a much more intuitive interface for saving formatting.
+         if(file.exists(FileName)){
+            WB <- openxlsx::loadWorkbook(file = FileName)
+         } else {
+            WB <- openxlsx::createWorkbook()
+         }
+         
+         HeaderStyle <- openxlsx::createStyle(textDecoration = "bold",
+                                              wrapText = TRUE, 
+                                              halign = "center", 
+                                              valign = "center")
+         
+         NotesColumn <- openxlsx::createStyle(wrapText = TRUE, 
+                                              valign = "center") 
+         
+         BlueColumn <- openxlsx::createStyle(wrapText = TRUE, 
+                                             valign = "center", 
+                                             fgFill = "#E7F3FF")
+         
+         BlueColumnHeader <- openxlsx::createStyle(textDecoration = "bold",
+                                                   wrapText = TRUE, 
+                                                   halign = "center", 
+                                                   valign = "center", 
+                                                   fgFill = "#E7F3FF")
+         
+         
+         ProbCells <- openxlsx::createStyle(wrapText = TRUE, 
+                                            valign = "center", 
+                                            fgFill = "#FFC7CE", 
+                                            fontColour = "#9B030C")
+         
+         openxlsx::addWorksheet(wb = WB, 
+                                sheetName = output_tab_name)
+         
+         openxlsx::writeData(wb = WB, 
+                             sheet = output_tab_name,
+                             x = Main, 
+                             headerStyle = HeaderStyle)
+         
+         # Setting column widths. Notes should be 40.
+         ColWidths <- guess_col_widths(Main)
+         ColWidths <- ColWidths[ColWidths == "Notes"] <- 40
+         ColWidths <- ColWidths[which(str_detect(names(Main),
+                          "All files have this value|TEMPLATE"))] <- 25
+         
+         openxlsx::setColWidths(wb = WB, 
+                                sheet = output_tab_name, 
+                                cols = 1:ncol(Main), 
+                                widths = ColWidths)
+         
+         openxlsx::addStyle(wb = WB, 
+                            sheet = output_tab_name, 
+                            style = NotesColumn, 
+                            rows = 2:(nrow(Main) + 1), 
+                            cols = which(str_detect(names(Main),
+                                                    "Note")))
+         
          if(is.na(template_sim) | length(FileOrder) == 1){
             # This is when there is no template simulation, but we are
             # including a column noting when a given value was the same for
             # all simulations.
-            formatXL(
-               DF = Main, file = FileName, sheet = output_tab_name,
-               styles = list(
-                  list(columns = which(names(Main) == "Notes"), 
-                       textposition = list(wrapping = TRUE)),
-                  list(rows = 0, font = list(bold = TRUE),
-                       textposition = list(alignment = "middle",
-                                           wrapping = TRUE)), 
-                  list(columns = which(str_detect(names(Main), "All files have this value")),
-                       fill = "#E7F3FF"), 
-                  list(rows = 0, columns = which(str_detect(names(Main), "All files have this value")), 
-                       font = list(bold = TRUE), 
-                       textposition = list(alignment = "middle",
-                                           wrapping = TRUE), 
-                       fill = "#E7F3FF")))
+            
+            openxlsx::addStyle(wb = WB, 
+                               sheet = output_tab_name, 
+                               style = BlueColumn, 
+                               rows = 2:(nrow(Main) + 1), 
+                               cols = which(str_detect(names(Main),
+                                                       "All files have this value")))
+            
+            openxlsx::addStyle(wb = WB, 
+                               sheet = output_tab_name, 
+                               style = BlueColumnHeader, 
+                               rows = 1, 
+                               cols = which(str_detect(names(Main),
+                                                       "All files have this value")))
             
          } else {
             # This is when there IS a template simulation. Formatting to
             # highlight in red all the places where things differ.
             
-            MyStyles[[1]] <- 
-               # wrapping text in the notes column since it's sometimes long
-               list(columns = which(names(Main) == "Notes"), 
-                    textposition = list(wrapping = TRUE))
-            
-            MyStyles[[2]] <- 
-               # making header row bold and centered
-               list(rows = 0, font = list(bold = TRUE),
-                    textposition = list(alignment = "middle",
-                                        wrapping = TRUE))
-            
             # making the template sim column blue
-            MyStyles[[3]] <- 
-               list(columns = which(str_detect(names(Main), template_sim)),
-                    fill = "#E7F3FF")
+            openxlsx::addStyle(wb = WB, 
+                               sheet = output_tab_name, 
+                               style = BlueColumn, 
+                               rows = 2:(nrow(Main) + 1), 
+                               cols = which(str_detect(names(Main),
+                                                       template_sim)))
             
-            MyStyles[[4]] <- 
-               list(columns = which(str_detect(names(Main), template_sim)),
-                    rows = 0, font = list(bold = TRUE), 
-                    textposition = list(alignment = "middle",
-                                        wrapping = TRUE), 
-                    fill = "#E7F3FF")
+            openxlsx::addStyle(wb = WB, 
+                               sheet = output_tab_name, 
+                               style = BlueColumnHeader, 
+                               rows = 1, 
+                               cols = which(str_detect(names(Main),
+                                                       template_sim)))
             
-            MyStyles <- append(MyStyles, Diffs)
-            
-            formatXL(
-               DF = Main, file = FileName, sheet = output_tab_name,
-               styles = MyStyles)
-            
+            # highlighting mismatches in red
+            for(i in 1:length(Diffs)){
+               openxlsx::addStyle(wb = WB, 
+                                  sheet = output_tab_name, 
+                                  style = ProbCells, 
+                                  rows = Diffs[[i]]$rows, 
+                                  cols = Diffs[[i]]$columns)
+            }
          }
          
          # Checking for other things we should save
@@ -1102,6 +1153,9 @@ annotateDetails <- function(existing_exp_details,
             
             for(i in ToWrite){
                
+               openxlsx::addWorksheet(wb = WB, 
+                                      sheetName = i)
+               
                if(i == "ConcDependent_fup"){
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = fup)
@@ -1111,14 +1165,50 @@ annotateDetails <- function(existing_exp_details,
                } else if(i == "CustomDosing"){ 
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = Dose)
+                  
+                  ggplot(existing_exp_details[[i]], 
+                         aes(x = Time, xend = Time,
+                             y = 0, yend = Dose, 
+                             color = File)) +
+                     geom_segment(linewidth = 1, color = "dodgerblue4") +
+                     facet_grid(File ~ Compound, 
+                                scales = "fixed") + 
+                     scale_y_continuous(limits = c(0, max(existing_exp_details[[i]]$Dose)), 
+                                        expand = expansion(mult = c(0, 0.05))) +
+                     xlab("Time (h)") +
+                     ylab("Dose (mg)") +
+                     scale_x_time() +
+                     theme_consultancy(border = TRUE) +
+                     theme(legend.position = "none")
+                  
+                  openxlsx::insertPlot(wb = WB, 
+                                       sheet = i, 
+                                       width = length(unique(existing_exp_details[[i]]$Compound)) * 4, 
+                                       height = length(unique(existing_exp_details[[i]]$File)) * 3,
+                                       fileType = "png", 
+                                       units = "in", 
+                                       startRow = nrow(DF4XL) + 5, 
+                                       startCol = 1)
+                  
                } else {
                   DF4XL <- existing_exp_details[[i]]
                }
                
-               formatXL_head(DF = DF4XL, 
-                             file = FileName, 
-                             sheet = i)
+               openxlsx::writeData(wb = WB, 
+                                   sheet = i,
+                                   x = DF4XL, 
+                                   headerStyle = HeaderStyle)
+               
+               openxlsx::setColWidths(wb = WB, 
+                                      sheet = i, 
+                                      cols = 1:ncol(DF4XL), 
+                                      widths = guess_col_widths(DF4XL))
+               
             }
+            
+            openxlsx::saveWorkbook(wb = WB, 
+                                   file = FileName, overwrite = TRUE)
+            
          }
       }
    }
