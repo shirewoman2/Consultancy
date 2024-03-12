@@ -2,26 +2,31 @@
 % Please edit documentation in R/check_file_name.R
 \name{check_file_name}
 \alias{check_file_name}
-\title{Check file names for naming standards}
+\title{Checks a file name for naming standards using the criteria laid out by the
+Consultancy Support Team}
 \usage{
 check_file_name(file_name)
 }
 \arguments{
-\item{file_name}{name of data file}
+\item{file_name}{the name(s) of the file(s) to check. This can be a single
+string, e.g., \code{file_name = "xlsx"} to match all files in the current
+working directory with that string of text in their names or it can be a
+character vector of one or more files that you want to check.}
 }
 \value{
-Only prints messages
+a character vector
 }
 \description{
-\code{check_file_name} checks that files are named according to USFDA
-file-naming protocols using Cade's checklist.
+\code{check_file_name} checks whether a file name meets standard file-naming
+conventions acceptable by various drug regulatory agencies. A warning message
+will be given for any unacceptable formats.
 }
 \examples{
- 
+# Good file name will give a message that things were ok.
+check_file_name(file_name = "abc-5mg-qd.xlsx")
+
+# Bad file names will tell you what went wrong.
 check_file_name(file_name = "Example simulator output MD.xlsx")
-check_file_name(file_name = "abc1b-5mg-sd.xlsx")
-check_file_name(file_name = "abc1b-5mg-sd-sdy101a-cohortb-increasedki-10x-decreased-indmax-2x.xlsx")
-
-
+check_file_name(file_name = "abc_123_5mg.wksz")
 
 }
