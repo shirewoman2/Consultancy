@@ -235,6 +235,11 @@ annotateDetails <- function(existing_exp_details,
                             output_tab_name = "Simulation experimental details"){
    
    # Error catching --------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
    compoundID <- tolower(compoundID)
    
    if(all(complete.cases(compoundID)) &&
@@ -288,6 +293,15 @@ annotateDetails <- function(existing_exp_details,
       existing_exp_details <- filter_sims(which_object = existing_exp_details, 
                                           which_sims = sims_to_include,
                                           include_or_omit = "include")
+   }
+   
+   # Checking for file name issues
+   CheckFileNames <- check_file_name(existing_exp_details$MainDetails$File)
+   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
+   if(length(BadFileNames)> 0){
+      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
+      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+              str_c(paste0("     ", BadFileNames), collapse = "\n"))
    }
    
    if("Substrate" %in% names(existing_exp_details$MainDetails) == FALSE & 
@@ -710,7 +724,7 @@ annotateDetails <- function(existing_exp_details,
    ## detail_set -------------------------------------------------------------
    
    if(any(complete.cases(detail_set)) &&
-      detail_set != "all"){
+      any(detail_set != "all")){
       
       DetailSet <- c()
       
@@ -991,9 +1005,7 @@ annotateDetails <- function(existing_exp_details,
                                  (complete.cases(Main[ , NontempFiles[i]]) &
                                      is.na(Main[, TSim])) |
                                  (is.na(Main[ , NontempFiles[i]]) & 
-                                     complete.cases(Main[, TSim]))), 
-                 fill = "#FFC7CE", 
-                 font = list(color = "#9B030C"))
+                                     complete.cases(Main[, TSim]))))
       }
    }
    
@@ -1035,65 +1047,124 @@ annotateDetails <- function(existing_exp_details,
       if(Ext == "csv"){
          write.csv(Main, FileName, row.names = F)
       } else if(Ext == "xlsx"){
+         
+         # Using openxlsx to format things. NB: Version 2.12.17 used the xlsx
+         # package to save, but openxlsx allows you to insert graphs and also
+         # seems to have a much more intuitive interface for saving formatting.
+         if(file.exists(FileName)){
+            WB <- openxlsx::loadWorkbook(file = FileName)
+         } else {
+            WB <- openxlsx::createWorkbook()
+         }
+         
+         HeaderStyle <- openxlsx::createStyle(textDecoration = "bold",
+                                              wrapText = TRUE, 
+                                              halign = "center", 
+                                              valign = "center")
+         
+         NotesColumn <- openxlsx::createStyle(wrapText = TRUE, 
+                                              valign = "center") 
+         
+         BlueColumn <- openxlsx::createStyle(wrapText = TRUE, 
+                                             valign = "center", 
+                                             fgFill = "#E7F3FF")
+         
+         BlueColumnHeader <- openxlsx::createStyle(textDecoration = "bold",
+                                                   wrapText = TRUE, 
+                                                   halign = "center", 
+                                                   valign = "center", 
+                                                   fgFill = "#E7F3FF")
+         
+         
+         ProbCells <- openxlsx::createStyle(wrapText = TRUE, 
+                                            valign = "center", 
+                                            fgFill = "#FFC7CE", 
+                                            fontColour = "#9B030C")
+         
+         if(file.exists(FileName) &&
+            output_tab_name %in% readxl::excel_sheets(path = FileName)){
+            openxlsx::removeWorksheet(wb = WB, 
+                                      sheet = output_tab_name)
+         }
+         
+         openxlsx::addWorksheet(wb = WB, 
+                                sheetName = output_tab_name)
+         
+         openxlsx::writeData(wb = WB, 
+                             sheet = output_tab_name,
+                             x = Main, 
+                             headerStyle = HeaderStyle)
+         
+         # Setting column widths. Notes should be 40.
+         ColWidths <- guess_col_widths(Main)
+         ColWidths <- ColWidths[ColWidths == "Notes"] <- 40
+         ColWidths <- ColWidths[which(str_detect(names(Main),
+                                                 "All files have this value|TEMPLATE"))] <- 25
+         
+         openxlsx::setColWidths(wb = WB, 
+                                sheet = output_tab_name, 
+                                cols = 1:ncol(Main), 
+                                widths = ColWidths)
+         
+         openxlsx::addStyle(wb = WB, 
+                            sheet = output_tab_name, 
+                            style = NotesColumn, 
+                            rows = 2:(nrow(Main) + 1), 
+                            cols = which(str_detect(names(Main),
+                                                    "Note")))
+         
          if(is.na(template_sim) | length(FileOrder) == 1){
             # This is when there is no template simulation, but we are
             # including a column noting when a given value was the same for
             # all simulations.
-            formatXL(
-               DF = Main, file = FileName, sheet = output_tab_name,
-               styles = list(
-                  list(columns = which(names(Main) == "Notes"), 
-                       textposition = list(wrapping = TRUE)),
-                  list(rows = 0, font = list(bold = TRUE),
-                       textposition = list(alignment = "middle",
-                                           wrapping = TRUE)), 
-                  list(columns = which(str_detect(names(Main), "All files have this value")),
-                       fill = "#E7F3FF"), 
-                  list(rows = 0, columns = which(str_detect(names(Main), "All files have this value")), 
-                       font = list(bold = TRUE), 
-                       textposition = list(alignment = "middle",
-                                           wrapping = TRUE), 
-                       fill = "#E7F3FF")))
+            
+            openxlsx::addStyle(wb = WB, 
+                               sheet = output_tab_name, 
+                               style = BlueColumn, 
+                               rows = 2:(nrow(Main) + 1), 
+                               cols = which(str_detect(names(Main),
+                                                       "All files have this value")))
+            
+            openxlsx::addStyle(wb = WB, 
+                               sheet = output_tab_name, 
+                               style = BlueColumnHeader, 
+                               rows = 1, 
+                               cols = which(str_detect(names(Main),
+                                                       "All files have this value")))
             
          } else {
             # This is when there IS a template simulation. Formatting to
             # highlight in red all the places where things differ.
             
-            MyStyles[[1]] <- 
-               # wrapping text in the notes column since it's sometimes long
-               list(columns = which(names(Main) == "Notes"), 
-                    textposition = list(wrapping = TRUE))
-            
-            MyStyles[[2]] <- 
-               # making header row bold and centered
-               list(rows = 0, font = list(bold = TRUE),
-                    textposition = list(alignment = "middle",
-                                        wrapping = TRUE))
-            
             # making the template sim column blue
-            MyStyles[[3]] <- 
-               list(columns = which(str_detect(names(Main), template_sim)),
-                    fill = "#E7F3FF")
+            openxlsx::addStyle(wb = WB, 
+                               sheet = output_tab_name, 
+                               style = BlueColumn, 
+                               rows = 2:(nrow(Main) + 1), 
+                               cols = which(str_detect(names(Main),
+                                                       template_sim)))
             
-            MyStyles[[4]] <- 
-               list(columns = which(str_detect(names(Main), template_sim)),
-                    rows = 0, font = list(bold = TRUE), 
-                    textposition = list(alignment = "middle",
-                                        wrapping = TRUE), 
-                    fill = "#E7F3FF")
+            openxlsx::addStyle(wb = WB, 
+                               sheet = output_tab_name, 
+                               style = BlueColumnHeader, 
+                               rows = 1, 
+                               cols = which(str_detect(names(Main),
+                                                       template_sim)))
             
-            MyStyles <- append(MyStyles, Diffs)
-            
-            formatXL(
-               DF = Main, file = FileName, sheet = output_tab_name,
-               styles = MyStyles)
-            
+            # highlighting mismatches in red
+            for(i in 1:length(Diffs)){
+               openxlsx::addStyle(wb = WB, 
+                                  sheet = output_tab_name, 
+                                  style = ProbCells, 
+                                  rows = Diffs[[i]]$rows + 1, 
+                                  cols = Diffs[[i]]$columns)
+            }
          }
          
          # Checking for other things we should save
          if(any(complete.cases(detail_set)) == FALSE |
             (any(complete.cases(detail_set)) & 
-             detail_set == "all")){
+             any(detail_set == "all"))){
             ToWrite <- names(existing_exp_details)[
                sapply(existing_exp_details, is.null) == FALSE]
             ToWrite <- names(existing_exp_details[ToWrite])[
@@ -1102,24 +1173,145 @@ annotateDetails <- function(existing_exp_details,
             
             for(i in ToWrite){
                
+               if(file.exists(FileName) && 
+                  i %in% readxl::excel_sheets(path = FileName)){
+                  openxlsx::removeWorksheet(wb = WB, 
+                                            sheet = i)
+               }
+               
+               openxlsx::addWorksheet(wb = WB, 
+                                      sheetName = i)
+               
                if(i == "ConcDependent_fup"){
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = fup)
+                  
+                  plot(ggplot(existing_exp_details[[i]], 
+                              aes(x = Conc, y = fup, color = File)) +
+                          geom_point() + geom_line() +
+                          facet_grid(. ~ Compound, 
+                                     scales = "fixed") +
+                          xlab("Concentration") +
+                          ylab(expression(f[u,p])) +
+                          ggtitle("Concentration-dependent fu,p", 
+                                  subtitle = "If all simulations had the same values, points will overlap perfectly.") +
+                          theme_consultancy(border = TRUE))
+                  
+                  openxlsx::insertPlot(wb = WB, 
+                                       sheet = i, 
+                                       width = 12,  
+                                       height = 6,
+                                       fileType = "png", 
+                                       units = "in", 
+                                       startRow = nrow(DF4XL) + 5, 
+                                       startCol = 1)
+                  
+                  
                } else if(i == "ConcDependent_BP"){ 
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = BP)
+                  
+                  plot(ggplot(existing_exp_details[[i]], 
+                              aes(x = Conc, y = BP, color = File)) +
+                          geom_point() + geom_line() +
+                          facet_grid(. ~ Compound, 
+                                     scales = "fixed") +
+                          xlab("Concentration") +
+                          ylab("B/P") +
+                          ggtitle("Concentration-dependent B/P", 
+                                  subtitle = "If all simulations had the same values, points will overlap perfectly.") +
+                          theme_consultancy(border = TRUE))
+                  
+                  openxlsx::insertPlot(wb = WB, 
+                                       sheet = i, 
+                                       width = 12,  
+                                       height = 6,
+                                       fileType = "png", 
+                                       units = "in", 
+                                       startRow = nrow(DF4XL) + 5, 
+                                       startCol = 1)
+                  
                } else if(i == "CustomDosing"){ 
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = Dose)
-               } else {
+                  
+                  plot(ggplot(existing_exp_details[[i]], 
+                              aes(x = Time, xend = Time,
+                                  y = 0, yend = Dose, 
+                                  color = File)) +
+                          geom_segment(linewidth = 1, color = "dodgerblue4") +
+                          facet_grid(File ~ Compound, 
+                                     scales = "fixed") + 
+                          scale_y_continuous(limits = c(0, max(existing_exp_details[[i]]$Dose)), 
+                                             expand = expansion(mult = c(0, 0.05))) +
+                          xlab("Time (h)") +
+                          ylab("Dose (mg)") +
+                          ggtitle("Custom-dosing regimens") +
+                          scale_x_time() +
+                          theme_consultancy(border = TRUE) +
+                          theme(legend.position = "none"))
+                  
+                  openxlsx::insertPlot(wb = WB, 
+                                       sheet = i, 
+                                       width = length(unique(existing_exp_details[[i]]$Compound)) * 4, 
+                                       height = length(unique(existing_exp_details[[i]]$File)) * 3,
+                                       fileType = "png", 
+                                       units = "in", 
+                                       startRow = nrow(DF4XL) + 5, 
+                                       startCol = 1)
+                  
+               } else if(i == "DissolutionProfiles"){ 
+                  
                   DF4XL <- existing_exp_details[[i]]
-               }
+                  
+                  plot(dissolution_profile_plot(existing_exp_details[[i]]) +
+                          ggtitle("Dissolution-profile plot", 
+                                  subtitle = "If all simulations had the same values, points will overlap perfectly."))
+                  
+                  openxlsx::insertPlot(wb = WB, 
+                                       sheet = i, 
+                                       width = 12, 
+                                       height = 6, 
+                                       fileType = "png", 
+                                       units = "in", 
+                                       startRow = nrow(DF4XL) + 5, 
+                                       startCol = 1)
+                  
+               } else if(i == "ReleaseProfiles"){ 
+                  
+                  DF4XL <- existing_exp_details[[i]]
+                  
+                  plot(release_profile_plot(existing_exp_details[[i]]) +
+                          ggtitle("Release-profile plot", 
+                                  subtitle = "If all simulations had the same values, points will overlap perfectly."))
+                  
+                  openxlsx::insertPlot(wb = WB, 
+                                       sheet = i, 
+                                       width = 12, 
+                                       height = 6, 
+                                       fileType = "png", 
+                                       units = "in", 
+                                       startRow = nrow(DF4XL) + 5, 
+                                       startCol = 1)
+               } 
                
-               formatXL_head(DF = DF4XL, 
-                             file = FileName, 
-                             sheet = i)
+               openxlsx::writeData(wb = WB, 
+                                   sheet = i,
+                                   x = DF4XL, 
+                                   headerStyle = HeaderStyle)
+               
+               openxlsx::setColWidths(wb = WB, 
+                                      sheet = i, 
+                                      cols = 1:ncol(DF4XL), 
+                                      widths = guess_col_widths(DF4XL))
+               
             }
+            
          }
+         
+         openxlsx::saveWorkbook(wb = WB, 
+                                file = FileName, overwrite = TRUE)
+         
       }
    }
    

@@ -21,11 +21,6 @@
 #'   \item{"Summary and Input"}{Extract details available from the "Summary tab"
 #'   and the "Input Sheet" (default)}
 #'
-#'   \item{"Summary tab"}{Extract details available from the "Summary tab"
-#'   (default)}
-#'
-#'   \item{"Input Sheet"}{Extract details available from the "Input Sheet" tab}
-#'
 #'   \item{"population tab"}{Extract details about the population used (data
 #'   come from the tab with the same name as the population simulated)}
 #'
@@ -106,6 +101,15 @@ extractExpDetails <- function(sim_data_file,
    # If they didn't include ".xlsx" at the end, add that.
    sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_file), ".xlsx")
    
+   # Checking for file name issues
+   CheckFileNames <- check_file_name(sim_data_file)
+   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
+   if(length(BadFileNames)> 0){
+      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
+      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+   }
+   
    # Checking that the file is, indeed, a simulator output file.
    SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
                           error = openxlsx::getSheetNames(sim_data_file))
@@ -120,16 +124,8 @@ extractExpDetails <- function(sim_data_file,
    }
    
    # Cleaning up possible problems w/how exp_details by tab might be inputted
-   if(str_detect(tolower(exp_details[1]), "summary") & 
-      str_detect(tolower(exp_details[1]), "input")){
+   if(str_detect(tolower(exp_details[1]), "summary|input")){
       exp_details <- "summary and input"
-   } else if(str_detect(tolower(exp_details[1]), "simcyp") & 
-             str_detect(tolower(exp_details[1]), "input")){
-      exp_details <- "simcyp inputs"
-   } else if(str_detect(tolower(exp_details[1]), "summary")){
-      exp_details <- "summary tab"
-   } else if(str_detect(tolower(exp_details[1]), "input")){
-      exp_details <- "input sheet"
    } else if(str_detect(tolower(exp_details[1]), "population")){
       exp_details <- "population tab"
    } else if(str_detect(tolower(exp_details[1]), "worksp")){
@@ -695,7 +691,8 @@ extractExpDetails <- function(sim_data_file,
                       Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+                      Compound = as.character(Out[AllCompounds$DetailNames[
+                         AllCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, Time, Release_mean, Release_CV)
             
             rm(StartRow, EndRow, Release_temp)
@@ -783,7 +780,8 @@ extractExpDetails <- function(sim_data_file,
                          File = sim_data_file, 
                          Tissue = DissoTissues[[tiss]],
                          CompoundID = i, 
-                         Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]])
+                         Compound = as.character(Out[AllCompounds$DetailNames[
+                            AllCompounds$CompoundID == i]]))
                
                rm(Disso_temp, DissoCV)
                
@@ -833,7 +831,8 @@ extractExpDetails <- function(sim_data_file,
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+                      Compound = as.character(Out[AllCompounds$DetailNames[
+                         AllCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, Conc, fup)
             
             rm(StartRow, EndRow, CDfup_temp)
@@ -878,7 +877,8 @@ extractExpDetails <- function(sim_data_file,
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+                      Compound = as.character(Out[AllCompounds$DetailNames[
+                         AllCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, Conc, BP)
             
             rm(StartRow, EndRow, CDBP_temp)
@@ -923,7 +923,8 @@ extractExpDetails <- function(sim_data_file,
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+                      Compound = as.character(Out[AllCompounds$DetailNames[
+                         AllCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, pH, Solubility)
             
             rm(StartRow, EndRow, pHSol_temp)
