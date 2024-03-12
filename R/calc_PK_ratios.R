@@ -1019,20 +1019,21 @@ calc_PK_ratios <- function(sim_data_file_numerator,
             
             suppressWarnings(
                CheckDoseInt_1[[i]] <- check_doseint(sim_data_file = i, 
-                                             existing_exp_details = existing_exp_details,
-                                             compoundID = compoundToExtract,
-                                             stop_or_warn = "warn")
+                                                    existing_exp_details = existing_exp_details,
+                                                    compoundID = compoundToExtract,
+                                                    stop_or_warn = "warn")
             )
          }
          
-         CheckDoseInt <- list("message" = ifelse(any(map(CheckDoseInt_1, "message") == "mismatch"), 
-                                                 "mismatch", "good"),
-                              "interval" = as.data.frame(lapply(bind_rows(
-                                 map(CheckDoseInt_1, "interval")),
-                                 FUN = function(x) str_c(unique(x), collapse = ", "))) %>% 
-                                 mutate(across(.cols = -c(File, CompoundID), 
-                                               .fns = as.numeric)))
-                              
+         suppressWarnings(
+            CheckDoseInt <- list("message" = ifelse(any(map(CheckDoseInt_1, "message") == "mismatch"), 
+                                                    "mismatch", "good"),
+                                 "interval" = as.data.frame(lapply(bind_rows(
+                                    map(CheckDoseInt_1, "interval")),
+                                    FUN = function(x) str_c(unique(x), collapse = ", "))) %>% 
+                                    mutate(across(.cols = -c(File, CompoundID), 
+                                                  .fns = as.numeric)))
+         )
          
          rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 
