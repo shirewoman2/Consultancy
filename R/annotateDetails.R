@@ -1293,10 +1293,11 @@ annotateDetails <- function(existing_exp_details,
                
             }
             
-            openxlsx::saveWorkbook(wb = WB, 
-                                   file = FileName, overwrite = TRUE)
-            
          }
+         
+         openxlsx::saveWorkbook(wb = WB, 
+                                file = FileName, overwrite = TRUE)
+         
       }
    }
    
