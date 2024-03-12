@@ -763,6 +763,15 @@ pksummary_table <- function(sim_data_file = NA,
    # Everything should be harmonized, tidy, and ready to be combined into one
    # central place now.
    
+   # Checking for file name issues
+   CheckFileNames <- check_file_name(sim_data_file)
+   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
+   if(length(BadFileNames)> 0){
+      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
+      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+   }
+   
    suppressMessages(
       MyPK <- data.frame(File = sim_data_file, 
                          PKparameter = PKparameters) %>% 

@@ -24,6 +24,11 @@
 
 check_file_name <- function(file_name){
    
+   # Check whether tidyverse is loaded
+   if(any(c("package:tidyverse", "package:stringr") %in% search()) == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
    if(length(file_name) == 1){
       # If they supplied a single string, they probably want to check files that
       # match that.

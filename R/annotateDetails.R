@@ -235,6 +235,11 @@ annotateDetails <- function(existing_exp_details,
                             output_tab_name = "Simulation experimental details"){
    
    # Error catching --------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
    compoundID <- tolower(compoundID)
    
    if(all(complete.cases(compoundID)) &&
@@ -288,6 +293,15 @@ annotateDetails <- function(existing_exp_details,
       existing_exp_details <- filter_sims(which_object = existing_exp_details, 
                                           which_sims = sims_to_include,
                                           include_or_omit = "include")
+   }
+   
+   # Checking for file name issues
+   CheckFileNames <- check_file_name(existing_exp_details$MainDetails$File)
+   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
+   if(length(BadFileNames)> 0){
+      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
+      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+              str_c(paste0("     ", BadFileNames), collapse = "\n"))
    }
    
    if("Substrate" %in% names(existing_exp_details$MainDetails) == FALSE & 
@@ -710,7 +724,7 @@ annotateDetails <- function(existing_exp_details,
    ## detail_set -------------------------------------------------------------
    
    if(any(complete.cases(detail_set)) &&
-      detail_set != "all"){
+      any(detail_set != "all")){
       
       DetailSet <- c()
       
@@ -1150,7 +1164,7 @@ annotateDetails <- function(existing_exp_details,
          # Checking for other things we should save
          if(any(complete.cases(detail_set)) == FALSE |
             (any(complete.cases(detail_set)) & 
-             detail_set == "all")){
+             any(detail_set == "all"))){
             ToWrite <- names(existing_exp_details)[
                sapply(existing_exp_details, is.null) == FALSE]
             ToWrite <- names(existing_exp_details[ToWrite])[

@@ -194,6 +194,15 @@ extractConcTime <- function(sim_data_file,
    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                            sim_data_file, paste0(sim_data_file, ".xlsx"))
    
+   # Checking for file name issues
+   CheckFileNames <- check_file_name(sim_data_file)
+   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
+   if(length(BadFileNames)> 0){
+      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
+      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+   }
+   
    # If they used the American spelling of feces, change to the British version
    # for compatibility with simulator output
    tissue <- sub("feces", "faeces", tissue)

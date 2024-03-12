@@ -149,6 +149,15 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # If they didn't include ".xlsx" at the end, add that.
    sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_files), ".xlsx")
    
+   # Checking for file name issues
+   CheckFileNames <- check_file_name(sim_data_files)
+   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
+   if(length(BadFileNames)> 0){
+      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
+      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+   }
+   
    # Making sure that all the files exist before attempting to pull data
    if(any(file.exists(sim_data_files) == FALSE)){
       MissingSimFiles <- sim_data_files[

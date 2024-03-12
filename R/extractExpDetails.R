@@ -101,6 +101,15 @@ extractExpDetails <- function(sim_data_file,
    # If they didn't include ".xlsx" at the end, add that.
    sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_file), ".xlsx")
    
+   # Checking for file name issues
+   CheckFileNames <- check_file_name(sim_data_file)
+   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
+   if(length(BadFileNames)> 0){
+      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
+      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+   }
+   
    # Checking that the file is, indeed, a simulator output file.
    SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
                           error = openxlsx::getSheetNames(sim_data_file))
