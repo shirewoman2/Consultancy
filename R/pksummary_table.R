@@ -1079,7 +1079,7 @@ pksummary_table <- function(sim_data_file = NA,
       # units -- only conc.
       if(Deets$Units_Cmax != adjust_conc_units){
          ColsToChange <- names(MyPKResults_all$aggregate)[
-            intersect(which(str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax")), 
+            intersect(which(str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax|Cmin")), 
                       which(!str_detect(names(MyPKResults_all$aggregate), "ratio")))
          ]
          

@@ -21,11 +21,6 @@
 #'   \item{"Summary and Input"}{Extract details available from the "Summary tab"
 #'   and the "Input Sheet" (default)}
 #'
-#'   \item{"Summary tab"}{Extract details available from the "Summary tab"
-#'   (default)}
-#'
-#'   \item{"Input Sheet"}{Extract details available from the "Input Sheet" tab}
-#'
 #'   \item{"population tab"}{Extract details about the population used (data
 #'   come from the tab with the same name as the population simulated)}
 #'
@@ -120,16 +115,8 @@ extractExpDetails <- function(sim_data_file,
    }
    
    # Cleaning up possible problems w/how exp_details by tab might be inputted
-   if(str_detect(tolower(exp_details[1]), "summary") & 
-      str_detect(tolower(exp_details[1]), "input")){
+   if(str_detect(tolower(exp_details[1]), "summary|input")){
       exp_details <- "summary and input"
-   } else if(str_detect(tolower(exp_details[1]), "simcyp") & 
-             str_detect(tolower(exp_details[1]), "input")){
-      exp_details <- "simcyp inputs"
-   } else if(str_detect(tolower(exp_details[1]), "summary")){
-      exp_details <- "summary tab"
-   } else if(str_detect(tolower(exp_details[1]), "input")){
-      exp_details <- "input sheet"
    } else if(str_detect(tolower(exp_details[1]), "population")){
       exp_details <- "population tab"
    } else if(str_detect(tolower(exp_details[1]), "worksp")){

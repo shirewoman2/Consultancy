@@ -26,11 +26,6 @@ the autorunner adds as long as that stamp is in a format like this: "myfile
   \item{"Summary and Input"}{Extract details available from the "Summary tab"
   and the "Input Sheet" (default)}
 
-  \item{"Summary tab"}{Extract details available from the "Summary tab"
-  (default)}
-
-  \item{"Input Sheet"}{Extract details available from the "Input Sheet" tab}
-
   \item{"population tab"}{Extract details about the population used (data
   come from the tab with the same name as the population simulated)}
 
