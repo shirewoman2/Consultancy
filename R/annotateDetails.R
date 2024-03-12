@@ -1067,6 +1067,12 @@ annotateDetails <- function(existing_exp_details,
                                             fgFill = "#FFC7CE", 
                                             fontColour = "#9B030C")
          
+         if(file.exists(FileName) &&
+            output_tab_name %in% readxl::excel_sheets(path = FileName)){
+            openxlsx::removeWorksheet(wb = WB, 
+                                      sheet = output_tab_name)
+         }
+         
          openxlsx::addWorksheet(wb = WB, 
                                 sheetName = output_tab_name)
          
@@ -1079,7 +1085,7 @@ annotateDetails <- function(existing_exp_details,
          ColWidths <- guess_col_widths(Main)
          ColWidths <- ColWidths[ColWidths == "Notes"] <- 40
          ColWidths <- ColWidths[which(str_detect(names(Main),
-                          "All files have this value|TEMPLATE"))] <- 25
+                                                 "All files have this value|TEMPLATE"))] <- 25
          
          openxlsx::setColWidths(wb = WB, 
                                 sheet = output_tab_name, 
@@ -1153,33 +1159,83 @@ annotateDetails <- function(existing_exp_details,
             
             for(i in ToWrite){
                
+               if(file.exists(FileName) && 
+                  i %in% readxl::excel_sheets(path = FileName)){
+                  openxlsx::removeWorksheet(wb = WB, 
+                                            sheet = i)
+               }
+               
                openxlsx::addWorksheet(wb = WB, 
                                       sheetName = i)
                
                if(i == "ConcDependent_fup"){
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = fup)
+                  
+                  plot(ggplot(existing_exp_details[[i]], 
+                              aes(x = Conc, y = fup, color = File)) +
+                          geom_point() + geom_line() +
+                          facet_grid(. ~ Compound, 
+                                     scales = "fixed") +
+                          xlab("Concentration") +
+                          ylab(expression(f[u,p])) +
+                          ggtitle("Concentration-dependent fu,p", 
+                                  subtitle = "If all simulations had the same values, points will overlap perfectly.") +
+                          theme_consultancy(border = TRUE))
+                  
+                  openxlsx::insertPlot(wb = WB, 
+                                       sheet = i, 
+                                       width = 12,  
+                                       height = 6,
+                                       fileType = "png", 
+                                       units = "in", 
+                                       startRow = nrow(DF4XL) + 5, 
+                                       startCol = 1)
+                  
+                  
                } else if(i == "ConcDependent_BP"){ 
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = BP)
+                  
+                  plot(ggplot(existing_exp_details[[i]], 
+                              aes(x = Conc, y = BP, color = File)) +
+                          geom_point() + geom_line() +
+                          facet_grid(. ~ Compound, 
+                                     scales = "fixed") +
+                          xlab("Concentration") +
+                          ylab("B/P") +
+                          ggtitle("Concentration-dependent B/P", 
+                                  subtitle = "If all simulations had the same values, points will overlap perfectly.") +
+                          theme_consultancy(border = TRUE))
+                  
+                  openxlsx::insertPlot(wb = WB, 
+                                       sheet = i, 
+                                       width = 12,  
+                                       height = 6,
+                                       fileType = "png", 
+                                       units = "in", 
+                                       startRow = nrow(DF4XL) + 5, 
+                                       startCol = 1)
+                  
                } else if(i == "CustomDosing"){ 
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = Dose)
                   
-                  ggplot(existing_exp_details[[i]], 
-                         aes(x = Time, xend = Time,
-                             y = 0, yend = Dose, 
-                             color = File)) +
-                     geom_segment(linewidth = 1, color = "dodgerblue4") +
-                     facet_grid(File ~ Compound, 
-                                scales = "fixed") + 
-                     scale_y_continuous(limits = c(0, max(existing_exp_details[[i]]$Dose)), 
-                                        expand = expansion(mult = c(0, 0.05))) +
-                     xlab("Time (h)") +
-                     ylab("Dose (mg)") +
-                     scale_x_time() +
-                     theme_consultancy(border = TRUE) +
-                     theme(legend.position = "none")
+                  plot(ggplot(existing_exp_details[[i]], 
+                              aes(x = Time, xend = Time,
+                                  y = 0, yend = Dose, 
+                                  color = File)) +
+                          geom_segment(linewidth = 1, color = "dodgerblue4") +
+                          facet_grid(File ~ Compound, 
+                                     scales = "fixed") + 
+                          scale_y_continuous(limits = c(0, max(existing_exp_details[[i]]$Dose)), 
+                                             expand = expansion(mult = c(0, 0.05))) +
+                          xlab("Time (h)") +
+                          ylab("Dose (mg)") +
+                          ggtitle("Custom-dosing regimens") +
+                          scale_x_time() +
+                          theme_consultancy(border = TRUE) +
+                          theme(legend.position = "none"))
                   
                   openxlsx::insertPlot(wb = WB, 
                                        sheet = i, 
@@ -1190,9 +1246,40 @@ annotateDetails <- function(existing_exp_details,
                                        startRow = nrow(DF4XL) + 5, 
                                        startCol = 1)
                   
-               } else {
+               } else if(i == "DissolutionProfiles"){ 
+                  
                   DF4XL <- existing_exp_details[[i]]
-               }
+                  
+                  plot(dissolution_profile_plot(existing_exp_details[[i]]) +
+                          ggtitle("Dissolution-profile plot", 
+                                  subtitle = "If all simulations had the same values, points will overlap perfectly."))
+                  
+                  openxlsx::insertPlot(wb = WB, 
+                                       sheet = i, 
+                                       width = 12, 
+                                       height = 6, 
+                                       fileType = "png", 
+                                       units = "in", 
+                                       startRow = nrow(DF4XL) + 5, 
+                                       startCol = 1)
+                  
+               } else if(i == "ReleaseProfiles"){ 
+                  
+                  DF4XL <- existing_exp_details[[i]]
+                  
+                  plot(release_profile_plot(existing_exp_details[[i]]) +
+                          ggtitle("Release-profile plot", 
+                                  subtitle = "If all simulations had the same values, points will overlap perfectly."))
+                  
+                  openxlsx::insertPlot(wb = WB, 
+                                       sheet = i, 
+                                       width = 12, 
+                                       height = 6, 
+                                       fileType = "png", 
+                                       units = "in", 
+                                       startRow = nrow(DF4XL) + 5, 
+                                       startCol = 1)
+               } 
                
                openxlsx::writeData(wb = WB, 
                                    sheet = i,

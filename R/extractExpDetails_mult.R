@@ -213,6 +213,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    }
    
    Out <- c(list(existing_exp_details), MyDeets)
+   Out <- Out[which(sapply(Out, FUN = function(x) all(x != "none")))]
    
    # Binding like elements in the list with like
    bind_details <- function(listname){

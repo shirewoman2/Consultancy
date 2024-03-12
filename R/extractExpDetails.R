@@ -695,7 +695,8 @@ extractExpDetails <- function(sim_data_file,
                       Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+                      Compound = as.character(Out[AllCompounds$DetailNames[
+                         AllCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, Time, Release_mean, Release_CV)
             
             rm(StartRow, EndRow, Release_temp)
@@ -783,7 +784,8 @@ extractExpDetails <- function(sim_data_file,
                          File = sim_data_file, 
                          Tissue = DissoTissues[[tiss]],
                          CompoundID = i, 
-                         Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]])
+                         Compound = as.character(Out[AllCompounds$DetailNames[
+                            AllCompounds$CompoundID == i]]))
                
                rm(Disso_temp, DissoCV)
                
@@ -833,7 +835,8 @@ extractExpDetails <- function(sim_data_file,
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+                      Compound = as.character(Out[AllCompounds$DetailNames[
+                         AllCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, Conc, fup)
             
             rm(StartRow, EndRow, CDfup_temp)
@@ -878,7 +881,8 @@ extractExpDetails <- function(sim_data_file,
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+                      Compound = as.character(Out[AllCompounds$DetailNames[
+                         AllCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, Conc, BP)
             
             rm(StartRow, EndRow, CDBP_temp)
@@ -923,7 +927,8 @@ extractExpDetails <- function(sim_data_file,
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = Out[AllCompounds$DetailNames[AllCompounds$CompoundID == i]]) %>% 
+                      Compound = as.character(Out[AllCompounds$DetailNames[
+                         AllCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, pH, Solubility)
             
             rm(StartRow, EndRow, pHSol_temp)
