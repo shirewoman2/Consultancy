@@ -1142,7 +1142,7 @@ annotateDetails <- function(existing_exp_details,
                openxlsx::addStyle(wb = WB, 
                                   sheet = output_tab_name, 
                                   style = ProbCells, 
-                                  rows = Diffs[[i]]$rows, 
+                                  rows = Diffs[[i]]$rows + 1, 
                                   cols = Diffs[[i]]$columns)
             }
          }
