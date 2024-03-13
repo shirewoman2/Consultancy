@@ -1264,7 +1264,7 @@ annotateDetails <- function(existing_exp_details,
                   
                   DF4XL <- existing_exp_details[[i]]
                   
-                  plot(dissolution_profile_plot(existing_exp_details[[i]]) +
+                  plot(dissolution_profile_plot(existing_exp_details) +
                           ggtitle("Dissolution-profile plot", 
                                   subtitle = "If all simulations had the same values, points will overlap perfectly."))
                   
@@ -1281,7 +1281,7 @@ annotateDetails <- function(existing_exp_details,
                   
                   DF4XL <- existing_exp_details[[i]]
                   
-                  plot(release_profile_plot(existing_exp_details[[i]]) +
+                  plot(release_profile_plot(existing_exp_details) +
                           ggtitle("Release-profile plot", 
                                   subtitle = "If all simulations had the same values, points will overlap perfectly."))
                   

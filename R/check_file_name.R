@@ -49,6 +49,8 @@ check_file_name <- function(file_name){
       file_name_touse <- file_name
    }
    
+   file_name_touse <- basename(file_name_touse)
+   
    subfun <- Vectorize(function(file_name_subfun){
       
       results <- c("File name cannot")
