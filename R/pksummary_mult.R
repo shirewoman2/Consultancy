@@ -405,15 +405,6 @@ pksummary_mult <- function(sim_data_files = NA,
       tissues <- sys.call()$tissue
    }
    
-   # Checking for file name issues
-   CheckFileNames <- check_file_name(sim_data_files)
-   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
-   if(length(BadFileNames)> 0){
-      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
-      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"))
-   }
-   
    # If they said "save_output" instead of "save_table", fix that.
    if("save_output" %in% names(match.call())){
       save_table <- sys.call()$save_output
@@ -495,6 +486,15 @@ pksummary_mult <- function(sim_data_files = NA,
                                    recursive = (complete.cases(sim_data_files) &&
                                                    sim_data_files == "recursive"))
       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+   }
+   
+   # Checking for file name issues
+   CheckFileNames <- check_file_name(sim_data_files)
+   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
+   if(length(BadFileNames)> 0){
+      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
+      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+              str_c(paste0("     ", BadFileNames), collapse = "\n"))
    }
    
    ## Read obs data --------------------------------------------------------
