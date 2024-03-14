@@ -1183,6 +1183,9 @@ annotateDetails <- function(existing_exp_details,
                                       sheetName = i)
                
                if(i == "ConcDependent_fup"){
+                  
+                  NumFiles <- length(unique(existing_exp_details[[i]]$File))
+                  
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = fup)
                   
@@ -1197,9 +1200,14 @@ annotateDetails <- function(existing_exp_details,
                                   subtitle = "If all simulations had the same values, points will overlap perfectly.") +
                           theme_consultancy(border = TRUE))
                   
+                  # Seems like ggplot makes not more than 20 items in the legend
+                  # before going over a column. Will need to consider that when
+                  # adjusting width.
+                  PlotWidth <- 8 + (NumFiles %/% 20) * 6
+                  
                   openxlsx::insertPlot(wb = WB, 
                                        sheet = i, 
-                                       width = 12,  
+                                       width = PlotWidth,  
                                        height = 6,
                                        fileType = "png", 
                                        units = "in", 
@@ -1208,23 +1216,33 @@ annotateDetails <- function(existing_exp_details,
                   
                   
                } else if(i == "ConcDependent_BP"){ 
+                  
+                  NumFiles <- length(unique(existing_exp_details[[i]]$File))
+                  
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = BP)
                   
-                  plot(ggplot(existing_exp_details[[i]], 
-                              aes(x = Conc, y = BP, color = File)) +
-                          geom_point() + geom_line() +
-                          facet_grid(. ~ Compound, 
-                                     scales = "fixed") +
-                          xlab("Concentration") +
-                          ylab("B/P") +
-                          ggtitle("Concentration-dependent B/P", 
-                                  subtitle = "If all simulations had the same values, points will overlap perfectly.") +
-                          theme_consultancy(border = TRUE))
+                  suppressMessages(
+                     plot(ggplot(existing_exp_details[[i]], 
+                                 aes(x = Conc, y = BP, color = File)) +
+                             geom_point() + geom_line() +
+                             facet_grid(. ~ Compound, 
+                                        scales = "fixed") +
+                             xlab("Concentration") +
+                             ylab("B/P") +
+                             ggtitle("Concentration-dependent B/P", 
+                                     subtitle = "If all simulations had the same values, points will overlap perfectly.") +
+                             theme_consultancy(border = TRUE))
+                  )
+                  
+                  # Seems like ggplot makes not more than 20 items in the legend
+                  # before going over a column. Will need to consider that when
+                  # adjusting width.
+                  PlotWidth <- 8 + (NumFiles %/% 20) * 6
                   
                   openxlsx::insertPlot(wb = WB, 
                                        sheet = i, 
-                                       width = 12,  
+                                       width = PlotWidth,  
                                        height = 6,
                                        fileType = "png", 
                                        units = "in", 
@@ -1232,24 +1250,27 @@ annotateDetails <- function(existing_exp_details,
                                        startCol = 1)
                   
                } else if(i == "CustomDosing"){ 
+                  
                   DF4XL <- existing_exp_details[[i]] %>% 
                      pivot_wider(names_from = File, values_from = Dose)
                   
-                  plot(ggplot(existing_exp_details[[i]], 
-                              aes(x = Time, xend = Time,
-                                  y = 0, yend = Dose, 
-                                  color = File)) +
-                          geom_segment(linewidth = 1, color = "dodgerblue4") +
-                          facet_grid(File ~ Compound, 
-                                     scales = "fixed") + 
-                          scale_y_continuous(limits = c(0, max(existing_exp_details[[i]]$Dose)), 
-                                             expand = expansion(mult = c(0, 0.05))) +
-                          xlab("Time (h)") +
-                          ylab("Dose (mg)") +
-                          ggtitle("Custom-dosing regimens") +
-                          scale_x_time() +
-                          theme_consultancy(border = TRUE) +
-                          theme(legend.position = "none"))
+                  suppressMessages(
+                     plot(ggplot(existing_exp_details[[i]], 
+                                 aes(x = Time, xend = Time,
+                                     y = 0, yend = Dose, 
+                                     color = File)) +
+                             geom_segment(linewidth = 1, color = "dodgerblue4") +
+                             facet_grid(File ~ Compound, 
+                                        scales = "fixed") + 
+                             scale_y_continuous(limits = c(0, max(existing_exp_details[[i]]$Dose)), 
+                                                expand = expansion(mult = c(0, 0.05))) +
+                             xlab("Time (h)") +
+                             ylab("Dose (mg)") +
+                             ggtitle("Custom-dosing regimens") +
+                             scale_x_time() +
+                             theme_consultancy(border = TRUE) +
+                             theme(legend.position = "none"))
+                  )
                   
                   openxlsx::insertPlot(wb = WB, 
                                        sheet = i, 
@@ -1264,35 +1285,64 @@ annotateDetails <- function(existing_exp_details,
                   
                   DF4XL <- existing_exp_details[[i]]
                   
-                  plot(dissolution_profile_plot(existing_exp_details) +
-                          ggtitle("Dissolution-profile plot", 
-                                  subtitle = "If all simulations had the same values, points will overlap perfectly."))
+                  NumFiles <- length(unique(existing_exp_details[[i]]$File))
+                  
+                  suppressMessages(
+                     plot(dissolution_profile_plot(existing_exp_details, 
+                                                   colorBy_column = File, 
+                                                   line_transparency = 1/(NumFiles * 2), 
+                                                   facet1_column = Compound) +
+                             ggtitle("Dissolution-profile plot", 
+                                     subtitle = "If all simulations had the same values, points will overlap perfectly."))
+                  )
+                  
+                  # Seems like ggplot makes not more than 20 items in the legend
+                  # before going over a column. Will need to consider that when
+                  # adjusting width.
+                  PlotWidth <- 8 + (NumFiles %/% 20) * 6
                   
                   openxlsx::insertPlot(wb = WB, 
                                        sheet = i, 
-                                       width = 12, 
+                                       width = PlotWidth, 
                                        height = 6, 
                                        fileType = "png", 
                                        units = "in", 
                                        startRow = nrow(DF4XL) + 5, 
                                        startCol = 1)
+                  
+                  rm(NumFiles, PlotWidth)
                   
                } else if(i == "ReleaseProfiles"){ 
                   
                   DF4XL <- existing_exp_details[[i]]
                   
-                  plot(release_profile_plot(existing_exp_details) +
-                          ggtitle("Release-profile plot", 
-                                  subtitle = "If all simulations had the same values, points will overlap perfectly."))
+                  NumFiles <- length(unique(existing_exp_details[[i]]$File))
+                  
+                  suppressMessages(
+                     plot(release_profile_plot(existing_exp_details, 
+                                               colorBy_column = File, 
+                                               line_transparency = 1/(NumFiles * 2), 
+                                               facet1_column = Compound) +
+                             ggtitle("Release-profile plot", 
+                                     subtitle = "If all simulations had the same values, points will overlap perfectly."))
+                  )
+                  
+                  # Seems like ggplot makes not more than 20 items in the legend
+                  # before going over a column. Will need to consider that when
+                  # adjusting width.
+                  PlotWidth <- 8 + (NumFiles %/% 20) * 6
                   
                   openxlsx::insertPlot(wb = WB, 
                                        sheet = i, 
-                                       width = 12, 
+                                       width = PlotWidth, 
                                        height = 6, 
                                        fileType = "png", 
                                        units = "in", 
                                        startRow = nrow(DF4XL) + 5, 
                                        startCol = 1)
+                  
+                  rm(NumFiles, PlotWidth)
+                  
                } 
                
                openxlsx::writeData(wb = WB, 
