@@ -98,8 +98,15 @@ extractAUCXtab <- function(PKparameters,
       
       # Looking for the regular expression specific to this parameter
       # i. 
-      ColNum <- which(str_detect(as.vector(t(AUCX_xl[2, ])),
-                                 ToDetect$SearchText))
+      if(i == "DoseAdministered"){
+         ColNum <- which(str_detect(as.vector(t(AUCX_xl[2, ])),
+                                    ToDetect$SearchText))
+      } else {
+         ColNum <- which(str_detect(as.vector(t(AUCX_xl[2, ])),
+                                    ToDetect$SearchText) &
+                            !str_detect(as.vector(t(AUCX_xl[2, ])), 
+                                        "/kg"))
+      }
       
       if(length(ColNum) == 0 || is.na(ColNum)){
          # Adding a condition for checking whether user requested a set of
