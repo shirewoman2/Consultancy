@@ -769,7 +769,7 @@ pksummary_table <- function(sim_data_file = NA,
    if(length(BadFileNames)> 0){
       BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
       warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+              str_c(paste0("     ", BadFileNames), collapse = "\n"), call. = FALSE)
    }
    
    suppressMessages(
@@ -1024,6 +1024,8 @@ pksummary_table <- function(sim_data_file = NA,
       PKparameters_temp <- unique(c(PKToPull,
                                     sub("AUCinf_dose1",
                                         "AUCt_dose1", PKToPull),
+                                    sub("AUCinf_ratio",
+                                        "AUCt_ratio", PKToPull),
                                     sub("AUCinf$",
                                         "AUCt$", PKToPull))) 
       sheet_temp <- NA
