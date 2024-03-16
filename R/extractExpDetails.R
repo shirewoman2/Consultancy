@@ -107,7 +107,7 @@ extractExpDetails <- function(sim_data_file,
    if(length(BadFileNames)> 0){
       BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
       warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+              str_c(paste0("     ", BadFileNames), collapse = "\n"), call. = FALSE)
    }
    
    # Checking that the file is, indeed, a simulator output file.
@@ -1615,11 +1615,15 @@ extractExpDetails <- function(sim_data_file,
             mutate(Time_units = ifelse(str_detect(TimeUnits, "\\.h\\.$"), 
                                        "h", "min"), 
                    File = sim_data_file, 
+                   TimeOfDay = as.character(round_date(timeConv(
+                      as.numeric(Time1)), unit = "minute")), 
+                   TimeOfDay = sub("1899-12-30 ", "", TimeOfDay), 
                    CompoundID = MyCompoundID, 
                    Compound = MyCompound) %>% 
             mutate(across(.cols = matches("DoseNum|Time$|Dose$"), 
                           .fns = as.numeric)) %>% 
-            select(File, CompoundID, Compound, Time, Time_units, DoseNum, 
+            select(File, CompoundID, Compound, Day, TimeOfDay, 
+                   Time, Time_units, DoseNum, 
                    Dose, Dose_units, DoseRoute)
          
          Out[[paste0("CustomDosing", Suffix)]] <- Dosing

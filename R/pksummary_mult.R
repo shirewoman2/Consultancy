@@ -494,7 +494,7 @@ pksummary_mult <- function(sim_data_files = NA,
    if(length(BadFileNames)> 0){
       BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
       warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+              str_c(paste0("     ", BadFileNames), collapse = "\n"), call. = FALSE)
    }
    
    ## Read obs data --------------------------------------------------------
