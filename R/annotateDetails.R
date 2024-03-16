@@ -301,7 +301,7 @@ annotateDetails <- function(existing_exp_details,
    if(length(BadFileNames)> 0){
       BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
       warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+              str_c(paste0("     ", BadFileNames), collapse = "\n"), call. = FALSE)
    }
    
    if("Substrate" %in% names(existing_exp_details$MainDetails) == FALSE & 
@@ -1062,11 +1062,9 @@ annotateDetails <- function(existing_exp_details,
                                               halign = "center", 
                                               valign = "center")
          
-         NotesColumn <- openxlsx::createStyle(wrapText = TRUE, 
-                                              valign = "center") 
+         NotesColumn <- openxlsx::createStyle(wrapText = TRUE) 
          
          BlueColumn <- openxlsx::createStyle(wrapText = TRUE, 
-                                             valign = "center", 
                                              fgFill = "#E7F3FF")
          
          BlueColumnHeader <- openxlsx::createStyle(textDecoration = "bold",
@@ -1077,7 +1075,6 @@ annotateDetails <- function(existing_exp_details,
          
          
          ProbCells <- openxlsx::createStyle(wrapText = TRUE, 
-                                            valign = "center", 
                                             fgFill = "#FFC7CE", 
                                             fontColour = "#9B030C")
          
@@ -1261,9 +1258,10 @@ annotateDetails <- function(existing_exp_details,
                                      color = File)) +
                              geom_segment(linewidth = 1, color = "dodgerblue4") +
                              facet_grid(File ~ Compound, 
-                                        scales = "fixed") + 
+                                        scales = "free") + 
                              scale_y_continuous(limits = c(0, max(existing_exp_details[[i]]$Dose)), 
                                                 expand = expansion(mult = c(0, 0.05))) +
+                             scale_x_continuous(limits = c(0, max(existing_exp_details[[i]]$Time))) +
                              xlab("Time (h)") +
                              ylab("Dose (mg)") +
                              ggtitle("Custom-dosing regimens") +
@@ -1274,8 +1272,8 @@ annotateDetails <- function(existing_exp_details,
                   
                   openxlsx::insertPlot(wb = WB, 
                                        sheet = i, 
-                                       width = length(unique(existing_exp_details[[i]]$Compound)) * 4, 
-                                       height = length(unique(existing_exp_details[[i]]$File)) * 3,
+                                       width = length(unique(existing_exp_details[[i]]$Compound)) * 5.5, 
+                                       height = length(unique(existing_exp_details[[i]]$File)) * 4,
                                        fileType = "png", 
                                        units = "in", 
                                        startRow = nrow(DF4XL) + 5, 
