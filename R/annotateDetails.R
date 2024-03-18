@@ -55,8 +55,8 @@
 #'   setting this to TRUE when you have similarly named compounds that really
 #'   should be compared and see how that compares to the default. If you set
 #'   this to "concatenate", you'll get all the possible compound names together;
-#'   for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
-#'   as the compound.
+#'   in the example we just gave, you would see "DrugX, Drug X, or Drug X -
+#'   reduced Ki" listed as the compound.
 #' @param omit_all_missing TRUE (default) or FALSE for whether to omit a detail
 #'   if the values are NA for all files
 #' @param compoundID optionally supply one or more of "substrate", "primary
@@ -73,7 +73,8 @@
 #'   is the set of parameters used for that compound and not whether that
 #'   compound was the substrate or the inhibitor. This will change the output
 #'   somewhat because we won't include the column "CompoundID" and we will
-#'   concatenate all the possible compound names in the column "Compound".
+#'   concatenate all the possible compound names in the column "Compound". Try
+#'   this out and you'll see what we mean.
 #' @param find_matching_details optionally supply a string of text to search for
 #'   in the column "Detail". Regular expressions are supported here, so use,
 #'   e.g., \itemize{
@@ -88,14 +89,10 @@
 #'   = "^CLint.*CYP3A.*sub$"} to find all details that start with "CLint", then,
 #'   somewhere in the name, include "CYP3A", and then end with "sub" (for
 #'   "substrate"). Case sensitive.
-#' @param detail_set optionally supply a set of details to return \emph{only}
-#'   those details. Options are the same as the ones listed as possibilities for
-#'   \code{exp_details} for \code{\link{extractExpDetails}} or
-#'   \code{\link{extractExpDetails_mult}}: \describe{
+#' @param detail_set optionally supply a set of details and this will return
+#'   \emph{only} those details. Options: \describe{
 #'
-#'   \item{"all"}{all possible details (default). If you select this option, you will also
-#'   get additional tabs in the output Excel file for any custom dosing regimens
-#'   and any drug-release profiles.}
+#'   \item{"all"}{all possible details (default)}
 #'
 #'   \item{"Summary tab"}{details available from the "Summary tab"}
 #'
@@ -117,6 +114,27 @@
 #'  lactation such as the milk-to-plasma ratio and whether a breast
 #'  perfusion-limited model was used.}
 #'
+#'  \item{"CustomDosing" ("custom dosing" is also ok)}{custom-dosing
+#'  information. This will be on a tab named "CustomDosing" unless you specify
+#'  a tab name you want.}
+#'
+#'  \item{"DissolutionProfiles" ("dissolution profiles" is also ok)}{drug-dissolution
+#'  profiles. This will be on a tab named "DissolutionProfiles" unless you specify
+#'  a tab name you want.}
+#'
+#'  \item{"ReleaseProfiles" ("release profiles" is also ok)}{drug-release
+#'  profiles This will be on a tab named "ReleaseProfiles" unless you specify
+#'  a tab name you want.}
+#'
+#'  \item{"ConcDependent_fup"}{concentration-dependent fu,p. This will be on a 
+#'  tab named "ConcDependent_fup" unless you specify a tab name you want.}
+#'
+#'  \item{"ConcDependent_BP"}{concentration-dependent B/P. This will be on a 
+#'  tab named "ConcDependent_BP" unless you specify a tab name you want.}
+#'
+#'  \item{"pH_dependent_solubility"}{pH-dependent drug solubility. This will be on a 
+#'  tab named "pH_dependent_solubility" unless you specify a tab name you want.}
+#'
 #'   \item{a string of the specific details you want, each in quotes and
 #'   encapsulated with \code{c(...)},}{For a complete list of possibilities,
 #'   type \code{view(ExpDetailDefinitions)} into the console. Parameters are
@@ -127,6 +145,7 @@
 #'   inducer listed, or "_inh1met" for the inhibitor 1 metabolite. An example of
 #'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}  Not
 #'   case sensitive.}
+#'
 #' @param simulator_section optionally supply a specific simulator section or
 #'   sections from which to find simulation experimental details and then return
 #'   \emph{only} those details. Options are "Absorption", "Distribution",
@@ -727,6 +746,7 @@ annotateDetails <- function(existing_exp_details,
       any(detail_set != "all")){
       
       DetailSet <- c()
+      DetailSetSpecial <- c()
       
       if("simcyp inputs" %in% tolower(detail_set)){
          
@@ -797,6 +817,29 @@ annotateDetails <- function(existing_exp_details,
          
       }
       
+      if(any(str_detect(tolower(detail_set), "custom.*?dosing"))){
+         DetailSetSpecial <- c(DetailSetSpecial, "CustomDosing")
+      }
+      
+      if(any(str_detect(tolower(detail_set), "dissolu.*?(prof)?"))){
+         DetailSetSpecial <- c(DetailSetSpecial, "DissolutionProfiles")
+      }
+      
+      if(any(str_detect(tolower(detail_set), "release.*?(prof)?"))){
+         DetailSetSpecial <- c(DetailSetSpecial, "ReleaseProfiles")
+      }
+      
+      if(any(str_detect(tolower(detail_set), "conc.*?fup"))){
+         DetailSetSpecial <- c(DetailSetSpecial, "ConcDependent_fup")
+      }
+      
+      if(any(str_detect(tolower(detail_set), "conc.*?b.?p"))){
+         DetailSetSpecial <- c(DetailSetSpecial, "ConcDependent_BP")
+      }
+      
+      if(any(str_detect(tolower(detail_set), "ph.*?solubility"))){
+         DetailSetSpecial <- c(DetailSetSpecial, "pH_dependent_solubility")
+      }
       
       # This is when they have requested individual details. This also removes
       # any replicates.
@@ -1110,6 +1153,11 @@ annotateDetails <- function(existing_exp_details,
                             cols = which(str_detect(names(Main),
                                                     "Note")))
          
+         openxlsx::freezePane(wb = WB,
+                              sheet = output_tab_name,
+                              firstActiveRow = 2,
+                              firstActiveCol = 8)
+         
          if(is.na(template_sim) | length(FileOrder) == 1){
             # This is when there is no template simulation, but we are
             # including a column noting when a given value was the same for
@@ -1257,8 +1305,8 @@ annotateDetails <- function(existing_exp_details,
                                      y = 0, yend = Dose, 
                                      color = File)) +
                              geom_segment(linewidth = 1, color = "dodgerblue4") +
-                             facet_grid(File ~ Compound, 
-                                        scales = "free") + 
+                             ggh4x::facet_grid2(Compound ~ File, scales = "free", 
+                                                axes = "all", switch = "y") + 
                              scale_y_continuous(limits = c(0, max(existing_exp_details[[i]]$Dose)), 
                                                 expand = expansion(mult = c(0, 0.05))) +
                              scale_x_continuous(limits = c(0, max(existing_exp_details[[i]]$Time))) +
@@ -1267,13 +1315,14 @@ annotateDetails <- function(existing_exp_details,
                              ggtitle("Custom-dosing regimens") +
                              scale_x_time() +
                              theme_consultancy(border = TRUE) +
-                             theme(legend.position = "none"))
+                             theme(legend.position = "none", 
+                                   strip.placement = "outside"))
                   )
                   
                   openxlsx::insertPlot(wb = WB, 
                                        sheet = i, 
-                                       width = length(unique(existing_exp_details[[i]]$Compound)) * 5.5, 
-                                       height = length(unique(existing_exp_details[[i]]$File)) * 4,
+                                       height = 0.5 + length(unique(existing_exp_details[[i]]$Compound)) * 4, 
+                                       width = length(unique(existing_exp_details[[i]]$File)) * 5.5,
                                        fileType = "png", 
                                        units = "in", 
                                        startRow = nrow(DF4XL) + 5, 
