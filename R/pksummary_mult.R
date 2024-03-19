@@ -725,7 +725,7 @@ pksummary_mult <- function(sim_data_files = NA,
       }
       
       for(j in compoundsToExtract){
-         message(paste("Extracting data for compound =", j))
+         message(paste("     for compound =", j))
          
          MyPKResults[[i]][[j]] <- list()
          PKpulled[[i]][[j]] <- list()
@@ -754,7 +754,7 @@ pksummary_mult <- function(sim_data_files = NA,
                ObsPK_temp <- NA
             }
             
-            message(paste("Extracting data for tissue =", k))
+            message(paste("          for tissue =", k))
             suppressWarnings(
                temp <- pksummary_table(
                   sim_data_file = i,

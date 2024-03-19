@@ -217,28 +217,32 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    Out <- Out[which(sapply(Out, \(x) all(is.null(names(x))) == FALSE))]
    Out <- Out[which(sapply(Out, FUN = function(x) all(x != "none")))]
    
-   # Tried EVERYTHING I COULD THINK OF to avoid doing this next bit as multiple
-   # loops, but NOTHING worked.
-   Classes <- list()
-   
-   for(i in names(Out)){
-      TEMP <- sapply(Out[[i]][["MainDetails"]], class)
-      Classes[[i]] <- data.frame(Detail = names(TEMP),
-                                 Class = as.character(TEMP),
-                                 File = i)
-      rm(TEMP)
-   }
-   
-   Classes <- bind_rows(Classes) %>% 
-      mutate(Class = ifelse(Class == "logical", NA, Class)) %>% 
-      group_by(Detail) %>% 
-      summarize(Problem = length(sort(unique(Class))) > 1) %>% 
-      filter(Problem)
-   
-   for(i in names(Out)){
-      Out[[i]][["MainDetails"]] <- Out[[i]][["MainDetails"]] %>% 
-         mutate(across(.cols = Classes$Detail, 
-                       .fns = as.character))
+   # If MyDeets was length 0, which will happen if there are no new simulations
+   # to extract, then skip the class check b/c it won't work.
+   if(length(MyDeets) > 0){
+      # Tried EVERYTHING I COULD THINK OF to avoid doing this next bit as multiple
+      # loops, but NOTHING worked.
+      Classes <- list()
+      
+      for(i in names(Out)){
+         TEMP <- sapply(Out[[i]][["MainDetails"]], class)
+         Classes[[i]] <- data.frame(Detail = names(TEMP),
+                                    Class = as.character(TEMP),
+                                    File = i)
+         rm(TEMP)
+      }
+      
+      Classes <- bind_rows(Classes) %>% 
+         mutate(Class = ifelse(Class == "logical", NA, Class)) %>% 
+         group_by(Detail) %>% 
+         summarize(Problem = length(sort(unique(Class))) > 1) %>% 
+         filter(Problem)
+      
+      for(i in names(Out)){
+         Out[[i]][["MainDetails"]] <- Out[[i]][["MainDetails"]] %>% 
+            mutate(across(.cols = Classes$Detail, 
+                          .fns = as.character))
+      }
    }
    
    Out <- Out %>% list_transpose() %>% 

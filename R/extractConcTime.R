@@ -524,7 +524,7 @@ extractConcTime <- function(sim_data_file,
    for(cmpd in compoundToExtract){
       
       if(fromMultFunction){
-         message(paste("Extracting data for compound ID =", cmpd))
+         message(paste("          for compound ID =", cmpd))
       }
       
       sim_data[[cmpd]] <- list() 
