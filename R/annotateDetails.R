@@ -925,7 +925,9 @@ annotateDetails <- function(existing_exp_details,
                                  "CustomDosing" = any(complete.cases(Dose)), 
                                  "ConcDependent_fup" = any(complete.cases(fup)), 
                                  "ConcDependent_BP" = any(complete.cases(BP)),  
-                                 "pH_dependent_solubility" = any(complete.cases(pH)))) %>% 
+                                 "pH_dependent_solubility" = any(complete.cases(pH)), 
+                                 "DissolutionProfiles" = TRUE, 
+                                 "ReleaseProfiles" = TRUE)) %>% 
          filter(Keep == TRUE) %>% 
          pull(CompoundID) %>% unique() %>% as.character()
       
@@ -1097,7 +1099,7 @@ annotateDetails <- function(existing_exp_details,
                                      "pH_dependent_solubility" = "All files have this solubility for this compound")
                   
                   
-                  names(DF)[names(DF) == UniqueVal] <- All_name
+                  names(DF)[names(DF) == "UniqueVal"] <- All_name
                   
                } else {
                   DF <- DF %>% 
@@ -1112,7 +1114,7 @@ annotateDetails <- function(existing_exp_details,
                                      "ConcDependent_BP" = "All files have this B/P for this compound ID and compound", 
                                      "pH_dependent_solubility" = "All files have this solubility for this compound ID and compound")
                   
-                  names(DF)[names(DF) == UniqueVal] <- All_name
+                  names(DF)[names(DF) == "UniqueVal"] <- All_name
                }
             } else {
                
@@ -1123,7 +1125,7 @@ annotateDetails <- function(existing_exp_details,
                                   "ConcDependent_BP" = "All files have this B/P for this compound ID", 
                                   "pH_dependent_solubility" = "All files have this solubility for this compound ID")
                
-               names(DF)[names(DF) == UniqueVal] <- All_name
+               names(DF)[names(DF) == "UniqueVal"] <- All_name
                
             }
          } 
@@ -1171,6 +1173,8 @@ annotateDetails <- function(existing_exp_details,
                                        (is.na(DF[ , NontempFiles[i]]) & 
                                            complete.cases(DF[, TSim]))))
             }
+         } else {
+            Diffs <- list()
          }
          
       } else {
