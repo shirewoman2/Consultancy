@@ -149,15 +149,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # If they didn't include ".xlsx" at the end, add that.
    sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_files), ".xlsx")
    
-   # Checking for file name issues
-   CheckFileNames <- check_file_name(sim_data_files)
-   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
-   if(length(BadFileNames)> 0){
-      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
-      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"), call. = FALSE)
-   }
-   
    # Making sure that all the files exist before attempting to pull data
    if(any(file.exists(sim_data_files) == FALSE)){
       MissingSimFiles <- sim_data_files[
@@ -222,20 +213,36 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    }
    
    Out <- c(list(existing_exp_details), MyDeets)
+   # Retaining only files that were simulations.
+   Out <- Out[which(sapply(Out, \(x) all(is.null(names(x))) == FALSE))]
    Out <- Out[which(sapply(Out, FUN = function(x) all(x != "none")))]
    
-   # Binding like elements in the list with like
-   bind_details <- function(listname){
-      sub_out <- data.table::rbindlist(
-         map_depth(.x = Out, 
-                   .depth = 1,
-                   .f = listname), 
-         fill = TRUE) %>% 
-         as.data.frame()
+   # Tried EVERYTHING I COULD THINK OF to avoid doing this next bit as multiple
+   # loops, but NOTHING worked.
+   Classes <- list()
+   
+   for(i in names(Out)){
+      TEMP <- sapply(Out[[i]][["MainDetails"]], class)
+      Classes[[i]] <- data.frame(Detail = names(TEMP),
+                                 Class = as.character(TEMP),
+                                 File = i)
+      rm(TEMP)
    }
    
-   Out <- map(ExpDetailListItems, .f = bind_details)
-   names(Out) <- ExpDetailListItems
+   Classes <- bind_rows(Classes) %>% 
+      mutate(Class = ifelse(Class == "logical", NA, Class)) %>% 
+      group_by(Detail) %>% 
+      summarize(Problem = length(sort(unique(Class))) > 1) %>% 
+      filter(Problem)
+   
+   for(i in names(Out)){
+      Out[[i]][["MainDetails"]] <- Out[[i]][["MainDetails"]] %>% 
+         mutate(across(.cols = Classes$Detail, 
+                       .fns = as.character))
+   }
+   
+   Out <- Out %>% list_transpose() %>% 
+      map(.f = bind_rows) 
    
    if(length(Out) == 0 | nrow(Out$MainDetails) == 0){
       stop("It was not possible to extract any simulation experimental details.")

@@ -310,16 +310,6 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
       sim_data_file_pairs$sheet_PKparameters_denom <- sheet_PKparameters_denom
    }
    
-   # Checking for file name issues
-   CheckFileNames <- check_file_name(c(sim_data_file_pairs$Numerator, 
-                                       sim_data_file_pairs$Denominator))
-   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
-   if(length(BadFileNames)> 0){
-      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
-      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"), call. = FALSE)
-   }
-   
    MyTable <- list()
    QC <- list()
    ForestInfo <- list()

@@ -488,15 +488,6 @@ pksummary_mult <- function(sim_data_files = NA,
       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
    }
    
-   # Checking for file name issues
-   CheckFileNames <- check_file_name(sim_data_files)
-   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
-   if(length(BadFileNames)> 0){
-      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
-      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"), call. = FALSE)
-   }
-   
    ## Read obs data --------------------------------------------------------
    # Read in the observed_PK data if it's not already a data.frame. Note that
    # the class of observed_PK will be logical if left as NA.
