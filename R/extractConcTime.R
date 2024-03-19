@@ -199,8 +199,9 @@ extractConcTime <- function(sim_data_file,
    BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
    if(length(BadFileNames)> 0){
       BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
-      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+      warning(paste0("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+                     str_c(paste0("     ", BadFileNames), collapse = "\n"), "\n"),
+              call. = FALSE)
    }
    
    # If they used the American spelling of feces, change to the British version
@@ -523,7 +524,7 @@ extractConcTime <- function(sim_data_file,
    for(cmpd in compoundToExtract){
       
       if(fromMultFunction){
-         message(paste("Extracting data for compound ID =", cmpd))
+         message(paste("          for compound ID =", cmpd))
       }
       
       sim_data[[cmpd]] <- list() 

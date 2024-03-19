@@ -53,8 +53,9 @@ extractFmFe <- function(sim_data_file,
    BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
    if(length(BadFileNames)> 0){
       BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
-      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"))
+      warning(paste0("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+                     str_c(paste0("     ", BadFileNames), collapse = "\n"), "\n"),
+              call. = FALSE)
    }
    
    if(any(c(length(returnAggregateOrIndiv) < 1,

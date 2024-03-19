@@ -14,13 +14,13 @@ annotateDetails(
   simulator_section = NA,
   detail_set = "all",
   find_matching_details = NA,
-  filename_text = NA,
   show_compound_col = TRUE,
   omit_all_missing = TRUE,
   file_order = NA,
   return_list = FALSE,
   save_output = NA,
-  output_tab_name = "Simulation experimental details"
+  output_tab_name = "Simulation experimental details",
+  filename_text = NA
 )
 }
 \arguments{
@@ -42,7 +42,8 @@ information on a specific compound, we will assume what what you care about
 is the set of parameters used for that compound and not whether that
 compound was the substrate or the inhibitor. This will change the output
 somewhat because we won't include the column "CompoundID" and we will
-concatenate all the possible compound names in the column "Compound".}
+concatenate all the possible compound names in the column "Compound". Try
+this out and you'll see what we mean.}
 
 \item{template_sim}{optionally include a specific file name -- it must be one
 of the files included in the object you supply for
@@ -59,10 +60,22 @@ sensitive), and set \code{show_compound_col = FALSE}. This will result in a
 much clearer Excel file.}
 
 \item{sims_to_include}{optionally specify which simulation files you'd like
-to include in the annotated output. Must be a character vector of the file
-names \emph{exactly} as they appear in the column "File" of the
-"MainDetails" item in \code{existing_exp_details}. Leave as default NA to
-get all the simulations included in \code{existing_exp_details}.}
+  to include in the annotated output. Acceptable input:
+
+  \describe{\item{NA (default)}{get all the simulations included in
+  \code{existing_exp_details}}
+
+  \item{a character vector of the file names you want}{The items in the character
+  vector must \emph{exactly} match file names in the column "File" of the
+  "MainDetails" item in \code{existing_exp_details}, including the ".xlsx"
+  file extension}
+
+  \item{a regular expression}{This will include in the output only files
+  that match the regular expression. This must have length = 1, and it IS 
+  case sensitive. For example, say you only want to look at development or 
+  verification simulations and you included "dev" or "ver" in those file
+  names, respectively. Here is how you could specify that (the verical pipe |
+  means "or" for regular expressions): \code{sim_to_include = "dev|ver"}}}}
 
 \item{show_only_diff_from_template}{TRUE or FALSE (default) to show only the
 details that differ from the template simulation, which reduces the number
@@ -76,14 +89,10 @@ sections from which to find simulation experimental details and then return
 "Population", or "Trial Design". Not case sensitive. If you want more than
 one, enclose them with \code{c(...)}}
 
-\item{detail_set}{optionally supply a set of details to return \emph{only}
-  those details. Options are the same as the ones listed as possibilities for
-  \code{exp_details} for \code{\link{extractExpDetails}} or
-  \code{\link{extractExpDetails_mult}}: \describe{
+\item{detail_set}{optionally supply a set of details and this will return
+  \emph{only} those details. Options: \describe{
 
-  \item{"all"}{all possible details (default). If you select this option, you will also
-  get additional tabs in the output Excel file for any custom dosing regimens
-  and any drug-release profiles.}
+  \item{"all"}{all possible details (default)}
 
   \item{"Summary tab"}{details available from the "Summary tab"}
 
@@ -104,6 +113,27 @@ one, enclose them with \code{c(...)}}
  \item{"lactation"}{details from the "Input Sheet" tab that pertain to
  lactation such as the milk-to-plasma ratio and whether a breast
  perfusion-limited model was used.}
+
+ \item{"CustomDosing" ("custom dosing" is also ok)}{custom-dosing
+ information. This will be on a tab named "CustomDosing" unless you specify
+ a tab name you want.}
+
+ \item{"DissolutionProfiles" ("dissolution profiles" is also ok)}{drug-dissolution
+ profiles. This will be on a tab named "DissolutionProfiles" unless you specify
+ a tab name you want.}
+
+ \item{"ReleaseProfiles" ("release profiles" is also ok)}{drug-release
+ profiles This will be on a tab named "ReleaseProfiles" unless you specify
+ a tab name you want.}
+
+ \item{"ConcDependent_fup"}{concentration-dependent fu,p. This will be on a
+ tab named "ConcDependent_fup" unless you specify a tab name you want.}
+
+ \item{"ConcDependent_BP"}{concentration-dependent B/P. This will be on a
+ tab named "ConcDependent_BP" unless you specify a tab name you want.}
+
+ \item{"pH_dependent_solubility"}{pH-dependent drug solubility. This will be on a
+ tab named "pH_dependent_solubility" unless you specify a tab name you want.}
 
   \item{a string of the specific details you want, each in quotes and
   encapsulated with \code{c(...)},}{For a complete list of possibilities,
@@ -131,14 +161,6 @@ one, enclose them with \code{c(...)}}
   somewhere in the name, include "CYP3A", and then end with "sub" (for
   "substrate"). Case sensitive.}
 
-\item{filename_text}{optionally specify a string of text to use for looking
-at only a subset of files. Standard regular expressions are acceptable; if
-you're unfamiliar with them, please see the notes on for the
-\code{find_matching_details} argument. For example, say you only want to
-look at development or verification simulations and you included "dev" or
-"ver" in those file names. Here is how you could specify that:
-\code{filename_text = "dev|ver"}}
-
 \item{show_compound_col}{TRUE (default), FALSE, or "concatenate" for whether
 to include in the results the column "Compound", which is the compound's
 specific name in each simulation. Why would you ever omit this? If you have
@@ -150,8 +172,8 @@ one row and the same Ki value for "Drug X" will be on a separate row. Try
 setting this to TRUE when you have similarly named compounds that really
 should be compared and see how that compares to the default. If you set
 this to "concatenate", you'll get all the possible compound names together;
-for example, you might see "DrugX, Drug X, or Drug X - reduced Ki" listed
-as the compound.}
+in the example we just gave, you would see "DrugX, Drug X, or Drug X -
+reduced Ki" listed as the compound.}
 
 \item{omit_all_missing}{TRUE (default) or FALSE for whether to omit a detail
 if the values are NA for all files}
@@ -183,6 +205,9 @@ this time using the detail set "Trial design" and naming this second tab
 accordingly, and the result will be a single Excel file named according to
 what you specified with \code{save_output} with one tab for Simcyp inputs
 and one tab for the trial design parameters.}
+
+\item{filename_text}{SOON TO BE DEPRECATED optionally specify a string of
+text to use for looking at only a subset of files.}
 }
 \value{
 Returns a data.frame of simulation experimental details including the

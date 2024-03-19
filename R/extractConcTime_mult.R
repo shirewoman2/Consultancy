@@ -237,15 +237,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
       compoundsToExtract <- sys.call()$compoundToExtract
    }
    
-   # Checking for file name issues
-   CheckFileNames <- check_file_name(sim_data_files)
-   BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
-   if(length(BadFileNames)> 0){
-      BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
-      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"))
-   }
-   
    compoundsToExtract <- tolower(compoundsToExtract)
    
    MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
@@ -708,7 +699,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
       # sheets.
       for(j in tissues){
          
-         message(paste("Extracting data for tissue =", j))
+         message(paste("     for tissue =", j))
          # Depending on both the tissue AND which compound the user
          # requests, that could be on multiple sheets or on a single
          # sheet. Figuring out which sheet to read.
