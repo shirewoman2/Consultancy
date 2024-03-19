@@ -212,6 +212,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                         exp_details = exp_details) 
    }
    
+   MyDeets <- MyDeets[which(sapply(MyDeets, \(x) length(x) > 0))]
    Out <- c(list(existing_exp_details), MyDeets)
    # Retaining only files that were simulations.
    Out <- Out[which(sapply(Out, \(x) all(is.null(names(x))) == FALSE))]
