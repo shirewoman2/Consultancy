@@ -41,15 +41,15 @@
 #'   \describe{\item{NA (default)}{get all the simulations included in
 #'   \code{existing_exp_details}}
 #'
-#'   \item{a character vector of the file names you want}{The items in the character 
-#'   vector must \emph{exactly} match file names in the column "File" of the 
-#'   "MainDetails" item in \code{existing_exp_details}, including the ".xlsx" 
+#'   \item{a character vector of the file names you want}{The items in the character
+#'   vector must \emph{exactly} match file names in the column "File" of the
+#'   "MainDetails" item in \code{existing_exp_details}, including the ".xlsx"
 #'   file extension}
 #'
-#'   \item{a regular expression}{This will include in the output only files 
-#'   that match the regular expression. (This must have length = 1.) For 
-#'   example, say you only want to look at development or verification 
-#'   simulations and you included "dev" or "ver" in those file
+#'   \item{a regular expression}{This will include in the output only files
+#'   that match the regular expression. This must have length = 1, and it IS 
+#'   case sensitive. For example, say you only want to look at development or 
+#'   verification simulations and you included "dev" or "ver" in those file
 #'   names, respectively. Here is how you could specify that (the verical pipe |
 #'   means "or" for regular expressions): \code{sim_to_include = "dev|ver"}}}
 #' @param show_only_diff_from_template TRUE or FALSE (default) to show only the
@@ -355,8 +355,9 @@ annotateDetails <- function(existing_exp_details,
    BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]
    if(length(BadFileNames)> 0){
       BadFileNames <- paste0(names(BadFileNames), ": ", BadFileNames)
-      warning("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
-              str_c(paste0("     ", BadFileNames), collapse = "\n"), call. = FALSE)
+      warning(paste0("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+                     str_c(paste0("     ", BadFileNames), collapse = "\n"), "\n"),
+              call. = FALSE)
    }
    
    if("Substrate" %in% names(existing_exp_details$MainDetails) == FALSE & 
@@ -632,7 +633,7 @@ annotateDetails <- function(existing_exp_details,
       } else {
          DF <- existing_exp_details[[item]]
          
-         if(nrow(DF) == 0){return(data.frame())}
+         if(is.null(DF) || nrow(DF) == 0){return(data.frame())}
          
          suppressMessages(
             DF <- left_join(DF, CompoundNames)
@@ -708,8 +709,6 @@ annotateDetails <- function(existing_exp_details,
                       Detail = sub("_sub$|_inhib$|_met1$|_met2$|_secmet$|_inhib2$|_inhib1met$", 
                                    "", Detail))
          }
-         
-         show_compound_col <- "concatenate" # Does this make any different for non MainDetails items? 
       }
       
       ### simulator_section --------------------------------------------------
@@ -1476,14 +1475,14 @@ annotateDetails <- function(existing_exp_details,
                
             } else if(item == "DissolutionProfiles"){ 
                
-               suppressMessages(
+               suppressMessages(suppressWarnings(
                   plot(dissolution_profile_plot(existing_exp_details, 
                                                 colorBy_column = File, 
                                                 line_transparency = 1/(NumFiles * 2), 
                                                 facet1_column = Compound) +
                           ggtitle("Dissolution-profile plot", 
                                   subtitle = "If all simulations had the same values, points will overlap perfectly."))
-               )
+               ))
                
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
@@ -1501,14 +1500,14 @@ annotateDetails <- function(existing_exp_details,
                
             } else if(i == "ReleaseProfiles"){ 
                
-               suppressMessages(
+               suppressMessages(suppressWarnings(
                   plot(release_profile_plot(existing_exp_details, 
                                             colorBy_column = File, 
                                             line_transparency = 1/(NumFiles * 2), 
                                             facet1_column = Compound) +
                           ggtitle("Release-profile plot", 
                                   subtitle = "If all simulations had the same values, points will overlap perfectly."))
-               )
+               ))
                
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
@@ -1530,10 +1529,12 @@ annotateDetails <- function(existing_exp_details,
          }
       } # end subfun for saving xlsx
       
-      # Determining which items we need to save. 
-      if(any(complete.cases(detail_set)) == FALSE |
-         (any(complete.cases(detail_set)) & 
-          any(detail_set == "all"))){
+      # Determining which items we need to save. Write everything when they have
+      # not done any filtering by detail_set, simulator_section, or
+      # find_matching_details.
+      if(any(complete.cases(c(simulator_section, 
+                              find_matching_details))) == FALSE &
+         (any(complete.cases(detail_set)) & any(detail_set == "all"))){
          ToWrite <- names(existing_exp_details)[
             sapply(existing_exp_details, is.null) == FALSE]
          ToWrite <- names(existing_exp_details[ToWrite])[
@@ -1543,7 +1544,7 @@ annotateDetails <- function(existing_exp_details,
             OutputTabs <- ToWrite
             OutputTabs["MainDetails"] <- output_tab_name
          } else {
-            OutputTabs <- paste0(output_tab_name, " - ", ToWrite)
+            OutputTabs <- paste0(output_tab_name, "-", ToWrite)
          }
          
       } else {

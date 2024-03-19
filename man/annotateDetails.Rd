@@ -65,15 +65,15 @@ much clearer Excel file.}
   \describe{\item{NA (default)}{get all the simulations included in
   \code{existing_exp_details}}
 
-  \item{a character vector of the file names you want}{The items in the character 
-  vector must \emph{exactly} match file names in the column "File" of the 
-  "MainDetails" item in \code{existing_exp_details}, including the ".xlsx" 
+  \item{a character vector of the file names you want}{The items in the character
+  vector must \emph{exactly} match file names in the column "File" of the
+  "MainDetails" item in \code{existing_exp_details}, including the ".xlsx"
   file extension}
 
-  \item{a regular expression}{This will include in the output only files 
-  that match the regular expression. (This must have length = 1.) For 
-  example, say you only want to look at development or verification 
-  simulations and you included "dev" or "ver" in those file
+  \item{a regular expression}{This will include in the output only files
+  that match the regular expression. This must have length = 1, and it IS 
+  case sensitive. For example, say you only want to look at development or 
+  verification simulations and you included "dev" or "ver" in those file
   names, respectively. Here is how you could specify that (the verical pipe |
   means "or" for regular expressions): \code{sim_to_include = "dev|ver"}}}}
 
