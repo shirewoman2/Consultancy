@@ -1364,7 +1364,9 @@ annotateDetails <- function(existing_exp_details,
                   openxlsx::freezePane(wb = WB,
                                        sheet = output_tab_name,
                                        firstActiveRow = 2,
-                                       firstActiveCol = 8)
+                                       firstActiveCol =  which(
+                                          str_detect(names(Out[[item]][["DF"]]),
+                                                     "TEMPLATE|^All files")) + 1)
                   
                } else {
                   openxlsx::freezePane(wb = WB,
