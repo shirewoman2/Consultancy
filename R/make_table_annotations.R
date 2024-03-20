@@ -82,11 +82,12 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                 "secondary metabolite" = "DoseRoute_sub",
                                 "inhibitor 1" = "DoseRoute_inhib",
                                 "inhibitor 2" = "DoseRoute_inhib2",
-                                "inhibitor 1 metabolite" = "DoseRoute_inhib1")]]
+                                "inhibitor 1 metabolite" = "DoseRoute_inhib")]]
    MyDoseRoute <- switch(MyDoseRoute, 
                          "Oral" = "oral", 
                          "IV" = "IV", 
-                         "Inhaled" = "inhaled")
+                         "Inhaled" = "inhaled", 
+                         "custom dosing" = "**CUSTOM DOSING - CHECK ADMINISTRATION ROUTE**")
    
    MyDose <- switch(MyCompoundID, 
                     "substrate" = "Dose_sub",
@@ -96,6 +97,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                     "inhibitor 1" = "Dose_inhib",
                     "inhibitor 2" = "Dose_inhib2",
                     "inhibitor 1 metabolite" = "Dose_inhib")
+   MyDose <- sub("custom dosing", "**CUSTOM DOSING**", MyDose)
    
    if(class(prettify_compound_names) == "logical" &&
       # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
@@ -144,11 +146,11 @@ make_table_annotations <- function(MyPKResults, # only PK table
    ## Info on any perpetrators included ---------------------------------
    
    AllPerpetrators <- c("inhibitor 1" = ifelse("Inhibitor1" %in% names(Deets), 
-                                            Deets$Inhibitor1, NA), 
-                     "inhibitor 2" = ifelse("Inhibitor2" %in% names(Deets), 
-                                            Deets$Inhibitor2, NA), 
-                     "inhibitor 1 metabolite" = ifelse("Inhibitor1Metabolite" %in% names(Deets), 
-                                                       Deets$Inhibitor1, NA))
+                                               Deets$Inhibitor1, NA), 
+                        "inhibitor 2" = ifelse("Inhibitor2" %in% names(Deets), 
+                                               Deets$Inhibitor2, NA), 
+                        "inhibitor 1 metabolite" = ifelse("Inhibitor1Metabolite" %in% names(Deets), 
+                                                          Deets$Inhibitor1, NA))
    AllPerpetrators <- AllPerpetrators[complete.cases(AllPerpetrators)]
    
    MyPerpetrator <- determine_myperpetrator(Deets, prettify_compound_names)
@@ -212,14 +214,16 @@ make_table_annotations <- function(MyPKResults, # only PK table
                       
                       "no dose num included" = paste("the first and/or multiple", 
                                                      MyDoseRoute, "doses")
-                      )
+   )
    
    FigText3 <- ifelse(
       MyPerpetrator != "none" & 
          (MyCompoundID %in% c("inhibitor 1", "inhibitor 2",
                               "inhibitor 1 metabolite") == FALSE |
              length(setdiff(names(AllPerpetrators), MyCompoundID)) > 0),
-      paste(" with or without", Deets$Dose_inhib, "mg",
+      paste(" with or without", 
+            sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
+            "mg",
             MyPerpetrator, DoseFreq_inhib),
       "")
    
@@ -228,7 +232,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
                      MeanType, " mean ", 
                      str_comma(tissue), " PK parameters for ",
                      MyCompound, " after ", FigText2, " of ",
-                     paste(Deets[[MyDose]], "mg", MyDosedCompound), 
+                     paste(sub("custom dosing", "**CUSTOM DOSING**", Deets[[MyDose]]), 
+                           "mg", MyDosedCompound), 
                      FigText3, " in ", 
                      tidyPop(Deets$Population)$Population, ".*")
    
