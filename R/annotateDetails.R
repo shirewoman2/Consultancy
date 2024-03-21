@@ -1361,10 +1361,20 @@ annotateDetails <- function(existing_exp_details,
                                         str_detect(names(Out[[item]][["DF"]]),
                                                    "Note")))
                   
+                  UnfrozCol1 <- which(
+                     str_detect(names(Out[[item]][["DF"]]),
+                                "TEMPLATE|^All files")) + 1
+                  UnfrozCol1 <- UnfrozCol1[1]
+                  # Most of the time, column 8 should be the 1st active column,
+                  # so set that here. Also, the only time we won't have a value
+                  # here is if there was only 1 simulation, so which column is
+                  # frozen isn't that important.
+                  UnfrozCol1 <- ifelse(is.na(UnfrozCol1), 8, UnfrozCol1)
+                  
                   openxlsx::freezePane(wb = WB,
                                        sheet = output_tab_name,
                                        firstActiveRow = 2,
-                                       firstActiveCol = 8)
+                                       firstActiveCol =  UnfrozCol1)
                   
                } else {
                   openxlsx::freezePane(wb = WB,
@@ -1542,9 +1552,11 @@ annotateDetails <- function(existing_exp_details,
          
          if(output_tab_name == "Simulation experimental details"){
             OutputTabs <- ToWrite
+            names(OutputTabs) <- ToWrite
             OutputTabs["MainDetails"] <- output_tab_name
          } else {
             OutputTabs <- paste0(output_tab_name, "-", ToWrite)
+            names(OutputTabs) <- ToWrite
          }
          
       } else {
@@ -1557,16 +1569,18 @@ annotateDetails <- function(existing_exp_details,
          
          if(length(ToWrite) > 1){
             if(output_tab_name == "Simulation experimental details"){
+               OutputTabs <- ToWrite
+               names(OutputTabs) <- ToWrite
                OutputTabs["MainDetails"] <- output_tab_name
             } else {
                OutputTabs <- paste(output_tab_name, "-", ToWrite)
+               names(OutputTabs) <- ToWrite
             }
          } else {
             OutputTabs <- output_tab_name
+            names(OutputTabs) <- ToWrite
          }
       }
-      
-      names(OutputTabs) <- ToWrite
       
       for(i in ToWrite){
          write_subfun(item = i, 

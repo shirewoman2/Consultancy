@@ -629,33 +629,34 @@ extractPK <- function(sim_data_file,
    
    # !!! IMPORTANT!!! If it was a custom-dosing regimen, then any parameters
    # that are not dose 1 parameters are not necessarily in their usual
-   # locations! Do NOT pull last-dose parameters for a custom-dosing simulation
-   # UNLESS the user has specified the sheet to use! Giving a warning about
-   # that.
-   if(((compoundToExtract %in% c("substrate", "primary metabolite 1", 
-                                 "primary metabolite 2", "secondary metabolite") & 
-        is.null(Deets$DoseInt_sub) == FALSE && 
-        (complete.cases(Deets$DoseInt_sub) && Deets$DoseInt_sub == "custom dosing")) |
-       
-       (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &
-        is.null(Deets$DoseInt_inhib) == FALSE && 
-        complete.cases(Deets$DoseInt_inhib) &&
-        Deets$DoseInt_inhib == "custom dosing") |
-       
-       (compoundToExtract == "inhibitor 2" & 
-        is.null(Deets$DoseInt_inhib2) == FALSE && 
-        complete.cases(Deets$DoseInt_inhib2) &&
-        Deets$DoseInt_inhib2 == "custom dosing")) &
-      
-      any(str_detect(PKparameters, "_last")) & all(is.na(sheet))){
-      warning(paste0("The file `",
-                     sim_data_file,
-                     "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.\nWe cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet`."), 
-              call. = FALSE)
-      
-      PKparamDF <- PKparamDF %>% 
-         filter(!str_detect(PKparameter, "_last"))
-   }
+   # locations! Previously, we did NOT report any PK for that scenario. Now, we
+   # check that the dose interval and the AUC interval match, so this SHOULD be
+   # ok. No longer removing this info. 
+   
+   # if(((compoundToExtract %in% c("substrate", "primary metabolite 1", 
+   #                               "primary metabolite 2", "secondary metabolite") & 
+   #      is.null(Deets$DoseInt_sub) == FALSE && 
+   #      (complete.cases(Deets$DoseInt_sub) && Deets$DoseInt_sub == "custom dosing")) |
+   #     
+   #     (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &
+   #      is.null(Deets$DoseInt_inhib) == FALSE && 
+   #      complete.cases(Deets$DoseInt_inhib) &&
+   #      Deets$DoseInt_inhib == "custom dosing") |
+   #     
+   #     (compoundToExtract == "inhibitor 2" & 
+   #      is.null(Deets$DoseInt_inhib2) == FALSE && 
+   #      complete.cases(Deets$DoseInt_inhib2) &&
+   #      Deets$DoseInt_inhib2 == "custom dosing")) &
+   #    
+   #    any(str_detect(PKparameters, "_last")) & all(is.na(sheet))){
+   #    warning(paste0("The file `",
+   #                   sim_data_file,
+   #                   "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.\nWe cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet`."), 
+   #            call. = FALSE)
+   #    
+   #    PKparamDF <- PKparamDF %>% 
+   #       filter(!str_detect(PKparameter, "_last"))
+   # }
    
    # If it was a multiple-dose regimen, then the AUC tab will not include
    # certain parameters that WILL be able to be pulled from the AUC0 tab. NOTE:
