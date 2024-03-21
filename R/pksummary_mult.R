@@ -724,6 +724,18 @@ pksummary_mult <- function(sim_data_files = NA,
          compoundsToExtract <- intersect(compoundsToExtract, AllPossCompounds)
       }
       
+      # Discovery simulations have only 1 tissue. Need to adjust for that. 
+      if(Deets$SimulatorUsed == "Simcyp Discovery"){
+         if("PKTissue_Discovery" %in% names(Deets) == FALSE){
+            Deets <- extractExpDetails(sim_data_file = i, 
+                                       exp_details = "Summary and Input")
+            Deets <- Deets[["MainDetails"]]
+         }
+         PossTissues <- Deets$PKTissue_Discovery
+      } else {
+         PossTissues <- tissues
+      }
+      
       for(j in compoundsToExtract){
          message(paste("     for compound =", j))
          
@@ -732,7 +744,7 @@ pksummary_mult <- function(sim_data_files = NA,
          OutQC[[i]][[j]] <- list()
          FD[[i]][[j]] <- list()
          
-         for(k in tissues){
+         for(k in PossTissues){
             if(exists("observed_PKDF", inherits = FALSE) &&
                i %in% observed_PKDF$File){ 
                ObsPK_temp <- observed_PKDF %>% filter(File == i)
@@ -837,10 +849,13 @@ pksummary_mult <- function(sim_data_files = NA,
          FD[[i]][[j]] <- bind_rows(FD[[i]][[j]])
       }
       
-      MyPKResults[[i]] <- bind_rows(MyPKResults[[i]])
+      MyPKResults[[i]] <- bind_rows(MyPKResults[[i]][
+         which(sapply(MyPKResults[[i]], nrow) > 0)])
       PKpulled[[i]] <- bind_rows(PKpulled[[i]])
       OutQC[[i]] <- bind_rows(OutQC[[i]])
       FD[[i]] <- bind_rows(FD[[i]])
+      
+      rm(PossTissues)
       
    }
    

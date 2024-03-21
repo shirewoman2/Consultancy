@@ -218,7 +218,7 @@ or percentile, e.g., "2400 to 2700". Please note that the current
 SimcypConsultancy template lists one row for each of the upper and lower
 values, so this should be set to FALSE for official reports.}
 
-\item{variability_format}{formatting used to indicate the variability When
+\item{variability_format}{formatting used to indicate the variability when
 the variability is concatenated. Options are "to" (default) to get output
 like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
 output like "[X, Y]", or "parentheses" for the eponymous symbol if you're

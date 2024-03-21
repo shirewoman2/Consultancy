@@ -253,7 +253,7 @@
 #'   or percentile, e.g., "2400 to 2700". Please note that the current
 #'   SimcypConsultancy template lists one row for each of the upper and lower
 #'   values, so this should be set to FALSE for official reports.
-#' @param variability_format formatting used to indicate the variability When
+#' @param variability_format formatting used to indicate the variability when
 #'   the variability is concatenated. Options are "to" (default) to get output
 #'   like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
 #'   output like "[X, Y]", or "parentheses" for the eponymous symbol if you're
@@ -1087,6 +1087,12 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    # Changing units if user wants. 
+   if(complete.cases(adjust_conc_units) & is.na(Deets$Units_Cmax)){
+      warning("You requested that we adjust the concentration units, but we can't find what units were used in your simulation. (This is often the case for Discovery simulations in particular.) We won't be able to adjust the concentration units.\n", 
+              call. = FALSE)
+      adjust_conc_units <- NA
+   }
+   
    if(complete.cases(adjust_conc_units)){
       # Only adjusting AUC and Cmax values and not adjusting time portion of
       # units -- only conc.
@@ -1809,15 +1815,19 @@ pksummary_table <- function(sim_data_file = NA,
                                             UnitsToAdd)
       }
       
-      if(complete.cases(adjust_conc_units)){
-         PrettyCol <- gsub(Deets$Units_Cmax,  adjust_conc_units, PrettyCol)
-      }
-      
       # Adjusting units as needed.
-      PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), PrettyCol)
-      PrettyCol <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), PrettyCol)
-      PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
-      PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
+      if("Units_AUC" %in% names(Deets) && complete.cases(Deets$Units_AUC)){
+         PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), PrettyCol)
+      }
+      if("Units_CL" %in% names(Deets) && complete.cases(Deets$Units_CL)){
+         PrettyCol <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), PrettyCol)
+      }
+      if("Units_Cmax" %in% names(Deets) && complete.cases(Deets$Units_Cmax)){
+         PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
+      }
+      if("Units_tmax" %in% names(Deets) && complete.cases(Deets$Units_tmax)){
+         PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
+      }
       PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
       
       MyPerpetrator <- determine_myperpetrator(Deets, prettify_compound_names)

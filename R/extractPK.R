@@ -262,6 +262,16 @@ extractPK <- function(sim_data_file,
       }
    }
    
+   if(Deets$SimulatorUsed == "Simcyp Discovery" & 
+      tissue != Deets$PKTissue_Discovery){
+      warning(paste0("You requested PK for ", 
+                     tissue, 
+                     ", but the tissue included in your Simcyp Discovery file is ", 
+                     Deets$PKTissue_Discovery, ". We cannot return any of the requested PK.\n"), 
+              call. = FALSE)
+      return(list())
+   }
+   
    
    ## Figuring out correct tab names ---------------------------------------
    
@@ -290,11 +300,15 @@ extractPK <- function(sim_data_file,
       "inhibitor 2" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Inh 2\\)$")][1],
       "inhibitor 1 metabolite" = SheetNames[str_detect(SheetNames, "^AUC(_CI|_SD)?\\(Inh 1 Met\\)$")][1])
    
-   if(Deets$Species != "human" & compoundToExtract == "substrate"){
+   if(Deets$SimulatorUsed == "Simcyp Discovery"){
       # If it's from Simcyp Discovery, there's only one AUC sheet and
       # it's either for the only dose in a SD sim or the last dose for
       # a MD sim. Not sure about the regular Simcyp Animal, though. 
-      Tab_AUC <- SheetNames[which(str_detect(SheetNames, "AUC"))]
+      Tab_AUC <- SheetNames[which(str_detect(
+         SheetNames, 
+         paste0("AUC.*", switch(compoundToExtract, 
+                                "substrate" = "Sub\\)", 
+                                "primary metabolite 1" = "Sub Met"))))]
    }
    
    SimV21plus <- as.numeric(str_extract(Deets$SimulatorVersion, "[0-9]{2}")) >= 21
@@ -763,30 +777,37 @@ extractPK <- function(sim_data_file,
       
       # REMOVE the columns for the un-requested tissues ENTIRELY. I think this
       # will be easier to code. -LSh
-      ColStart <- c("plasma" = which(str_detect(t(AUC_xl[1, ]), "CPlasma"))[1], 
-                    "unbound plasma" = which(str_detect(t(AUC_xl[1, ]), "CuPlasma"))[1], 
-                    "blood" = which(str_detect(t(AUC_xl[1, ]), "CBlood"))[1], 
-                    "unbound blood" = which(str_detect(t(AUC_xl[1, ]), "CuBlood"))[1])
-      ColStart <- ColStart[tissue]
-      if(is.na(ColStart[tissue])){
-         # Using "warning" instead of "stop" here b/c I want this to be
-         # able to pass through to other functions.
-         warning(paste0("You requested PK parameters for ", 
-                        tissue, ", but that does not appear to be included in your output, so no PK data can be returned.", 
-                        call. = FALSE))
-         return(list())
-      }
-      
-      if(length(ColStart) > 1){
-         ColEnd <- ColStart
-         ColEnd[1:(length(ColStart)-1)] <- as.numeric(ColStart[2:length(ColStart)] - 1)
-         ColEnd[length(ColStart)] <- which(is.na(t(AUC_xl[3,])))[1] - 1
+      if(Deets$SimulatorUsed == "Simcyp Simulator"){
+         # Discovery files only have one tissue available at a time, so it's not
+         # an issue.
+         
+         ColStart <- switch(tissue, 
+                            "plasma" = which(str_detect(t(AUC_xl[1, ]), "CPlasma"))[1], 
+                            "unbound plasma" = which(str_detect(t(AUC_xl[1, ]), "CuPlasma"))[1], 
+                            "blood" = which(str_detect(t(AUC_xl[1, ]), "CBlood"))[1], 
+                            "unbound blood" = which(str_detect(t(AUC_xl[1, ]), "CuBlood"))[1])
+         if(is.na(ColStart)){
+            # Using "warning" instead of "stop" here b/c I want this to be
+            # able to pass through to other functions.
+            warning(paste0("You requested PK parameters for ", 
+                           tissue, ", but that does not appear to be included in your output, so no PK data can be returned.", 
+                           call. = FALSE))
+            return(list())
+         }
+         
+         if(length(ColStart) > 1){
+            ColEnd <- ColStart
+            ColEnd[1:(length(ColStart)-1)] <- as.numeric(ColStart[2:length(ColStart)] - 1)
+            ColEnd[length(ColStart)] <- which(is.na(t(AUC_xl[3,])))[1] - 1
+         } else {
+            ColEnd <- which(is.na(t(AUC_xl[3,])))[1] - 1
+         }
+         
+         AUC_xl <- AUC_xl[, c(1, 2, ColStart:ColEnd)]
       } else {
-         ColEnd <- which(is.na(t(AUC_xl[3,])))[1] - 1
-         names(ColEnd) <- tissue
+         # Discovery files
+         ColStart <- 3
       }
-      
-      AUC_xl <- AUC_xl[, c(1, 2, ColStart[tissue]:ColEnd[tissue])]
       
       # Finding the aggregate data rows 
       StartRow_agg <- which(AUC_xl$...2 == "Statistics")[1] + 2 # Need to only get the 1st instance b/c people will sometimes copy and paste additional data -- usually obs -- below!

@@ -244,7 +244,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       
       for(i in names(Out)){
          Out[[i]][["MainDetails"]] <- Out[[i]][["MainDetails"]] %>% 
-            mutate(across(.cols = Classes$Detail, 
+            mutate(across(.cols = any_of(Classes$Detail), 
                           .fns = as.character))
       }
    }
