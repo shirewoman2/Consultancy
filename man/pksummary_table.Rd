@@ -28,6 +28,7 @@ pksummary_table(
   variability_format = "to",
   adjust_conc_units = NA,
   include_dose_num = NA,
+  add_header_for_DDI = TRUE,
   rounding = NA,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
@@ -246,6 +247,10 @@ default, if you have data only for the first dose or only for the last
 dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
+
+\item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
+header row to the top of your table denoting when the PK are for baseline,
+with a perpetrator, or are the geometric mean ratios.}
 
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{NA or "Consultancy"}{All output will be rounded according

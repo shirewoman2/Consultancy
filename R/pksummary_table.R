@@ -389,6 +389,9 @@
 #' @param return_PK_pulled TRUE or FALSE (default) for whether to return as a
 #'   list item what PK parameters were pulled. This is used internally for
 #'   writing table headings later.
+#' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
+#'   header row to the top of your table denoting when the PK are for baseline,
+#'   with a perpetrator, or are the geometric mean ratios. 
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -444,6 +447,7 @@ pksummary_table <- function(sim_data_file = NA,
                             variability_format = "to",
                             adjust_conc_units = NA,
                             include_dose_num = NA,
+                            add_header_for_DDI = TRUE, 
                             rounding = NA,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 

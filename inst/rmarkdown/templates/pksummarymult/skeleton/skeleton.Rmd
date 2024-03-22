@@ -185,6 +185,7 @@ if(single_table == FALSE){
    MyPKResults <- MyPKResults[which(lapply(MyPKResults, nrow) > 0)]
    
    for(i in names(MyPKResults)){
+      # assign("ITERATION_STEP", value = i, envir = global_env())
       
       TableSettings <- c(Tissue = length(tissues) > 1, 
                          CompoundID = length(compoundsToExtract) > 1, 

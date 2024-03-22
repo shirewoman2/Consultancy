@@ -326,6 +326,9 @@
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
 #'   If you do specify your own bespoke colors, you'll need to make sure that
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
+#' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
+#'   header row to the top of your table denoting when the PK are for baseline,
+#'   with a perpetrator, or are the geometric mean ratios. 
 #' @param ...
 #'
 #' @return Returns a data.frame with summary PK parameters from multiple
@@ -370,6 +373,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            variability_format = "to",
                            adjust_conc_units = NA, 
                            include_dose_num = NA,
+                           add_header_for_DDI = TRUE, 
                            rounding = NA,
                            prettify_columns = TRUE, 
                            extract_forest_data = FALSE, 
@@ -692,7 +696,8 @@ pksummary_mult <- function(sim_data_files = NA,
       Deets <- existing_exp_details$MainDetails %>% filter(File == i)
       
       # Checking that the file is, indeed, a simulator output file.
-      if(length(Deets) == 0){
+      if(length(Deets) == 0 | 
+         (length(Deets) > 0 && nrow(Deets) == 0)){
          # Using "warning" instead of "stop" here b/c I want this to be able to
          # pass through to other functions and just skip any files that
          # aren't simulator output.

@@ -100,6 +100,7 @@ if("File" %in% names(MyPKResults)){
 formatTable_Simcyp(MyPKResults, 
                    fontsize = fontsize,
                    prettify_columns = TRUE,
+                   perpetrator_name = MyPerpetrator,
                    highlight_so_cutoffs = highlight_so_cutoffs, 
                    highlight_so_colors = highlight_so_colors, 
                    highlight_gmr_colors = highlight_gmr_colors)
