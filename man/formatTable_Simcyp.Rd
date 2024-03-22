@@ -14,6 +14,7 @@ formatTable_Simcyp(
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
   add_header_for_DDI = TRUE,
+  perpetrator_name = "perpetrator",
   prettify_columns = FALSE,
   highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
@@ -86,6 +87,13 @@ alignment of the first column centered}
 \item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
 header row to the top of your table denoting when the PK are for baseline,
 with a perpetrator, or are the geometric mean ratios.}
+
+\item{perpetrator_name}{the name of any perpetrator that is included in a PK
+table. This is only used when \code{add_header_for_DDI} is TRUE. It looks
+for the name of the perpetrator you specify and uses that in the top, extra
+row where the table is labeled as being the PK at baseline, with your
+perpetrator, or GMRs. If we don't know what the perpetrator drug name is,
+it's really hard to do that just right.}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names for any columns with PK parameters. TRUE makes
