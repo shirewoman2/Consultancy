@@ -262,14 +262,20 @@ extractPK <- function(sim_data_file,
       }
    }
    
-   if(Deets$SimulatorUsed == "Simcyp Discovery" && 
-      tissue != Deets$PKTissue_Discovery){
-      warning(paste0("You requested PK for ", 
-                     tissue, 
-                     ", but the tissue included in your Simcyp Discovery file is ", 
-                     Deets$PKTissue_Discovery, ". We cannot return any of the requested PK.\n"), 
-              call. = FALSE)
-      return(list())
+   if(Deets$SimulatorUsed == "Simcyp Discovery"){
+      if("PKTissue_Discovery" %in% names(Deets) == FALSE){
+         Deets <- extractExpDetails(sim_data_file = sim_data_file)
+         Deets <- Deets$MainDetails
+      }
+      
+      if(tissue != Deets$PKTissue_Discovery){
+         warning(paste0("You requested PK for ", 
+                        tissue, 
+                        ", but the tissue included in your Simcyp Discovery file is ", 
+                        Deets$PKTissue_Discovery, ". We cannot return any of the requested PK.\n"), 
+                 call. = FALSE)
+         return(list())
+      }
    }
    
    
