@@ -129,6 +129,15 @@
 #'   table you supply contains a column titled "File", there will already be a
 #'   caption listing the source files; this would add some additional text
 #'   before that.
+#' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
+#'   header row to the top of your table denoting when the PK are for baseline,
+#'   with a perpetrator, or are the geometric mean ratios.
+#' @param perpetrator_name the name of any perpetrator that is included in a PK
+#'   table. This is only used when \code{add_header_for_DDI} is TRUE. It looks
+#'   for the name of the perpetrator you specify and uses that in the top, extra
+#'   row where the table is labeled as being the PK at baseline, with your
+#'   perpetrator, or GMRs. If we don't know what the perpetrator drug name is,
+#'   it's really hard to do that just right.
 #'
 #' @return a formatted table
 #' @export
@@ -206,6 +215,8 @@ formatTable_Simcyp <- function(DF,
                                sort_column, 
                                bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
+                               add_header_for_DDI = TRUE, 
+                               perpetrator_name = "perpetrator", 
                                prettify_columns = FALSE, 
                                highlight_gmr_colors = NA, 
                                highlight_so_cutoffs = NA, 
@@ -367,40 +378,102 @@ formatTable_Simcyp <- function(DF,
    # Main body of function -------------------------------------------------
    
    # Figuring out which columns contain PK data
-   PKregex <- sub("perpetrator", ".", c(AllPKParameters$PKparameter,
-                                        AllPKParameters$PrettifiedNames))
-   PKregex <- str_trim(gsub(" \\(.*\\)|Dose 1|Last dose", "", PKregex))
-   PKregex <- str_c(unique(PKregex), collapse = "|")
+   PKRegex <- c(AllPKParameters$PrettifiedNames, 
+                AllPKParameters$PrettifiedNames_nodosenum)
+   PKRegex <- unique(str_trim(sub("\\(.*\\)", "", PKRegex)))
+   PKRegex <- str_c(PKRegex, collapse = "|")
    PKCols <- which(sapply(names(DF), 
-                          FUN = function(x){str_detect(x, PKregex)}))
+                          FUN = function(x){str_detect(x, PKRegex)}))
    
    if(prettify_columns){
       DF <- prettify_column_names(DF)
    }
    
+   # Check for whether there are any DDI columns b/c will add extra header row
+   # if so later. I have not set this up to replace a specific drug w/that
+   # specific drug name, so will need to return to this.
+   # FIXME 
+   AnyDDI <- any(str_detect(names(DF)[PKCols], " with | ratio")) & 
+      add_header_for_DDI
+   OrigNames <- names(DF)
+   
    FT <- flextable::flextable(DF)
    
-   # Optionally making things bold face
+   ## Adding DDI header row --------------------------------------------------
+   
+   if(AnyDDI){
+      
+      PerpRegex <- paste0(" with perpetrator| ratio|_withInhib|_ratio| with ", 
+                          perpetrator_name)
+      
+      DDIRegex <- c(AllPKParameters$PrettifiedNames[
+         AllPKParameters$AppliesOnlyWhenPerpPresent == TRUE], 
+         AllPKParameters$PrettifiedNames_nodosenum[
+            AllPKParameters$AppliesOnlyWhenPerpPresent == TRUE])
+      DDIRegex <- unique(str_trim(sub("\\(.*\\)", "", DDIRegex)))
+      DDIRegex <- sub("perpetrator", perpetrator_name, DDIRegex)
+      DDIRegex <- str_c(DDIRegex, collapse = "|")
+      
+      DDIcols <- which(sapply(names(DF), 
+                              FUN = function(x){str_detect(x, DDIRegex)}))
+      BLcols <- setdiff(PKCols, DDIcols)
+      
+      RatioCols <- intersect(which(str_detect(OrigNames, "ratio")), 
+                             PKCols)
+      DDIcols <- setdiff(DDIcols, RatioCols)
+      
+      TopRowValues <- OrigNames
+      TopRowValues[BLcols] <- "Baseline"
+      TopRowValues[DDIcols] <- paste("With", perpetrator_name)
+      TopRowValues[RatioCols] <- "GMR"
+      
+      FT <- FT %>% 
+         flextable::delete_part(part = "header") %>% 
+         flextable::add_header_row(values = sub(PerpRegex, "", OrigNames)) %>% 
+         flextable::add_header_row(values = TopRowValues) %>%  
+         flextable::merge_h(part = "header") %>% 
+         flextable::merge_v(part = "header")
+      
+   } else {
+      PerpRegex <- ""
+   }
+   
+   # Optionally making things bold face ---------------------------------------
    if(any(sapply(bold_cells, complete.cases))){
-      for(i in 1:length(bold_cells)){
+      for(cells in 1:length(bold_cells)){
          
-         FT <- FT %>% 
-            flextable::bold(i = switch(paste(is.na(bold_cells[[i]][1]), 
-                                             bold_cells[[i]][1] == 0), 
-                                       "TRUE NA" = NULL, 
-                                       "FALSE TRUE" = 1, # this is when the row should be the only row in the header
-                                       "FALSE FALSE" = bold_cells[[i]][1]), 
-                            j = switch(as.character(is.na(bold_cells[[i]][2])), 
-                                       "TRUE" = NULL, 
-                                       "FALSE" = bold_cells[[i]][2]), 
-                            part = ifelse(complete.cases(bold_cells[[i]][1]) & 
-                                             bold_cells[[i]][1] == 0, 
-                                          "header", "body"))   
+         if(complete.cases(bold_cells[[cells]][1]) &&
+            bold_cells[[cells]][1] == 0){
+            # This is when the header should be bold. NB: User does not have the
+            # ability to make one but not the other header row -- when there
+            # even are two header rows -- bold. Just too complicated to code and
+            # unnecessary.
+            FT <- FT %>% 
+               flextable::bold(part = "header", 
+                               j = switch(as.character(is.na(bold_cells[[cells]][2])), 
+                                          "TRUE" = NULL, 
+                                          "FALSE" = bold_cells[[cells]][2]))
+         } else {
+            # This is when the bold settings apply to the body. Row can be NA or
+            # can be a specific row.
+            BoldRows <- bold_cells[[cells]][1]
+            if(is.na(BoldRows)){BoldRows <- NULL}
+            
+            BoldCols <- bold_cells[[cells]][2]
+            if(is.na(BoldCols)){BoldCols <- NULL}
+            
+            FT <- FT %>% 
+               flextable::bold(part = "body", 
+                               i = BoldRows, 
+                               j = BoldCols) 
+            
+            rm(BoldRows, BoldCols)
+         }
       }
    }
    
+   # center the header row, bg white -----------------------------------------
    FT <- FT %>% 
-      # center the header row
       flextable::align(align = "center", part = "header") %>% 
       
       # make everything have a white background (we'll fill in other shading later)
@@ -419,7 +492,7 @@ formatTable_Simcyp <- function(DF,
                                      "FALSE TRUE" = 2:ncol(DF)))
    }
    
-   # Optionally including shading whenever the shading column changes
+   # Optionally including shading whenever the shading column changes ------------
    if(as_label(shading_column) != "<empty>"){
       
       ShadeCol <- DF %>% pull(!!shading_column)
@@ -464,7 +537,6 @@ formatTable_Simcyp <- function(DF,
             flextable::merge_v(j = mc)
       }
    }
-   
    
    ## Highlight GMRs ---------------------------------------------------------
    
@@ -734,6 +806,8 @@ formatTable_Simcyp <- function(DF,
       flextable::border_remove() %>% 
       flextable::border_inner_v(part = "all", 
                                 border = officer::fp_border(width = 0.5)) %>% 
+      flextable::border_inner_h(part = "header", 
+                                border = officer::fp_border(width = 0.5)) %>% 
       flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
       flextable::hline_bottom(part = "body", 
                               border = officer::fp_border(width = 0.5)) %>% 
@@ -743,7 +817,7 @@ formatTable_Simcyp <- function(DF,
       flextable::set_table_properties(width = 1, layout = "autofit")
    
    # Dealing with subscripts
-   ColNames <- names(DF)
+   ColNames <- sub(PerpRegex, "", OrigNames)
    ColNames <- sub("AUCt( |$)", "AUC~t~ ", ColNames)
    ColNames <- sub("AUCinf( |$)", "AUC~inf~ ", ColNames)
    ColNames <- sub("AUCt$", "AUC~t~", ColNames)
@@ -768,14 +842,15 @@ formatTable_Simcyp <- function(DF,
    ColNames <- str_split(ColNames, pattern = "~", simplify = T)
    
    if(ncol(ColNames) == 3){
-      for(i in which(ColNames[,2] != "")){
+      for(cols in which(ColNames[,2] != "")){
          FT <- FT %>% 
             flextable::compose(part = "header",
-                               j = i,
+                               i = ifelse(AnyDDI, 2, 1),
+                               j = cols,
                                value = flextable::as_paragraph(
-                                  ColNames[i, 1],
-                                  flextable::as_sub(ColNames[i, 2]), 
-                                  ColNames[i, 3]))
+                                  ColNames[cols, 1],
+                                  flextable::as_sub(ColNames[cols, 2]), 
+                                  ColNames[cols, 3]))
       }
    }
    

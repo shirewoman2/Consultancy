@@ -13,6 +13,7 @@ formatTable_Simcyp(
   sort_column,
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
+  add_header_for_DDI = TRUE,
   prettify_columns = FALSE,
   highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
@@ -81,6 +82,10 @@ the examples at the bottom of the help file.}
 
 \item{center_1st_column}{TRUE or FALSE (default) for whether to make the
 alignment of the first column centered}
+
+\item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
+header row to the top of your table denoting when the PK are for baseline,
+with a perpetrator, or are the geometric mean ratios.}
 
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names for any columns with PK parameters. TRUE makes
