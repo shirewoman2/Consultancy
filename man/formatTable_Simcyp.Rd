@@ -13,7 +13,7 @@ formatTable_Simcyp(
   sort_column,
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
-  add_header_for_DDI = TRUE,
+  add_header_for_DDI = FALSE,
   perpetrator_name = "perpetrator",
   prettify_columns = FALSE,
   highlight_gmr_colors = NA,
