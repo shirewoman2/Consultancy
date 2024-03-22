@@ -333,13 +333,21 @@ extractExpDetails <- function(sim_data_file,
          # Tidying up some specific idiosyncracies of simulator output
          Val <- ifelse(complete.cases(Val) & Val == "n/a", NA, Val)
          Val <- ifelse(str_detect(deet, "^Unit"),
-                       gsub("Dose \\(|\\)|CMax \\(|TMax \\(|AUC \\(|CL \\(Dose/AUC\\)\\(|\\(blood\\)",
-                            "", Val), Val)
+                       str_trim(gsub("\\(unbound\\)|\\(blood\\)|\\(unbound blood\\)|Dose \\(|\\)|CMax \\(|TMax \\(|AUC \\(|CL \\(Dose/AUC\\)\\(|\\(blood\\)",
+                                     "", Val)), Val)
          Val <- ifelse(deet %in% c("SimDuration"),
                        as.numeric(Val), Val)
          Val <- ifelse(deet == "SimulatorVersion",
                        str_extract(Val, "Version [12][0-9]"),
                        Val)
+         if(deet == "PKTissue_Discovery"){
+            ConcUnit <- str_extract(Val, "(ng|mg|µg|µM|nM)(/)?(mL|L)?")
+            Val <- case_match(Val, 
+                              paste0("CMax (", ConcUnit, ")") ~ "plasma", 
+                              paste0("CMax (", ConcUnit, ")(blood)") ~ "blood",
+                              paste0("CMax (", ConcUnit, ")(unbound)") ~ "unbound plasma", 
+                              paste0("CMax (", ConcUnit, ")(unbound blood)") ~ "unbound blood")
+         }
          
          return(Val)
       }
@@ -621,6 +629,9 @@ extractExpDetails <- function(sim_data_file,
          # Tidying up some specific idiosyncracies of simulator output
          Val <- ifelse(length(Val) == 0 || 
                           (complete.cases(Val) & Val == "n/a"), NA, Val)
+         Val <- ifelse(str_detect(deet, "^Unit"),
+                       str_trim(gsub("\\(unbound\\)|\\(blood\\)|\\(unbound blood\\)|Dose \\(|\\)|CMax \\(|TMax \\(|AUC \\(|CL \\(Dose/AUC\\)\\(|\\(blood\\)",
+                                     "", Val)), Val)
          
          return(Val)
       }
