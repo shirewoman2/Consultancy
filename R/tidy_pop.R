@@ -60,7 +60,13 @@ tidyPop <- function(input_pop,
       "Renal Impaired_Moderate" = "patients with moderate renal impairment",
       "RenalGFR_less_30" = "patients with renal GFR less than 30",
       "Renal Impaired_Severe" = "patients with severe renal impairment",
-      "Rheumatoid Arthritis" = "rheumatoid arthritis patients")
+      "Rheumatoid Arthritis" = "rheumatoid arthritis patients", 
+      # Discovery populations (really, species)
+      "Beagle" = "beagles", 
+      "HealthyVolunteer" = "healthy volunteers",
+      "Monkey" = "monkeys", 
+      "Mouse" = "mice", 
+      "Rat" = "rats")
    
    TidySteps <- data.frame(Step1 = sub("Sim-", "", input_pop))
    TidySteps$Step2 <- sapply(TidySteps$Step1, function(x) which(str_detect(x, names(PopNiceNames)))[1])
