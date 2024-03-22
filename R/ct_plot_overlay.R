@@ -1966,14 +1966,6 @@ ct_plot_overlay <- function(ct_dataframe,
       ylab <- y_axis_label
    }
    
-   # When the y label is an expression, it tends to be a little too small. Make
-   # it 1.25 * larger. If it's an expression, that also means that it can't be
-   # bold. Make the x axis title not bold as well in that case.
-   if("expression" %in% class(ylab)){
-      A <- A + theme(axis.title.y = element_text(size = A$theme$text$size * 1.25), 
-                     axis.title.x = element_text(face = "plain"))
-   }
-   
    if((class(x_axis_label) == "character" && complete.cases(x_axis_label)) |
       (class(x_axis_label) == "expression" && length(x_axis_label) > 0)){
       xlab <- x_axis_label
@@ -1985,6 +1977,15 @@ ct_plot_overlay <- function(ct_dataframe,
       theme(panel.border = element_rect(color = "black", fill = NA)) + # KEEP THIS
       theme_consultancy(border = border)
    
+   # When the y label is an expression, it tends to be a little too small. Make
+   # it 1.25 * larger. If it's an expression, that also means that it can't be
+   # bold. Make the x axis title not bold as well in that case. !!!!!NB: This
+   # snippet of code must AFTER you have set the theme. Otherwise, the theme
+   # text size is NULL! 
+   if("expression" %in% class(ylab)){
+      A <- A + theme(axis.title.y = element_text(size = A$theme$text$size * 1.25), 
+                     axis.title.x = element_text(face = "plain"))
+   }
    
    ## Faceting -----------------------------------------------------------------
    
@@ -2393,14 +2394,14 @@ ct_plot_overlay <- function(ct_dataframe,
          # However, if they did not include anything for legend_label_linetype
          # but there *is* a column that is mapped to linetype, then they
          # probably do want the title for linetypes on the legend to be the same
-         # as the linetypeBy_column name.
-         A <- A + labs(linetype = as_label(linetypeBy_column), 
-                       shape = as_label(linetypeBy_column))
+         # as the linetype_column name.
+         A <- A + labs(linetype = as_label(linetype_column), 
+                       shape = as_label(linetype_column))
       } 
       
       # None of these conditions are met when 1) they did NOT set anything for
       # the legend_label_linetype, 2) they did not specify any alternative label
-      # for each value in the linetypeBy_column for the legend, and 3) the
+      # for each value in the linetype_column for the legend, and 3) the
       # specified aesthetics do NOT include linetype or linetype.
       
    }
