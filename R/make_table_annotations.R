@@ -50,7 +50,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    # There are some situations where we want to just pass through generic info,
    # so that's why I'm returning things here rather than stopping.
-   if("logical" %in% class(Deets) || nrow(Deets) == 0){
+   if("logical" %in% class(Deets) | 
+      ("data.frame" %in% class(Deets) && nrow(Deets) == 0)){
       return(list(TableHeading = paste0("***Table XXX.*** *Simulated ",
                                         ifelse(Observedincluded, "and observed ", ""),
                                         "PK data*"),
@@ -59,9 +60,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
       
    }
    
-   Deets <- switch(as.character("File" %in% names(as.data.frame(Deets))), 
-                   "TRUE" = as.data.frame(Deets), 
-                   "FALSE" = deannotateDetails(Deets)) %>% 
+   Deets <- harmonize_details(Deets)$MainDetails %>% 
       filter(File == MyFile)
    
    ## General info on MyCompoundID ----------------------------------------
