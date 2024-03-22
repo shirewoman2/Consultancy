@@ -262,7 +262,7 @@ extractPK <- function(sim_data_file,
       }
    }
    
-   if(Deets$SimulatorUsed == "Simcyp Discovery" & 
+   if(Deets$SimulatorUsed == "Simcyp Discovery" && 
       tissue != Deets$PKTissue_Discovery){
       warning(paste0("You requested PK for ", 
                      tissue, 
