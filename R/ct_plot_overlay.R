@@ -821,26 +821,31 @@ ct_plot_overlay <- function(ct_dataframe,
          mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
    }
    
-   # If the color labels don't match the files available, give a warning.
+   # If the color labels don't match the items in the colorBy_column, give a
+   # warning.
    if(as_label(colorBy_column) != "<empty>" && 
       any(complete.cases(color_labels)) && 
       all(names(color_labels) %in% sort(t(unique(
          ct_dataframe[, as_label(colorBy_column)])))) == FALSE){
-      BadLabs <- setdiff(names(color_labels), sort(t(unique(ct_dataframe[, as_label(colorBy_column)]))))
+      
+      BadLabs <- setdiff(names(color_labels), 
+                         sort(t(unique(ct_dataframe[, as_label(colorBy_column)]))))
       
       warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
                      as_label(colorBy_column), 
-                     ". This will mess up the colors on your graph unless that's fixed. Specifically, the following values are not present in the column ",
-                     as_label(colorBy_column), ":\n", 
+                     ". This will mess up the colors and the legend labels on your graph unless that's fixed. Specifically, the following values are not present in the column ",
+                     as_label(colorBy_column), ":\n     ", 
                      str_comma(BadLabs)), 
               call. = FALSE)
       
-      WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
+      WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the items included in\nthe column used for setting the color.", 
                              gsub(" - problem no. 1", "", 
                                   paste(" - problem no.", 
-                                        1:length(unique(ct_dataframe$File)))))
+                                        1:length(unique(ct_dataframe[, as_label(colorBy_column)])))))
+      
       color_labels[which(names(color_labels) %in% BadLabs)] <-
          WarningLabel[1:length(BadLabs)]
+      
       NewNames <- setdiff(sort(t(unique(ct_dataframe[, as_label(colorBy_column)]))),
                           names(color_labels))
       
@@ -856,29 +861,45 @@ ct_plot_overlay <- function(ct_dataframe,
       rm(NewNames, BadLabs, WarningLabel)
    }
    
-   # If the linetype labels don't match the files available, give a warning.
+   # If the linetype labels don't match the items in the linetype_column, give a
+   # warning.
    if(as_label(linetype_column) != "<empty>" && 
       any(complete.cases(linetype_labels)) && 
-      all(names(linetype_labels) %in% unique(ct_dataframe[, as_label(linetype_column)]) == FALSE)){
-      BadLabs <- setdiff(names(linetype_labels), unique(ct_dataframe[, as_label(linetype_column)]))
+      all(names(linetype_labels) %in% sort(t(unique(
+         ct_dataframe[, as_label(linetype_column)])))) == FALSE){
+      
+      BadLabs <- setdiff(names(linetype_labels), 
+                         sort(t(unique(ct_dataframe[, as_label(linetype_column)]))))
       
       warning(paste0("The labels you supplied for `linetype_labels` are not all present in the column ", 
                      as_label(linetype_column), 
-                     ". Specifically, the following values are not present in the column ",
-                     as_label(linetype_column), ": ", 
+                     ". This will mess up the line types and the legend labels on your graph unless that's fixed. Specifically, the following values are not present in the column ",
+                     as_label(linetype_column), ":\n     ", 
                      str_comma(BadLabs)), 
               call. = FALSE)
       
-      WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the file name here", 
-                             gsub(" - problem no. 1", "", paste(" - problem no.", 1:2)))
-      linetype_labels[names(linetype_labels) %in% BadLabs] <- WarningLabel
-      NewNames <- setdiff(
-         unique(ct_dataframe[, as_label(linetype_column)] %>% pull(1) %>% 
-                   as.character()), 
-         names(linetype_labels))
-      NewNames <- NewNames[complete.cases(NewNames)]
-      names(linetype_labels)[which(names(linetype_labels) %in% BadLabs)] <- NewNames
+      WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the items included in\nthe column used for setting the line type.", 
+                             gsub(" - problem no. 1", "", 
+                                  paste(" - problem no.", 
+                                        1:length(unique(ct_dataframe[, as_label(linetype_column)])))))
+      
+      linetype_labels[which(names(linetype_labels) %in% BadLabs)] <- 
+         WarningLabel[1:length(BadLabs)]
+      
+      NewNames <- setdiff(sort(t(unique(ct_dataframe[, as_label(linetype_column)]))), 
+                          names(linetype_labels))
+      
+      if(length(NewNames) == 0){
+         # This happens when the file they named just is not present.
+         linetype_labels <- linetype_labels[names(linetype_labels) %in%
+                                               sort(unique(ct_dataframe[, as_label(linetype_column)]))]
+      } else {
+         # This happens when the file they named was probably misspelled.
+         NewNames <- NewNames[complete.cases(NewNames)]
+         names(linetype_labels)[which(names(linetype_labels) %in% BadLabs)] <- NewNames
+      }
       rm(NewNames, BadLabs, WarningLabel)
+      
    }
    
    if(as_label(colorBy_column) != "<empty>"){
