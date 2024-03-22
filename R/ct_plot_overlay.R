@@ -859,8 +859,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # If the linetype labels don't match the files available, give a warning.
    if(as_label(linetype_column) != "<empty>" && 
       any(complete.cases(linetype_labels)) && 
-      all(names(linetype_labels) %in% (unique(ct_dataframe[, as_label(linetype_column)]) %>%
-                                       pull(1) %>% as.character()) == FALSE)){
+      all(names(linetype_labels) %in% unique(ct_dataframe[, as_label(linetype_column)]) == FALSE)){
       BadLabs <- setdiff(names(linetype_labels), unique(ct_dataframe[, as_label(linetype_column)]))
       
       warning(paste0("The labels you supplied for `linetype_labels` are not all present in the column ", 
@@ -1705,77 +1704,106 @@ ct_plot_overlay <- function(ct_dataframe,
    # Making the skeleton of the graph ----------------------------------------
    A <- switch(
       figure_type, 
-      "means only" = ggplot(sim_dataframe %>% filter(Trial == MyMeanType),
-                            switch(AES, 
-                                   "color-linetype" = aes(x = Time, y = Conc, 
-                                                          group = Group, 
-                                                          color = colorBy_column, 
-                                                          fill = colorBy_column,
-                                                          linetype = linetype_column, 
-                                                          shape = linetype_column),
-                                   "color" = aes(x = Time, y = Conc, 
-                                                 color = colorBy_column, 
-                                                 fill = colorBy_column,
-                                                 group = Group), 
-                                   "linetype" = aes(x = Time, y = Conc, 
-                                                    linetype = linetype_column, 
-                                                    group = Group, shape = linetype_column),
-                                   "none" = aes(x = Time, y = Conc,
-                                                group = Group))), 
-      "trial means" = ggplot(sim_data_trial,
-                             switch(AES, 
-                                    "color-linetype" = aes(x = Time, y = Conc, 
-                                                           group = Group, 
-                                                           color = colorBy_column, 
-                                                           fill = colorBy_column,
-                                                           linetype = linetype_column, 
-                                                           shape = linetype_column),
-                                    "color" = aes(x = Time, y = Conc, 
-                                                  color = colorBy_column, 
-                                                  fill = colorBy_column,
-                                                  group = Group), 
-                                    "linetype" = aes(x = Time, y = Conc, 
-                                                     linetype = linetype_column, 
-                                                     group = Group, shape = linetype_column),
-                                    "none" = aes(x = Time, y = Conc,
-                                                 group = Group))), 
-      "percentiles" = ggplot(sim_dataframe %>%
-                                filter(Trial %in% c("per5", "per95")) %>%
-                                mutate(Group = paste(Group, Trial)),
-                             switch(AES, 
-                                    "color-linetype" = aes(x = Time, y = Conc,
-                                                           color = colorBy_column,
-                                                           fill = colorBy_column,
-                                                           linetype = linetype_column,
-                                                           group = Group,
-                                                           shape = linetype_column),
-                                    "color" = aes(x = Time, y = Conc, 
-                                                  color = colorBy_column, 
-                                                  fill = colorBy_column,
-                                                  group = Group), 
-                                    "linetype" = aes(x = Time, y = Conc,
-                                                     linetype = linetype_column,
-                                                     group = Group, 
-                                                     shape = linetype_column),
-                                    "none" = aes(x = Time, y = Conc,
-                                                 group = Group))), 
-      "percentile ribbon" = ggplot(RibbonDF, 
-                                   switch(AES, 
-                                          "color-linetype" = aes(x = Time, y = MyMean, 
-                                                                 ymin = per5, ymax = per95, 
-                                                                 shape = linetype_column,
-                                                                 color = colorBy_column, 
-                                                                 fill = colorBy_column, 
-                                                                 linetype = linetype_column),
-                                          "linetype" = aes(x = Time, y = MyMean, 
-                                                           ymin = per5, ymax = per95, 
-                                                           linetype = linetype_column),
-                                          "color" = aes(x = Time, y = MyMean, 
-                                                        ymin = per5, ymax = per95, 
-                                                        color = colorBy_column, 
-                                                        fill = colorBy_column), 
-                                          "none" = aes(x = Time, y = MyMean, group = File, # at the very least, this should be grouped by file all the time, I think... 
-                                                       ymin = per5, ymax = per95)))
+      
+      "means only" = ggplot(
+         sim_dataframe %>% filter(Trial == MyMeanType),
+         switch(AES, 
+                "color-linetype" = aes(x = Time,
+                                       y = Conc, 
+                                       group = Group, 
+                                       color = colorBy_column, 
+                                       fill = colorBy_column,
+                                       linetype = linetype_column, 
+                                       shape = linetype_column),
+                "color" = aes(x = Time,
+                              y = Conc, 
+                              color = colorBy_column, 
+                              fill = colorBy_column,
+                              group = Group), 
+                "linetype" = aes(x = Time, 
+                                 y = Conc, 
+                                 linetype = linetype_column, 
+                                 group = Group, 
+                                 shape = linetype_column),
+                "none" = aes(x = Time, y = Conc,
+                             group = Group))), 
+      
+      "trial means" = ggplot(
+         sim_data_trial,
+         switch(AES, 
+                "color-linetype" = aes(x = Time,
+                                       y = Conc, 
+                                       group = Group, 
+                                       color = colorBy_column, 
+                                       fill = colorBy_column,
+                                       linetype = linetype_column, 
+                                       shape = linetype_column),
+                "color" = aes(x = Time,
+                              y = Conc, 
+                              color = colorBy_column, 
+                              fill = colorBy_column,
+                              group = Group), 
+                "linetype" = aes(x = Time,
+                                 y = Conc, 
+                                 linetype = linetype_column, 
+                                 group = Group,
+                                 shape = linetype_column),
+                "none" = aes(x = Time,
+                             y = Conc,
+                             group = Group))), 
+      
+      "percentiles" = ggplot(
+         sim_dataframe %>%
+            filter(Trial %in% c("per5", "per95")) %>%
+            mutate(Group = paste(Group, Trial)),
+         switch(AES, 
+                "color-linetype" = aes(x = Time,
+                                       y = Conc,
+                                       color = colorBy_column,
+                                       fill = colorBy_column,
+                                       linetype = linetype_column,
+                                       group = Group,
+                                       shape = linetype_column),
+                "color" = aes(x = Time,
+                              y = Conc, 
+                              color = colorBy_column, 
+                              fill = colorBy_column,
+                              group = Group), 
+                "linetype" = aes(x = Time,
+                                 y = Conc,
+                                 linetype = linetype_column,
+                                 group = Group, 
+                                 shape = linetype_column),
+                "none" = aes(x = Time, y = Conc,
+                             group = Group))), 
+      
+      "percentile ribbon" = ggplot(
+         RibbonDF, 
+         switch(AES, 
+                "color-linetype" = aes(x = Time,
+                                       y = MyMean, 
+                                       ymin = per5,
+                                       ymax = per95, 
+                                       shape = linetype_column,
+                                       color = colorBy_column, 
+                                       fill = colorBy_column, 
+                                       linetype = linetype_column),
+                "linetype" = aes(x = Time, 
+                                 y = MyMean, 
+                                 ymin = per5,
+                                 ymax = per95, 
+                                 linetype = linetype_column),
+                "color" = aes(x = Time,
+                              y = MyMean, 
+                              ymin = per5,
+                              ymax = per95, 
+                              color = colorBy_column, 
+                              fill = colorBy_column), 
+                "none" = aes(x = Time,
+                             y = MyMean,
+                             group = File, # at the very least, this should be grouped by file all the time, I think... 
+                             ymin = per5,
+                             ymax = per95)))
    )
    
    # Adding optional horizontal line(s)
@@ -1936,6 +1964,14 @@ ct_plot_overlay <- function(ct_dataframe,
    if((class(y_axis_label) == "character" && complete.cases(y_axis_label)) |
       (class(y_axis_label) == "expression" && length(y_axis_label) > 0)){
       ylab <- y_axis_label
+   }
+   
+   # When the y label is an expression, it tends to be a little too small. Make
+   # it 1.25 * larger. If it's an expression, that also means that it can't be
+   # bold. Make the x axis title not bold as well in that case.
+   if("expression" %in% class(ylab)){
+      A <- A + theme(axis.title.y = element_text(size = A$theme$text$size * 1.25), 
+                     axis.title.x = element_text(face = "plain"))
    }
    
    if((class(x_axis_label) == "character" && complete.cases(x_axis_label)) |
@@ -2105,7 +2141,13 @@ ct_plot_overlay <- function(ct_dataframe,
       }
    }
    
-   # Colors, linetypes, & legends -------------------------------------------
+   # Adding spacing between facets if requested 
+   if(complete.cases(facet_spacing)){
+      A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
+   }
+   
+   
+   ## Colors, linetypes, & legends -------------------------------------------
    
    if(AES %in% c("color", "color-linetype")){
       
@@ -2298,7 +2340,7 @@ ct_plot_overlay <- function(ct_dataframe,
       }
    }
    
-   # Adding legend label for color and linetype as appropriate
+   ### Adding legend label for color and linetype as appropriate ----------------
    if(complete.cases(legend_label_color)){
       if(legend_label_color == "none"){    
          A <- A + labs(color = NULL, fill = NULL)
@@ -2323,44 +2365,52 @@ ct_plot_overlay <- function(ct_dataframe,
                        fill = as_label(colorBy_column))
       } 
       
-      # None of these conditions are met when 1) they did NOT set anything for the
-      # legend_label_color, 2) they did not specify any alternative label
+      # None of these conditions are met when 1) they did NOT set anything for
+      # the legend_label_color, 2) they did not specify any alternative label
       # for each value in the colorBy_column for the legend, and 3) the
       # specified aesthetics do NOT include color or linetype.
       
    }
    
-   if(complete.cases(legend_label_linetype) && 
-      legend_label_linetype == "none"){
-      A <- A + labs(linetype = NULL)
-   } else if(as_label(linetype_column) != "<empty>"){
-      A <- A + labs(linetype = switch(as.character(complete.cases(legend_label_linetype)), 
-                                      "TRUE" = legend_label_linetype,
-                                      "FALSE" = as_label(linetype_column)), 
-                    shape = switch(as.character(complete.cases(legend_label_linetype)), 
-                                   "TRUE" = legend_label_linetype,
-                                   "FALSE" = as_label(linetype_column)))
-      
-      if(any(linetypes != "solid")){
-         # When the linetype is dashed (or possibly some other user-specified
-         # line type that I'm not even considering), then the legend glyph
-         # often cuts off the 2nd dash and it's unclear how solid vs. dashed
-         # lines differ in the legend. Fixing that here.
-         A <- A + theme(legend.key.width = unit(2, "lines"))
+   if(complete.cases(legend_label_linetype)){
+      if(legend_label_linetype == "none"){    
+         A <- A + labs(linetype = NULL, 
+                       shape = NULL)
+      } else {
+         A <- A + labs(linetype = legend_label_linetype, 
+                       shape = legend_label_linetype)
       }
+   } else {
+      # This is when no legend_label_linetype has been specified.
+      if(complete.cases(linetype_labels[1])){
+         # If user did not request a label on the legend for linetype but DID
+         # set any of the linetype labels, that means that the legend label for
+         # linetype probably should NOT be the same as the column title. Do not
+         # include a legend label for linetype in that scenario.
+         A <- A + labs(linetype = NULL, 
+                       shape = NULL)
+      } else if(AES %in% c("linetype", "color-linetype")){
+         # However, if they did not include anything for legend_label_linetype
+         # but there *is* a column that is mapped to linetype, then they
+         # probably do want the title for linetypes on the legend to be the same
+         # as the linetypeBy_column name.
+         A <- A + labs(linetype = as_label(linetypeBy_column), 
+                       shape = as_label(linetypeBy_column))
+      } 
+      
+      # None of these conditions are met when 1) they did NOT set anything for
+      # the legend_label_linetype, 2) they did not specify any alternative label
+      # for each value in the linetypeBy_column for the legend, and 3) the
+      # specified aesthetics do NOT include linetype or linetype.
+      
    }
    
-   ## Adding spacing between facets if requested
-   if(complete.cases(facet_spacing)){
-      A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
-   }
-   
-   # When the y label is an expression, it tends to be a little too small. Make
-   # it 1.25 * larger. If it's an expression, that also means that it can't be
-   # bold. Make the x axis title not bold as well in that case.
-   if("expression" %in% class(ylab)){
-      A <- A + theme(axis.title.y = element_text(size = A$theme$text$size * 1.25), 
-                     axis.title.x = element_text(face = "plain"))
+   if(any(linetypes != "solid")){
+      # When the linetype is dashed (or possibly some other user-specified
+      # line type that I'm not even considering), then the legend glyph
+      # often cuts off the 2nd dash and it's unclear how solid vs. dashed
+      # lines differ in the legend. Fixing that here.
+      A <- A + theme(legend.key.width = unit(2, "lines"))
    }
    
    # If any of the items in the legend have length = 1, don't show that in the
@@ -2377,7 +2427,8 @@ ct_plot_overlay <- function(ct_dataframe,
       A <- A + guides(color = "none", fill = "none")
    }
    
-   ## Making semi-log graph ------------------------------------------------
+   
+   # Making semi-log graph ----------------------------------------------------
    
    LowConc <- bind_rows(sim_dataframe, obs_dataframe) %>%
       filter(Trial %in% c("mean", "per5", "per95") &
