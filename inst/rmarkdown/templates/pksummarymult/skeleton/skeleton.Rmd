@@ -154,14 +154,11 @@ if(single_table){
    }
    
    formatTable_Simcyp(MyPKResults,
-                      shading_column = File, #shading_column, 
-                      # sort_column = sort_column,
-                      # merge_columns = merge_columns, 
+                      shading_column = File, 
                       merge_shaded_cells = TRUE, 
                       fontsize = fontsize,
-                      # bold_cells = bold_cells,
                       prettify_columns = prettify_columns, 
-                      # center_1st_column = center_1st_column, 
+                      add_header_for_DDI = add_header_for_DDI, 
                       highlight_gmr_colors = highlight_gmr_colors, 
                       highlight_so_cutoffs = highlight_so_cutoffs, 
                       highlight_so_colors = highlight_so_colors)

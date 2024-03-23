@@ -90,14 +90,11 @@ TempTable <- MyPKResults[[i]] %>% ungroup() %>%
 names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
 
 formatTable_Simcyp(TempTable,
-                   # sort_column = sort_column,
-                   # merge_columns = merge_columns, 
                    merge_shaded_cells = merge_shaded_cells,
                    perpetrator_name = MyPerpetrator, 
                    fontsize = fontsize,
-                   # bold_cells = bold_cells,
                    prettify_columns = prettify_columns, 
-                   # center_1st_column = center_1st_column, 
+                   add_header_for_DDI = add_header_for_DDI, 
                    highlight_so_cutoffs = highlight_so_cutoffs, 
                    highlight_so_colors = highlight_so_colors)
 
