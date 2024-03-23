@@ -2,7 +2,7 @@
 % Please edit documentation in R/make_trial_design_table.R
 \name{make_trial_design_table}
 \alias{make_trial_design_table}
-\title{Create a table describing your file design.}
+\title{Create a table describing your trial design.}
 \usage{
 make_trial_design_table(
   existing_exp_details,

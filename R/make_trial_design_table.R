@@ -1,4 +1,4 @@
-#' Create a table describing your file design.
+#' Create a table describing your trial design.
 #' 
 #' UNDER CONSTRUCTION. Proof of concept only for now. 
 #'
