@@ -138,6 +138,8 @@
 #'   row where the table is labeled as being the PK at baseline, with your
 #'   perpetrator, or GMRs. If we don't know what the perpetrator drug name is,
 #'   it's really hard to do that just right.
+#' @param page_orientation set the page orientation for the Word file output to
+#'   "portrait" (default) or "landscape" 
 #'
 #' @return a formatted table
 #' @export
@@ -224,6 +226,7 @@ formatTable_Simcyp <- function(DF,
                                highlight_cells = NA, 
                                highlight_color = "yellow",
                                save_table = NA, 
+                               page_orientation = "portrait", 
                                title_document = NA, 
                                table_caption = NA){
    
@@ -233,6 +236,19 @@ formatTable_Simcyp <- function(DF,
       stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
            call. = FALSE)
    }
+   
+   page_orientation <- tolower(page_orientation)[1]
+   if(page_orientation %in% c("portrait", "landscape") == FALSE){
+      warning("You requested something other than `portrait` or `landscape` for the page orientation in the Word output, and those are the only options. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+      page_orientation <- "portrait"
+   }
+   
+   TemplatePath <- switch(page_orientation, 
+                          "landscape" = system.file("Word/landscape_report_template.dotx",
+                                                    package="SimcypConsultancy"), 
+                          "portrait" = system.file("Word/report_template.dotx",
+                                                   package="SimcypConsultancy"))
    
    if("flextable" %in% class(DF)){
       
@@ -262,6 +278,7 @@ formatTable_Simcyp <- function(DF,
       
       rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
                                     package="SimcypConsultancy"), 
+                        output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
                         output_dir = OutPath, 
                         output_file = FileName, 
                         quiet = TRUE)
@@ -881,9 +898,11 @@ formatTable_Simcyp <- function(DF,
       
       rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
                                     package="SimcypConsultancy"), 
+                        output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
                         output_dir = OutPath, 
                         output_file = FileName, 
-                        quiet = TRUE)
+                        quiet = TRUE,
+                        params = list(template_path = TemplatePath))
       # Note: The "system.file" part of the call means "go to where the
       # package is installed, search for the file listed, and return its
       # full path.

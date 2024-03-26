@@ -4,7 +4,13 @@
 #' indicating where the predicted parameters fell within X fold of the observed.
 #'
 #' @param PKtable a table in the same format as output from the function
-#'   \code{\link{pksummary_mult}}
+#'   \code{\link{pksummary_mult}}. This should include a column titled
+#'   "Statistic" and columns for each of the PK parameters you want to graph.
+#'   The column statistic should have values of "Simulated" and "Observed" for
+#'   the simulated and observed PK, respectively; anything else will be ignored.
+#'   The columns for each PK parameter should be named like the values in the
+#'   data.frame PKParameterDefinitions, in the column "PKparameter". To see
+#'   that, please enter \code{view(PKParameterDefinitions)} into the console.
 #' @param PKparameters any of the PK parameters included in the output from
 #'   \code{\link{pksummary_mult}}; if left as NA, this will make graphs for each
 #'   parameter included in \code{PKtable}. To see the full set of possible
