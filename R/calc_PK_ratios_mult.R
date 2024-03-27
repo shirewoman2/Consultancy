@@ -229,6 +229,9 @@
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
+#' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
+#'   header row to the top of your table denoting when the PK are for baseline,
+#'   with a perpetrator, or are the geometric mean ratios. 
 #'
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from and data to use for making forest plots
@@ -252,6 +255,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                 rounding = NA,
                                 checkDataSource = TRUE, 
                                 include_dose_num = NA,
+                                add_header_for_DDI = TRUE, 
                                 extract_forest_data = FALSE, 
                                 existing_exp_details = NA,
                                 save_table = NA, 
