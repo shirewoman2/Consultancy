@@ -497,7 +497,7 @@ pksummary_mult <- function(sim_data_files = NA,
    # the class of observed_PK will be logical if left as NA.
    if(class(observed_PK)[1] == "character"){
       observed_PKDF <- switch(str_extract(observed_PK, "csv|xlsx"), 
-                              "csv" = read.csv(observed_PK), 
+                              "csv" = read.csv(observed_PK, na.strings = "NA"), 
                               "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                        sheetName = "observed PK"))
       # If there's anything named anything like "File", use that for the

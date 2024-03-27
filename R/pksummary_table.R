@@ -642,7 +642,7 @@ pksummary_table <- function(sim_data_file = NA,
       if(any(complete.cases(observed_PK)) && 
          "character" %in% class(observed_PK)){
          observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
-                               "csv" = read.csv(observed_PK), 
+                               "csv" = read.csv(observed_PK, na.strings = "NA"), 
                                "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                         sheetName = "observed PK"))
          
