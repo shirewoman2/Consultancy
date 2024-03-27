@@ -602,8 +602,11 @@ extractConcTime <- function(sim_data_file,
    # Use the supplied obs file here if a) tissue is systemic and b) the
    # function was NOT called from the mult function OR the function WAS
    # called from the mult function but the user supplied an obs data file.
-   if(TissueType == "systemic" &
-      (fromMultFunction == FALSE | (fromMultFunction & complete.cases(obs_data_file)))){
+   
+   # !!!! CHANGING THIS. Allowing this to proceed even if it was from mult
+   # function. NEED TO CHECK THAT THIS DOESN'T HAVE UNEXPECTED DOWNSTREAM
+   # CONSEQUENCES.
+   if(TissueType == "systemic"){
       
       # If the user did not specify a file to use for observed data, use the
       # observed data that they included for the simulation. Note that this will
