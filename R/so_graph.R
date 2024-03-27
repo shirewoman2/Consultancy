@@ -11,10 +11,11 @@
 #'   The columns for each PK parameter should be named like the values in the
 #'   data.frame PKParameterDefinitions, in the column "PKparameter". To see
 #'   that, please enter \code{view(PKParameterDefinitions)} into the console.
-#' @param PKparameters any of the PK parameters included in the output from
-#'   \code{\link{pksummary_mult}}; if left as NA, this will make graphs for each
-#'   parameter included in \code{PKtable}. To see the full set of possible
-#'   parameters, enter \code{view(PKParameterDefinitions)} into the console.
+#' @param PKparameters any of the AUC, Cmax, tmax, CL, or half-life PK
+#'   parameters included in the output from \code{\link{pksummary_mult}}; if
+#'   left as NA, this will make graphs for each parameter included in
+#'   \code{PKtable}. To see the full set of possible parameters, enter
+#'   \code{view(PKParameterDefinitions)} into the console.
 #' @param PKorder optionally specify the order of the graphs. Leaving this as
 #'   "default" puts the graphs in the same order as the columns in the Simcyp
 #'   Consultancy Team template for PK tables (plus some guesses at a good order
@@ -27,10 +28,17 @@
 #'   list for \code{PKparameters} wherever you want that to happen, e.g.,
 #'   \code{PKparameters = c("Cmax_dose1", "BLANK", "AUCinf_dose1", "BLANK",
 #'   "tmax_dose1")}
-#' @param make_AUC_generic TRUE or FALSE for whether to list just "AUC ratio"
-#'   instead of, e.g., "AUCinf ratio" or "AUCtau ratio" or even instead of "AUCt
-#'   ratio". If TRUE, all AUC values for a given dose number (1st or last or
-#'   unspecified) will all be shown together.
+#' @param all_intervals_together NOT YET SET UP. TRUE or FALSE (default) for
+#'   whether to combine all of a single type of PK parameter into a single
+#'   graph. For example, setting this to TRUE would put all the Cmax PK --
+#'   regardless of whether it was for the 1st dose, the last dose, or a custom
+#'   interval -- into a single graph. The default, FALSE, means that anything
+#'   that was its own column in the PK summary table would also be its own graph
+#'   here. If you do set this to TRUE, the color and shape of the points will be
+#'   mapped to which interval it is, which means that you can't \emph{also}
+#'   specify something for the arguments \code{point_color_column} or
+#'   \code{point_shape_column}. If you do, those will be ignored. Try this out
+#'   if you're uncertain what we mean.
 #' @param boundaries Numerical boundaries to show on the graph. Defaults to the
 #'   1.5- and 2-fold boundaries. Indicate boundaries you want like this:
 #'   \code{boundaries = c(1.25, 1.5, 2)}
@@ -174,6 +182,23 @@
 #'   in quotes here, e.g., "My conc time graph.png"
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 6
+#' @param include_dose_num Should the dose number be included? If set to TRUE,
+#'   then the dose number part of the graph title, e.g., the "Dose 1" or "Last
+#'   dose" part of "Dose 1 AUCinf" or "Last dose Cmax", will be included. If set
+#'   to FALSE, those would be come "AUCinf" and "Cmax" only with no reference to
+#'   which dose it was. If left as the default NA, then the dose number will be
+#'   omitted if all the data are all for dose 1 or all for the last dose, and it
+#'   will be included if you have a mix of dosing intervals.
+#' @param title_adjustments a character vector of text adjustments for the
+#'   title. Possible options: \describe{\item{"sub steady-state for last"}{Instead of the
+#'   default PK parameters for the last dose being labeled as, e.g.,
+#'   "Last dose Cmax", this will use "steady-state" instead, e.g.,
+#'   "Steady-state Cmax"}
+#'
+#'   \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other
+#'   substitutions people might want. Instead of the using AUCinf, graph titles will
+#'   use AUC0 to inf}}
+#'
 #'
 #' @return a set of arranged ggplot2 graphs
 #' @export
@@ -206,9 +231,6 @@ so_graph <- function(PKtable,
                      boundary_color_set = "red black", 
                      boundary_line_types = "default",
                      boundary_line_width = 0.7, 
-                     axis_titles = c("y" = "Simulated", "x" = "Observed"),
-                     include_dose_num = NA,
-                     make_AUC_generic = FALSE, 
                      point_color_column, 
                      point_color_set = "default",
                      legend_label_point_color = NA, 
@@ -217,6 +239,10 @@ so_graph <- function(PKtable,
                      point_size = NA,
                      legend_label_point_shape = NA, 
                      legend_position = "none",
+                     axis_titles = c("y" = "Simulated", "x" = "Observed"),
+                     include_dose_num = NA,
+                     title_adjustments = c(), 
+                     all_intervals_together = FALSE, 
                      ncol = NULL, 
                      nrow = NULL,
                      save_graph = NA, 
@@ -691,12 +717,23 @@ so_graph <- function(PKtable,
                        .fns = function(x) sub("_dose1|_last", "", x)))
    }
    
-   if(make_AUC_generic){
-      PKparameters <- sub("AUCinf|AUCtau|AUCt", "AUC", PKparameters)
-      names(SO) <- sub("AUCinf|AUCtau|AUCt", "AUC", names(SO))
-      PKnames <- PKnames %>% 
-         mutate(across(.cols = everything(), 
-                       .fns = function(x) sub("AUCinf|AUCtau|AUCt", "AUC", x)))
+   if(all_intervals_together){
+      
+      # For this option, data must be in long format w/ a column for interval.
+      # This will be easiest to manage w/R-friendly column names.
+      TEMP <- prettify_column_names(PKtable, pretty_or_ugly_cols = "ugly") %>% 
+         pivot_longer(cols = any_of(PKparameters), 
+                      names_to = "PKparameter", 
+                      values_to = "Value") %>% 
+         mutate(Interval = str_extract(PKparameter, "last|dose1"), 
+                PKparameter_rev = str_extract(PKparameter, "AUC|Cmax|tmax|CL|HalfLife"))
+      
+      
+      # PKparameters <- sub("AUCinf|AUCtau|AUCt", "AUC", PKparameters)
+      # names(SO) <- sub("AUCinf|AUCtau|AUCt", "AUC", names(SO))
+      # PKnames <- PKnames %>% 
+      #    mutate(across(.cols = everything(), 
+      #                  .fns = function(x) sub("AUCinf|AUCtau|AUCt", "AUC", x)))
    }
    
    suppressWarnings(
@@ -723,6 +760,15 @@ so_graph <- function(PKtable,
                          paste("CL as dose/AUCt")))
    }
    
+   # Checking for other graph title substitutions they want
+   if(length(title_adjustments) > 0){
+      if("sub steady-state for last" %in% tolower(title_adjustments) |
+         "sub steady state for last" %in% tolower(title_adjustments)){
+         
+         PKparameters <- sub("_last", "_ss", PKparameters)
+         SO$PKparameter <- sub("_last", "_ss", SO$PKparameter)
+      }
+   }
    
    ## Setting things up for nonstandard evaluation --------------------------
    point_color_column <- rlang::enquo(point_color_column)
@@ -1071,6 +1117,11 @@ so_graph <- function(PKtable,
             bind_rows(AllPKParameters %>% select(PKparameter_nodosenum, SortOrder) %>% 
                          rename(PKparameter = PKparameter_nodosenum)) %>% 
             arrange(SortOrder) %>% pull(PKparameter) %>% unique()
+         
+         if("sub steady-state for last" %in% title_adjustments){
+            GoodOrder <- sub("_last", "_ss", GoodOrder)
+         }
+         
          GoodOrder <- GoodOrder[GoodOrder %in% names(G)]
          
          G <- G[GoodOrder]

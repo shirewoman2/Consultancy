@@ -14,9 +14,6 @@ so_graph(
   boundary_color_set = "red black",
   boundary_line_types = "default",
   boundary_line_width = 0.7,
-  axis_titles = c(y = "Simulated", x = "Observed"),
-  include_dose_num = NA,
-  make_AUC_generic = FALSE,
   point_color_column,
   point_color_set = "default",
   legend_label_point_color = NA,
@@ -25,6 +22,10 @@ so_graph(
   point_size = NA,
   legend_label_point_shape = NA,
   legend_position = "none",
+  axis_titles = c(y = "Simulated", x = "Observed"),
+  include_dose_num = NA,
+  title_adjustments = c(),
+  all_intervals_together = FALSE,
   ncol = NULL,
   nrow = NULL,
   save_graph = NA,
@@ -42,10 +43,11 @@ The columns for each PK parameter should be named like the values in the
 data.frame PKParameterDefinitions, in the column "PKparameter". To see
 that, please enter \code{view(PKParameterDefinitions)} into the console.}
 
-\item{PKparameters}{any of the PK parameters included in the output from
-\code{\link{pksummary_mult}}; if left as NA, this will make graphs for each
-parameter included in \code{PKtable}. To see the full set of possible
-parameters, enter \code{view(PKParameterDefinitions)} into the console.}
+\item{PKparameters}{any of the AUC, Cmax, tmax, CL, or half-life PK
+parameters included in the output from \code{\link{pksummary_mult}}; if
+left as NA, this will make graphs for each parameter included in
+\code{PKtable}. To see the full set of possible parameters, enter
+\code{view(PKParameterDefinitions)} into the console.}
 
 \item{PKorder}{optionally specify the order of the graphs. Leaving this as
 "default" puts the graphs in the same order as the columns in the Simcyp
@@ -107,15 +109,6 @@ the possibilities, type \code{ggpubr::show_line_types()} into the console.}
 
 \item{boundary_line_width}{line width; default is 0.7. This only applies when
 \code{boundary_indicator} is set to "lines", the default.}
-
-\item{axis_titles}{optionally specify what you'd like for the x and y axis
-titles with a named character vector. The default is \code{axis_titles =
-c("x" = "Observed", "y" = "Simulated")}}
-
-\item{make_AUC_generic}{TRUE or FALSE for whether to list just "AUC ratio"
-instead of, e.g., "AUCinf ratio" or "AUCtau ratio" or even instead of "AUCt
-ratio". If TRUE, all AUC values for a given dose number (1st or last or
-unspecified) will all be shown together.}
 
 \item{point_color_column}{(optional) the column in \code{PKtable} that should
 be used for determining which color the points will be. This should be
@@ -214,6 +207,40 @@ this legend item, set this to "none".}
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
+
+\item{axis_titles}{optionally specify what you'd like for the x and y axis
+titles with a named character vector. The default is \code{axis_titles =
+c("x" = "Observed", "y" = "Simulated")}}
+
+\item{include_dose_num}{Should the dose number be included? If set to TRUE,
+then the dose number part of the graph title, e.g., the "Dose 1" or "Last
+dose" part of "Dose 1 AUCinf" or "Last dose Cmax", will be included. If set
+to FALSE, those would be come "AUCinf" and "Cmax" only with no reference to
+which dose it was. If left as the default NA, then the dose number will be
+omitted if all the data are all for dose 1 or all for the last dose, and it
+will be included if you have a mix of dosing intervals.}
+
+\item{title_adjustments}{a character vector of text adjustments for the
+  title. Possible options: \describe{\item{"sub steady-state for last"}{Instead of the
+  default PK parameters for the last dose being labeled as, e.g.,
+  "Last dose Cmax", this will use "steady-state" instead, e.g.,
+  "Steady-state Cmax"}
+
+  \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other
+  substitutions people might want. Instead of the using AUCinf, graph titles will
+  use AUC0 to inf}}}
+
+\item{all_intervals_together}{NOT YET SET UP. TRUE or FALSE (default) for
+whether to combine all of a single type of PK parameter into a single
+graph. For example, setting this to TRUE would put all the Cmax PK --
+regardless of whether it was for the 1st dose, the last dose, or a custom
+interval -- into a single graph. The default, FALSE, means that anything
+that was its own column in the PK summary table would also be its own graph
+here. If you do set this to TRUE, the color and shape of the points will be
+mapped to which interval it is, which means that you can't \emph{also}
+specify something for the arguments \code{point_color_column} or
+\code{point_shape_column}. If you do, those will be ignored. Try this out
+if you're uncertain what we mean.}
 
 \item{ncol}{number of columns of graphs to show. If left as NULL (default), R
 will make a reasonable guess for the number.}
