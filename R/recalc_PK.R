@@ -512,7 +512,30 @@ recalc_PK <- function(ct_dataframe,
                         
                         CompoundID %in% "inhibitor 2" ~ StartHr_inhib2 + DoseInt_inhib2))
             )
+            
+            MaxPossDoseTime <- CTsubset[["1"]] %>% ungroup() %>%
+               filter(complete.cases(Conc)) %>%
+               group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial,
+                        Simulated, File, ObsFile, DoseNum, ID) %>%
+               summarize(MaxPossTime = max(Time, na.rm = T),
+                         # For reasons that utterly baffle and infuriate me, dplyr
+                         # will invisibly DROP the last grouping variable if the
+                         # result would have only one row. (See help file for
+                         # dplyr::summarize.) Why THAT would EVER be what people
+                         # really want since the function that groups the data is NOT
+                         # summarize and that this occurs even when they have
+                         # specified .drop = FALSE in the function that DOES perform
+                         # the grouping is *beyond me*.
+                         .groups = "keep") 
+            
+            suppressMessages(
+               FirstDoseTime <- FirstDoseTime %>% 
+                  left_join(MaxPossDoseTime) %>% 
+                  mutate(MaxTime = ifelse(is.na(MaxTime), 
+                                          MaxPossTime, MaxTime)))
+            
          } else {
+            
             suppressMessages(suppressWarnings(
                FirstDoseTime <- CTsubset[["1"]] %>% ungroup() %>%
                   filter(complete.cases(Conc)) %>%
