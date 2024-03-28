@@ -807,21 +807,23 @@ annotateDetails <- function(existing_exp_details,
             }
             
             if(any(str_detect(tolower(detail_set), "methods|trial design"))){
-               DetailSet <- unique(c(DetailSet,  "Substrate", 
-                                     "PrimaryMetabolite1", "PrimaryMetabolite2",
-                                     "SecondaryMetabolite", 
-                                     "Inhibitor1", "Inhibitor2", "Inhibitor1Metabolite",
-                                     "Dose_sub", "Dose_inhib", "Regimen_sub", "Regimen_inhib",
-                                     "FixedTrialDesign", "FixedTrialDesignFile", 
-                                     "SimulatorVersion", 
-                                     "NumTrials", "NumSubjTrial", "PercFemale", 
-                                     "Age_min", "Age_max", "NumDoses", "Regimen", 
-                                     "Inhibitor1", "Inhibitor2", "SimDuration", 
-                                     "StartDayTime", 
-                                     paste0(rep(c("StartDayTime_", "StartHr_"), 
-                                                each = 7),
-                                            c("sub", "inhib", "inhib2", "met1", 
-                                              "met2", "secmet", "inhib1met"))))
+               DetailSet <- unique(c(
+                  DetailSet,  "Substrate", 
+                  "PrimaryMetabolite1", "PrimaryMetabolite2",
+                  "SecondaryMetabolite", 
+                  "Inhibitor1", "Inhibitor2", "Inhibitor1Metabolite",
+                  "Dose_sub", "Dose_inhib", 
+                  "DoseRoute_sub", "DoseRoute_inhib", "DoseRoute_inhib2",
+                  "Regimen_sub", "Regimen_inhib",
+                  "FixedTrialDesign", "FixedTrialDesignFile", 
+                  "SimulatorVersion", 
+                  "NumTrials", "NumSubjTrial", "PercFemale", 
+                  "Age_min", "Age_max", "NumDoses", "Regimen", 
+                  "SimDuration", "SimStartDayTime", "SimEndDayTime",
+                  paste0(rep(c("StartDayTime_", "StartHr_"), 
+                             each = 7),
+                         c("sub", "inhib", "inhib2", "met1", 
+                           "met2", "secmet", "inhib1met"))))
             }
             
             if(any(str_detect(tolower(detail_set), "summary"))){
@@ -1454,12 +1456,27 @@ annotateDetails <- function(existing_exp_details,
                
             } else if(item == "CustomDosing"){ 
                
+               RouteColors <- c("Oral" = "dodgerblue4", 
+                                "i.v. bolus" = "#E41A1C", 
+                                "iv. infusion" = "#91429D", 
+                                "Dermal" = "seagreen", 
+                                "Inhaled" = "#5ECCF3", 
+                                "Long-Acting-Injectable" = "orange", 
+                                "IntraVaginal" = "#08E6D1", 
+                                "Rectal" = "#6F4C29", 
+                                "Synovial Joint" = "#E0E006", 
+                                "Other site" = "gray20", 
+                                "Subcutaneous" = "#F51B7E", 
+                                "Custom" = "black")
+               
                suppressMessages(
                   plot(ggplot(existing_exp_details[[item]], 
                               aes(x = Time, xend = Time,
                                   y = 0, yend = Dose, 
-                                  color = File)) +
-                          geom_segment(linewidth = 1, color = "dodgerblue4") +
+                                  color = DoseRoute)) +
+                          geom_segment(linewidth = 1) +
+                          scale_color_manual(values = RouteColors) +
+                          labs(color = "Dose route") +
                           ggh4x::facet_grid2(Compound ~ File, scales = "free", 
                                              axes = "all", switch = "y") + 
                           scale_y_continuous(limits = c(0, max(existing_exp_details[[item]]$Dose)), 
@@ -1470,7 +1487,8 @@ annotateDetails <- function(existing_exp_details,
                           ggtitle("Custom-dosing regimens") +
                           scale_x_time() +
                           theme_consultancy(border = TRUE) +
-                          theme(legend.position = "none", 
+                          theme(legend.position = "bottom", 
+                                legend.justification = c(0, 0), 
                                 strip.placement = "outside"))
                )
                
