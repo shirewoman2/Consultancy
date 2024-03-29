@@ -329,6 +329,8 @@
 #' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
 #'   header row to the top of your table denoting when the PK are for baseline,
 #'   with a perpetrator, or are the geometric mean ratios. 
+#' @param page_orientation set the page orientation for the Word file output to
+#'   "portrait" (default) or "landscape" 
 #' @param ...
 #'
 #' @return Returns a data.frame with summary PK parameters from multiple
@@ -378,12 +380,13 @@ pksummary_mult <- function(sim_data_files = NA,
                            prettify_columns = TRUE, 
                            extract_forest_data = FALSE, 
                            checkDataSource = TRUE, 
-                           save_table = NA, 
-                           fontsize = 11, 
                            highlight_gmr_colors = NA, 
                            highlight_so_cutoffs = NA, 
                            highlight_so_colors = "yellow to red", 
+                           save_table = NA, 
                            single_table = FALSE,
+                           page_orientation = "portrait", 
+                           fontsize = 11, 
                            ...){
    
    # Error catching ----------------------------------------------------------
@@ -804,6 +807,11 @@ pksummary_mult <- function(sim_data_files = NA,
             )
             
             if(length(temp) == 0){
+               warning(paste0("There were no possible PK parameters to be extracted for the ",
+                              j, " in ", k, " for the simulation `", i,
+                              "`. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.\n"),
+                       call. = FALSE)
+               
                rm(temp)
                next
             }
@@ -1018,10 +1026,16 @@ pksummary_mult <- function(sim_data_files = NA,
          
          FileName <- basename(save_table)
          FromCalcPKRatios <- FALSE
+         TemplatePath <- switch(page_orientation, 
+                                "landscape" = system.file("Word/landscape_report_template.dotx",
+                                                          package="SimcypConsultancy"), 
+                                "portrait" = system.file("Word/report_template.dotx",
+                                                         package="SimcypConsultancy"))
          
          rmarkdown::render(
             system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 
                         package="SimcypConsultancy"),
+            output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
             output_dir = OutPath, 
             output_file = FileName, 
             quiet = TRUE)

@@ -249,6 +249,10 @@ extractPK <- function(sim_data_file,
    }
    
    if(any(complete.cases(sheet))){
+      # Using SheetWasSpecified later for flow control. If they specified a
+      # sheet name originally, even if that sheet name wasn't found, then only
+      # attempt to get PK from the user-specified sheet.
+      SheetWasSpecified <- TRUE 
       GoodSheets <- sheet[complete.cases(sheet) & sheet %in% SheetNames]
       BadSheets <- setdiff(sheet, GoodSheets)
       BadSheets <- BadSheets[complete.cases(BadSheets)]
@@ -260,6 +264,8 @@ extractPK <- function(sim_data_file,
          
          sheet <- GoodSheets
       }
+   } else {
+      SheetWasSpecified <- FALSE
    }
    
    if(Deets$SimulatorUsed == "Simcyp Discovery"){
@@ -713,13 +719,23 @@ extractPK <- function(sim_data_file,
    
    # Removing any rows where all sheets are labeled as FALSE, i.e., it is not
    # going to be found on any of those sheets.
+   if(SheetWasSpecified){
+      PKparamDF <- PKparamDF %>% 
+         mutate(across(.cols = c(SheetAUC, SheetAbsorption, SheetRegADAM, 
+                                 SheetAUC, SheetAUC0, SheetAUClast, 
+                                 SheetDrugPop, SheetCLTSS), 
+                       .fns = function(x) FALSE))
+   } 
+   
    PKparamDF <- PKparamDF %>% 
       mutate(AnyTRUE = any(SheetAUC, SheetAbsorption, SheetRegADAM, SheetDrugPop, 
                            SheetAUC0, SheetAUClast, SheetCLTSS, SheetUser)) %>% 
       filter(AnyTRUE == TRUE) %>% select(-AnyTRUE)
    
    if(nrow(PKparamDF) == 0){
-      warning("There are no possible PK parameters to be extracted. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.",
+      warning(paste0("There were no possible PK parameters to be extracted for ",
+                     sim_data_file,
+                     ". Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.\n"),
               call. = FALSE)
       return(list())
    }
@@ -1119,12 +1135,11 @@ extractPK <- function(sim_data_file,
       setdiff(PKparamDF$PKparameter[PKparamDF$SheetUser == TRUE], 
               names(Out_agg))
    
-   
    if(length(ParamUserDef) > 0){
       
       # Some parameters are not going to be present, so removing those. 
       ParamUserDef <- ParamUserDef[!str_detect(
-         ParamUserDef, "^fa_|^ka_|^tlag_|CLinf|CL_hepatic|CL_po|^F_|^Fg_|^Fh_|^fm_|^AUCinf|^HalfLife|^AUCtau|CLtau|Accumulation")]
+         ParamUserDef, "^fa_|^ka_|^tlag_|CLinf|CL_hepatic|CL_po|^F_|^Fg_|^Fh_|^fm_|^AUCinf|^HalfLife|^AUCtau|CLtau|Accumulation|BPratio|Qgut|^fu")]
       
       UserSheet <- unique(sheet[complete.cases(sheet)])
       

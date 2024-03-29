@@ -65,6 +65,10 @@ extractAUCXtab <- function(PKparameters,
    EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1]
    EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(AUCX_xl), EndRow_agg)
    
+   if(UserSpecified){
+      PKparameters <- unique(sub("_dose1|_last", "", PKparameters))
+   }
+   
    # Looping through parameters and extracting values
    for(i in PKparameters){
       
@@ -93,6 +97,7 @@ extractAUCXtab <- function(PKparameters,
          unique()
       
       if(nrow(ToDetect) == 0){
+         PKparameters <- setdiff(PKparameters, i)
          next
       }
       
