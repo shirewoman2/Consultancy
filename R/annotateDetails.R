@@ -978,11 +978,14 @@ annotateDetails <- function(existing_exp_details,
                DF <- DF %>% mutate(Compound = ifelse(complete.cases(Compound), 
                                                      AllMyCompounds, NA))
                
-               if(item == "MainDetails"){
-                  DF <- DF %>% 
-                     select(SimulatorSection, Sheet, Notes, Compound, Detail,
-                            File, Value)
-               } # FIXME - need to figure out what this looks like for non MainDetails items.
+               DF <- DF %>% select(-CompoundID) %>% 
+                  select(any_of(c("SimulatorSection", "Sheet", "Notes",
+                                  "Compound", "Detail", "pH", "Conc", 
+                                  "Time", "Time_units", "DoseNum", "Dose_units", 
+                                  "DoseRoute", "Day", "TimeOfDay", 
+                                  "File", "Value", "Solubility", "BP", "fup", 
+                                  "Dose", "Dissolution_mean", "Dissolution_CV",
+                                  "Release_mean", "Release_CV", everything())))
                
             }
          } else {
@@ -994,31 +997,38 @@ annotateDetails <- function(existing_exp_details,
             suppressMessages(
                DF <- DF %>% select(-Compound) %>% left_join(AllMyCompounds))
             
-            # Is this the right place for this below?!?
-            
-            # if(item == "MainDetails"){
-            #    DF <- DF %>% 
-            #       select(SimulatorSection, Sheet, Notes, CompoundID, Compound, 
-            #              Detail, File, Value)
-            # } # FIXME - need to figure out what this looks like for non MainDetails items.
          }
       }
       
       ## Pivoting wider again ------------------------------------------------
       
       # Items that will have either template sims or a column where everything
-      # is the same
+      # is the same. This does NOT include DissolutionProfiles or
+      # SolubilityProfiles b/c those have multiple dependent variables
+      # (Dissolution_mean and Dissolution_CV, for example). For these others,
+      # there is a single dependent variable to go with the specific independent
+      # variable or, if there are multiple possible dependent variables (e.g.,
+      # CustomDosing), we've picked the one we want to pivot wider by (Dose in
+      # that example). Variables for each with *exact* column name:
+      
+      # MainDetails: IV = Detail, DV = Value
+      # CustomDosing: IV = Time, DV = Dose
+      # ConcDependent_fup: IV = Conc, DV = fup
+      # ConcDependent_BP: IV = Conc, DV = BP
+      # pH_dependent_solubility: IV = pH, DV = Solubility
+      
       if(item %in% c("MainDetails", "CustomDosing", "ConcDependent_fup", 
                      "ConcDependent_BP", "pH_dependent_solubility")){
          
          DF <- DF %>% 
             pivot_wider(names_from = "File", 
+                        # values_from calls on the dependent variable listed 
                         values_from = switch(item, 
                                              "MainDetails" = "Value", 
                                              "CustomDosing" = "Dose", 
                                              "ConcDependent_fup" = "fup", 
                                              "ConcDependent_BP" = "BP", 
-                                             "pH_dependent_solubility" = "pH"))
+                                             "pH_dependent_solubility" = "Solubility"))
          
          # Need to check again whether template_sim is included b/c it might not
          # be any more if the user has filtered results for a specific compound
@@ -1042,8 +1052,8 @@ annotateDetails <- function(existing_exp_details,
                                       "CustomDosing" = c("Time", "Time_units", "DoseNum",
                                                          "Dose_units", "DoseRoute", 
                                                          "Day", "TimeOfDay"), 
-                                      "ConcDependent_fup" = "Concentration", 
-                                      "ConcDependent_BP" = "Concentration", 
+                                      "ConcDependent_fup" = "Conc", 
+                                      "ConcDependent_BP" = "Conc", 
                                       "pH_dependent_solubility" = "pH")
             
             suppressMessages(
@@ -1287,6 +1297,9 @@ annotateDetails <- function(existing_exp_details,
                                    cols = 1:ncol(Out[[item]][["DF"]]), 
                                    widths = ColWidths)
             
+            # These are all the items that would have either an "all items are
+            # the same" column or a template simulation column. Note that this
+            # does NOT include DissolutionProfiles or ReleaseProfiles.
             if(item %in% c("MainDetails", "CustomDosing", "ConcDependent_fup", 
                            "ConcDependent_BP", "pH_dependent_solubility")){
                
@@ -1316,14 +1329,14 @@ annotateDetails <- function(existing_exp_details,
                                      style = BlueColumn, 
                                      rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
                                      cols = which(str_detect(names(Out[[item]][["DF"]]),
-                                                             "All files have this value")))
+                                                             "All files have this")))
                   
                   openxlsx::addStyle(wb = WB, 
                                      sheet = output_tab_name, 
                                      style = BlueColumnHeader, 
                                      rows = 1, 
                                      cols = which(str_detect(names(Out[[item]][["DF"]]),
-                                                             "All files have this value")))
+                                                             "All files have this")))
                   
                } else {
                   # This is when there IS a template simulation. Formatting to
@@ -1354,7 +1367,27 @@ annotateDetails <- function(existing_exp_details,
                   }
                }
                
+               # Freezing view 
+               UnfrozCol1 <- which(
+                  str_detect(names(Out[[item]][["DF"]]),
+                             "TEMPLATE|^All files")) + 1
+               UnfrozCol1 <- UnfrozCol1[1]
+               # Most of the time, column 8 should be the 1st active column,
+               # so set that here. Also, the only time we won't have a value
+               # here is if there was only 1 simulation, so which column is
+               # frozen isn't that important.
+               UnfrozCol1 <- ifelse(is.na(UnfrozCol1), 8, UnfrozCol1)
+               
+               openxlsx::freezePane(wb = WB,
+                                    sheet = output_tab_name,
+                                    firstActiveRow = 2,
+                                    firstActiveCol =  UnfrozCol1)
+               
+               
                if(item == "MainDetails"){
+                  ## MainDetails tab -------------------------------------------
+                  
+                  # Adding style for notes column
                   openxlsx::addStyle(wb = WB, 
                                      sheet = output_tab_name, 
                                      style = NotesColumn, 
@@ -1363,30 +1396,14 @@ annotateDetails <- function(existing_exp_details,
                                         str_detect(names(Out[[item]][["DF"]]),
                                                    "Note")))
                   
-                  UnfrozCol1 <- which(
-                     str_detect(names(Out[[item]][["DF"]]),
-                                "TEMPLATE|^All files")) + 1
-                  UnfrozCol1 <- UnfrozCol1[1]
-                  # Most of the time, column 8 should be the 1st active column,
-                  # so set that here. Also, the only time we won't have a value
-                  # here is if there was only 1 simulation, so which column is
-                  # frozen isn't that important.
-                  UnfrozCol1 <- ifelse(is.na(UnfrozCol1), 8, UnfrozCol1)
                   
-                  openxlsx::freezePane(wb = WB,
-                                       sheet = output_tab_name,
-                                       firstActiveRow = 2,
-                                       firstActiveCol =  UnfrozCol1)
-                  
-               } else {
-                  openxlsx::freezePane(wb = WB,
-                                       sheet = output_tab_name,
-                                       firstActiveRow = 2)
                }
             } else {
+               # Adding frozen top row for dissolution and release profiles.
                openxlsx::freezePane(wb = WB,
                                     sheet = output_tab_name,
-                                    firstActiveRow = 2)
+                                    firstActiveRow = 2,
+                                    firstActiveCol =  1)
             }
             
             # At this point, we have written the data for all possible items,
@@ -1399,6 +1416,8 @@ annotateDetails <- function(existing_exp_details,
             
             if(item == "ConcDependent_fup"){
                
+               ## ConcDependent_fup tab ----------------------------------------
+               
                plot(ggplot(existing_exp_details[[item]], 
                            aes(x = Conc, y = fup, color = File)) +
                        geom_point() + geom_line() +
@@ -1407,18 +1426,20 @@ annotateDetails <- function(existing_exp_details,
                        xlab("Concentration") +
                        ylab(expression(f[u,p])) +
                        ggtitle("Concentration-dependent fu,p", 
-                               subtitle = "If all simulations had the same values, points will overlap perfectly.") +
+                               subtitle = "Points will overlap perfectly when all simulations have the same values.") +
                        theme_consultancy(border = TRUE))
                
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20) * 6
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotHeight <- 0.5 + 
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
                                     width = PlotWidth,  
-                                    height = 6,
+                                    height = PlotHeight,
                                     fileType = "png", 
                                     units = "in", 
                                     startRow = nrow(Out[[item]][["DF"]]) + 5, 
@@ -1427,34 +1448,41 @@ annotateDetails <- function(existing_exp_details,
                
             } else if(item == "ConcDependent_BP"){ 
                
+               ## ConcDependent_BP tab ----------------------------------------
+               
                suppressMessages(
                   plot(ggplot(existing_exp_details[[item]], 
                               aes(x = Conc, y = BP, color = File)) +
                           geom_point() + geom_line() +
+                          scale_color_manual(values = rainbow(length(unique(existing_exp_details[[item]]$File)))) +
                           facet_grid(. ~ Compound, 
                                      scales = "fixed") +
                           xlab("Concentration") +
                           ylab("B/P") +
                           ggtitle("Concentration-dependent B/P", 
-                                  subtitle = "If all simulations had the same values, points will overlap perfectly.") +
+                                  subtitle = "Points will overlap perfectly when all simulations have the same values.") +
                           theme_consultancy(border = TRUE))
                )
                
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20) * 6
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotHeight <- 0.5 + 
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
                                     width = PlotWidth,  
-                                    height = 6,
+                                    height = PlotHeight,
                                     fileType = "png", 
                                     units = "in", 
                                     startRow = nrow(Out[[item]][["DF"]]) + 5, 
                                     startCol = 1)
                
             } else if(item == "CustomDosing"){ 
+               
+               ## CustomDosing tab --------------------------------------------
                
                RouteColors <- c("Oral" = "dodgerblue4", 
                                 "i.v. bolus" = "#E41A1C", 
@@ -1492,10 +1520,18 @@ annotateDetails <- function(existing_exp_details,
                                 strip.placement = "outside"))
                )
                
+               # Seems like ggplot makes not more than 20 items in the legend
+               # before going over a column. Will need to consider that when
+               # adjusting width.
+               PlotWidth <- 0.5 + 
+                  length(unique(existing_exp_details[[item]]$File)) * 5.5
+               PlotHeight <- 0.5 + 
+                  length(unique(existing_exp_details[[item]]$Compound)) * 4
+               
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
-                                    height = 0.5 + length(unique(existing_exp_details[[item]]$Compound)) * 4, 
-                                    width = length(unique(existing_exp_details[[item]]$File)) * 5.5,
+                                    height = PlotHeight,
+                                    width = PlotWidth,
                                     fileType = "png", 
                                     units = "in", 
                                     startRow = nrow(Out[[item]][["DF"]]) + 5, 
@@ -1503,24 +1539,28 @@ annotateDetails <- function(existing_exp_details,
                
             } else if(item == "DissolutionProfiles"){ 
                
+               ## DissolutionProfiles tab --------------------------------------
+               
                suppressMessages(suppressWarnings(
                   plot(dissolution_profile_plot(existing_exp_details, 
                                                 colorBy_column = File, 
                                                 line_transparency = 1/(NumFiles * 2), 
                                                 facet1_column = Compound) +
                           ggtitle("Dissolution-profile plot", 
-                                  subtitle = "If all simulations had the same values, points will overlap perfectly."))
+                                  subtitle = "Points will overlap perfectly when all simulations have the same values."))
                ))
                
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20) * 6
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotHeight <- 0.5 + 
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
                                     width = PlotWidth, 
-                                    height = 6, 
+                                    height = PlotHeight, 
                                     fileType = "png", 
                                     units = "in", 
                                     startRow = nrow(Out[[item]][["DF"]]) + 5, 
@@ -1528,24 +1568,28 @@ annotateDetails <- function(existing_exp_details,
                
             } else if(i == "ReleaseProfiles"){ 
                
+               ## ReleaseProfiles tab --------------------------------------
+               
                suppressMessages(suppressWarnings(
                   plot(release_profile_plot(existing_exp_details, 
                                             colorBy_column = File, 
                                             line_transparency = 1/(NumFiles * 2), 
                                             facet1_column = Compound) +
                           ggtitle("Release-profile plot", 
-                                  subtitle = "If all simulations had the same values, points will overlap perfectly."))
+                                  subtitle = "Points will overlap perfectly when all simulations have the same values."))
                ))
                
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20) * 6
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotHeight <- 0.5 + 
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
                                     width = PlotWidth, 
-                                    height = 6, 
+                                    height = PlotHeight, 
                                     fileType = "png", 
                                     units = "in", 
                                     startRow = nrow(Out[[item]][["DF"]]) + 5, 
@@ -1553,7 +1597,41 @@ annotateDetails <- function(existing_exp_details,
                
                rm(NumFiles, PlotWidth)
                
-            } 
+            } else if(i == "pH_dependent_solubility"){
+               
+               ## pH_dependent_solubility tab ----------------------------------
+               
+               suppressMessages(
+                  plot(ggplot(existing_exp_details[[item]], 
+                              aes(x = pH, y = Solubility, color = File)) +
+                          geom_point() + 
+                          geom_line() +
+                          facet_grid(Compound ~ ., switch = "y") +
+                          scale_color_manual(values = rainbow(length(unique(existing_exp_details[[item]]$File)))) +
+                          ylab("Solubility (mg/mL)") +
+                          ggtitle("pH-dependent solubility", 
+                                  subtitle = "Points will overlap perfectly when all simulations have the same values.") +
+                          theme_consultancy(border = TRUE) +
+                          theme(strip.placement = "outside")
+                  ))
+               
+               # Seems like ggplot makes not more than 20 items in the legend
+               # before going over a column. Will need to consider that when
+               # adjusting width.
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotHeight <- 0.5 + 
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
+               
+               openxlsx::insertPlot(wb = WB, 
+                                    sheet = output_tab_name, 
+                                    width = PlotWidth,  
+                                    height = PlotHeight,
+                                    fileType = "png", 
+                                    units = "in", 
+                                    startRow = nrow(Out[[item]][["DF"]]) + 5, 
+                                    startCol = 1)
+               
+            }
          }
       } # end subfun for saving xlsx
       
