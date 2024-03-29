@@ -798,11 +798,13 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    if(nrow(MyPK) == 0){
-      MyPK <- data.frame(File = sim_data_file, 
-                         Tab = ifelse(any(complete.cases(sheet_PKparameters$Tab)), 
-                                      sort(unique(sheet_PKparameters$Tab)), NA), 
-                         PKparameter = NA, 
-                         Value = NA)
+      MyPK <- data.frame(
+         File = sim_data_file, 
+         Tab = ifelse("Tab" %in% names(sheet_PKparameters) &&
+                         any(complete.cases(sheet_PKparameters$Tab)), 
+                      sort(unique(sheet_PKparameters$Tab)), NA), 
+         PKparameter = NA, 
+         Value = NA)
    }
    
    # # From here down, function is set up for observed PK to be a data.frame or,
@@ -940,7 +942,8 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Kahina requested that we give a warning that you don't need to specify the
    # sheet if it's for standard dose 1 or last dose PK.
-   if(any(complete.cases(sheet_PKparameters$Tab)) & 
+   if(("Tab" %in% names(sheet_PKparameters) &&
+      any(complete.cases(sheet_PKparameters$Tab))) & 
       (all(is.na(PKToPull)) |
        all(PKToPull %in% AllPKParameters$PKparameter, na.rm = T))){
       warning("You requested a specific sheet for extracting PK parameters; just fyi, you only need to specify the sheet if it's for a custom AUC interval.\n", 
