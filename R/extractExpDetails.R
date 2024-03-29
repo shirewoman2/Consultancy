@@ -1940,7 +1940,7 @@ extractExpDetails <- function(sim_data_file,
                ReleaseProfiles = ReleaseProfs, 
                ConcDependent_fup = CDfupProfs, 
                ConcDependent_BP = CDBPProfs, 
-               pH_dependend_solubility = pHSol)
+               pH_dependent_solubility = pHSol)
    
    for(j in names(Out)[unlist(lapply(Out, is.null)) == FALSE]){
       Out[[j]] <- Out[[j]] %>% 
