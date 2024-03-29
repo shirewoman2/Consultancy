@@ -1044,8 +1044,12 @@ annotateDetails <- function(existing_exp_details,
             template_sim <- NA
          }
          
-         # FileOrder should be > 1 if there is more than 1 sim. 
-         if(length(FileOrder) > 1){
+         # FileOrder should be > 1 if there is more than 1 sim. Also need to
+         # check that there is more than one sim in this particular set of data.
+         # If there is only 1 sim, no need to adjust order OR to look for
+         # differences from template or which are unique.
+         if(length(intersect(FileOrder, 
+                             unique(existing_exp_details[[item]]$File))) > 1){
             # Checking for details that are the SAME across all files
             GroupingDetails <- switch(item, 
                                       "MainDetails" = "Detail", 
@@ -1073,73 +1077,73 @@ annotateDetails <- function(existing_exp_details,
                DF <- DF %>%
                   left_join(AllSame)
             )
-         }
-         
-         if(complete.cases(template_sim)){
-            DF <- DF %>% 
-               select(-any_of("UniqueVal")) %>% 
-               select(any_of(unique(c(
-                  "SimulatorSection", "Sheet", "Notes", "CompoundID", "Compound",
-                  GroupingDetails, template_sim))), 
-                  everything())
             
-            TSim <- paste("TEMPLATE SIMULATION", 
-                          switch(item, 
-                                 "MainDetails" = "",
-                                 "CustomDosing" = "FOR DOSE", 
-                                 "ConcDependent_fup" = "FOR fu,p", 
-                                 "ConcDependent_BP" = "FOR B/P", 
-                                 "pH_dependent_solubility" = "FOR SOLUBILITY"), 
-                          "-", template_sim)
-            names(DF)[names(DF) == template_sim] <- TSim
-            
-         } else if("UniqueVal" %in% names(DF)){
-            DF <- DF %>% 
-               select(any_of(unique(c(
-                  "SimulatorSection", "Sheet", "Notes", "CompoundID", "Compound", 
-                  GroupingDetails, "UniqueVal"))), 
-                  everything())
-            
-            if("Compound" %in% names(DF)){
-               if(complete.cases(compound)){
-                  All_name <- switch(item, 
-                                     "MainDetails" = "All files have this value for this compound", 
-                                     "CustomDosing" = "All files have this dose for this compound", 
-                                     "ConcDependent_fup" = "All files have this fu,p for this compound", 
-                                     "ConcDependent_BP" = "All files have this B/P for this compound", 
-                                     "pH_dependent_solubility" = "All files have this solubility for this compound")
-                  
-                  
-                  names(DF)[names(DF) == "UniqueVal"] <- All_name
-                  
+            if(complete.cases(template_sim)){
+               DF <- DF %>% 
+                  select(-any_of("UniqueVal")) %>% 
+                  select(any_of(unique(c(
+                     "SimulatorSection", "Sheet", "Notes", "CompoundID", "Compound",
+                     GroupingDetails, template_sim))), 
+                     everything())
+               
+               TSim <- paste("TEMPLATE SIMULATION", 
+                             switch(item, 
+                                    "MainDetails" = "",
+                                    "CustomDosing" = "FOR DOSE", 
+                                    "ConcDependent_fup" = "FOR fu,p", 
+                                    "ConcDependent_BP" = "FOR B/P", 
+                                    "pH_dependent_solubility" = "FOR SOLUBILITY"), 
+                             "-", template_sim)
+               names(DF)[names(DF) == template_sim] <- TSim
+               
+            } else if("UniqueVal" %in% names(DF)){
+               DF <- DF %>% 
+                  select(any_of(unique(c(
+                     "SimulatorSection", "Sheet", "Notes", "CompoundID", "Compound", 
+                     GroupingDetails, "UniqueVal"))), 
+                     everything())
+               
+               if("Compound" %in% names(DF)){
+                  if(complete.cases(compound)){
+                     All_name <- switch(item, 
+                                        "MainDetails" = "All files have this value for this compound", 
+                                        "CustomDosing" = "All files have this dose for this compound", 
+                                        "ConcDependent_fup" = "All files have this fu,p for this compound", 
+                                        "ConcDependent_BP" = "All files have this B/P for this compound", 
+                                        "pH_dependent_solubility" = "All files have this solubility for this compound")
+                     
+                     
+                     names(DF)[names(DF) == "UniqueVal"] <- All_name
+                     
+                  } else {
+                     DF <- DF %>% 
+                        mutate(ToOmit = complete.cases(CompoundID) & 
+                                  is.na(Compound)) %>% 
+                        filter(ToOmit == FALSE) %>% select(-ToOmit)
+                     
+                     All_name <- switch(item, 
+                                        "MainDetails" = "All files have this value for this compound ID and compound", 
+                                        "CustomDosing" = "All files have this dose for this compound ID and compound", 
+                                        "ConcDependent_fup" = "All files have this fu,p for this compound ID and compound", 
+                                        "ConcDependent_BP" = "All files have this B/P for this compound ID and compound", 
+                                        "pH_dependent_solubility" = "All files have this solubility for this compound ID and compound")
+                     
+                     names(DF)[names(DF) == "UniqueVal"] <- All_name
+                  }
                } else {
-                  DF <- DF %>% 
-                     mutate(ToOmit = complete.cases(CompoundID) & 
-                               is.na(Compound)) %>% 
-                     filter(ToOmit == FALSE) %>% select(-ToOmit)
                   
                   All_name <- switch(item, 
-                                     "MainDetails" = "All files have this value for this compound ID and compound", 
-                                     "CustomDosing" = "All files have this dose for this compound ID and compound", 
-                                     "ConcDependent_fup" = "All files have this fu,p for this compound ID and compound", 
-                                     "ConcDependent_BP" = "All files have this B/P for this compound ID and compound", 
-                                     "pH_dependent_solubility" = "All files have this solubility for this compound ID and compound")
+                                     "MainDetails" = "All files have this value for this compound ID", 
+                                     "CustomDosing" = "All files have this dose for this compound ID", 
+                                     "ConcDependent_fup" = "All files have this fu,p for this compound ID", 
+                                     "ConcDependent_BP" = "All files have this B/P for this compound ID", 
+                                     "pH_dependent_solubility" = "All files have this solubility for this compound ID")
                   
                   names(DF)[names(DF) == "UniqueVal"] <- All_name
+                  
                }
-            } else {
-               
-               All_name <- switch(item, 
-                                  "MainDetails" = "All files have this value for this compound ID", 
-                                  "CustomDosing" = "All files have this dose for this compound ID", 
-                                  "ConcDependent_fup" = "All files have this fu,p for this compound ID", 
-                                  "ConcDependent_BP" = "All files have this B/P for this compound ID", 
-                                  "pH_dependent_solubility" = "All files have this solubility for this compound ID")
-               
-               names(DF)[names(DF) == "UniqueVal"] <- All_name
-               
-            }
-         } 
+            } 
+         }
          
          # Removing anything that was all NA's if that's what user requested
          if(omit_all_missing){
@@ -1170,7 +1174,9 @@ annotateDetails <- function(existing_exp_details,
                       intersect(FileOrder, names(DF)))] # files in the order requested
          
          # Checking for differences from template sim
-         if(complete.cases(template_sim) & length(FileOrder) > 1){
+         if(complete.cases(template_sim) & 
+            length(intersect(FileOrder, 
+                             unique(existing_exp_details[[item]]$File))) > 1){
             Diffs <- list()
             NontempFiles <- setdiff(intersect(FileOrder, names(DF)), 
                                     template_sim)
@@ -1358,45 +1364,31 @@ annotateDetails <- function(existing_exp_details,
                                                              template_sim)))
                   
                   # highlighting mismatches in red
-                  for(i in 1:length(Out[[item]][["Diffs"]])){
-                     openxlsx::addStyle(wb = WB, 
-                                        sheet = output_tab_name, 
-                                        style = ProbCells, 
-                                        rows = Out[[item]][["Diffs"]][[i]]$rows + 1, 
-                                        cols = Out[[item]][["Diffs"]][[i]]$columns)
+                  if(length(Out[[item]][["Diffs"]]) > 0){
+                     for(i in 1:length(Out[[item]][["Diffs"]])){
+                        openxlsx::addStyle(wb = WB, 
+                                           sheet = output_tab_name, 
+                                           style = ProbCells, 
+                                           rows = Out[[item]][["Diffs"]][[i]]$rows + 1, 
+                                           cols = Out[[item]][["Diffs"]][[i]]$columns)
+                     }
                   }
-               }
-               
-               # Freezing view 
-               UnfrozCol1 <- which(
-                  str_detect(names(Out[[item]][["DF"]]),
-                             "TEMPLATE|^All files")) + 1
-               UnfrozCol1 <- UnfrozCol1[1]
-               # Most of the time, column 8 should be the 1st active column,
-               # so set that here. Also, the only time we won't have a value
-               # here is if there was only 1 simulation, so which column is
-               # frozen isn't that important.
-               UnfrozCol1 <- ifelse(is.na(UnfrozCol1), 8, UnfrozCol1)
-               
-               openxlsx::freezePane(wb = WB,
-                                    sheet = output_tab_name,
-                                    firstActiveRow = 2,
-                                    firstActiveCol =  UnfrozCol1)
-               
-               
-               if(item == "MainDetails"){
-                  ## MainDetails tab -------------------------------------------
                   
-                  # Adding style for notes column
-                  openxlsx::addStyle(wb = WB, 
-                                     sheet = output_tab_name, 
-                                     style = NotesColumn, 
-                                     rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
-                                     cols = which(
-                                        str_detect(names(Out[[item]][["DF"]]),
-                                                   "Note")))
+                  # Freezing view 
+                  UnfrozCol1 <- which(
+                     str_detect(names(Out[[item]][["DF"]]),
+                                "TEMPLATE|^All files")) + 1
+                  UnfrozCol1 <- UnfrozCol1[1]
+                  # Most of the time, column 8 should be the 1st active column,
+                  # so set that here. Also, the only time we won't have a value
+                  # here is if there was only 1 simulation, so which column is
+                  # frozen isn't that important.
+                  UnfrozCol1 <- ifelse(is.na(UnfrozCol1), 8, UnfrozCol1)
                   
-                  
+                  openxlsx::freezePane(wb = WB,
+                                       sheet = output_tab_name,
+                                       firstActiveRow = 2,
+                                       firstActiveCol =  UnfrozCol1)
                }
             } else {
                # Adding frozen top row for dissolution and release profiles.
@@ -1404,6 +1396,21 @@ annotateDetails <- function(existing_exp_details,
                                     sheet = output_tab_name,
                                     firstActiveRow = 2,
                                     firstActiveCol =  1)
+            }
+            
+            if(item == "MainDetails"){
+               ## MainDetails tab -------------------------------------------
+               
+               # Adding style for notes column
+               openxlsx::addStyle(wb = WB, 
+                                  sheet = output_tab_name, 
+                                  style = NotesColumn, 
+                                  rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
+                                  cols = which(
+                                     str_detect(names(Out[[item]][["DF"]]),
+                                                "Note")))
+               
+               
             }
             
             # At this point, we have written the data for all possible items,
