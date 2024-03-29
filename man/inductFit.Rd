@@ -32,6 +32,7 @@ inductFit(
   graph_title_size = 14,
   save_graph = NA,
   save_table = NA,
+  page_orientation = "portrait",
   fig_height = 5,
   fig_width = 5.5,
   save_output = NA
@@ -247,6 +248,9 @@ dollar signs, or periods in the file name. If you only want to save the
 graphs, please use the argument \code{save_graph}. If you want to save a
 Word document with all the results, please use the argument
 \code{save_output}.}
+
+\item{page_orientation}{set the page orientation for the Word file output to
+"portrait" (default) or "landscape"}
 
 \item{fig_height}{figure height in inches; default is 5}
 

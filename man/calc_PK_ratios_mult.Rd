@@ -26,6 +26,7 @@ calc_PK_ratios_mult(
   existing_exp_details = NA,
   save_table = NA,
   single_table = TRUE,
+  page_orientation = "portrait",
   fontsize = 11
 )
 }
@@ -216,6 +217,9 @@ its own and will have "- QC" added to the end of the file name.}
 \item{single_table}{TRUE (default) or FALSE for whether to save all the PK
 data in a single table or break the data up by tissue, compound ID, and
 file into multiple tables. This only applies to the Word output.}
+
+\item{page_orientation}{set the page orientation for the Word file output to
+"portrait" (default) or "landscape"}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
