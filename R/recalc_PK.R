@@ -518,14 +518,14 @@ recalc_PK <- function(ct_dataframe,
                group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial,
                         Simulated, File, ObsFile, DoseNum, ID) %>%
                summarize(MaxPossTime = max(Time, na.rm = T),
-                         # For reasons that utterly baffle and infuriate me, dplyr
-                         # will invisibly DROP the last grouping variable if the
-                         # result would have only one row. (See help file for
-                         # dplyr::summarize.) Why THAT would EVER be what people
-                         # really want since the function that groups the data is NOT
-                         # summarize and that this occurs even when they have
-                         # specified .drop = FALSE in the function that DOES perform
-                         # the grouping is *beyond me*.
+                         # For reasons that utterly baffle and infuriate me,
+                         # dplyr will invisibly DROP the last grouping variable
+                         # if the result would have only one row. (See help file
+                         # for dplyr::summarize.) Why THAT would EVER be what
+                         # people really want since the function that groups the
+                         # data is NOT summarize and that this occurs even when
+                         # they have specified .drop = FALSE in the function
+                         # that DOES perform the grouping is *beyond me*.
                          .groups = "keep") 
             
             suppressMessages(
@@ -543,13 +543,14 @@ recalc_PK <- function(ct_dataframe,
                            Simulated, File, ObsFile, DoseNum, ID) %>%
                   summarize(t0 = min(Time, na.rm = T),
                             MaxTime = max(Time, na.rm = T),
-                            # For reasons that utterly baffle and infuriate me, dplyr
-                            # will invisibly DROP the last grouping variable if the
-                            # result would have only one row. (See help file for
-                            # dplyr::summarize.) Why THAT would EVER be what people
-                            # really want since the function that groups the data is NOT
-                            # summarize and that this occurs even when they have
-                            # specified .drop = FALSE in the function that DOES perform
+                            # For reasons that utterly baffle and infuriate me,
+                            # dplyr will invisibly DROP the last grouping
+                            # variable if the result would have only one row.
+                            # (See help file for dplyr::summarize.) Why THAT
+                            # would EVER be what people really want since the
+                            # function that groups the data is NOT summarize and
+                            # that this occurs even when they have specified
+                            # .drop = FALSE in the function that DOES perform
                             # the grouping is *beyond me*.
                             .groups = "keep") %>%
                   mutate(MaxTime =
@@ -588,12 +589,11 @@ recalc_PK <- function(ct_dataframe,
                CT_temp <- CTsubset[["1"]][[j]] %>% 
                   left_join(FirstDoseTime) %>% 
                   filter(Time >= t0 & Time <= MaxTime) %>% 
-                  # NB: Need to subtract t0 here so that fitting
-                  # starts at the right time. Also, there may be 0
-                  # concs *after* t0 depending on the absorption,
-                  # so I'm specifically using the minimum value so
-                  # that all subjects in the same simulation have
-                  # the same t0 for dose 1.
+                  # NB: Need to subtract t0 here so that fitting starts at the
+                  # right time. Also, there may be 0 concs *after* t0 depending
+                  # on the absorption, so I'm specifically using the minimum
+                  # value so that all subjects in the same simulation have the
+                  # same t0 for dose 1.
                   mutate(Time = Time - t0)
             )
             
@@ -673,7 +673,8 @@ recalc_PK <- function(ct_dataframe,
                )
             }
             
-            # Check whether that attempt worked and try again if not if that's what the user wants.
+            # Check whether that attempt worked and try again if not if that's
+            # what the user wants.
             if((inherits(TEMP, "try-error") |
                 (inherits(TEMP, "try-error") == FALSE && 
                  "Estimates" %in% names(TEMP) &&
@@ -689,7 +690,8 @@ recalc_PK <- function(ct_dataframe,
                                graph = TRUE)
             }
             
-            # Check whether things worked. If they did, make the graph.
+            # Check whether things worked. If they did, make the graph showing
+            # that. If they did not, make a graph that says there was a problem.
             if("Estimates" %in% names(TEMP) &&
                (any(is.na(TEMP$Estimates$Beta)) |
                 any(TEMP$Estimates$Estimate < 0)) == FALSE){
@@ -697,7 +699,16 @@ recalc_PK <- function(ct_dataframe,
                   ggtitle(sub("observed ", "observed\n", 
                               sub("simulated ", "simulated\n", j))) +
                   theme(title = element_text(size = 6))
-            } 
+            } else {
+               ElimFitGraphs[[j]] <- ggplot(CT_temp, aes(x = Time, y = Conc)) +
+                  geom_point() +
+                  annotate(geom = "text", x = mean(CT_temp$Time, na.rm = T),
+                           y = mean(CT_temp$Conc, na.rm = T), size = 8,
+                           color = "red", 
+                           label = "There was a problem with extrapolation\nto infinity for this graph.") +
+                  ggtitle(sub("observed ", "observed\n", 
+                              sub("simulated ", "simulated\n", j)))
+            }
             
             if("Estimates" %in% names(TEMP)){
                ElimFits[[j]] <- TEMP$Estimates
@@ -732,10 +743,10 @@ recalc_PK <- function(ct_dataframe,
             suppressMessages(
                CmaxTmax_temp <- CTsubset[["1"]][[j]] %>% 
                   # NB: Need to subtract t0 here so that fitting starts at the
-                  # right time. Also, there may be 0 concs *after* t0 depending on
-                  # the absorption, so I'm specifically using the minimum value so
-                  # that all subjects in the same simulation have the same t0 for
-                  # dose 1.
+                  # right time. Also, there may be 0 concs *after* t0 depending
+                  # on the absorption, so I'm specifically using the minimum
+                  # value so that all subjects in the same simulation have the
+                  # same t0 for dose 1.
                   left_join(FirstDoseTime) %>% 
                   mutate(Time = Time - t0) %>% 
                   summarize(Cmax = max(Conc, na.rm = T), 
@@ -844,13 +855,14 @@ recalc_PK <- function(ct_dataframe,
                            Simulated, File, ObsFile, DoseNum, ID) %>%
                   summarize(t0 = min(Time, na.rm = T),
                             MaxTime = max(Time, na.rm = T),
-                            # For reasons that utterly baffle and infuriate me, dplyr
-                            # will invisibly DROP the last grouping variable if the
-                            # result would have only one row. (See help file for
-                            # dplyr::summarize.) Why THAT would EVER be what people
-                            # really want since the function that groups the data is NOT
-                            # summarize and that this occurs even when they have
-                            # specified .drop = FALSE in the function that DOES perform
+                            # For reasons that utterly baffle and infuriate me,
+                            # dplyr will invisibly DROP the last grouping
+                            # variable if the result would have only one row.
+                            # (See help file for dplyr::summarize.) Why THAT
+                            # would EVER be what people really want since the
+                            # function that groups the data is NOT summarize and
+                            # that this occurs even when they have specified
+                            # .drop = FALSE in the function that DOES perform
                             # the grouping is *beyond me*.
                             .groups = "keep") %>%
                   mutate(MaxTime =
@@ -925,7 +937,7 @@ recalc_PK <- function(ct_dataframe,
             
             for(j in names(CTsubset[[i]])){
                
-               if(report_progress == "yes"){message(paste0("   Calculating PK for dataset", j))}
+               if(report_progress == "yes"){message(paste0("   Calculating PK for dataset ", j))}
                
                MyDose <- switch(unique(CTsubset[[i]][[j]]$CompoundID), 
                                 "substrate" = unique(CTsubset[[i]][[j]]$Dose_sub), 
@@ -954,8 +966,8 @@ recalc_PK <- function(ct_dataframe,
                      filter(Conc > 0)
                }
                
-               # Make a graph of the last-dose data so that user can check that they're
-               # integrating what they *think* they're integrating.
+               # Make a graph of the last-dose data so that user can check that
+               # they're integrating what they *think* they're integrating.
                ElimFitGraphs[[j]] <- 
                   ct_plot(CTsubset[[i]][[j]] %>% 
                              mutate(Trial = "mean"), 
@@ -1055,13 +1067,14 @@ recalc_PK <- function(ct_dataframe,
                            Simulated, File, ObsFile, DoseNum, ID) %>%
                   summarize(t0 = min(Time, na.rm = T),
                             MaxTime = max(Time, na.rm = T),
-                            # For reasons that utterly baffle and infuriate me, dplyr
-                            # will invisibly DROP the last grouping variable if the
-                            # result would have only one row. (See help file for
-                            # dplyr::summarize.) Why THAT would EVER be what people
-                            # really want since the function that groups the data is NOT
-                            # summarize and that this occurs even when they have
-                            # specified .drop = FALSE in the function that DOES perform
+                            # For reasons that utterly baffle and infuriate me,
+                            # dplyr will invisibly DROP the last grouping
+                            # variable if the result would have only one row.
+                            # (See help file for dplyr::summarize.) Why THAT
+                            # would EVER be what people really want since the
+                            # function that groups the data is NOT summarize and
+                            # that this occurs even when they have specified
+                            # .drop = FALSE in the function that DOES perform
                             # the grouping is *beyond me*.
                             .groups = "keep") %>%
                   mutate(MaxTime =
