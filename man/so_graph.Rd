@@ -8,11 +8,13 @@ so_graph(
   PKtable,
   PKparameters = NA,
   PKorder = "default",
-  boundaries = c(1.5, 2),
-  boundaries_Guest = 2,
   boundary_indicator = "lines",
+  boundaries = c(1, 1.5, 2),
+  boundaries_Guest = c(1, 2),
   boundary_color_set = "red black",
+  boundary_color_set_Guest = "red black",
   boundary_line_types = "default",
+  boundary_line_types_Guest = "default",
   boundary_line_width = 0.7,
   point_color_column,
   point_color_set = "default",
@@ -22,7 +24,8 @@ so_graph(
   point_size = NA,
   legend_label_point_shape = NA,
   legend_position = "none",
-  axis_titles = c(y = "Simulated", x = "Observed"),
+  axis_title_x = "Observed",
+  axis_title_y = "Simulated",
   include_dose_num = NA,
   title_adjustments = c(),
   all_intervals_together = FALSE,
@@ -30,7 +33,8 @@ so_graph(
   nrow = NULL,
   save_graph = NA,
   fig_width = 8,
-  fig_height = 6
+  fig_height = 6,
+  axis_titles = NA
 )
 }
 \arguments{
@@ -62,22 +66,6 @@ list for \code{PKparameters} wherever you want that to happen, e.g.,
 \code{PKparameters = c("Cmax_dose1", "BLANK", "AUCinf_dose1", "BLANK",
 "tmax_dose1")}}
 
-\item{boundaries}{Numerical boundaries to show on the graph. Defaults to the
-1.5- and 2-fold boundaries. Indicate boundaries you want like this:
-\code{boundaries = c(1.25, 1.5, 2)}}
-
-\item{boundaries_Guest}{Numerical boundaries to show on the graph when the PK
-parameter is a mean ratio of the parameter in the presence of a perpetrator
-/ the parameter in the absence of the perpetrator. The default boundary for
-Guest curves is 2, which will show both the Guest curve and a straight
-line. Honestly, we recommend leaving this as 2 for clarity of the graph.
-For these PK parameters, if there are any values listed for
-\code{boundaries_Guest}, the lines will be replaced with a curve as
-described in [Guest Galetin 2011 Drug Metab
-Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/). If you'd rather show
-straight lines for these parameters instead of Guest curves, set this to
-NA.}
-
 \item{boundary_indicator}{how to indicate the boundaries for simulated /
 observed. Options are "lines" (default), "fill" to get a shaded area, or
 "none" to remove any indicators of those
@@ -88,24 +76,62 @@ RStudio, go to Tools --> Global Options --> General --> Graphics --> And
 then set "Graphics device: backend" to "AGG". Honestly, this is a better
 option for higher-quality graphics anyway!}
 
+\item{boundaries}{Numerical boundaries to show on the graph. Defaults to the
+1.5- and 2-fold boundaries. Indicate boundaries you want like this:
+\code{boundaries = c(1.25, 1.5, 2)}}
+
+\item{boundaries_Guest}{Numerical boundaries to show on the graph when the PK
+parameter is a mean ratio of the parameter in the presence of a perpetrator
+/ the parameter in the absence of the perpetrator. Please see [BoundariesGuest
+Galetin 2011 Drug Metab Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/)
+for a reference for this type of graph. If you'd rather show straight lines
+for these parameters instead of BoundariesGuest curves, set this to NA. The default
+boundaries for BoundariesGuest curves are 1 (straight line at unity; even if you
+don't include 1, we'll add it back in) and 2. For all numbers > 1, you'll
+get a BoundariesGuest curve that approaches that value at higher DDI ratios, and, for
+the highest number you list, you'll additionally get straight line
+boundaries. This matches what is described in the BoundariesGuest Galetin 2011 paper.
+We recommend using only 1 and 2 as BoundariesGuest boundaries for clarity of the
+graph.}
+
 \item{boundary_color_set}{set of colors to use for indicating the X-fold
 boundaries of the simulated / observed ratio. The default is "red black",
 which, for the default boundaries, results in a black line at the 1.5-fold
 boundary and a red one at the 2-fold boundary. Other options are "red
-green", "muted red green" (a lighter, somewhat more muted red and green
-that work well for indicating the boundary when you're using shading
-instead of lines), and "black", which will result in only black lines or
-shading. You also can set this to any set of colors you'd like, e.g.,
-\code{boundary_color_set = c("yellow", "blue")}. The number of colors
-should equal the number of boundaries that you've indicated or the graph
-won't be easily interpretable.}
+green", "muted red green" (a lighter, more muted red and green that work
+well for indicating boundaries when you're using shading instead of lines),
+and "black", which will result in only black lines or shading. You also can
+set this to any set of colors you'd like, e.g., \code{boundary_color_set =
+c("yellow", "blue")}. The number of colors should equal the number of
+boundaries that you've indicated or the graph won't be easily
+interpretable.}
+
+\item{boundary_color_set_Guest}{set of colors to use for indicating the
+X-fold boundaries of the simulated / observed ratio for DDI ratio graphs.
+The default is "red black", which, for the default BoundariesGuest boundaries,
+results in a black curved line and a red straight line at the 2-fold
+boundary. Other options are "red green", "muted red green" (a lighter, more
+muted red and green that work well for indicating boundaries when you're
+using shading instead of lines), and "black", which will result in only
+black lines or shading. You also can set this to
+any set of colors you'd like, e.g., \code{boundary_color_set_Guest = c("yellow",
+"blue")}. The number of colors should equal the number of BoundariesGuest boundaries
+that you've indicated or the graph won't be easily interpretable.}
 
 \item{boundary_line_types}{optionally specify the line types to use for the
-boundaries (only applicable when \code{boundary_indicator = "lines"});
-leaving this as "default" results in a dashed line at unity and solid lines
+boundaries (only applicable when \code{boundary_indicator = "lines"}).
+Leaving this as "default" results in a dashed line at unity and solid lines
 for all others, but you can specify this with any R-acceptable line types,
 e.g., \code{boundary_line_types = c("dotted", "dashed", "solid")}. To see
 the possibilities, type \code{ggpubr::show_line_types()} into the console.}
+
+\item{boundary_line_types_Guest}{optionally specify the line types to use for
+the DDI ratio graph boundaries (only applicable when
+\code{boundary_indicator = "lines"}). Leaving this as "default" results in
+a dashed line at unity and solid lines for all others, but you can specify
+this with any R-acceptable line types, e.g., \code{boundary_line_types_Guest =
+c("dotted", "dashed", "solid")}. To see the possibilities, type
+\code{ggpubr::show_line_types()} into the console.}
 
 \item{boundary_line_width}{line width; default is 0.7. This only applies when
 \code{boundary_indicator} is set to "lines", the default.}
@@ -208,9 +234,9 @@ this legend item, set this to "none".}
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
 
-\item{axis_titles}{optionally specify what you'd like for the x and y axis
-titles with a named character vector. The default is \code{axis_titles =
-c("x" = "Observed", "y" = "Simulated")}}
+\item{axis_title_x}{title for the x axis; default is "Observed"}
+
+\item{axis_title_y}{title for the y axis; default is "Simulated"}
 
 \item{include_dose_num}{Should the dose number be included? If set to TRUE,
 then the dose number part of the graph title, e.g., the "Dose 1" or "Last
@@ -221,7 +247,9 @@ omitted if all the data are all for dose 1 or all for the last dose, and it
 will be included if you have a mix of dosing intervals.}
 
 \item{title_adjustments}{a character vector of text adjustments for the
-  title. Possible options: \describe{\item{"sub steady-state for last"}{Instead of the
+  title. Possible options:
+
+  \describe{\item{"sub steady-state for last"}{Instead of the
   default PK parameters for the last dose being labeled as, e.g.,
   "Last dose Cmax", this will use "steady-state" instead, e.g.,
   "Steady-state Cmax"}
@@ -254,6 +282,10 @@ in quotes here, e.g., "My conc time graph.png"}
 \item{fig_width}{figure width in inches; default is 6}
 
 \item{fig_height}{figure height in inches; default is 8}
+
+\item{axis_titles}{optionally specify what you'd like for the x and y axis
+titles with a named character vector. The default is \code{axis_titles =
+c("x" = "Observed", "y" = "Simulated")}}
 }
 \value{
 a set of arranged ggplot2 graphs
