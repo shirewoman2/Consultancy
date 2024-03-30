@@ -387,9 +387,10 @@ so_graph <- function(PKtable,
    
    boundary_color_set_Guest <- boundary_color_set_Guest
    
-   
-   # FIXME - Ummm... I don't remember why I set this "BLANK" stuff up... What
-   # was the problem I was trying to solve here?!? Bad code annotation, Laura!
+   # This next bit is for dealing with blank graphs when user specifies PKorder
+   # and wants to include some blank spaces so that, for example, all the Cmax
+   # graphs are in the same column or row. See the help file for the arguments
+   # PKorder and PKparameters to see how this would be set up.
    PKwithBlanks <- PKparameters
    PKwithBlanks[toupper(PKwithBlanks) == "BLANK"] <- 
       paste0(PKwithBlanks[toupper(PKwithBlanks) == "BLANK"], 
