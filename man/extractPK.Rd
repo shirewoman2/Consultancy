@@ -27,9 +27,9 @@ in quotes}
   \item{"all"}{all possible parameters}
 
   \item{"AUC tab"}{only those parameters on the "AUC" tab (default). For V21
-  or later, this will look for tabs named something like 
-  "Int AUC 1st_CI(Sub)(CPlasma)" for the 1st dose of the substrate, for 
-  example, and pull all possible parameters there. For V21, 
+  or later, this will look for tabs named something like
+  "Int AUC 1st_CI(Sub)(CPlasma)" for the 1st dose of the substrate, for
+  example, and pull all possible parameters there. For V21,
   and earlier, this will pull data from the tab literally named "AUC"
   or the "AUC_CI" tab or "AUC_SD" tab if a tab named "AUC"is not present.}
 
@@ -66,8 +66,10 @@ listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
 metabolite of inhibitor 1}}}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default), "unbound plasma", "blood", or "unbound
-blood".}
+Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
+"peripheral plasma", or "peripheral blood". \strong{NOTE: PK for peripheral
+sampling is not as well tested as for other tissues and is only set up for 
+V21+. Please check your results carefully.}}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to

@@ -184,8 +184,10 @@
 #'   character vector to the argument \code{PKparameters} instead, but please do
 #'   not supply it to both.}}
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
-#'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
-#'   blood".
+#'   Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
+#'   "peripheral plasma", or "peripheral blood". \strong{NOTE: PK for peripheral
+#'   sampling is not as well tested as for other tissues and is only set up for 
+#'   V21+. Please check your results carefully.}
 #' @param compoundToExtract For which compound do you want to extract PK data?
 #'   Options are: \itemize{\item{"substrate" (default),} \item{"primary
 #'   metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
@@ -475,8 +477,9 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Check for appropriate input for arguments
    tissue <- tolower(tissue)
-   if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
+   if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood", 
+                    "peripheral plasma", "peripheral blood") == FALSE){
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, `unbound blood`, `peripheral plasma`, or `peripheral blood`. The PK parameters will be for plasma.", 
               call. = FALSE)
       tissue <- "plasma"
    }

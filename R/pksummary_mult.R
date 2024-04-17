@@ -85,8 +85,11 @@
 #'   e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}
 #' @param tissues For which tissue(s) would you like the PK parameters to be
 #'   pulled? Options are any combination of "plasma" (default), "unbound
-#'   plasma", "blood", or "unbound blood". For multiple tissues, enclose them
-#'   with parentheses, e.g., \code{tissues = c("blood", "plasma")}
+#'   plasma", "blood", "unbound blood", "peripheral plasma", or "peripheral 
+#'   blood". \strong{NOTE: PK for peripheral sampling is not as well tested as 
+#'   for other tissues and is only set up for V21+. Please check your results 
+#'   carefully.}. For multiple tissues, enclose them with parentheses, e.g., 
+#'   \code{tissues = c("blood", "plasma")}
 #' @param PKparameters (optional) the PK parameters to include as a character
 #'   vector. \itemize{
 #'
@@ -328,9 +331,9 @@
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
 #' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
 #'   header row to the top of your table denoting when the PK are for baseline,
-#'   with a perpetrator, or are the geometric mean ratios. 
+#'   with a perpetrator, or are the geometric mean ratios.
 #' @param page_orientation set the page orientation for the Word file output to
-#'   "portrait" (default) or "landscape" 
+#'   "portrait" (default) or "landscape"
 #' @param ...
 #'
 #' @return Returns a data.frame with summary PK parameters from multiple

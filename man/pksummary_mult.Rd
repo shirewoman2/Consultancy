@@ -65,8 +65,11 @@ e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}}
 
 \item{tissues}{For which tissue(s) would you like the PK parameters to be
 pulled? Options are any combination of "plasma" (default), "unbound
-plasma", "blood", or "unbound blood". For multiple tissues, enclose them
-with parentheses, e.g., \code{tissues = c("blood", "plasma")}}
+plasma", "blood", "unbound blood", "peripheral plasma", or "peripheral 
+blood". \strong{NOTE: PK for peripheral sampling is not as well tested as 
+for other tissues and is only set up for V21+. Please check your results 
+carefully.}. For multiple tissues, enclose them with parentheses, e.g., 
+\code{tissues = c("blood", "plasma")}}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
   vector. \itemize{

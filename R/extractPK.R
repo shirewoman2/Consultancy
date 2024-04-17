@@ -19,9 +19,9 @@
 #'   \item{"all"}{all possible parameters}
 #'
 #'   \item{"AUC tab"}{only those parameters on the "AUC" tab (default). For V21
-#'   or later, this will look for tabs named something like 
-#'   "Int AUC 1st_CI(Sub)(CPlasma)" for the 1st dose of the substrate, for 
-#'   example, and pull all possible parameters there. For V21, 
+#'   or later, this will look for tabs named something like
+#'   "Int AUC 1st_CI(Sub)(CPlasma)" for the 1st dose of the substrate, for
+#'   example, and pull all possible parameters there. For V21,
 #'   and earlier, this will pull data from the tab literally named "AUC"
 #'   or the "AUC_CI" tab or "AUC_SD" tab if a tab named "AUC"is not present.}
 #'
@@ -49,8 +49,10 @@
 #'   listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
 #'   metabolite of inhibitor 1}}
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
-#'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
-#'   blood".
+#'   Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
+#'   "peripheral plasma", or "peripheral blood". \strong{NOTE: PK for peripheral
+#'   sampling is not as well tested as for other tissues and is only set up for 
+#'   V21+. Please check your results carefully.}
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
 #'   get all the details from the "Input Sheet" (e.g., when you ran
@@ -175,8 +177,9 @@ extractPK <- function(sim_data_file,
    }
    
    tissue <- tolower(tissue)
-   if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
+   if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood", 
+                    "peripheral plasma", "peripheral blood") == FALSE){
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, `unbound blood`, `peripheral plasma`, or `peripheral blood`. The PK parameters will be for plasma.", 
               call. = FALSE)
       tissue <- "plasma"
    }
@@ -328,7 +331,9 @@ extractPK <- function(sim_data_file,
    if(SimV21plus){
       Tab_first <- SheetNames[
          str_detect(SheetNames, 
-                    paste0("Int AUC 1st(_CI|_SD)?", 
+                    paste0(ifelse(str_detect(tissue, "peripheral"), 
+                                  "Periph ", ""), 
+                           "Int AUC 1st(_CI|_SD)?", 
                            switch(compoundToExtract,
                                   "substrate" = "\\(Sub\\)", 
                                   "primary metabolite 1" = "\\(Sub Met\\)",
@@ -339,8 +344,10 @@ extractPK <- function(sim_data_file,
                                   "inhibitor 2" = "\\(Inh 2\\)"), 
                            switch(tissue, 
                                   "plasma" = "\\(CP", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
+                                  "peripheral plasma" = "\\(CP",
                                   "unbound plasma" = "\\(CuP",
                                   "blood" = "\\(CB", 
+                                  "peripheral blood" = "\\(CB", 
                                   "unbound blood" = "\\(CuB")))][1]
       
       # Sometimes, the tab name gets clipped so far that you can't even tell

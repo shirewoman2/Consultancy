@@ -61,8 +61,10 @@ simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
 inhibitor 1}}}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default), "unbound plasma", "blood", or "unbound
-blood".}
+Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
+"peripheral plasma", or "peripheral blood". \strong{NOTE: PK for peripheral
+sampling is not as well tested as for other tissues and is only set up for 
+V21+. Please check your results carefully.}}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
   vector. \itemize{
