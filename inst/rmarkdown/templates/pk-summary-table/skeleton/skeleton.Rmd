@@ -101,7 +101,11 @@ formatTable_Simcyp(MyPKResults,
                    fontsize = fontsize,
                    prettify_columns = TRUE,
                    add_header_for_DDI = add_header_for_DDI, 
-                   perpetrator_name = MyPerpetrator,
+                   perpetrator_name = 
+                      ifelse(prettify_columns, 
+                             determine_myperpetrator(Deets,
+                                                     prettify_compound_names = prettify_compound_names), 
+                             "perpetrator"),
                    highlight_so_cutoffs = highlight_so_cutoffs, 
                    highlight_so_colors = highlight_so_colors, 
                    highlight_gmr_colors = highlight_gmr_colors)

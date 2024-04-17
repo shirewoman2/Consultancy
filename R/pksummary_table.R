@@ -1476,7 +1476,7 @@ pksummary_table <- function(sim_data_file = NA,
       
       suppressMessages(
          MyPKResults <- MyPKResults %>% 
-            full_join(MyObsPK %>% select(-BaseNameFile)) %>% 
+            full_join(MyObsPK %>% select(-any_of("BaseNameFile"))) %>% 
             pivot_longer(names_to = "SorO", values_to = "Value", 
                          cols = c(Sim, Obs)) %>% 
             full_join(SOratios)
