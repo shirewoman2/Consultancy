@@ -372,6 +372,10 @@ extractObsConcTime <- function(obs_data_file,
       obs_data$Species <- "human"
    }
    
+   # If there's nothing filled in for DVID, you can still get that to work with
+   # the simulator but it will break here. Fill in 1 for any NA values.
+   obs_data$DVID[is.na(obs_data$DVID)] <- 1
+   
    obs_data <- obs_data %>%
       mutate(across(.cols = any_of(c("Time", "Conc", "SD_SE")), .fns = as.numeric)) %>%
       mutate(CompoundID_obsfile = CompoundCode[as.character(DVID)],

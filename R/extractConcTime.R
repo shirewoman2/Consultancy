@@ -704,8 +704,11 @@ extractConcTime <- function(sim_data_file,
       } else {
          # If the user did specify an observed data file, read in
          # observed data.
+         
+         # FIXME - This is failing sometimes. not sure why. see acoziborole conmeds. 
          obs_data <- extractObsConcTime(obs_data_file) %>%
-            mutate(Compound = ObsCompounds[CompoundID],
+            mutate(CompoundID = as.character(CompoundID), # Need to include this b/c sometimes it could be a named character vector, which messes up the next step. 
+                   Compound = ObsCompounds[CompoundID],
                    Inhibitor = ifelse(Inhibitor == "inhibitor" &
                                          complete.cases(AllPerps_comma),
                                       AllPerps_comma, Inhibitor))
