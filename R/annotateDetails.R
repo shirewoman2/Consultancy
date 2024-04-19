@@ -1032,14 +1032,20 @@ annotateDetails <- function(existing_exp_details,
          
          # Need to check again whether template_sim is included b/c it might not
          # be any more if the user has filtered results for a specific compound
-         # ID that doesn't exist in template_sim.
-         if(complete.cases(template_sim) & template_sim %in% names(DF) == FALSE){
-            warning(paste0("Your template simulation file, `", 
-                           template_sim, 
-                           "`, was originally included in the object you supplied for `existing_exp_details`, but that particular simulation didn't have any of the combination of details or compound IDs or compounds that you requested we filter the results by for the ", 
-                           item_char, 
-                           ". We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim` for this part of the output.\n"), 
-                    call. = FALSE)
+         # ID that doesn't exist in template_sim. 
+         if(complete.cases(template_sim) & 
+            template_sim %in% names(DF) == FALSE){
+            
+            # Only giving the warning when it's for MainDetails b/c otherwise
+            # it's confusing. 
+            if(item == "MainDetails"){
+               warning(paste0("Your template simulation file, `", 
+                              template_sim, 
+                              "`, was originally included in the object you supplied for `existing_exp_details`, but that particular simulation didn't have any of the combination of details or compound IDs or compounds that you requested we filter the results by for the ", 
+                              item_char, 
+                              ". We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim` for this part of the output.\n"), 
+                       call. = FALSE)
+            }
             
             template_sim <- NA
          }
