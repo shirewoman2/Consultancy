@@ -94,6 +94,7 @@ formatTable_Simcyp(TempTable,
                    perpetrator_name = MyPerpetrator, 
                    fontsize = fontsize,
                    prettify_columns = prettify_columns, 
+                   add_header_for_DDI = add_header_for_DDI, 
                    highlight_so_cutoffs = highlight_so_cutoffs, 
                    highlight_so_colors = highlight_so_colors)
 

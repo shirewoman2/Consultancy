@@ -932,7 +932,7 @@ ct_plot_overlay <- function(ct_dataframe,
       if(length(unique(ct_dataframe$FC1)) == 1){
          warning(paste0("You requested the column `", 
                         as_label(facet1_column), 
-                        "` for facet1_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
+                        "` for facet1_column, but that column contains only 1 unique value. Are you sure that's what you want?\n"), 
                  call. = FALSE)
       }
    }
@@ -944,7 +944,7 @@ ct_plot_overlay <- function(ct_dataframe,
       if(length(unique(ct_dataframe$FC2)) == 1){
          warning(paste0("You requested the column `", 
                         as_label(facet2_column), 
-                        "` for facet2_column, but that column contains only 1 unique value. Are you sure that's what you want?"), 
+                        "` for facet2_column, but that column contains only 1 unique value. Are you sure that's what you want?\n"), 
                  call. = FALSE)
       }
    }
@@ -961,20 +961,20 @@ ct_plot_overlay <- function(ct_dataframe,
    if(length(time_range) == 1 && complete.cases(time_range[1]) &&
       !str_detect(time_range, "dose|last obs|all obs")){
       if(complete.cases(time_range)){
-         warning("You have specified only 1 value for the time range and you don't appear to be specifying a time range by dose number, so we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used.",
+         warning("You have specified only 1 value for the time range and you don't appear to be specifying a time range by dose number, so we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used.\n",
                  call. = FALSE)
          time_range <- NA
       }
    } else {
       if(length(time_range) > 2){
-         warning("You have specified more than 2 values for the time range, which only calls for a start time and an end time. Only the 1st two values you listed will be used for the time range.",
+         warning("You have specified more than 2 values for the time range, which only calls for a start time and an end time. Only the 1st two values you listed will be used for the time range.\n",
                  call. = FALSE)
          time_range <- time_range[1:2]
       } 
       
       if(class(time_range) != "numeric" && complete.cases(time_range[1]) &&
          !str_detect(time_range, "dose|last obs|all obs")){
-         warning("You don't appear to be specifying a time range by dose number, and you have not specified numeric data for the start and end of your time range, which is the input required for this function if you're not supplying a dose number. The full time range will be used.",
+         warning("You don't appear to be specifying a time range by dose number, and you have not specified numeric data for the start and end of your time range, which is the input required for this function if you're not supplying a dose number. The full time range will be used.\n",
                  call. = FALSE)
          time_range <- NA
       }
@@ -1002,7 +1002,7 @@ ct_plot_overlay <- function(ct_dataframe,
                      ", but those are not included in your data. Instead, the ",
                      ifelse(MyMeanType[1] == "mean", 
                             "arithmetic mean", MyMeanType[1]),
-                     "s will be used."),
+                     "s will be used.\n"),
               call. = FALSE)
       MyMeanType <- MyMeanType[1] %>% as.character()
       mean_type <-  switch(MyMeanType,
@@ -1114,7 +1114,7 @@ ct_plot_overlay <- function(ct_dataframe,
          # If there are some assignments for File but some missing, just warn
          # the user about that b/c it's not clear how to assign the ones that
          # are missing.
-         warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.", 
+         warning("You have supplied a data.frame with some of the observed data assigned to specific simulator files and some of the observed data unassigned, so we don't know what file to match with the unassigned observed data and will thus ignore those observed data.\n", 
                  call. = FALSE)
          obs_dataframe <- obs_dataframe %>% filter(complete.cases(File))
       }
@@ -1192,7 +1192,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                                         obs_dataframe$colorBy_column)])){
          warning(paste0("You have not included enough labels for the colors in the legend. The values in '",
                         as_label(colorBy_column), 
-                        "' will be used as labels instead."),
+                        "' will be used as labels instead.\n"),
                  call. = FALSE)
          color_labels <- NA
       } else {
@@ -1200,7 +1200,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                                            obs_dataframe$colorBy_column)]) == 0 |
             length(sort(unique(c(simcheck, obscheck)))) == 0){
             warning(paste0("There is some kind of mismatch between the color labels provided and the values actually present in ",
-                           as_label(colorBy_column), ". The specified labels cannot be used."),
+                           as_label(colorBy_column), ". The specified labels cannot be used.\n"),
                     call. = FALSE)  
          } else {
             
@@ -1243,7 +1243,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                                               obs_dataframe$linetype_column)])){
          warning(paste0("You have not included enough labels for the linetypes in the legend. The values in '",
                         as_label(linetype_column), 
-                        "' will be used as labels instead."),
+                        "' will be used as labels instead.\n"),
                  call. = FALSE)
          linetype_labels <- NA
       } else {
@@ -1251,7 +1251,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                                                  obs_dataframe$linetype_column)]) == 0 |
             length(sort(unique(c(simcheck, obscheck)))) == 0){
             warning(paste0("There is some kind of mismatch between the linetype labels provided and the values actually present in ",
-                           as_label(linetype_column), ". The specified labels cannot be used."),
+                           as_label(linetype_column), ". The specified labels cannot be used.\n"),
                     call. = FALSE)  
          } else {
             
@@ -1290,7 +1290,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # we don't know what column to use to determine the shapes of the points.
    if(str_detect(AES, "linetype") == FALSE && complete.cases(obs_shape[1]) &&
       length(obs_shape) > 1){
-      warning("You have specified multiple shapes to use for the observed data, but you have not said which column should determine what the shapes of the observed data should be. Since the shape is set by the same column that sets the line types, you can set this with the `linetype_column` argument. For now, only the 1st shape you specified will be used.", 
+      warning("You have specified multiple shapes to use for the observed data, but you have not said which column should determine what the shapes of the observed data should be. Since the shape is set by the same column that sets the line types, you can set this with the `linetype_column` argument. For now, only the 1st shape you specified will be used.\n", 
               call. = FALSE)
    }
    
@@ -1434,7 +1434,7 @@ ct_plot_overlay <- function(ct_dataframe,
                      ", but you have only requested ", 
                      length(unique(linetypes)), " linetype(s): ", 
                      str_comma(unique(linetypes)), 
-                     ". You may get a more interpretable graph if you specify more values for the argument 'linetypes'."),
+                     ". You may get a more interpretable graph if you specify more values for the argument 'linetypes'.\n"),
               call. = FALSE)
    }
    
@@ -1560,7 +1560,7 @@ ct_plot_overlay <- function(ct_dataframe,
       warning(paste("There are", NumLT,
                     "unique values in the column you have specified for the line types, but you have only specified", 
                     length(linetypes), 
-                    "line types to use. (Note that there are only two line types used by default: solid and dashed.) We will recycle the line types to get enough to display your data, but you probably will want to supply more line types and re-graph."), 
+                    "line types to use. (Note that there are only two line types used by default: solid and dashed.) We will recycle the line types to get enough to display your data, but you probably will want to supply more line types and re-graph.\n"), 
               call. = FALSE)
       linetypes = rep(linetypes, 100)[1:NumLT]
    } 
@@ -2013,7 +2013,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # Error catching
    if((complete.cases(facet_ncol) | complete.cases(facet_nrow)) == TRUE & 
       AESCols["facet1"] == "<empty>" & AESCols["facet2"] == "<empty>"){
-      warning("You have specified the number of columns and/or rows you want in your facetted graph, but you have not specified *how* you want to break up the data. Please set a value for either `facet1_column` or `facet2_column` to do that. For now, the graph will not be facetted.", 
+      warning("You have specified the number of columns and/or rows you want in your facetted graph, but you have not specified *how* you want to break up the data. Please set a value for either `facet1_column` or `facet2_column` to do that. For now, the graph will not be facetted.\n", 
               call. = FALSE)
       facet_ncol <- NA
       facet_nrow <- NA
@@ -2211,7 +2211,7 @@ ct_plot_overlay <- function(ct_dataframe,
                warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
                               as_label(colorBy_column),
                               " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
-                              as_label(colorBy_column), "."), 
+                              as_label(colorBy_column), ".\n"), 
                        call. = FALSE)
                
                MyColors <- as.character(color_set)
@@ -2219,7 +2219,7 @@ ct_plot_overlay <- function(ct_dataframe,
                warning(paste("There are", NumColorsNeeded,
                              "unique values in the column you have specified for the colors, but you have only specified", 
                              length(color_set), 
-                             "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph."), 
+                             "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph.\n"), 
                        call. = FALSE)
                
                MyColors <- rep(color_set, 100)[1:NumColorsNeeded]
@@ -2267,7 +2267,7 @@ ct_plot_overlay <- function(ct_dataframe,
             # bit.
             
             if(any(is.na(MyColors))){
-               warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.", 
+               warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.\n", 
                        call. = FALSE)
                
                MyColors <- rainbow(NumColorsNeeded)
@@ -2460,7 +2460,7 @@ ct_plot_overlay <- function(ct_dataframe,
    
    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon") & 
       linear_or_log %in% c("both", "both vertical", "both horizontal", "semi-log", "log")){
-      warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.",
+      warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.\n",
               call. = FALSE)
    }
    

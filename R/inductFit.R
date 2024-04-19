@@ -207,6 +207,8 @@
 #'   graphs, please use the argument \code{save_graph}. If you want to save a
 #'   Word document with all the results, please use the argument
 #'   \code{save_output}.
+#' @param page_orientation set the page orientation for the Word file output to
+#'   "portrait" (default) or "landscape" 
 #' @param save_output optionally save a) the equations used for fitting, b) the
 #'   fitted parameters, and c) the graphs by supplying a file name in quotes
 #'   here, e.g., "My induction results.docx". Do not include any slashes, dollar
@@ -272,6 +274,7 @@ inductFit <- function(DF,
                       graph_title_size = 14, 
                       save_graph = NA,
                       save_table = NA,
+                      page_orientation = "portrait", 
                       fig_height = 5,
                       fig_width = 5.5, 
                       save_output = NA){
@@ -1244,12 +1247,18 @@ inductFit <- function(DF,
       }
       
       FileName <- basename(FileName)
+      TemplatePath <- switch(page_orientation, 
+                             "landscape" = system.file("Word/landscape_report_template.dotx",
+                                                       package="SimcypConsultancy"), 
+                             "portrait" = system.file("Word/report_template.dotx",
+                                                      package="SimcypConsultancy"))
       
       # NB: NO ROUNDING before here! Rmd file optionally calculates mean of
       # fits, so it can't be character data yet!
       
       rmarkdown::render(system.file("rmarkdown/templates/inductfit/skeleton/skeleton.Rmd",
                                     package="SimcypConsultancy"),
+                        output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
                         output_dir = OutPath,
                         output_file = FileName,
                         quiet = TRUE)

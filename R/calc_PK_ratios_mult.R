@@ -232,6 +232,8 @@
 #' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
 #'   header row to the top of your table denoting when the PK are for baseline,
 #'   with a perpetrator, or are the geometric mean ratios. 
+#' @param page_orientation set the page orientation for the Word file output to
+#'   "portrait" (default) or "landscape" 
 #'
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from and data to use for making forest plots
@@ -260,6 +262,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                 existing_exp_details = NA,
                                 save_table = NA, 
                                 single_table = TRUE,
+                                page_orientation = "portrait", 
                                 fontsize = 11){
    
    # Error catching ----------------------------------------------------------
@@ -479,9 +482,15 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
          highlight_so_cutoffs = NA
          highlight_so_colors = "yellow to red"
          prettify_columns <- TRUE
+         TemplatePath <- switch(page_orientation, 
+                                "landscape" = system.file("Word/landscape_report_template.dotx",
+                                                          package="SimcypConsultancy"), 
+                                "portrait" = system.file("Word/report_template.dotx",
+                                                         package="SimcypConsultancy"))
          
          rmarkdown::render(system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 
+                           output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
                            output_dir = OutPath, 
                            output_file = FileName, 
                            quiet = TRUE)

@@ -85,8 +85,11 @@
 #'   e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}
 #' @param tissues For which tissue(s) would you like the PK parameters to be
 #'   pulled? Options are any combination of "plasma" (default), "unbound
-#'   plasma", "blood", or "unbound blood". For multiple tissues, enclose them
-#'   with parentheses, e.g., \code{tissues = c("blood", "plasma")}
+#'   plasma", "blood", "unbound blood", "peripheral plasma", or "peripheral 
+#'   blood". \strong{NOTE: PK for peripheral sampling is not as well tested as 
+#'   for other tissues and is only set up for V21+. Please check your results 
+#'   carefully.}. For multiple tissues, enclose them with parentheses, e.g., 
+#'   \code{tissues = c("blood", "plasma")}
 #' @param PKparameters (optional) the PK parameters to include as a character
 #'   vector. \itemize{
 #'
@@ -328,7 +331,9 @@
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
 #' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
 #'   header row to the top of your table denoting when the PK are for baseline,
-#'   with a perpetrator, or are the geometric mean ratios. 
+#'   with a perpetrator, or are the geometric mean ratios.
+#' @param page_orientation set the page orientation for the Word file output to
+#'   "portrait" (default) or "landscape"
 #' @param ...
 #'
 #' @return Returns a data.frame with summary PK parameters from multiple
@@ -373,17 +378,18 @@ pksummary_mult <- function(sim_data_files = NA,
                            variability_format = "to",
                            adjust_conc_units = NA, 
                            include_dose_num = NA,
-                           # add_header_for_DDI = TRUE, 
+                           add_header_for_DDI = TRUE, 
                            rounding = NA,
                            prettify_columns = TRUE, 
                            extract_forest_data = FALSE, 
                            checkDataSource = TRUE, 
-                           save_table = NA, 
-                           fontsize = 11, 
                            highlight_gmr_colors = NA, 
                            highlight_so_cutoffs = NA, 
                            highlight_so_colors = "yellow to red", 
+                           save_table = NA, 
                            single_table = FALSE,
+                           page_orientation = "portrait", 
+                           fontsize = 11, 
                            ...){
    
    # Error catching ----------------------------------------------------------
@@ -463,8 +469,9 @@ pksummary_mult <- function(sim_data_files = NA,
    }
    
    tissues <- tolower(tissues)
-   if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE)){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.\n", 
+   if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood", 
+                         "peripheral plasma", "peripheral blood") == FALSE)){
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, `unbound blood`, `peripheral plasma`, or `peripheral blood`. The PK parameters will be for plasma.\n", 
               call. = FALSE)
       tissues <- intersect(tissues, c("plasma", "unbound plasma", "blood", "unbound blood"))
    }
@@ -497,7 +504,7 @@ pksummary_mult <- function(sim_data_files = NA,
    # the class of observed_PK will be logical if left as NA.
    if(class(observed_PK)[1] == "character"){
       observed_PKDF <- switch(str_extract(observed_PK, "csv|xlsx"), 
-                              "csv" = read.csv(observed_PK), 
+                              "csv" = read.csv(observed_PK, na.strings = "NA"), 
                               "xlsx" = xlsx::read.xlsx(observed_PK, 
                                                        sheetName = "observed PK"))
       # If there's anything named anything like "File", use that for the
@@ -804,6 +811,11 @@ pksummary_mult <- function(sim_data_files = NA,
             )
             
             if(length(temp) == 0){
+               warning(paste0("There were no possible PK parameters to be extracted for the ",
+                              j, " in ", k, " for the simulation `", i,
+                              "`. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.\n"),
+                       call. = FALSE)
+               
                rm(temp)
                next
             }
@@ -1018,10 +1030,16 @@ pksummary_mult <- function(sim_data_files = NA,
          
          FileName <- basename(save_table)
          FromCalcPKRatios <- FALSE
+         TemplatePath <- switch(page_orientation, 
+                                "landscape" = system.file("Word/landscape_report_template.dotx",
+                                                          package="SimcypConsultancy"), 
+                                "portrait" = system.file("Word/report_template.dotx",
+                                                         package="SimcypConsultancy"))
          
          rmarkdown::render(
             system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 
                         package="SimcypConsultancy"),
+            output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
             output_dir = OutPath, 
             output_file = FileName, 
             quiet = TRUE)

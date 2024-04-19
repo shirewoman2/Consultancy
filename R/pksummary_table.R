@@ -184,8 +184,10 @@
 #'   character vector to the argument \code{PKparameters} instead, but please do
 #'   not supply it to both.}}
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
-#'   Options are "plasma" (default), "unbound plasma", "blood", or "unbound
-#'   blood".
+#'   Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
+#'   "peripheral plasma", or "peripheral blood". \strong{NOTE: PK for peripheral
+#'   sampling is not as well tested as for other tissues and is only set up for 
+#'   V21+. Please check your results carefully.}
 #' @param compoundToExtract For which compound do you want to extract PK data?
 #'   Options are: \itemize{\item{"substrate" (default),} \item{"primary
 #'   metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
@@ -392,6 +394,8 @@
 #' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
 #'   header row to the top of your table denoting when the PK are for baseline,
 #'   with a perpetrator, or are the geometric mean ratios. 
+#' @param page_orientation set the page orientation for the Word file output to
+#'   "portrait" (default) or "landscape" 
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -447,7 +451,7 @@ pksummary_table <- function(sim_data_file = NA,
                             variability_format = "to",
                             adjust_conc_units = NA,
                             include_dose_num = NA,
-                            # add_header_for_DDI = TRUE, 
+                            add_header_for_DDI = TRUE, 
                             rounding = NA,
                             prettify_columns = TRUE,
                             prettify_compound_names = TRUE, 
@@ -458,6 +462,7 @@ pksummary_table <- function(sim_data_file = NA,
                             highlight_so_cutoffs = NA, 
                             highlight_so_colors = "yellow to red",
                             save_table = NA, 
+                            page_orientation = "portrait", 
                             fontsize = 11){
    
    # Error catching ----------------------------------------------------------
@@ -472,8 +477,9 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Check for appropriate input for arguments
    tissue <- tolower(tissue)
-   if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood") == FALSE){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
+   if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood", 
+                    "peripheral plasma", "peripheral blood") == FALSE){
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, `unbound blood`, `peripheral plasma`, or `peripheral blood`. The PK parameters will be for plasma.", 
               call. = FALSE)
       tissue <- "plasma"
    }
@@ -1470,7 +1476,7 @@ pksummary_table <- function(sim_data_file = NA,
       
       suppressMessages(
          MyPKResults <- MyPKResults %>% 
-            full_join(MyObsPK %>% select(-BaseNameFile)) %>% 
+            full_join(MyObsPK %>% select(-any_of("BaseNameFile"))) %>% 
             pivot_longer(names_to = "SorO", values_to = "Value", 
                          cols = c(Sim, Obs)) %>% 
             full_join(SOratios)
@@ -1837,6 +1843,7 @@ pksummary_table <- function(sim_data_file = NA,
          
          UnitsToAdd <- str_extract(PrettyCol[CustomIntCols], 
                                    " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)")
+         UnitsToAdd[is.na(UnitsToAdd)] <- ""
          
          PrettyCol[CustomIntCols] <- 
             sub(" \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", "", PrettyCol[CustomIntCols])
@@ -2002,9 +2009,15 @@ pksummary_table <- function(sim_data_file = NA,
          
          FileName <- basename(save_table)
          FromCalcPKRatios <- FALSE
+         TemplatePath <- switch(page_orientation, 
+                                "landscape" = system.file("Word/landscape_report_template.dotx",
+                                                          package="SimcypConsultancy"), 
+                                "portrait" = system.file("Word/report_template.dotx",
+                                                         package="SimcypConsultancy"))
          
          rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 
+                           output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
                            output_dir = OutPath, 
                            output_file = FileName, 
                            quiet = TRUE)

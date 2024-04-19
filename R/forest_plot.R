@@ -552,6 +552,17 @@ forest_plot <- function(forest_dataframe,
       x_axis_number_type <- "ratios"
    }
    
+   # Reading in observed data if it was a csv file. 
+   if("character" %in% class(observed_PK)){
+      if(str_detect(observed_PK, "\\.csv$")){
+         observed_PK <- read.csv(observed_PK)
+      } else {
+         warning("You appear to have provided a file name for the observed PK data, but it's not a csv file, which is the only kind this function can read. We won't be able to include any observed data.\n", 
+                 call. = FALSE)
+         observed_PK <- NA
+      }
+   } 
+   
    # Noting whether user supplied observed data
    ObsIncluded <- "data.frame" %in% class(observed_PK)
    
