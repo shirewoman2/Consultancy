@@ -1843,6 +1843,7 @@ pksummary_table <- function(sim_data_file = NA,
          
          UnitsToAdd <- str_extract(PrettyCol[CustomIntCols], 
                                    " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)")
+         UnitsToAdd[is.na(UnitsToAdd)] <- ""
          
          PrettyCol[CustomIntCols] <- 
             sub(" \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", "", PrettyCol[CustomIntCols])
