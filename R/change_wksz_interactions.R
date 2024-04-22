@@ -246,7 +246,7 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
       # those changes applied to all possible workspace files.
       Changes <- left_join(Changes, 
                            expand_grid(sim_workspace_files = sim_workspace_files, 
-                                       enzymes = enzymes), 
+                                       enzymes = unique(Changes$enzymes)), 
                            by = "enzymes")
    }
    
@@ -424,7 +424,7 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                  "primary metabolite 2" = 8)
          
          EnzIntRoutes <- switch(str_extract(Changes[[i]]$enzymes[j], 
-                                            "CYP|UGT|Pgp|BCRP"), 
+                                            "CYP|UGT|Pgp|BCRP|OATP1B"), 
                                 "CYP" = "CYPInteractionRoutes", 
                                 "UGT" = "UGTInteractionRoutes", 
                                 "Pgp" = switch(Changes[[i]]$tissues[j], 
@@ -434,66 +434,76 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                 "BCRP" = switch(Changes[[i]]$tissues[j], 
                                                 "liver" = "LiverTransporterSet", 
                                                 "kidney" = "KidneyTransporterSet",
-                                                "intestine" = "GutTransporterSet"))
+                                                "intestine" = "GutTransporterSet"), 
+                                "OATP1B" = "LiverTransporterSet")
          
          EnzNum_Enzyme <- switch(Changes[[i]]$enzymes[j],
-                          # !!! WARNING: I have checked this for V22. Double
-                          # check that this applies for other versions. -LSh
-                          
-                          "CYP1A1" = 13,
-                          "CYP1A2" = 0, 
-                          "CYP2A6" = 1, 
-                          "CYP2B6" = 2,
-                          "CYP2C18" = 5, 
-                          "CYP2C19" = 6,
-                          "CYP2C8" = 3, 
-                          "CYP2C9" = 4, 
-                          "CYP2D6" = 7, 
-                          "CYP2E1" = 8, 
-                          "CYP2J2" = 9,
-                          "CYP3A4" = 10, 
-                          "CYP3A5" = 11, 
-                          "CYP3A7" = 12, 
-                          
-                          "UGT1A1" = 1, 
-                          "UGT1A3" = 2, 
-                          "UGT1A4" = 3, 
-                          "UGT1A5" = 4, 
-                          "UGT1A6" = 5, 
-                          "UGT1A7" = 6, 
-                          "UGT1A8" = 7, 
-                          "UGT1A9" = 8, 
-                          "UGT1A10" = 9, 
-                          "UGT2B4" = 10, 
-                          "UGT2B7" = 11, 
-                          "UGT2B10" = 12, 
-                          "UGT2B11" = 13, 
-                          "UGT2B15" = 14, 
-                          "UGT2B17" = 15, 
-                          "UGT2B28" = 16, 
-                          "User UGT1" = 17, 
-                          "Pgp" =  switch(Changes[[i]]$tissues[j], 
-                                          "liver" = 18, 
-                                          "kidney" = 19,
-                                          "intestine" = 10), 
-                          "BCRP" = switch(Changes[[i]]$tissues[j], 
-                                          "liver" = 21, 
-                                          "kidney" = 22,
-                                          "intestine" = 12))
+                                 # !!! WARNING: I have checked this for V22.
+                                 # Double check that this applies for other
+                                 # versions. -LSh
+                                 
+                                 "CYP1A1" = 13,
+                                 "CYP1A2" = 0, 
+                                 "CYP2A6" = 1, 
+                                 "CYP2B6" = 2,
+                                 "CYP2C18" = 5, 
+                                 "CYP2C19" = 6,
+                                 "CYP2C8" = 3, 
+                                 "CYP2C9" = 4, 
+                                 "CYP2D6" = 7, 
+                                 "CYP2E1" = 8, 
+                                 "CYP2J2" = 9,
+                                 "CYP3A4" = 10, 
+                                 "CYP3A5" = 11, 
+                                 "CYP3A7" = 12, 
+                                 
+                                 "UGT1A1" = 1, 
+                                 "UGT1A3" = 2, 
+                                 "UGT1A4" = 3, 
+                                 "UGT1A5" = 4, 
+                                 "UGT1A6" = 5, 
+                                 "UGT1A7" = 6, 
+                                 "UGT1A8" = 7, 
+                                 "UGT1A9" = 8, 
+                                 "UGT1A10" = 9, 
+                                 "UGT2B4" = 10, 
+                                 "UGT2B7" = 11, 
+                                 "UGT2B10" = 12, 
+                                 "UGT2B11" = 13, 
+                                 "UGT2B15" = 14, 
+                                 "UGT2B17" = 15, 
+                                 "UGT2B28" = 16, 
+                                 "User UGT1" = 17, 
+                                 "Pgp" =  switch(Changes[[i]]$tissues[j], 
+                                                 "liver" = 18, 
+                                                 "kidney" = 19,
+                                                 "intestine" = 10), 
+                                 "BCRP" = switch(Changes[[i]]$tissues[j], 
+                                                 "liver" = 21, 
+                                                 "kidney" = 22,
+                                                 "intestine" = 12), 
+                                 "OATP1B1" =  6, # only in liver
+                                 "OATP1B3" = 7 # only in liver
+         )
          
-         # Need to check what the index is for each enzyme b/c sometimes, for
-         # reasons that utterly mystify and infuriate me, the index and the
-         # enzyme number DON'T MATCH. Why use an enzyme number if you're going
-         # to move around the position?!?
-         EnzymeIndex <- 1:length(
-            names(RootNode[["Compounds"]][[CompoundIDnum]][[EnzIntRoutes]]))
-         
-         for(enz_i in EnzymeIndex){
-            names(EnzymeIndex)[enz_i] <- 
-               XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[EnzIntRoutes]][[enz_i]][["Enzyme"]])
+         # Next check is for DME only and NOT for transporters. 
+         if(str_detect(Changes[[i]]$enzymes[j], "CYP|UGT")){
+            # Need to check what the index is for each enzyme b/c sometimes, for
+            # reasons that utterly mystify and infuriate me, the index and the
+            # enzyme number DON'T MATCH. Why use an enzyme number if you're going
+            # to move around the position?!?
+            EnzymeIndex <- 1:length(
+               names(RootNode[["Compounds"]][[CompoundIDnum]][[EnzIntRoutes]]))
+            
+            for(enz_i in EnzymeIndex){
+               names(EnzymeIndex)[enz_i] <- 
+                  XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[EnzIntRoutes]][[enz_i]][["Enzyme"]])
+            }
+            
+            EnzNum <- EnzymeIndex[as.character(EnzNum_Enzyme)]
+         } else {
+            EnzNum <- EnzNum_Enzyme
          }
-         
-         EnzNum <- EnzymeIndex[as.character(EnzNum_Enzyme)]
          
          XML::xmlValue(RootNode[["Compounds"]][[CompoundIDnum]][[
             EnzIntRoutes]][[EnzNum]][[Changes[[i]]$Level5[j]]]) <-
