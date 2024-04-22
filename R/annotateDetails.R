@@ -663,6 +663,10 @@ annotateDetails <- function(existing_exp_details,
                                 is.na(CompoundID))
       }
       
+      if(nrow(DF) == 0){
+         return(data.frame())
+      }
+      
       ### compound -------------------------------------------------------------
       if(complete.cases(compound)){
          
@@ -701,6 +705,10 @@ annotateDetails <- function(existing_exp_details,
          DF <- DF %>%
             filter(str_detect(tolower(Compound), tolower({{compound}})) |
                       is.na(Compound))
+         
+         if(nrow(DF) == 0){
+            return(data.frame())
+         }
          
          if(item == "MainDetails"){
             DF <- DF %>% 
@@ -778,6 +786,9 @@ annotateDetails <- function(existing_exp_details,
          
          DF <- DF %>% filter(SimulatorSection %in% MySections)
          
+         if(nrow(DF) == 0){
+            return(data.frame())
+         }
       }
       
       ### detail_set -------------------------------------------------------------
@@ -877,6 +888,11 @@ annotateDetails <- function(existing_exp_details,
                                           "TRUE" = sub("_sub|_inhib|_inhib2|_met1|_met2|_secmet|_inhib1met", 
                                                        "", DetailSet),
                                           "FALSE" = DetailSet))
+            
+            if(nrow(DF) == 0){
+               return(data.frame())
+            }
+            
          }
          
       } else {
@@ -914,6 +930,10 @@ annotateDetails <- function(existing_exp_details,
             filter(str_detect(Detail, find_matching_details))
       }
       
+      if(nrow(DF) == 0){
+         return(data.frame())
+      }
+      
       ## Cleaning up and removing unnecessary info ----------------------------
       # Removing unnecessary compounds. 
       
@@ -935,11 +955,16 @@ annotateDetails <- function(existing_exp_details,
       DF <- DF %>% 
          filter(is.na(CompoundID) | CompoundID %in% {{CmpdIDCheck}})
       
+      if(nrow(DF) == 0){
+         return(data.frame())
+      }
+      
       # Removing compound column if they don't want it
       if(class(show_compound_col) == "logical"){
          if(show_compound_col == FALSE){
             DF <- DF %>% select(-Compound)
          }
+         
       } else if(show_compound_col == "concatenate"){
          if(complete.cases(compound)){
             
@@ -1651,45 +1676,48 @@ annotateDetails <- function(existing_exp_details,
       # Determining which items we need to save. Write everything when they have
       # not done any filtering by detail_set, simulator_section, or
       # find_matching_details.
-      if(any(complete.cases(c(simulator_section, 
-                              find_matching_details))) == FALSE &
-         (any(complete.cases(detail_set)) & any(detail_set == "all"))){
-         ToWrite <- names(existing_exp_details)[
-            sapply(existing_exp_details, is.null) == FALSE]
-         ToWrite <- names(existing_exp_details[ToWrite])[
-            sapply(existing_exp_details[ToWrite], nrow) > 0]
-         
+      
+      # Actually, just use Out. We've already filtered OR NOT filtered as needed. 
+      # if(any(complete.cases(c(simulator_section, 
+      #                         find_matching_details))) == FALSE &
+      #    (any(complete.cases(detail_set)) & any(detail_set == "all"))){
+      #    
+      #    ToWrite <-  
+      #       names(Out)[sapply(map(Out, "DF"), 
+      #                         function(x) is.null(x) == FALSE &&
+      #                            nrow(x) > 0)]
+      #    
+      #    if(output_tab_name == "Simulation experimental details"){
+      #       OutputTabs <- ToWrite
+      #       names(OutputTabs) <- ToWrite
+      #       OutputTabs["MainDetails"] <- output_tab_name
+      #    } else {
+      #       OutputTabs <- paste0(output_tab_name, "-", ToWrite)
+      #       names(OutputTabs) <- ToWrite
+      #    }
+      #    
+      # } else {
+      GoodItems <- as.logical(
+         map(Out, function(x){is.null(x) == FALSE && nrow(x$DF) > 0}))
+      ToWrite <- intersect(names(Out)[which(GoodItems)], 
+                           c("MainDetails", 
+                             ExpDetailListItems[tolower(ExpDetailListItems) %in% 
+                                                   tolower(detail_set)]))
+      
+      if(length(ToWrite) > 1){
          if(output_tab_name == "Simulation experimental details"){
             OutputTabs <- ToWrite
             names(OutputTabs) <- ToWrite
             OutputTabs["MainDetails"] <- output_tab_name
          } else {
-            OutputTabs <- paste0(output_tab_name, "-", ToWrite)
+            OutputTabs <- paste(output_tab_name, "-", ToWrite)
             names(OutputTabs) <- ToWrite
          }
-         
       } else {
-         GoodItems <- as.logical(
-            map(Out, function(x){is.null(x) == FALSE && nrow(x$DF) > 0}))
-         ToWrite <- intersect(names(Out)[which(GoodItems)], 
-                              c("MainDetails", 
-                                ExpDetailListItems[tolower(ExpDetailListItems) %in% 
-                                                      tolower(detail_set)]))
-         
-         if(length(ToWrite) > 1){
-            if(output_tab_name == "Simulation experimental details"){
-               OutputTabs <- ToWrite
-               names(OutputTabs) <- ToWrite
-               OutputTabs["MainDetails"] <- output_tab_name
-            } else {
-               OutputTabs <- paste(output_tab_name, "-", ToWrite)
-               names(OutputTabs) <- ToWrite
-            }
-         } else {
-            OutputTabs <- output_tab_name
-            names(OutputTabs) <- ToWrite
-         }
+         OutputTabs <- output_tab_name
+         names(OutputTabs) <- ToWrite
       }
+      # }
       
       for(i in ToWrite){
          write_subfun(item = i, 
