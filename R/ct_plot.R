@@ -346,7 +346,6 @@
 #'
 #' @return Output is a ggplot2 graph or two ggplot2 graphs arranged with
 #'   ggpubr::ggarrange()
-#' @import tidyverse
 #' @export
 #'
 #' @examples

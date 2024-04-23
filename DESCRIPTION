@@ -1,17 +1,33 @@
 Package: SimcypConsultancy
 Type: Package
 Title: Standardized tools for using R within the Simcyp Consultancy Team
-Version: 2.13.9
+Version: 2.13.10
 Author: Laura Sh., Mackenzie, Howie, Alenka, Ludwig, Christiane, Magali, Laura Sa., Fatma, Shinji, Kahina, Anthonia 
 Maintainer: The package maintainer <laura.shireman@certara.com>
 Description: This package is meant to be a collection of standardized reporting tools for the Simcyp Consultancy Team. 
 Imports:
       tidyverse (>= 2.0.0), 
+      flextable, 
+      forcats, 
+      ggh4x, 
+      ggpubr,
+      ggthemes,
+      knitr, 
+      officer, 
+      openxlsx,
+      patchwork, 
+      R.utils,
+      RColorBrewer,
       readxl, 
       rlang,
-      stringr, 
-      knitr, 
-      rmarkdown
+      rmarkdown, 
+      scales, 
+      shinyFiles,
+      shinyjs,
+      treemapify, 
+      viridis,
+      xlsx,
+      XML
 License: none
 Encoding: UTF-8
 LazyData: true

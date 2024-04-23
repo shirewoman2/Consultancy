@@ -85,8 +85,6 @@
 #'   \code{checkDataSource} is TRUE, this will also return a data.frame named
 #'   "QC" that indicates where in the simulator output file the data came from.
 #'
-#' @import tidyverse
-#' @import readxl
 #' @export
 #' @examples
 #'

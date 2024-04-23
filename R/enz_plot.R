@@ -230,8 +230,6 @@
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
-#' @import tidyverse
-#' @import readxl
 #' @return Output is a ggplot2 graph or two ggplot2 graphs arranged with
 #'   ggpubr::ggarrange()
 #' @export

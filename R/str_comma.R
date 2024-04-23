@@ -19,7 +19,6 @@
 #'   Options are "and" (default) and "or".
 #'
 #' @return Returns a single, collapsed character string
-#' @import stringr
 #' @export
 #' @examples
 #' str_comma(LETTERS[1:2])
