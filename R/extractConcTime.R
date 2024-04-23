@@ -139,8 +139,6 @@
 #'   \item{File}{the simulator output Excel file that was used as the source for
 #'   these data} }
 #'
-#' @import tidyverse
-#' @import readxl
 #' @export
 #'
 #' @examples
@@ -680,11 +678,11 @@ extractConcTime <- function(sim_data_file,
                            mutate(Trial = "obs",
                                   Inhibitor = "none",
                                   CompoundID = ifelse(tissue == "plasma" &
-                                                         compoundToExtract == "substrate" &
+                                                         all(compoundToExtract == "substrate") &
                                                          all(AllCompoundsID == "substrate"),
                                                       cmpd, "UNKNOWN"),
                                   Compound = ifelse(tissue == "plasma" &
-                                                       compoundToExtract == "substrate" &
+                                                       all(compoundToExtract == "substrate") &
                                                        all(AllCompoundsID == "substrate"),
                                                     AllCompoundsPresent["substrate"], "UNKNOWN"),
                                   ObsFile = NA,

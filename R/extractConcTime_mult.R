@@ -479,11 +479,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
                if(any(file.exists(ObsAssign$ObsFile[
                   complete.cases(ObsAssign$ObsFile) &
                   ObsAssign$File %in% sim_data_files_topull]) == FALSE)){
-                  warning(paste0("We couldn't find the following observed data Excel files and thus cannot extract their data:", 
+                  warning(paste0("We couldn't find the following observed data Excel files and thus cannot extract their data:\n", 
                                  str_c(ObsAssign$ObsFile[
+                                    which(
                                     file.exists(ObsAssign$ObsFile[
                                        complete.cases(ObsAssign$ObsFile) &
-                                          ObsAssign$File %in% sim_data_files_topull]) == FALSE], 
+                                          ObsAssign$File %in% sim_data_files_topull]) == FALSE)], 
                                     collapse = "\n"), "\n"), 
                           call. = FALSE)
                }
