@@ -303,8 +303,14 @@ enz_plot <- function(sim_enz_dataframe,
    
    Data <- sim_enz_dataframe
    
-   if(any(unique(Data$Tissue) %in% c("colon", "small intestine"))){
-      Data <- Data %>% filter(Tissue == gut_tissue)
+   if(all(c("colon", "small intestine") %in% unique(Data$Tissue))){
+      if(hasArg("gut_tissue")){
+         Data <- Data %>% filter(Tissue == gut_tissue)
+      } else {
+         warning("The supplied data include both colon and small intestine enzyme levels, but you have not specified which tissue you would like. Since the enz_plot function can only plot one tissue at a time, we'll use the default value of `colon`.\n", 
+                 call. = FALSE)
+         Data <- Data %>% filter(Tissue == "colon")
+      }
    }
    
    # Tell the user what they're plotting.
