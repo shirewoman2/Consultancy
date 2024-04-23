@@ -928,16 +928,33 @@ pksummary_mult <- function(sim_data_files = NA,
                              left_join(AllPKParameters %>% select(PrettifiedNames, SortOrder)) %>% 
                              filter(complete.cases(SortOrder)) %>% 
                              arrange(SortOrder) %>% pull(PrettifiedNames) %>% unique()),
-                   everything()) %>% 
-            relocate(c(CompoundID, Tissue, File), .after = last_col())
+                   everything()) 
       )
       
    } else {
       
       MyPKResults <- bind_rows(MyPKResults) %>% 
-         select(Statistic, CompoundID, Tissue, everything()) %>% 
-         relocate(c(CompoundID, Tissue, File), .after = last_col())
+         select(Statistic, CompoundID, Tissue, everything())
    }
+   
+   # Adding compound name column based on existing_exp_details. 
+   MyCompounds <- Deets %>% 
+      select(File, any_of(AllCompounds$DetailNames)) %>% 
+      left_join(MyPKResults %>% select(File, CompoundID), 
+                by = "File") %>% 
+      mutate(Compound = case_match(CompoundID, 
+                                   "substrate" ~ Substrate, 
+                                   "primary metabolite 1" ~ PrimaryMetabolite1, 
+                                   "primary metabolite 2" ~ PrimaryMetabolite2, 
+                                   "secondary metabolite" ~ SecondaryMetabolite,
+                                   "inhibitor 1" ~ Inhibitor1, 
+                                   "inhibitor 2" ~ Inhibitor2, 
+                                   "inhibitor 1 metabolite" ~ Inhibitor1Metabolite))
+   
+   MyPKResults <- MyPKResults %>% 
+      left_join(MyCompounds %>% select(File, CompoundID, Compound),
+                by = c("File", "CompoundID")) %>% 
+      relocate(c(Compound, CompoundID, Tissue, File), .after = last_col())
    
    if(is.na(include_dose_num)){
       # Dropping dose number depending on input. First, checking whether they have
