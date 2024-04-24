@@ -52,7 +52,8 @@
 #' @param gut_tissue Which of the two types of gut tissue would you like to
 #'   plot? Acceptable options are "colon" (default) or "small intestine".
 #'   Applicable only when the tissue extracted with
-#'   \code{\link{extractEnzAbund}} was gut and ignored in all other cases.
+#'   \code{\link{extractEnzAbund}} included gut tissue and ignored in all other
+#'   cases.
 #'
 #' @param mean_type graph "arithmetic" (default) or "geometric" means or
 #'   "median" for median concentrations. If that option was not included in the

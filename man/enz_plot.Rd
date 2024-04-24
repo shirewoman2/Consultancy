@@ -46,7 +46,8 @@ from running the function \code{\link{extractEnzAbund}}. Not quoted.}
 \item{gut_tissue}{Which of the two types of gut tissue would you like to
 plot? Acceptable options are "colon" (default) or "small intestine".
 Applicable only when the tissue extracted with
-\code{\link{extractEnzAbund}} was gut and ignored in all other cases.}
+\code{\link{extractEnzAbund}} included gut tissue and ignored in all other
+cases.}
 
 \item{figure_type}{type of figure to plot. Options are:
 
