@@ -115,3 +115,72 @@ formatTable_Simcyp(MyPKResults,
 `r Annotations[["TableCaption"]]`
 
 
+```{r}
+
+if(any(complete.cases(highlight_gmr_colors))){
+   TableKeyText_gmr <- "Key for color-coded GMR values:"
+} else {
+   TableKeyText_gmr <- ""
+}
+
+```
+
+**`r TableKeyText_gmr`**
+
+```{r}
+
+if(any(complete.cases(highlight_gmr_colors))){
+   tibble(`Interaction level` = names(highlight_gmr_colors)) %>% 
+      flextable::flextable() %>% 
+      flextable::bold(part = "header") %>% 
+      flextable::bg(i = 1, 
+                    bg = highlight_gmr_colors["negligible"]) %>% 
+      flextable::bg(i = 2, 
+                    bg = highlight_gmr_colors["weak"]) %>% 
+      flextable::bg(i = 3, 
+                    bg = highlight_gmr_colors["moderate"]) %>% 
+      flextable::bg(i = 4, 
+                    bg = highlight_gmr_colors["strong"]) %>% 
+      flextable::width(width = 1.5) %>% 
+      flextable::align(align = "center", part = "all")
+   
+} 
+
+```
+
+
+```{r}
+
+if(any(complete.cases(highlight_so_cutoffs))){
+   TableKeyText_so <- "Key for color-coded S/O values:"
+} else {
+   TableKeyText_so <- ""
+}
+
+```
+
+**`r TableKeyText_so`**
+
+```{r}
+
+if(any(complete.cases(highlight_so_cutoffs))){
+   SOkey <- tibble(`S/O ratio` = highlight_so_cutoffs) %>% 
+      flextable::flextable() %>% 
+      flextable::bold(part = "header") %>% 
+      flextable::width(width = 1.5) %>% 
+      flextable::align(align = "center", part = "all")
+   
+   for(i in 1:length(highlight_so_cutoffs)){
+      SOkey <- SOkey %>% 
+         flextable::bg(i = i, 
+                       bg = highlight_so_colors[i])
+   }
+   
+   SOkey
+   
+} 
+
+```
+
+
+
