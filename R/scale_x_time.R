@@ -21,8 +21,8 @@
 #'   reasonable x axis intervals, but then you can add a call to
 #'   \code{\link{ggplot::coord_cartesian}} to limit the range without the abrupt
 #'   cut off.
-#' @param time_units the units of time in the graph. Defaults is "hours", and
-#'   acceptable alternative input is "minutes" or "days".
+#' @param time_units the units of time in the graph. Options are "hours"
+#'   (default), "minutes", "days", or "weeks". 
 #' @param x_axis_interval optionally set the x-axis major tick-mark interval.
 #'   Acceptable input: any number or leave as NA to accept default values, which
 #'   are generally reasonable guesses as to aesthetically pleasing and

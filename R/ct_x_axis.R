@@ -82,7 +82,8 @@ ct_x_axis <- function(Data, time_range, t0,
    xlab <- switch(TimeUnits,
                   "hours" = "Time (h)",
                   "minutes" = "Time (min)", 
-                  "days" = "Time (days)")
+                  "days" = "Time (days)", 
+                  "weeks" = "Time (weeks)")
    
    # Setting the breaks for the x axis
    tlast <- ifelse(all(complete.cases(time_range)) &

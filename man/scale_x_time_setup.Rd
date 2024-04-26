@@ -21,8 +21,8 @@ scale_x_time_setup(
   \code{time_range = c(24, 48)}. Note that there are no quotes around numeric
   data.}}}
 
-\item{time_units}{the units of time in the graph. Default is "hours", and
-acceptable alternative input is "minutes" or "days".}
+\item{time_units}{the units of time in the graph. Options are "hours"
+(default), "minutes", "days", or "weeks".}
 
 \item{x_axis_interval}{optionally set the x-axis major tick-mark interval.
 Acceptable input: any number or leave as NA to accept default values, which
