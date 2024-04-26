@@ -840,7 +840,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             # Adjusting conc units as requested.
             
-            # Adding some NA values to Deets as needed for match_units to
+            # Adding some NA values to Deets as needed for adjust_units to
             # work w/out generating a ton of warnings.
             MissingCols <- setdiff(paste0("MW", 
                                           c("_sub", "_met1", "_met2", "_secmet",
@@ -894,7 +894,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             if(nrow(CT_nonadam) > 0){
                CT_nonadam <- CT_nonadam %>% 
-                  match_units(goodunits = NA, 
+                  adjust_units(goodunits = NA, 
                               conc_units = conc_units_to_use,
                               time_units = time_units_to_use, 
                               MW = c("substrate" = Deets$MW_sub, 

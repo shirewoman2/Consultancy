@@ -1,6 +1,6 @@
 #' Match concentration and time units as needed
 #'
-#' \code{match_units} adjusts the units for a data.frame containing
+#' \code{adjust_units} adjusts the units for a data.frame containing
 #' concentration-time data as necessary to match some desired set of
 #' concentration and time units.
 #'
@@ -35,10 +35,10 @@
 #' @export
 #'
 #' @examples
-#' DF_to_adjust <- match_units(DF_to_adjust = SimulatedData,
+#' DF_to_adjust <- adjust_units(DF_to_adjust = SimulatedData,
 #'                             goodunits = ObsData)
 #' 
-match_units <- function(DF_to_adjust, 
+adjust_units <- function(DF_to_adjust, 
                         time_units = "hours", 
                         conc_units = "ng/mL", 
                         goodunits = NA, 
@@ -52,7 +52,7 @@ match_units <- function(DF_to_adjust,
    }
    
    # if("logical" %in% class(goodunits)){
-   #     stop("You have supplied units you want but not labeled them in a way the function `match_units` can understand. Please name the items in the list supplied to `goodunits` as `Time_units` and/or `Conc_units`.", 
+   #     stop("You have supplied units you want but not labeled them in a way the function `adjust_units` can understand. Please name the items in the list supplied to `goodunits` as `Time_units` and/or `Conc_units`.", 
    #          call. = FALSE)
    # }
    

@@ -1138,7 +1138,7 @@ pksummary_table <- function(sim_data_file = NA,
          ]
          
          for(i in ColsToChange){
-            TEMP <- match_units(
+            TEMP <- adjust_units(
                MyPKResults_all$aggregate %>% 
                   rename(Conc = i) %>% 
                   mutate(CompoundID = compoundToExtract, 
@@ -1160,7 +1160,7 @@ pksummary_table <- function(sim_data_file = NA,
             rm(TEMP)
             
             if("individual" %in% names(MyPKResults_all)){
-               TEMP <- match_units(
+               TEMP <- adjust_units(
                   MyPKResults_all$individual %>% 
                      rename(Conc = i) %>% 
                      mutate(CompoundID = compoundToExtract, 

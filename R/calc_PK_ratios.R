@@ -528,7 +528,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    Comparisons$PKparam_denomREVISED <- Comparisons$PKparam_num
    
    # # RETURN TO THIS. Checking conc units
-   # TEMP <- match_units(
+   # TEMP <- adjust_units(
    #     PKnumerator$aggregate %>% 
    #         rename(Conc = i) %>% 
    #         mutate(CompoundID = compoundToExtract, 
