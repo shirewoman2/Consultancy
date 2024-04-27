@@ -482,9 +482,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
                   warning(paste0("We couldn't find the following observed data Excel files and thus cannot extract their data:\n", 
                                  str_c(ObsAssign$ObsFile[
                                     which(
-                                    file.exists(ObsAssign$ObsFile[
-                                       complete.cases(ObsAssign$ObsFile) &
-                                          ObsAssign$File %in% sim_data_files_topull]) == FALSE)], 
+                                       file.exists(ObsAssign$ObsFile[
+                                          complete.cases(ObsAssign$ObsFile) &
+                                             ObsAssign$File %in% sim_data_files_topull]) == FALSE)], 
                                     collapse = "\n"), "\n"), 
                           call. = FALSE)
                }
@@ -894,16 +894,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             if(nrow(CT_nonadam) > 0){
                CT_nonadam <- CT_nonadam %>% 
-                  adjust_units(goodunits = NA, 
-                              conc_units = conc_units_to_use,
-                              time_units = time_units_to_use, 
-                              MW = c("substrate" = Deets$MW_sub, 
-                                     "inhibitor 1" = Deets$MW_inhib,
-                                     "primary metabolite 1" = Deets$MW_met1, 
-                                     "primary metabolite 2" = Deets$MW_met2, 
-                                     "inhibitor 2" = Deets$MW_inhib2, 
-                                     "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
-                                     "secondary metabolite" = Deets$MW_secmet))
+                  adjust_units(DF_with_good_units = NA, 
+                               conc_units = conc_units_to_use,
+                               time_units = time_units_to_use, 
+                               MW = c("substrate" = Deets$MW_sub, 
+                                      "inhibitor 1" = Deets$MW_inhib,
+                                      "primary metabolite 1" = Deets$MW_met1, 
+                                      "primary metabolite 2" = Deets$MW_met2, 
+                                      "inhibitor 2" = Deets$MW_inhib2, 
+                                      "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                                      "secondary metabolite" = Deets$MW_secmet))
             }
             
             MultData[[ff]][[j]] <- bind_rows(CT_adam, CT_nonadam)

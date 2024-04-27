@@ -743,7 +743,7 @@ extractConcTime <- function(sim_data_file,
             # As necessary, convert simulated data units to match the
             # observed data
             sim_data <- adjust_units(DF_to_adjust = sim_data,
-                                    goodunits = obs_data)
+                                     DF_with_good_units = obs_data)
          }
       }
    }
