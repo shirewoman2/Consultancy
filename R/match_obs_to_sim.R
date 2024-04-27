@@ -215,7 +215,7 @@ match_obs_to_sim <- function(ct_dataframe,
          
          # Matching units
          ObsData_j[[k]] <- adjust_units(ObsData_j[[k]], 
-                                       goodunits = ct_dataframe[[k]])
+                                        DF_with_good_units = ct_dataframe[[k]])
          
          # Adding inhibitor name as needed
          MyPerpetrator <- determine_myperpetrator(Deets,

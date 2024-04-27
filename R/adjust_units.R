@@ -168,8 +168,7 @@ adjust_conc_units <- function(DF_to_adjust,
       DF_with_good_units$Conc_units <- sub("ug", "µg", DF_with_good_units$Conc_units)
       DF_with_good_units$Conc_units <- sub("uM", "µM", DF_with_good_units$Conc_units)
    } else {
-      DF_with_good_units <- list(Conc_units = conc_units, 
-                                 Time_units = time_units)
+      DF_with_good_units <- list(Conc_units = conc_units)
    }
    
    # Allowing for "u" instead of "µ" as input

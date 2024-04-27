@@ -534,7 +534,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    #         mutate(CompoundID = compoundToExtract, 
    #                Conc_units = Deets$Units_Cmax, 
    #                Time = 1, Time_units = "hours"),
-   #     goodunits = list("Conc_units" = adjust_conc_units, 
+   #     DF_with_good_units = list("Conc_units" = adjust_conc_units, 
    #                      "Time_units" = "hours"), 
    #     MW = c(compoundToExtract = 
    #                switch(compoundToExtract, 
