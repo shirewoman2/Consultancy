@@ -258,8 +258,14 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
    # If they've set the number of trials or number of subjects per trial, we
    # also need to set the number in the population.
    if("NumSubjTrial" %in% names(Changes)){
-      Changes <- Changes %>% 
-         mutate(PopSize = NumTrials * NumSubjTrial)
+      suppressWarnings(
+         Changes <- Changes %>% 
+            mutate(PopSize = case_when(NumTrials != "no change" & 
+                                          NumSubjTrial != "no change" ~ 
+                                          as.character(as.numeric(NumTrials) * 
+                                                          as.numeric(NumSubjTrial)), 
+                                       TRUE ~ "no change"))
+      )
    }
    
    # Main body of function ---------------------------------------------------
