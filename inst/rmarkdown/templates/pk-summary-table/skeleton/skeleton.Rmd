@@ -130,6 +130,10 @@ if(any(complete.cases(highlight_gmr_colors))){
 ```{r}
 
 if(any(complete.cases(highlight_gmr_colors))){
+   highlight_gmr_colors <- set_boundary_colors(color_set = highlight_gmr_colors, 
+                                               boundaries = c(1, 1.25, 2, 5), 
+                                               break_type = "GMR")
+   
    tibble(`Interaction level` = names(highlight_gmr_colors)) %>% 
       flextable::flextable() %>% 
       flextable::bold(part = "header") %>% 
@@ -164,6 +168,11 @@ if(any(complete.cases(highlight_so_cutoffs))){
 ```{r}
 
 if(any(complete.cases(highlight_so_cutoffs))){
+   
+   highlight_so_colors <- set_boundary_colors(color_set = highlight_so_colors, 
+                                              boundaries = highlight_so_cutoffs, 
+                                              break_type = "SO")
+   
    SOkey <- data.frame(UpperA = highlight_so_cutoffs[1:(length(highlight_so_cutoffs)-1)], 
                        UpperB = highlight_so_cutoffs[2:(length(highlight_so_cutoffs))], 
                        LowerA = 1/highlight_so_cutoffs[2:(length(highlight_so_cutoffs))], 
