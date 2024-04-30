@@ -829,10 +829,11 @@ pksummary_mult <- function(sim_data_files = NA,
             
             # Checking for when they requested AUCinf but there were problems
             # extrapolating. Giving a warning in that situation.
-            if((all(is.na(PKparameters)) |
-                all(complete.cases(PKparameters)) &
-                any(str_detect(PKparameters, "AUCinf"))) &
-               any(str_detect(names(MyPKResults[[i]][[j]][[k]]), "AUCinf")) == FALSE){
+            if( (all(is.na(PKparameters)) &
+                 any(str_detect(names(MyPKResults[[i]][[j]][[k]]), "AUCt |AUCt_"))) |
+                (all(complete.cases(PKparameters)) &
+                 any(str_detect(PKparameters, "AUCinf"))) &
+                any(str_detect(names(MyPKResults[[i]][[j]][[k]]), "AUCinf")) == FALSE){
                
                warning(paste0("The ", k, # tissue
                               " AUCinf included NA values for the ", j, # CompoundID
@@ -938,9 +939,10 @@ pksummary_mult <- function(sim_data_files = NA,
    }
    
    # Adding compound name column based on existing_exp_details. 
-   MyCompounds <- Deets %>% 
+   MyCompounds <- existing_exp_details$MainDetails %>% 
+      filter(File %in% MyPKResults$File) %>% 
       select(File, any_of(AllCompounds$DetailNames)) %>% 
-      left_join(MyPKResults %>% select(File, CompoundID), 
+      left_join(MyPKResults %>% select(File, CompoundID) %>% unique(), 
                 by = "File") %>% 
       mutate(Compound = case_match(CompoundID, 
                                    "substrate" ~ Substrate, 
