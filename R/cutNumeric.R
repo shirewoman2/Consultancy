@@ -21,14 +21,17 @@
 #'
 
 cutNumeric <- function(x, breaks){
-    
-    Out <- x
-    Out <- cut(Out, breaks)
-    Out <- stringr::str_extract(Out, "[0-9]{1,}\\]|0\\.[0-9]{1,}\\]")
-    Out <- as.numeric(sub("\\]", "", Out))
-    Out[which(x == 0)] <- 0
-    return(Out)
-    
+   
+   Out <- x
+   Out <- cut(Out, unique(c(-Inf, breaks, Inf)))
+   Outa <- stringr::str_extract(Out, "[0-9]{1,}\\]|0\\.[0-9]{1,}\\]")
+   Outb <- stringr::str_extract(Out, "\\([0-9]{1,}|\\(0\\.[0-9]{1,}")
+   Out <- Outa
+   Out[is.na(Out)] <- Outb[is.na(Out)]
+   Out <- as.numeric(sub("\\]|\\(", "", Out))
+   Out[which(x == 0)] <- 0
+   return(Out)
+   
 }
 
 
