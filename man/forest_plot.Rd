@@ -24,6 +24,8 @@ forest_plot(
   legend_position = "none",
   color_set = "grays",
   point_shape = c(24, 21),
+  point_color_column,
+  point_color_set = "default",
   graph_title = NA,
   graph_title_size = 14,
   table_title = NA,
@@ -50,7 +52,7 @@ forest_plot(
   some saved forest-plot data, supply a csv or Excel file with the same data.
   (If it's an Excel file, it must have only one tab.) The following columns
   are required:
-  
+
   \describe{\item{File}{Simulation file name. You can hack this and set the values to
   whatever you want rather than simulation file names, but this column is
   what will be used for grouping simulations on the y axis.}
@@ -178,6 +180,8 @@ on the graph even though they both had the same perpetrator. That's the
 reason it's ok here. Unclear? Please check out the examples at the bottom,
 particularly the ones that employ \code{facet_column_x}.}
 
+\item{facet_title_x}{title to use for the facet column along the x axis}
+
 \item{show_numbers_on_right}{TRUE or FALSE (default) for whether to show the
 numbers used for the centre statistic (the point) and any variability (the
 error bars). This \emph{only} works when the graph has not been facetted
@@ -258,6 +262,64 @@ simulated and observed data, enter two shapes with the first being the
 shape for the observed data and the second being the shape for the
 simulated data. If you have only simulated data, enter only one. If you
 enter more shapes than your graph requires, the extras will be ignored.}
+
+\item{point_color_column}{the unquoted name of a column in
+\code{forest_dataframe} to use for coloring the points. If not set, points
+will be white. If you would like to color points based on whether the data
+were predicted or observed, set this to \code{point_color_column =
+SimOrObs}}
+
+\item{point_color_set}{color set to use for points. Options: \describe{
+
+  \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
+  that are friendly to those with red-green colorblindness. The first three
+  colors are green, orange, and purple. This can also be referred to as
+  "Brewer set 2". If there are only two unique values in the colorBy_column,
+  then Brewer set 1 will be used since red and blue are still easily
+  distinguishable but also more aesthetically pleasing than green and
+  orange.}
+
+  \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+  first three colors are red, blue, and green. "set 1" also works to specify 
+  this option.}
+
+  \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+  (ggplot2 is an R package for graphing.)}
+
+  \item{"rainbow"}{colors selected from a rainbow palette. The default
+  palette is limited to something like 6 colors, so if you have more than
+  that, that's when this palette is most useful. It's \emph{not} very useful
+  when you only need a couple of colors.}
+
+  \item{"blue-green"}{a set of blues fading into greens. This palette can be
+  especially useful if you are comparing a systematic change in some
+  continuous variable -- for example, increasing dose or predicting how a
+  change in intrinsic solubility will affect concentration-time profiles --
+  because the direction of the trend will be clear.}
+
+  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+  package}
+
+  \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+  colors from purple to blue to green to yellow in a manner that is
+  "printer-friendly, perceptually uniform and easy to read by those with
+  colorblindness", according to the package author}
+
+  \item{a character vector of colors}{If you'd prefer to set all the colors
+  yourself to \emph{exactly} the colors you want, you can specify those
+  colors here. An example of how the syntax should look: \code{color_set =
+  c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+  which item in \code{colorBy_column} gets which color, you can supply a
+  named vector. For example, if you're coloring the lines by the compound ID,
+  you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+  "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+  like help creating a specific gradation of colors, please talk to a member
+  of the R Working Group about how to do that using
+  \link{colorRampPalette}.}}}
 
 \item{graph_title}{optionally specify a title that will be centered across
 the graph}
