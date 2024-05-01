@@ -346,7 +346,6 @@
 #'
 #' @return Output is a ggplot2 graph or two ggplot2 graphs arranged with
 #'   ggpubr::ggarrange()
-#' @import tidyverse
 #' @export
 #'
 #' @examples
@@ -437,8 +436,14 @@ ct_plot <- function(ct_dataframe = NA,
            call. = FALSE)
    }
    
+   # Noting whether this is an enzyme-abundance plot b/c some options change
+   # then.
+   EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
+   
    if(nrow(ct_dataframe) == 0){
-      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+      stop(paste0("Please check your input. The data.frame you supplied for ",
+                  ifelse(EnzPlot, "sim_enz_dataframe", "ct_dataframe"),
+                  " doesn't have any rows."), 
            call. = FALSE)
    }
    
@@ -488,10 +493,6 @@ ct_plot <- function(ct_dataframe = NA,
                  unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])))
       }
    }
-   
-   # Noting whether this is an enzyme-abundance plot b/c some options change
-   # then.
-   EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
    
    # Checking whether user tried to include obs data directly from simulator
    # output for a simulation that included anything other than substrate in
@@ -1510,13 +1511,13 @@ ct_plot <- function(ct_dataframe = NA,
       
       if(is.na(fig_width)){
          fig_width <- switch(linear_or_log, 
-                              "linear" = 4.75, 
-                              "log" = 4.75, 
-                              "semi-log" = 4.75, 
-                              "both" = 5, 
-                              "both vertical" = 5,
-                              "both horizontal" = 8, 
-                              "horizontal and vertical" = 8)
+                             "linear" = 4.75, 
+                             "log" = 4.75, 
+                             "semi-log" = 4.75, 
+                             "both" = 5, 
+                             "both vertical" = 5,
+                             "both horizontal" = 8, 
+                             "horizontal and vertical" = 8)
       }
       
       FileName <- save_graph

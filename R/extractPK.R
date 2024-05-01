@@ -85,8 +85,6 @@
 #'   \code{checkDataSource} is TRUE, this will also return a data.frame named
 #'   "QC" that indicates where in the simulator output file the data came from.
 #'
-#' @import tidyverse
-#' @import readxl
 #' @export
 #' @examples
 #'
@@ -726,13 +724,17 @@ extractPK <- function(sim_data_file,
    
    # Removing any rows where all sheets are labeled as FALSE, i.e., it is not
    # going to be found on any of those sheets.
-   if(SheetWasSpecified){
-      PKparamDF <- PKparamDF %>% 
-         mutate(across(.cols = c(SheetAUC, SheetAbsorption, SheetRegADAM, 
-                                 SheetAUC, SheetAUC0, SheetAUClast, 
-                                 SheetDrugPop, SheetCLTSS), 
-                       .fns = function(x) FALSE))
-   } 
+   
+   
+   ## I think the snippet below isn't serving a purpose any more other than to
+   ## filter out parameters that I do want.
+   # if(SheetWasSpecified){
+   #    PKparamDF <- PKparamDF %>% 
+   #       mutate(across(.cols = c(SheetAUC, SheetAbsorption, SheetRegADAM, 
+   #                               SheetAUC, SheetAUC0, SheetAUClast, 
+   #                               SheetDrugPop, SheetCLTSS), 
+   #                     .fns = function(x) FALSE))
+   # } 
    
    PKparamDF <- PKparamDF %>% 
       mutate(AnyTRUE = any(SheetAUC, SheetAbsorption, SheetRegADAM, SheetDrugPop, 

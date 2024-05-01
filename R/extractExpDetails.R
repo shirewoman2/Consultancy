@@ -573,11 +573,11 @@ extractExpDetails <- function(sim_data_file,
                   NameColBelow <- InputTab[Row + 1,
                                            InputDeets$NameCol[
                                               which(InputDeets$Deet == deet)]] %>% pull()
-                  if(str_detect(NameColBelow,
-                                gsub(paste0("kp_scalar_|",
-                                            str_c(AllCompounds$Suffix, collapse = "|")),
-                                     "", 
-                                     sub("additional_organ", "Additional Organ", deet)))){
+                  if(str_detect(tolower(NameColBelow),
+                                tolower(gsub(paste0("kp_scalar_|",
+                                                    str_c(AllCompounds$Suffix, collapse = "|")),
+                                             "", 
+                                             sub("additional_organ", "Additional Organ", deet))))){
                      Val <- InputTab[Row + 1, InputDeets$ValueCol[
                         which(InputDeets$Deet == deet)]] %>% pull()
                      

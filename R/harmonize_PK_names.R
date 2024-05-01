@@ -33,12 +33,13 @@ harmonize_PK_names <- function(PKparameters){
    PKparameters <- sub("last_ratio", "ratio_last", PKparameters)
    
    # Dealing with possible case issues
-   PKparameters <- data.frame(Orig = tolower(PKparameters)) %>% 
+   PKparameters <- data.frame(Orig = PKparameters) %>% 
+      mutate(Orig_lower = tolower(Orig)) %>% 
       left_join(
          data.frame(Rev = unique(c(AllPKParameters$PKparameter,
                                    sub("_dose1|_last", "", AllPKParameters$PKparameter)))) %>% 
-            mutate(Orig = tolower(Rev)), 
-         by = "Orig") %>% 
+            mutate(Orig_lower = tolower(Rev)), 
+         by = "Orig_lower") %>% 
       mutate(NoCaseProbs = ifelse(complete.cases(Rev), 
                                   Rev, Orig)) %>% 
       pull(NoCaseProbs)

@@ -277,7 +277,8 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
       
       Ylim_log[1] <- Ylim_data %>%
          filter(Conc >= 0) %>%  # Not allowing BLQ values that were set below 0.
-         filter(Time == near_match(Ylim_data$Time, time_range_relative[2])) %>%
+         filter(Time == near_match(Ylim_data$Time[complete.cases(Ylim_data$Conc)],
+                                   time_range_relative[2])) %>%
          pull(Conc) %>% min()
       
       # If Ylim_log[1] is 0, which can happen when the concs are really low, that
@@ -312,7 +313,6 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
    YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
    YLogLabels   <- rep("",length(YLogBreaks))
    
-   
    if(is.na(y_axis_limits_log[1]) |
       # checking whether Ylim_log values are a factor of 10 b/c, if they are,
       # then just use the Ylim_log that we would have come up with using the
@@ -320,7 +320,7 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
       all(log10(Ylim_log) == round(log10(Ylim_log)))){
       
       # add labels at order of magnitude
-      YLogLabels[seq(1,length(YLogLabels),9)] <- 
+      YLogLabels[seq(1, length(YLogLabels), 9)] <- 
          format(YLogBreaks[seq(1,length(YLogLabels),9)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
       
    } else {

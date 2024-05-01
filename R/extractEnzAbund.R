@@ -68,8 +68,6 @@
 #'   }
 #'
 #'
-#' @import tidyverse
-#' @import readxl
 #' @export
 #' @examples
 #' extractEnzAbund(sim_data_file = "../Example simulator output MD.xlsx",

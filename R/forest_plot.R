@@ -638,21 +638,21 @@ forest_plot <- function(forest_dataframe,
    # just make all the columns lower or upper case but I haven't coded
    # everything else like that, so not fixing that now.
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "geomean|geometric"))] <- "GeoMean"
+                                            "geomean|geometric"))][1] <- "GeoMean"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "gcv"))] <- "GCV"
+                                            "gcv"))][1] <- "GCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "^cv$"))] <- "ArithCV"
+                                            "^cv$"))][1] <- "ArithCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "ci(90|95)?_lower"))] <- "CI_Lower"
+                                            "ci(90|95)?_lower"))][1] <- "CI_Lower"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "ci(90|95)?_upper"))] <- "CI_Upper"
+                                            "ci(90|95)?_upper"))][1] <- "CI_Upper"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "centile_lower"))] <- "Centile_Lower"
+                                            "centile_lower"))][1] <- "Centile_Lower"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "centile_upper"))] <- "Centile_Upper"
+                                            "centile_upper"))][1] <- "Centile_Upper"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "pkparameter"))] <- "PKparameter"
+                                            "^pkparameter$|^pkparameters$"))][1] <- "PKparameter"
    
    names(forest_dataframe)[tolower(names(forest_dataframe)) %in% 
                               c("file", "mean", "median", "min", "max", 

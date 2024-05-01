@@ -13,7 +13,7 @@ formatTable_Simcyp(
   sort_column,
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
-  add_header_for_DDI = FALSE,
+  add_header_for_DDI = TRUE,
   perpetrator_name = "perpetrator",
   prettify_columns = FALSE,
   highlight_gmr_colors = NA,
@@ -22,6 +22,7 @@ formatTable_Simcyp(
   highlight_cells = NA,
   highlight_color = "yellow",
   save_table = NA,
+  page_orientation = "portrait",
   title_document = NA,
   table_caption = NA
 )
@@ -166,6 +167,9 @@ slashes, dollar signs, or periods in the file name. If you leave off the
 file extension, we'll assume you want it to be ".docx". If there is a
 column titled "File" in your table, we'll add a caption listing which files
 were included.}
+
+\item{page_orientation}{set the page orientation for the Word file output to
+"portrait" (default) or "landscape"}
 
 \item{title_document}{optionally specify a title for the Word document
 output. If you don't save the table, this will be ignored.}

@@ -17,8 +17,8 @@
 #'   \item{a start time and end time in hours}{only include data in that range, e.g.
 #'   \code{time_range = c(24, 48)}. Note that there are no quotes around numeric
 #'   data.}}
-#' @param time_units the units of time in the graph. Default is "hours", and
-#'   acceptable alternative input is "minutes" or "days".
+#' @param time_units the units of time in the graph. Options are "hours"
+#'   (default), "minutes", "days", or "weeks". 
 #' @param x_axis_interval optionally set the x-axis major tick-mark interval.
 #'   Acceptable input: any number or leave as NA to accept default values, which
 #'   are generally reasonable guesses as to aesthetically pleasing and
@@ -68,8 +68,8 @@ scale_x_time_setup <- function(time_range = NA,
     }
     
     time_units <- tolower(time_units)
-    if(time_units %in% c("hours", "minutes", "days") == FALSE){
-        warning("You have not supplied an acceptable value for time_units, which can be `hours`, `minutes`, or `days`. We'll use the default, `hours`.", 
+    if(time_units %in% c("hours", "minutes", "days", "weeks") == FALSE){
+        warning("You have not supplied an acceptable value for time_units, which can be `hours` (default), `minutes`, `days` or `weeks`. We'll use the default, `hours`.\n", 
                 call. = FALSE)
         time_units <- "hours"
     }
@@ -88,13 +88,15 @@ scale_x_time_setup <- function(time_range = NA,
     tlast <- switch(time_units, 
                     "hours" = round_unit(time_range_adj[2], 4),
                     "minutes" = round_unit(time_range_adj[2], 15), 
-                    "days" = round_unit(time_range_adj[2], 2))
+                    "days" = round_unit(time_range_adj[2], 2), 
+                    "weeks" = round_unit(time_range_adj[2], 2)) 
     
     if(tlast <= max(time_range_adj, na.rm = T) * 0.8){
         tlast <- switch(time_units, 
                         "hours" = round_up_unit(time_range_adj[2], 4),
                         "minutes" = round_up_unit(time_range_adj[2], 15), 
-                        "days" = round_up_unit(time_range_adj[2], 2))
+                        "days" = round_up_unit(time_range_adj[2], 2), 
+                        "weeks" = round_up_unit(time_range_adj[2], 2)) 
     }
     
     if(time_units == "hours"){
@@ -178,6 +180,34 @@ scale_x_time_setup <- function(time_range = NA,
                                                          length.out = 12)),
                           "UserDefined" = seq(0, max(GraphData$Time, na.rm = T),
                                               x_axis_interval/2))
+    } else if(time_units == "weeks"){
+       PossBreaks <- data.frame(
+          Tlast = c(2, 4, 6, 8, 10, 12, 16, 20, 24, 52, Inf),
+          BreaksToUse = c("2wk", "4wk", "6wk", "8wk", "10wk",
+                          "12wk", "16wk", "20wk", "24wk", "52wk",
+                          "52wkplus"))
+       
+       BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
+          slice(which.min(Tlast)) %>% pull(BreaksToUse)
+       
+       BreaksToUse <- ifelse(complete.cases(x_axis_interval),
+                             "UserDefined", BreaksToUse)
+       
+       XBreaks <- switch(BreaksToUse,
+                         "2wk" = seq(0, 2, 0.25),
+                         "4wk" = seq(0, 4, 0.5),
+                         "6wk" = seq(0, 6, 0.5), 
+                         "8wk" = seq(0, 8, 1), 
+                         "10wk" = seq(0, 10, 1.25),
+                         "12wk" = seq(0, 12, 1.5), 
+                         "16wk" = seq(0, 16, 2), 
+                         "20wk" = seq(0, 20, 2), 
+                         "24wk" = seq(0, 24, 3),
+                         "52wk" = seq(0, 52, 3),
+                         "52wkplus" = round_up_nice(seq(0, tlast,
+                                                        length.out = 12)),
+                         "UserDefined" = seq(0, max(GraphData$Time, na.rm = T),
+                                             x_axis_interval/2))
     }
     
     XLabels <- XBreaks + t0

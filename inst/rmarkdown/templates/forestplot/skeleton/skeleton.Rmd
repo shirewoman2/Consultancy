@@ -21,16 +21,21 @@ Head1 <- data.frame(PKparameter = ParamToUse) %>%
                 bind_rows(
                    AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
                       mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
-                             PrettifiedNames = sub("Dose 1 |Last dose ", "", PrettifiedNames))), 
+                             PrettifiedNames = sub("Dose 1 |Last dose ", 
+                                                   "", PrettifiedNames))), 
              by = "PKparameter") %>% 
    pull(PrettifiedNames) %>% unique() %>%
    sub("ratio", "ratios", .) %>% 
+   sub("Cmax", "C~max~", .) %>% 
+   sub("AUCinf", "AUC~inf~", .) %>% 
+   sub("AUCtau", "AUC~tau~", .) %>% 
+   sub("AUCt", "AUC~t~", .) %>% 
    str_comma()
 
 ```
 
 
-*Figure XXX. Forest plot comparing plasma `r Head1` for a single dose/multiple doses of XXX when co-administered with YYY.*
+***Figure XXX**. *Forest plot comparing plasma `r Head1` for a single dose/multiple doses of XXX when co-administered with YYY.*
 
 ```{r forestplot, fig.width = fig_width, fig.height = fig_height}
 

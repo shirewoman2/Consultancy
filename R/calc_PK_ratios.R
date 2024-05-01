@@ -528,13 +528,13 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    Comparisons$PKparam_denomREVISED <- Comparisons$PKparam_num
    
    # # RETURN TO THIS. Checking conc units
-   # TEMP <- match_units(
+   # TEMP <- adjust_units(
    #     PKnumerator$aggregate %>% 
    #         rename(Conc = i) %>% 
    #         mutate(CompoundID = compoundToExtract, 
    #                Conc_units = Deets$Units_Cmax, 
    #                Time = 1, Time_units = "hours"),
-   #     goodunits = list("Conc_units" = adjust_conc_units, 
+   #     DF_with_good_units = list("Conc_units" = adjust_conc_units, 
    #                      "Time_units" = "hours"), 
    #     MW = c(compoundToExtract = 
    #                switch(compoundToExtract, 

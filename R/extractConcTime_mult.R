@@ -164,7 +164,7 @@
 #'   not converted because there are simply too many units to manage easily, so
 #'   please check that the units are what you expected in the end.
 #' @param time_units_to_use time units to use so that all data will be
-#'   comparable. Options are "hours" (default), "days", or "minutes".
+#'   comparable. Options are "hours" (default), "days", "weeks", or "minutes".
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are "aggregate" (default), "individual",
 #'   or "both". Aggregated data are not calculated here but are pulled from the
@@ -479,11 +479,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
                if(any(file.exists(ObsAssign$ObsFile[
                   complete.cases(ObsAssign$ObsFile) &
                   ObsAssign$File %in% sim_data_files_topull]) == FALSE)){
-                  warning(paste0("We couldn't find the following observed data Excel files and thus cannot extract their data:", 
+                  warning(paste0("We couldn't find the following observed data Excel files and thus cannot extract their data:\n", 
                                  str_c(ObsAssign$ObsFile[
-                                    file.exists(ObsAssign$ObsFile[
-                                       complete.cases(ObsAssign$ObsFile) &
-                                          ObsAssign$File %in% sim_data_files_topull]) == FALSE], 
+                                    which(
+                                       file.exists(ObsAssign$ObsFile[
+                                          complete.cases(ObsAssign$ObsFile) &
+                                             ObsAssign$File %in% sim_data_files_topull]) == FALSE)], 
                                     collapse = "\n"), "\n"), 
                           call. = FALSE)
                }
@@ -700,9 +701,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
       for(j in tissues){
          
          message(paste("     for tissue =", j))
-         # Depending on both the tissue AND which compound the user
-         # requests, that could be on multiple sheets or on a single
-         # sheet. Figuring out which sheet to read.
+         # Depending on both the tissue AND which compound the user requests,
+         # that could be on multiple sheets or on a single sheet. Figuring out
+         # which sheet to read.
          
          # Extracting solid tissue or plasma/blood data? Sheet format differs. A
          # few notes: 
@@ -839,7 +840,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             # Adjusting conc units as requested.
             
-            # Adding some NA values to Deets as needed for match_units to
+            # Adding some NA values to Deets as needed for adjust_units to
             # work w/out generating a ton of warnings.
             MissingCols <- setdiff(paste0("MW", 
                                           c("_sub", "_met1", "_met2", "_secmet",
@@ -893,16 +894,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             if(nrow(CT_nonadam) > 0){
                CT_nonadam <- CT_nonadam %>% 
-                  match_units(goodunits = NA, 
-                              conc_units = conc_units_to_use,
-                              time_units = time_units_to_use, 
-                              MW = c("substrate" = Deets$MW_sub, 
-                                     "inhibitor 1" = Deets$MW_inhib,
-                                     "primary metabolite 1" = Deets$MW_met1, 
-                                     "primary metabolite 2" = Deets$MW_met2, 
-                                     "inhibitor 2" = Deets$MW_inhib2, 
-                                     "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
-                                     "secondary metabolite" = Deets$MW_secmet))
+                  adjust_units(DF_with_good_units = NA, 
+                               conc_units = conc_units_to_use,
+                               time_units = time_units_to_use, 
+                               MW = c("substrate" = Deets$MW_sub, 
+                                      "inhibitor 1" = Deets$MW_inhib,
+                                      "primary metabolite 1" = Deets$MW_met1, 
+                                      "primary metabolite 2" = Deets$MW_met2, 
+                                      "inhibitor 2" = Deets$MW_inhib2, 
+                                      "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                                      "secondary metabolite" = Deets$MW_secmet))
             }
             
             MultData[[ff]][[j]] <- bind_rows(CT_adam, CT_nonadam)

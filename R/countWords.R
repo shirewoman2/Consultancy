@@ -4,7 +4,6 @@
 #' words are separated by either a space or a hyphen.
 #'
 #' @param x A vector or list. This can be any type of data.
-#' @import stringr
 #' @return Returns a vector of numbers that is the number of words present
 #' @export
 #'

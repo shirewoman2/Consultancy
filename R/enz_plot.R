@@ -52,7 +52,8 @@
 #' @param gut_tissue Which of the two types of gut tissue would you like to
 #'   plot? Acceptable options are "colon" (default) or "small intestine".
 #'   Applicable only when the tissue extracted with
-#'   \code{\link{extractEnzAbund}} was gut and ignored in all other cases.
+#'   \code{\link{extractEnzAbund}} included gut tissue and ignored in all other
+#'   cases.
 #'
 #' @param mean_type graph "arithmetic" (default) or "geometric" means or
 #'   "median" for median concentrations. If that option was not included in the
@@ -230,8 +231,6 @@
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'
-#' @import tidyverse
-#' @import readxl
 #' @return Output is a ggplot2 graph or two ggplot2 graphs arranged with
 #'   ggpubr::ggarrange()
 #' @export
@@ -305,8 +304,14 @@ enz_plot <- function(sim_enz_dataframe,
    
    Data <- sim_enz_dataframe
    
-   if(any(unique(Data$Tissue) %in% c("colon", "small intestine"))){
-      Data <- Data %>% filter(Tissue == gut_tissue)
+   if(all(c("colon", "small intestine") %in% unique(Data$Tissue))){
+      if(hasArg("gut_tissue")){
+         Data <- Data %>% filter(Tissue == gut_tissue)
+      } else {
+         warning("The supplied data include both colon and small intestine enzyme levels, but you have not specified which tissue you would like. Since the enz_plot function can only plot one tissue at a time, we'll use the default value of `colon`.\n", 
+                 call. = FALSE)
+         Data <- Data %>% filter(Tissue == "colon")
+      }
    }
    
    # Tell the user what they're plotting.

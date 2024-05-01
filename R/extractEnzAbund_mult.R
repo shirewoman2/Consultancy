@@ -116,6 +116,12 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       tissues <- sys.call()$tissue
    }
    
+   # If they didn't include ".xlsx" at the end, add that.
+   sim_data_files <- as.character(
+      sapply(sim_data_files, 
+             function(x) ifelse(str_detect(x, "\\.xlsx$"), 
+                                x, paste0(x, ".xlsx"))))
+   
    # Make it so that, if they supply NA, NULL, or "none" for sim_enz_dataframe, all
    # of those will work. Note to coders: It was REALLY HARD to get this to work
    # with just the perfect magical combination of exists and suppressWarnings,

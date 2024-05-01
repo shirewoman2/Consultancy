@@ -28,6 +28,7 @@ pksummary_table(
   variability_format = "to",
   adjust_conc_units = NA,
   include_dose_num = NA,
+  add_header_for_DDI = TRUE,
   rounding = NA,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
@@ -38,6 +39,7 @@ pksummary_table(
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
   save_table = NA,
+  page_orientation = "portrait",
   fontsize = 11
 )
 }
@@ -59,8 +61,10 @@ simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
 inhibitor 1}}}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default), "unbound plasma", "blood", or "unbound
-blood".}
+Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
+"peripheral plasma", or "peripheral blood". \strong{NOTE: PK for peripheral
+sampling is not as well tested as for other tissues and is only set up for 
+V21+. Please check your results carefully.}}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
   vector. \itemize{
@@ -247,6 +251,10 @@ dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
 
+\item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
+header row to the top of your table denoting when the PK are for baseline,
+with a perpetrator, or are the geometric mean ratios.}
+
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{NA or "Consultancy"}{All output will be rounded according
 to Simcyp Consultancy Team standards: to three significant figures when the
@@ -365,12 +373,11 @@ whatever file format you requested, if you set \code{checkDataSource =
 TRUE}, the QC data will be in a csv file on its own and will have "- QC"
 added to the end of the file name.}
 
+\item{page_orientation}{set the page orientation for the Word file output to
+"portrait" (default) or "landscape"}
+
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
-
-\item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
-header row to the top of your table denoting when the PK are for baseline,
-with a perpetrator, or are the geometric mean ratios.}
 }
 \value{
 Returns a data.frame of PK summary data and, if observed data were

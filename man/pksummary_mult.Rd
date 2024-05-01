@@ -26,16 +26,18 @@ pksummary_mult(
   variability_format = "to",
   adjust_conc_units = NA,
   include_dose_num = NA,
+  add_header_for_DDI = TRUE,
   rounding = NA,
   prettify_columns = TRUE,
   extract_forest_data = FALSE,
   checkDataSource = TRUE,
-  save_table = NA,
-  fontsize = 11,
   highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
+  save_table = NA,
   single_table = FALSE,
+  page_orientation = "portrait",
+  fontsize = 11,
   ...
 )
 }
@@ -63,8 +65,11 @@ e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}}
 
 \item{tissues}{For which tissue(s) would you like the PK parameters to be
 pulled? Options are any combination of "plasma" (default), "unbound
-plasma", "blood", or "unbound blood". For multiple tissues, enclose them
-with parentheses, e.g., \code{tissues = c("blood", "plasma")}}
+plasma", "blood", "unbound blood", "peripheral plasma", or "peripheral 
+blood". \strong{NOTE: PK for peripheral sampling is not as well tested as 
+for other tissues and is only set up for V21+. Please check your results 
+carefully.}. For multiple tissues, enclose them with parentheses, e.g., 
+\code{tissues = c("blood", "plasma")}}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
   vector. \itemize{
@@ -237,6 +242,10 @@ dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
 
+\item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
+header row to the top of your table denoting when the PK are for baseline,
+with a perpetrator, or are the geometric mean ratios.}
+
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{NA or "Consultancy"}{All output will be rounded according
 to Simcyp Consultancy Team standards: to three significant figures when the
@@ -268,22 +277,6 @@ will only work for simulations that included a perpetrator.}
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
-
-\item{save_table}{optionally save the output table and, if requested, the QC
-info, by supplying a file name in quotes here, e.g., "My nicely formatted
-table.docx" or "My table.csv", depending on whether you'd prefer to have
-the table saved as a Word or csv file.  Do not include any slashes, dollar
-signs, or periods in the file name. (You can also save the table to a Word
-file later with the function \code{\link{formatTable_Simcyp}}.) If you
-supply only the file extension, e.g., \code{save_table = "docx"}, the name
-of the file will be "PK summary table" with that extension. If you supply
-something other than just "docx" or just "csv" for the file name but you
-leave off the file extension, we'll assume you want it to be ".csv". All PK
-info will be included in a single Word or csv file, and, if
-\code{checkDataSource = TRUE}, that will be saved in a single csv file.}
-
-\item{fontsize}{the numeric font size for Word output. Default is 11 point.
-This only applies when you save the table as a Word file.}
 
 \item{highlight_gmr_colors}{optionally specify a set of colors to use for
 highlighting geometric mean ratios for DDIs. Options are "yellow to red",
@@ -329,15 +322,30 @@ c("green", "red")}. This only applies when you save the table as a Word file.}
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
 
+\item{save_table}{optionally save the output table and, if requested, the QC
+info, by supplying a file name in quotes here, e.g., "My nicely formatted
+table.docx" or "My table.csv", depending on whether you'd prefer to have
+the table saved as a Word or csv file.  Do not include any slashes, dollar
+signs, or periods in the file name. (You can also save the table to a Word
+file later with the function \code{\link{formatTable_Simcyp}}.) If you
+supply only the file extension, e.g., \code{save_table = "docx"}, the name
+of the file will be "PK summary table" with that extension. If you supply
+something other than just "docx" or just "csv" for the file name but you
+leave off the file extension, we'll assume you want it to be ".csv". All PK
+info will be included in a single Word or csv file, and, if
+\code{checkDataSource = TRUE}, that will be saved in a single csv file.}
+
 \item{single_table}{TRUE (default) or FALSE for whether to save all the PK
 data in a single table or break the data up by tissue, compound ID, and
 file into multiple tables. This only applies to the Word output.}
 
-\item{...}{}
+\item{page_orientation}{set the page orientation for the Word file output to
+"portrait" (default) or "landscape"}
 
-\item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
-header row to the top of your table denoting when the PK are for baseline,
-with a perpetrator, or are the geometric mean ratios.}
+\item{fontsize}{the numeric font size for Word output. Default is 11 point.
+This only applies when you save the table as a Word file.}
+
+\item{...}{}
 }
 \value{
 Returns a data.frame with summary PK parameters from multiple

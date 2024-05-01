@@ -946,7 +946,7 @@ pksummary_table <- function(sim_data_file = NA,
    # Kahina requested that we give a warning that you don't need to specify the
    # sheet if it's for standard dose 1 or last dose PK.
    if(("Tab" %in% names(sheet_PKparameters) &&
-      any(complete.cases(sheet_PKparameters$Tab))) & 
+       any(complete.cases(sheet_PKparameters$Tab))) & 
       (all(is.na(PKToPull)) |
        all(PKToPull %in% AllPKParameters$PKparameter, na.rm = T))){
       warning("You requested a specific sheet for extracting PK parameters; just fyi, you only need to specify the sheet if it's for a custom AUC interval.\n", 
@@ -1138,14 +1138,14 @@ pksummary_table <- function(sim_data_file = NA,
          ]
          
          for(i in ColsToChange){
-            TEMP <- match_units(
+            TEMP <- adjust_units(
                MyPKResults_all$aggregate %>% 
                   rename(Conc = i) %>% 
                   mutate(CompoundID = compoundToExtract, 
                          Conc_units = Deets$Units_Cmax, 
                          Time = 1, Time_units = "hours"),
-               goodunits = list("Conc_units" = adjust_conc_units, 
-                                "Time_units" = "hours"), 
+               DF_with_good_units = list("Conc_units" = adjust_conc_units, 
+                                         "Time_units" = "hours"), 
                MW = c(compoundToExtract = 
                          switch(compoundToExtract, 
                                 "substrate" = Deets$MW_sub, 
@@ -1160,14 +1160,14 @@ pksummary_table <- function(sim_data_file = NA,
             rm(TEMP)
             
             if("individual" %in% names(MyPKResults_all)){
-               TEMP <- match_units(
+               TEMP <- adjust_units(
                   MyPKResults_all$individual %>% 
                      rename(Conc = i) %>% 
                      mutate(CompoundID = compoundToExtract, 
                             Conc_units = Deets$Units_Cmax, 
                             Time = 1, Time_units = "hours"),
-                  goodunits = list("Conc_units" = adjust_conc_units, 
-                                   "Time_units" = "hours"), 
+                  DF_with_good_units = list("Conc_units" = adjust_conc_units, 
+                                            "Time_units" = "hours"), 
                   MW = c(compoundToExtract = 
                             switch(compoundToExtract, 
                                    "substrate" = Deets$MW_sub, 

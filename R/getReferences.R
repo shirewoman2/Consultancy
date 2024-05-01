@@ -15,7 +15,6 @@
 #'   where applicable, the subdirectory of a file, and "File" for the file name.
 #'   Optionally save output to a csv file.
 #'
-#' @import tidyverse
 #' @export
 #' @examples
 #' getReferences()
