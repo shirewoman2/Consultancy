@@ -1609,6 +1609,8 @@ forest_plot <- function(forest_dataframe,
          }
          
       }
+   } else {
+      MyColors <- "white"
    }
    
    
