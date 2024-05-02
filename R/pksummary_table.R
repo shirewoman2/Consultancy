@@ -671,10 +671,16 @@ pksummary_table <- function(sim_data_file = NA,
    MyObsPK <- get_obs_PK(observed_PK, mean_type, use_median_for_tmax, 
                          sim_data_file, PKparameters)
    
-   # Make sure any observed PK parameters are included in the PK to extract and
-   # make sure that PK names are all nice and harmonized.
-   PKparameters <- harmonize_PK_names(sort(unique(union(PKparameters, 
-                                                        MyObsPK$PKparameter))))
+   # If they left PKparameters as NA, make sure any observed PK parameters are
+   # included in the PK to extract. If they specified something for
+   # PKparameters, then ONLY return those PK data. Make sure that PK names
+   # are all nice and harmonized.
+   if(all(is.na(PKparameters))){
+      PKparameters <- harmonize_PK_names(sort(unique(union(PKparameters, 
+                                                           MyObsPK$PKparameter))))
+   } else {
+      PKparameters <- harmonize_PK_names(sort(unique(PKparameters)))
+   }
    # If they didn't supply anything for PKparameters, sheet_PKparameters, or
    # observed_PK, then this will be empty. Need this to be NA instead. 
    if(length(PKparameters) == 0){PKparameters <- NA}
@@ -791,7 +797,8 @@ pksummary_table <- function(sim_data_file = NA,
                          PKparameter = PKparameters) %>% 
          full_join(sheet_PKparameters, by = "PKparameter") %>% 
          full_join(MyObsPK) %>% 
-         filter(complete.cases(PKparameter))
+         filter(complete.cases(PKparameter) & 
+                   PKparameter %in% PKparameters)
    ) # If user left PKparameters as NA, MyPK has 0 rows. 
    
    # Need to have columns of NA values for Tab, Value, PKparameter.
