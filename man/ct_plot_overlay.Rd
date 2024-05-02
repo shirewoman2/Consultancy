@@ -103,7 +103,12 @@ simulator output, you'll receive a warning message and we'll plot one that
   for certain versions of RStudio.} To get around this, within RStudio, go to
   Tools --> Global Options --> General --> Graphics --> And then set
   "Graphics device: backend" to "AGG". Honestly, this is a better option for
-  higher-quality graphics anyway!}}}
+  higher-quality graphics anyway!}
+  
+  \item{"trial means"}{plots an opaque line for the mean data, lighter lines
+  for the mean of each trial of simulated data, and open circles for the
+  observed data. If a perpetrator were present, lighter dashed lines indicate
+  the mean of each trial of simulated data in the presence of the perpetrator.}}}
 
 \item{linear_or_log}{the type of graph to be returned. Options: \describe{
   \item{"semi-log"}{y axis is log transformed; this is the default}

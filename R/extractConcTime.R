@@ -543,7 +543,37 @@ extractConcTime <- function(sim_data_file,
                          tissue = tissue, 
                          SimConcUnits = SimConcUnits,
                          SimTimeUnits = SimTimeUnits,
-                         returnAggregateOrIndiv = returnAggregateOrIndiv)
+                         returnAggregateOrIndiv = c("aggregate", "individual"))
+         
+         # Adding trial means. 
+         suppressMessages(
+            sim_data_trial <- sim_data[[cmpd]][[ss]] %>%
+               filter(Trial %in% c("mean", "geomean", "per5", "per95", 
+                                   "per10", "per90", "median") == FALSE) %>%
+               group_by(across(any_of(c("Compound", "CompoundID", "Tissue",
+                                        "Inhibitor", "Simulated", "Trial", 
+                                        "Time", "Time_orig", "subsection_ADAM",
+                                        "Time_units", "Conc_units")))) %>%
+               summarize(Conc_arith = mean(Conc, na.rm = T),
+                         Conc_gm = gm_mean(Conc, na.rm = T),
+                         Conc_med = median(Conc, na.rm = T)) %>%
+               ungroup() %>%
+               pivot_longer(cols = c(Conc_arith, Conc_gm, Conc_med), 
+                            names_to = "MeanType", 
+                            values_to = "Conc") %>% 
+               mutate(TrialOrig = Trial, 
+                      Trial = case_match(MeanType, 
+                                         "Conc_arith" ~ "trial mean", 
+                                         "Conc_gm" ~ "trial geomean", 
+                                         "Conc_med" ~ "trial median"), 
+                      Individual = paste(Trial, TrialOrig)) %>% 
+               select(-TrialOrig, -MeanType)
+         )
+         
+         sim_data[[cmpd]][[ss]] <- bind_rows(sim_data[[cmpd]][[ss]], 
+                                             sim_data_trial)
+         
+         rm(sim_data_trial)
          
          if(length(AllPerpsPresent) > 0 & cmpd %in% c("substrate", 
                                                       "primary metabolite 1", 

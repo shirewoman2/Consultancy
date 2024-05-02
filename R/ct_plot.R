@@ -771,17 +771,6 @@ ct_plot <- function(ct_dataframe = NA,
       stop("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
    }
    
-   # You can't graph trial means if you didn't extract the individual data
-   # (this is one of the rare instances where we DO calculate things rather
-   # than pulling directly from the simulator output), so issuing an error if
-   # that's the case.
-   if(figure_type %in% c("trial means", "freddy") &
-      suppressWarnings(length(sort(as.numeric(
-         as.character(unique(Data$Trial)))))) == 0){
-      warning("The figure type selected requires the calculation of trial means, but the individual data were not supplied. Only the overall aggregate data will be displayed.\n",
-              call. = FALSE)
-   }
-   
    # Setting up the x axis using the subfunction ct_x_axis
    XStuff <- ct_x_axis(Data = Data, 
                        time_range = time_range, 
@@ -867,29 +856,21 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Setting up data.frames to graph ---------------------------------------
    # Separating the data by type and calculating trial means
-   suppressMessages(
-      sim_data_trial <- Data %>%
-         filter(Simulated == TRUE &
-                   Trial %in% c("mean", "geomean", "per5", "per95", 
-                                "per10", "per90", "median") == FALSE) %>%
-         group_by(across(any_of(c("Compound", "CompoundID", "Tissue", "Inhibitor",
-                                  "Simulated", "Trial", 
-                                  "Time", "Time_orig",
-                                  "Time_units", "Conc_units")))) %>%
-         summarize(Conc = switch(mean_type, 
-                                 "arithmetic" = mean(Conc, na.rm = T),
-                                 "geometric" = gm_mean(Conc, na.rm = T),
-                                 "median" = median(Conc, na.rm = T))) %>%
-         ungroup() %>% 
-         unite(col = Group, remove = FALSE, 
-               any_of(c("Compound", "Inhibitor", "Trial", "Simulated")))
-   )
+   sim_data_trial <- Data %>%
+      filter(Simulated == TRUE &
+                Trial %in% switch(mean_type, 
+                                  "arithmetic" = "trial mean", 
+                                  "geometric" = "trial geomean", 
+                                  "median" = "trial median")) %>% 
+      ungroup() %>% 
+      unite(col = Group, remove = FALSE, 
+            any_of(c("Compound", "Inhibitor", "Individual", "Simulated")))
    
    sim_data_mean <- Data %>%
       filter(Simulated == TRUE  &
                 Trial %in% c(MyMeanType, "per5", "per95")) %>%
       unite(col = Group, remove = FALSE, 
-            any_of(c("Compound", "Inhibitor", "Trial")))
+            any_of(c("Compound", "Inhibitor", "Trial", "Individual")))
    
    # Setting up observed data per user input -------------------------------
    
@@ -1059,7 +1040,7 @@ ct_plot <- function(ct_dataframe = NA,
                                              linetype = Inhibitor, shape = Inhibitor,
                                              color = Inhibitor, fill = Inhibitor)), 
                          "FALSE" = ggplot(sim_data_trial,
-                                          aes(x = Time, y = Conc, group = Trial,
+                                          aes(x = Time, y = Conc, group = Group,
                                               linetype = Inhibitor, shape = Inhibitor,
                                               color = Inhibitor, fill = Inhibitor))), 
                "means only" = ggplot(sim_data_mean %>%

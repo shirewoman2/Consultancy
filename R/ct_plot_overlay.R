@@ -92,7 +92,13 @@
 #'   for certain versions of RStudio.} To get around this, within RStudio, go to
 #'   Tools --> Global Options --> General --> Graphics --> And then set
 #'   "Graphics device: backend" to "AGG". Honestly, this is a better option for
-#'   higher-quality graphics anyway!}}
+#'   higher-quality graphics anyway!}
+#'   
+#'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
+#'   for the mean of each trial of simulated data, and open circles for the
+#'   observed data. If a perpetrator were present, lighter dashed lines indicate
+#'   the mean of each trial of simulated data in the presence of the perpetrator.}}
+#'   
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed; this is the default}
 #'
@@ -1698,27 +1704,17 @@ ct_plot_overlay <- function(ct_dataframe,
          names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
       }
    } else if(figure_type == "trial means"){
-      suppressMessages(
-         sim_data_trial <- sim_dataframe %>%
-            filter(Simulated == TRUE &
-                      Trial %in% c("mean", "geomean", "per5", "per95", 
-                                   "per10", "per90", "median") == FALSE) %>%
-            group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
-                                     "Simulated", "Trial", "Group",
-                                     "Time", "Time_orig",
-                                     "Time_units", "Conc_units", 
-                                     "colorBy_column", "linetype_column",
-                                     "FC1", "FC2")))) %>%
-            summarize(Conc = switch(mean_type, 
-                                    "arithmetic" = mean(Conc, na.rm = T),
-                                    "geometric" = gm_mean(Conc, na.rm = T),
-                                    "median" = median(Conc, na.rm = T))) %>%
-            ungroup() %>% 
-            unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
-                                        "Compound", "Inhibitor", "Individual",
-                                        "colorBy_column", "FC1", "FC2")), 
-                  sep = " ", remove = FALSE)
-      )
+      sim_data_trial <- Data %>%
+         filter(Simulated == TRUE &
+                   Trial %in% switch(mean_type, 
+                                     "arithmetic" = "trial mean", 
+                                     "geometric" = "trial geomean", 
+                                     "median" = "trial median")) %>% 
+         ungroup() %>% 
+         unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
+                                     "Compound", "Inhibitor", "Individual",
+                                     "colorBy_column", "FC1", "FC2")), 
+               sep = " ", remove = FALSE)
    } 
    
    
