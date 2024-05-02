@@ -383,12 +383,6 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
-   page_orientation <- tolower(page_orientation)[1]
-   if(page_orientation %in% c("portrait", "landscape") == FALSE){
-      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
-              call. = FALSE)
-   }
-   
    
    # Setting things up for nonstandard evaluation ----------------------------
    shading_column <- rlang::enquo(shading_column)
