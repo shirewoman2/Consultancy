@@ -3,10 +3,12 @@
 #'
 #' \code{prettify_column_names} converts columns in a table of PK values from
 #' names such as "AUCinf_dose1" or "Cmax_last" to prettier names such as "Dose 1
-#' AUCinf (ng/mL.h)" or "Last dose Cmax (ng/mL)"
+#' AUCinf (ng/mL.h)" or "Last dose Cmax (ng/mL)". Alternatively, it can also be
+#' used to convert pretty column names into R-friendly coded names, e.g., "Dose
+#' 1 AUCinf (ng/mL.h)" becomes "AUCinf_dose1".
 #'
 #' @param PKtable a table of PK data with column names such as "AUCinf_dose1" or
-#'   "Cmax_last" or a vector of the names of a PK table
+#'   "Cmax_last" or a character vector of the names of a PK table
 #' @param prettify_compound_names Do you want to prettify your compound
 #'   names? Options: \describe{
 #'
@@ -95,6 +97,47 @@ prettify_column_names <- function(PKtable,
    AllPKParameters_mod <- bind_rows(AllPKParameters_mod, 
                                     ExtraPKParam)
    
+   # Dealing with unit differences b/c could have units in table other than the
+   # most common ng/mL and h.
+   TableUnits <- list("OrigColNames" = names(PKtable), # Keeping this just in case. 
+                      "Conc" = str_extract(names(PKtable), 
+                                           "mg/L|mg/mL|µg/L|ug/L|µg/mL|ug/mL|ng/L|ng/mL|µM|nM") %>% 
+                         sort() %>% unique(), 
+                      "Time" = str_extract(names(PKtable), 
+                                           "\\(L/(h|day|min)|\\(h|day|min\\)") %>% # haven't yet seen any time units other than h but leaving this open to minutes or days just in case
+                         gsub("\\(L?|\\)|/", "", .) %>% 
+                         sort() %>% unique())
+   
+   # I'm not sure what to do if there's more than 1 conc or time unit. I don't
+   # think there ever should be, but adding this warning just in case.
+   if(length(TableUnits$Conc) > 1){
+      warning(paste0("You have concentration units of ", 
+                     str_comma(paste0("`", TableUnits$Conc, "`")), 
+                     " in your PK table, and we were only expecting one concentration unit. Please check your units in the output.\n"), 
+              call. = FALSE)
+      TableUnits$Conc <- TableUnits$Conc[1]
+   }
+   
+   if(length(TableUnits$Time) > 1){
+      warning(paste0("You have time units of ", 
+                     str_comma(paste0("`", TableUnits$Time, "`")), 
+                     " in your PK table, and we were only expecting one time unit. Please check your units in the output.\n"), 
+              call. = FALSE)
+      TableUnits$Time <- TableUnits$Time[1]
+   }
+   
+   # TEMPORARILY replacing the actual units w/the standard units in AllPKParameters
+   if(TableUnits$Conc != "ng/mL"){
+      names(PKtable) <- sub(TableUnits$Conc, "ng/mL", names(PKtable))
+   }
+   
+   if(TableUnits$Time != "h"){
+      names(PKtable) <- sub(paste0("\\(", TableUnits$Time, "\\)"),
+                            "(h)", names(PKtable))
+      names(PKtable) <- sub(paste0("\\(L", TableUnits$Time, "\\)"),
+                            "(L/h)", names(PKtable))
+   }
+   
    # 1st step: This will leave some values as NA for the column PrettifiedNames.
    TableNames <-
       data.frame(OrigColNames = OrigColNames, 
@@ -176,59 +219,24 @@ prettify_column_names <- function(PKtable,
                1:length(TableNames$FinalNames[duplicated(TableNames$FinalNames)]))
    }
    
-   # if(complete.cases(adjust_conc_units)){
-   #    PrettyCol <- gsub(Deets$Units_Cmax,  adjust_conc_units, PrettyCol)
-   # } # <--- Will need to add this back into pksummary_table if we replace column prettification there w/this function. 
+   # Returning to original conc and time units as necessary
+   if(TableUnits$Conc != "ng/mL"){
+      TableNames$FinalNames <- sub("ng/mL", TableUnits$Conc, TableNames$FinalNames)
+   }
    
-   # # Adjusting units as needed.
-   # PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), PrettyCol)
-   # PrettyCol <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), PrettyCol)
-   # PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
-   # PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
-   # PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
-   
-   # MyPerpetrator <- c(Deets$Inhibitor1, Deets$Inhibitor1Metabolite, 
-   #                 Deets$Inhibitor2)
-   # 
-   # if(any(complete.cases(MyPerpetrator))){
-   #    MyPerpetrator <- str_comma(MyPerpetrator[complete.cases(MyPerpetrator)])
-   #    
-   #    if(class(prettify_compound_names) == "logical" &&
-   #       prettify_compound_names){
-   #       MyPerpetrator <- prettify_compound_name(MyPerpetrator)
-   #    }
-   #    
-   #    if(class(prettify_compound_names) == "character" &
-   #       "perpetrator" %in% names(prettify_compound_names)){
-   #       names(prettify_compound_names)[
-   #          str_detect(tolower(names(prettify_compound_names)), 
-   #                     "perpetrator")][1] <- "perpetrator"
-   #       MyPerpetrator <- prettify_compound_names["perpetrator"]
-   #    }
-   #    
-   #    PrettyCol <- sub("perpetrator", MyPerpetrator, PrettyCol)
-   # }
-   # 
-   
-   # MyPerpetrator <- determine_myperpetrator(existing_exp_details, prettify_compound_names)
-   # <-- Also will need to add this back in to pksummary_table.
-   
-   # if(any(complete.cases(MyPerpetrator))){
-   #    PrettyCol <- sub("perpetrator", MyPerpetrator, PrettyCol)
-   # }
+   if(TableUnits$Time != "h"){
+      TableNames$FinalNames <- sub("(h)", paste0("\\(", TableUnits$Time, "\\)"), 
+                            names(PKtable))
+      TableNames$FinalNames <- sub("(L/h)", paste0("\\(L", TableUnits$Time, "\\)"), 
+                            names(PKtable))
+   }
    
    if(PKtable_class == "data.frame"){
       names(PKtable) <- TableNames$FinalNames
    } else {
+      # This is when it was a character vector rather than a data.frame. 
       PKtable <- TableNames$FinalNames
    }
-   
-   # } else if(complete.cases(sheet_PKparameters) & 
-   #           any(str_detect(names(PKtable_all[[1]]), "_dose1|_last")) == FALSE){
-   #    # This is when it's a user-defined sheet but we're not prettifying column
-   #    # names. We don't know whether an AUC was actually AUCtau, so make it
-   #    # AUCt.
-   #    PKparameters <- sub("AUCtau", "AUCt", PKparameters)
    
    return(PKtable)
    

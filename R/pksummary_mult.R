@@ -622,7 +622,7 @@ pksummary_mult <- function(sim_data_files = NA,
       # Now error catching for either long or wide obs data
       
       # If user has not included "xlsx" in file name, add that.
-      if(any(str_detect(observed_PKDF$File, "xlsx$") == FALSE)){
+      if(any(str_detect(observed_PKDF$File, "xlsx$"), na.rm = T) == FALSE){
          observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)] <-
             paste0(observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)], 
                    ".xlsx")
@@ -964,6 +964,40 @@ pksummary_mult <- function(sim_data_files = NA,
       left_join(MyCompounds %>% select(File, CompoundID, Compound),
                 by = c("File", "CompoundID")) %>% 
       relocate(c(Compound, CompoundID, Tissue, File), .after = last_col())
+   
+   # setting levels for PK parameters so that they're in a nice order. 
+   PKlevels <- switch(PKorder, 
+                      
+                      # the default scenario
+                      "default" =
+                         bind_rows(AllPKParameters, 
+                                   AllPKParameters %>% 
+                                      mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
+                                             SortOrder = SortOrder + 25)) %>% # This should work based on how I've got the SortOrder set up in AllPKParameters.
+                         select(PKparameter, SortOrder) %>% 
+                         arrange(SortOrder) %>%
+                         pull(PKparameter) %>% unique(), 
+                      
+                      # user wants a specific order but using default tabs
+                      "user specified" = PKparameters)
+   
+   ColOrder <- prettify_column_names(MyPKResults, pretty_or_ugly_cols = "ugly")
+   ColOrder <- data.frame(Orig = names(MyPKResults), 
+                          Ugly = names(ColOrder)) %>% 
+      mutate(Ugly = factor(Ugly, levels = PKlevels)) %>% 
+      filter(complete.cases(Ugly)) %>% # this removes column names that aren't PK parameters
+      arrange(Ugly)
+   
+   MyPKResults <- MyPKResults %>% 
+      select(any_of(c("Statistic", ColOrder$Orig, "CompoundID",
+                                  "Compound", "Tissue", "File")), 
+             # Adding "everything" here b/c, if we've got mismatches for column
+             # names due to unit differences after running
+             # prettify_column_names, that could conceivably remove those
+             # columns. It would be best to retain them and just have them be in
+             # the wrong place. That would make column order problems easier to
+             # diagnose in the future.
+             everything()) 
    
    if(is.na(include_dose_num)){
       # Dropping dose number depending on input. First, checking whether they have

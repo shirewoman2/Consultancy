@@ -13,7 +13,7 @@ prettify_column_names(
 }
 \arguments{
 \item{PKtable}{a table of PK data with column names such as "AUCinf_dose1" or
-"Cmax_last" or a vector of the names of a PK table}
+"Cmax_last" or a character vector of the names of a PK table}
 
 \item{prettify_compound_names}{Do you want to prettify your compound
   names? Options: \describe{
@@ -48,7 +48,9 @@ a PK table with prettier column names
 \description{
 \code{prettify_column_names} converts columns in a table of PK values from
 names such as "AUCinf_dose1" or "Cmax_last" to prettier names such as "Dose 1
-AUCinf (ng/mL.h)" or "Last dose Cmax (ng/mL)"
+AUCinf (ng/mL.h)" or "Last dose Cmax (ng/mL)". Alternatively, it can also be
+used to convert pretty column names into R-friendly coded names, e.g., "Dose
+1 AUCinf (ng/mL.h)" becomes "AUCinf_dose1".
 }
 \examples{
 # None yet
