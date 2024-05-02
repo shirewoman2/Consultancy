@@ -305,6 +305,13 @@ calc_PK_ratios <- function(sim_data_file_numerator,
            call. = FALSE)
    }
    
+   page_orientation <- tolower(page_orientation)[1]
+   if(page_orientation %in% c("portrait", "landscape") == FALSE){
+      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+   }
+   
+   
    # Main body of function -------------------------------------------------
    
    ## Extracting PK ---------------------------------------------------------

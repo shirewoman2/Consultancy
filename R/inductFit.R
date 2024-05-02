@@ -367,6 +367,13 @@ inductFit <- function(DF,
       Bounds <- FALSE
    }
    
+   page_orientation <- tolower(page_orientation)[1]
+   if(page_orientation %in% c("portrait", "landscape") == FALSE){
+      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+   }
+   
+   
    # Setting things up for nonstandard evaluation -------------------------
    conc_column <- rlang::enquo(conc_column)
    fold_change_column <- rlang::enquo(fold_change_column)

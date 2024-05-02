@@ -12,7 +12,8 @@ draft_text_mult(
   default_cmpd_file = TRUE,
   client_drug_regex = NA,
   mean_type = "geometric",
-  save_text = NA
+  save_text = NA,
+  page_orientation = "portrait"
 )
 }
 \arguments{
@@ -48,6 +49,9 @@ position it is affects the wording of the output text.}
 
 \item{save_text}{optionally save the output as a Word document, which is what
 we recommend, by providing a Word file name here.}
+
+\item{page_orientation}{set the page orientation for the Word file output to
+"portrait" (default) or "landscape"}
 }
 \value{
 list of study design info for a report and, optionall, a Word

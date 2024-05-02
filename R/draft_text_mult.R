@@ -27,6 +27,8 @@
 #'   drug, and that will be used to check whether the client drug is in the
 #'   substrate position or inhibitor 1 position in the simulation. Which
 #'   position it is affects the wording of the output text.
+#' @param page_orientation set the page orientation for the Word file output to
+#'   "portrait" (default) or "landscape" 
 #'
 #' @return list of study design info for a report and, optionall, a Word
 #'   document with that info
@@ -40,7 +42,14 @@ draft_text_mult <- function(sim_data_files = "use existing_exp_details",
                             default_cmpd_file = TRUE, 
                             client_drug_regex = NA, 
                             mean_type = "geometric", 
-                            save_text = NA){
+                            save_text = NA, 
+                            page_orientation = "portrait"){
+   
+   page_orientation <- tolower(page_orientation)[1]
+   if(page_orientation %in% c("portrait", "landscape") == FALSE){
+      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+   }
    
    if("character" %in% class(sim_data_files) &&
       all(sim_data_files == "use existing_exp_details")){
@@ -112,9 +121,16 @@ draft_text_mult <- function(sim_data_files = "use existing_exp_details",
       
       FileName <- basename(save_text)
       
+      TemplatePath <- switch(page_orientation, 
+                             "landscape" = system.file("Word/landscape_report_template.dotx",
+                                                       package="SimcypConsultancy"), 
+                             "portrait" = system.file("Word/report_template.dotx",
+                                                      package="SimcypConsultancy"))
+      
       rmarkdown::render(
          system.file("rmarkdown/templates/draftsections/skeleton/skeleton.Rmd", 
                      package="SimcypConsultancy"),
+         output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
          output_dir = OutPath, 
          output_file = FileName, 
          quiet = TRUE)

@@ -121,7 +121,11 @@ draft_methods_text <- function(sim_data_file,
                     " years) were recruited into the study")),
              
       ". For the simulations, ", Deets$NumTrials, " virtual trials of ", 
-      Deets$NumSubjTrial, " subjects **matched by age, sex, height, and weight** were generated to assess variability across groups. The simulated concentration-time profiles of ", 
+      Deets$NumSubjTrial, " subjects ", 
+      ifelse(Deets$FixedTrialDesign == "Yes", 
+             "**matched by age, sex, height, and weight**", 
+             "**with the same age range and percent female**"), 
+      " were generated to assess variability across groups. The simulated concentration-time profiles of ", 
       MySubstrate, " were compared to observed data.")
    
    
