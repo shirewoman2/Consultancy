@@ -128,7 +128,7 @@ PKsum <- pksummary_table(sim_data_file = paste0(OutPath, "/", sim_data_file),
                          includeTrialMeans = includeTrialMeans,
                          include_dose_num = TRUE, # will adjust later
                          prettify_compound_names = prettify_compound_names, 
-                         adjust_conc_units = "ng/mL") 
+                         convert_conc_units = "ng/mL") 
 
 pretfun <- function(X){
    if(prettify_compound_names){

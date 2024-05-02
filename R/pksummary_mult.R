@@ -246,15 +246,15 @@
 #'   want to have nicely rounded and formatted output in a Word file but you
 #'   \emph{also} want to use the results from \code{pksummary_mult} to make
 #'   forest plots, which requires numbers that are \emph{not} rounded.}}
-#' @param adjust_conc_units Would you like to adjust the units to something
+#' @param convert_conc_units Would you like to convert the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
-#'   will attempt to adjust the units to match that. This only adjusts only the
+#'   will attempt to convert the units to match that. This only adjusts only the
 #'   simulated values, since we're assuming that that's the most likely problem
 #'   and that observed units are relatively easy to fix, and it also only
 #'   affects AUC and Cmax values. Acceptable input is any concentration unit
-#'   listed in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
-#'   "ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
+#'   listed in the Excel form for PE data entry, e.g. \code{convert_conc_units =
+#'   "ng/mL"} or \code{convert_conc_units = "uM"}. Molar concentrations will be
 #'   automatically converted using the molecular weight of whatever you set for
 #'   \code{compoundToExtract}.
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
@@ -376,7 +376,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            includeTrialMeans = FALSE, 
                            concatVariability = FALSE, 
                            variability_format = "to",
-                           adjust_conc_units = NA, 
+                           convert_conc_units = NA, 
                            include_dose_num = NA,
                            add_header_for_DDI = TRUE, 
                            rounding = NA,
@@ -810,7 +810,7 @@ pksummary_mult <- function(sim_data_files = NA,
                   variability_format = variability_format,
                   include_dose_num = TRUE, # will remove later if needed but we need this for some of the table heading info
                   rounding = rounding,
-                  adjust_conc_units = adjust_conc_units,
+                  convert_conc_units = convert_conc_units,
                   prettify_columns = prettify_columns, 
                   extract_forest_data = extract_forest_data,
                   checkDataSource = checkDataSource,

@@ -1,17 +1,18 @@
-#' Match concentration and time units as needed
+#' Convert concentration and time units as needed
 #'
-#' \code{adjust_units} adjusts the units for a data.frame containing
+#' \code{convert_units} converts the units for a data.frame containing
 #' concentration-time data as necessary to match some desired set of
 #' concentration and time units.
 #'
-#' @param DF_to_adjust the data.frame of concentration-time data with units that
-#'   may need to be adjusted. If you're adjusting concentration units, this must
-#'   include the columns "Conc" and "Conc_units", and, if you're adjusting time
-#'   units, it must include the columns "Time", and "Time_units". (Outputs from
-#'   \code{\link{extractConcTime}}, \code{\link{extractConcTime_mult}}, and
-#'   \code{\link{extractObsConcTime}} work here.) If you want to convert between
-#'   mass per volume and molar concentrations and there are multiple compounds
-#'   present, this must also include the column "CompoundID".
+#' @param DF_to_convert the data.frame of concentration-time data with units
+#'   that may need to be converted. If you're converting concentration units,
+#'   this must include the columns "Conc" and "Conc_units", and, if you're
+#'   converting time units, it must include the columns "Time", and
+#'   "Time_units". (Outputs from \code{\link{extractConcTime}},
+#'   \code{\link{extractConcTime_mult}}, and \code{\link{extractObsConcTime}}
+#'   work here.) If you want to convert between mass per volume and molar
+#'   concentrations and there are multiple compounds present, this must also
+#'   include the column "CompoundID".
 #' @param time_units time units to use, e.g., "hours". Options for time units
 #'   are "hours", "days", and "minutes".
 #' @param conc_units concentration units to use, e.g. "ng/mL". Options for
@@ -27,23 +28,23 @@
 #'   you have more than one compound, list the compoundID and the MW as a named
 #'   character vector, e.g., \code{MW = c("substrate" = 325.8, "inhibitor 1" =
 #'   705.6)} for a DDI simulation of midazolam with itraconazole. If you want to
-#'   make this type of conversion, the data.frame DF_to_adjust must also include
-#'   the column "CompoundID". Acceptable compoundIDs are "substrate", "primary
-#'   metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
-#'   1", "inhibitor 2", or "inhibitor 1 metabolite".
+#'   make this type of conversion, the data.frame DF_to_convert must also
+#'   include the column "CompoundID". Acceptable compoundIDs are "substrate",
+#'   "primary metabolite 1", "primary metabolite 2", "secondary metabolite",
+#'   "inhibitor 1", "inhibitor 2", or "inhibitor 1 metabolite".
 #'
-#' @return a data.frame with the adjusted units
+#' @return a data.frame with the converted units
 #' @export
 #'
 #' @examples
-#' DF_to_adjust <- adjust_units(DF_to_adjust = SimulatedData,
+#' DF_to_convert <- convert_units(DF_to_convert = SimulatedData,
 #'                              DF_with_good_units = ObsData)
 #' 
-adjust_units <- function(DF_to_adjust, 
-                         time_units = "hours", 
-                         conc_units = "ng/mL", 
-                         DF_with_good_units = NA, 
-                         MW = NA){
+convert_units <- function(DF_to_convert, 
+                          time_units = "hours", 
+                          conc_units = "ng/mL", 
+                          DF_with_good_units = NA, 
+                          MW = NA){
    
    # Error catching ----------------------------------------------------------
    
@@ -53,13 +54,13 @@ adjust_units <- function(DF_to_adjust,
            call. = FALSE)
    }
    
-   if("Conc_units" %in% names(DF_to_adjust) == FALSE){
-      stop("The function `adjust_units` requires that DF_to_adjust have a column titled `Conc_units`, and your data.frame does not. We cannot adjust the concentration units here. Did you only want to adjust the time units? If so, please use the function `adjust_time_units`.", 
+   if("Conc_units" %in% names(DF_to_convert) == FALSE){
+      stop("The function `convert_units` requires that DF_to_convert have a column titled `Conc_units`, and your data.frame does not. We cannot convert the concentration units here. Did you only want to convert the time units? If so, please use the function `convert_time_units`.", 
            call. = FALSE)
    }
    
-   if("Time_units" %in% names(DF_to_adjust) == FALSE){
-      stop("The function `adjust_units` requires that DF_to_adjust have a column titled `Time_units`, and your data.frame does not. We cannot adjust the time units here. Did you only want to adjust the concentration units? If so, please use the function `adjust_conc_units`.", 
+   if("Time_units" %in% names(DF_to_convert) == FALSE){
+      stop("The function `convert_units` requires that DF_to_convert have a column titled `Time_units`, and your data.frame does not. We cannot convert the time units here. Did you only want to convert the concentration units? If so, please use the function `convert_conc_units`.", 
            call. = FALSE)
    }
    
@@ -68,32 +69,33 @@ adjust_units <- function(DF_to_adjust,
    
    ## Matching concentration units --------------------------------------
    
-   DF_to_adjust <- adjust_conc_units(DF_to_adjust = DF_to_adjust,
-                                     conc_units = conc_units, 
-                                     DF_with_good_units = DF_with_good_units, 
-                                     MW = MW)
+   DF_to_convert <- convert_conc_units(DF_to_convert = DF_to_convert,
+                                       conc_units = conc_units, 
+                                       DF_with_good_units = DF_with_good_units, 
+                                       MW = MW)
    
    ## Matching time units -------------------------------------------------
    
-   DF_to_adjust <- adjust_time_units(DF_to_adjust = DF_to_adjust, 
-                                     time_units = time_units)
+   DF_to_convert <- convert_time_units(DF_to_convert = DF_to_convert, 
+                                       time_units = time_units)
    
    ## Output -----------------------------------------------------------
    
-   return(DF_to_adjust)
+   return(DF_to_convert)
 }
 
 
-#' Adjust the concentration units in a data.frame of concentration-time data
+#' Convert the concentration units in a data.frame of concentration-time data
 #'
-#' @param DF_to_adjust the data.frame of concentration-time data with units that
-#'   may need to be adjusted. If you're adjusting concentration units, this must
-#'   include the columns "Conc" and "Conc_units", and, if you're adjusting time
-#'   units, it must include the columns "Time", and "Time_units". (Outputs from
-#'   \code{\link{extractConcTime}}, \code{\link{extractConcTime_mult}}, and
-#'   \code{\link{extractObsConcTime}} work here.) If you want to convert between
-#'   mass per volume and molar concentrations and there are multiple compounds
-#'   present, this must also include the column "CompoundID".
+#' @param DF_to_convert the data.frame of concentration-time data with units
+#'   that may need to be converted. If you're converting concentration units,
+#'   this must include the columns "Conc" and "Conc_units", and, if you're
+#'   converting time units, it must include the columns "Time", and
+#'   "Time_units". (Outputs from \code{\link{extractConcTime}},
+#'   \code{\link{extractConcTime_mult}}, and \code{\link{extractObsConcTime}}
+#'   work here.) If you want to convert between mass per volume and molar
+#'   concentrations and there are multiple compounds present, this must also
+#'   include the column "CompoundID".
 #' @param conc_units concentration units to use, e.g. "ng/mL". Options for
 #'   concentration units are the same as the ones in the Excel form for PE data
 #'   entry.
@@ -107,21 +109,21 @@ adjust_units <- function(DF_to_adjust,
 #'   you have more than one compound, list the compoundID and the MW as a named
 #'   character vector, e.g., \code{MW = c("substrate" = 325.8, "inhibitor 1" =
 #'   705.6)} for a DDI simulation of midazolam with itraconazole. If you want to
-#'   make this type of conversion, the data.frame DF_to_adjust must also include
-#'   the column "CompoundID". Acceptable compoundIDs are "substrate", "primary
-#'   metabolite 1", "primary metabolite 2", "secondary metabolite", "inhibitor
-#'   1", "inhibitor 2", or "inhibitor 1 metabolite".
+#'   make this type of conversion, the data.frame DF_to_convert must also
+#'   include the column "CompoundID". Acceptable compoundIDs are "substrate",
+#'   "primary metabolite 1", "primary metabolite 2", "secondary metabolite",
+#'   "inhibitor 1", "inhibitor 2", or "inhibitor 1 metabolite".
 #'
-#' @return a data.frame with adjusted concentration units
+#' @return a data.frame with converted concentration units
 #' @export
 #'
 #' @examples
 #' # none yet
 #' 
-adjust_conc_units <- function(DF_to_adjust, 
-                              conc_units = "ng/mL", 
-                              DF_with_good_units = NA, 
-                              MW = NA){
+convert_conc_units <- function(DF_to_convert, 
+                               conc_units = "ng/mL", 
+                               DF_with_good_units = NA, 
+                               MW = NA){
    
    # Error catching ----------------------------------------------------------
    
@@ -131,8 +133,8 @@ adjust_conc_units <- function(DF_to_adjust,
            call. = FALSE)
    }
    
-   if("Conc_units" %in% names(DF_to_adjust) == FALSE){
-      stop("The function `adjust_conc_units` requires that DF_to_adjust have a column titled `Conc_units`, and your data.frame does not. We cannot adjust the concentration units here.", 
+   if("Conc_units" %in% names(DF_to_convert) == FALSE){
+      stop("The function `convert_conc_units` requires that DF_to_convert have a column titled `Conc_units`, and your data.frame does not. We cannot convert the concentration units here.", 
            call. = FALSE)
    }
    
@@ -142,7 +144,7 @@ adjust_conc_units <- function(DF_to_adjust,
               call. = FALSE)
       } 
       
-      names(MW) <- unique(DF_to_adjust$CompoundID)
+      names(MW) <- unique(DF_to_convert$CompoundID)
       
       if(any(names(MW)) %in% 
          c("substrate", "inhibitor 1", "primary metabolite 1", 
@@ -152,7 +154,7 @@ adjust_conc_units <- function(DF_to_adjust,
               call. = FALSE)
       }
       
-      if(all(names(MW) %in% unique(DF_to_adjust$CompoundID)) == FALSE){
+      if(all(names(MW) %in% unique(DF_to_convert$CompoundID)) == FALSE){
          stop("The names you have supplied for which molecular weight is which are not among the compound IDs present in your data. Please check the names and try again.", 
               call. = FALSE)
       }
@@ -172,8 +174,8 @@ adjust_conc_units <- function(DF_to_adjust,
    }
    
    # Allowing for "u" instead of "µ" as input
-   if("Conc_units" %in% names(DF_to_adjust)){
-      DF_to_adjust <- DF_to_adjust %>% 
+   if("Conc_units" %in% names(DF_to_convert)){
+      DF_to_convert <- DF_to_convert %>% 
          mutate(Conc_units = sub("ug", "µg", Conc_units), 
                 Conc_units = sub("uM", "µM", Conc_units))
    }
@@ -185,7 +187,7 @@ adjust_conc_units <- function(DF_to_adjust,
    MolarUnits <- c("µM", "nM")
    
    if(unique(DF_with_good_units$Conc_units) %in% MassUnits &
-      unique(DF_to_adjust$Conc_units) %in% MolarUnits){
+      unique(DF_to_convert$Conc_units) %in% MolarUnits){
       
       suppressMessages(
          ConvTable_conc <- data.frame(
@@ -213,7 +215,7 @@ adjust_conc_units <- function(DF_to_adjust,
       )
       
    } else if(unique(DF_with_good_units$Conc_units) %in% MolarUnits &
-             unique(DF_to_adjust$Conc_units) %in% MassUnits){
+             unique(DF_to_convert$Conc_units) %in% MassUnits){
       
       suppressMessages(
          ConvTable_conc <- data.frame(
@@ -287,34 +289,34 @@ adjust_conc_units <- function(DF_to_adjust,
    }
    
    if(unique(DF_with_good_units$Conc_units) %in% ConvTable_conc$RevUnits == FALSE |
-      unique(DF_to_adjust$Conc_units) %in% ConvTable_conc$OrigUnits == FALSE){
+      unique(DF_to_convert$Conc_units) %in% ConvTable_conc$OrigUnits == FALSE){
       stop("Our apologies, but we have not yet set up this function to deal with your concentration units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.",
            call. = FALSE)
    }
    
    ConvTable_conc <- ConvTable_conc %>% 
-      filter(OrigUnits %in% unique(DF_to_adjust$Conc_units) &
+      filter(OrigUnits %in% unique(DF_to_convert$Conc_units) &
                 RevUnits %in% unique(DF_with_good_units$Conc_units))
    
-   # If there are multiple compound IDs in DF_to_adjust, then there can be
+   # If there are multiple compound IDs in DF_to_convert, then there can be
    # multiple CompoundIDs in ConvTable_conc. For some applications, though, s/a
    # PK tables, there might not be any compuond IDs.
    
-   if("CompoundID" %in% names(DF_to_adjust) & 
+   if("CompoundID" %in% names(DF_to_convert) & 
       "CompoundID" %in% names(ConvTable_conc)){
       
-      if(any(ConvTable_conc %>% filter(CompoundID %in% DF_to_adjust$CompoundID) %>% 
+      if(any(ConvTable_conc %>% filter(CompoundID %in% DF_to_convert$CompoundID) %>% 
              group_by(CompoundID) %>% summarize(N = n()) %>% 
              pull(N) < 1)){
          stop(paste0("You supplied concentration units of ",
-                     str_comma(unique(DF_to_adjust$Conc_units)), 
+                     str_comma(unique(DF_to_convert$Conc_units)), 
                      ", but we were not able to convert them to the desired units of ", 
                      unique(DF_with_good_units$Conc_units), 
                      ". No adjustment of units was possible and thus no data can be returned here."),
               call. = FALSE)
       }
       
-      DF_to_adjust <- DF_to_adjust %>% 
+      DF_to_convert <- DF_to_convert %>% 
          left_join(ConvTable_conc, by = "CompoundID") %>% 
          mutate(Conc = Conc*Factor,
                 Conc_units = RevUnits)
@@ -322,34 +324,34 @@ adjust_conc_units <- function(DF_to_adjust,
    } else {
       ConvFactor_conc <-
          ConvTable_conc$Factor[
-            which(ConvTable_conc$OrigUnits == unique(DF_to_adjust$Conc_units) &
+            which(ConvTable_conc$OrigUnits == unique(DF_to_convert$Conc_units) &
                      ConvTable_conc$RevUnits == unique(DF_with_good_units$Conc_units))]
       
       if(length(ConvFactor_conc) < 1){
          stop(paste0("You supplied concentration units of ",
-                     str_comma(unique(DF_to_adjust$Conc_units)), 
+                     str_comma(unique(DF_to_convert$Conc_units)), 
                      ", but we were not able to convert them to the desired units of ", 
                      unique(DF_with_good_units$Conc_units), 
                      ". No adjustment of units was possible and thus no data can be returned here."),
               call. = FALSE)
       }
       
-      DF_to_adjust <- DF_to_adjust %>% mutate(Conc = Conc*ConvFactor_conc,
-                                              Conc_units = unique(DF_with_good_units$Conc_units))
+      DF_to_convert <- DF_to_convert %>% mutate(Conc = Conc*ConvFactor_conc,
+                                                Conc_units = unique(DF_with_good_units$Conc_units))
    }
    
    ## Output -----------------------------------------------------------
    
-   return(DF_to_adjust)
+   return(DF_to_convert)
    
 }
 
 
-#' Adjust the time units in a data.frame of concentration-time data 
+#' Convert the time units in a data.frame of concentration-time data 
 #'
-#' @param DF_to_adjust the data.frame of concentration-time data with units that
-#'   may need to be adjusted. If you're adjusting concentration units, this must
-#'   include the columns "Conc" and "Conc_units", and, if you're adjusting time
+#' @param DF_to_convert the data.frame of concentration-time data with units that
+#'   may need to be converted. If you're converting concentration units, this must
+#'   include the columns "Conc" and "Conc_units", and, if you're converting time
 #'   units, it must include the columns "Time", and "Time_units". (Outputs from
 #'   \code{\link{extractConcTime}}, \code{\link{extractConcTime_mult}}, and
 #'   \code{\link{extractObsConcTime}} work here.) If you want to convert between
@@ -363,16 +365,16 @@ adjust_conc_units <- function(DF_to_adjust,
 #'   for PE data entry, and options for time units are "hours", "days", and
 #'   "minutes".
 #'
-#' @return a data.frame with adjusted time units
+#' @return a data.frame with converted time units
 #' @export
 #'
 #' @examples
 #' # none yet
 #' 
 #' 
-adjust_time_units <- function(DF_to_adjust, 
-                              time_units = "hours", 
-                              DF_with_good_units = NA){
+convert_time_units <- function(DF_to_convert, 
+                               time_units = "hours", 
+                               DF_with_good_units = NA){
    
    # Error catching ----------------------------------------------------------
    
@@ -382,8 +384,8 @@ adjust_time_units <- function(DF_to_adjust,
            call. = FALSE)
    }
    
-   if("Time_units" %in% names(DF_to_adjust) == FALSE){
-      stop("The function `adjust_time_units` requires that DF_to_adjust have a column titled `Time_units`, and your data.frame does not. We cannot adjust the time units here.", 
+   if("Time_units" %in% names(DF_to_convert) == FALSE){
+      stop("The function `convert_time_units` requires that DF_to_convert have a column titled `Time_units`, and your data.frame does not. We cannot convert the time units here.", 
            call. = FALSE)
    }
    
@@ -404,23 +406,23 @@ adjust_time_units <- function(DF_to_adjust,
                  1/168, 1/(168*60), 1/7,    1))
    
    if(unique(DF_with_good_units$Time_units) %in% ConvTable_time$OrigUnits == FALSE |
-      unique(DF_to_adjust$Time_units) %in% ConvTable_time$RevUnits == FALSE){
+      unique(DF_to_convert$Time_units) %in% ConvTable_time$RevUnits == FALSE){
       stop("Our apologies, but we have not yet set up this function to deal with your time units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.",
            call. = FALSE)
    }
    
    ConvFactor_time <-
       ConvTable_time$Factor[
-         which(ConvTable_time$OrigUnits == unique(DF_to_adjust$Time_units) &
+         which(ConvTable_time$OrigUnits == unique(DF_to_convert$Time_units) &
                   ConvTable_time$RevUnits == unique(DF_with_good_units$Time_units))]
    
-   DF_to_adjust <- DF_to_adjust %>% mutate(Time = Time*ConvFactor_time,
-                                           Time_units = unique(DF_with_good_units$Time_units))
+   DF_to_convert <- DF_to_convert %>% mutate(Time = Time*ConvFactor_time,
+                                             Time_units = unique(DF_with_good_units$Time_units))
    
    
    # Output -----------------------------------------------------------
    
-   return(DF_to_adjust)
+   return(DF_to_convert)
    
 }
 

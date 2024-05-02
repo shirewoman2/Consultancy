@@ -24,7 +24,7 @@ pksummary_mult(
   includeTrialMeans = FALSE,
   concatVariability = FALSE,
   variability_format = "to",
-  adjust_conc_units = NA,
+  convert_conc_units = NA,
   include_dose_num = NA,
   add_header_for_DDI = TRUE,
   rounding = NA,
@@ -221,15 +221,15 @@ an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
 ambiguity; this was written by an American who didn't originally realize
 that there was another name for parentheses.)}
 
-\item{adjust_conc_units}{Would you like to adjust the units to something
+\item{convert_conc_units}{Would you like to convert the units to something
 other than what was used in the simulation? Default is NA to leave the
 units as is, but if you set the concentration units to something else, this
-will attempt to adjust the units to match that. This only adjusts only the
+will attempt to convert the units to match that. This only adjusts only the
 simulated values, since we're assuming that that's the most likely problem
 and that observed units are relatively easy to fix, and it also only
 affects AUC and Cmax values. Acceptable input is any concentration unit
-listed in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
-"ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
+listed in the Excel form for PE data entry, e.g. \code{convert_conc_units =
+"ng/mL"} or \code{convert_conc_units = "uM"}. Molar concentrations will be
 automatically converted using the molecular weight of whatever you set for
 \code{compoundToExtract}.}
 

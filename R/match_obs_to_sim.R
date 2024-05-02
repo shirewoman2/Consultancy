@@ -214,7 +214,7 @@ match_obs_to_sim <- function(ct_dataframe,
                                            existing_exp_details = Deets)
          
          # Matching units
-         ObsData_j[[k]] <- adjust_units(ObsData_j[[k]], 
+         ObsData_j[[k]] <- convert_units(ObsData_j[[k]], 
                                         DF_with_good_units = ct_dataframe[[k]])
          
          # Adding inhibitor name as needed

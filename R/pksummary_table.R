@@ -284,15 +284,15 @@
 #'   want to have nicely rounded and formatted output in a Word file but you
 #'   \emph{also} want to use the results from \code{pksummary_table} to make
 #'   forest plots, which requires numbers that are \emph{not} rounded.}}
-#' @param adjust_conc_units Would you like to adjust the units to something
+#' @param convert_conc_units Would you like to convert the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
-#'   will attempt to adjust the units to match that. This only adjusts only the
+#'   will attempt to convert the units to match that. This only adjusts only the
 #'   simulated values, since we're assuming that that's the most likely problem
 #'   and that observed units are relatively easy to fix, and it also only
 #'   affects AUC and Cmax values. Acceptable input is any concentration unit
-#'   listed in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
-#'   "ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
+#'   listed in the Excel form for PE data entry, e.g. \code{convert_conc_units =
+#'   "ng/mL"} or \code{convert_conc_units = "uM"}. Molar concentrations will be
 #'   automatically converted using the molecular weight of whatever you set for
 #'   \code{compoundToExtract}.
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
@@ -449,7 +449,7 @@ pksummary_table <- function(sim_data_file = NA,
                             includeTrialMeans = FALSE,
                             concatVariability = FALSE,
                             variability_format = "to",
-                            adjust_conc_units = NA,
+                            convert_conc_units = NA,
                             include_dose_num = NA,
                             add_header_for_DDI = TRUE, 
                             rounding = NA,
@@ -1134,29 +1134,29 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    # Changing units if user wants. 
-   if(complete.cases(adjust_conc_units) & is.na(Deets$Units_Cmax)){
-      warning("You requested that we adjust the concentration units, but we can't find what units were used in your simulation. (This is often the case for Discovery simulations in particular.) We won't be able to adjust the concentration units.\n", 
+   if(complete.cases(convert_conc_units) & is.na(Deets$Units_Cmax)){
+      warning("You requested that we convert the concentration units, but we can't find what units were used in your simulation. (This is often the case for Discovery simulations in particular.) We won't be able to convert the concentration units.\n", 
               call. = FALSE)
-      adjust_conc_units <- NA
+      convert_conc_units <- NA
    }
    
-   if(complete.cases(adjust_conc_units)){
+   if(complete.cases(convert_conc_units)){
       # Only adjusting AUC and Cmax values and not adjusting time portion of
       # units -- only conc.
-      if(Deets$Units_Cmax != adjust_conc_units){
+      if(Deets$Units_Cmax != convert_conc_units){
          ColsToChange <- names(MyPKResults_all$aggregate)[
             intersect(which(str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax|Cmin")), 
                       which(!str_detect(names(MyPKResults_all$aggregate), "ratio")))
          ]
          
          for(i in ColsToChange){
-            TEMP <- adjust_units(
+            TEMP <- convert_units(
                MyPKResults_all$aggregate %>% 
                   rename(Conc = i) %>% 
                   mutate(CompoundID = compoundToExtract, 
                          Conc_units = Deets$Units_Cmax, 
                          Time = 1, Time_units = "hours"),
-               DF_with_good_units = list("Conc_units" = adjust_conc_units, 
+               DF_with_good_units = list("Conc_units" = convert_conc_units, 
                                          "Time_units" = "hours"), 
                MW = c(compoundToExtract = 
                          switch(compoundToExtract, 
@@ -1172,13 +1172,13 @@ pksummary_table <- function(sim_data_file = NA,
             rm(TEMP)
             
             if("individual" %in% names(MyPKResults_all)){
-               TEMP <- adjust_units(
+               TEMP <- convert_units(
                   MyPKResults_all$individual %>% 
                      rename(Conc = i) %>% 
                      mutate(CompoundID = compoundToExtract, 
                             Conc_units = Deets$Units_Cmax, 
                             Time = 1, Time_units = "hours"),
-                  DF_with_good_units = list("Conc_units" = adjust_conc_units, 
+                  DF_with_good_units = list("Conc_units" = convert_conc_units, 
                                             "Time_units" = "hours"), 
                   MW = c(compoundToExtract = 
                             switch(compoundToExtract, 
@@ -1195,8 +1195,8 @@ pksummary_table <- function(sim_data_file = NA,
          }
          
          # Need to change units in Deets now to match.
-         Deets$Units_AUC <- sub(Deets$Units_Cmax, adjust_conc_units, Deets$Units_AUC)
-         Deets$Units_Cmax <- adjust_conc_units
+         Deets$Units_AUC <- sub(Deets$Units_Cmax, convert_conc_units, Deets$Units_AUC)
+         Deets$Units_Cmax <- convert_conc_units
       }
    }
    
