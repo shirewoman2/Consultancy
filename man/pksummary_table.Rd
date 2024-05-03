@@ -40,7 +40,8 @@ pksummary_table(
   highlight_so_colors = "yellow to red",
   save_table = NA,
   page_orientation = "portrait",
-  fontsize = 11
+  fontsize = 11,
+  adjust_conc_units = NA
 )
 }
 \arguments{

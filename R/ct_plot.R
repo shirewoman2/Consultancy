@@ -343,6 +343,15 @@
 #'   saved to disk.
 #' @param fig_height figure height in inches
 #' @param fig_width figure width in inches
+#' @param time_units_to_use time units to use for graphs. If left as NA, the
+#'   time units in the source data will be used. Options are "hours", "minutes",
+#'   "days", or "weeks".
+#' @param conc_units_to_use concentration units to use for graphs. If left as
+#'   NA, the concentration units in the source data will be used. Acceptable
+#'   options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
+#'   "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
+#'   concentration, you'll need to provide something for the argument
+#'   \code{existing_exp_details}.
 #'
 #' @return Output is a ggplot2 graph or two ggplot2 graphs arranged with
 #'   ggpubr::ggarrange()
@@ -391,12 +400,14 @@ ct_plot <- function(ct_dataframe = NA,
                     x_axis_label = NA,
                     pad_x_axis = TRUE,
                     pad_y_axis = TRUE,
+                    time_units_to_use = NA, 
                     adjust_obs_time = FALSE,
                     t0 = "simulation start",
                     y_axis_limits_lin = NA,
                     y_axis_limits_log = NA,
                     y_axis_interval = NA, 
                     y_axis_label = NA,
+                    conc_units_to_use = NA, 
                     obs_color = NA,
                     obs_shape = NA,
                     obs_size = NA,
@@ -639,6 +650,30 @@ ct_plot <- function(ct_dataframe = NA,
       }
    }
    
+   if(any(complete.cases(time_units_to_use))){
+      time_units_to_use <- tolower(time_units_to_use[1])
+      if(time_units_to_use %in% c("hours", "minutes", "days", "weeks") == FALSE){
+         warning(paste0("You requested that the graph have time units of `", 
+                        time_units_to_use, 
+                        "`, which is not among the acceptable options. We'll use hours instead.\n"), 
+                 call. = FALSE)
+         time_units_to_use <- "hours"
+      }
+   }
+   
+   if(any(complete.cases(conc_units_to_use))){
+      conc_units_to_use <- conc_units_to_use[1]
+      if(conc_units_to_use %in% c("mg/L", "mg/mL", "µg/L", "ug/L", "µg/mL", 
+                                  "ug/mL", "ng/L", "ng/mL", "µM", "uM", 
+                                  "nM") == FALSE){
+         warning(paste0("You requested that the graph have concentration units of `", 
+                        conc_units_to_use, 
+                        "`, which is not among the acceptable options. We'll use ng/mL instead.\n"), 
+                 call. = FALSE)
+         conc_units_to_use <- "ng/mL"
+      }
+   }
+   
    
    # Main body of function --------------------------------------------------
    
@@ -697,8 +732,8 @@ ct_plot <- function(ct_dataframe = NA,
    
    Data <- ct_dataframe %>% 
       # Making sure we only have one summary aggregate measurement
-      filter(! Trial %in% setdiff(c("mean", "geomean", "median"), 
-                                  MyMeanType))
+      filter(!Trial %in% setdiff(c("mean", "geomean", "median"), 
+                                 MyMeanType))
    
    # Set compoundToExtract to whatever compound was included.
    compoundToExtract <- ifelse(EnzPlot, unique(Data$Enzyme), 
@@ -771,19 +806,6 @@ ct_plot <- function(ct_dataframe = NA,
       stop("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
    }
    
-   # Setting up the x axis using the subfunction ct_x_axis
-   XStuff <- ct_x_axis(Data = Data, 
-                       time_range = time_range, 
-                       t0 = t0,
-                       pad_x_axis = pad_x_axis,
-                       compoundToExtract = compoundToExtract, 
-                       EnzPlot = EnzPlot)
-   xlab <- XStuff$xlab
-   Data <- XStuff$Data # Is this necessary??
-   time_range <- XStuff$time_range
-   time_range_relative <- XStuff$time_range_relative
-   t0 <- XStuff$t0
-   TimeUnits <- XStuff$TimeUnits
    
    # Dealing with possible inhibitor 1 data ---------------------------------
    # Adding a grouping variable to data and also making the inhibitor 1 name
@@ -855,6 +877,49 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    # Setting up data.frames to graph ---------------------------------------
+   
+   # Converting conc and time units if requested
+   if(any(complete.cases(conc_units_to_use))){
+      if("logical" %in% class(existing_exp_details) == FALSE){
+         MWs_1 <- AllCompounds %>% 
+            mutate(Detail = paste0("MW", Suffix)) %>% 
+            select(CompoundID, Detail) %>% 
+            left_join(harmonize_details(existing_exp_details)[["MainDetails"]] %>%
+                         filter(File %in% unique(ct_dataframe$File)) %>% 
+                         select(File, matches("MW_")) %>% 
+                         pivot_longer(cols = matches("MW_"), 
+                                      names_to = "Detail", 
+                                      values_to = "Value"), 
+                      by = "Detail")
+         MWs <- MWs_1$Value
+         names(MWs) <- MWs_1$CompoundID
+         
+      } else {
+         MWs <- NA
+      }
+      
+      Data <- convert_conc_units(Data, conc_units = conc_units_to_use,
+                                 MW = MWs)
+   }
+   
+   if(any(complete.cases(time_units_to_use))){
+      Data <- convert_time_units(Data, time_units = time_units_to_use)
+   }
+   
+   # Setting up the x axis using the subfunction ct_x_axis
+   XStuff <- ct_x_axis(Data = Data, 
+                       time_range = time_range, 
+                       t0 = t0,
+                       pad_x_axis = pad_x_axis,
+                       compoundToExtract = compoundToExtract, 
+                       EnzPlot = EnzPlot)
+   xlab <- XStuff$xlab
+   Data <- XStuff$Data # Is this necessary??
+   time_range <- XStuff$time_range
+   time_range_relative <- XStuff$time_range_relative
+   t0 <- XStuff$t0
+   TimeUnits <- XStuff$TimeUnits
+   
    # Separating the data by type and calculating trial means
    sim_data_trial <- Data %>%
       filter(Simulated == TRUE &

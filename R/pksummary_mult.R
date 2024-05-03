@@ -390,7 +390,8 @@ pksummary_mult <- function(sim_data_files = NA,
                            single_table = FALSE,
                            page_orientation = "portrait", 
                            fontsize = 11, 
-                           ...){
+                           ..., 
+                           adjust_conc_units = NA){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -486,6 +487,14 @@ pksummary_mult <- function(sim_data_files = NA,
    if(page_orientation %in% c("portrait", "landscape") == FALSE){
       warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
               call. = FALSE)
+   }
+   
+   if(any(complete.cases(adjust_conc_units)) & 
+      all(is.na(convert_conc_units))){
+      warning("You have used the argument `adjust_conc_units` to specify which concentration units to use, and we'll be deprecating this argument in favor of the (hopefully more clearly named) argument `convert_conc_units`. Next time, please use the argument `convert_conc_units`.\n", 
+              call. = FALSE)
+      
+      convert_conc_units <- adjust_conc_units
    }
    
    

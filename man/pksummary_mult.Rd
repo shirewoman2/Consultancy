@@ -38,7 +38,8 @@ pksummary_mult(
   single_table = FALSE,
   page_orientation = "portrait",
   fontsize = 11,
-  ...
+  ...,
+  adjust_conc_units = NA
 )
 }
 \arguments{

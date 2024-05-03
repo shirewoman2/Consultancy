@@ -17,7 +17,8 @@
 #'   are "hours", "days", and "minutes".
 #' @param conc_units concentration units to use, e.g. "ng/mL". Options for
 #'   concentration units are the same as the ones in the Excel form for PE data
-#'   entry.
+#'   entry: "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"), "ng/L",
+#'   "ng/mL", "µM" (or "uM"), or "nM".
 #' @param DF_with_good_units if you would like to just match another data.frame,
 #'   supply here a data.frame that has the desired concentration and time units.
 #'   Options for concentration units are the same as the ones in the Excel form
@@ -67,14 +68,14 @@ convert_units <- function(DF_to_convert,
    
    # Main body of function -------------------------------------------------
    
-   ## Matching concentration units --------------------------------------
+   ## Converting concentration units --------------------------------------
    
    DF_to_convert <- convert_conc_units(DF_to_convert = DF_to_convert,
                                        conc_units = conc_units, 
                                        DF_with_good_units = DF_with_good_units, 
                                        MW = MW)
    
-   ## Matching time units -------------------------------------------------
+   ## Converting time units -------------------------------------------------
    
    DF_to_convert <- convert_time_units(DF_to_convert = DF_to_convert, 
                                        time_units = time_units)
@@ -98,7 +99,8 @@ convert_units <- function(DF_to_convert,
 #'   include the column "CompoundID".
 #' @param conc_units concentration units to use, e.g. "ng/mL". Options for
 #'   concentration units are the same as the ones in the Excel form for PE data
-#'   entry.
+#'   entry: "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"), "ng/L",
+#'   "ng/mL", "µM" (or "uM"), or "nM".
 #' @param DF_with_good_units if you would like to just match another data.frame,
 #'   supply here a data.frame that has the desired concentration and time units.
 #'   Options for concentration units are the same as the ones in the Excel form
@@ -160,7 +162,7 @@ convert_conc_units <- function(DF_to_convert,
       }
    }
    
-   # Matching concentration units --------------------------------------
+   # Converting concentration units --------------------------------------
    
    if("data.frame" %in% class(DF_with_good_units)){
       DF_with_good_units <- DF_with_good_units %>% 
@@ -312,7 +314,7 @@ convert_conc_units <- function(DF_to_convert,
                      str_comma(unique(DF_to_convert$Conc_units)), 
                      ", but we were not able to convert them to the desired units of ", 
                      unique(DF_with_good_units$Conc_units), 
-                     ". No adjustment of units was possible and thus no data can be returned here."),
+                     ". No conversion of units was possible and thus no data can be returned here."),
               call. = FALSE)
       }
       
@@ -332,7 +334,7 @@ convert_conc_units <- function(DF_to_convert,
                      str_comma(unique(DF_to_convert$Conc_units)), 
                      ", but we were not able to convert them to the desired units of ", 
                      unique(DF_with_good_units$Conc_units), 
-                     ". No adjustment of units was possible and thus no data can be returned here."),
+                     ". No conversion of units was possible and thus no data can be returned here."),
               call. = FALSE)
       }
       
@@ -393,7 +395,7 @@ convert_time_units <- function(DF_to_convert,
       DF_with_good_units <- list(Time_units = time_units)
    }
    
-   # Adjusting time units ----------------------------------------------------
+   # Converting time units ----------------------------------------------------
    
    ConvTable_time <- data.frame(
       OrigUnits = rep(c("hours", "minutes", "days", "weeks"), 4),
