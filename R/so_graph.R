@@ -417,10 +417,10 @@ so_graph <- function(PKtable,
       if(any(PKparameters %in% AllPKParameters$PKparameter)){
          PKparameters <- PKparameters[PKparameters %in% AllPKParameters$PKparameter]
       } else {
-         PKparameters <- data.frame(PrettifiedNames = PKparameters) %>% 
-            left_join(AllPKParameters_pretty, by = join_by(PrettifiedNames)) %>% 
-            filter(complete.cases(PKparameter)) %>% 
-            pull(PKparameter)
+         suppressWarnings(PKparameters <- prettify_column_names(PKtable, 
+                                                                pretty_or_ugly_cols = "ugly"))
+         PKparameters <- intersect(names(PKparameters), 
+                                   AllPKParameters_pretty$PKparameter)
       }
    }
    
@@ -756,8 +756,9 @@ so_graph <- function(PKtable,
              Statistic = ifelse(str_detect(Statistic, "^Simulated"),
                                 "Simulated", Statistic))
    
-   SO <- prettify_column_names(SO, 
-                               pretty_or_ugly_cols = "ugly")
+   suppressWarnings(
+      SO <- prettify_column_names(SO, 
+                                  pretty_or_ugly_cols = "ugly"))
    
    if(is.na(include_dose_num)){
       # Dropping dose number depending on input. First, checking whether they have
