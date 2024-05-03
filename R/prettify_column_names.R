@@ -197,17 +197,35 @@ prettify_column_names <- function(PKtable,
    # Making sure that we don't have duplicates for OrigOrder b/c that would mean
    # that final column names might be offset. An example of when this can
    # happen: When you're trying to uglify CL/F b/c could be CLinf or CLt or
-   # CLtau. If there are duplicates here, then it's best to just use original
-   # column names to be safe.
+   # CLtau. If there are duplicates here BUT there were NO DUPLICATES in the
+   # original data.frame (e.g., user supplied prettified data.frame with a
+   # column titled "CL/F (L/h)", which could be CLinf_dose1, CLtau_last, or
+   # CLt_dose1), then use CLinf_dose1 and MAKE A WARNING. For other duplicates,
+   # it's best to just use original column names to be safe.
    if(any(duplicated(TableNames$OrigOrder))){
-      warning(paste0("There's something ambiguous about the input table column names that means that we don't know what value(s) to use for the final column names, so we cannot ", 
-                     switch(pretty_or_ugly_cols, 
-                            "pretty" = "prettify", 
-                            "ugly" = "uglify"), 
-                     " your columns. Please check your input and tell a member of the R Working Group if you're uncertain what the problem might be.\n"), 
-              call. = FALSE)
-      TableNames <- TableNames %>% 
-         mutate(FinalNames = OrigColNames) %>% unique()
+      if(any(duplicated(OrigColNames)) |
+         any(str_detect(TableNames$FinalNames[duplicated(TableNames$OrigOrder)], 
+                        "CL")) == FALSE){
+         warning(paste0("There's something ambiguous about the input table column names that means that we don't know what value(s) to use for the final column names, so we cannot ", 
+                        switch(pretty_or_ugly_cols, 
+                               "pretty" = "prettify", 
+                               "ugly" = "uglify"), 
+                        " your columns. Please check your input and tell a member of the R Working Group if you're uncertain what the problem might be.\n"), 
+                 call. = FALSE)
+         TableNames <- TableNames %>% 
+            mutate(FinalNames = OrigColNames) %>% unique()
+      } else {
+         # This is when there's a duplicate b/c of CLinf vs. CLt vs. CLtau. Just
+         # remove the duplicate CL names.
+         warning("At least one column was ambiguous and could have been CLinf_dose1, CLtau_last, or CLt_dose1, but we're not sure which. We are calling it CLinf_dose1 as a placeholder.\n", 
+                 call. = FALSE)
+         
+         TableNames$Duplicated <- FALSE
+         TableNames$Duplicated[duplicated(TableNames$OrigOrder)] <- TRUE
+         
+         TableNames <- TableNames %>% 
+            filter(Duplicated == FALSE) %>% select(-Duplicated)
+      }
    }
    
    # Check that all column names would be unique.
