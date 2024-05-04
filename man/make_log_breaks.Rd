@@ -4,10 +4,10 @@
 \alias{make_log_breaks}
 \title{Make pretty breaks and labels for a log axis}
 \usage{
-make_log_breaks(y_axis_limits_log = NA, ct_dataframe, time_range_to_use = NA)
+make_log_breaks(axis_range, axis_limits_log = NA)
 }
 \arguments{
-\item{y_axis_limits_log}{desired y axis limits for a semi-log
+\item{axis_limits_log}{desired y axis limits for a semi-log
 concentration-time plot}
 
 \item{ct_dataframe}{the concentration-time data.frame that's being plotted}

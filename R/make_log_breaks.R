@@ -4,7 +4,7 @@
 #' use and is thus not terribly annotated in terms of warnings if you do
 #' something wrong.
 #'
-#' @param y_axis_limits_log desired y axis limits for a semi-log
+#' @param axis_limits_log desired y axis limits for a semi-log
 #'   concentration-time plot
 #' @param ct_dataframe the concentration-time data.frame that's being plotted
 #' @param time_range_to_use optionally specify a time range for the conc-time
@@ -18,60 +18,37 @@
 #' # none
 #'
 #' 
-make_log_breaks <- function(y_axis_limits_log = NA, 
-                            ct_dataframe, 
-                            time_range_to_use = NA){
+make_log_breaks <- function(axis_range, 
+                            axis_limits_log = NA){
    
-   if(all(is.na(time_range_to_use))){
-      time_range_relative <- range(ct_dataframe$Time[
-         complete.cases(ct_dataframe$Conc)], na.rm = T)
-   } else {
-      time_range_relative <- time_range_to_use
+   axis_range <- sort(axis_range)
+   
+   # If user set axis_range[1] to 0, set it to 1/100th the higher value and
+   # tell them we can't use 0.
+   if(complete.cases(axis_limits_log[1]) && axis_limits_log[1] <= 0){
+      axis_limits_log[1] <- axis_limits_log[2]/100
+      warning("You requested a lower y axis limit of 0, which is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.",
+              call. = FALSE)
    }
    
-   near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
+   # If axis_range[1] is 0, which can happen when the concs are really low, that
+   # is undefined for log transformations. Setting it to be max value / 100
+   # when that happens.
+   axis_range[1] <- ifelse(axis_range[1] == 0, 
+                         axis_range[2]/100, axis_range[1])
+   axis_range[1] <- round_down(axis_range[1])
+   axis_range[2] <- round_up(axis_range[2])
+   axis_range <- sort(axis_range) # sorting again just to be sure b/c sometimes can get weird mathematical artifacts
    
-   if(is.na(y_axis_limits_log[1])){ # Option to consider for the future: Allow user to specify only the upper limit, which would leave y_axis_limits_log[1] as NA?
-      
-      Ylim_log <- range(ct_dataframe$Conc, na.rm = T)
-      
-      Ylim_log[1] <- ct_dataframe %>%
-         filter(Conc >= 0) %>%  # Not allowing BLQ values that were set below 0.
-         filter(Time == near_match(ct_dataframe$Time[complete.cases(ct_dataframe$Conc)],
-                                   time_range_relative[2])) %>%
-         pull(Conc) %>% min()
-      
-      # If Ylim_log[1] is 0, which can happen when the concs are really low, that
-      # is undefined for log transformations. Setting it to be max value / 100
-      # when that happens.
-      Ylim_log[1] <- ifelse(Ylim_log[1] == 0, 
-                            Ylim_log[2]/100, Ylim_log[1])
-      Ylim_log[1] <- round_down(Ylim_log[1])
-      Ylim_log[2] <- round_up(max(ct_dataframe$Conc, na.rm = T))
-      Ylim_log <- sort(Ylim_log)
-      
-   } else {
-      # If user set Ylim_log[1] to 0, set it to 1/100th the higher value and
-      # tell them we can't use 0.
-      if(y_axis_limits_log[1] <= 0){
-         y_axis_limits_log[1] <- y_axis_limits_log[2]/100
-         warning("You requested a lower y axis limit that is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.",
-                 call. = FALSE)
-      }
-      
-      Ylim_log <- y_axis_limits_log
-      
-   }
-   
-   YLogBreaks <- as.vector(outer(1:9, 10^(log10(Ylim_log[1]):log10(Ylim_log[2]))))
-   YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
+   YLogBreaks <- as.vector(outer(1:9, 10^(log10(axis_range[1]):log10(axis_range[2]))))
+   YLogBreaks <- YLogBreaks[YLogBreaks >= axis_range[1] & YLogBreaks <= axis_range[2]]
    YLogLabels   <- rep("",length(YLogBreaks))
    
-   if(is.na(y_axis_limits_log[1]) |
-      # checking whether Ylim_log values are a factor of 10 b/c, if they are,
-      # then just use the Ylim_log that we would have come up with using the
+   if(is.na(axis_limits_log[1]) |
+      # checking whether axis_range values are a factor of 10 b/c, if they are,
+      # then just use the axis_range that we would have come up with using the
       # other method b/c that makes prettier breaks
-      all(log10(Ylim_log) == round(log10(Ylim_log)))){
+      all(log10(axis_range) == round(log10(axis_range)))){
       
       # add labels at order of magnitude
       YLogLabels[seq(1, length(YLogLabels), 9)] <- 
@@ -99,7 +76,7 @@ make_log_breaks <- function(y_axis_limits_log = NA,
    
    return(list("labels" = YLogLabels, 
                "breaks" = YLogBreaks, 
-               "y_axis_limits_log" = Ylim_log))
+               "axis_limits_log" = axis_range))
    
 }
 

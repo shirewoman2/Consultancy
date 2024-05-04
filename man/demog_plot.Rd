@@ -30,7 +30,7 @@ Age, Weight_kg, Height_cm, HSA_gL, AGP_gL, Sex, BMI_kgm2, and RenalFunction}
 
 \item{obs_alpha}{how transparent to make the observed data, with 0 being
 completely transparent and invisible so I don't know why you'd want that
-but, hey, you do you, man, to 1, which is fully opaque.}
+but, hey, you do you, dude, to 1, which is fully opaque.}
 
 \item{sim_alpha}{how transparent to make the simulated data. See notes on the
 obs_alpha argument.}
