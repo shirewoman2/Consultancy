@@ -446,173 +446,25 @@ so_graph <- function(PKtable,
                                    "muted red green") &
       boundary_indicator != "none"){
       
-      ColorChoices <- paste(
-         boundary_color_set, boundary_indicator,
-         cut(length(boundaries), breaks = c(0:3, Inf)))
+      boundary_color_set <- 
+         set_boundary_colors(color_set = boundary_color_set,
+                             boundaries = boundaries, 
+                             break_type = "SO")
       
-      boundary_color_set <-
-         switch(ColorChoices,
-                ## red black lines
-                
-                # 1 boundary, e.g., it's only unity
-                "red black lines (0,1]" = "black",
-                
-                # 2 boundaries
-                "red black lines (1,2]" = c("black", "black"),
-                
-                # 3 boundaries
-                "red black lines (2,3]" = c("black", "black", "red"),
-                
-                # >3 boundaries
-                "red black lines (3,Inf]" = colorRampPalette(c("black", "red"))(
-                   length(boundaries)),
-                
-                
-                ## red black fill
-                
-                # 1 boundary, e.g., it's only unity
-                "red black fill (0,1]" = "black",
-                
-                # 2 boundaries
-                "red black fill (1,2]" = c("black", "black"),
-                
-                # 3 boundaries
-                "red black fill (2,3]" = c("black", "black", "red"),
-                
-                # >3 boundaries
-                "red black fill (3,Inf]" = c("black",
-                                             colorRampPalette(c("black", "#FFC000", "red"))(
-                                                length(boundaries) - 1)),
-                
-                
-                ## red green lines
-                # 1 boundary, e.g., it's only unity
-                "red green lines (0,1]" = "#17A142",
-                
-                # 2 boundaries
-                "red green lines (1,2]" = c("#17A142", "red"),
-                
-                # 3 boundaries
-                "red green lines (2,3]" = c("black", "#17A142", "red"),
-                
-                # >3 boundaries
-                "red green lines (3,Inf]" = c("black",
-                                              colorRampPalette(c("#17A142", "red"))(
-                                                 length(boundaries) - 1)),
-                
-                
-                ## red green fill
-                # 1 boundary, e.g., it's only unity
-                "red green fill (0,1]" = "#17A142",
-                
-                # 2 boundaries
-                "red green fill (1,2]" = c("#17A142", "red"),
-                
-                # 3 boundaries
-                "red green fill (2,3]" = c("black", "#17A142", "red"),
-                
-                # >3 boundaries
-                "red green fill (3,Inf]" = c("black",
-                                             colorRampPalette(c("#17A142", "red"))(
-                                                length(boundaries) - 1)),
-                
-                
-                ## muted red green lines
-                # 1 boundary, e.g., it's only unity
-                "muted red green lines (0,1]" = "#A4E4AF",
-                
-                # 2 boundaries
-                "muted red green lines (1,2]" = c("#A4E4AF", "#A4E4AF"),
-                
-                # 3 boundaries
-                "muted red green lines (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"),
-                
-                # >3 boundaries
-                "muted red green lines (3,Inf]" = c("#A4E4AF",
-                                                    colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                       length(boundaries)-1)),
-                
-                
-                ## muted red green fill
-                # 1 boundary, e.g., it's only unity
-                "muted red green fill (0,1]" = "#A4E4AF",
-                
-                # 2 boundaries
-                "muted red green fill (1,2]" = c("#A4E4AF", "#A4E4AF"),
-                
-                # 3 boundaries
-                "muted red green fill (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"),
-                
-                # >3 boundaries
-                "muted red green fill (3,Inf]" = c("#A4E4AF",
-                                                   colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                      length(boundaries)-1))
-         )
    }
    
    if(boundary_color_set_Guest[1] %in% c("red green", "red black", 
                                          "muted red green") &
       boundary_indicator != "none"){
       
-      if(any(complete.cases(boundaries_Guest))){
-         ColorChoicesGuest <- paste(
-            boundary_color_set_Guest, 
-            cut(length(boundaries_Guest), breaks = c(0:3, Inf)))
-         
-         boundary_color_set_Guest <- 
-            switch(ColorChoicesGuest,
-                   ## red black -- Need 1 extra color for b/c last
-                   ## color will be for the straight line
-                   
-                   # 1 boundary, e.g., it's only unity
-                   "red black (0,1]" = c("black", "black"),
-                   
-                   # 2 boundaries
-                   "red black (1,2]" = c("black", "black", "red"), 
-                   
-                   # 3 boundaries
-                   "red black (2,3]" = c("black", "black", "#FFC000", "red"), 
-                   
-                   # >3 boundaries
-                   "red black (3,Inf]" = c("black", 
-                                           colorRampPalette(c("black", "#FFC000", "red"))(
-                                              length(boundaries))), 
-                   
-                   ## red green -- Need 1 extra color for b/c last
-                   ## color will be for the straight line 
-                   # 1 boundary, e.g., it's only unity
-                   "red green (0,1]" = c("#17A142", "#17A142"), 
-                   
-                   # 2 boundaries
-                   "red green (1,2]" = c("#17A142", "#17A142", "red"), 
-                   
-                   # 3 boundaries
-                   "red green (2,3]" = c("#17A142", 
-                                         colorRampPalette(c("#17A142", "red"))(
-                                            length(boundaries))),
-                   
-                   # >3 boundaries
-                   "red green (3,Inf]" = c("#17A142", 
-                                           colorRampPalette(c("#17A142", "red"))(
-                                              length(boundaries))), 
-                   
-                   ## muted red green -- Need 1 extra color for b/c last
-                   ## color will be for the straight line 
-                   # 1 boundary, e.g., it's only unity
-                   "muted red green (0,1]" = c("#A4E4AF", "#A4E4AF"),
-                   
-                   # 2 boundaries
-                   "muted red green (1,2]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
-                   
-                   # 3 boundaries
-                   "muted red green (2,3]" = c("#A4E4AF", "#A4E4AF", "#FFFF95", "#E6A2A2"), 
-                   
-                   # >3 boundaries
-                   "muted red green (3,Inf]" = c("#A4E4AF", 
-                                                 colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                    length(boundaries)))
-            )
-      }
+      boundary_color_set_Guest <- 
+         set_boundary_colors(color_set = boundary_color_set_Guest,
+                             boundaries = c(boundaries_Guest, 
+                                            # repeat the last boundary b/c we
+                                            # have curved and straight lines for
+                                            # that one.
+                                            boundaries_Guest[length(boundaries_Guest)]), 
+                             break_type = "SO")
       
    } else {
       # Making sure we have enough colors
@@ -756,9 +608,12 @@ so_graph <- function(PKtable,
              Statistic = ifelse(str_detect(Statistic, "^Simulated"),
                                 "Simulated", Statistic))
    
-   suppressWarnings(
-      SO <- prettify_column_names(SO, 
-                                  pretty_or_ugly_cols = "ugly"))
+   # Uglifying if needed. Only pretty column names have spaces. 
+   if(any(str_detect(names(SO), " "))){
+      suppressWarnings(
+         SO <- prettify_column_names(SO, 
+                                     pretty_or_ugly_cols = "ugly"))
+   } 
    
    if(is.na(include_dose_num)){
       # Dropping dose number depending on input. First, checking whether they have
