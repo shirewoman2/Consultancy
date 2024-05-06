@@ -761,8 +761,12 @@ pksummary_table <- function(sim_data_file = NA,
       } else if(TabSpecification == 2){
          MyObsPK$Tab <- NULL
       } else if(TabSpecification == 3){
-         # Need to delete tab column b/c it will be all NA
-         sheet_PKparameters$Tab <- NULL
+         # Use the tab listed in the obs data.
+         suppressMessages(
+            sheet_PKparameters <- sheet_PKparameters %>% 
+            select(-Tab) %>% 
+            left_join(MyObsPK)
+         )
       }
    } else {
       sheet_PKparameters <- data.frame(PKparameter = NA)
