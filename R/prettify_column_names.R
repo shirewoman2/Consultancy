@@ -127,11 +127,13 @@ prettify_column_names <- function(PKtable,
    }
    
    # TEMPORARILY replacing the actual units w/the standard units in AllPKParameters
-   if(TableUnits$Conc != "ng/mL"){
+   if(is.null(TableUnits$Conc) == FALSE &&
+      TableUnits$Conc != "ng/mL"){
       names(PKtable) <- sub(TableUnits$Conc, "ng/mL", names(PKtable))
    }
    
-   if(TableUnits$Time != "h"){
+   if(is.null(TableUnits$Time) == FALSE && 
+      TableUnits$Time != "h"){
       names(PKtable) <- sub(paste0("\\(", TableUnits$Time, "\\)"),
                             "(h)", names(PKtable))
       names(PKtable) <- sub(paste0("\\(L", TableUnits$Time, "\\)"),
@@ -244,9 +246,9 @@ prettify_column_names <- function(PKtable,
    
    if(TableUnits$Time != "h"){
       TableNames$FinalNames <- sub("(h)", paste0("\\(", TableUnits$Time, "\\)"), 
-                            names(PKtable))
+                                   names(PKtable))
       TableNames$FinalNames <- sub("(L/h)", paste0("\\(L", TableUnits$Time, "\\)"), 
-                            names(PKtable))
+                                   names(PKtable))
    }
    
    if(PKtable_class == "data.frame"){
