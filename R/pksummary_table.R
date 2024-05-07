@@ -1605,6 +1605,7 @@ pksummary_table <- function(sim_data_file = NA,
                 complete.cases(Value)) %>% pull(PKParam) %>% unique()
    
    MyPKResults <- MyPKResults %>%
+      select(-any_of("Tab")) %>% 
       filter(PKParam %in% GoodPKParam) %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>% 
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
