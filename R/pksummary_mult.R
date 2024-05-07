@@ -435,7 +435,8 @@ pksummary_mult <- function(sim_data_files = NA,
    
    # Kahina requested that we give a warning that you don't need to specify the
    # sheet if it's for standard dose 1 or last dose PK.
-   if(all(complete.cases(sheet_PKparameters))){
+   if(all(complete.cases(sheet_PKparameters)) & 
+      (all(str_detect(PKparameters, "_dose1|_last")))){
       warning("You requested a specific sheet for extracting PK parameters; just fyi, you only need to specify the sheet if it's for a custom AUC interval.\n", 
               call. = FALSE)
    }
@@ -1016,11 +1017,15 @@ pksummary_mult <- function(sim_data_files = NA,
       
       # Next, checking whether they have a mix of custom AUC intervals and
       # regular b/c need to retain dose num in that case.
-      if(any(PKparameters %in% 
+      if(any(unique(PKpulled$PKpulled) %in% 
              c(setdiff(unique(AllPKParameters$PKparameter_nodosenum), 
                        unique(AllPKParameters$PKparameter)), 
                setdiff(unique(AllPKParameters$PrettifiedNames_nodosenum), 
-                       unique(AllPKParameters$PrettifiedNames))))){
+                       unique(AllPKParameters$PrettifiedNames)))) |
+         # check whether we have prettified column names where some are 1st or
+         # last dose and some are for a user-specified interval
+         (any(str_detect(unique(PKpulled$PKpulled), "Dose 1|Last dose")) &
+          any(str_detect(unique(PKpulled$PKpulled), "for interval")))){
          DoseCheck <- TRUE
       }
       
