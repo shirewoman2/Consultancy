@@ -118,14 +118,14 @@ formatTable_Simcyp(MyPKResults,
 ```{r}
 
 if(any(complete.cases(highlight_gmr_colors))){
-   TableKeyText_gmr <- "Key for color-coded GMR values:"
+   TableKeyText_gmr <- "**Key for color-coded GMR values:**"
 } else {
    TableKeyText_gmr <- ""
 }
 
 ```
 
-**`r TableKeyText_gmr`**
+`r TableKeyText_gmr`
 
 ```{r}
 
@@ -156,14 +156,14 @@ if(any(complete.cases(highlight_gmr_colors))){
 ```{r}
 
 if(any(complete.cases(highlight_so_cutoffs))){
-   TableKeyText_so <- "Key for color-coded S/O values:"
+   TableKeyText_so <- "**Key for color-coded S/O values:**"
 } else {
    TableKeyText_so <- ""
 }
 
 ```
 
-**`r TableKeyText_so`**
+`r TableKeyText_so`
 
 ```{r}
 

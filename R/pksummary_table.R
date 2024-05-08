@@ -1497,6 +1497,7 @@ pksummary_table <- function(sim_data_file = NA,
       
       suppressMessages(
          MyPKResults <- MyPKResults %>% 
+            select(-any_of("Tab")) %>% 
             full_join(MyObsPK %>% select(-any_of("BaseNameFile"))) %>% 
             pivot_longer(names_to = "SorO", values_to = "Value", 
                          cols = c(Sim, Obs)) %>% 
