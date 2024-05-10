@@ -750,11 +750,13 @@ forest_plot <- function(forest_dataframe,
    
    # Checking for acceptable input for PK_labels
    if(is.logical(PK_labels) == FALSE){ # NB: Can't use any(complete.cases(PK_labels)) b/c complete.cases doesn't work for expressions. 
-      if("list" %in% class(PK_labels) == FALSE){
+      if("list" %in% class(PK_labels) == FALSE &&
+         "expression" %in% class(PK_labels) == FALSE){
          warning("You supplied something other than a list of expressions for the argument PK_labels, and we need a list of expressions to make this work. Did you perhaps use `c()` instead of `list()` for specifying PK_labels? We'll use the default PK labels instead.\n", 
                  call. = FALSE)
          PK_labels <- NA
-      } else if(all(sapply(PK_labels, "class") == "expression") == FALSE){
+      } else if(all(sapply(PK_labels, "class") == "expression") == FALSE &
+                length(PK_labels) > 1){
          warning("You supplied something other than a list of expressions for the argument PK_labels, and we need a list of expressions to make this work. Did you perhaps use `c()` instead of `list()` for specifying PK_labels? We'll use the default PK labels instead.\n", 
                  call. = FALSE)
          PK_labels <- NA
@@ -1324,7 +1326,8 @@ forest_plot <- function(forest_dataframe,
    # faceted on PKparameter so that we're not repeating the same PK parameter on
    # every row. Except let them include a table on the right, something that
    # wouldn't work if they had more than one PK parameter.
-   FakeFacetOnPK <- length(unique(forest_dataframe$PKparameter)) == 1
+   FakeFacetOnPK <- length(unique(forest_dataframe$PKparameter)) == 1 &
+      as_label(facet_column_x) == "<empty>"
    
    # If the user wants to title their facets, check whether ggh4x is installed
    # and ask user if they want to install it if not.
@@ -1467,7 +1470,7 @@ forest_plot <- function(forest_dataframe,
                              
                              # This is when NOT facted on PKparameter
                              switch(paste(ObsIncluded, length(ParamToUse)), 
-                                    "FALSE 1" = 0,
+                                    "FALSE 1" = 0.5,
                                     "FALSE 2" = 0.5, 
                                     "FALSE 3" = 0.25, 
                                     "FALSE 4" = 0.2, 
@@ -1711,8 +1714,8 @@ forest_plot <- function(forest_dataframe,
       
       if(as_label(point_color_column) == "<empty>"){
          G <- G + geom_point(size = 2.5, fill = "white") +
-            scale_color_manual(values = MyColors)
-         labs(fill = "Interaction level", shape = NULL)
+            scale_color_manual(values = MyColors) + 
+            labs(fill = "Interaction level", shape = NULL)
       } else {
          G <- G + geom_point(size = 2.5) + 
             labs(fill = "Interaction level",
@@ -1794,8 +1797,8 @@ forest_plot <- function(forest_dataframe,
       
       if(as_label(point_color_column) == "<empty>"){
          G <- G + geom_point(size = 2.5, fill = "white") +
-            scale_color_manual(values = MyColors)
-         labs(fill = "Interaction level", shape = NULL)
+            scale_color_manual(values = MyColors) +
+            labs(fill = "Interaction level", shape = NULL)
       } else {
          G <- G + geom_point(size = 2.5) + 
             labs(fill = "Interaction level",
@@ -1804,9 +1807,12 @@ forest_plot <- function(forest_dataframe,
       
       G <- G +
          scale_shape_manual(values = MyShapes) +
-         scale_y_continuous(breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
-                            labels = sapply(Param_exp[levels(forest_dataframe$PKparameter)], FUN = `[`), 
-                            expand = expansion(mult = pad_y_num)) 
+         scale_y_continuous(
+            breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
+            labels = switch(as.character(length(Param_exp) == 1), 
+                            "TRUE" = PK_labels, 
+                            "FALSE" = sapply(Param_exp[levels(forest_dataframe$PKparameter)], FUN = `[`)), 
+            expand = expansion(mult = pad_y_num)) 
       
       if(as_label(facet_column_x) != "<empty>"){
          
