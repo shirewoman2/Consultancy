@@ -545,6 +545,27 @@ extractConcTime <- function(sim_data_file,
                          SimTimeUnits = SimTimeUnits,
                          returnAggregateOrIndiv = c("aggregate", "individual"))
          
+         if(length(AllPerpsPresent) > 0 & cmpd %in% c("substrate", 
+                                                      "primary metabolite 1", 
+                                                      "primary metabolite 2", 
+                                                      "secondary metabolite")){
+            sim_data[[cmpd]][[ss]] <- 
+               bind_rows(sim_data[[cmpd]][[ss]], 
+                         eCT_pulldata(sim_data_xl = sim_data_xl, 
+                                      cmpd = cmpd, 
+                                      AllPerpsPresent = AllPerpsPresent, 
+                                      pull_interaction_data = TRUE, 
+                                      fromMultFunction = fromMultFunction, 
+                                      Deets = Deets, 
+                                      ADAM = ADAM, 
+                                      ss = ss, 
+                                      AdvBrainModel = AdvBrainModel, 
+                                      tissue = tissue, 
+                                      SimConcUnits = SimConcUnits, 
+                                      SimTimeUnits = SimTimeUnits,
+                                      returnAggregateOrIndiv = c("aggregate", "individual")))
+         }
+         
          # Adding trial means. 
          suppressMessages(
             sim_data_trial <- sim_data[[cmpd]][[ss]] %>%
@@ -575,27 +596,8 @@ extractConcTime <- function(sim_data_file,
          
          rm(sim_data_trial)
          
-         if(length(AllPerpsPresent) > 0 & cmpd %in% c("substrate", 
-                                                      "primary metabolite 1", 
-                                                      "primary metabolite 2", 
-                                                      "secondary metabolite")){
-            sim_data[[cmpd]][[ss]] <- 
-               bind_rows(sim_data[[cmpd]][[ss]], 
-                         eCT_pulldata(sim_data_xl = sim_data_xl, 
-                                      cmpd = cmpd, 
-                                      AllPerpsPresent = AllPerpsPresent, 
-                                      pull_interaction_data = TRUE, 
-                                      fromMultFunction = fromMultFunction, 
-                                      Deets = Deets, 
-                                      ADAM = ADAM, 
-                                      ss = ss, 
-                                      AdvBrainModel = AdvBrainModel, 
-                                      tissue = tissue, 
-                                      SimConcUnits = SimConcUnits, 
-                                      SimTimeUnits = SimTimeUnits,
-                                      returnAggregateOrIndiv = returnAggregateOrIndiv))
-         }
       }
+      
       sim_data[[cmpd]] <- bind_rows(sim_data[[cmpd]])
    }
    
@@ -773,7 +775,7 @@ extractConcTime <- function(sim_data_file,
             # As necessary, convert simulated data units to match the
             # observed data
             sim_data <- convert_units(DF_to_convert = sim_data,
-                                     DF_with_good_units = obs_data)
+                                      DF_with_good_units = obs_data)
          }
       }
    }
