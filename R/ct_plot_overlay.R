@@ -556,6 +556,8 @@ ct_plot_overlay <- function(ct_dataframe,
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
    
+   if(EnzPlot){ct_dataframe$Simulated <- TRUE}
+   
    # Checking whether this is a release-profile plot or a dissolution-profile plot
    ReleaseProfPlot <- all(c("Release_mean", "Release_CV") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
@@ -566,7 +568,8 @@ ct_plot_overlay <- function(ct_dataframe,
          # plots. 
          rename(Conc = Release_mean, 
                 SD_SE = ReleaseSD) %>% 
-         mutate(MyMean = Conc)
+         mutate(MyMean = Conc, 
+                Simulated = TRUE)
    }
    
    DissolutionProfPlot <- all(c("Dissolution_mean", "Dissolution_CV") %in% 
@@ -579,8 +582,10 @@ ct_plot_overlay <- function(ct_dataframe,
          # plots. 
          rename(Conc = Dissolution_mean, 
                 SD_SE = DissolutionSD) %>% 
-         mutate(MyMean = Conc)
+         mutate(MyMean = Conc, 
+                Simulated = TRUE)
    }
+   
    
    # Checking for more than one tissue or ADAM data type b/c there's only one y
    # axis and it should have only one concentration type.
@@ -1541,12 +1546,12 @@ ct_plot_overlay <- function(ct_dataframe,
                        EnzPlot = EnzPlot)
    
    xlab <- XStuff$xlab
-   sim_dataframe <- XStuff$Data %>% filter(Simulated == TRUE)
-   obs_dataframe <- XStuff$Data %>% filter(Simulated == FALSE)
    time_range <- XStuff$time_range
    time_range_relative <- XStuff$time_range_relative
    t0 <- XStuff$t0
    TimeUnits <- XStuff$TimeUnits
+   sim_dataframe <- XStuff$Data %>% filter(Simulated == TRUE)
+   obs_dataframe <- XStuff$Data %>% filter(Simulated == FALSE)
    
    # Setting up the y axis using the subfunction ct_y_axis
    Ylim_data <- bind_rows(sim_dataframe, obs_dataframe) %>%
