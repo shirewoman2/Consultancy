@@ -343,6 +343,15 @@
 #'   to a number; the default is \code{c(0.02, 0.04)}, which adds 2\% more space
 #'   to the left side and 4\% more space to the right side of the x axis. If you
 #'   only specify one number, padding is added to the left side.
+#' @param time_units_to_use time units to use for graphs. If left as NA, the
+#'   time units in the source data will be used. Options are "hours", "minutes",
+#'   "days", or "weeks".
+#' @param conc_units_to_use concentration units to use for graphs. If left as
+#'   NA, the concentration units in the source data will be used. Acceptable
+#'   options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
+#'   "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
+#'   concentration, you'll need to provide something for the argument
+#'   \code{existing_exp_details}.
 #' @param pad_y_axis optionally add a smidge of padding to the y axis (default
 #'   is TRUE, which includes some generally reasonable padding). As with
 #'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
@@ -497,12 +506,14 @@ ct_plot_overlay <- function(ct_dataframe,
                             time_range = NA, 
                             x_axis_interval = NA,
                             x_axis_label = NA,
+                            time_units_to_use = NA, 
                             pad_x_axis = TRUE,
                             pad_y_axis = TRUE,
                             y_axis_limits_lin = NA,
                             y_axis_limits_log = NA, 
                             y_axis_interval = NA,
                             y_axis_label = NA,
+                            conc_units_to_use = NA, 
                             hline_position = NA, 
                             hline_style = "red dotted", 
                             vline_position = NA, 
@@ -674,6 +685,30 @@ ct_plot_overlay <- function(ct_dataframe,
          warning("We couldn't find the source Excel files for this graph, so we can't QC it.", 
                  call. = FALSE)
          qc_graph <- FALSE
+      }
+   }
+   
+   if(any(complete.cases(time_units_to_use))){
+      time_units_to_use <- tolower(time_units_to_use[1])
+      if(time_units_to_use %in% c("hours", "minutes", "days", "weeks") == FALSE){
+         warning(paste0("You requested that the graph have time units of `", 
+                        time_units_to_use, 
+                        "`, which is not among the acceptable options. We'll use hours instead.\n"), 
+                 call. = FALSE)
+         time_units_to_use <- "hours"
+      }
+   }
+   
+   if(any(complete.cases(conc_units_to_use))){
+      conc_units_to_use <- conc_units_to_use[1]
+      if(conc_units_to_use %in% c("mg/L", "mg/mL", "µg/L", "ug/L", "µg/mL", 
+                                  "ug/mL", "ng/L", "ng/mL", "µM", "uM", 
+                                  "nM") == FALSE){
+         warning(paste0("You requested that the graph have concentration units of `", 
+                        conc_units_to_use, 
+                        "`, which is not among the acceptable options. We'll use ng/mL instead.\n"), 
+                 call. = FALSE)
+         conc_units_to_use <- "ng/mL"
       }
    }
    
@@ -1462,6 +1497,41 @@ ct_plot_overlay <- function(ct_dataframe,
          pull(CompoundID) %>% as.character()
    }
    
+   # Converting conc and time units if requested
+   if(any(complete.cases(conc_units_to_use))){
+      if("logical" %in% class(existing_exp_details) == FALSE){
+         MWs_1 <- AllCompounds %>% 
+            mutate(Detail = paste0("MW", Suffix)) %>% 
+            select(CompoundID, Detail) %>% 
+            left_join(harmonize_details(existing_exp_details)[["MainDetails"]] %>%
+                         filter(File %in% unique(ct_dataframe$File)) %>% 
+                         select(File, matches("MW_")) %>% 
+                         pivot_longer(cols = matches("MW_"), 
+                                      names_to = "Detail", 
+                                      values_to = "Value"), 
+                      by = "Detail")
+         MWs <- MWs_1$Value
+         names(MWs) <- MWs_1$CompoundID
+         
+      } else {
+         MWs <- NA
+      }
+      
+      sim_dataframe <- convert_conc_units(sim_dataframe, 
+                                          conc_units = conc_units_to_use,
+                                          MW = MWs)
+      obs_dataframe <- convert_conc_units(obs_dataframe, 
+                                          conc_units = conc_units_to_use,
+                                          MW = MWs)
+   }
+   
+   if(any(complete.cases(time_units_to_use))){
+      sim_dataframe <- convert_time_units(sim_dataframe,
+                                          time_units = time_units_to_use)
+      obs_dataframe <- convert_time_units(obs_dataframe,
+                                          time_units = time_units_to_use)
+   }
+   
    # Setting up the x axis using the subfunction ct_x_axis
    XStuff <- ct_x_axis(Data = bind_rows(sim_dataframe, obs_dataframe),
                        time_range = time_range, 
@@ -1471,7 +1541,8 @@ ct_plot_overlay <- function(ct_dataframe,
                        EnzPlot = EnzPlot)
    
    xlab <- XStuff$xlab
-   Data <- XStuff$Data # Is this necessary??
+   sim_dataframe <- XStuff$Data %>% filter(Simulated == TRUE)
+   obs_dataframe <- XStuff$Data %>% filter(Simulated == FALSE)
    time_range <- XStuff$time_range
    time_range_relative <- XStuff$time_range_relative
    t0 <- XStuff$t0
@@ -1704,7 +1775,7 @@ ct_plot_overlay <- function(ct_dataframe,
          names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
       }
    } else if(figure_type == "trial means"){
-      sim_data_trial <- Data %>%
+      sim_data_trial <- sim_dataframe %>%
          filter(Simulated == TRUE &
                    Trial %in% switch(mean_type, 
                                      "arithmetic" = "trial mean", 

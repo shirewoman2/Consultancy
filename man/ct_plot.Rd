@@ -12,9 +12,9 @@ ct_plot(
   time_range = NA,
   x_axis_interval = NA,
   x_axis_label = NA,
+  time_units_to_use = NA,
   pad_x_axis = TRUE,
   pad_y_axis = TRUE,
-  time_units_to_use = NA,
   adjust_obs_time = FALSE,
   t0 = "simulation start",
   y_axis_limits_lin = NA,
@@ -151,6 +151,10 @@ PK-relevant intervals.}
 \item{x_axis_label}{optionally supply a character vector or an expression to
 use for the x axis label}
 
+\item{time_units_to_use}{time units to use for graphs. If left as NA, the
+time units in the source data will be used. Options are "hours", "minutes",
+"days", or "weeks".}
+
 \item{pad_x_axis}{optionally add a smidge of padding to the the x axis
 (default is TRUE, which includes some generally reasonable padding). If
 changed to FALSE, the y axis will be placed right at the beginning of your
@@ -169,10 +173,6 @@ the bottom of your data, possibly cutting a point in half. If you want a
 is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
 to the top of the y axis. If you only specify one number, we'll assume
 that's the percent you want added to the bottom.}
-
-\item{time_units_to_use}{time units to use for graphs. If left as NA, the
-time units in the source data will be used. Options are "hours", "minutes",
-"days", or "weeks".}
 
 \item{adjust_obs_time}{TRUE or FALSE (default) for whether to adjust the time
 listed in the observed data file to match the last dose administered. This
