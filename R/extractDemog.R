@@ -114,7 +114,7 @@ extractDemog <- function(sim_data_files = NA,
          which(file.exists(sim_data_files_topull) == FALSE)]
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present and thus will not be extracted.\n"), 
+                     " is/are not present or have a file path that is too long and thus cannot be extracted.\n"), 
               call. = FALSE)
       sim_data_files_topull <- setdiff(sim_data_files_topull, MissingSimFiles)
    }
@@ -174,17 +174,24 @@ extractDemog <- function(sim_data_files = NA,
                  call. = FALSE)
       }
       
-      Demog[[ff]] <- Demog.xl[, names(ColNames)]
+      suppressWarnings(LastRow <- min(which(is.na(Demog.xl$Index))) - 1)
+      LastRow <- ifelse(is.infinite(LastRow), nrow(Demog.xl), LastRow)
+      
+      Demog[[ff]] <- Demog.xl[1:LastRow, names(ColNames)]
       names(Demog[[ff]]) <- ColNames
       
-      Demog[[ff]] <- Demog[[ff]] %>% 
-         select(-SexCode) %>% 
-         mutate(File = ff, 
-                Simulated = TRUE, 
-                Individual = as.character(Individual), 
-                Trial = as.character(Trial))
+      suppressWarnings(
+         Demog[[ff]] <- Demog[[ff]] %>% 
+            select(-SexCode) %>% 
+            mutate(across(.cols = any_of(setdiff(ColNames, "Sex")), 
+                          .fns = as.numeric), 
+                   File = ff, 
+                   Simulated = TRUE, 
+                   Individual = as.character(Individual), 
+                   Trial = as.character(Trial))
+      )
       
-      rm(Demog.xl)
+      rm(Demog.xl, LastRow, ColNames)
       
    }
    

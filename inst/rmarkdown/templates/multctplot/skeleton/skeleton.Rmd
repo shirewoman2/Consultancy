@@ -66,7 +66,7 @@ CapText1 <-
    switch(paste(ifelse(InhibPresent, "InhibPresent", "NoInhibPresent"), 
                 PlotType), 
           "NoInhibPresent CTPlot" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                                           "simulated and observed data (circles; mean of n =* ***XXX*** *individuals; ***Clinical Study ***XXX****)", 
+                                           "simulated and observed data (circles; mean of n =* ***XXX*** *individuals; ***Clinical Study ***XXX*** *)", 
                                            "simulated data"), 
           
           "NoInhibPresent EnzPlot" = "simulated data", 
@@ -77,7 +77,7 @@ CapText1 <-
           
           "InhibPresent CTPlot" = paste0(
              ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                    "simulated and observed (circles; mean of n =* ***XXX*** *individuals; Clinical Study ***XXX****)", 
+                    "simulated and observed (circles; mean of n =* ***XXX*** *individuals; Clinical Study ***XXX*** *)", 
                     ""), 
              " plasma concentration-time profiles of ",
              str_comma(prettify_compound_name(

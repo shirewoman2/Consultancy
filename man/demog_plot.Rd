@@ -12,7 +12,10 @@ demog_plot(
   plot_title = "Demographics",
   variables = NA,
   obs_alpha = 0.8,
-  sim_alpha = 0.4
+  sim_alpha = 0.4,
+  ncol = NULL,
+  nrow = NULL,
+  facet_by_sex = FALSE
 )
 }
 \arguments{
@@ -26,7 +29,10 @@ all the files in demog_dataframe will be included.}
 \item{plot_title}{title to use on the plots}
 
 \item{variables}{variables to include. We're starting with a limited set:
-Age, Weight_kg, Height_cm, HSA_gL, AGP_gL, Sex, BMI_kgm2, and RenalFunction}
+"Age", "Weight_kg", "Height_cm", "Height vs Weight", "HSA_gL", "AGP_gL",
+"Sex", "BMI_kgm2", and "RenalFunction". If you want only a subset of those,
+list them in a character vector, e.g., \code{variables = c("Age",
+"Height_cm", "Weight_kg")}. Plots will be in the order listed.}
 
 \item{obs_alpha}{how transparent to make the observed data, with 0 being
 completely transparent and invisible so I don't know why you'd want that
@@ -34,6 +40,12 @@ but, hey, you do you, dude, to 1, which is fully opaque.}
 
 \item{sim_alpha}{how transparent to make the simulated data. See notes on the
 obs_alpha argument.}
+
+\item{ncol}{optionally specify the number of columns. If left as NULL, a
+reasonable guess will be used.}
+
+\item{nrow}{optionally specify the number of rows. If left as NULL, a
+reasonable guess will be used.}
 }
 \value{
 a set of graphs. This does not yet save the graphs for you, so you'll
