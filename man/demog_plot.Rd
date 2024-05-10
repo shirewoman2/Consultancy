@@ -15,7 +15,9 @@ demog_plot(
   sim_alpha = 0.4,
   ncol = NULL,
   nrow = NULL,
-  facet_by_sex = FALSE
+  facet_by_sex = FALSE,
+  border_facets = TRUE,
+  graph_labels = TRUE
 )
 }
 \arguments{
@@ -46,6 +48,15 @@ reasonable guess will be used.}
 
 \item{nrow}{optionally specify the number of rows. If left as NULL, a
 reasonable guess will be used.}
+
+\item{facet_by_sex}{TRUE or FALSE (default) for whether to break up the
+graphs into facets based on the sex of the subjects}
+
+\item{border_facets}{TRUE (default) or FALSE for whether to include a border
+around the facets if the graphs are broken up by the sex of the subjects}
+
+\item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
+etc.) for each of the small graphs.}
 }
 \value{
 a set of graphs. This does not yet save the graphs for you, so you'll

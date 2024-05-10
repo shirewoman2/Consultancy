@@ -22,6 +22,12 @@
 #'   reasonable guess will be used.
 #' @param nrow optionally specify the number of rows. If left as NULL, a
 #'   reasonable guess will be used.
+#' @param facet_by_sex TRUE or FALSE (default) for whether to break up the
+#'   graphs into facets based on the sex of the subjects
+#' @param border_facets TRUE (default) or FALSE for whether to include a border
+#'   around the facets if the graphs are broken up by the sex of the subjects
+#' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
+#'   etc.) for each of the small graphs. 
 #'
 #' @return a set of graphs. This does not yet save the graphs for you, so you'll
 #'   need to run ggsave(...) to do that.
@@ -37,7 +43,9 @@ demog_plot <- function(demog_dataframe,
                        sim_alpha = 0.4, 
                        ncol = NULL, 
                        nrow = NULL, 
-                       facet_by_sex = FALSE){
+                       facet_by_sex = FALSE, 
+                       border_facets = TRUE, 
+                       graph_labels = TRUE){
    
    if(facet_by_sex & length(unique(demog_dataframe$Sex)) == 1){
       warning("You requested that we facet the graphs by sex, but there's only one sex in your data. We will not be able to do this.\n", 
@@ -53,6 +61,9 @@ demog_plot <- function(demog_dataframe,
    Demog_sub <- Demog_sub %>% 
       mutate(SorO = ifelse(Simulated == TRUE, 
                            "Simulated", "Observed")) %>% unique()
+   
+   SOcolors <- c("Simulated" = "#377EB8", 
+                 "Observed" = "#E41A1C") 
    
    if("Sex" %in% names(Demog_sub) == FALSE){
       Demog_sub$Sex <- "unknown"
@@ -80,15 +91,15 @@ demog_plot <- function(demog_dataframe,
       names(Demog_sub)[names(Demog_sub) == Var] <- "MyVar"
       
       G <- ggplot(Demog_sub, aes(x = Age, y = MyVar, shape = Sex, 
-                            color = SorO, alpha = SorO)) +
+                                 color = SorO, alpha = SorO)) +
          geom_point() +
          scale_alpha_manual(values = c("Observed" = obs_alpha, 
                                        "Simulated" = sim_alpha)) +
-         scale_color_brewer(palette = "Set1") +
+         scale_color_manual(values = SOcolors) +
          labs(color = NULL, alpha = NULL) +
          ylab(YLabs[Var]) +
          xlab("Age (years)") +
-         theme_consultancy() 
+         theme_consultancy(border = border_facets) 
       
       if(length(unique(Demog_sub$Sex)) == 1){
          G <- G + guides(shape = "none") 
@@ -108,19 +119,19 @@ demog_plot <- function(demog_dataframe,
                geom_violin(alpha = 0.7, show.legend = FALSE) +
                ylab("Sex") +
                xlab("Age (years)") +
-               scale_fill_brewer(palette = "Set1") +
-               theme_consultancy() + 
+               scale_fill_manual(values = SOcolors) +
+               theme_consultancy(border = border_facets) + 
                theme(legend.position = "none", 
                      strip.placement = "outside"))
-        
+         
       } else if(yy == "Age"){
          MyGraphs[[yy]] <- 
             ggplot(Demog_sub, aes(x = Age, shape = Sex, fill = SorO)) +
             geom_density(alpha = 0.5, show.legend = FALSE) +
             ylab("Distribution") +
             xlab("Age (years)") +
-            scale_fill_brewer(palette = "Set1") +
-            theme_consultancy() + 
+            scale_fill_manual(values = SOcolors) +
+            theme_consultancy(border = border_facets) + 
             theme(legend.position = "none", 
                   strip.placement = "outside")
          
@@ -135,11 +146,11 @@ demog_plot <- function(demog_dataframe,
             geom_point() + 
             scale_alpha_manual(values = c("Observed" = obs_alpha, 
                                           "Simulated" = sim_alpha)) +
-            scale_color_brewer(palette = "Set1") +
+            scale_color_manual(values = SOcolors) +
             labs(color = NULL, alpha = NULL) +
             ylab("Weight (kg)") +
             xlab("Height (cm)") +
-            theme_consultancy()
+            theme_consultancy(border = border_facets) 
          
          if(length(unique(Demog_sub$Sex)) == 1){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + guides(shape = "none") 
@@ -157,13 +168,15 @@ demog_plot <- function(demog_dataframe,
    }
    
    wrap_plots(MyGraphs) +
-      plot_layout(guides = "collect", 
-                  ncol = ncol, 
-                  nrow = nrow) + 
-      plot_annotation(title = plot_title) & 
+      patchwork::plot_layout(guides = "collect", 
+                             ncol = ncol, 
+                             nrow = nrow) + 
+      patchwork::plot_annotation(title = plot_title, 
+                                 tag_level = ifelse(graph_labels == TRUE, 
+                                                    "A", NULL)) & 
       theme(plot.title = element_text(size = 12, 
-                                      hjust = 0.5, 
-                                      face = "bold"), 
-            legend.position = "bottom")
+                                                 hjust = 0.5, 
+                                                 face = "bold"), 
+                       legend.position = "bottom")
    
 }
