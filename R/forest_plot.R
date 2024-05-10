@@ -281,10 +281,8 @@
 #' @param pad_y_axis optionally add a smidge of padding to the y axis (default
 #'   is TRUE, which includes some generally reasonable padding). If set to
 #'   FALSE, the y axis tick marks will be placed closer to the top and bottom of
-#'   your data. If you want a \emph{specific} amount of y-axis padding, set this
-#'   to a number; the default is \code{c(0.2, 0)}, which adds 20\% more space to
-#'   the bottom and nothing to the top of the y axis. If you only specify one
-#'   number, we'll assume that's the percent you want added to the bottom.
+#'   your data. The default amount of padding varies depending on how many PK
+#'   parameters you're including, but try something in the realm of 0 to 3.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My forest plot.png" or "My forest plot.docx". If you
 #'   leave off ".png" or ".docx" from the file name, it will be saved as a png
@@ -315,7 +313,7 @@
 #'   orange.}
 #'
 #'   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
-#'   first three colors are red, blue, and green. "set 1" also works to specify 
+#'   first three colors are red, blue, and green. "set 1" also works to specify
 #'   this option.}
 #'
 #'   \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
