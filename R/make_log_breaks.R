@@ -6,7 +6,6 @@
 #'
 #' @param axis_limits_log desired y axis limits for a semi-log
 #'   concentration-time plot
-#' @param ct_dataframe the concentration-time data.frame that's being plotted
 #' @param time_range_to_use optionally specify a time range for the conc-time
 #'   data you're plotting and we'll find min and max concs within only that time
 #'   range. If left as NA, we'll use the min and max concs for the overall data. 
