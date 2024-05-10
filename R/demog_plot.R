@@ -9,8 +9,9 @@
 #'   all the files in demog_dataframe will be included.
 #' @param plot_title title to use on the plots
 #' @param variables variables to include. We're starting with a limited set:
-#'   "Age", "Weight_kg", "Height_cm", "Height vs Weight", "HSA_gL", "AGP_gL",
-#'   "Sex", "BMI_kgm2", and "RenalFunction". If you want only a subset of those,
+#'   "Age", "Weight_kg", "Height_cm", "Height vs Weight", "Height distribution",
+#'   "Weight distribution", "HSA_gL", "AGP_gL", "Sex", "BMI_kgm2", and
+#'   "RenalFunction". If you want only a subset of those,
 #'   list them in a character vector, e.g., \code{variables = c("Age",
 #'   "Height_cm", "Weight_kg")}. Plots will be in the order listed.
 #' @param obs_alpha how transparent to make the observed data, with 0 being
@@ -27,7 +28,7 @@
 #' @param border_facets TRUE (default) or FALSE for whether to include a border
 #'   around the facets if the graphs are broken up by the sex of the subjects
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
-#'   etc.) for each of the small graphs. 
+#'   etc.) for each of the small graphs.
 #'
 #' @return a set of graphs. This does not yet save the graphs for you, so you'll
 #'   need to run ggsave(...) to do that.
@@ -78,28 +79,33 @@ demog_plot <- function(demog_dataframe,
               "BMI_kgm2" = "BMI (kg/m2)", 
               "RenalFunction" = "Renal function")
    
-   Graphs <- variables
-   variables <- setdiff(variables, c("Height vs Weight")) # FIXME - Allow for flexiblity in case for all of these
-   
-   if(all(is.na(variables)) == FALSE){
-      YLabs <- YLabs[variables]
+   if(all(is.na(variables))){
+      Graphs <- c("Age", "Weight_kg", "Height_cm", "Height vs Weight",
+                  "Height distribution", "Weight distribution", "HSA_gL",
+                  "AGP_gL", "Sex", "BMI_kgm2", "RenalFunction")
    } else {
-      Graphs <- names(YLabs)
+      Graphs <- variables
    }
+   
+   variables <- setdiff(variables, c("Height vs Weight", 
+                                     "Height distribution", 
+                                     "Weight distribution")) # FIXME - Allow for flexiblity in case for all of these
    
    subplotfun <- function(Var){
       names(Demog_sub)[names(Demog_sub) == Var] <- "MyVar"
       
-      G <- ggplot(Demog_sub, aes(x = Age, y = MyVar, shape = Sex, 
-                                 color = SorO, alpha = SorO)) +
-         geom_point() +
-         scale_alpha_manual(values = c("Observed" = obs_alpha, 
-                                       "Simulated" = sim_alpha)) +
-         scale_color_manual(values = SOcolors) +
-         labs(color = NULL, alpha = NULL) +
-         ylab(YLabs[Var]) +
-         xlab("Age (years)") +
-         theme_consultancy(border = border_facets) 
+      suppressWarnings(
+         G <- ggplot(Demog_sub, aes(x = Age, y = MyVar, shape = Sex, 
+                                    color = SorO, alpha = SorO)) +
+            geom_point() +
+            scale_alpha_manual(values = c("Observed" = obs_alpha, 
+                                          "Simulated" = sim_alpha)) +
+            scale_color_manual(values = SOcolors) +
+            labs(color = NULL, alpha = NULL) +
+            ylab(YLabs[Var]) +
+            xlab("Age (years)") +
+            theme_consultancy(border = border_facets) 
+      )
       
       if(length(unique(Demog_sub$Sex)) == 1){
          G <- G + guides(shape = "none") 
@@ -108,53 +114,83 @@ demog_plot <- function(demog_dataframe,
       return(G)
    }
    
-   MyGraphs <- list()
-   
-   for(yy in Graphs){
-      if(yy == "Sex"){
-         MyGraphs[[yy]] <- free(
-            ggplot(Demog_sub, 
-                   aes(x = Age, y = SorO, fill = SorO)) +
-               facet_grid(Sex ~ ., switch = "y") +
-               geom_violin(alpha = 0.7, show.legend = FALSE) +
-               ylab("Sex") +
-               xlab("Age (years)") +
-               scale_fill_manual(values = SOcolors) +
-               theme_consultancy(border = border_facets) + 
-               theme(legend.position = "none", 
-                     strip.placement = "outside"))
-         
-      } else if(yy == "Age"){
-         MyGraphs[[yy]] <- 
-            ggplot(Demog_sub, aes(x = Age, shape = Sex, fill = SorO)) +
+   subplotfun_density <- function(Var){
+      names(Demog_sub)[names(Demog_sub) == Var] <- "MyVar"
+      
+      suppressWarnings(
+         ggplot(Demog_sub, aes(x = MyVar, fill = SorO)) +
             geom_density(alpha = 0.5, show.legend = FALSE) +
             ylab("Distribution") +
-            xlab("Age (years)") +
+            xlab(YLabs[Var]) +
+            guides(fill = "none") +
             scale_fill_manual(values = SOcolors) +
             theme_consultancy(border = border_facets) + 
             theme(legend.position = "none", 
                   strip.placement = "outside")
+      )
+   }
+   
+   MyGraphs <- list()
+   
+   for(yy in Graphs){
+      if(yy == "Sex"){
+         suppressWarnings(
+            MyGraphs[[yy]] <- free(
+               ggplot(Demog_sub, 
+                      aes(x = Age, y = SorO, fill = SorO)) +
+                  facet_grid(Sex ~ ., switch = "y") +
+                  geom_violin(alpha = 0.7, show.legend = FALSE) +
+                  ylab("Sex") +
+                  xlab("Age (years)") +
+                  scale_fill_manual(values = SOcolors) +
+                  theme_consultancy(border = border_facets) + 
+                  theme(legend.position = "none", 
+                        strip.placement = "outside"))
+         )
+         
+      } else if(yy == "Age"){
+         suppressWarnings(
+            MyGraphs[[yy]] <- 
+               ggplot(Demog_sub, aes(x = Age, fill = SorO)) +
+               geom_density(alpha = 0.5, show.legend = FALSE) +
+               ylab("Distribution") +
+               xlab("Age (years)") +
+               scale_fill_manual(values = SOcolors) +
+               theme_consultancy(border = border_facets) + 
+               theme(legend.position = "none", 
+                     strip.placement = "outside")
+         )
          
          if(length(unique(Demog_sub$Sex)) == 1){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + guides(shape = "none") 
          }
          
       } else if(yy == "Height vs Weight"){
-         MyGraphs[[yy]] <- 
-            ggplot(Demog_sub, aes(x = Height_cm, y = Weight_kg, shape = Sex, 
-                                  color = SorO, alpha = SorO)) +
-            geom_point() + 
-            scale_alpha_manual(values = c("Observed" = obs_alpha, 
-                                          "Simulated" = sim_alpha)) +
-            scale_color_manual(values = SOcolors) +
-            labs(color = NULL, alpha = NULL) +
-            ylab("Weight (kg)") +
-            xlab("Height (cm)") +
-            theme_consultancy(border = border_facets) 
+         suppressWarnings(
+            MyGraphs[[yy]] <- 
+               ggplot(Demog_sub, aes(x = Height_cm, y = Weight_kg, shape = Sex, 
+                                     color = SorO, alpha = SorO)) +
+               geom_point() + 
+               scale_alpha_manual(values = c("Observed" = obs_alpha, 
+                                             "Simulated" = sim_alpha)) +
+               scale_color_manual(values = SOcolors) +
+               labs(color = NULL, alpha = NULL) +
+               ylab("Weight (kg)") +
+               xlab("Height (cm)") +
+               theme_consultancy(border = border_facets) 
+         )
          
          if(length(unique(Demog_sub$Sex)) == 1){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + guides(shape = "none") 
          }
+         
+      } else if(yy %in% c("Height distribution", 
+                          "Weight distribution")){
+         TempVar <- sub(" distribution", "", yy)
+         TempVar <- case_match(TempVar, 
+                               "Height" ~ "Height_cm", 
+                               "Weight" ~ "Weight_kg")
+         MyGraphs[[yy]] <- subplotfun_density(TempVar)
          
       } else {
          MyGraphs[[yy]] <- subplotfun(yy)
@@ -175,8 +211,8 @@ demog_plot <- function(demog_dataframe,
                                  tag_level = ifelse(graph_labels == TRUE, 
                                                     "A", NULL)) & 
       theme(plot.title = element_text(size = 12, 
-                                                 hjust = 0.5, 
-                                                 face = "bold"), 
-                       legend.position = "bottom")
+                                      hjust = 0.5, 
+                                      face = "bold"), 
+            legend.position = "bottom")
    
 }
