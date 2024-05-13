@@ -1461,23 +1461,23 @@ forest_plot <- function(forest_dataframe,
    # amount if not
    if(class(pad_y_axis) == "logical"){ # class is logical if pad_y_axis unspecified
       if(pad_y_axis){
-         pad_y_num <- ifelse(as_label(facet_column_x) == "PKparameter", 
-                             # When faceted on PKparameter, graph is set up
-                             # differently & no padding necessary 
-                             0, 
-                             
-                             # This is when NOT facted on PKparameter
-                             switch(paste(ObsIncluded, length(ParamToUse)), 
-                                    "FALSE 1" = 0.5,
-                                    "FALSE 2" = 0.5, 
-                                    "FALSE 3" = 0.25, 
-                                    "FALSE 4" = 0.2, 
-                                    "FALSE 5" = 0.2,
-                                    "TRUE 1" = 0.2, 
-                                    "TRUE 2" = 0.3, 
-                                    "TRUE 3" = 0.2, 
-                                    "TRUE 4" = 0.15, 
-                                    "TRUE 5" = 0.2))
+         pad_y_num <- case_when(
+            
+            # When faceted on PKparameter, graph is set up
+            # differently & no padding necessary 
+            FakeFacetOnPK == TRUE | as_label(facet_column_x) == "PKparameter" ~ 0, 
+            
+            as_label(facet_column_x) != "PKparameter" & 
+               as_label(facet_column_x) != "<empty>" ~ 0.5, 
+            
+            # This is when NOT facted on PKparameter
+            ObsIncluded == FALSE & length(ParamToUse) %in% c(1, 2) ~ 0.5,
+            ObsIncluded == FALSE & length(ParamToUse) == 3 ~ 0.25, 
+            ObsIncluded == FALSE & length(ParamToUse) >= 4 ~ 0.2, 
+            ObsIncluded == TRUE & length(ParamToUse) == 1 ~ 0.2, 
+            ObsIncluded == TRUE & length(ParamToUse) == 2 ~ 0.3, 
+            ObsIncluded == TRUE & length(ParamToUse) >= 3 ~ 0.2)
+         
       } else {
          pad_y_num <- 0
       }
@@ -1808,7 +1808,7 @@ forest_plot <- function(forest_dataframe,
          scale_y_continuous(
             breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
             labels = switch(as.character(length(Param_exp) == 1), 
-                            "TRUE" = PK_labels, 
+                            "TRUE" = Param_exp[[1]], 
                             "FALSE" = sapply(Param_exp[levels(forest_dataframe$PKparameter)], FUN = `[`)), 
             expand = expansion(mult = pad_y_num)) 
       
