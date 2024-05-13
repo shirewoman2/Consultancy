@@ -1116,9 +1116,11 @@ forest_plot <- function(forest_dataframe,
    # Checking for any replicates that would make points overlap, e.g., need only
    # 1 file per YCol value.
    CheckFile <- forest_dataframe %>% 
-      select(any_of(c("File", "PKparameter", "YCol",
+      select(any_of(c("File", "PKparameter", "YCol", "SimOrObs", 
                       as_label(facet_column_x)))) %>% unique() %>% 
-      group_by(across(.cols = any_of(c("YCol", "PKparameter", as_label(facet_column_x))))) %>% 
+      group_by(across(.cols = any_of(c("YCol", "PKparameter",
+                                       as_label(facet_column_x), 
+                                       "SimOrObs")))) %>% 
       summarize(N = n())
    if(any(CheckFile$N > 1)){
       CheckFile <- CheckFile %>% filter(N > 1)
