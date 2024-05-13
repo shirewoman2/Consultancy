@@ -1,6 +1,5 @@
 #' Make a set of plots showing the demographics used in a set of simulations and
-#' optionally compare them to observed demographics. \strong{UNDER
-#' CONSTRUCTION}.
+#' optionally compare them to observed demographics. 
 #'
 #' @param demog_dataframe the output from running \code{\link{extractDemog}}.
 #'   Optionally (and we recommend) with added observed demographic data, perhaps
@@ -9,11 +8,12 @@
 #'   all the files in demog_dataframe will be included.
 #' @param plot_title title to use on the plots
 #' @param variables variables to include. We're starting with a limited set:
-#'   "Age", "Weight_kg", "Height_cm", "Weight vs Height", "Height vs Age",
-#'   "Weight vs Age", "HSA_gL", "AGP_gL", "Sex", "Sex vs Age", "BMI_kgm2", and
-#'   "RenalFunction". If you want only a subset of those,
+#'   "Age", "Weight_kg" ("Weight" is also fine), "Height_cm" ("Height" is fine),
+#'   "Weight vs Height", "Height vs Age", "Weight vs Age", "HSA_gL" ("HSA" is
+#'   fine), "AGP_gL" ("AGP" is fine), "Sex", "Sex vs Age", "BMI_kgm2" ("BMI" is
+#'   fine), and "RenalFunction". If you want only a subset of those,
 #'   list them in a character vector, e.g., \code{variables = c("Age",
-#'   "Height_cm", "Weight_kg")}. Plots will be in the order listed. 
+#'   "Height_cm", "Weight_kg")}. Plots will be in the order listed.
 #' @param obs_alpha how transparent to make the observed data, with 0 being
 #'   completely transparent and invisible so I don't know why you'd want that
 #'   but, hey, you do you, dude, to 1, which is fully opaque.
@@ -77,7 +77,35 @@ demog_plot <- function(demog_dataframe,
                            "age vs height" ~ "height vs age", 
                            "age vs weight" ~ "weight vs age", 
                            "age vs sex" ~ "sex vs age", 
+                           "weight" ~ "weight_kg",
+                           "height" ~ "height_cm",
+                           "hsa" ~ "hsa_gl",
+                           "agp" ~ "agp_gl",
+                           "bmi" ~ "bmi_kgm2",
                            .default = variables)
+   
+   BadVar <- setdiff(variables, 
+                     tolower("Age", 
+                             "AGP_gL", 
+                             "BMI_kgm2", 
+                             "Height_cm", 
+                             "Height vs Age", 
+                             "HSA_gL",
+                             "Weight_kg",
+                             "Weight vs Age", 
+                             "Weight vs Height",
+                             "Sex", 
+                             "Sex vs Age", 
+                             "RenalFunction"))
+   
+   if(length(BadVar) > 0){
+      warning(paste0("The variables ", 
+                     str_comma(paste0("`", BadVar, "`")), 
+                     " are not among the possible options for variables to graph, so they won't be included. Please check the help file for options.\n"), 
+              call. = FALSE)
+      
+      variables <- setdiff(variables, BadVar)
+   }
    
    Demog_sub <- Demog_sub %>% 
       mutate(SorO = ifelse(simulated == TRUE, 
