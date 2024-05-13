@@ -31,8 +31,8 @@ all the files in demog_dataframe will be included.}
 \item{plot_title}{title to use on the plots}
 
 \item{variables}{variables to include. We're starting with a limited set:
-"Age", "Weight_kg", "Height_cm", "Height vs Weight", "Height distribution",
-"Weight distribution", "HSA_gL", "AGP_gL", "Sex", "BMI_kgm2", and
+"Age", "Weight_kg", "Height_cm", "Weight vs Height", "Height vs Age",
+"Weight vs Age", "HSA_gL", "AGP_gL", "Sex", "Sex vs Age", "BMI_kgm2", and
 "RenalFunction". If you want only a subset of those,
 list them in a character vector, e.g., \code{variables = c("Age",
 "Height_cm", "Weight_kg")}. Plots will be in the order listed.}
