@@ -1302,6 +1302,14 @@ extractExpDetails <- function(sim_data_file,
             # listed in the output files I've found.
             IntRowStart <- which(str_detect(InputTab[, NameCol] %>%
                                                pull(), "Ind [mM]ax|Ind [sS]lope|^Ki |^MBI"))[1] - 1
+            TransporterTissues <- IntRows[which(
+               str_detect(t(InputTab[IntRows, NameCol]), "Transporter"))]
+            TransporterTissues <- TransporterTissues[which(
+               str_detect(t(InputTab[TransporterTissues - 1, NameCol]), 
+                          "Organ/Tissue"))] - 1
+            TransporterTissues <- data.frame(
+               Row = TransporterTissues, 
+               Tissue = as.character(t(InputTab[TransporterTissues, ValueCol])))
             
             if(complete.cases(IntRowStart)){
                
@@ -1383,7 +1391,11 @@ extractExpDetails <- function(sim_data_file,
                      if(EnzTrans == "Transporter"){
                         Enzyme <-
                            paste0(Enzyme, "_",
-                                  tolower(as.character(InputTab[i-1, NameCol + 1])))
+                                  # setting the tissue 
+                                  TransporterTissues %>% 
+                                     filter(Row <= i) %>% 
+                                     filter(Row == max(Row)) %>% 
+                                     pull(Tissue))
                      }
                      
                      suppressWarnings(
