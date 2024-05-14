@@ -24,7 +24,6 @@ calc_PK_ratios(
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   rounding = NA,
-  add_header_for_DDI = TRUE,
   checkDataSource = TRUE,
   returnExpDetails = FALSE,
   save_table = NA,
@@ -194,10 +193,6 @@ nothing will be rounded in the output R object. This can be useful when you
 want to have nicely rounded and formatted output in a Word file but you
 \emph{also} want to use the results from \code{calc_PK_ratios} to make
 forest plots, which requires numbers that are \emph{not} rounded.}}}
-
-\item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
-header row to the top of your table denoting when the PK are for baseline,
-with a perpetrator, or are the geometric mean ratios.}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the

@@ -12,6 +12,7 @@ ct_plot(
   time_range = NA,
   x_axis_interval = NA,
   x_axis_label = NA,
+  time_units_to_use = NA,
   pad_x_axis = TRUE,
   pad_y_axis = TRUE,
   adjust_obs_time = FALSE,
@@ -20,6 +21,7 @@ ct_plot(
   y_axis_limits_log = NA,
   y_axis_interval = NA,
   y_axis_label = NA,
+  conc_units_to_use = NA,
   obs_color = NA,
   obs_shape = NA,
   obs_size = NA,
@@ -149,6 +151,10 @@ PK-relevant intervals.}
 \item{x_axis_label}{optionally supply a character vector or an expression to
 use for the x axis label}
 
+\item{time_units_to_use}{time units to use for graphs. If left as NA, the
+time units in the source data will be used. Options are "hours", "minutes",
+"days", or "weeks".}
+
 \item{pad_x_axis}{optionally add a smidge of padding to the the x axis
 (default is TRUE, which includes some generally reasonable padding). If
 changed to FALSE, the y axis will be placed right at the beginning of your
@@ -199,6 +205,13 @@ are generally reasonable guesses as to aesthetically pleasing intervals.}
 
 \item{y_axis_label}{optionally supply a character vector or an expression to
 use for the y axis label}
+
+\item{conc_units_to_use}{concentration units to use for graphs. If left as
+NA, the concentration units in the source data will be used. Acceptable
+options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
+"ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
+concentration, you'll need to provide something for the argument
+\code{existing_exp_details}.}
 
 \item{obs_color}{If you would like the observed data points to be in color,
 either specify a color here or set this to "default". Points will be
