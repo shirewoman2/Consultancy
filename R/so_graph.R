@@ -397,36 +397,9 @@ so_graph <- function(PKtable,
              1:length(PKwithBlanks[toupper(PKwithBlanks) == "BLANK"]))
    PKparameters <- PKparameters[!toupper(PKparameters) == "BLANK"]
    
-   # Will need to figure out what PK parameters are and will need deprettified
-   # names when reshaping and organizing data here and lower in function
-   AllPKParameters_pretty <- AllPKParameters %>%
-      filter(!PKparameter == "CLt_dose1") %>% 
-      select(PrettifiedNames, PKparameter) %>% unique()
-   
-   AllPKParameters_pretty <- bind_rows(
-      AllPKParameters_pretty, 
-      AllPKParameters_pretty %>% 
-         mutate(PrettifiedNames = sub("(for )?[Dd]ose 1 |Last dose ", "", PrettifiedNames), 
-                PKparameter = sub("_dose1|_last", "", PKparameter)))
-   
-   if(any(is.na(PKparameters))){
-      PKparameters <- names(PKtable)
-      
-      # Need to get the un-prettified names here. First, check whether they're
-      # pretty or R friendly.
-      if(any(PKparameters %in% AllPKParameters$PKparameter)){
-         PKparameters <- PKparameters[PKparameters %in% AllPKParameters$PKparameter]
-      } else {
-         suppressWarnings(PKparameters <- prettify_column_names(PKtable, 
-                                                                pretty_or_ugly_cols = "ugly"))
-         PKparameters <- intersect(names(PKparameters), 
-                                   AllPKParameters_pretty$PKparameter)
-      }
-   }
-   
    if(PKorder %in% c("default", "user specified") == FALSE){
       warning(paste0("PKorder must be either `default` or `user specified`, and you listed `", 
-                     PKorder, "`. We'll set this to default (alphabetical by PK parameter name).\n"), 
+                     PKorder, "`. We'll set this to the default (1st dose before last dose; baseline, then + perpetrator, then GMRs).\n"), 
               call. = FALSE)
       PKorder <- "default"
    }
@@ -602,25 +575,79 @@ so_graph <- function(PKtable,
       }
    }
    
+   # Will need to figure out what PK parameters are and will need deprettified
+   # names when reshaping and organizing data here and lower in function
+   
+   PKCols <- data.frame(Orig = names(PKtable)) %>% 
+      mutate(Pretty = prettify_column_names(Orig), 
+             Ugly = prettify_column_names(Orig, pretty_or_ugly_cols = "ugly"))
+   
+   # Find all the parameters that were for a user-defined AUC interval and
+   # adjust those.
+   WhichUserInt <- which(str_detect(PKCols$Orig, " for interval from"))
+   UserInt <- PKCols$Orig[WhichUserInt]
+   StartCh <- as.data.frame(str_locate(UserInt, " for interval"))
+   UserInt <- str_sub(UserInt, start = 1, end = StartCh$start - 1)
+   PKCols$Ugly[WhichUserInt] <- UserInt
+   
+   PKCols$IsPK <- PKCols$Ugly %in% c(AllPKParameters$PKparameter, 
+                                     AllPKParameters$PKparameter_nodosenum)
+   
+   # AllPKParameters_pretty <- AllPKParameters %>%
+   #    filter(!PKparameter == "CLt_dose1") %>% 
+   #    select(PrettifiedNames, PKparameter) %>% unique()
+   # 
+   # AllPKParameters_pretty <- bind_rows(
+   #    AllPKParameters_pretty, 
+   #    AllPKParameters_pretty %>% 
+   #       mutate(PrettifiedNames = sub("(for )?[Dd]ose 1 |Last dose ", "", PrettifiedNames), 
+   #              PKparameter = sub("_dose1|_last", "", PKparameter)))
+   # 
+   # if(any(is.na(PKparameters))){
+   #    PKparameters <- names(PKtable)
+   #    
+   #    # Need to get the un-prettified names here. First, check whether they're
+   #    # pretty or R friendly.
+   #    if(any(PKparameters %in% AllPKParameters$PKparameter)){
+   #       PKparameters <- PKparameters[PKparameters %in% c(AllPKParameters$PKparameter, 
+   #                                                        AllPKParameters$PKparameter_nodosenum)]
+   #    } else {
+   #       suppressWarnings(PKparameters <- prettify_column_names(PKtable, 
+   #                                                              pretty_or_ugly_cols = "ugly"))
+   #       PKparameters <- names(PKparameters)
+   #       
+   #       # Find all the parameters that were for a user-defined AUC interval and
+   #       # adjust those.
+   #       WhichUserInt <- which(str_detect(PKparameters, " for interval from"))
+   #       UserInt <- PKparameters[WhichUserInt]
+   #       StartCh <- as.data.frame(str_locate(UserInt, " for interval"))
+   #       UserInt <- str_sub(UserInt, start = 1, end = StartCh$start - 1)
+   #       PKparameters[WhichUserInt] <- UserInt
+   #       
+   #       PKparameters <- PKparameters[PKparameters %in% c(AllPKParameters$PKparameter, 
+   #                                                        AllPKParameters$PKparameter_nodosenum)]
+   #    }
+   # }
+   
+   if(any(is.na(PKparameters))){
+      PKparameters <- PKCols$Ugly[PKCols$IsPK]
+   }
+   
    # Arranging and tidying input data. First, de-prettifying column names.
    SO <- PKtable %>% 
       mutate(Statistic = as.character(Statistic), 
              Statistic = ifelse(str_detect(Statistic, "^Simulated"),
                                 "Simulated", Statistic))
    
-   # Uglifying if needed. Only pretty column names have spaces. 
-   if(any(str_detect(names(SO), " "))){
-      suppressWarnings(
-         SO <- prettify_column_names(SO, 
-                                     pretty_or_ugly_cols = "ugly"))
-   } 
+   names(SO) <- PKCols$Ugly
    
    if(is.na(include_dose_num)){
       # Dropping dose number depending on input. First, checking whether they have
       # both dose 1 and last-dose data.
       DoseCheck <- c("first" = any(str_detect(PKparameters, "dose1")), 
+                     "user-defined" = any(str_detect(PKparameters, "dose1|last")), 
                      "last" = any(str_detect(PKparameters, "last")))
-      include_dose_num <- all(DoseCheck)
+      include_dose_num <- length(which(DoseCheck)) > 1
    }
    
    # include_dose_num now should be either T or F no matter what, so checking
@@ -636,19 +663,9 @@ so_graph <- function(PKtable,
       names(SO) <- sub("_dose1|_last", "", names(SO))
    }
    
-   if(all_intervals_together){
-      
-      # FIXME - Just started working on this. This is NOT set up yet. 
-      
-      # For this option, data must be in long format w/ a column for interval.
-      # This will be easiest to manage w/R-friendly column names.
-      TEMP <- prettify_column_names(PKtable, pretty_or_ugly_cols = "ugly") %>% 
-         pivot_longer(cols = any_of(PKparameters), 
-                      names_to = "PKparameter", 
-                      values_to = "Value") %>% 
-         mutate(Interval = str_extract(PKparameter, "last|dose1"), 
-                PKparameter_rev = str_extract(PKparameter, "AUC|Cmax|tmax|CL|HalfLife"))
-   }
+   # Removing additional columns since they mess up pivoting. 
+   SO <- SO[, PKCols %>% filter(IsPK == FALSE | Ugly %in% PKparameters) %>% 
+               pull(Ugly)]
    
    suppressWarnings(
       SO <- SO %>% 
@@ -662,6 +679,22 @@ so_graph <- function(PKtable,
          pivot_wider(names_from = Statistic, values_from = Value) %>% 
          filter(complete.cases(Observed) & PKparameter %in% {{PKparameters}})
    )
+   
+   if(all_intervals_together){
+      
+      # FIXME - Just started working on this. This is NOT set up yet. 
+      
+      # For this option, data must be in long format w/ a column for interval.
+      TEMP <- SO %>% 
+         mutate(Interval = case_when(str_detect(PKparameter, "dose1") ~ "first dose", 
+                                     str_detect(PKparameter, "last") ~ "last dose", 
+                                     PKparameter %in% PKCols$Ugly[
+                                        str_detect(PKCols$Orig, "for interval from")] ~ "user-defined interval", 
+                                     TRUE ~ "applies to all intervals"), 
+                PKparameter_rev = sub("_last|_dose1", "", PKparameter), 
+                point_color_column = Interval, 
+                point_shape_column = Interval)
+   }
    
    # It's possible to have both CLt_dose1 and CLinf_dose1 and they're labeled
    # the same way in PKexpressions. Adjusting for that scenario.
@@ -771,7 +804,7 @@ so_graph <- function(PKtable,
       
    } else {
       # Setting color to black if point_color_column unspecified
-      point__color_set <- "black"
+      point_color_set <- "black"
    }
    
    if(as_label(point_shape_column) != "<empty>"){
