@@ -292,6 +292,12 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    # Making sure they always have a space.
    PKparameters <- sub("( )?/( )?", " / ", PKparameters)
    
+   page_orientation <- tolower(page_orientation)[1]
+   if(page_orientation %in% c("portrait", "landscape") == FALSE){
+      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+   }
+   
    
    # Main body of function -------------------------------------------------
    
