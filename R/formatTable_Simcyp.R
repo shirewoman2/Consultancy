@@ -862,8 +862,7 @@ formatTable_Simcyp <- function(DF,
       flextable::set_table_properties(width = 1, layout = "autofit")
    
    # Dealing with subscripts
-   ColNames <- sub(PerpRegex, "", OrigNames)
-   ColNames <- sub("AUCt( |$)", "AUC~t~ ", ColNames)
+   ColNames <- sub("AUCt( |$)", "AUC~t~ ", OrigNames)
    ColNames <- sub("AUCinf( |$)", "AUC~inf~ ", ColNames)
    ColNames <- sub("AUCt$", "AUC~t~", ColNames)
    ColNames <- sub("AUCtau", "AUC~tau~", ColNames)
