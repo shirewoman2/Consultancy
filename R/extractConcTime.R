@@ -543,7 +543,7 @@ extractConcTime <- function(sim_data_file,
                          tissue = tissue, 
                          SimConcUnits = SimConcUnits,
                          SimTimeUnits = SimTimeUnits,
-                         returnAggregateOrIndiv = c("aggregate", "individual"))
+                         returnAggregateOrIndiv = returnAggregateOrIndiv)
          
          if(length(AllPerpsPresent) > 0 & cmpd %in% c("substrate", 
                                                       "primary metabolite 1", 
@@ -563,41 +563,9 @@ extractConcTime <- function(sim_data_file,
                                       tissue = tissue, 
                                       SimConcUnits = SimConcUnits, 
                                       SimTimeUnits = SimTimeUnits,
-                                      returnAggregateOrIndiv = c("aggregate", "individual")))
+                                      returnAggregateOrIndiv = returnAggregateOrIndiv))
          }
-         
-         # Adding trial means. 
-         suppressMessages(
-            sim_data_trial <- sim_data[[cmpd]][[ss]] %>%
-               filter(Trial %in% c("mean", "geomean", "per5", "per95", 
-                                   "per10", "per90", "median") == FALSE) %>%
-               group_by(across(any_of(c("Compound", "CompoundID", "Tissue",
-                                        "Inhibitor", "Simulated", "Trial", 
-                                        "Time", "Time_orig", "subsection_ADAM",
-                                        "Time_units", "Conc_units")))) %>%
-               summarize(Conc_arith = mean(Conc, na.rm = T),
-                         Conc_gm = gm_mean(Conc, na.rm = T),
-                         Conc_med = median(Conc, na.rm = T)) %>%
-               ungroup() %>%
-               pivot_longer(cols = c(Conc_arith, Conc_gm, Conc_med), 
-                            names_to = "MeanType", 
-                            values_to = "Conc") %>% 
-               mutate(TrialOrig = Trial, 
-                      Trial = case_match(MeanType, 
-                                         "Conc_arith" ~ "trial mean", 
-                                         "Conc_gm" ~ "trial geomean", 
-                                         "Conc_med" ~ "trial median"), 
-                      Individual = paste(Trial, TrialOrig)) %>% 
-               select(-TrialOrig, -MeanType)
-         )
-         
-         sim_data[[cmpd]][[ss]] <- bind_rows(sim_data[[cmpd]][[ss]], 
-                                             sim_data_trial)
-         
-         rm(sim_data_trial)
-         
       }
-      
       sim_data[[cmpd]] <- bind_rows(sim_data[[cmpd]])
    }
    
@@ -774,8 +742,8 @@ extractConcTime <- function(sim_data_file,
             
             # As necessary, convert simulated data units to match the
             # observed data
-            sim_data <- convert_units(DF_to_convert = sim_data,
-                                      DF_with_good_units = obs_data)
+            sim_data <- adjust_units(DF_to_adjust = sim_data,
+                                     DF_with_good_units = obs_data)
          }
       }
    }

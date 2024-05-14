@@ -269,51 +269,79 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
    
    # Setting up y axis for semi-log graphs ----------------------------------
    
-   if(all(is.na(time_range_relative))){
-      time_range_relative <- range(ct_dataframe$Time[
-         complete.cases(ct_dataframe$Conc)], na.rm = T)
-   } 
+   near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
    
-   Ylim_log <- range(Ylim_data$Conc, na.rm = T)
-   
-   if(all(is.na(y_axis_limits_log))){ # Option to consider for the future: Allow user to specify only the upper limit, which would leave y_axis_limits_log[1] as NA?
+   if(is.na(y_axis_limits_log[1])){ # Option to consider for the future: Allow user to specify only the upper limit, which would leave y_axis_limits_log[1] as NA?
       
-      # If user did not specify limits, then we'll need to find them based on
-      # what data are included, which includes figuring out which data are
-      # within the time range they wanted.
+      Ylim_log <- Ylim
       
-      near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
-      
-      Ylim_log[1] <- Ylim_data %>% 
+      Ylim_log[1] <- Ylim_data %>%
          filter(Conc >= 0) %>%  # Not allowing BLQ values that were set below 0.
-         filter(complete.cases(Conc)) %>% 
-         mutate(TimeMatch = Time == near_match(Time, time_range_relative[2])) %>%
-         filter(TimeMatch == TRUE) %>% 
+         filter(Time == near_match(Ylim_data$Time[complete.cases(Ylim_data$Conc)],
+                                   time_range_relative[2])) %>%
          pull(Conc) %>% min()
       
-   } else {
+      # If Ylim_log[1] is 0, which can happen when the concs are really low, that
+      # is undefined for log transformations. Setting it to be max value / 100
+      # when that happens.
+      Ylim_log[1] <- ifelse(Ylim_log[1] == 0, 
+                            Ylim_log[2]/100, Ylim_log[1])
+      Ylim_log[1] <- round_down(Ylim_log[1])
+      Ylim_log[2] <- round_up(Ylim[2])
+      Ylim_log <- sort(Ylim_log)
       
+   } else {
       # If user set Ylim_log[1] to 0, set it to 1/100th the higher value and
       # tell them we can't use 0.
       if(y_axis_limits_log[1] <= 0){
          y_axis_limits_log[1] <- y_axis_limits_log[2]/100
-         warning("You requested a lower y axis limit of 0, which is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.",
+         warning("You requested a lower y axis limit that is undefined for log-transformed data. The lower y axis limit will be set to 1/100th the upper y axis limit instead.",
                  call. = FALSE)
       }
       
       Ylim_log <- y_axis_limits_log
       
+      # Previously, we *had* been rounding here, but I think the user may
+      # actually want a specific set of limits, so commenting that out for
+      # now. -LS 
+      # Ylim_log[1] <- round_down(Ylim_log[1]) 
+      # Ylim_log[2] <- round_up(Ylim[2])
+      
    }
    
-   Breaks <- make_log_breaks(axis_range = Ylim_log, 
-                             axis_limits_log = y_axis_limits_log) # just submit y range desired
-                             
+   YLogBreaks <- as.vector(outer(1:9, 10^(log10(Ylim_log[1]):log10(Ylim_log[2]))))
+   YLogBreaks <- YLogBreaks[YLogBreaks >= Ylim_log[1] & YLogBreaks <= Ylim_log[2]]
+   YLogLabels   <- rep("",length(YLogBreaks))
    
-   YLogBreaks <- Breaks$breaks
-   YLogLabels <- Breaks$labels
-   Ylim_log <- Breaks$axis_limits_log
-   
-   # return -------------------------------------------------------------------
+   if(is.na(y_axis_limits_log[1]) |
+      # checking whether Ylim_log values are a factor of 10 b/c, if they are,
+      # then just use the Ylim_log that we would have come up with using the
+      # other method b/c that makes prettier breaks
+      all(log10(Ylim_log) == round(log10(Ylim_log)))){
+      
+      # add labels at order of magnitude
+      YLogLabels[seq(1, length(YLogLabels), 9)] <- 
+         format(YLogBreaks[seq(1,length(YLogLabels),9)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      
+   } else {
+      
+      # add labels for the 1st and last YLogBreaks and also 3 in between. The
+      # odd fractions are b/c I want to have them spaced out somewhat
+      # regularly, and that requires nonlinear intervals since it's log
+      # transformed.
+      YLogLabels[1] <- 
+         format(YLogBreaks[1], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      Nbreaks <- length(YLogBreaks)
+      YLogLabels[Nbreaks] <- 
+         format(YLogBreaks[Nbreaks], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      YLogLabels[round(Nbreaks/4)] <- 
+         format(YLogBreaks[round(Nbreaks/4)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      YLogLabels[round(2*Nbreaks/3)] <- 
+         format(YLogBreaks[round(2*Nbreaks/3)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      YLogLabels[round(5*Nbreaks/6)] <- 
+         format(YLogBreaks[round(5*Nbreaks/6)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+      
+   } 
    
    # Assigning the variables created or changed here to the environment one
    # level up, e.g., probably the environment within the function that's

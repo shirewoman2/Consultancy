@@ -92,13 +92,7 @@
 #'   for certain versions of RStudio.} To get around this, within RStudio, go to
 #'   Tools --> Global Options --> General --> Graphics --> And then set
 #'   "Graphics device: backend" to "AGG". Honestly, this is a better option for
-#'   higher-quality graphics anyway!}
-#'   
-#'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
-#'   for the mean of each trial of simulated data, and open circles for the
-#'   observed data. If a perpetrator were present, lighter dashed lines indicate
-#'   the mean of each trial of simulated data in the presence of the perpetrator.}}
-#'   
+#'   higher-quality graphics anyway!}}
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed; this is the default}
 #'
@@ -343,15 +337,6 @@
 #'   to a number; the default is \code{c(0.02, 0.04)}, which adds 2\% more space
 #'   to the left side and 4\% more space to the right side of the x axis. If you
 #'   only specify one number, padding is added to the left side.
-#' @param time_units_to_use time units to use for graphs. If left as NA, the
-#'   time units in the source data will be used. Options are "hours", "minutes",
-#'   "days", or "weeks".
-#' @param conc_units_to_use concentration units to use for graphs. If left as
-#'   NA, the concentration units in the source data will be used. Acceptable
-#'   options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
-#'   "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
-#'   concentration, you'll need to provide something for the argument
-#'   \code{existing_exp_details}.
 #' @param pad_y_axis optionally add a smidge of padding to the y axis (default
 #'   is TRUE, which includes some generally reasonable padding). As with
 #'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
@@ -506,14 +491,12 @@ ct_plot_overlay <- function(ct_dataframe,
                             time_range = NA, 
                             x_axis_interval = NA,
                             x_axis_label = NA,
-                            time_units_to_use = NA, 
                             pad_x_axis = TRUE,
                             pad_y_axis = TRUE,
                             y_axis_limits_lin = NA,
                             y_axis_limits_log = NA, 
                             y_axis_interval = NA,
                             y_axis_label = NA,
-                            conc_units_to_use = NA, 
                             hline_position = NA, 
                             hline_style = "red dotted", 
                             vline_position = NA, 
@@ -556,8 +539,6 @@ ct_plot_overlay <- function(ct_dataframe,
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
    
-   if(EnzPlot){ct_dataframe$Simulated <- TRUE}
-   
    # Checking whether this is a release-profile plot or a dissolution-profile plot
    ReleaseProfPlot <- all(c("Release_mean", "Release_CV") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
@@ -568,8 +549,7 @@ ct_plot_overlay <- function(ct_dataframe,
          # plots. 
          rename(Conc = Release_mean, 
                 SD_SE = ReleaseSD) %>% 
-         mutate(MyMean = Conc, 
-                Simulated = TRUE)
+         mutate(MyMean = Conc)
    }
    
    DissolutionProfPlot <- all(c("Dissolution_mean", "Dissolution_CV") %in% 
@@ -582,10 +562,8 @@ ct_plot_overlay <- function(ct_dataframe,
          # plots. 
          rename(Conc = Dissolution_mean, 
                 SD_SE = DissolutionSD) %>% 
-         mutate(MyMean = Conc, 
-                Simulated = TRUE)
+         mutate(MyMean = Conc)
    }
-   
    
    # Checking for more than one tissue or ADAM data type b/c there's only one y
    # axis and it should have only one concentration type.
@@ -690,30 +668,6 @@ ct_plot_overlay <- function(ct_dataframe,
          warning("We couldn't find the source Excel files for this graph, so we can't QC it.", 
                  call. = FALSE)
          qc_graph <- FALSE
-      }
-   }
-   
-   if(any(complete.cases(time_units_to_use))){
-      time_units_to_use <- tolower(time_units_to_use[1])
-      if(time_units_to_use %in% c("hours", "minutes", "days", "weeks") == FALSE){
-         warning(paste0("You requested that the graph have time units of `", 
-                        time_units_to_use, 
-                        "`, which is not among the acceptable options. We'll use hours instead.\n"), 
-                 call. = FALSE)
-         time_units_to_use <- "hours"
-      }
-   }
-   
-   if(any(complete.cases(conc_units_to_use))){
-      conc_units_to_use <- conc_units_to_use[1]
-      if(conc_units_to_use %in% c("mg/L", "mg/mL", "µg/L", "ug/L", "µg/mL", 
-                                  "ug/mL", "ng/L", "ng/mL", "µM", "uM", 
-                                  "nM") == FALSE){
-         warning(paste0("You requested that the graph have concentration units of `", 
-                        conc_units_to_use, 
-                        "`, which is not among the acceptable options. We'll use ng/mL instead.\n"), 
-                 call. = FALSE)
-         conc_units_to_use <- "ng/mL"
       }
    }
    
@@ -1448,7 +1402,7 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # If there are only 2 groups for the colorBy_column and color_set was set to
    # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
-   # aesthetically pleasing.
+   # aethetically pleasing.
    if(as_label(colorBy_column) != "<empty>" &&
       UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
       color_set[1] == "default"){
@@ -1502,41 +1456,6 @@ ct_plot_overlay <- function(ct_dataframe,
          pull(CompoundID) %>% as.character()
    }
    
-   # Converting conc and time units if requested
-   if(any(complete.cases(conc_units_to_use))){
-      if("logical" %in% class(existing_exp_details) == FALSE){
-         MWs_1 <- AllCompounds %>% 
-            mutate(Detail = paste0("MW", Suffix)) %>% 
-            select(CompoundID, Detail) %>% 
-            left_join(harmonize_details(existing_exp_details)[["MainDetails"]] %>%
-                         filter(File %in% unique(ct_dataframe$File)) %>% 
-                         select(File, matches("MW_")) %>% 
-                         pivot_longer(cols = matches("MW_"), 
-                                      names_to = "Detail", 
-                                      values_to = "Value"), 
-                      by = "Detail")
-         MWs <- MWs_1$Value
-         names(MWs) <- MWs_1$CompoundID
-         
-      } else {
-         MWs <- NA
-      }
-      
-      sim_dataframe <- convert_conc_units(sim_dataframe, 
-                                          conc_units = conc_units_to_use,
-                                          MW = MWs)
-      obs_dataframe <- convert_conc_units(obs_dataframe, 
-                                          conc_units = conc_units_to_use,
-                                          MW = MWs)
-   }
-   
-   if(any(complete.cases(time_units_to_use))){
-      sim_dataframe <- convert_time_units(sim_dataframe,
-                                          time_units = time_units_to_use)
-      obs_dataframe <- convert_time_units(obs_dataframe,
-                                          time_units = time_units_to_use)
-   }
-   
    # Setting up the x axis using the subfunction ct_x_axis
    XStuff <- ct_x_axis(Data = bind_rows(sim_dataframe, obs_dataframe),
                        time_range = time_range, 
@@ -1546,12 +1465,11 @@ ct_plot_overlay <- function(ct_dataframe,
                        EnzPlot = EnzPlot)
    
    xlab <- XStuff$xlab
+   Data <- XStuff$Data # Is this necessary??
    time_range <- XStuff$time_range
    time_range_relative <- XStuff$time_range_relative
    t0 <- XStuff$t0
    TimeUnits <- XStuff$TimeUnits
-   sim_dataframe <- XStuff$Data %>% filter(Simulated == TRUE)
-   obs_dataframe <- XStuff$Data %>% filter(Simulated == FALSE)
    
    # Setting up the y axis using the subfunction ct_y_axis
    Ylim_data <- bind_rows(sim_dataframe, obs_dataframe) %>%
@@ -1780,17 +1698,27 @@ ct_plot_overlay <- function(ct_dataframe,
          names(RibbonDF)[names(RibbonDF) == MyMeanType] <- "MyMean"
       }
    } else if(figure_type == "trial means"){
-      sim_data_trial <- sim_dataframe %>%
-         filter(Simulated == TRUE &
-                   Trial %in% switch(mean_type, 
-                                     "arithmetic" = "trial mean", 
-                                     "geometric" = "trial geomean", 
-                                     "median" = "trial median")) %>% 
-         ungroup() %>% 
-         unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
-                                     "Compound", "Inhibitor", "Individual",
-                                     "colorBy_column", "FC1", "FC2")), 
-               sep = " ", remove = FALSE)
+      suppressMessages(
+         sim_data_trial <- sim_dataframe %>%
+            filter(Simulated == TRUE &
+                      Trial %in% c("mean", "geomean", "per5", "per95", 
+                                   "per10", "per90", "median") == FALSE) %>%
+            group_by(across(any_of(c("Compound", "Tissue", "Inhibitor",
+                                     "Simulated", "Trial", "Group",
+                                     "Time", "Time_orig",
+                                     "Time_units", "Conc_units", 
+                                     "colorBy_column", "linetype_column",
+                                     "FC1", "FC2")))) %>%
+            summarize(Conc = switch(mean_type, 
+                                    "arithmetic" = mean(Conc, na.rm = T),
+                                    "geometric" = gm_mean(Conc, na.rm = T),
+                                    "median" = median(Conc, na.rm = T))) %>%
+            ungroup() %>% 
+            unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
+                                        "Compound", "Inhibitor", "Individual",
+                                        "colorBy_column", "FC1", "FC2")), 
+                  sep = " ", remove = FALSE)
+      )
    } 
    
    

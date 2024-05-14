@@ -161,7 +161,7 @@ call. = FALSE)
    # Adjusting conc units to ng/mL. At some point, we could make this detect
    # the units and then adjust the graph titles to whatever is in the data, but
    # for now, just making everything be ng/mL for convenience.
-   ct_dataframe <- convert_units(ct_dataframe, conc_units = "ng/mL")
+   ct_dataframe <- adjust_units(ct_dataframe, conc_units = "ng/mL")
    
    suppressMessages(
       SScheck <- ct_dataframe %>% 

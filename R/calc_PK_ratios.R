@@ -301,13 +301,6 @@ calc_PK_ratios <- function(sim_data_file_numerator,
            call. = FALSE)
    }
    
-   page_orientation <- tolower(page_orientation)[1]
-   if(page_orientation %in% c("portrait", "landscape") == FALSE){
-      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
-              call. = FALSE)
-   }
-   
-   
    # Main body of function -------------------------------------------------
    
    ## Extracting PK ---------------------------------------------------------
@@ -531,13 +524,13 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    Comparisons$PKparam_denomREVISED <- Comparisons$PKparam_num
    
    # # RETURN TO THIS. Checking conc units
-   # TEMP <- convert_units(
+   # TEMP <- adjust_units(
    #     PKnumerator$aggregate %>% 
    #         rename(Conc = i) %>% 
    #         mutate(CompoundID = compoundToExtract, 
    #                Conc_units = Deets$Units_Cmax, 
    #                Time = 1, Time_units = "hours"),
-   #     DF_with_good_units = list("Conc_units" = convert_conc_units, 
+   #     DF_with_good_units = list("Conc_units" = adjust_conc_units, 
    #                      "Time_units" = "hours"), 
    #     MW = c(compoundToExtract = 
    #                switch(compoundToExtract, 
