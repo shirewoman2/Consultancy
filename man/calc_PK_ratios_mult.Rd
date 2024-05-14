@@ -21,7 +21,6 @@ calc_PK_ratios_mult(
   rounding = NA,
   checkDataSource = TRUE,
   include_dose_num = NA,
-  add_header_for_DDI = TRUE,
   extract_forest_data = FALSE,
   existing_exp_details = NA,
   save_table = NA,
@@ -176,10 +175,6 @@ default, if you have data only for the first dose or only for the last
 dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
-
-\item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
-header row to the top of your table denoting when the PK are for baseline,
-with a perpetrator, or are the geometric mean ratios.}
 
 \item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
 the same time. If set to TRUE, this will return a list that includes data
