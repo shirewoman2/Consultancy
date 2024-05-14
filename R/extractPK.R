@@ -870,21 +870,21 @@ extractPK <- function(sim_data_file,
          IndexRow <- which(AUC_xl$...1 == "Index")
          
          # Looking for the correct subheading 
-         StartCol <- which(str_detect(as.vector(t(
+         ColsStart_subcol <- which(str_detect(as.vector(t(
             AUC_xl[IndexRow - 1, ])), 
             ToDetect$AUCtab_StartColText))[1]
          
-         if(length(StartCol) == 0){
-            StartCol <- 1
+         if(length(ColsStart_subcol) == 0){
+            ColsStart_subcol <- 1
          }
          
          # Find the last column for this particular subheading
          EndCol <- which(complete.cases(as.vector(t(
             AUC_xl[IndexRow - 1, ]))))
-         EndCol <- EndCol[EndCol > StartCol][1] - 1
+         EndCol <- EndCol[EndCol > ColsStart_subcol][1] - 1
          EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
          
-         if(is.na(StartCol)){
+         if(is.na(ColsStart_subcol)){
             # If the subheading can't be found, then this parameter
             # isn't on the AUC tab (or, at least, we can't currently
             # find it). Removing that parameter from the parameters to
@@ -898,7 +898,7 @@ extractPK <- function(sim_data_file,
             # often more than one column with the same title, we only
             # want the 1st one. (The second would be for the wrong
             # tissue, e.g., blood when user asked for plasma.)
-            PossCol <- StartCol:EndCol
+            PossCol <- ColsStart_subcol:EndCol
             ColNum <- PossCol[which(str_detect(as.vector(t(
                AUC_xl[IndexRow, PossCol])), ToDetect$SearchText))][1]
          }
@@ -910,7 +910,7 @@ extractPK <- function(sim_data_file,
                               sim_data_file, "."), 
                        call. = FALSE)
             }
-            suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
+            suppressWarnings(suppressMessages(rm(ToDetect, ColsStart_subcol, EndCol, PossCol, ColNum)))
             PKparameters_AUC <- setdiff(PKparameters_AUC, i)
             next
          }
@@ -926,7 +926,7 @@ extractPK <- function(sim_data_file,
                                  StartColText = ToDetect$AUCtab_StartColText,
                                  SearchText = ToDetect$SearchText,
                                  Column = ColNum - 2 + # "-2" accounts for index and trial columns
-                                    ColStart[tissue] - 1, # "-1" accounts for the 1st column being 1 and not 0
+                                    ColStart - 1, # "-1" accounts for the 1st column being 1 and not 0
                                  StartRow_agg = StartRow_agg,
                                  EndRow_agg = EndRow_agg,
                                  StartRow_ind = IndexRow + 1,
@@ -950,7 +950,7 @@ extractPK <- function(sim_data_file,
             
             PKparameters_AUC <- unique(c(PKparameters_AUC, NewParam))
             
-            suppressWarnings(rm(StartCol, EndCol, ColNum, ToDetect))
+            suppressWarnings(rm(ColsStart_subcol, EndCol, ColNum, ToDetect))
             
             ToDetect <- AllPKParameters %>% 
                filter(Sheet == "AUC" & PKparameter == NewParam) %>% 
@@ -959,20 +959,20 @@ extractPK <- function(sim_data_file,
             # !!! STARTING HERE, ALL TEXT IS SAME AS MAIN CODE ABOVE.
             
             # Looking for the correct subheading 
-            StartCol <- which(str_detect(as.vector(t(AUC_xl[IndexRow - 1, ])), 
+            ColsStart_subcol <- which(str_detect(as.vector(t(AUC_xl[IndexRow - 1, ])), 
                                          ToDetect$AUCtab_StartColText))[1]
             
-            if(length(StartCol) == 0){
-               StartCol <- 1
+            if(length(ColsStart_subcol) == 0){
+               ColsStart_subcol <- 1
             }
             
             # Find the last column for this particular subheading
             EndCol <- which(complete.cases(as.vector(t(
                AUC_xl[IndexRow - 1, ]))))
-            EndCol <- EndCol[EndCol > StartCol][1] - 1
+            EndCol <- EndCol[EndCol > ColsStart_subcol][1] - 1
             EndCol <- ifelse(is.na(EndCol), ncol(AUC_xl), EndCol)
             
-            if(is.na(StartCol)){
+            if(is.na(ColsStart_subcol)){
                # If the subheading can't be found, then this parameter
                # isn't on the AUC tab (or, at least, we can't currently
                # find it). Removing that parameter from the parameters to
@@ -986,7 +986,7 @@ extractPK <- function(sim_data_file,
                # often more than one column with the same title, we only
                # want the 1st one. (The second would be for the wrong
                # tissue, e.g., blood when user asked for plasma.)
-               PossCol <- StartCol:EndCol
+               PossCol <- ColsStart_subcol:EndCol
                ColNum <- PossCol[which(str_detect(as.vector(t(
                   AUC_xl[IndexRow, PossCol])), ToDetect$SearchText))][1]
             }
@@ -998,7 +998,7 @@ extractPK <- function(sim_data_file,
                                  sim_data_file, "."), 
                           call. = FALSE)
                }
-               suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
+               suppressWarnings(suppressMessages(rm(ToDetect, ColsStart_subcol, EndCol, PossCol, ColNum)))
                PKparameters_AUC <- setdiff(PKparameters_AUC, i)
                next
             }
@@ -1031,7 +1031,7 @@ extractPK <- function(sim_data_file,
                                     EndRow_ind = EndRow_ind,
                                     Note = paste("StartColText is looking in row", IndexRow - 1)))
             
-            suppressWarnings(rm(ToDetect, StartCol, EndCol, ColNum, PossCol))
+            suppressWarnings(rm(ToDetect, ColsStart_subcol, EndCol, ColNum, PossCol))
             
          } else {
             
@@ -1047,7 +1047,7 @@ extractPK <- function(sim_data_file,
                pull(1)
          }
          
-         suppressWarnings(rm(ToDetect, StartCol, EndCol, ColNum, PossCol))
+         suppressWarnings(rm(ToDetect, ColsStart_subcol, EndCol, ColNum, PossCol))
       }
       
       if(includeTrialInfo & length(PKparameters_AUC) > 0){
