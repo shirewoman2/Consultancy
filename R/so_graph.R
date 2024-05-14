@@ -593,42 +593,6 @@ so_graph <- function(PKtable,
    PKCols$IsPK <- PKCols$Ugly %in% c(AllPKParameters$PKparameter, 
                                      AllPKParameters$PKparameter_nodosenum)
    
-   # AllPKParameters_pretty <- AllPKParameters %>%
-   #    filter(!PKparameter == "CLt_dose1") %>% 
-   #    select(PrettifiedNames, PKparameter) %>% unique()
-   # 
-   # AllPKParameters_pretty <- bind_rows(
-   #    AllPKParameters_pretty, 
-   #    AllPKParameters_pretty %>% 
-   #       mutate(PrettifiedNames = sub("(for )?[Dd]ose 1 |Last dose ", "", PrettifiedNames), 
-   #              PKparameter = sub("_dose1|_last", "", PKparameter)))
-   # 
-   # if(any(is.na(PKparameters))){
-   #    PKparameters <- names(PKtable)
-   #    
-   #    # Need to get the un-prettified names here. First, check whether they're
-   #    # pretty or R friendly.
-   #    if(any(PKparameters %in% AllPKParameters$PKparameter)){
-   #       PKparameters <- PKparameters[PKparameters %in% c(AllPKParameters$PKparameter, 
-   #                                                        AllPKParameters$PKparameter_nodosenum)]
-   #    } else {
-   #       suppressWarnings(PKparameters <- prettify_column_names(PKtable, 
-   #                                                              pretty_or_ugly_cols = "ugly"))
-   #       PKparameters <- names(PKparameters)
-   #       
-   #       # Find all the parameters that were for a user-defined AUC interval and
-   #       # adjust those.
-   #       WhichUserInt <- which(str_detect(PKparameters, " for interval from"))
-   #       UserInt <- PKparameters[WhichUserInt]
-   #       StartCh <- as.data.frame(str_locate(UserInt, " for interval"))
-   #       UserInt <- str_sub(UserInt, start = 1, end = StartCh$start - 1)
-   #       PKparameters[WhichUserInt] <- UserInt
-   #       
-   #       PKparameters <- PKparameters[PKparameters %in% c(AllPKParameters$PKparameter, 
-   #                                                        AllPKParameters$PKparameter_nodosenum)]
-   #    }
-   # }
-   
    if(any(is.na(PKparameters))){
       PKparameters <- PKCols$Ugly[PKCols$IsPK]
    }
