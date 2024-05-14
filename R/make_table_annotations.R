@@ -201,18 +201,21 @@ make_table_annotations <- function(MyPKResults, # only PK table
                           collapse = " ")
    DosesIncluded <- ifelse(DosesIncluded == "", "no dose num included", DosesIncluded)
    
-   FigText2 <- switch(DosesIncluded, 
-                      "Dose1 Last" = paste("the first and multiple", 
-                                           MyDoseRoute, "doses"),
-                      
-                      "Dose1" = paste("the first",
-                                      MyDoseRoute, "dose"),
-                      
-                      "Last" = paste("multiple",
-                                     MyDoseRoute, "doses"), 
-                      
-                      "no dose num included" = paste("the first and/or multiple", 
-                                                     MyDoseRoute, "doses")
+   FigText2 <- switch(
+      DosesIncluded, 
+      "Dose1 Last" = paste("the first and multiple", 
+                           MyDoseRoute, "doses"),
+      
+      "Dose1" = paste(ifelse(is.na(Deets$DoseInt_sub), 
+                             "a single", "the first"),
+                      MyDoseRoute, "dose"),
+      
+      "Last" = paste("multiple",
+                     MyDoseRoute, "doses"), 
+      
+      "no dose num included" = ifelse(is.na(Deets$DoseInt_sub), 
+                                      paste("a single", MyDoseRoute, "dose"), 
+                                      paste("the first and/or multiple", MyDoseRoute, "doses"))
    )
    
    FigText3 <- ifelse(

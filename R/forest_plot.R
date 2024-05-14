@@ -25,7 +25,7 @@
 #'   some saved forest-plot data, supply a csv or Excel file with the same data.
 #'   (If it's an Excel file, it must have only one tab.) The following columns
 #'   are required:
-#'   
+#'
 #'   \describe{\item{File}{Simulation file name. You can hack this and set the values to
 #'   whatever you want rather than simulation file names, but this column is
 #'   what will be used for grouping simulations on the y axis.}
@@ -281,10 +281,8 @@
 #' @param pad_y_axis optionally add a smidge of padding to the y axis (default
 #'   is TRUE, which includes some generally reasonable padding). If set to
 #'   FALSE, the y axis tick marks will be placed closer to the top and bottom of
-#'   your data. If you want a \emph{specific} amount of y-axis padding, set this
-#'   to a number; the default is \code{c(0.2, 0)}, which adds 20\% more space to
-#'   the bottom and nothing to the top of the y axis. If you only specify one
-#'   number, we'll assume that's the percent you want added to the bottom.
+#'   your data. The default amount of padding varies depending on how many PK
+#'   parameters you're including, but try something in the realm of 0 to 3.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My forest plot.png" or "My forest plot.docx". If you
 #'   leave off ".png" or ".docx" from the file name, it will be saved as a png
@@ -298,6 +296,63 @@
 #' @param prettify_compound_names SOON TO BE DEPRECATED. This is the same thing
 #'   as "prettify_ylabel", which we think is more general and thus more accurate
 #'   at describing what this argument does.
+#' @param facet_title_x title to use for the facet column along the x axis
+#' @param point_color_column the unquoted name of a column in
+#'   \code{forest_dataframe} to use for coloring the points. If not set, points
+#'   will be white. If you would like to color points based on whether the data
+#'   were predicted or observed, set this to \code{point_color_column =
+#'   SimOrObs}
+#' @param point_color_set color set to use for points. Options: \describe{
+#'
+#'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
+#'   that are friendly to those with red-green colorblindness. The first three
+#'   colors are green, orange, and purple. This can also be referred to as
+#'   "Brewer set 2". If there are only two unique values in the colorBy_column,
+#'   then Brewer set 1 will be used since red and blue are still easily
+#'   distinguishable but also more aesthetically pleasing than green and
+#'   orange.}
+#'
+#'   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+#'   first three colors are red, blue, and green. "set 1" also works to specify
+#'   this option.}
+#'
+#'   \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+#'   (ggplot2 is an R package for graphing.)}
+#'
+#'   \item{"rainbow"}{colors selected from a rainbow palette. The default
+#'   palette is limited to something like 6 colors, so if you have more than
+#'   that, that's when this palette is most useful. It's \emph{not} very useful
+#'   when you only need a couple of colors.}
+#'
+#'   \item{"blue-green"}{a set of blues fading into greens. This palette can be
+#'   especially useful if you are comparing a systematic change in some
+#'   continuous variable -- for example, increasing dose or predicting how a
+#'   change in intrinsic solubility will affect concentration-time profiles --
+#'   because the direction of the trend will be clear.}
+#'
+#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+#'   package}
+#'
+#'   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+#'   colors from purple to blue to green to yellow in a manner that is
+#'   "printer-friendly, perceptually uniform and easy to read by those with
+#'   colorblindness", according to the package author}
+#'
+#'   \item{a character vector of colors}{If you'd prefer to set all the colors
+#'   yourself to \emph{exactly} the colors you want, you can specify those
+#'   colors here. An example of how the syntax should look: \code{color_set =
+#'   c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+#'   which item in \code{colorBy_column} gets which color, you can supply a
+#'   named vector. For example, if you're coloring the lines by the compound ID,
+#'   you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+#'   "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+#'   like help creating a specific gradation of colors, please talk to a member
+#'   of the R Working Group about how to do that using
+#'   \link{colorRampPalette}.}}
 #'
 #' @return Output is a graph.
 #' @export
@@ -481,6 +536,8 @@ forest_plot <- function(forest_dataframe,
                         legend_position = "none", 
                         color_set = "grays",
                         point_shape = c(24, 21),
+                        point_color_column, 
+                        point_color_set = "default",
                         graph_title = NA,
                         graph_title_size = 14,
                         table_title = NA,
@@ -513,6 +570,7 @@ forest_plot <- function(forest_dataframe,
    
    # Setting things up for nonstandard evaluation 
    facet_column_x <- rlang::enquo(facet_column_x)
+   point_color_column <- rlang::enquo(point_color_column)
    
    if("character" %in% class(forest_dataframe)){
       if(str_detect(forest_dataframe, "csv$")){
@@ -690,11 +748,13 @@ forest_plot <- function(forest_dataframe,
    
    # Checking for acceptable input for PK_labels
    if(is.logical(PK_labels) == FALSE){ # NB: Can't use any(complete.cases(PK_labels)) b/c complete.cases doesn't work for expressions. 
-      if("list" %in% class(PK_labels) == FALSE){
+      if("list" %in% class(PK_labels) == FALSE &&
+         "expression" %in% class(PK_labels) == FALSE){
          warning("You supplied something other than a list of expressions for the argument PK_labels, and we need a list of expressions to make this work. Did you perhaps use `c()` instead of `list()` for specifying PK_labels? We'll use the default PK labels instead.\n", 
                  call. = FALSE)
          PK_labels <- NA
-      } else if(all(sapply(PK_labels, "class") == "expression") == FALSE){
+      } else if(all(sapply(PK_labels, "class") == "expression") == FALSE &
+                length(PK_labels) > 1){
          warning("You supplied something other than a list of expressions for the argument PK_labels, and we need a list of expressions to make this work. Did you perhaps use `c()` instead of `list()` for specifying PK_labels? We'll use the default PK labels instead.\n", 
                  call. = FALSE)
          PK_labels <- NA
@@ -1056,9 +1116,11 @@ forest_plot <- function(forest_dataframe,
    # Checking for any replicates that would make points overlap, e.g., need only
    # 1 file per YCol value.
    CheckFile <- forest_dataframe %>% 
-      select(any_of(c("File", "PKparameter", "YCol",
+      select(any_of(c("File", "PKparameter", "YCol", "SimOrObs", 
                       as_label(facet_column_x)))) %>% unique() %>% 
-      group_by(across(.cols = any_of(c("YCol", "PKparameter", as_label(facet_column_x))))) %>% 
+      group_by(across(.cols = any_of(c("YCol", "PKparameter",
+                                       as_label(facet_column_x), 
+                                       "SimOrObs")))) %>% 
       summarize(N = n())
    if(any(CheckFile$N > 1)){
       CheckFile <- CheckFile %>% filter(N > 1)
@@ -1118,7 +1180,7 @@ forest_plot <- function(forest_dataframe,
    forest_dataframe <- forest_dataframe %>% 
       select(File, YCol, PKparameter, SimOrObs, 
              any_of(c(as_label(facet_column_x), 
-                      CenterStat, VarStat)))
+                      CenterStat, VarStat, as_label(point_color_column))))
    
    if(any(complete.cases(PKparameters)) &&
       any(PKparameters %in% forest_dataframe$PKparameter) == FALSE){
@@ -1264,7 +1326,8 @@ forest_plot <- function(forest_dataframe,
    # faceted on PKparameter so that we're not repeating the same PK parameter on
    # every row. Except let them include a table on the right, something that
    # wouldn't work if they had more than one PK parameter.
-   FakeFacetOnPK <- length(unique(forest_dataframe$PKparameter)) == 1
+   FakeFacetOnPK <- length(unique(forest_dataframe$PKparameter)) == 1 &
+      as_label(facet_column_x) == "<empty>"
    
    # If the user wants to title their facets, check whether ggh4x is installed
    # and ask user if they want to install it if not.
@@ -1400,23 +1463,23 @@ forest_plot <- function(forest_dataframe,
    # amount if not
    if(class(pad_y_axis) == "logical"){ # class is logical if pad_y_axis unspecified
       if(pad_y_axis){
-         pad_y_num <- ifelse(as_label(facet_column_x) == "PKparameter", 
-                             # When faceted on PKparameter, graph is set up
-                             # differently & no padding necessary 
-                             0, 
-                             
-                             # This is when NOT facted on PKparameter
-                             switch(paste(ObsIncluded, length(ParamToUse)), 
-                                    "FALSE 1" = 0,
-                                    "FALSE 2" = 0.5, 
-                                    "FALSE 3" = 0.25, 
-                                    "FALSE 4" = 0.2, 
-                                    "FALSE 5" = 0.2,
-                                    "TRUE 1" = 0.2, 
-                                    "TRUE 2" = 0.3, 
-                                    "TRUE 3" = 0.2, 
-                                    "TRUE 4" = 0.15, 
-                                    "TRUE 5" = 0.2))
+         pad_y_num <- case_when(
+            
+            # When faceted on PKparameter, graph is set up
+            # differently & no padding necessary 
+            FakeFacetOnPK == TRUE | as_label(facet_column_x) == "PKparameter" ~ 0, 
+            
+            as_label(facet_column_x) != "PKparameter" & 
+               as_label(facet_column_x) != "<empty>" ~ 0.5, 
+            
+            # This is when NOT facted on PKparameter
+            ObsIncluded == FALSE & length(ParamToUse) %in% c(1, 2) ~ 0.5,
+            ObsIncluded == FALSE & length(ParamToUse) == 3 ~ 0.25, 
+            ObsIncluded == FALSE & length(ParamToUse) >= 4 ~ 0.2, 
+            ObsIncluded == TRUE & length(ParamToUse) == 1 ~ 0.2, 
+            ObsIncluded == TRUE & length(ParamToUse) == 2 ~ 0.3, 
+            ObsIncluded == TRUE & length(ParamToUse) >= 3 ~ 0.2)
+         
       } else {
          pad_y_num <- 0
       }
@@ -1449,14 +1512,109 @@ forest_plot <- function(forest_dataframe,
                           "ArithCV_Lower" = "(Arithmetic CV)"))
    
    
-   ### Assigning shapes -------------------------------------------------------
+   ### Assigning aesthetics ----------------------------------------------------
    if(length(point_shape) == 1){
       MyShapes <- c(point_shape, point_shape)
    } else if(length(point_shape > 1)){
       MyShapes <- point_shape[1:2]
    }
    
+   if(as_label(point_color_column) != "<empty>"){
+      # If they want to color the point shape, we need the shape to be a solid
+      # one and not one of the ones with an outline and a filled center. 
+      GoodShapes <- data.frame(Orig = as.character(0:25), 
+                               Good = 0:25) %>% 
+         mutate(Good = case_match(Orig, 
+                                  "21" ~ 16, 
+                                  "22" ~ 15, 
+                                  "23" ~ 18, 
+                                  "24" ~ 17, 
+                                  "25" ~ 6, # <- Not an ideal match. No filled upside down triangle available. 
+                                  .default = Good))
+      
+      MyShapes <- data.frame(Orig = as.character(MyShapes)) %>% 
+         left_join(GoodShapes, by = "Orig") %>% 
+         pull(Good)
+   }
+   
    names(MyShapes) <- c("observed", "predicted")
+   
+   if(as_label(point_color_column) != "<empty>"){
+      
+      NumColorsNeeded <- forest_dataframe %>% pull(!!point_color_column) %>% 
+         unique() %>% length()
+      
+      # If there are only 2 groups in the point_color_column and point_color_set
+      # was set to "default", use Brewer set 1 instead of Brewer set 2 b/c it's
+      # more aesthetically pleasing.
+      if(NumColorsNeeded <= 2 & point_color_set[1] == "default"){
+         point_color_set <- "Brewer set 1"
+      }
+      
+      # This is when the user wants specific user-specified colors rather
+      # that one of the pre-made sets.
+      if(length(point_color_set) > 1){
+         
+         if(length(point_color_set) < NumColorsNeeded){
+            warning(paste("There are", NumColorsNeeded,
+                          "unique values in the column you have specified for the point colors, but you have only specified", 
+                          length(point_color_set), 
+                          "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph.\n"), 
+                    call. = FALSE)
+            
+            MyColors <- rep(point_color_set, NumColorsNeeded)[1:NumColorsNeeded]
+         } else {
+            MyColors <- point_color_set
+         }
+         
+      } else {
+         
+         # NOTE: For no reason I can discern, if the user has observed data that
+         # should be all one color but then uses scale_color_X where x is anything
+         # except "manual", the observed points DISAPPEAR. That's why, below,
+         # whenever it's scale_color_x, I'm setting the colors needed and then
+         # using scale_color_manual instead of scale_color_x. -LSh
+         
+         point_color_set <- ifelse(str_detect(tolower(point_color_set), 
+                                              "default|brewer.*2|set.*2"), 
+                                   "set2", point_color_set)
+         point_color_set <- ifelse(str_detect(tolower(point_color_set),
+                                              "brewer.*1|set.*1"), 
+                                   "set1", point_color_set)
+         
+         suppressWarnings(
+            MyColors <- 
+               switch(
+                  point_color_set,
+                  # Using "Dark2" b/c "Set2" is just really,
+                  # really light.
+                  "set2" = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")[
+                     1:NumColorsNeeded], 
+                  "blue-green" = blueGreens(NumColorsNeeded),
+                  "blues" = blues(NumColorsNeeded),
+                  "rainbow" = rainbow(NumColorsNeeded),
+                  "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
+                     1:NumColorsNeeded],
+                  "Tableau" = ggthemes::tableau_color_pal(
+                     palette = "Tableau 10")(NumColorsNeeded),
+                  "viridis" = viridis::viridis_pal()(NumColorsNeeded))
+         )
+         # NB: For the RColorBrewer palettes, the minimum number of
+         # colors you can get is 3. Since sometimes we might only want 1
+         # or 2 colors, though, we have to add the [1:NumColorsNeeded]
+         # bit.
+         
+         if(any(is.na(MyColors))){
+            warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.\n", 
+                    call. = FALSE)
+            
+            MyColors <- rainbow(NumColorsNeeded)
+         }
+         
+      }
+   } else {
+      MyColors <- "white"
+   }
    
    
    ### vline at x = 1 ----------------------------------------------------------
@@ -1521,9 +1679,19 @@ forest_plot <- function(forest_dataframe,
                                          levels = names({{Param_exp}}), 
                                          labels = {{Param_exp}}))
       
-      G <- ggplot(forest_dataframe, 
-                  aes(x = Centre, xmin = Lower, xmax = Upper, 
-                      y = YCol_num, shape = SimOrObs)) +
+      if(as_label(point_color_column) == "<empty>"){
+         G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
+                                           y = YCol_num, shape = SimOrObs))
+      } else {
+         forest_dataframe <- forest_dataframe %>% 
+            mutate(PointColorCol = !!point_color_column)
+         
+         G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
+                                           y = YCol_num, shape = SimOrObs, 
+                                           color = PointColorCol))
+      }
+      
+      G <- G +
          geom_rect(data = Rect, 
                    aes(xmin = Xmin, xmax = Xmax,
                        ymin = Ymin, ymax = Ymax, 
@@ -1542,8 +1710,19 @@ forest_plot <- function(forest_dataframe,
       
       G <- G +
          geom_errorbar(width = ifelse(is.na(error_bar_height), 
-                                      0.3, error_bar_height)) +
-         geom_point(size = 2.5, fill = "white") +
+                                      0.3, error_bar_height))
+      
+      if(as_label(point_color_column) == "<empty>"){
+         G <- G + geom_point(size = 2.5, fill = "white") +
+            scale_color_manual(values = MyColors) + 
+            labs(fill = "Interaction level", shape = NULL)
+      } else {
+         G <- G + geom_point(size = 2.5) + 
+            labs(fill = "Interaction level",
+                 shape = NULL, color = NULL)
+      }
+      
+      G <- G +
          facet_grid(. ~ PKparameter_exp, 
                     labeller = label_parsed, 
                     switch = "y") +
@@ -1581,8 +1760,23 @@ forest_plot <- function(forest_dataframe,
          }
       }
       
-      G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
-                                        y = PKParam_num, shape = SimOrObs)) +
+      if(as_label(point_color_column) == "<empty>"){
+         
+         G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
+                                           y = PKParam_num, shape = SimOrObs))
+         
+      } else {
+         
+         forest_dataframe <- forest_dataframe %>% 
+            mutate(PointColorCol = !!point_color_column)
+         
+         G <- ggplot(forest_dataframe, aes(x = Centre, xmin = Lower, xmax = Upper, 
+                                           y = PKParam_num, shape = SimOrObs, 
+                                           color = PointColorCol))
+         
+      }
+      
+      G <- G + 
          geom_rect(data = Rect, aes(xmin = Xmin, xmax = Xmax, 
                                     ymin = Ymin, ymax = Ymax,
                                     fill = IntLevel), 
@@ -1592,22 +1786,33 @@ forest_plot <- function(forest_dataframe,
       
       # vline needs to be here to be underneath the points.
       if(ShowVLine){
-         G <- G +
-            geom_vline(xintercept = 1, 
-                       linetype = VlineParams$linetype,
-                       color = VlineParams$color,
-                       linewidth = VlineParams$linewidth)
+         G <- G + geom_vline(xintercept = 1, 
+                             linetype = VlineParams$linetype,
+                             color = VlineParams$color,
+                             linewidth = VlineParams$linewidth)
+      }
+      
+      G <- G + geom_errorbar(width = ifelse(is.na(error_bar_height), 
+                                            0.3, error_bar_height))
+      
+      if(as_label(point_color_column) == "<empty>"){
+         G <- G + geom_point(size = 2.5, fill = "white") +
+            scale_color_manual(values = MyColors) +
+            labs(fill = "Interaction level", shape = NULL)
+      } else {
+         G <- G + geom_point(size = 2.5) + 
+            labs(fill = "Interaction level",
+                 shape = NULL, color = NULL)
       }
       
       G <- G +
-         geom_errorbar(width = ifelse(is.na(error_bar_height), 
-                                      0.3, error_bar_height)) +
-         geom_point(size = 2.5, fill = "white") +
          scale_shape_manual(values = MyShapes) +
-         scale_y_continuous(breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
-                            labels = sapply(Param_exp[levels(forest_dataframe$PKparameter)], FUN = `[`), 
-                            expand = expansion(mult = pad_y_num)) +
-         labs(fill = "Interaction level", shape = NULL)
+         scale_y_continuous(
+            breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
+            labels = switch(as.character(length(Param_exp) == 1), 
+                            "TRUE" = Param_exp[[1]], 
+                            "FALSE" = sapply(Param_exp[levels(forest_dataframe$PKparameter)], FUN = `[`)), 
+            expand = expansion(mult = pad_y_num)) 
       
       if(as_label(facet_column_x) != "<empty>"){
          
@@ -1697,6 +1902,10 @@ forest_plot <- function(forest_dataframe,
    if(length(color_set) == 1 && color_set == "none"){
       G <- G +
          guides(fill = "none")
+   }
+   
+   if(as_label(point_color_column) != "<empty>"){
+      G <- G + scale_color_manual(values = MyColors)
    }
    
    if(complete.cases(graph_title)){

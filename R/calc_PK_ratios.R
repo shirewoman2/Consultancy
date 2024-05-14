@@ -215,9 +215,6 @@
 #'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 #'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 #'   the default behavior and get exactly what you want.
-#' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
-#'   header row to the top of your table denoting when the PK are for baseline,
-#'   with a perpetrator, or are the geometric mean ratios. 
 #' @param page_orientation set the page orientation for the Word file output to
 #'   "portrait" (default) or "landscape" 
 #'
@@ -246,7 +243,6 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                            prettify_columns = TRUE,
                            prettify_compound_names = TRUE,
                            rounding = NA,
-                           add_header_for_DDI = TRUE, 
                            checkDataSource = TRUE, 
                            returnExpDetails = FALSE,
                            save_table = NA, 
@@ -1055,6 +1051,8 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                                                           package="SimcypConsultancy"), 
                                 "portrait" = system.file("Word/report_template.dotx",
                                                          package="SimcypConsultancy"))
+         
+         add_header_for_DDI <- FALSE
          
          rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 

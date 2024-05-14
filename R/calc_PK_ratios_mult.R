@@ -229,9 +229,6 @@
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
-#' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
-#'   header row to the top of your table denoting when the PK are for baseline,
-#'   with a perpetrator, or are the geometric mean ratios. 
 #' @param page_orientation set the page orientation for the Word file output to
 #'   "portrait" (default) or "landscape" 
 #'
@@ -257,7 +254,6 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                 rounding = NA,
                                 checkDataSource = TRUE, 
                                 include_dose_num = NA,
-                                add_header_for_DDI = TRUE, 
                                 extract_forest_data = FALSE, 
                                 existing_exp_details = NA,
                                 save_table = NA, 
@@ -493,6 +489,8 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                                           package="SimcypConsultancy"), 
                                 "portrait" = system.file("Word/report_template.dotx",
                                                          package="SimcypConsultancy"))
+         
+         add_header_for_DDI <- FALSE
          
          rmarkdown::render(system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 

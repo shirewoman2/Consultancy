@@ -397,36 +397,9 @@ so_graph <- function(PKtable,
              1:length(PKwithBlanks[toupper(PKwithBlanks) == "BLANK"]))
    PKparameters <- PKparameters[!toupper(PKparameters) == "BLANK"]
    
-   # Will need to figure out what PK parameters are and will need deprettified
-   # names when reshaping and organizing data here and lower in function
-   AllPKParameters_pretty <- AllPKParameters %>%
-      filter(!PKparameter == "CLt_dose1") %>% 
-      select(PrettifiedNames, PKparameter) %>% unique()
-   
-   AllPKParameters_pretty <- bind_rows(
-      AllPKParameters_pretty, 
-      AllPKParameters_pretty %>% 
-         mutate(PrettifiedNames = sub("(for )?[Dd]ose 1 |Last dose ", "", PrettifiedNames), 
-                PKparameter = sub("_dose1|_last", "", PKparameter)))
-   
-   if(any(is.na(PKparameters))){
-      PKparameters <- names(PKtable)
-      
-      # Need to get the un-prettified names here. First, check whether they're
-      # pretty or R friendly.
-      if(any(PKparameters %in% AllPKParameters$PKparameter)){
-         PKparameters <- PKparameters[PKparameters %in% AllPKParameters$PKparameter]
-      } else {
-         PKparameters <- data.frame(PrettifiedNames = PKparameters) %>% 
-            left_join(AllPKParameters_pretty, by = join_by(PrettifiedNames)) %>% 
-            filter(complete.cases(PKparameter)) %>% 
-            pull(PKparameter)
-      }
-   }
-   
    if(PKorder %in% c("default", "user specified") == FALSE){
       warning(paste0("PKorder must be either `default` or `user specified`, and you listed `", 
-                     PKorder, "`. We'll set this to default (alphabetical by PK parameter name).\n"), 
+                     PKorder, "`. We'll set this to the default (1st dose before last dose; baseline, then + perpetrator, then GMRs).\n"), 
               call. = FALSE)
       PKorder <- "default"
    }
@@ -446,173 +419,25 @@ so_graph <- function(PKtable,
                                    "muted red green") &
       boundary_indicator != "none"){
       
-      ColorChoices <- paste(
-         boundary_color_set, boundary_indicator,
-         cut(length(boundaries), breaks = c(0:3, Inf)))
+      boundary_color_set <- 
+         set_boundary_colors(color_set = boundary_color_set,
+                             boundaries = boundaries, 
+                             break_type = "SO")
       
-      boundary_color_set <-
-         switch(ColorChoices,
-                ## red black lines
-                
-                # 1 boundary, e.g., it's only unity
-                "red black lines (0,1]" = "black",
-                
-                # 2 boundaries
-                "red black lines (1,2]" = c("black", "black"),
-                
-                # 3 boundaries
-                "red black lines (2,3]" = c("black", "black", "red"),
-                
-                # >3 boundaries
-                "red black lines (3,Inf]" = colorRampPalette(c("black", "red"))(
-                   length(boundaries)),
-                
-                
-                ## red black fill
-                
-                # 1 boundary, e.g., it's only unity
-                "red black fill (0,1]" = "black",
-                
-                # 2 boundaries
-                "red black fill (1,2]" = c("black", "black"),
-                
-                # 3 boundaries
-                "red black fill (2,3]" = c("black", "black", "red"),
-                
-                # >3 boundaries
-                "red black fill (3,Inf]" = c("black",
-                                             colorRampPalette(c("black", "#FFC000", "red"))(
-                                                length(boundaries) - 1)),
-                
-                
-                ## red green lines
-                # 1 boundary, e.g., it's only unity
-                "red green lines (0,1]" = "#17A142",
-                
-                # 2 boundaries
-                "red green lines (1,2]" = c("#17A142", "red"),
-                
-                # 3 boundaries
-                "red green lines (2,3]" = c("black", "#17A142", "red"),
-                
-                # >3 boundaries
-                "red green lines (3,Inf]" = c("black",
-                                              colorRampPalette(c("#17A142", "red"))(
-                                                 length(boundaries) - 1)),
-                
-                
-                ## red green fill
-                # 1 boundary, e.g., it's only unity
-                "red green fill (0,1]" = "#17A142",
-                
-                # 2 boundaries
-                "red green fill (1,2]" = c("#17A142", "red"),
-                
-                # 3 boundaries
-                "red green fill (2,3]" = c("black", "#17A142", "red"),
-                
-                # >3 boundaries
-                "red green fill (3,Inf]" = c("black",
-                                             colorRampPalette(c("#17A142", "red"))(
-                                                length(boundaries) - 1)),
-                
-                
-                ## muted red green lines
-                # 1 boundary, e.g., it's only unity
-                "muted red green lines (0,1]" = "#A4E4AF",
-                
-                # 2 boundaries
-                "muted red green lines (1,2]" = c("#A4E4AF", "#A4E4AF"),
-                
-                # 3 boundaries
-                "muted red green lines (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"),
-                
-                # >3 boundaries
-                "muted red green lines (3,Inf]" = c("#A4E4AF",
-                                                    colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                       length(boundaries)-1)),
-                
-                
-                ## muted red green fill
-                # 1 boundary, e.g., it's only unity
-                "muted red green fill (0,1]" = "#A4E4AF",
-                
-                # 2 boundaries
-                "muted red green fill (1,2]" = c("#A4E4AF", "#A4E4AF"),
-                
-                # 3 boundaries
-                "muted red green fill (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"),
-                
-                # >3 boundaries
-                "muted red green fill (3,Inf]" = c("#A4E4AF",
-                                                   colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                      length(boundaries)-1))
-         )
    }
    
    if(boundary_color_set_Guest[1] %in% c("red green", "red black", 
                                          "muted red green") &
       boundary_indicator != "none"){
       
-      if(any(complete.cases(boundaries_Guest))){
-         ColorChoicesGuest <- paste(
-            boundary_color_set_Guest, 
-            cut(length(boundaries_Guest), breaks = c(0:3, Inf)))
-         
-         boundary_color_set_Guest <- 
-            switch(ColorChoicesGuest,
-                   ## red black -- Need 1 extra color for b/c last
-                   ## color will be for the straight line
-                   
-                   # 1 boundary, e.g., it's only unity
-                   "red black (0,1]" = c("black", "black"),
-                   
-                   # 2 boundaries
-                   "red black (1,2]" = c("black", "black", "red"), 
-                   
-                   # 3 boundaries
-                   "red black (2,3]" = c("black", "black", "#FFC000", "red"), 
-                   
-                   # >3 boundaries
-                   "red black (3,Inf]" = c("black", 
-                                           colorRampPalette(c("black", "#FFC000", "red"))(
-                                              length(boundaries))), 
-                   
-                   ## red green -- Need 1 extra color for b/c last
-                   ## color will be for the straight line 
-                   # 1 boundary, e.g., it's only unity
-                   "red green (0,1]" = c("#17A142", "#17A142"), 
-                   
-                   # 2 boundaries
-                   "red green (1,2]" = c("#17A142", "#17A142", "red"), 
-                   
-                   # 3 boundaries
-                   "red green (2,3]" = c("#17A142", 
-                                         colorRampPalette(c("#17A142", "red"))(
-                                            length(boundaries))),
-                   
-                   # >3 boundaries
-                   "red green (3,Inf]" = c("#17A142", 
-                                           colorRampPalette(c("#17A142", "red"))(
-                                              length(boundaries))), 
-                   
-                   ## muted red green -- Need 1 extra color for b/c last
-                   ## color will be for the straight line 
-                   # 1 boundary, e.g., it's only unity
-                   "muted red green (0,1]" = c("#A4E4AF", "#A4E4AF"),
-                   
-                   # 2 boundaries
-                   "muted red green (1,2]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
-                   
-                   # 3 boundaries
-                   "muted red green (2,3]" = c("#A4E4AF", "#A4E4AF", "#FFFF95", "#E6A2A2"), 
-                   
-                   # >3 boundaries
-                   "muted red green (3,Inf]" = c("#A4E4AF", 
-                                                 colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                    length(boundaries)))
-            )
-      }
+      boundary_color_set_Guest <- 
+         set_boundary_colors(color_set = boundary_color_set_Guest,
+                             boundaries = c(boundaries_Guest, 
+                                            # repeat the last boundary b/c we
+                                            # have curved and straight lines for
+                                            # that one.
+                                            boundaries_Guest[length(boundaries_Guest)]), 
+                             break_type = "SO")
       
    } else {
       # Making sure we have enough colors
@@ -750,21 +575,43 @@ so_graph <- function(PKtable,
       }
    }
    
+   # Will need to figure out what PK parameters are and will need deprettified
+   # names when reshaping and organizing data here and lower in function
+   
+   PKCols <- data.frame(Orig = names(PKtable)) %>% 
+      mutate(Pretty = prettify_column_names(Orig), 
+             Ugly = prettify_column_names(Orig, pretty_or_ugly_cols = "ugly"))
+   
+   # Find all the parameters that were for a user-defined AUC interval and
+   # adjust those.
+   WhichUserInt <- which(str_detect(PKCols$Orig, " for interval from"))
+   UserInt <- PKCols$Orig[WhichUserInt]
+   StartCh <- as.data.frame(str_locate(UserInt, " for interval"))
+   UserInt <- str_sub(UserInt, start = 1, end = StartCh$start - 1)
+   PKCols$Ugly[WhichUserInt] <- UserInt
+   
+   PKCols$IsPK <- PKCols$Ugly %in% c(AllPKParameters$PKparameter, 
+                                     AllPKParameters$PKparameter_nodosenum)
+   
+   if(any(is.na(PKparameters))){
+      PKparameters <- PKCols$Ugly[PKCols$IsPK]
+   }
+   
    # Arranging and tidying input data. First, de-prettifying column names.
    SO <- PKtable %>% 
       mutate(Statistic = as.character(Statistic), 
              Statistic = ifelse(str_detect(Statistic, "^Simulated"),
                                 "Simulated", Statistic))
    
-   SO <- prettify_column_names(SO, 
-                               pretty_or_ugly_cols = "ugly")
+   names(SO) <- PKCols$Ugly
    
    if(is.na(include_dose_num)){
       # Dropping dose number depending on input. First, checking whether they have
       # both dose 1 and last-dose data.
       DoseCheck <- c("first" = any(str_detect(PKparameters, "dose1")), 
+                     "user-defined" = any(str_detect(PKparameters, "dose1|last")), 
                      "last" = any(str_detect(PKparameters, "last")))
-      include_dose_num <- all(DoseCheck)
+      include_dose_num <- length(which(DoseCheck)) > 1
    }
    
    # include_dose_num now should be either T or F no matter what, so checking
@@ -780,19 +627,9 @@ so_graph <- function(PKtable,
       names(SO) <- sub("_dose1|_last", "", names(SO))
    }
    
-   if(all_intervals_together){
-      
-      # FIXME - Just started working on this. This is NOT set up yet. 
-      
-      # For this option, data must be in long format w/ a column for interval.
-      # This will be easiest to manage w/R-friendly column names.
-      TEMP <- prettify_column_names(PKtable, pretty_or_ugly_cols = "ugly") %>% 
-         pivot_longer(cols = any_of(PKparameters), 
-                      names_to = "PKparameter", 
-                      values_to = "Value") %>% 
-         mutate(Interval = str_extract(PKparameter, "last|dose1"), 
-                PKparameter_rev = str_extract(PKparameter, "AUC|Cmax|tmax|CL|HalfLife"))
-   }
+   # Removing additional columns since they mess up pivoting. 
+   SO <- SO[, PKCols %>% filter(IsPK == FALSE | Ugly %in% PKparameters) %>% 
+               pull(Ugly)]
    
    suppressWarnings(
       SO <- SO %>% 
@@ -806,6 +643,22 @@ so_graph <- function(PKtable,
          pivot_wider(names_from = Statistic, values_from = Value) %>% 
          filter(complete.cases(Observed) & PKparameter %in% {{PKparameters}})
    )
+   
+   if(all_intervals_together){
+      
+      # FIXME - Just started working on this. This is NOT set up yet. 
+      
+      # For this option, data must be in long format w/ a column for interval.
+      TEMP <- SO %>% 
+         mutate(Interval = case_when(str_detect(PKparameter, "dose1") ~ "first dose", 
+                                     str_detect(PKparameter, "last") ~ "last dose", 
+                                     PKparameter %in% PKCols$Ugly[
+                                        str_detect(PKCols$Orig, "for interval from")] ~ "user-defined interval", 
+                                     TRUE ~ "applies to all intervals"), 
+                PKparameter_rev = sub("_last|_dose1", "", PKparameter), 
+                point_color_column = Interval, 
+                point_shape_column = Interval)
+   }
    
    # It's possible to have both CLt_dose1 and CLinf_dose1 and they're labeled
    # the same way in PKexpressions. Adjusting for that scenario.
@@ -915,7 +768,7 @@ so_graph <- function(PKtable,
       
    } else {
       # Setting color to black if point_color_column unspecified
-      point__color_set <- "black"
+      point_color_set <- "black"
    }
    
    if(as_label(point_shape_column) != "<empty>"){

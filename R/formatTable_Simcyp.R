@@ -383,6 +383,7 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
+   
    # Setting things up for nonstandard evaluation ----------------------------
    shading_column <- rlang::enquo(shading_column)
    sort_column <- rlang::enquo(sort_column)
@@ -404,6 +405,10 @@ formatTable_Simcyp <- function(DF,
    
    if(prettify_columns){
       DF <- prettify_column_names(DF)
+      PrettyCols <- TRUE # noting whether columns are pretty
+   } else {
+      # Only prettified columns have spaces.
+      PrettyCols <- any(str_detect(names(DF), " "))
    }
    
    # Check for whether there are any DDI columns b/c will add extra header row
@@ -420,19 +425,35 @@ formatTable_Simcyp <- function(DF,
    
    if(AnyDDI){
       
-      PerpRegex <- paste0(" with perpetrator| ratio|_withInhib|_ratio| with ", 
+      # Attempt to figure out the name of the perpetrator(s) if user has not
+      # specified it/them. NB: Retaining duplicates and missing values for
+      # AllPerps_colposition so that the column position of the perpetrator is
+      # retained.
+      AllPerps_colposition <-
+         gsub("with | \\(.*", "", str_extract(OrigNames, "with .*"))
+      AllPerps <- sort(unique(AllPerps_colposition))
+      
+      # This will only work with pretty columns b/c ugly columns will only say
+      # "XXX_withInhib".
+      if(perpetrator_name == "perpetrator" & PrettyCols &
+         any(str_detect(OrigNames, "with perpetrator")) == FALSE){
+         # This is when there is a perpetrator but they haven't specified the
+         # name. Check whether there are multiple columns with the string "with
+         # XXX". If there is only one value for XXX, then use that as
+         # perpetrator_name.
+         if(length(AllPerps) == 1){
+            prepetrator_name <- AllPerps
+         } else {
+            perpetrator_name <- "perpetrator"
+         }
+      }
+      
+      PerpRegex <- paste0(" with .* \\(| ratio|_withInhib|_ratio| with ", 
                           perpetrator_name)
       
-      DDIRegex <- c(AllPKParameters$PrettifiedNames[
-         AllPKParameters$AppliesOnlyWhenPerpPresent == TRUE], 
-         AllPKParameters$PrettifiedNames_nodosenum[
-            AllPKParameters$AppliesOnlyWhenPerpPresent == TRUE])
-      DDIRegex <- unique(str_trim(sub("\\(.*\\)", "", DDIRegex)))
-      DDIRegex <- sub("perpetrator", perpetrator_name, DDIRegex)
-      DDIRegex <- str_c(DDIRegex, collapse = "|")
-      
       DDIcols <- which(sapply(names(DF), 
-                              FUN = function(x){str_detect(x, DDIRegex)}))
+                              FUN = function(x){
+                                 str_detect(x, PerpRegex)}))
       BLcols <- setdiff(PKCols, DDIcols)
       
       RatioCols <- intersect(which(str_detect(OrigNames, "ratio")), 
@@ -441,12 +462,15 @@ formatTable_Simcyp <- function(DF,
       
       TopRowValues <- OrigNames
       TopRowValues[BLcols] <- "Baseline"
-      TopRowValues[DDIcols] <- paste("With", perpetrator_name)
+      TopRowValues[DDIcols] <- paste("With", AllPerps_colposition[
+         complete.cases(AllPerps_colposition)])
       TopRowValues[RatioCols] <- "GMR"
       
       FT <- FT %>% 
          flextable::delete_part(part = "header") %>% 
-         flextable::add_header_row(values = sub(PerpRegex, "", OrigNames)) %>% 
+         flextable::add_header_row(
+            values = sub(str_c(paste(" with", AllPerps), collapse = "|"),
+                         "", OrigNames)) %>% 
          flextable::add_header_row(values = TopRowValues) %>%  
          flextable::merge_h(part = "header") %>% 
          flextable::merge_v(part = "header")
@@ -838,8 +862,7 @@ formatTable_Simcyp <- function(DF,
       flextable::set_table_properties(width = 1, layout = "autofit")
    
    # Dealing with subscripts
-   ColNames <- sub(PerpRegex, "", OrigNames)
-   ColNames <- sub("AUCt( |$)", "AUC~t~ ", ColNames)
+   ColNames <- sub("AUCt( |$)", "AUC~t~ ", OrigNames)
    ColNames <- sub("AUCinf( |$)", "AUC~inf~ ", ColNames)
    ColNames <- sub("AUCt$", "AUC~t~", ColNames)
    ColNames <- sub("AUCtau", "AUC~tau~", ColNames)

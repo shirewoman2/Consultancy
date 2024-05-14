@@ -246,15 +246,15 @@
 #'   want to have nicely rounded and formatted output in a Word file but you
 #'   \emph{also} want to use the results from \code{pksummary_mult} to make
 #'   forest plots, which requires numbers that are \emph{not} rounded.}}
-#' @param adjust_conc_units Would you like to adjust the units to something
+#' @param convert_conc_units Would you like to convert the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
-#'   will attempt to adjust the units to match that. This only adjusts only the
+#'   will attempt to convert the units to match that. This only adjusts only the
 #'   simulated values, since we're assuming that that's the most likely problem
 #'   and that observed units are relatively easy to fix, and it also only
 #'   affects AUC and Cmax values. Acceptable input is any concentration unit
-#'   listed in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
-#'   "ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
+#'   listed in the Excel form for PE data entry, e.g. \code{convert_conc_units =
+#'   "ng/mL"} or \code{convert_conc_units = "uM"}. Molar concentrations will be
 #'   automatically converted using the molecular weight of whatever you set for
 #'   \code{compoundToExtract}.
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
@@ -376,7 +376,7 @@ pksummary_mult <- function(sim_data_files = NA,
                            includeTrialMeans = FALSE, 
                            concatVariability = FALSE, 
                            variability_format = "to",
-                           adjust_conc_units = NA, 
+                           convert_conc_units = NA, 
                            include_dose_num = NA,
                            add_header_for_DDI = TRUE, 
                            rounding = NA,
@@ -390,7 +390,8 @@ pksummary_mult <- function(sim_data_files = NA,
                            single_table = FALSE,
                            page_orientation = "portrait", 
                            fontsize = 11, 
-                           ...){
+                           ..., 
+                           adjust_conc_units = NA){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -435,7 +436,7 @@ pksummary_mult <- function(sim_data_files = NA,
    # Kahina requested that we give a warning that you don't need to specify the
    # sheet if it's for standard dose 1 or last dose PK.
    if(all(complete.cases(sheet_PKparameters)) & 
-      all(str_detect(PKparameters, "_dose1|_last"))){
+      (all(str_detect(PKparameters, "_dose1|_last")))){
       warning("You requested a specific sheet for extracting PK parameters; just fyi, you only need to specify the sheet if it's for a custom AUC interval.\n", 
               call. = FALSE)
    }
@@ -482,6 +483,21 @@ pksummary_mult <- function(sim_data_files = NA,
               call. = FALSE)
       includeConfInt <- TRUE
    }
+   
+   page_orientation <- tolower(page_orientation)[1]
+   if(page_orientation %in% c("portrait", "landscape") == FALSE){
+      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+   }
+   
+   if(any(complete.cases(adjust_conc_units)) & 
+      all(is.na(convert_conc_units))){
+      warning("You have used the argument `adjust_conc_units` to specify which concentration units to use, and we'll be deprecating this argument in favor of the (hopefully more clearly named) argument `convert_conc_units`. Next time, please use the argument `convert_conc_units`.\n", 
+              call. = FALSE)
+      
+      convert_conc_units <- adjust_conc_units
+   }
+   
    
    # Main body of function --------------------------------------------------
    
@@ -616,7 +632,7 @@ pksummary_mult <- function(sim_data_files = NA,
       # Now error catching for either long or wide obs data
       
       # If user has not included "xlsx" in file name, add that.
-      if(any(str_detect(observed_PKDF$File, "xlsx$") == FALSE, na.rm = T)){
+      if(any(str_detect(observed_PKDF$File, "xlsx$"), na.rm = T) == FALSE){
          observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)] <-
             paste0(observed_PKDF$File[which(str_detect(observed_PKDF$File, "xlsx$") == FALSE)], 
                    ".xlsx")
@@ -804,7 +820,7 @@ pksummary_mult <- function(sim_data_files = NA,
                   variability_format = variability_format,
                   include_dose_num = TRUE, # will remove later if needed but we need this for some of the table heading info
                   rounding = rounding,
-                  adjust_conc_units = adjust_conc_units,
+                  convert_conc_units = convert_conc_units,
                   prettify_columns = prettify_columns, 
                   extract_forest_data = extract_forest_data,
                   checkDataSource = checkDataSource,
@@ -959,6 +975,40 @@ pksummary_mult <- function(sim_data_files = NA,
                 by = c("File", "CompoundID")) %>% 
       relocate(c(Compound, CompoundID, Tissue, File), .after = last_col())
    
+   # setting levels for PK parameters so that they're in a nice order. 
+   PKlevels <- switch(PKorder, 
+                      
+                      # the default scenario
+                      "default" =
+                         bind_rows(AllPKParameters, 
+                                   AllPKParameters %>% 
+                                      mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
+                                             SortOrder = SortOrder + 25)) %>% # This should work based on how I've got the SortOrder set up in AllPKParameters.
+                         select(PKparameter, SortOrder) %>% 
+                         arrange(SortOrder) %>%
+                         pull(PKparameter) %>% unique(), 
+                      
+                      # user wants a specific order but using default tabs
+                      "user specified" = PKparameters)
+   
+   ColOrder <- prettify_column_names(MyPKResults, pretty_or_ugly_cols = "ugly")
+   ColOrder <- data.frame(Orig = names(MyPKResults), 
+                          Ugly = names(ColOrder)) %>% 
+      mutate(Ugly = factor(Ugly, levels = PKlevels)) %>% 
+      filter(complete.cases(Ugly)) %>% # this removes column names that aren't PK parameters
+      arrange(Ugly)
+   
+   MyPKResults <- MyPKResults %>% 
+      select(any_of(c("Statistic", ColOrder$Orig, "CompoundID",
+                                  "Compound", "Tissue", "File")), 
+             # Adding "everything" here b/c, if we've got mismatches for column
+             # names due to unit differences after running
+             # prettify_column_names, that could conceivably remove those
+             # columns. It would be best to retain them and just have them be in
+             # the wrong place. That would make column order problems easier to
+             # diagnose in the future.
+             everything()) 
+   
    if(is.na(include_dose_num)){
       # Dropping dose number depending on input. First, checking whether they have
       # both dose 1 and last-dose data.
@@ -975,7 +1025,7 @@ pksummary_mult <- function(sim_data_files = NA,
          # check whether we have prettified column names where some are 1st or
          # last dose and some are for a user-specified interval
          (any(str_detect(unique(PKpulled$PKpulled), "Dose 1|Last dose")) &
-         any(str_detect(unique(PKpulled$PKpulled), "for interval")))){
+          any(str_detect(unique(PKpulled$PKpulled), "for interval")))){
          DoseCheck <- TRUE
       }
       

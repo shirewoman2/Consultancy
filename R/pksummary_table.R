@@ -284,15 +284,15 @@
 #'   want to have nicely rounded and formatted output in a Word file but you
 #'   \emph{also} want to use the results from \code{pksummary_table} to make
 #'   forest plots, which requires numbers that are \emph{not} rounded.}}
-#' @param adjust_conc_units Would you like to adjust the units to something
+#' @param convert_conc_units Would you like to convert the units to something
 #'   other than what was used in the simulation? Default is NA to leave the
 #'   units as is, but if you set the concentration units to something else, this
-#'   will attempt to adjust the units to match that. This only adjusts only the
+#'   will attempt to convert the units to match that. This only adjusts only the
 #'   simulated values, since we're assuming that that's the most likely problem
 #'   and that observed units are relatively easy to fix, and it also only
 #'   affects AUC and Cmax values. Acceptable input is any concentration unit
-#'   listed in the Excel form for PE data entry, e.g. \code{adjust_conc_units =
-#'   "ng/mL"} or \code{adjust_conc_units = "uM"}. Molar concentrations will be
+#'   listed in the Excel form for PE data entry, e.g. \code{convert_conc_units =
+#'   "ng/mL"} or \code{convert_conc_units = "uM"}. Molar concentrations will be
 #'   automatically converted using the molecular weight of whatever you set for
 #'   \code{compoundToExtract}.
 #' @param prettify_columns TRUE (default) or FALSE for whether to make easily
@@ -449,7 +449,7 @@ pksummary_table <- function(sim_data_file = NA,
                             includeTrialMeans = FALSE,
                             concatVariability = FALSE,
                             variability_format = "to",
-                            adjust_conc_units = NA,
+                            convert_conc_units = NA,
                             include_dose_num = NA,
                             add_header_for_DDI = TRUE, 
                             rounding = NA,
@@ -463,7 +463,8 @@ pksummary_table <- function(sim_data_file = NA,
                             highlight_so_colors = "yellow to red",
                             save_table = NA, 
                             page_orientation = "portrait", 
-                            fontsize = 11){
+                            fontsize = 11, 
+                            adjust_conc_units = NA){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -584,6 +585,19 @@ pksummary_table <- function(sim_data_file = NA,
       mean_type <- "geometric"
    }
    
+   page_orientation <- tolower(page_orientation)[1]
+   if(page_orientation %in% c("portrait", "landscape") == FALSE){
+      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+   }
+   
+   if(any(complete.cases(adjust_conc_units)) & 
+      all(is.na(convert_conc_units))){
+      warning("You have used the argument `adjust_conc_units` to specify which concentration units to use, and we'll be deprecating this argument in favor of the (hopefully more clearly named) argument `convert_conc_units`. Next time, please use the argument `convert_conc_units`.\n", 
+              call. = FALSE)
+      
+      convert_conc_units <- adjust_conc_units
+   }
    
    # Main body of function -----------------------------------------------------
    
@@ -666,10 +680,16 @@ pksummary_table <- function(sim_data_file = NA,
    MyObsPK <- get_obs_PK(observed_PK, mean_type, use_median_for_tmax, 
                          sim_data_file, PKparameters)
    
-   # Make sure any observed PK parameters are included in the PK to extract and
-   # make sure that PK names are all nice and harmonized.
-   PKparameters <- harmonize_PK_names(sort(unique(union(PKparameters, 
-                                                        MyObsPK$PKparameter))))
+   # If they left PKparameters as NA, make sure any observed PK parameters are
+   # included in the PK to extract. If they specified something for
+   # PKparameters, then ONLY return those PK data. Make sure that PK names
+   # are all nice and harmonized.
+   if(all(is.na(PKparameters))){
+      PKparameters <- harmonize_PK_names(sort(unique(union(PKparameters, 
+                                                           MyObsPK$PKparameter))))
+   } else {
+      PKparameters <- harmonize_PK_names(sort(unique(PKparameters)))
+   }
    # If they didn't supply anything for PKparameters, sheet_PKparameters, or
    # observed_PK, then this will be empty. Need this to be NA instead. 
    if(length(PKparameters) == 0){PKparameters <- NA}
@@ -761,12 +781,8 @@ pksummary_table <- function(sim_data_file = NA,
       } else if(TabSpecification == 2){
          MyObsPK$Tab <- NULL
       } else if(TabSpecification == 3){
-         # Use the tab listed in the obs data.
-         suppressMessages(
-            sheet_PKparameters <- sheet_PKparameters %>% 
-            select(-Tab) %>% 
-            left_join(MyObsPK)
-         )
+         # Need to delete tab column b/c it will be all NA
+         sheet_PKparameters$Tab <- NULL
       }
    } else {
       sheet_PKparameters <- data.frame(PKparameter = NA)
@@ -790,7 +806,8 @@ pksummary_table <- function(sim_data_file = NA,
                          PKparameter = PKparameters) %>% 
          full_join(sheet_PKparameters, by = "PKparameter") %>% 
          full_join(MyObsPK) %>% 
-         filter(complete.cases(PKparameter))
+         filter(complete.cases(PKparameter) & 
+                   PKparameter %in% PKparameters)
    ) # If user left PKparameters as NA, MyPK has 0 rows. 
    
    # Need to have columns of NA values for Tab, Value, PKparameter.
@@ -1126,29 +1143,29 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    # Changing units if user wants. 
-   if(complete.cases(adjust_conc_units) & is.na(Deets$Units_Cmax)){
-      warning("You requested that we adjust the concentration units, but we can't find what units were used in your simulation. (This is often the case for Discovery simulations in particular.) We won't be able to adjust the concentration units.\n", 
+   if(complete.cases(convert_conc_units) & is.na(Deets$Units_Cmax)){
+      warning("You requested that we convert the concentration units, but we can't find what units were used in your simulation. (This is often the case for Discovery simulations in particular.) We won't be able to convert the concentration units.\n", 
               call. = FALSE)
-      adjust_conc_units <- NA
+      convert_conc_units <- NA
    }
    
-   if(complete.cases(adjust_conc_units)){
+   if(complete.cases(convert_conc_units)){
       # Only adjusting AUC and Cmax values and not adjusting time portion of
       # units -- only conc.
-      if(Deets$Units_Cmax != adjust_conc_units){
+      if(Deets$Units_Cmax != convert_conc_units){
          ColsToChange <- names(MyPKResults_all$aggregate)[
             intersect(which(str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax|Cmin")), 
                       which(!str_detect(names(MyPKResults_all$aggregate), "ratio")))
          ]
          
          for(i in ColsToChange){
-            TEMP <- adjust_units(
+            TEMP <- convert_units(
                MyPKResults_all$aggregate %>% 
                   rename(Conc = i) %>% 
                   mutate(CompoundID = compoundToExtract, 
                          Conc_units = Deets$Units_Cmax, 
                          Time = 1, Time_units = "hours"),
-               DF_with_good_units = list("Conc_units" = adjust_conc_units, 
+               DF_with_good_units = list("Conc_units" = convert_conc_units, 
                                          "Time_units" = "hours"), 
                MW = c(compoundToExtract = 
                          switch(compoundToExtract, 
@@ -1164,13 +1181,13 @@ pksummary_table <- function(sim_data_file = NA,
             rm(TEMP)
             
             if("individual" %in% names(MyPKResults_all)){
-               TEMP <- adjust_units(
+               TEMP <- convert_units(
                   MyPKResults_all$individual %>% 
                      rename(Conc = i) %>% 
                      mutate(CompoundID = compoundToExtract, 
                             Conc_units = Deets$Units_Cmax, 
                             Time = 1, Time_units = "hours"),
-                  DF_with_good_units = list("Conc_units" = adjust_conc_units, 
+                  DF_with_good_units = list("Conc_units" = convert_conc_units, 
                                             "Time_units" = "hours"), 
                   MW = c(compoundToExtract = 
                             switch(compoundToExtract, 
@@ -1187,8 +1204,8 @@ pksummary_table <- function(sim_data_file = NA,
          }
          
          # Need to change units in Deets now to match.
-         Deets$Units_AUC <- sub(Deets$Units_Cmax, adjust_conc_units, Deets$Units_AUC)
-         Deets$Units_Cmax <- adjust_conc_units
+         Deets$Units_AUC <- sub(Deets$Units_Cmax, convert_conc_units, Deets$Units_AUC)
+         Deets$Units_Cmax <- convert_conc_units
       }
    }
    
@@ -1480,6 +1497,7 @@ pksummary_table <- function(sim_data_file = NA,
       
       suppressMessages(
          MyPKResults <- MyPKResults %>% 
+            select(-any_of("Tab")) %>% 
             full_join(MyObsPK %>% select(-any_of("BaseNameFile"))) %>% 
             pivot_longer(names_to = "SorO", values_to = "Value", 
                          cols = c(Sim, Obs)) %>% 
@@ -1605,7 +1623,6 @@ pksummary_table <- function(sim_data_file = NA,
                 complete.cases(Value)) %>% pull(PKParam) %>% unique()
    
    MyPKResults <- MyPKResults %>%
-      select(-any_of("Tab")) %>% 
       filter(PKParam %in% GoodPKParam) %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>% 
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
