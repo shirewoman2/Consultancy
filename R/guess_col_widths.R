@@ -84,6 +84,8 @@ guess_col_widths <- function(DF){
    }
    GoodWidths[which(NumWord > 20)] <- 50
    
+   names(GoodWidths) <- names(DF)
+   
    return(GoodWidths)
    
 }
