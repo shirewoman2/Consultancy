@@ -405,6 +405,10 @@ formatTable_Simcyp <- function(DF,
    
    if(prettify_columns){
       DF <- prettify_column_names(DF)
+      PrettyCols <- TRUE # noting whether columns are pretty
+   } else {
+      # Only prettified columns have spaces.
+      PrettyCols <- any(str_detect(names(DF), " "))
    }
    
    # Check for whether there are any DDI columns b/c will add extra header row
@@ -421,7 +425,24 @@ formatTable_Simcyp <- function(DF,
    
    if(AnyDDI){
       
-      PerpRegex <- paste0(" with perpetrator| ratio|_withInhib|_ratio| with ", 
+      # Attempt to figure out the name of the perpetrator if user has not
+      # specified it. This will only work with pretty columns b/c ugly columns
+      # will only say "XXX_withInhib".
+      if(perpetrator_name == "perpetrator" & PrettyCols &
+         any(str_detect(OrigNames, "with perpetrator")) == FALSE){
+         # This is when there is a perpetrator but they haven't specified the
+         # name. Check whether there are multiple columns with the string "with
+         # XXX". If there is only one value for XXX, then use that as
+         # perpetrator_name.
+         perpetrator_name <- sort(unique(
+            gsub("with | \\(.*", "", str_extract(OrigNames, "with .*"))))
+         
+         if(length(perpetrator_name) != 1){
+            perpetrator_name <- "perpetrator"
+         }
+      }
+      
+      PerpRegex <- paste0(" with .* \\(| ratio|_withInhib|_ratio| with ", 
                           perpetrator_name)
       
       DDIRegex <- c(AllPKParameters$PrettifiedNames[
