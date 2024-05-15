@@ -27,6 +27,7 @@ so_graph(
   axis_title_x = "Observed",
   axis_title_y = "Simulated",
   include_dose_num = NA,
+  facet_title_size = NA,
   title_adjustments = c(),
   all_intervals_together = FALSE,
   ncol = NULL,
@@ -82,17 +83,18 @@ option for higher-quality graphics anyway!}
 
 \item{boundaries_Guest}{Numerical boundaries to show on the graph when the PK
 parameter is a mean ratio of the parameter in the presence of a perpetrator
-/ the parameter in the absence of the perpetrator. Please see [BoundariesGuest
-Galetin 2011 Drug Metab Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/)
-for a reference for this type of graph. If you'd rather show straight lines
-for these parameters instead of BoundariesGuest curves, set this to NA. The default
-boundaries for BoundariesGuest curves are 1 (straight line at unity; even if you
-don't include 1, we'll add it back in) and 2. For all numbers > 1, you'll
-get a BoundariesGuest curve that approaches that value at higher DDI ratios, and, for
-the highest number you list, you'll additionally get straight line
-boundaries. This matches what is described in the BoundariesGuest Galetin 2011 paper.
-We recommend using only 1 and 2 as BoundariesGuest boundaries for clarity of the
-graph.}
+/ the parameter in the absence of the perpetrator. Please see
+[BoundariesGuest Galetin 2011 Drug Metab
+Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/) for a reference for this
+type of graph. If you'd rather show straight lines for these parameters
+instead of BoundariesGuest curves, set this to NA. The default boundaries
+for BoundariesGuest curves are 1 (straight line at unity; even if you don't
+include 1, we'll add it back in) and 2. For all numbers > 1, you'll get a
+BoundariesGuest curve that approaches that value at higher DDI ratios, and,
+for the highest number you list, you'll additionally get straight line
+boundaries. This matches what is described in the BoundariesGuest Galetin
+2011 paper. We recommend using only 1 and 2 as BoundariesGuest boundaries
+for clarity of the graph.}
 
 \item{boundary_color_set}{set of colors to use for indicating the X-fold
 boundaries of the simulated / observed ratio. The default is "red black",
@@ -108,12 +110,12 @@ interpretable.}
 
 \item{boundary_color_set_Guest}{set of colors to use for indicating the
 X-fold boundaries of the simulated / observed ratio for DDI ratio graphs.
-The default is "red black", which, for the default BoundariesGuest boundaries,
-results in a black curved line and a red straight line at the 2-fold
-boundary. Other options are "red green", "muted red green" (a lighter, more
-muted red and green that work well for indicating boundaries when you're
-using shading instead of lines), and "black", which will result in only
-black lines or shading. You also can set this to
+The default is "red black", which, for the default BoundariesGuest
+boundaries, results in a black curved line and a red straight line at the
+2-fold boundary. Other options are "red green", "muted red green" (a
+lighter, more muted red and green that work well for indicating boundaries
+when you're using shading instead of lines), and "black", which will result
+in only black lines or shading. You also can set this to
 any set of colors you'd like, e.g., \code{boundary_color_set_Guest = c("yellow",
 "blue")}. The number of colors should equal the number of BoundariesGuest boundaries
 that you've indicated or the graph won't be easily interpretable.}
@@ -246,6 +248,9 @@ which dose it was. If left as the default NA, then the dose number will be
 omitted if all the data are all for dose 1 or all for the last dose, and it
 will be included if you have a mix of dosing intervals.}
 
+\item{facet_title_size}{optionally specify what font size to use for the
+facet titles. If left as NA, a reasonable guess will be used.}
+
 \item{title_adjustments}{a character vector of text adjustments for the
   title. Possible options:
 
@@ -283,8 +288,9 @@ in quotes here, e.g., "My conc time graph.png"}
 
 \item{fig_height}{figure height in inches; default is 8}
 
-\item{axis_titles}{optionally specify what you'd like for the x and y axis
-titles with a named character vector. The default is \code{axis_titles =
+\item{axis_titles}{SOON TO BE DEPRECATED in favor of \code{axis_title_x} and
+\code{axis_title_x}. Optionally specify what you'd like for the x and y
+axis titles with a named character vector. The default is \code{axis_titles =
 c("x" = "Observed", "y" = "Simulated")}}
 }
 \value{

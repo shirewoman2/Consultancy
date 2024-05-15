@@ -216,7 +216,7 @@
 #'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 #'   the default behavior and get exactly what you want.
 #' @param page_orientation set the page orientation for the Word file output to
-#'   "portrait" (default) or "landscape" 
+#'   "portrait" or "landscape" (default) 
 #'
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from
@@ -246,7 +246,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                            checkDataSource = TRUE, 
                            returnExpDetails = FALSE,
                            save_table = NA, 
-                           page_orientation = "portrait", 
+                           page_orientation = "landscape", 
                            fontsize = 11){
    
    # Error catching ----------------------------------------------------------
@@ -301,6 +301,13 @@ calc_PK_ratios <- function(sim_data_file_numerator,
            call. = FALSE)
    }
    
+   page_orientation <- tolower(page_orientation)[1]
+   if(page_orientation %in% c("portrait", "landscape") == FALSE){
+      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+   }
+   
+   
    # Main body of function -------------------------------------------------
    
    ## Extracting PK ---------------------------------------------------------
@@ -323,8 +330,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
       Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
                                                         sim_data_file_denominator), 
-                                      exp_details = "Summary and Input", 
-                                      annotate_output = FALSE)[["MainDetails"]]
+                                      exp_details = "Summary and Input")[["MainDetails"]]
    } else {
       Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
          filter(File %in% c(sim_data_file_numerator, 
@@ -333,8 +339,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       if(nrow(Deets) != 2){
          Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
                                                            sim_data_file_denominator), 
-                                         exp_details = "Summary and Input", 
-                                         annotate_output = FALSE)[["MainDetails"]]
+                                         exp_details = "Summary and Input")[["MainDetails"]]
       }
       
       if(nrow(Deets) != 2){
@@ -524,13 +529,13 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    Comparisons$PKparam_denomREVISED <- Comparisons$PKparam_num
    
    # # RETURN TO THIS. Checking conc units
-   # TEMP <- adjust_units(
+   # TEMP <- convert_units(
    #     PKnumerator$aggregate %>% 
    #         rename(Conc = i) %>% 
    #         mutate(CompoundID = compoundToExtract, 
    #                Conc_units = Deets$Units_Cmax, 
    #                Time = 1, Time_units = "hours"),
-   #     DF_with_good_units = list("Conc_units" = adjust_conc_units, 
+   #     DF_with_good_units = list("Conc_units" = convert_conc_units, 
    #                      "Time_units" = "hours"), 
    #     MW = c(compoundToExtract = 
    #                switch(compoundToExtract, 

@@ -27,7 +27,7 @@ calc_PK_ratios(
   checkDataSource = TRUE,
   returnExpDetails = FALSE,
   save_table = NA,
-  page_orientation = "portrait",
+  page_orientation = "landscape",
   fontsize = 11
 )
 }
@@ -218,7 +218,7 @@ you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
 its own and will have "- QC" added to the end of the file name.}
 
 \item{page_orientation}{set the page orientation for the Word file output to
-"portrait" (default) or "landscape"}
+"portrait" or "landscape" (default)}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}

@@ -543,7 +543,7 @@ extractConcTime <- function(sim_data_file,
                          tissue = tissue, 
                          SimConcUnits = SimConcUnits,
                          SimTimeUnits = SimTimeUnits,
-                         returnAggregateOrIndiv = returnAggregateOrIndiv)
+                         returnAggregateOrIndiv = c("aggregate", "individual"))
          
          if(length(AllPerpsPresent) > 0 & cmpd %in% c("substrate", 
                                                       "primary metabolite 1", 
@@ -563,9 +563,41 @@ extractConcTime <- function(sim_data_file,
                                       tissue = tissue, 
                                       SimConcUnits = SimConcUnits, 
                                       SimTimeUnits = SimTimeUnits,
-                                      returnAggregateOrIndiv = returnAggregateOrIndiv))
+                                      returnAggregateOrIndiv = c("aggregate", "individual")))
          }
+         
+         # Adding trial means. 
+         suppressMessages(
+            sim_data_trial <- sim_data[[cmpd]][[ss]] %>%
+               filter(Trial %in% c("mean", "geomean", "per5", "per95", 
+                                   "per10", "per90", "median") == FALSE) %>%
+               group_by(across(any_of(c("Compound", "CompoundID", "Tissue",
+                                        "Inhibitor", "Simulated", "Trial", 
+                                        "Time", "Time_orig", "subsection_ADAM",
+                                        "Time_units", "Conc_units")))) %>%
+               summarize(Conc_arith = mean(Conc, na.rm = T),
+                         Conc_gm = gm_mean(Conc, na.rm = T),
+                         Conc_med = median(Conc, na.rm = T)) %>%
+               ungroup() %>%
+               pivot_longer(cols = c(Conc_arith, Conc_gm, Conc_med), 
+                            names_to = "MeanType", 
+                            values_to = "Conc") %>% 
+               mutate(TrialOrig = Trial, 
+                      Trial = case_match(MeanType, 
+                                         "Conc_arith" ~ "trial mean", 
+                                         "Conc_gm" ~ "trial geomean", 
+                                         "Conc_med" ~ "trial median"), 
+                      Individual = paste(Trial, TrialOrig)) %>% 
+               select(-TrialOrig, -MeanType)
+         )
+         
+         sim_data[[cmpd]][[ss]] <- bind_rows(sim_data[[cmpd]][[ss]], 
+                                             sim_data_trial)
+         
+         rm(sim_data_trial)
+         
       }
+      
       sim_data[[cmpd]] <- bind_rows(sim_data[[cmpd]])
    }
    
@@ -632,7 +664,7 @@ extractConcTime <- function(sim_data_file,
                   # obs data in that situation.
                   rm(obs_data)
                } else {
-                  warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of a perpetrator. The safer way to include observed data is to supply a separate file for 'obs_data_file'.\n",
+                  warning("This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of a perpetrator. The safer way to include observed data is to supply a separate file for 'obs_data_file'.\n",
                           call. = FALSE)
                   
                   # If subject names include special characters s/a "_", that
@@ -703,7 +735,10 @@ extractConcTime <- function(sim_data_file,
          # If the user did specify an observed data file, read in
          # observed data.
          
-         # FIXME - This is failing sometimes. not sure why. see acoziborole conmeds. 
+         if(obs_data_file == "use existing_exp_details"){
+            obs_data_file <- Deets$ObsOverlayFile
+         }
+         
          obs_data <- extractObsConcTime(obs_data_file) %>%
             mutate(CompoundID = as.character(CompoundID), # Need to include this b/c sometimes it could be a named character vector, which messes up the next step. 
                    Compound = ObsCompounds[CompoundID],
@@ -742,8 +777,8 @@ extractConcTime <- function(sim_data_file,
             
             # As necessary, convert simulated data units to match the
             # observed data
-            sim_data <- adjust_units(DF_to_adjust = sim_data,
-                                     DF_with_good_units = obs_data)
+            sim_data <- convert_units(DF_to_convert = sim_data,
+                                      DF_with_good_units = obs_data)
          }
       }
    }

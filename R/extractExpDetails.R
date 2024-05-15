@@ -59,16 +59,6 @@
 #'   etc. Same thing with requesting interaction parameters (ex:
 #'   "Interaction_inhib" to get all the interaction parameters for inhibitor 1)
 #'   and transporter parameters (ex: "Transport_sub").}}
-#' @param annotate_output TRUE or FALSE (default) on whether to transpose the
-#'   rows and columns in the output, making the output table longer instead of
-#'   wider, and adding columns to the output for a) which compound the
-#'   information pertains to (substrate, inhibitor, etc.), b) which section of
-#'   the Simcyp Simulator this detail is found in (physchem, absorption,
-#'   distribution, etc.), c) notes describing what the detail is, and d) which
-#'   sheet in the Excel file the information was pulled from. Setting this to
-#'   "TRUE" runs the function \code{\link{annotateDetails}} behind the scenes.
-#'   Please see \code{annotateDetails} for further ways to sift through and
-#'   organize this output to find what you need.
 #' @param save_output optionally save the output by supplying a csv or Excel
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
 #'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the
@@ -89,7 +79,6 @@
 #' 
 extractExpDetails <- function(sim_data_file,
                               exp_details = "Summary and Input", 
-                              annotate_output = FALSE, 
                               save_output = NA){
    
    # Error catching ---------------------------------------------------------
@@ -1960,10 +1949,7 @@ extractExpDetails <- function(sim_data_file,
          select(File, everything())
    }
    
-   if(annotate_output){
-      Out <- annotateDetails(Main, 
-                             save_output = save_output)
-   } else if(complete.cases(save_output)){
+   if(complete.cases(save_output)){
       write.csv(Main, FileName, row.names = F)
    }
    

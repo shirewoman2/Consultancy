@@ -1117,14 +1117,14 @@ annotateDetails <- function(existing_exp_details,
                      GroupingDetails, template_sim))), 
                      everything())
                
-               TSim <- paste("TEMPLATE SIMULATION", 
-                             switch(item, 
-                                    "MainDetails" = "",
-                                    "CustomDosing" = "FOR DOSE", 
-                                    "ConcDependent_fup" = "FOR fu,p", 
-                                    "ConcDependent_BP" = "FOR B/P", 
-                                    "pH_dependent_solubility" = "FOR SOLUBILITY"), 
-                             "-", template_sim)
+               TSim <- paste0("TEMPLATE SIMULATION ", 
+                              switch(item, 
+                                     "MainDetails" = "",
+                                     "CustomDosing" = "FOR DOSE ", 
+                                     "ConcDependent_fup" = "FOR fu,p ", 
+                                     "ConcDependent_BP" = "FOR B/P ", 
+                                     "pH_dependent_solubility" = "FOR SOLUBILITY "), 
+                              "- ", template_sim)
                names(DF)[names(DF) == template_sim] <- TSim
                
             } else if("UniqueVal" %in% names(DF)){
@@ -1325,9 +1325,18 @@ annotateDetails <- function(existing_exp_details,
             
             # Setting column widths. Notes should be 40.
             ColWidths <- guess_col_widths(Out[[item]][["DF"]])
-            ColWidths <- ColWidths[ColWidths == "Notes"] <- 40
-            ColWidths <- ColWidths[which(str_detect(names(Out[[item]][["DF"]]),
-                                                    "All files have this value|TEMPLATE"))] <- 25
+            GoodColWidths <- c("SimulatorSection" = 17, 
+                               "Sheet" = 15,
+                               "CompoundID" = 15, 
+                               "Compound" = 15, 
+                               "Notes" = 40, 
+                               "Detail" = 20)
+            GoodColWidths <- GoodColWidths[intersect(names(GoodColWidths), 
+                                                     names(ColWidths))]
+            ColWidths[names(GoodColWidths)] <- GoodColWidths
+            ColWidths[which(str_detect(names(ColWidths),
+                                       "All files have this value|TEMPLATE"))] <- 15
+            ColWidths[which(str_detect(names(ColWidths), "xlsx$|wksz$"))] <- 15
             
             openxlsx::setColWidths(wb = WB, 
                                    sheet = output_tab_name, 
@@ -1404,23 +1413,24 @@ annotateDetails <- function(existing_exp_details,
                                            cols = Out[[item]][["Diffs"]][[i]]$columns)
                      }
                   }
-                  
-                  # Freezing view 
-                  UnfrozCol1 <- which(
-                     str_detect(names(Out[[item]][["DF"]]),
-                                "TEMPLATE|^All files")) + 1
-                  UnfrozCol1 <- UnfrozCol1[1]
-                  # Most of the time, column 8 should be the 1st active column,
-                  # so set that here. Also, the only time we won't have a value
-                  # here is if there was only 1 simulation, so which column is
-                  # frozen isn't that important.
-                  UnfrozCol1 <- ifelse(is.na(UnfrozCol1), 8, UnfrozCol1)
-                  
-                  openxlsx::freezePane(wb = WB,
-                                       sheet = output_tab_name,
-                                       firstActiveRow = 2,
-                                       firstActiveCol =  UnfrozCol1)
                }
+               
+               # Freezing view 
+               UnfrozCol1 <- which(
+                  str_detect(names(Out[[item]][["DF"]]),
+                             "TEMPLATE|^All files")) + 1
+               UnfrozCol1 <- UnfrozCol1[1]
+               # Most of the time, column 8 should be the 1st active column,
+               # so set that here. Also, the only time we won't have a value
+               # here is if there was only 1 simulation, so which column is
+               # frozen isn't that important.
+               UnfrozCol1 <- ifelse(is.na(UnfrozCol1), 8, UnfrozCol1)
+               
+               openxlsx::freezePane(wb = WB,
+                                    sheet = output_tab_name,
+                                    firstActiveRow = 2,
+                                    firstActiveCol =  UnfrozCol1)
+               
             } else {
                # Adding frozen top row for dissolution and release profiles.
                openxlsx::freezePane(wb = WB,
@@ -1673,30 +1683,6 @@ annotateDetails <- function(existing_exp_details,
          }
       } # end subfun for saving xlsx
       
-      # Determining which items we need to save. Write everything when they have
-      # not done any filtering by detail_set, simulator_section, or
-      # find_matching_details.
-      
-      # Actually, just use Out. We've already filtered OR NOT filtered as needed. 
-      # if(any(complete.cases(c(simulator_section, 
-      #                         find_matching_details))) == FALSE &
-      #    (any(complete.cases(detail_set)) & any(detail_set == "all"))){
-      #    
-      #    ToWrite <-  
-      #       names(Out)[sapply(map(Out, "DF"), 
-      #                         function(x) is.null(x) == FALSE &&
-      #                            nrow(x) > 0)]
-      #    
-      #    if(output_tab_name == "Simulation experimental details"){
-      #       OutputTabs <- ToWrite
-      #       names(OutputTabs) <- ToWrite
-      #       OutputTabs["MainDetails"] <- output_tab_name
-      #    } else {
-      #       OutputTabs <- paste0(output_tab_name, "-", ToWrite)
-      #       names(OutputTabs) <- ToWrite
-      #    }
-      #    
-      # } else {
       GoodItems <- as.logical(
          map(Out, function(x){is.null(x) == FALSE && nrow(x$DF) > 0}))
       ToWrite <- intersect(names(Out)[which(GoodItems)], 
@@ -1729,11 +1715,19 @@ annotateDetails <- function(existing_exp_details,
       
    }
    
-   if(return_list){
-      Out <- existing_exp_details
-      Out$MainDetails <- MainDetails
+   # If they didn't include "MainDetails", then they get a list even if that's
+   # not what they wanted.
+   if(return_list | "MainDetails" %in% names(Out) == FALSE){
+      
+      for(i in names(Out)){
+         if(length(Out[[i]]) == 0){
+            Out[[i]] <- NULL 
+         } else if(length(Out[[i]]) > 1){
+            Out[[i]] <- Out[[i]][["DF"]]
+         }
+      }
    } else {
-      Out <- MainDetails
+      Out <- Out[["MainDetails"]][["DF"]]
    }
    
    return(Out)

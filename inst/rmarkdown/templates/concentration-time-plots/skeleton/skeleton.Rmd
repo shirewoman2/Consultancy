@@ -128,7 +128,7 @@ if(qc_graph){
 ObsIncluded <- nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0
 ObsShowsMean <- all(c(exists("obs_dataframe", inherits = FALSE), 
                       exists("check", inherits = FALSE))) &&
-   nrow(obs_dataframe) > 0 && any(check$N > 1)
+   nrow(obs_dataframe) > 0 && all(check$N == 1)
 
 if(DDI){
    
@@ -166,7 +166,8 @@ if(DDI){
                            paste0(mean_type, 
                                   " mean of n = ", N_subjpertrial, 
                                   " individuals; "), 
-                           ""),
+                           paste0(" n = ", N_subjpertrial, 
+                                  " individuals; ")),
                     "Clinical Study **XXX**) "),
              "simulated "), 
       MyTissue, " concentration-time profiles of ", 

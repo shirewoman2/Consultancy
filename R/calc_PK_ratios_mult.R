@@ -230,7 +230,7 @@
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #' @param page_orientation set the page orientation for the Word file output to
-#'   "portrait" (default) or "landscape" 
+#'   "portrait" or "landscape" (default) 
 #'
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from and data to use for making forest plots
@@ -287,6 +287,12 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    # Standardizing input for when they want to specify PK parameters with "/".
    # Making sure they always have a space.
    PKparameters <- sub("( )?/( )?", " / ", PKparameters)
+   
+   page_orientation <- tolower(page_orientation)[1]
+   if(page_orientation %in% c("portrait", "landscape") == FALSE){
+      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+   }
    
    
    # Main body of function -------------------------------------------------

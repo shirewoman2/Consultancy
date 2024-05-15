@@ -466,20 +466,22 @@ formatTable_Simcyp <- function(DF,
          complete.cases(AllPerps_colposition)])
       TopRowValues[RatioCols] <- "GMR"
       
+      NewNames <- sub(str_c(paste(" with", AllPerps), collapse = "|"),
+                      "", OrigNames)
       FT <- FT %>% 
          flextable::delete_part(part = "header") %>% 
          flextable::add_header_row(
-            values = sub(str_c(paste(" with", AllPerps), collapse = "|"),
-                         "", OrigNames)) %>% 
+            values = NewNames) %>% 
          flextable::add_header_row(values = TopRowValues) %>%  
          flextable::merge_h(part = "header") %>% 
          flextable::merge_v(part = "header")
       
    } else {
       PerpRegex <- ""
+      NewNames <- OrigNames
    }
    
-   # Optionally making things bold face ---------------------------------------
+   ## Optionally making things bold face ---------------------------------------
    if(any(sapply(bold_cells, complete.cases))){
       for(cells in 1:length(bold_cells)){
          
@@ -513,7 +515,7 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
-   # center the header row, bg white -----------------------------------------
+   ## center the header row, bg white -----------------------------------------
    FT <- FT %>% 
       flextable::align(align = "center", part = "header") %>% 
       
@@ -533,7 +535,7 @@ formatTable_Simcyp <- function(DF,
                                      "FALSE TRUE" = 2:ncol(DF)))
    }
    
-   # Optionally including shading whenever the shading column changes ------------
+   ## Optionally including shading whenever the shading column changes ------------
    if(as_label(shading_column) != "<empty>"){
       
       ShadeCol <- DF %>% pull(!!shading_column)
@@ -862,7 +864,7 @@ formatTable_Simcyp <- function(DF,
       flextable::set_table_properties(width = 1, layout = "autofit")
    
    # Dealing with subscripts
-   ColNames <- sub("AUCt( |$)", "AUC~t~ ", OrigNames)
+   ColNames <- sub("AUCt( |$)", "AUC~t~ ", NewNames)
    ColNames <- sub("AUCinf( |$)", "AUC~inf~ ", ColNames)
    ColNames <- sub("AUCt$", "AUC~t~", ColNames)
    ColNames <- sub("AUCtau", "AUC~tau~", ColNames)

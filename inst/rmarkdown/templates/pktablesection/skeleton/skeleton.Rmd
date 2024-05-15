@@ -36,9 +36,11 @@ if(FromCalcPKRatios){
    
    PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
    if(any(str_detect(PKpulled_i, " "), na.rm = T)){
-      PKpulled_i <- data.frame(PrettifiedNames = PKpulled_i) %>% 
-         left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames)) %>% 
-         pull(PKparameter) %>% unique()
+      PKpulled_i <- setdiff(
+         names(prettify_column_names(MyPKResults[[i]],
+                                     pretty_or_ugly_cols = "ugly")), 
+         c("CompoundID", "Compound", "Tissue", "File", "Statistic"))
+      
    } 
    
    MyAnnotations <- make_table_annotations(
@@ -86,7 +88,7 @@ if(include_dose_num_i == FALSE){
 
 TempTable <- MyPKResults[[i]] %>% ungroup() %>% 
    purrr::discard(~all(is.na(.))) %>% 
-   select(-any_of(c("CompoundID", "Tissue", "File")))
+   select(-any_of(c("CompoundID", "Tissue", "File", "Compound")))
 names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
 
 formatTable_Simcyp(TempTable,

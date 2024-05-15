@@ -46,7 +46,7 @@ Text2 <- switch(PlotType,
 ```
 
 
-*Figure XXX. `r Text1` `r Text2`*
+***Figure XXX.*** *`r Text1` `r Text2`*
 
 ```{r ctplotmult, fig.width = fig_width, fig.height = fig_height}
 
@@ -66,7 +66,7 @@ CapText1 <-
    switch(paste(ifelse(InhibPresent, "InhibPresent", "NoInhibPresent"), 
                 PlotType), 
           "NoInhibPresent CTPlot" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                                           "simulated and observed data (circles; mean of n = XXX individuals; Clinical Study XXX)", 
+                                           "simulated and observed data (circles; mean of n =* ***XXX*** *individuals; ***Clinical Study ***XXX*** *)", 
                                            "simulated data"), 
           
           "NoInhibPresent EnzPlot" = "simulated data", 
@@ -77,7 +77,7 @@ CapText1 <-
           
           "InhibPresent CTPlot" = paste0(
              ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                    "simulated and observed (circles; mean of n = XXX individuals; Clinical Study XXX)", 
+                    "simulated and observed (circles; mean of n =* ***XXX*** *individuals; Clinical Study ***XXX*** *)", 
                     ""), 
              " plasma concentration-time profiles of ",
              str_comma(prettify_compound_name(
@@ -95,7 +95,7 @@ CapText1 <-
              str_comma(prettify_compound_name(
                 unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
                 conjunction = "or"), 
-             " (solid line) and on the XXXth day of XXX days of dosing of ", 
+             " (solid line) and on the* ***XXX^th^*** *day of* ***XXX*** *days of dosing of ", 
              str_comma(prettify_compound_name(
                 unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
                 conjunction = "or"),
@@ -103,7 +103,7 @@ CapText1 <-
           
           "InhibPresent EnzPlot" = paste0(
              ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                    "simulated and observed (circles; mean of n = XXX individuals; Clinical Study XXX)", 
+                    "simulated and observed (circles; mean of n =* ***XXX*** *individuals; Clinical Study* ***XXX****)", 
                     ""), 
              "simulated enzyme-abundance profiles of ",
              str_comma(unique(ct_dataframe$Enzyme), conjunction = "or"), 
@@ -111,7 +111,7 @@ CapText1 <-
              str_comma(prettify_compound_name(
                 unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
                 conjunction = "or"), 
-             " (solid line) and on the XXXth day of XXX days of dosing of ", 
+             " (solid line) and on the* ***XXX^th^*** *day of* ***XXX*** *days of dosing of ", 
              str_comma(prettify_compound_name(
                 unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
                 conjunction = "or"),
@@ -123,25 +123,25 @@ CapText2 <- switch(figure_type,
                                          mean_type, 
                                          "mean values of simulated individual trials and the darker lines portray the",
                                          mean_type, 
-                                         "mean data of the simulated population (n = XXX)"), 
-                   "percentiles" = paste("The lighter lines represent the 5th and 95th percentiles and the darker lines the",
+                                         "mean data of the simulated population (n =* ***XXX****)"), 
+                   "percentiles" = paste("The lighter lines represent the 5^th^ and 95^th^ percentiles and the darker lines the",
                                          mean_type, 
-                                         "mean data for the simulated population (n = XXX)"), 
+                                         "mean data for the simulated population (n =* ***XXX****)"), 
                    "percentile ribbon" = ifelse(ReleaseProfPlot, 
                                                 "The line(s) represent(s) the arithmetic mean, and the shaded regions represent the mean plus or minus the standard deviation", 
-                                                paste("The shaded regions represent the 5th to the 95th percentiles and the darker lines the",
+                                                paste("The shaded regions represent the 5^th^ to the 95^th^ percentiles and the darker lines the",
                                                       mean_type, 
-                                                      "mean data for the simulated population (n = XXX)")), 
+                                                      "mean data for the simulated population (n =* ***XXX****)")), 
                    "means only" = ifelse(ReleaseProfPlot, 
                                          "The lines represent the arithmetic mean", 
                                          paste("The lines represent the",
                                                mean_type, 
-                                               "mean data for the simulated population (n = XXX)")), 
+                                               "mean data for the simulated population (n =* ***XXX****)")), 
                    "Freddy" = paste("The lighter lines represent",
                                     mean_type, 
                                     "mean values of simulated individual trials and the darker lines portray the",
                                     mean_type, 
-                                    "mean data of the simulated population (n = XXX). The dashed lines represent the 5th and 95th percentiles"))
+                                    "mean data of the simulated population (n =* ***XXX****). The dashed lines represent the 5^th^ and 95^th^ percentiles"))
 
 ```
 

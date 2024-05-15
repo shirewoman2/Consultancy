@@ -522,15 +522,74 @@ pksummary_mult <- function(sim_data_files = NA,
    if(class(observed_PK)[1] == "character"){
       observed_PKDF <- switch(str_extract(observed_PK, "csv|xlsx"), 
                               "csv" = read.csv(observed_PK, na.strings = "NA"), 
-                              "xlsx" = xlsx::read.xlsx(observed_PK, 
-                                                       sheetName = "observed PK"))
-      # If there's anything named anything like "File", use that for the
-      # "File" column. This is useful to deal with capitalization mismatches
-      # and also because, if the user saves the file as certain kinds of csv
-      # files, R has trouble importing and will add extra symbols to the 1st
-      # column name.
-      names(observed_PKDF)[str_detect(tolower(names(observed_PKDF)), "file")][1] <- 
-         "File"
+                              "xlsx" = readxl::read_xlsx(observed_PK, 
+                                                         sheet = "observed PK"))
+      
+      # Check obs data format to make sure it matches template file.
+      if(all(c("Cohort ID", 
+               "Compound PK pertain to",
+               "Tissue", 
+               "Tab to get data from for a user-defined AUC interval", 
+               "Concentration units",
+               "AUC interval",
+               "PK parameter", 
+               "Aggregate value", 
+               "Variability value", 
+               "Summary statistic used for the aggregate value", 
+               "Summary statistic used for the variability", 
+               "PK parameter with dose number when applicable", 
+               "PK parameter for R code",
+               "Validation check - good PK value", 
+               "Validation check - tab", 
+               "Input validation check", 
+               "QC initials", 
+               "QC date", 
+               "Simulation file",
+               "Notes") %in% names(observed_PKDF))){
+         
+         observed_PKDF <- observed_PKDF %>% 
+            rename(CompoundID = `Compound PK pertain to`, 
+                   CohortID = `Cohort ID`, 
+                   Value = `Aggregate value`, 
+                   CV = `Variability value`, 
+                   # MeanType = `Summary statistic used for the aggregate value`, # <--- Not using these for now other than for QCing. 
+                   # VarType = `Summary statistic used for the variability`, 
+                   PKparameter = `PK parameter for R code`, 
+                   File = `Simulation file`, 
+                   Tab = `Tab to get data from for a user-defined AUC interval`) %>% 
+            select(File, Tab, CohortID, Tissue, CompoundID, 
+                   PKparameter, Value, CV)
+         
+         # Dealing w/possibly multiple files for the same cohort since user may
+         # be making multiple comparisons. 
+         suppressWarnings(
+            Expand <- observed_PKDF %>% 
+               select(CohortID, CompoundID, Tissue, File) %>% 
+               mutate(File = str_split(File, pattern = ",( )?")) %>% 
+               unnest(File) %>% 
+               filter(complete.cases(File))
+         )
+         
+         observed_PKDF <- observed_PKDF %>% 
+            select(-File) %>% unique() %>% 
+            left_join(Expand, 
+                      by = c("CohortID", "Tissue", "CompoundID"),
+                      relationship = "many-to-many") %>% 
+            unique()
+         
+      } else {
+         
+         # If there's anything named anything like "File", use that for the
+         # "File" column. This is useful to deal with capitalization mismatches
+         # and also because, if the user saves the file as certain kinds of csv
+         # files, R has trouble importing and will add extra symbols to the 1st
+         # column name.
+         names(observed_PKDF)[str_detect(tolower(names(observed_PKDF)), "file")][1] <- 
+            "File"
+         
+         # FIXME - add whatever is needed to harmonize old format
+         
+      }
       
       # If they supplied a specific set of sims to extract, then ignore any
       # extras, even if they're in observed PK
@@ -659,11 +718,6 @@ pksummary_mult <- function(sim_data_files = NA,
          observed_PKDF$Tissue <- sort(unique(tissues))
       }
    }
-   
-   # If user has not included "xlsx" in file name, add that.
-   sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE] <-
-      paste0(sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE], 
-             ".xlsx")
    
    # Making sure that we're only extracting each file once
    sim_data_files <- unique(sim_data_files)
@@ -1000,7 +1054,7 @@ pksummary_mult <- function(sim_data_files = NA,
    
    MyPKResults <- MyPKResults %>% 
       select(any_of(c("Statistic", ColOrder$Orig, "CompoundID",
-                                  "Compound", "Tissue", "File")), 
+                      "Compound", "Tissue", "File")), 
              # Adding "everything" here b/c, if we've got mismatches for column
              # names due to unit differences after running
              # prettify_column_names, that could conceivably remove those

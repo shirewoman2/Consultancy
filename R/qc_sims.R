@@ -90,9 +90,9 @@ qc_sims <- function(existing_exp_details,
                                      detail_set = "Simcyp inputs", 
                                      show_compound_col = "concatenate",
                                      omit_all_missing = TRUE, 
-                                     save_output = NA) %>% 
-            select(Detail, matches("All files|xlsx"))
+                                     save_output = NA)
       )
+      Out[[i]] <- Out[[i]] %>% select(Detail, matches("All files|xlsx"))
    }
    
    # Changing the order to be just alphabetical by detail name since that's all

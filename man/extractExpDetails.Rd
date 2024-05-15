@@ -7,7 +7,6 @@
 extractExpDetails(
   sim_data_file,
   exp_details = "Summary and Input",
-  annotate_output = FALSE,
   save_output = NA
 )
 }
@@ -64,17 +63,6 @@ the autorunner adds as long as that stamp is in a format like this: "myfile
   etc. Same thing with requesting interaction parameters (ex:
   "Interaction_inhib" to get all the interaction parameters for inhibitor 1)
   and transporter parameters (ex: "Transport_sub").}}}
-
-\item{annotate_output}{TRUE or FALSE (default) on whether to transpose the
-rows and columns in the output, making the output table longer instead of
-wider, and adding columns to the output for a) which compound the
-information pertains to (substrate, inhibitor, etc.), b) which section of
-the Simcyp Simulator this detail is found in (physchem, absorption,
-distribution, etc.), c) notes describing what the detail is, and d) which
-sheet in the Excel file the information was pulled from. Setting this to
-"TRUE" runs the function \code{\link{annotateDetails}} behind the scenes.
-Please see \code{annotateDetails} for further ways to sift through and
-organize this output to find what you need.}
 
 \item{save_output}{optionally save the output by supplying a csv or Excel
 file name in quotes here, e.g., "Simulation details.csv" or "Simulation
