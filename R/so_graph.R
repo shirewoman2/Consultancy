@@ -44,17 +44,18 @@
 #'   \code{boundaries = c(1.25, 1.5, 2)}
 #' @param boundaries_Guest Numerical boundaries to show on the graph when the PK
 #'   parameter is a mean ratio of the parameter in the presence of a perpetrator
-#'   / the parameter in the absence of the perpetrator. Please see [BoundariesGuest
-#'   Galetin 2011 Drug Metab Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/)
-#'   for a reference for this type of graph. If you'd rather show straight lines
-#'   for these parameters instead of BoundariesGuest curves, set this to NA. The default
-#'   boundaries for BoundariesGuest curves are 1 (straight line at unity; even if you
-#'   don't include 1, we'll add it back in) and 2. For all numbers > 1, you'll
-#'   get a BoundariesGuest curve that approaches that value at higher DDI ratios, and, for
-#'   the highest number you list, you'll additionally get straight line
-#'   boundaries. This matches what is described in the BoundariesGuest Galetin 2011 paper.
-#'   We recommend using only 1 and 2 as BoundariesGuest boundaries for clarity of the
-#'   graph.
+#'   / the parameter in the absence of the perpetrator. Please see
+#'   [BoundariesGuest Galetin 2011 Drug Metab
+#'   Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/) for a reference for this
+#'   type of graph. If you'd rather show straight lines for these parameters
+#'   instead of BoundariesGuest curves, set this to NA. The default boundaries
+#'   for BoundariesGuest curves are 1 (straight line at unity; even if you don't
+#'   include 1, we'll add it back in) and 2. For all numbers > 1, you'll get a
+#'   BoundariesGuest curve that approaches that value at higher DDI ratios, and,
+#'   for the highest number you list, you'll additionally get straight line
+#'   boundaries. This matches what is described in the BoundariesGuest Galetin
+#'   2011 paper. We recommend using only 1 and 2 as BoundariesGuest boundaries
+#'   for clarity of the graph.
 #' @param boundary_indicator how to indicate the boundaries for simulated /
 #'   observed. Options are "lines" (default), "fill" to get a shaded area, or
 #'   "none" to remove any indicators of those
@@ -77,12 +78,12 @@
 #'   interpretable.
 #' @param boundary_color_set_Guest set of colors to use for indicating the
 #'   X-fold boundaries of the simulated / observed ratio for DDI ratio graphs.
-#'   The default is "red black", which, for the default BoundariesGuest boundaries,
-#'   results in a black curved line and a red straight line at the 2-fold
-#'   boundary. Other options are "red green", "muted red green" (a lighter, more
-#'   muted red and green that work well for indicating boundaries when you're
-#'   using shading instead of lines), and "black", which will result in only
-#'   black lines or shading. You also can set this to
+#'   The default is "red black", which, for the default BoundariesGuest
+#'   boundaries, results in a black curved line and a red straight line at the
+#'   2-fold boundary. Other options are "red green", "muted red green" (a
+#'   lighter, more muted red and green that work well for indicating boundaries
+#'   when you're using shading instead of lines), and "black", which will result
+#'   in only black lines or shading. You also can set this to
 #'   any set of colors you'd like, e.g., \code{boundary_color_set_Guest = c("yellow",
 #'   "blue")}. The number of colors should equal the number of BoundariesGuest boundaries
 #'   that you've indicated or the graph won't be easily interpretable.
@@ -103,8 +104,9 @@
 #'   \code{boundary_indicator} is set to "lines", the default.
 #' @param axis_title_x title for the x axis; default is "Observed"
 #' @param axis_title_y title for the y axis; default is "Simulated"
-#' @param axis_titles optionally specify what you'd like for the x and y axis
-#'   titles with a named character vector. The default is \code{axis_titles =
+#' @param axis_titles SOON TO BE DEPRECATED in favor of \code{axis_title_x} and
+#'   \code{axis_title_x}. Optionally specify what you'd like for the x and y
+#'   axis titles with a named character vector. The default is \code{axis_titles =
 #'   c("x" = "Observed", "y" = "Simulated")}
 #' @param point_color_column (optional) the column in \code{PKtable} that should
 #'   be used for determining which color the points will be. This should be
@@ -211,6 +213,8 @@
 #'   which dose it was. If left as the default NA, then the dose number will be
 #'   omitted if all the data are all for dose 1 or all for the last dose, and it
 #'   will be included if you have a mix of dosing intervals.
+#' @param facet_title_size optionally specify what font size to use for the
+#'   facet titles. If left as NA, a reasonable guess will be used.
 #' @param title_adjustments a character vector of text adjustments for the
 #'   title. Possible options:
 #'
@@ -268,6 +272,7 @@ so_graph <- function(PKtable,
                      axis_title_x = "Observed",
                      axis_title_y = "Simulated", 
                      include_dose_num = NA,
+                     facet_title_size = NA, 
                      title_adjustments = c(), 
                      all_intervals_together = FALSE, 
                      ncol = NULL, 
@@ -981,7 +986,9 @@ so_graph <- function(PKtable,
          ggtitle(Gtitle) +
          theme_bw() +
          theme(aspect.ratio = 1, 
-               plot.title = element_text(hjust = 0.5),
+               plot.title = element_text(hjust = 0.5, 
+                                         size = ifelse(is.na(facet_title_size), 
+                                                       NULL, facet_title_size)),
                axis.title = element_text(color = "black", face = "bold"),
                axis.title.x = element_text(margin = margin(2.75, 0, 0, 0)),
                axis.title.x.top = element_text(margin = margin(0, 0, 2.75, 0)),
