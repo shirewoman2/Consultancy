@@ -153,11 +153,27 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    if(any(file.exists(sim_data_files) == FALSE)){
       MissingSimFiles <- sim_data_files[
          which(file.exists(sim_data_files) == FALSE)]
-      warning(paste0("The file(s) ", 
-                     str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present, so we cannot extract any information about the simulation experimental details.\n"), 
-              call. = FALSE)
-      sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
+      
+      # This can happen if the file name is too long.
+      TooLong <- intersect(MissingSimFiles, list.files(pattern = "xlsx"))
+      
+      MissingSimFiles <- setdiff(MissingSimFiles, TooLong)
+      
+      if(length(TooLong) > 0){
+         warning(paste0("The file(s) ", 
+                        str_comma(paste0("`", TooLong, "`")), 
+                        " has/have a file path that is too long, so we cannot extract any information about the simulation experimental details.\n"), 
+                 call. = FALSE)
+         sim_data_files <- setdiff(sim_data_files, TooLong)   
+      }
+      
+      if(length(MissingSimFiles) > 0){
+         warning(paste0("The file(s) ", 
+                        str_comma(paste0("`", MissingSimFiles, "`")), 
+                        " is/are not present, so we cannot extract any information about the simulation experimental details.\n"), 
+                 call. = FALSE)
+         sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
+      }
    }
    
    # Make it so that, if they supply NA, NULL, or "none" for
