@@ -85,15 +85,6 @@
 #'   changed input parameters for simulations and re-run them OR when you have
 #'   extracted only some of the possible experimental details and you now would
 #'   like more experimental details from each simulator output file.
-#' @param annotate_output TRUE (default) or FALSE on whether to transpose the
-#'   rows and columns in the output, making the output table longer instead of
-#'   wider, and adding columns to the output for a) which compound the
-#'   information pertains to (substrate, inhibitor, etc.), b) which section of
-#'   the Simcyp Simulator this detail is found in (physchem, absorption,
-#'   distribution, etc.), c) notes describing what the detail is, and d) which
-#'   sheet in the Excel file the information was pulled from. Please see
-#'   \code{annotateDetails} for ways to sift through and organize this output to
-#'   find what you need.
 #' @param save_output optionally save the output by supplying a csv or Excel
 #'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
 #'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
@@ -118,7 +109,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
                                    exp_details = "all", 
                                    existing_exp_details = NA, 
                                    overwrite = FALSE,
-                                   annotate_output = FALSE,
                                    save_output = NA, 
                                    ...){
    
@@ -275,10 +265,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # Sorting to help organize output
    Out$MainDetails <- Out$MainDetails %>% select(File, everything())
    
-   if(annotate_output){
-      Out <- annotateDetails(Out, 
-                             save_output = save_output)
-   } else if(complete.cases(save_output)){
+   if(complete.cases(save_output)){
       FileName <- save_output
       if(str_detect(FileName, "\\.")){
          # Making sure they've got a good extension
