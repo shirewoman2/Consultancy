@@ -1715,12 +1715,19 @@ annotateDetails <- function(existing_exp_details,
       
    }
    
-   for(i in names(Out)){
-      if(length(Out[[i]]) == 0){
-         Out[[i]] <- NULL 
-      } else if(length(Out[[i]]) > 1){
-         Out[[i]] <- Out[[i]][["DF"]]
+   # If they didn't include "MainDetails", then they get a list even if that's
+   # not what they wanted.
+   if(return_list | "MainDetails" %in% names(Out) == FALSE){
+      
+      for(i in names(Out)){
+         if(length(Out[[i]]) == 0){
+            Out[[i]] <- NULL 
+         } else if(length(Out[[i]]) > 1){
+            Out[[i]] <- Out[[i]][["DF"]]
+         }
       }
+   } else {
+      Out <- Out[["MainDetails"]][["DF"]]
    }
    
    return(Out)

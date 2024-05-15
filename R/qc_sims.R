@@ -92,8 +92,7 @@ qc_sims <- function(existing_exp_details,
                                      omit_all_missing = TRUE, 
                                      save_output = NA)
       )
-      Out[[i]] <- Out[[i]][["MainDetails"]] %>% 
-         select(Detail, matches("All files|xlsx"))
+      Out[[i]] <- Out[[i]] %>% select(Detail, matches("All files|xlsx"))
    }
    
    # Changing the order to be just alphabetical by detail name since that's all
