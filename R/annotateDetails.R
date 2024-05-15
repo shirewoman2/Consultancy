@@ -1325,10 +1325,15 @@ annotateDetails <- function(existing_exp_details,
             
             # Setting column widths. Notes should be 40.
             ColWidths <- guess_col_widths(Out[[item]][["DF"]])
-            ColWidths["SimulatorSection"] <- 17
-            ColWidths[c("Sheet", "CompoundID", "Compound")] <- 15
-            ColWidths["Notes"] <- 40
-            ColWidths["Detail"] <- 20
+            GoodColWidths <- c("SimulatorSection" = 17, 
+                               "Sheet" = 15,
+                               "CompoundID" = 15, 
+                               "Compound" = 15, 
+                               "Notes" = 40, 
+                               "Detail" = 20)
+            GoodColWidths <- GoodColWidths[intersect(names(GoodColWidths), 
+                                                     names(ColWidths))]
+            ColWidths[names(GoodColWidths)] <- GoodColWidths
             ColWidths[which(str_detect(names(ColWidths),
                                        "All files have this value|TEMPLATE"))] <- 15
             ColWidths[which(str_detect(names(ColWidths), "xlsx$|wksz$"))] <- 15
