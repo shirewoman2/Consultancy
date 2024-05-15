@@ -216,7 +216,7 @@
 #'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 #'   the default behavior and get exactly what you want.
 #' @param page_orientation set the page orientation for the Word file output to
-#'   "portrait" (default) or "landscape" 
+#'   "portrait" or "landscape" (default) 
 #'
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from
@@ -246,7 +246,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                            checkDataSource = TRUE, 
                            returnExpDetails = FALSE,
                            save_table = NA, 
-                           page_orientation = "portrait", 
+                           page_orientation = "landscape", 
                            fontsize = 11){
    
    # Error catching ----------------------------------------------------------
