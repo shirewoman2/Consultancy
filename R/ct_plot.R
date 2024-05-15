@@ -626,8 +626,7 @@ ct_plot <- function(ct_dataframe = NA,
       if("logical" %in% class(existing_exp_details)){ 
          Deets <- tryCatch(
             extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
-                              exp_details = "Summary and Input", 
-                              annotate_output = FALSE)[["MainDetails"]], 
+                              exp_details = "Summary and Input")[["MainDetails"]], 
             error = function(x) "missing file")
       } else {
          Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
@@ -636,8 +635,7 @@ ct_plot <- function(ct_dataframe = NA,
          if(nrow(Deets) == 0){
             Deets <- tryCatch(
                extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
-                                 exp_details = "Summary and Input", 
-                                 annotate_output = FALSE)[["MainDetails"]], 
+                                 exp_details = "Summary and Input")[["MainDetails"]], 
                error = function(x) "missing file")
          }
       }

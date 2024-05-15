@@ -330,8 +330,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
       Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
                                                         sim_data_file_denominator), 
-                                      exp_details = "Summary and Input", 
-                                      annotate_output = FALSE)[["MainDetails"]]
+                                      exp_details = "Summary and Input")[["MainDetails"]]
    } else {
       Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
          filter(File %in% c(sim_data_file_numerator, 
@@ -340,8 +339,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       if(nrow(Deets) != 2){
          Deets <- extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
                                                            sim_data_file_denominator), 
-                                         exp_details = "Summary and Input", 
-                                         annotate_output = FALSE)[["MainDetails"]]
+                                         exp_details = "Summary and Input")[["MainDetails"]]
       }
       
       if(nrow(Deets) != 2){

@@ -421,8 +421,7 @@ draft_DDI_section <- function(sim_data_file,
    if("logical" %in% class(existing_exp_details)){ 
       Deets <- tryCatch(
          extractExpDetails(sim_data_file = sim_data_file, 
-                           exp_details = "all", 
-                           annotate_output = FALSE), 
+                           exp_details = "all"), 
          error = function(x) "missing file")
    } else {
       Deets <- filter_sims(existing_exp_details, sim_data_file, "include")
@@ -440,8 +439,7 @@ draft_DDI_section <- function(sim_data_file,
       if(nrow(Deets) == 0){
          Deets <- tryCatch(
             extractExpDetails(sim_data_file = sim_data_file, 
-                              exp_details = "all", 
-                              annotate_output = FALSE), 
+                              exp_details = "all"), 
             error = function(x) "missing file")
       }
    }
