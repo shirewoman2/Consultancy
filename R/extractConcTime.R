@@ -664,7 +664,7 @@ extractConcTime <- function(sim_data_file,
                   # obs data in that situation.
                   rm(obs_data)
                } else {
-                  warning("WARNING: This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of a perpetrator. The safer way to include observed data is to supply a separate file for 'obs_data_file'.\n",
+                  warning("This function is extracting observed data from simulator output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of a perpetrator. The safer way to include observed data is to supply a separate file for 'obs_data_file'.\n",
                           call. = FALSE)
                   
                   # If subject names include special characters s/a "_", that

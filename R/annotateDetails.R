@@ -1117,14 +1117,14 @@ annotateDetails <- function(existing_exp_details,
                      GroupingDetails, template_sim))), 
                      everything())
                
-               TSim <- paste("TEMPLATE SIMULATION", 
-                             switch(item, 
-                                    "MainDetails" = "",
-                                    "CustomDosing" = "FOR DOSE", 
-                                    "ConcDependent_fup" = "FOR fu,p", 
-                                    "ConcDependent_BP" = "FOR B/P", 
-                                    "pH_dependent_solubility" = "FOR SOLUBILITY"), 
-                             "-", template_sim)
+               TSim <- paste0("TEMPLATE SIMULATION ", 
+                              switch(item, 
+                                     "MainDetails" = "",
+                                     "CustomDosing" = "FOR DOSE ", 
+                                     "ConcDependent_fup" = "FOR fu,p ", 
+                                     "ConcDependent_BP" = "FOR B/P ", 
+                                     "pH_dependent_solubility" = "FOR SOLUBILITY "), 
+                              "- ", template_sim)
                names(DF)[names(DF) == template_sim] <- TSim
                
             } else if("UniqueVal" %in% names(DF)){
@@ -1715,11 +1715,12 @@ annotateDetails <- function(existing_exp_details,
       
    }
    
-   if(return_list){
-      Out <- existing_exp_details
-      Out$MainDetails <- MainDetails
-   } else {
-      Out <- MainDetails
+   for(i in names(Out)){
+      if(length(Out[[i]]) == 0){
+         Out[[i]] <- NULL 
+      } else if(length(Out[[i]]) > 1){
+         Out[[i]] <- Out[[i]][["DF"]]
+      }
    }
    
    return(Out)

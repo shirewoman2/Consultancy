@@ -85,18 +85,18 @@ demog_plot <- function(demog_dataframe,
                            .default = variables)
    
    BadVar <- setdiff(variables, 
-                     tolower("Age", 
-                             "AGP_gL", 
-                             "BMI_kgm2", 
-                             "Height_cm", 
-                             "Height vs Age", 
-                             "HSA_gL",
-                             "Weight_kg",
-                             "Weight vs Age", 
-                             "Weight vs Height",
-                             "Sex", 
-                             "Sex vs Age", 
-                             "RenalFunction"))
+                     tolower(c("Age", 
+                               "AGP_gL", 
+                               "BMI_kgm2", 
+                               "Height_cm", 
+                               "Height vs Age", 
+                               "HSA_gL",
+                               "Weight_kg",
+                               "Weight vs Age", 
+                               "Weight vs Height",
+                               "Sex", 
+                               "Sex vs Age", 
+                               "RenalFunction")))
    
    if(length(BadVar) > 0){
       warning(paste0("The variables ", 
