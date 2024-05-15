@@ -756,7 +756,8 @@ pksummary_table <- function(sim_data_file = NA,
    TabWithSheet <- any(complete.cases(sheet_PKparameters$Tab))
    TabWithPKparameters <- any(is.null(names(PKparameters)) == FALSE) |
       DoubleSheetSpecification == TRUE
-   TabWithObs <- "Tab" %in% names(observed_PK)
+   TabWithObs <- "Tab" %in% names(observed_PK) &&
+      any(complete.cases(observed_PK$Tab))
    
    TabSpecification <- c(TabWithSheet, 
                          TabWithPKparameters, 
@@ -986,35 +987,6 @@ pksummary_table <- function(sim_data_file = NA,
          pull(PKparameter) %>% unique()
    }
    
-   # !!! IMPORTANT!!! If it was a custom-dosing regimen, then any parameters
-   # that are not dose 1 parameters are not necessarily in their usual
-   # locations! Previously, we did NOT report any PK for that scenario. Now, we
-   # check that the dose interval and the AUC interval match, so this SHOULD be
-   # ok. No longer removing this info. 
-   
-   # if(((compoundToExtract %in% c("substrate", "primary metabolite 1", 
-   #                               "primary metabolite 2", "secondary metabolite") & 
-   #      complete.cases(Deets$DoseInt_sub) && Deets$DoseInt_sub == "custom dosing") |
-   #     
-   #     (compoundToExtract %in% c("inhibitor 1", "inhibitor 1 metabolite") &
-   #      is.null(Deets$DoseInt_inhib) == FALSE && 
-   #      complete.cases(Deets$DoseInt_inhib) &&
-   #      Deets$DoseInt_inhib == "custom dosing") |
-   #     
-   #     (compoundToExtract == "inhibitor 2" && 
-   #      is.null(Deets$DoseInt_inhib2) == FALSE && 
-   #      complete.cases(Deets$DoseInt_inhib2) &&
-   #      Deets$DoseInt_inhib2 == "custom dosing")) &
-   #    
-   #    (length(PKToPull) > 0 && any(str_detect(PKToPull, "_last"), na.rm = T)) &
-   #    all(is.na(MyPK$Tab))){
-   #    warning(paste0("The file `",
-   #                   sim_data_file,
-   #                   "` had a custom dosing regimen for the compound you requested or its parent, which means that PK data for the last dose are NOT in their usual locations.\nWe cannot pull any last-dose PK data for you unless you supply a specific tab using the argument `sheet_PKparameters`."), 
-   #            call. = FALSE)
-   #    PKToPull <- PKToPull[!str_detect(PKToPull, "_last")]
-   # }
-   
    SDParam <- AllPKParameters %>% 
       filter(AppliesToSingleDose == TRUE) %>% 
       pull(PKparameter)
@@ -1042,12 +1014,12 @@ pksummary_table <- function(sim_data_file = NA,
    
    # If there was no perpetrator, then don't pull any interaction info
    if(is.na(Deets$Inhibitor1)){
-      EffParam <- AllPKParameters %>%
+      DDIParam <- AllPKParameters %>%
          filter(AppliesOnlyWhenPerpPresent == TRUE) %>%
          pull(PKparameter)
       
-      PKToPull <- PKToPull[!PKToPull %in% c(EffParam, 
-                                            sub("_dose1|_last", "", EffParam))]
+      PKToPull <- PKToPull[!PKToPull %in% c(DDIParam, 
+                                            sub("_dose1|_last", "", DDIParam))]
    }
    
    # Give a useful message if there are no parameters to pull
@@ -1421,44 +1393,53 @@ pksummary_table <- function(sim_data_file = NA,
    
    MyPKResults <- MyPKResults %>%
       filter(Stat %in% c(VarOptions, 
-                         switch(MeanType, "geometric" = "geomean", 
+                         switch(MeanType, 
+                                "geometric" = "geomean", 
                                 "arithmetic" = "mean")))
    
    
    ## observed data -----------------------------------------------------
    
+   # NB: Absolutely NO ROUNDING and formatting here. Only rounding AFTER
+   # extracting forest data.
    if("Value" %in% names(MyObsPK)){
-      # Renaming column for PKparameter.
-      MyObsPK <- MyObsPK %>% rename(PKParam = PKparameter, Obs = Value)
       
       if("CV" %in% names(MyObsPK)){
-         MyObsPK$CV <- as.numeric(MyObsPK$CV)
+         MyObsPK_var <- MyObsPK %>% select(-Value) %>% 
+            rename(PKParam = PKparameter) %>% 
+            separate(col = CV, into = c("CV1", "CV2"), sep = "-") %>% 
+            mutate(across(.cols = c(CV1, CV2), .fn = as.numeric), 
+                   Stat = case_when(complete.cases(CV2) ~ "range", 
+                                    is.na(CV2) & MeanType == "arithmetic" ~ "CV", 
+                                    is.na(CV2) & MeanType == "geometric" ~ "GCV")) %>% 
+            pivot_longer(cols = c(CV1, CV2), 
+                         names_to = "VariableType", 
+                         values_to = "Value") %>% 
+            mutate(Stat = case_when(Stat == "range" & VariableType == "CV1" ~ "min", 
+                                    Stat == "range" & VariableType == "CV2" ~ "max", 
+                                    TRUE ~ Stat), 
+                   SorO = "Obs") %>% 
+            filter(complete.cases(Value)) %>% 
+            select(-VariableType)
          
-         if(MeanType == "geometric" & "GCV" %in% names(MyObsPK)){
-            MyObsPK <- MyObsPK %>% select(-CV) %>% 
-               rename(GCV = CV) %>% 
-               mutate(CV = as.numeric(CV))
-         } else {
-            # Assuming here that if they provided CV for obs data and requested
-            # geometric means that they know what they're doing and they meant
-            # to specify GCV. Just assuming that user's observed data stats
-            # match the simulated stats they requested.
-            MyObsPK <- MyObsPK %>% 
-               rename(GCV = CV)
-         }
+      } else {
+         MyObsPK_var <- MyObsPK %>% select(-Value) %>% 
+            mutate(Stat = switch(MeanType, 
+                                 "geometric" = "GCV", 
+                                 "arithmetic" = "CV"), 
+                   Value = as.numeric(NA), 
+                   SorO = "Obs")
       }
       
-      # Pivoting longer by stat
-      MyObsPK <- MyObsPK %>% 
-         mutate(across(.cols = matches("Obs|CV|GCV|value|mean|geomean|median"), 
-                       .fns = as.numeric)) %>% 
-         pivot_longer(cols = any_of(c("Obs", "CV", "GCV")),
-                      names_to = "Stat",
-                      values_to = "Obs") %>% 
-         mutate(Stat = ifelse(Stat == "Obs", 
-                              switch(MeanType, 
-                                     "geometric" = "geomean", 
-                                     "arithmetic" = "mean"), Stat))
+      # Pivoting main obs data longer by stat
+      MyObsPK <- MyObsPK %>% select(-any_of(c("CV", "GCV"))) %>% 
+         mutate(across(.cols = matches("Obs|value|mean|geomean|median"), 
+                       .fns = as.numeric), 
+                SorO = "Obs", 
+                Stat = switch(MeanType, 
+                              "geometric" = "geomean", 
+                              "arithmetic" = "mean")) %>% 
+         rename(PKParam = PKparameter)
       
       # Calculating S/O
       suppressMessages(
@@ -1467,7 +1448,7 @@ pksummary_table <- function(sim_data_file = NA,
                                   "geometric" = "geomean",
                                   "arithmetic" = "mean")) %>%
             left_join(MyObsPK) %>%
-            mutate(Value = Sim / Obs,
+            mutate(Value = Sim / Value,
                    Stat = "S_O", 
                    SorO = "S_O") %>%
             select(PKParam, Stat, Value, SorO)
@@ -1483,8 +1464,8 @@ pksummary_table <- function(sim_data_file = NA,
                                                   "geometric" = "geomean", 
                                                   "arithmetic" = "mean")) %>% 
                             select(-Stat)) %>%
-               mutate(Value = Sim / Obs) %>% 
-               select(-Sim, -Obs) %>% 
+               mutate(Value = Sim / Value) %>% 
+               select(-Sim, -Value) %>% 
                mutate(Stat = paste0("S_O_TM_", Stat), 
                       SorO = "S_O_TM") %>%
                select(PKParam, Stat, Value, SorO)
@@ -1495,14 +1476,11 @@ pksummary_table <- function(sim_data_file = NA,
          
       }
       
-      suppressMessages(
-         MyPKResults <- MyPKResults %>% 
-            select(-any_of("Tab")) %>% 
-            full_join(MyObsPK %>% select(-any_of("BaseNameFile"))) %>% 
-            pivot_longer(names_to = "SorO", values_to = "Value", 
-                         cols = c(Sim, Obs)) %>% 
-            full_join(SOratios)
-      )
+      MyPKResults <- MyPKResults %>% 
+         rename(Value = Sim) %>% 
+         mutate(SorO = "Sim") %>% 
+         bind_rows(MyObsPK, MyObsPK_var, SOratios) %>% 
+         select(-any_of(c("Tab", "BaseNameFile")))
       
       # If user supplied obs data and did NOT specify PK parameters that they
       # wanted, only keep PK parameters where there are values for the
@@ -1599,7 +1577,9 @@ pksummary_table <- function(sim_data_file = NA,
    MyPKResults <- MyPKResults %>%
       mutate(Value = if_else(str_detect(Stat, "CV"), 
                              round_opt(100*Value, rounding),
-                             round_opt(Value, rounding))) %>%
+                             round_opt(Value, rounding)))
+   
+   MyPKResults <- MyPKResults %>% 
       filter(Stat %in% c(case_match(MeanType, 
                                     "geometric" ~ "geomean",
                                     "arithmetic" ~ "mean", 
@@ -1614,6 +1594,33 @@ pksummary_table <- function(sim_data_file = NA,
                          "S_O_TM_MinMean", "S_O_TM_MaxMean",
                          "S_O", "SD", "median"))
    
+   # If there were any observed data that were a range, e.g., for tmax, then put
+   # the range on a single line, even if user did not request concatVariability
+   # b/c it just makes things so much easier.
+   if(nrow(MyPKResults %>% filter(Stat == "min" & SorO == "Obs")) > 0){
+      
+      MyPKResults <- MyPKResults %>% 
+         pivot_wider(names_from = Stat, 
+                     values_from = Value) %>% 
+         mutate(min = case_when(complete.cases(min) & 
+                                   complete.cases(max) ~ 
+                                   switch(variability_format, 
+                                          "to" = paste(min, "to", max), 
+                                          "hyphen" = paste(min, "-", max), 
+                                          "brackets" = paste0("[", min, ", ", max, "]"),
+                                          "parentheses" = paste0("(", min, ", ", max, ")")), 
+                                TRUE ~ min)) %>% 
+         select(-max) %>% 
+         pivot_longer(cols = -c(PKParam, SorO), 
+                      names_to = "Stat", 
+                      values_to = "Value") %>% 
+         mutate(Stat = ifelse(Stat == "min", 
+                              switch(MeanType, 
+                                     "geometric" = "GCV", 
+                                     "arithmetic" = "CV"), 
+                              Stat))
+   }
+   
    # Checking for any PK parameters where there are no simulated data.
    GoodPKParam <- MyPKResults %>% 
       filter(Stat == switch(MeanType, 
@@ -1623,7 +1630,8 @@ pksummary_table <- function(sim_data_file = NA,
                 complete.cases(Value)) %>% pull(PKParam) %>% unique()
    
    MyPKResults <- MyPKResults %>%
-      filter(PKParam %in% GoodPKParam) %>% 
+      filter(PKParam %in% GoodPKParam & 
+                complete.cases(Value)) %>% unique() %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>% 
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
              Stat = factor(Stat, levels = c("mean", "geomean", "median",
