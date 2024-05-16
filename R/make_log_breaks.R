@@ -35,8 +35,13 @@ make_log_breaks <- function(axis_range,
    # when that happens.
    axis_range[1] <- ifelse(axis_range[1] == 0, 
                          axis_range[2]/100, axis_range[1])
-   axis_range[1] <- round_down(axis_range[1])
-   axis_range[2] <- round_up(axis_range[2])
+   
+   # If user specified limits, then use those. If not, round to nice intervals.
+   if(all(is.na(axis_limits_log))){
+      axis_range[1] <- round_down(axis_range[1])
+      axis_range[2] <- round_up(axis_range[2])
+   }
+   
    axis_range <- sort(axis_range) # sorting again just to be sure b/c sometimes can get weird mathematical artifacts
    
    YLogBreaks <- as.vector(outer(1:9, 10^(log10(axis_range[1]):log10(axis_range[2]))))
@@ -51,7 +56,8 @@ make_log_breaks <- function(axis_range,
       
       # add labels at order of magnitude
       YLogLabels[seq(1, length(YLogLabels), 9)] <- 
-         format(YLogBreaks[seq(1,length(YLogLabels),9)], scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
+         format(YLogBreaks[seq(1, length(YLogLabels), 9)], 
+                scientific = FALSE, trim = TRUE, drop0trailing = TRUE)
       
    } else {
       
