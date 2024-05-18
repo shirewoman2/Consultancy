@@ -495,10 +495,10 @@ so_graph <- function(PKtable,
    for(j in Boundaries_num){
       
       Boundaries[[as.character(j)]] <-
-         list("Upper" = data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
+         list("Upper" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
                  mutate(LimitName = "upper", 
                         Simulated = Observed * j), 
-              "Lower" = data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
+              "Lower" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
                  mutate(LimitName = "upper", 
                         Simulated = Observed / j))
    }
@@ -506,23 +506,23 @@ so_graph <- function(PKtable,
    # BoundariesGuest 
    for(j in Boundaries_num_Guest){
       BoundariesGuest[[as.character(j)]] <- 
-         list("Upper" = data.frame(Observed = 10^seq(-4, 6, length.out = 1000)) %>% 
+         list("Upper" = data.frame(Observed = 10^seq(-4, 9, length.out = 1000)) %>% 
                  mutate(Limit = ifelse(Observed >= 1, 
                                        (1 + j*(Observed - 1))/Observed,
                                        (1 + j*((1/Observed) - 1))/(1/Observed)),
                         LimitName = "upper",
                         Simulated = Observed * Limit),
-              "Lower" = data.frame(Observed = 10^seq(-4, 6, length.out = 1000)) %>% 
+              "Lower" = data.frame(Observed = 10^seq(-4, 9, length.out = 1000)) %>% 
                  mutate(Limit = ifelse(Observed >= 1, 
                                        (1 + j*(Observed - 1))/Observed,
                                        (1 + j*((1/Observed) - 1))/(1/Observed)),
                         LimitName = "lower", 
                         Simulated = Observed / Limit))
       GuestStraight[[as.character(j)]] <- 
-         list("Upper" = data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
+         list("Upper" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
                  mutate(LimitName = "upper", 
                         Simulated = Observed * j), 
-              "Lower" = data.frame(Observed = 10^seq(-4, 6, length.out = 100)) %>% 
+              "Lower" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
                  mutate(LimitName = "upper", 
                         Simulated = Observed / j))
    }
@@ -580,9 +580,89 @@ so_graph <- function(PKtable,
       }
    }
    
-   # Will need to figure out what PK parameters are and will need deprettified
-   # names when reshaping and organizing data here and lower in function
+   ## Setting things up for nonstandard evaluation - Part 1 --------------------
+   point_color_column <- rlang::enquo(point_color_column)
+   point_shape_column <- rlang::enquo(point_shape_column)
    
+   # Only including sim and obs data.
+   PKtable <- PKtable %>% filter(Statistic %in% c("Simulated", "Observed"))
+   
+   # Dealing with units if there are more than one set.
+   PKUnits <- names(PKtable)[str_detect(names(PKtable), " \\(")]
+   # CL will always be L/h, so removing those from consideration. Also removing
+   # anything with a time unit s/a tmax b/c it will always be h.
+   PKUnits <- PKUnits[!str_detect(PKUnits, "\\(L/h|\\(h\\)")]
+   PKUnits <- sort(unique(gsub("\\(|\\)", "", str_extract(PKUnits, "\\(.*\\)"))))
+   
+   # Check whether there are any mixes of molar and mass per volume units b/c we
+   # can't interconvert since we don't know MWs.
+   if(any(str_detect(PKUnits, ".M")) & any(str_detect(PKUnits, "/.*L"))){
+      stop("You appear to have some molar units and some mass per volume units, and we can't interconvert and compare those here. Please adjust your units, change your header row to reflect whichever units you're using, and try again.", 
+           call. = FALSE)
+   }
+   # Everything should be all mass per volume or all molar concs now. 
+   
+   # Separating AUC and Cmax units b/c they have different regex requirements.
+   PKAUCUnits <- PKUnits[str_detect(PKUnits, "\\.h")]
+   PKCmaxUnits <- setdiff(PKUnits, PKAUCUnits)
+   
+   # Making everything use ng/mL units b/c that matches the units in
+   # PKexpressions. Otherwise, the mini graph titles will be incorrect.
+   PKAUCUnits <- setdiff(PKAUCUnits, "ng/mL.h")
+   PKCmaxUnits <- setdiff(PKCmaxUnits, "ng/mL")
+   
+   if(length(c(PKAUCUnits, PKCmaxUnits)) > 0){
+      AUCcols <- names(PKtable)[str_detect(names(PKtable), 
+                                           str_c(PKAUCUnits, collapse = "|"))]
+      Cmaxcols <- names(PKtable)[str_detect(names(PKtable), 
+                                            str_c(PKCmaxUnits, collapse = "|"))]
+      Cmaxcols <- setdiff(Cmaxcols, AUCcols)
+      
+      for(col in c(AUCcols, Cmaxcols)){
+         # convert_conc_units was specifically set up for converting conc-time
+         # data.frames where there is a column Conc that is to be converted and
+         # another column, Conc_units, that indicates what the units are.
+         # Hacking PKtable to match that format.
+         names(PKtable)[which(names(PKtable) == col)] <- "Conc"
+         
+         PKtable <- PKtable %>% 
+            mutate(Conc_units = sub("\\.h", "", 
+                                    str_extract(col, str_c(c(PKAUCUnits, 
+                                                             PKCmaxUnits), collapse = "|"))), 
+                   Conc = as.numeric(Conc)) %>% 
+            convert_conc_units(conc_units = "ng/mL") %>% 
+            select(-Conc_units)
+         
+         # Can't just change the name of this column b/c that column name may
+         # already exist. Need to remove and then join w/original PK table,
+         # keeping all necessary columns when joining.
+         ToJoin <- PKtable %>% 
+            select(File, Conc, Statistic, 
+                   any_of(c("Compound", "CompoundID", "Tissue", 
+                            as_label(point_color_column), 
+                            as_label(point_shape_column)))) %>% 
+            filter(complete.cases(Conc))
+         
+         newcol <- sub("\\(.*\\)", 
+                       ifelse(col %in% Cmaxcols, 
+                              "(ng/mL)", "(ng/mL.h)"),
+                       col)
+         names(ToJoin)[which(names(ToJoin) == "Conc")] <- newcol
+         
+         suppressMessages(
+            PKtable <- PKtable %>% 
+               mutate(across(.cols = any_of({{newcol}}), 
+                             .fns = as.numeric)) %>% 
+               full_join(ToJoin) %>% select(-Conc)
+         )
+         
+         rm(newcol, ToJoin)
+         
+      }
+   }
+   
+   # Will need to figure out what PK parameters are and will need deprettified
+   # names when reshaping and organizing data here and lower in function. 
    PKCols <- data.frame(Orig = names(PKtable)) %>% 
       mutate(Pretty = prettify_column_names(Orig), 
              Ugly = prettify_column_names(Orig, pretty_or_ugly_cols = "ugly"))
@@ -591,10 +671,34 @@ so_graph <- function(PKtable,
    # adjust those.
    WhichUserInt <- which(str_detect(PKCols$Orig, " for interval from"))
    UserInt <- PKCols$Orig[WhichUserInt]
-   StartCh <- as.data.frame(str_locate(UserInt, " for interval"))
-   UserInt <- str_sub(UserInt, start = 1, end = StartCh$start - 1)
-   PKCols$Ugly[WhichUserInt] <- UserInt
    
+   # Can't just change the name of each user int column b/c that column name may
+   # already exist. Need to remove and then join w/original PK table, keeping
+   # all necessary columns when joining.
+   for(col in UserInt){
+      
+      ToJoin <- PKtable %>% 
+         select(File, col, Statistic, 
+                any_of(c("Compound", "CompoundID", "Tissue", 
+                         as_label(point_color_column), 
+                         as_label(point_shape_column)))) 
+      ToJoin <- ToJoin[which(complete.cases(ToJoin[, col])), ]
+      
+      StartCh <- as.data.frame(str_locate(col, " for interval"))
+      newcol <- str_sub(col, start = 1, end = StartCh$start - 1)
+      
+      names(ToJoin)[which(names(ToJoin) == col)] <- newcol
+      
+      suppressMessages(
+         PKtable <- PKtable %>% 
+            full_join(ToJoin) %>% select(-any_of(col))
+      )
+      
+      rm(newcol, ToJoin)
+      
+   }
+   
+   PKCols <- PKCols %>% filter(!str_detect(Orig, " for interval"))
    PKCols$IsPK <- PKCols$Ugly %in% c(AllPKParameters$PKparameter, 
                                      AllPKParameters$PKparameter_nodosenum)
    
@@ -614,7 +718,7 @@ so_graph <- function(PKtable,
       # Dropping dose number depending on input. First, checking whether they have
       # both dose 1 and last-dose data.
       DoseCheck <- c("first" = any(str_detect(PKparameters, "dose1")), 
-                     "user-defined" = any(str_detect(PKparameters, "dose1|last")), 
+                     "user-defined" = any(str_detect(PKparameters, "dose1|last")) == FALSE, 
                      "last" = any(str_detect(PKparameters, "last")))
       include_dose_num <- length(which(DoseCheck)) > 1
    }
@@ -630,6 +734,7 @@ so_graph <- function(PKtable,
    if(include_dose_num == FALSE){
       PKparameters <- sub("_dose1|_last", "", PKparameters)
       names(SO) <- sub("_dose1|_last", "", names(SO))
+      PKCols$Ugly <- sub("_dose1|_last", "", PKCols$Ugly)
    }
    
    # Removing additional columns since they mess up pivoting. 
@@ -638,12 +743,11 @@ so_graph <- function(PKtable,
    
    suppressWarnings(
       SO <- SO %>% 
-         filter(Statistic %in% c("Simulated", "Observed")) %>%
          unique() %>% 
+         mutate(across(.cols = PKparameters, .fns = as.numeric)) %>% 
          pivot_longer(names_to = "PKparameter", 
                       values_to = "Value", 
                       cols = PKparameters) %>% 
-         mutate(Value = as.numeric(Value)) %>% 
          filter(complete.cases(Value)) %>% 
          pivot_wider(names_from = Statistic, values_from = Value) %>% 
          filter(complete.cases(Observed) & PKparameter %in% {{PKparameters}})
@@ -686,10 +790,7 @@ so_graph <- function(PKtable,
       }
    }
    
-   ## Setting things up for nonstandard evaluation --------------------------
-   point_color_column <- rlang::enquo(point_color_column)
-   point_shape_column <- rlang::enquo(point_shape_column)
-   
+   ## Setting things up for nonstandard evaluation - Part 2 --------------------
    if(as_label(point_color_column) != "<empty>"){
       SO <- SO %>% mutate(point_color_column = {{point_color_column}}) %>% 
          droplevels()
@@ -913,20 +1014,20 @@ so_graph <- function(PKtable,
          }
       }
       
-      PossBreaks <- sort(c(10^(-3:6),
-                           3*10^(-3:6),
-                           5*10^(-3:6)))
+      PossBreaks <- sort(c(10^(-3:9),
+                           3*10^(-3:9),
+                           5*10^(-3:9)))
       PossBreaks <- PossBreaks[PossBreaks >= Limits[1] &
                                   PossBreaks <= Limits[2]]
       
       if(length(PossBreaks) >= 5){
-         MajBreaks <- 10^(-3:6)
-         MinBreaks <- rep(1:9)*rep(10^(-3:6), each = 9)
+         MajBreaks <- 10^(-3:9)
+         MinBreaks <- rep(1:9)*rep(10^(-3:9), each = 9)
       } else {
-         MajBreaks <- c(10^(-3:6),
-                        3*10^(-3:6),
-                        5*10^(-3:6))
-         MinBreaks <- rep(1:9)*rep(10^(-3:6), each = 9)
+         MajBreaks <- c(10^(-3:9),
+                        3*10^(-3:9),
+                        5*10^(-3:9))
+         MinBreaks <- rep(1:9)*rep(10^(-3:9), each = 9)
       }
       
       G[[i]] <- 
@@ -973,15 +1074,24 @@ so_graph <- function(PKtable,
          Gtitle <- PKexpressions[[i]]
       }
       
+      CheckRange <- ifelse(round_up(max(c(SO[[i]]$Simulated, 
+                                          SO[[i]]$Observed),
+                                        na.rm = T)) >= 1e5, 
+                           "sci", "comma")
+      
       G[[i]] <- G[[i]] + 
          xlab(axis_title_x) +
          ylab(axis_title_y) +
          scale_y_log10(breaks = MajBreaks, 
                        minor_breaks = MinBreaks, 
-                       labels = scales::label_comma(MajBreaks)) +
+                       labels = switch(CheckRange, 
+                                       "sci" = scales::label_scientific(MajBreaks), 
+                                       "comma" = scales::label_comma(MajBreaks))) +
          scale_x_log10(breaks = MajBreaks, 
                        minor_breaks = MinBreaks, 
-                       labels = scales::label_comma(MajBreaks)) +
+                       labels = switch(CheckRange, 
+                                       "sci" = scales::label_scientific(MajBreaks), 
+                                       "comma" = scales::label_comma(MajBreaks))) +
          coord_cartesian(xlim = Limits, ylim = Limits) + # this causes the shading to disappear for BoundariesGuest curves. no idea why, but I think it's a bug w/coord_cartesian.
          ggtitle(Gtitle) +
          theme_bw() +
