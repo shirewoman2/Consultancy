@@ -35,17 +35,7 @@
 #'   results file name and is located in the same folder. Otherwise, this step
 #'   in the data extraction will be skipped.}
 #'
-#'   \item{"all"}{Extract all possible parameters}
-#'
-#'   \item{a string of the specific parameters you want, each in quotes and
-#'   encapsulated with \code{c(...)}}{For a complete list of options:
-#'   \code{view(ExpDetailDefinitions)} Parameters are reported with a suffix
-#'   depending on which compound they pertain to: "_sub" for the substrate,
-#'   "_met1" for the primary metabolite, "_met2" for the second primary
-#'   metabolite, "_secmet" for the secondary metabolite, "_inhib" for the 1st
-#'   inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or inducer
-#'   listed, or "_inhib1met" for the inhibitor 1 metabolite. An example of
-#'   acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
+#'   \item{"all"}{Extract all possible parameters}}
 #'
 #'   \strong{NOTES:} \enumerate{\item{The default pulls parameters from the
 #'   "Summary" tab and the "Input Sheet" tab. Note that the
@@ -115,12 +105,27 @@ extractExpDetails <- function(sim_data_file,
    }
    
    # Cleaning up possible problems w/how exp_details by tab might be inputted
-   if(str_detect(tolower(exp_details[1]), "summary|input")){
+   if(length(exp_details) != 1){
+      warning("You can only enter one value for what set of details you want for the argument `exp_details`. We'll set this to `all` for now.\n", 
+              call. = FALSE)
+      exp_details <- "all"
+   }
+   
+   exp_details <- tolower(exp_details[1])
+   
+   if(str_detect(exp_details, "summary|input")){
       exp_details <- "summary and input"
-   } else if(str_detect(tolower(exp_details[1]), "population")){
+   } else if(str_detect(exp_details, "population")){
       exp_details <- "population tab"
-   } else if(str_detect(tolower(exp_details[1]), "worksp")){
+   } else if(str_detect(exp_details, "worksp")){
       exp_details <- "workspace"
+   } 
+   
+   if(exp_details %in% c("summary and input", "population tab", "workspace", 
+                         "all", "simcyp inputs") == FALSE){
+      warning("The only options for the argument `exp_details` are `Summary and Input`, `population tab`, `workspace`, `Simcyp inputs`, or `all` (not case sensitive), and you've supplied something else. We'll set this to `all` for now.\n", 
+              call. = FALSE)
+      exp_details <- "all"
    }
    
    # Noting exp_details requested for later
@@ -156,43 +161,31 @@ extractExpDetails <- function(sim_data_file,
    PopDeets <- AllExpDetails %>% filter(Sheet == "population") %>% 
       rename(Deet = Detail) %>% arrange(Deet)
    
-   if(length(exp_details_input) == 1 && 
-      exp_details_input %in% c("all", "summary and input", "summary tab", 
-                               "input sheet", "population tab", "simcyp inputs",
-                               "workspace")){
-      exp_details <- 
-         switch(exp_details_input, 
-                "all" = unique(AllExpDetails$Detail), 
-                "summary tab" = SumDeets$Deet, 
-                "input sheet" = InputDeets$Deet, 
-                "summary and input" = c(SumDeets$Deet, InputDeets$Deet),
-                "population tab" = PopDeets$Deet, 
-                "simcyp inputs" = AllExpDetails %>% 
-                   filter(complete.cases(CDSInputMatch)) %>% 
-                   pull(Detail))
-      
-      # There are some details that we will just ALWAYS need to include b/c so
-      # many downstream functions rely on them. Making sure that these are
-      # included. Note that we are not requiring these when the user requested a
-      # *specific* set of exp_details b/c I'm assuming that this function will
-      # be serving a different purpose in that scenario.
-      exp_details <- 
-         unique(c(exp_details, 
-                  AllCompounds$DetailNames, 
-                  "Units_AUC", "Units_Cmax", "Units_CL", "Units_tmax",
-                  "PopRepSim", "SimulatorUsed",
-                  paste0(rep(c("StartHr", "StartDayTime", "Regimen", "MW",
-                               "Dose", "NumDoses", "DoseInt", "DoseRoute", 
-                               "ReleaseProfileAvailable"),
-                             each = 3), 
-                         c("_sub", "_inhib", "_inhib2"))))
-      
-   } else {
-      # Even if they only want a few specific details, there are just a few
-      # details we need just to make this function work. Adding those.
-      exp_details <- 
-         unique(c(exp_details, "SimulatorUsed", "SimulatorVersion"))
-   }
+   # Determining info to pull
+   exp_details <- 
+      switch(exp_details_input, 
+             "all" = unique(AllExpDetails$Detail), 
+             "summary tab" = SumDeets$Deet, 
+             "input sheet" = InputDeets$Deet, 
+             "summary and input" = c(SumDeets$Deet, InputDeets$Deet),
+             "population tab" = PopDeets$Deet, 
+             "simcyp inputs" = AllExpDetails %>% 
+                filter(complete.cases(CDSInputMatch)) %>% 
+                pull(Detail))
+   
+   # There are some details that we will just ALWAYS need to include b/c so
+   # many downstream functions rely on them. Making sure that these are
+   # included. 
+   exp_details <- 
+      unique(c(exp_details, 
+               AllCompounds$DetailNames, 
+               "Units_AUC", "Units_Cmax", "Units_CL", "Units_tmax",
+               "PopRepSim", "SimulatorUsed",
+               paste0(rep(c("StartHr", "StartDayTime", "Regimen", "MW",
+                            "Dose", "NumDoses", "DoseInt", "DoseRoute", 
+                            "ReleaseProfileAvailable"),
+                          each = 3), 
+                      c("_sub", "_inhib", "_inhib2"))))
    
    # This needs to exist for all scenarios, even if we're not checking for it.
    ReleaseProfs <- NULL
