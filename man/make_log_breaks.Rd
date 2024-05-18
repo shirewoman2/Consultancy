@@ -4,23 +4,29 @@
 \alias{make_log_breaks}
 \title{Make pretty breaks and labels for a log axis}
 \usage{
-make_log_breaks(axis_range, axis_limits_log = NA)
+make_log_breaks(data_range, axis_limits_log = NA)
 }
 \arguments{
-\item{axis_limits_log}{desired y axis limits for a semi-log
-concentration-time plot}
+\item{data_range}{the range of values to be plotted on a log-transformed axis}
 
-\item{time_range_to_use}{optionally specify a time range for the conc-time
-data you're plotting and we'll find min and max concs within only that time
-range. If left as NA, we'll use the min and max concs for the overall data.}
+\item{axis_limits_log}{desired axis limits for an axis that will be log
+transformed. Leave this as NA if you'd like us to make a reasonable guess.}
 }
 \value{
 a list of log axis breaks and log axis labels
 }
 \description{
-\code{make_log_breaks} is mainly meant for internal SimcypConsultancy package
-use and is thus not terribly annotated in terms of warnings if you do
-something wrong.
+\code{make_log_breaks} creates a set of evenly spaced breaks and labels in
+what will be a log-transformed axis. These are set up to be used with a
+ggplot2 log-transformed axis like this, where "G" is whatever else you have
+specified for a ggplot2 graph and "MyBreaks" is the output from running
+\code{make_log_breaks}: \code{G + scale_y_log10(limits =
+MyBreaks$axis_limits_log, breaks = MyBreaks$breaks, labels =
+MyBreaks$labels)}  If the limits are powers of 10, this will put breaks at
+all powers of 10, and, if not, it will guess at reasonably spaced intervals.
+Note that this will make it so that there are unlabeled tick marks between
+the labels; this is to help make it clearer visually that the axis has been
+log transformed.
 }
 \examples{
 # none

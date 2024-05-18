@@ -305,7 +305,7 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
       
    }
    
-   Breaks <- make_log_breaks(axis_range = Ylim_log, 
+   Breaks <- make_log_breaks(data_range = Ylim_log, 
                              axis_limits_log = y_axis_limits_log) # just submit y range desired
                              
    
