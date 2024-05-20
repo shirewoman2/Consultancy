@@ -12,12 +12,14 @@ a ggplot2 theme
 \description{
 \code{theme_consultancy} sets the following: \itemize{ \item{Plot background
 is white; this includes the background for the legend and any facets and
-their labels.} \item{Axis ticks, lines, text, and titles are black.} \item{If
-it's a concentration-time plot or an enzyme-abundance plot that does
-\emph{not} have any facets, then there will be a line on the x axis and a
-line on the y axis but no overall border around the graph.} \item{If the
-graph is facetted, the labels for the facets are not enclosed with a border.}
-\item{Axis titles and, when applicable, the plot title are bold face.}
+their labels.} \item{Axis ticks, lines, text, and titles are black. Same with
+text in facets.} \item{If it's a concentration-time plot or an 
+enzyme-abundance plot that does \emph{not} have any facets, then there will 
+be a line on the x axis and a line on the y axis but no overall border 
+around the graph.} \item{If the graph is facetted, the labels for the facets 
+are not enclosed with a border.} \item{Axis titles and, when applicable, the 
+plot title are bold face. Note that expressions cannot be bold, so sometimes 
+this means that one axis will be bold and the other will not. }
 \item{Font sizes and margins are the same as in the ggplot2 theme
 "theme_bw"}}
 }
