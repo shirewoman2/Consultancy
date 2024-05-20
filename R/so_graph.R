@@ -39,6 +39,10 @@
 #'   specify something for the arguments \code{point_color_column} or
 #'   \code{point_shape_column}. If you do, those will be ignored. Try this out
 #'   if you're uncertain what we mean.
+#' @param all_AUCs_together TRUE or FALSE (default) for whether to combine,
+#'   e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
+#'   with this because if you have points for both AUCinf and AUCt for a
+#'   simulation, then BOTH of those points will show up on the graph.
 #' @param boundaries Numerical boundaries to show on the graph. Defaults to the
 #'   1.5- and 2-fold boundaries. Indicate boundaries you want like this:
 #'   \code{boundaries = c(1.25, 1.5, 2)}
@@ -275,6 +279,7 @@ so_graph <- function(PKtable,
                      facet_title_size = NA, 
                      title_adjustments = c(), 
                      all_intervals_together = FALSE, 
+                     all_AUCs_together = FALSE, 
                      ncol = NULL, 
                      nrow = NULL,
                      save_graph = NA, 
@@ -769,6 +774,12 @@ so_graph <- function(PKtable,
                 point_shape_column = Interval)
    }
    
+   if(all_AUCs_together){
+      SO <- SO %>% 
+         mutate(PKparameter = sub("AUCinf|AUCt$|AUCtau", "AUC", PKparameter), 
+                PKparameter = sub("AUCt_", "AUC_", PKparameter))
+   }
+   
    # It's possible to have both CLt_dose1 and CLinf_dose1 and they're labeled
    # the same way in PKexpressions. Adjusting for that scenario.
    if(all(c("CLinf_dose1", "CLt_dose1") %in% PKparameters)){
@@ -853,6 +864,9 @@ so_graph <- function(PKtable,
                      palette = "Tableau 10")(NumColorsNeeded),
                   "viridis" = viridis::viridis_pal()(NumColorsNeeded))
          )   
+         
+         if(is.null(MyPointColors)){MyPointColors <- "black"}
+         
          # NB: For the RColorBrewer palettes, the minimum number of
          # colors you can get is 3. Since sometimes we might only want 1
          # or 2 colors, though, we have to add the [1:NumColorsNeeded]
@@ -902,7 +916,7 @@ so_graph <- function(PKtable,
             }
          }
       } else {
-         MyPointShapes <- c(15:19, 8, 3:7, 9:14)[1:NumShapesNeeded]
+         MyPointShapes <- c(16:18, 15, 8, 3:7, 9:14)[1:NumShapesNeeded]
       }
    }
    
@@ -1149,6 +1163,11 @@ so_graph <- function(PKtable,
             PKwithBlanks <- sub("_dose1|_last", "", PKwithBlanks)
          }
          
+         if(all_AUCs_together){
+            PKwithBlanks <- sub("AUCinf|AUCtau", "AUC", PKwithBlanks)
+            PKwithBlanks <- sub("AUCt_", "AUC_", PKwithBlanks)
+         }
+         
          for(blanks in PKwithBlanks[str_detect(PKwithBlanks, "BLANK")]){
             G[[blanks]] <- ggplot() + theme_void()
          }
@@ -1161,6 +1180,12 @@ so_graph <- function(PKtable,
             bind_rows(AllPKParameters %>% select(PKparameter_nodosenum, SortOrder) %>% 
                          rename(PKparameter = PKparameter_nodosenum)) %>% 
             arrange(SortOrder) %>% pull(PKparameter) %>% unique()
+         
+         if(all_AUCs_together){
+            GoodOrder <- sub("AUCinf|AUCtau", "AUC", GoodOrder)
+            GoodOrder <- sub("AUCt_", "AUC_", GoodOrder)
+            GoodOrder <- unique(GoodOrder)
+         }
          
          if("sub steady-state for last" %in% title_adjustments){
             GoodOrder <- sub("_last", "_ss", GoodOrder)

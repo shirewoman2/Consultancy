@@ -30,6 +30,7 @@ so_graph(
   facet_title_size = NA,
   title_adjustments = c(),
   all_intervals_together = FALSE,
+  all_AUCs_together = FALSE,
   ncol = NULL,
   nrow = NULL,
   save_graph = NA,
@@ -274,6 +275,11 @@ mapped to which interval it is, which means that you can't \emph{also}
 specify something for the arguments \code{point_color_column} or
 \code{point_shape_column}. If you do, those will be ignored. Try this out
 if you're uncertain what we mean.}
+
+\item{all_AUCs_together}{TRUE or FALSE (default) for whether to combine,
+e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
+with this because if you have points for both AUCinf and AUCt for a
+simulation, then BOTH of those points will show up on the graph.}
 
 \item{ncol}{number of columns of graphs to show. If left as NULL (default), R
 will make a reasonable guess for the number.}
