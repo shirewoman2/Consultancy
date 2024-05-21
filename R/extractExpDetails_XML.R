@@ -115,12 +115,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    
    # Checking compound IDs
    compoundsToExtract <- tolower(compoundsToExtract)
-   
-   MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
-                        "secondary metabolite",
-                        "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite")
-   
-   PossCmpd <- c(MainCompoundIDs, "all")
+   PossCmpd <- c(AllCompounds$CompoundID, "all")
    
    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
       warning(paste0("The compound(s) ", 
@@ -132,9 +127,9 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    }
    
    if(any(compoundsToExtract == "all")){
-      compoundsToExtract <- MainCompoundIDs
+      compoundsToExtract <- AllCompounds$CompoundID
    } else {
-      compoundsToExtract <- intersect(compoundsToExtract, MainCompoundIDs)
+      compoundsToExtract <- intersect(compoundsToExtract, AllCompounds$CompoundID)
    }
    
    # Main body of function ---------------------------------------------------
