@@ -369,7 +369,6 @@ ct_plot_mult <- function(ct_dataframe,
       # graph_titles that were the entire file path, which seems highly
       # unlikely.)
       file_label_names <- basename(names(graph_titles))
-      graph_titles <- basename(graph_titles)
       names(graph_titles) <- file_label_names
       
       # If the user omitted any files that are included in ct_dataframe, grab
