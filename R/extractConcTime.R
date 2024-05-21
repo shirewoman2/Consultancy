@@ -318,7 +318,7 @@ extractConcTime <- function(sim_data_file,
    }
    
    if(Deets$SimulatorUsed != "Simcyp Simulator" & 
-      tissue %in% AllTissues$Tissue_input[
+      tissue %in% AllTissues$Tissue[
          AllTissues$SimulatorAvailability == "Simcyp Simulator only"]){
       
       BadTissue <- setdiff(tissue, c("plasma", "blood"))

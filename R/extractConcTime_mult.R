@@ -275,7 +275,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    tissue_input <- tissues
    if(all(tissue_input == "all")){
       tissues <- unique(AllTissues %>% filter(ModelType != "ADC") %>% 
-                           pull(Tissue_input))
+                           pull(Tissue))
    }
    
    # Make it so that, if they supply NA, NULL, or "none" for ct_dataframe, all
