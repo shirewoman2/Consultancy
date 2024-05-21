@@ -622,7 +622,9 @@ pksummary_mult <- function(sim_data_files = NA,
       
       # Checking whether data in long or wide format. 
       Wide <- any(names(observed_PKDF) %in% c(AllPKParameters$PKparameter, 
-                                              tolower(AllPKParameters$PKparameter)))
+                                              tolower(AllPKParameters$PKparameter), 
+                                              AllPKParameters$PKparameter_nodosenum, 
+                                              tolower(AllPKParameters$PKparameter_nodosenum)))
       
       if(Wide){
          
