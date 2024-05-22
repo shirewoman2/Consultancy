@@ -129,7 +129,12 @@ ct_x_axis <- function(Data, time_range, t0,
          pull(UniqDT) 
       MultDoseInt <- any(MultDoseInt != 1)
       
-      if(MultDoseInt == FALSE){
+      # Also have problems when something failed and there are no dose numbers
+      # in the data.
+      NoDoseNum <- SingleDose == FALSE & 
+         any(complete.cases(Data$DoseNum)) == FALSE
+      
+      if(MultDoseInt == FALSE & NoDoseNum == FALSE){
          if(SingleDose){
             DoseTimes <- data.frame(
                FirstDoseStart = Data %>%
@@ -239,20 +244,25 @@ ct_x_axis <- function(Data, time_range, t0,
             time_range[1] <- DoseTimes$LastDoseStart
             
             if(any(is.infinite(time_range))){
-               warning("You requested 'last observed' or 'last dose to last observed' for the time range, but your data do not include any observed data in that time frame. The full time range will be returned.",
+               warning("You requested 'last observed' or 'last dose to last observed' for the time range, but your data do not include any observed data in that time frame. The full time range will be returned.\n",
                        call. = FALSE)
                time_range <- Data %>% pull(Time) %>% range()
             }
          }
          
-      } else {
+      } else if(MultDoseInt){
          
          # Multiple compound scenario here
          if(any(str_detect(time_range_input, "dose|last obs"))){
             warning(paste0("You requested the ", time_range_input,
-                           ", but this is a graph of multiple compounds, which may have different dose intervals. The graph x axis will cover the full time range of the simulation."),
+                           ", but this is a graph of multiple compounds, which may have different dose intervals. The graph x axis will cover the full time range of the simulation.\n"),
                     call. = FALSE)
+            time_range <- Data %>% pull(Time) %>% range()
          }
+      } else if(NoDoseNum){
+         warning("You appear to have a multiple-dose simulation, but something has gone wrong and there are no dose numbers in your data. The graph x axis will cover the full time range of the simulation.\n", 
+                 call. = FALSE)
+         time_range <- Data %>% pull(Time) %>% range()
       }
       
       if(all(complete.cases(time_range_input)) &&

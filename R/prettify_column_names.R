@@ -99,11 +99,11 @@ prettify_column_names <- function(PKtable,
    
    # Dealing with unit differences b/c could have units in table other than the
    # most common ng/mL and h.
-   TableUnits <- list("OrigColNames" = names(PKtable), # Keeping this just in case. 
-                      "Conc" = str_extract(names(PKtable), 
+   TableUnits <- list("OrigColNames" = OrigColNames, 
+                      "Conc" = str_extract(OrigColNames, 
                                            "mg/L|mg/mL|µg/L|ug/L|µg/mL|ug/mL|ng/L|ng/mL|µM|nM") %>% 
                          sort() %>% unique(), 
-                      "Time" = str_extract(names(PKtable), 
+                      "Time" = str_extract(OrigColNames, 
                                            "\\(L/(h|day|min)|\\(h|day|min\\)") %>% # haven't yet seen any time units other than h but leaving this open to minutes or days just in case
                          gsub("\\(L?|\\)|/", "", .) %>% 
                          sort() %>% unique())
@@ -130,42 +130,39 @@ prettify_column_names <- function(PKtable,
    if(is.null(TableUnits$Conc) == FALSE &&
       length(TableUnits$Conc) > 0 &&
       TableUnits$Conc != "ng/mL"){
-      names(PKtable) <- sub(TableUnits$Conc, "ng/mL", names(PKtable))
+      OrigColNames <- sub(TableUnits$Conc, "ng/mL", OrigColNames)
    }
    
    if(is.null(TableUnits$Time) == FALSE && 
       length(TableUnits$Time) > 0 &&
       TableUnits$Time != "h"){
-      names(PKtable) <- sub(paste0("\\(", TableUnits$Time, "\\)"),
-                            "(h)", names(PKtable))
-      names(PKtable) <- sub(paste0("\\(L", TableUnits$Time, "\\)"),
-                            "(L/h)", names(PKtable))
+      OrigColNames <- sub(paste0("\\(", TableUnits$Time, "\\)"),
+                            "(h)", OrigColNames)
+      OrigColNames <- sub(paste0("\\(L", TableUnits$Time, "\\)"),
+                            "(L/h)", OrigColNames)
    }
    
    # 1st step: This will leave some values as NA for the column PrettifiedNames.
    TableNames <-
       data.frame(OrigColNames = OrigColNames, 
-                 PKparameter_orig = switch(PKtable_class, 
-                                           "data.frame" = names(PKtable), 
-                                           "character" = PKtable), 
                  OrigOrder = switch(PKtable_class, 
                                     "data.frame" = 1:ncol(PKtable), 
                                     "character" = 1:length(PKtable))) %>% 
-      mutate(IsPretty = PKparameter_orig %in% c(AllPKParameters$PrettifiedNames, 
+      mutate(IsPretty = OrigColNames %in% c(AllPKParameters$PrettifiedNames, 
                                                 AllPKParameters_mod$PrettifiedNames), 
-             IsNotPretty = PKparameter_orig %in% c(AllPKParameters_mod$PKparameter, 
+             IsNotPretty = OrigColNames %in% c(AllPKParameters_mod$PKparameter, 
                                                    AllPKParameters$PKparameter),
              IsPKParam = IsPretty | IsNotPretty, 
              NeedsPrettifying = IsPKParam & IsNotPretty, 
-             PKparameter = case_when(NeedsPrettifying == TRUE ~ PKparameter_orig, 
-                                     NeedsPrettifying == FALSE & IsPKParam == FALSE ~ PKparameter_orig, 
+             PKparameter = case_when(NeedsPrettifying == TRUE ~ OrigColNames, 
+                                     NeedsPrettifying == FALSE & IsPKParam == FALSE ~ OrigColNames, 
                                      NeedsPrettifying == FALSE & IsPKParam ~ NA), 
-             PrettifiedNames = case_when(NeedsPrettifying == FALSE ~ PKparameter_orig, 
-                                         NeedsPrettifying == FALSE & IsPKParam == FALSE ~ PKparameter_orig, 
+             PrettifiedNames = case_when(NeedsPrettifying == FALSE ~ OrigColNames, 
+                                         NeedsPrettifying == FALSE & IsPKParam == FALSE ~ OrigColNames, 
                                          TRUE ~ NA))
-   # Some columns may need prettifying and others may need uglifying. Need to figure
-   # out what values to fill in for any NA values in either PrettifiedNames or
-   # in PKparameter, so splitting table here.
+   # Some columns may need prettifying and others may need uglifying. Need to
+   # figure out what values to fill in for any NA values in either
+   # PrettifiedNames or in PKparameter, so splitting table here.
    
    TableNamesToPrettify <- TableNames %>% filter(is.na(PrettifiedNames)) %>% 
       select(-PrettifiedNames) %>% 

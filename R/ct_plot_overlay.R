@@ -1525,16 +1525,21 @@ ct_plot_overlay <- function(ct_dataframe,
       sim_dataframe <- convert_conc_units(sim_dataframe, 
                                           conc_units = conc_units_to_use,
                                           MW = MWs)
-      obs_dataframe <- convert_conc_units(obs_dataframe, 
-                                          conc_units = conc_units_to_use,
-                                          MW = MWs)
+      
+      if(nrow(obs_dataframe) > 0){
+         obs_dataframe <- convert_conc_units(obs_dataframe, 
+                                             conc_units = conc_units_to_use,
+                                             MW = MWs)
+      }
    }
    
    if(any(complete.cases(time_units_to_use))){
       sim_dataframe <- convert_time_units(sim_dataframe,
                                           time_units = time_units_to_use)
-      obs_dataframe <- convert_time_units(obs_dataframe,
-                                          time_units = time_units_to_use)
+      if(nrow(obs_dataframe) > 0){
+         obs_dataframe <- convert_time_units(obs_dataframe,
+                                             time_units = time_units_to_use)
+      }
    }
    
    # Setting up the x axis using the subfunction ct_x_axis

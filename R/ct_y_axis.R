@@ -270,8 +270,8 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
    # Setting up y axis for semi-log graphs ----------------------------------
    
    if(all(is.na(time_range_relative))){
-      time_range_relative <- range(ct_dataframe$Time[
-         complete.cases(ct_dataframe$Conc)], na.rm = T)
+      time_range_relative <- range(Ylim_data$Time[
+         complete.cases(Ylim_data$Conc)], na.rm = T)
    } 
    
    Ylim_log <- range(Ylim_data$Conc, na.rm = T)
@@ -305,7 +305,7 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
       
    }
    
-   Breaks <- make_log_breaks(axis_range = Ylim_log, 
+   Breaks <- make_log_breaks(data_range = Ylim_log, 
                              axis_limits_log = y_axis_limits_log) # just submit y range desired
                              
    

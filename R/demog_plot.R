@@ -235,7 +235,7 @@ demog_plot <- function(demog_dataframe,
       }
    }
    
-   wrap_plots(MyGraphs) +
+   patchwork::wrap_plots(MyGraphs) +
       patchwork::plot_layout(guides = "collect", 
                              ncol = ncol, 
                              nrow = nrow) + 

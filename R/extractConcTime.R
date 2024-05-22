@@ -189,8 +189,7 @@ extractConcTime <- function(sim_data_file,
    }
    
    # If they didn't include ".xlsx" at the end, add that.
-   sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
-                           sim_data_file, paste0(sim_data_file, ".xlsx"))
+   sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_file), ".xlsx")
    
    # Checking for file name issues
    CheckFileNames <- check_file_name(sim_data_file)
@@ -318,7 +317,7 @@ extractConcTime <- function(sim_data_file,
    }
    
    if(Deets$SimulatorUsed != "Simcyp Simulator" & 
-      tissue %in% AllTissues$Tissue_input[
+      tissue %in% AllTissues$Tissue[
          AllTissues$SimulatorAvailability == "Simcyp Simulator only"]){
       
       BadTissue <- setdiff(tissue, c("plasma", "blood"))
@@ -873,7 +872,7 @@ extractConcTime <- function(sim_data_file,
          File = sim_data_file) %>%
       arrange(across(any_of(c("Compound", "Inhibitor", "Simulated",
                               "Individual", "Trial", "Time")))) %>%
-      select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated",
+      select(any_of(c("Compound", "CompoundID", "Inhibitor", 
                       "Species", "Tissue", "Individual", "Trial",
                       "Simulated", "Time", "Conc", "SD_SE",
                       "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
