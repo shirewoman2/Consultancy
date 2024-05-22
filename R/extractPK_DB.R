@@ -53,11 +53,6 @@
 #'   that object here, unquoted. If left as NA, this function will run
 #'   \code{extractExpDetails} behind the scenes to figure out some information
 #'   about your experimental set up.
-#' @param returnAggregateOrIndiv return aggregate (default) and/or individual PK
-#'   parameters? Options are "aggregate", "individual", or "both". For aggregate
-#'   data, values are pulled from simulator output -- not calculated -- and the
-#'   output will be a data.frame with the PK parameters in columns and the
-#'   statistics reported exactly as in the simulator output file.
 #'
 #' @return a list: "individual" = individual PK data, "aggregate" = aggregate PK
 #'   data, "TimeInterval" = the time intervals used
@@ -69,8 +64,7 @@ extractPK_DB <- function(sim_data_file,
                          compoundToExtract = "substrate", 
                          PKparameters = NA, 
                          tissue = "plasma", 
-                         existing_exp_details, 
-                         returnAggregateOrIndiv = "both"){
+                         existing_exp_details){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -98,18 +92,10 @@ extractPK_DB <- function(sim_data_file,
    PKparameters <- harmonize_PK_names(PKparameters)
    
    # If they didn't include ".db" at the end, add that.
-   sim_data_file <- ifelse(str_detect(sim_data_file, "db$"), 
-                           sim_data_file, paste0(sim_data_file, ".db"))
+   sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.db", "", sim_data_file), ".db")
    
-   if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
-      all(returnAggregateOrIndiv %in% c("aggregate", "both", "individual")) == FALSE){
-      stop("Options for 'returnAggregateOrIndiv' are 'aggregate', 'individual', or 'both'.",
-           call. = FALSE)
-   }
    
-   if(returnAggregateOrIndiv[1] == "both"){
-      returnAggregateOrIndiv <- c("aggregate", "individual")
-   }
+   # Figuring out which data to pull --------------------------------------------------
    
    # Checking experimental details to only pull details that apply
    if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
@@ -161,7 +147,10 @@ extractPK_DB <- function(sim_data_file,
                                "AUCinf_dose1", "HalfLife_dose1"))
    
    # Main body of function ----------------------------------------------------
-   conn <- RSQLite::dbConnect(SQLite(), sim_data_file) 
+   Simcyp::SetWorkspace(sub("\\.db", ".wksz", sim_data_file), 
+                        verbose = FALSE)
+   
+   conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
    
    Deets <- harmonize_details(existing_exp_details) %>% 
       filter_sims(which_sims = sub("\\.db", ".xlsx", sim_data_file), 
@@ -187,7 +176,7 @@ extractPK_DB <- function(sim_data_file,
                AllCompounds$CompoundID == compoundToExtract]]),
          individual = individual,
          allDoses = TRUE, 
-         conn) %>% 
+         conn = conn) %>% 
          mutate(Individual = individual, 
                 Trial = Simcyp::GetIndividualValue_DB(individual,
                                                       "idGroupNo", 
@@ -237,35 +226,31 @@ extractPK_DB <- function(sim_data_file,
    
    ## Calculating aggregate stats --------------------------------------------
    
-   if(returnAggregateOrIndiv %in% c("aggregate", "both")){
-      
-      suppressWarnings(suppressMessages(
-         PK_agg <- PK_indiv %>% 
-            group_by(Compound, CompoundID, Inhibitor, Tissue, 
-                     Simulated, File, Dose, DoseNum, PKparameter) %>% 
-            summarize(
-               N = n(), 
-               Mean = mean(Value, na.rm = T),
-               SD = sd(Value, na.rm = T), 
-               Geomean = gm_mean(Value, na.rm = F), # need this to fail when there were problems, e.g., problems extrapolating to inf
-               GeoCV = gm_CV(Value, na.rm = F), 
-               CI90_lower = gm_conf(Value, CI = 0.90)[1], 
-               CI90_upper = gm_conf(Value, CI = 0.90)[2],
-               Median = median(Value, na.rm = T), 
-               Minimum = min(Value, na.rm = T), 
-               Maximum = max(Value, na.rm = T)) 
-      ))
-      
-      PK_agg <- PK_agg %>% ungroup() %>% 
-         select(-Inhibitor, -DoseNum, -Dose) %>% 
-         pivot_longer(cols = -c(Compound, CompoundID, Tissue, Simulated, 
-                                File, Simulated, PKparameter), 
-                      names_to = "Statistic", 
-                      values_to = "Value") %>% 
-         pivot_wider(names_from = PKparameter, 
-                     values_from = Value) 
-      
-   }
+   suppressWarnings(suppressMessages(
+      PK_agg <- PK_indiv %>% 
+         group_by(Compound, CompoundID, Inhibitor, Tissue, 
+                  Simulated, File, Dose, DoseNum, PKparameter) %>% 
+         summarize(
+            N = n(), 
+            Mean = mean(Value, na.rm = T),
+            SD = sd(Value, na.rm = T), 
+            Geomean = gm_mean(Value, na.rm = F), # need this to fail when there were problems, e.g., problems extrapolating to inf
+            GeoCV = gm_CV(Value, na.rm = F), 
+            CI90_lower = gm_conf(Value, CI = 0.90)[1], 
+            CI90_upper = gm_conf(Value, CI = 0.90)[2],
+            Median = median(Value, na.rm = T), 
+            Minimum = min(Value, na.rm = T), 
+            Maximum = max(Value, na.rm = T)) 
+   ))
+   
+   PK_agg <- PK_agg %>% ungroup() %>% 
+      select(-Inhibitor, -DoseNum, -Dose) %>% 
+      pivot_longer(cols = -c(Compound, CompoundID, Tissue, Simulated, 
+                             File, Simulated, PKparameter), 
+                   names_to = "Statistic", 
+                   values_to = "Value") %>% 
+      pivot_wider(names_from = PKparameter, 
+                  values_from = Value) 
    
    Intervals <- Intervals %>% filter(DoseNum %in% c(1, max(DoseNum))) %>% 
       mutate(DoseNum_text = case_when(

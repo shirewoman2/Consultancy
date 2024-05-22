@@ -8,7 +8,9 @@ CONSTRUCTION!!!!!}
 extractExpDetails_DB(sim_data_file)
 }
 \arguments{
-\item{sim_data_file}{the database file to get information from}
+\item{sim_data_file}{the database file to get information from. Note that a
+matching workspace MUST also be present, as in, the exact same file name
+but ending in ".wksz" instead of ".db".}
 }
 \value{
 a list of information, same as other extractExpDetails_x functions

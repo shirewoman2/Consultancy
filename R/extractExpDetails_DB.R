@@ -5,23 +5,49 @@
 #' information about how the simulation was set up. This uses the Simcyp package
 #' under the hood.
 #'
-#' @param sim_data_file the database file to get information from 
+#' @param sim_data_file the database file to get information from. Note that a
+#'   matching workspace MUST also be present, as in, the exact same file name
+#'   but ending in ".wksz" instead of ".db".
 #'
 #' @return a list of information, same as other extractExpDetails_x functions
 #' @export
 #'
-#' @examples 
+#' @examples
 #' # none yet
 #' 
 extractExpDetails_DB <- function(sim_data_file){
    
-   conn <- RSQLite::dbConnect(SQLite(), sim_data_file) 
+   # Error catching ----------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # FIXME - Will need to figure out how to check whether engine has been
+   # initialized. If it has not, then initialize or give a stop message.
+   
+   # # Intialise the system files path. Not sure whether the version number will
+   # # matter for this.
+   # suppressMessages(Simcyp::Initialise(
+   #    species = as.numeric(Simcyp::SpeciesID[str_to_title(species)]),
+   #    verbose = FALSE))
+   
+   # If they didn't include ".db" at the end, add that.
+   sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.db", "", sim_data_file), ".db")
+   
+   
+   # Main body of function ---------------------------------------------------
+   
+   Simcyp::SetWorkspace(sub("\\.db", ".wksz", sim_data_file), 
+                        verbose = FALSE)
+   
+   conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
    
    # Figure out which compound positions were active. 
    ActiveCompounds <- 
       sapply(paste0("idInhEnabled", AllCompounds$CompoundID_num_Simcyp), 
              \(x) Simcyp::GetParameter(Tag = x, 
-                                       Category = CategoryID$SimulationData, 
+                                       Category = Simcyp::CategoryID$SimulationData, 
                                        SubCategory = 0))
    names(ActiveCompounds) <- AllCompounds$DetailNames
    ActiveCompounds <- names(ActiveCompounds)[ActiveCompounds]
@@ -146,14 +172,16 @@ extractExpDetails_DB <- function(sim_data_file){
       ParameterConversion$Detail_nosuffix[
          ParameterConversion$SimcypParameterType == "general parameter"])
    
-   # Have to deal w/NumDoses specially b/c it's set up not as a compound
-   # parameter but as a general parameter.
+   # Have to deal w/NumDoses, StartHr specially b/c they're not set up not as a
+   # compound parameter but as a general parameter.
    Remove <- setdiff(
       # All possible NumDoses_x
-      paste0("NumDoses", c("_sub", "_inhib", "_inhib2")), 
+      paste0(rep(c("NumDoses", "StartHr"), each = 3), 
+             c("_sub", "_inhib", "_inhib2")), 
       # Only the NumDoses_x that are active               
-      paste0("NumDoses", AllCompounds$DosedCompoundSuffix[
-         AllCompounds$DetailNames %in% ActiveCompounds]))
+      paste0(rep(c("NumDoses", "StartHr"), each = length(ActiveCompounds)), 
+             AllCompounds$DosedCompoundSuffix[
+                AllCompounds$DetailNames %in% ActiveCompounds]))
    
    GenParam <- setdiff(GenParam, Remove)
    rm(Remove)
@@ -171,22 +199,27 @@ extractExpDetails_DB <- function(sim_data_file){
       
       names(Details_toadd) <- k
       Details <- c(Details, Details_toadd)
+      
+      if(str_detect(k, "NumDoses")){
+         MoreDetails_toadd <- 
+            ifelse(Details_toadd > 1, "Multiple Dose", "Single Dose")
+         names(MoreDetails_toadd) <- 
+            sub("NumDoses", "Regimen", k)
+         Details <- c(Details, MoreDetails_toadd)
+         rm(MoreDetails_toadd)
+      }
+      
       rm(Details_toadd, ParamConv_subset)
       
    }
    
    # Getting compound names separately.
    CmpdNames <- 
-      map(.x = Simcyp::CompoundID, 
+      map(.x = AllCompounds$CompoundID_num_Simcyp, 
           .f = function(x){Simcyp::GetCompoundParameter(
              Tag = "idName", 
-             Compound = x)}) %>% 
-      as.data.frame() %>% 
-      rename(PrimaryMetabolite1 = SubPriMet1, 
-             PrimaryMetabolite2 = SubPriMet2, 
-             SecondaryMetabolite = SubSecMet,
-             Inhibitor1Metabolite = Inhibitor1Met) %>% 
-      as.list()
+             Compound = x)})
+   names(CmpdNames) <- AllCompounds$DetailNames
    
    Details <- c(Details, 
                 CmpdNames[intersect(AllCompounds$DetailNames, ActiveCompounds)])
@@ -196,8 +229,7 @@ extractExpDetails_DB <- function(sim_data_file){
    RSQLite::dbDisconnect(conn)
    
    Details <- as.data.frame(Details) %>% 
-      mutate(File = sub("\\.db$", ".xlsx", sim_data_file), 
-             DBFile = sim_data_file)
+      mutate(File = sim_data_file)
    
    Details <- harmonize_details(list(MainDetails = Details))
    

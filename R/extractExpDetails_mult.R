@@ -119,14 +119,17 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # recursive.
    if(length(sim_data_files) == 1 &&
       (is.na(sim_data_files) | sim_data_files == "recursive")){
-      sim_data_files <- list.files(pattern = "xlsx$",
+      sim_data_files <- list.files(pattern = "\\.xlsx$|\\.db$",
                                    recursive = (complete.cases(sim_data_files) &&
                                                    sim_data_files == "recursive"))
       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
    }
    
-   # If they didn't include ".xlsx" at the end, add that.
-   sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_files), ".xlsx")
+   # If they didn't include ".xlsx" or ".db" at the end of the file name, assume
+   # they want the more-developed option and add "xlsx".
+   MissingExt <- which(str_detect(sim_data_files, "\\.xlsx$|\\.db$") == FALSE)
+   sim_data_files[MissingExt] <- 
+      sub("\\.wksz$|\\.dscw$", ".xlsx", sim_data_files[MissingExt])
    
    # Making sure that all the files exist before attempting to pull data
    if(any(file.exists(sim_data_files) == FALSE)){
@@ -159,7 +162,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # existing_exp_details, all of those will work. Note to coders: It was REALLY
    # HARD to get this to work with just the perfect magical combination of
    # exists and suppressWarnings, etc.
-   
    
    # If user supplied an unquoted object, this checks whether that object
    # exists. However, if they supplied NA or NULL, this throws an error. 
@@ -203,8 +205,12 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    
    for(i in sim_data_files_topull){ 
       message(paste("Extracting simulation experimental details from file =", i))
-      MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
-                                        exp_details = exp_details) 
+      if(str_detect(i, "\\.db$")){
+         MyDeets[[i]] <- extractExpDetails_DB(sim_data_file = i) 
+      } else {
+         MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
+                                           exp_details = exp_details) 
+      }
    }
    
    if(length(MyDeets) > 0){
