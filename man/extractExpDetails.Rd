@@ -39,17 +39,7 @@ the autorunner adds as long as that stamp is in a format like this: "myfile
   results file name and is located in the same folder. Otherwise, this step
   in the data extraction will be skipped.}
 
-  \item{"all"}{Extract all possible parameters}
-
-  \item{a string of the specific parameters you want, each in quotes and
-  encapsulated with \code{c(...)}}{For a complete list of options:
-  \code{view(ExpDetailDefinitions)} Parameters are reported with a suffix
-  depending on which compound they pertain to: "_sub" for the substrate,
-  "_met1" for the primary metabolite, "_met2" for the second primary
-  metabolite, "_secmet" for the secondary metabolite, "_inhib" for the 1st
-  inhibitor or inducer listed, "_inhib2" for the 2nd inhibitor or inducer
-  listed, or "_inhib1met" for the inhibitor 1 metabolite. An example of
-  acceptable input: \code{c("pKa1_sub", "fa_inhib2", "Regimen_sub")}}}
+  \item{"all"}{Extract all possible parameters}}
 
   \strong{NOTES:} \enumerate{\item{The default pulls parameters from the
   "Summary" tab and the "Input Sheet" tab. Note that the
