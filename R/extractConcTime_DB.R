@@ -81,8 +81,8 @@ extractConcTime_DB <- function(sim_data_file,
    sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.db$", "", sim_data_file), ".db")
    
    # Main body of function ----------------------------------------------------
-   Simcyp::SetWorkspace(sub("\\.db", ".wksz", sim_data_file), 
-                        verbose = FALSE)
+   suppressMessages(Simcyp::SetWorkspace(sub("\\.db", ".wksz", sim_data_file), 
+                                         verbose = FALSE))
    
    conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
    

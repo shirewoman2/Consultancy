@@ -87,3 +87,36 @@ blues <- function(ncolors){
    
 }
 
+
+#' Create a vector of yellow-greens
+#'
+#' \code{chartreuse} is useful for getting a set of yellows to greens for
+#' graphs. These are from the RColorBrewer package, color set "YlGn", just to
+#' give credit where it's due, but they can be any number in length rather than
+#' only up to 9 colors.
+#'
+#' @param ncolors number of colors desired
+#'
+#' @return a character vector of colors
+#' @export
+#'
+#' @examples
+#' # Create a set of 10 yellows to chartreuses to greens.
+#' blues(10)
+#'
+#' # Try using scales::show_col() to visualize the colors, ex:
+#' scales::show_col(blues(10))
+#' 
+chartreuse <- function(ncolors){
+   
+   colChartreuse <- colorRampPalette(c("#FFFFE5", "#F7FCB9", "#D9F0A3", 
+                                  "#ADDD8E", "#78C679", "#41AB5D", 
+                                  "#238443", "#006837", "#004529"))
+   
+   return(colChartreuse(ncolors))
+   
+}
+
+
+
+

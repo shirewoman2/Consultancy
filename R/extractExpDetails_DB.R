@@ -38,8 +38,9 @@ extractExpDetails_DB <- function(sim_data_file){
    
    # Main body of function ---------------------------------------------------
    
-   Simcyp::SetWorkspace(sub("\\.db", ".wksz", sim_data_file), 
-                        verbose = FALSE)
+   suppressMessages(
+      Simcyp::SetWorkspace(sub("\\.db", ".wksz", sim_data_file), 
+                           verbose = FALSE))
    
    conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
    

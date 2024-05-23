@@ -147,8 +147,8 @@ extractPK_DB <- function(sim_data_file,
                                "AUCinf_dose1", "HalfLife_dose1"))
    
    # Main body of function ----------------------------------------------------
-   Simcyp::SetWorkspace(sub("\\.db", ".wksz", sim_data_file), 
-                        verbose = FALSE)
+   suppressMessages(Simcyp::SetWorkspace(sub("\\.db", ".wksz", sim_data_file), 
+                                         verbose = FALSE))
    
    conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
    
