@@ -102,10 +102,10 @@ blues <- function(ncolors){
 #'
 #' @examples
 #' # Create a set of 10 yellows to chartreuses to greens.
-#' blues(10)
+#' chartreuse(10)
 #'
 #' # Try using scales::show_col() to visualize the colors, ex:
-#' scales::show_col(blues(10))
+#' scales::show_col(chartreuse(10))
 #' 
 chartreuse <- function(ncolors){
    
@@ -117,6 +117,35 @@ chartreuse <- function(ncolors){
    
 }
 
+
+#' Create a vector of purples
+#'
+#' \code{purples} is useful for getting a set of yellows to greens for
+#' graphs. These are from the RColorBrewer package, color set "YlGn", just to
+#' give credit where it's due, but they can be any number in length rather than
+#' only up to 9 colors.
+#'
+#' @param ncolors number of colors desired
+#'
+#' @return a character vector of colors
+#' @export
+#'
+#' @examples
+#' # Create a set of 10 purples.
+#' purples(10)
+#'
+#' # Try using scales::show_col() to visualize the colors, ex:
+#' scales::show_col(purples(10))
+#' 
+purples <- function(ncolors){
+   
+   colPurple <- colorRampPalette(c("#FCFBFD", "#EFEDF5", "#DADAEB",
+                                   "#BCBDDC", "#9E9AC8", "#807DBA", 
+                                   "#6A51A3", "#54278F", "#3F007D"))
+   
+   return(colPurple(ncolors))
+   
+}
 
 
 
