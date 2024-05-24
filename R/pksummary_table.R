@@ -1,10 +1,14 @@
-#' Make summary PK tables for reports
+#' Make a summary PK table for a report or slide deck
 #'
 #' \code{pksummary_table} creates tables of PK parameters for reports and
 #' presentations, including reporting means, CVs, and confidence intervals or
-#' percentiles and, optionally, comparisons to observed data. This function
-#' automatically finds the correct tabs and the correct cells in a Simulator
-#' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
+#' percentiles and, optionally, comparisons to observed data. When it's a
+#' standard PK parameter you're after, this function automatically finds the
+#' correct tabs and the correct cells in a Simulator
+#' output Excel file to obtain those data. If you want PK from a user-defined 
+#' AUC interval, that's possible, too, but we'll need you to tell us which sheet 
+#' to use. \strong{Notes:} \itemize{\item{If you want}
+#' \item{Please
 #' see the notes at the bottom of this help file for how to supply observed data
 #' in a standardized fashion that this function can read.} \item{If you would
 #' like to make a single PK table for multiple files at once, please see the
@@ -186,7 +190,7 @@
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
 #'   "peripheral plasma", or "peripheral blood". \strong{NOTE: PK for peripheral
-#'   sampling is not as well tested as for other tissues and is only set up for 
+#'   sampling is not as well tested as for other tissues and is only set up for
 #'   V21+. Please check your results carefully.}
 #' @param compoundToExtract For which compound do you want to extract PK data?
 #'   Options are: \itemize{\item{"substrate" (default),} \item{"primary
@@ -393,9 +397,9 @@
 #'   writing table headings later.
 #' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
 #'   header row to the top of your table denoting when the PK are for baseline,
-#'   with a perpetrator, or are the geometric mean ratios. 
+#'   with a perpetrator, or are the geometric mean ratios.
 #' @param page_orientation set the page orientation for the Word file output to
-#'   "portrait" (default) or "landscape" 
+#'   "portrait" (default) or "landscape"
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
