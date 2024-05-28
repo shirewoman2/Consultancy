@@ -1685,10 +1685,16 @@ annotateDetails <- function(existing_exp_details,
       
       GoodItems <- as.logical(
          map(Out, function(x){is.null(x) == FALSE && nrow(x$DF) > 0}))
-      ToWrite <- intersect(names(Out)[which(GoodItems)], 
-                           c("MainDetails", 
-                             ExpDetailListItems[tolower(ExpDetailListItems) %in% 
-                                                   tolower(detail_set)]))
+      
+      if(any(tolower(detail_set) == "all")){
+         ToWrite <- names(Out)[which(GoodItems)]
+      } else {
+         ToWrite <- intersect(
+            names(Out)[which(GoodItems)], 
+            c("MainDetails", 
+              ExpDetailListItems[tolower(ExpDetailListItems) %in% 
+                                    tolower(detail_set)]))
+      }
       
       if(length(ToWrite) > 1){
          if(output_tab_name == "Simulation experimental details"){
