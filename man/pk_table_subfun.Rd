@@ -22,6 +22,8 @@ pk_table_subfun(
 
 \item{existing_exp_details}{harmonized existing_exp_details}
 
+\item{convert_conc_units}{how to convert conc units, if desired}
+
 \item{MeanType}{main mean type}
 
 \item{GMR_mean_type}{GMR mean type}
@@ -37,7 +39,8 @@ a list of 1) "PK" - a data.frame of unformatted simulated and, when
   has been rounded. 2) "PKrequested" - which PK parameters were requested, 3)
   "PKpulled" - which PK parameters were successfully pulled, 4) "QC" - QC
   info, 5) "ForestData" - forest data formatted appropriately for the
-  forest_plot function
+  forest_plot function, and 6) "CheckDoseInt" - list of the message and
+  dosing interval data
 }
 \description{
 Subfunction for pk_table. FOR INTERNAL PACKAGE USE.

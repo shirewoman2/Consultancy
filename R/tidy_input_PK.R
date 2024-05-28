@@ -11,9 +11,9 @@
 #' @param report_input_file probably not in use
 #' @param sheet_report probably not in use
 #' @param sim_data_files a character vector of file names. This should no longer
-#'   be NA or "recursive". 
+#'   be NA or "recursive".
 #' @param compoundsToExtract the values they supplied for compoundsToExtract in
-#'   the parent function. 
+#'   the parent function.
 #' @param tissues the values they supplied for tissues in the parent function
 #' @param sheet_PKparameters the values they supplied for sheet_PKparameters in
 #'   the parent function
@@ -85,13 +85,7 @@ tidy_input_PK <- function(PKparameters,
       
       PKparameters <- as.data.frame(sectionInfo$ObsData)
       
-   } else {
-      
-      # Setting this for use later since it's easiest if sectionInfo is
-      # logical when it doesn't apply. <-- Might not be necessary any more. 
-      sectionInfo <- FALSE
-      
-   }
+   } 
    
    ## OPTION: CHARACTER VECTOR OF SOME KIND ------------------------------------
    
@@ -432,17 +426,13 @@ tidy_input_PK <- function(PKparameters,
    if(("CompoundID" %in% names(PKparameters) == FALSE ||
        all(is.na(PKparameters$CompoundID)))){
       
-      # If they only want 1 compound, then apply that to all rows.
-      if(length(sort(unique(compoundsToExtract))) == 1){
-         PKparameters$CompoundID <- sort(unique(compoundsToExtract))
-      } else {
-         # otherwise, apply all combos to all rows.
-         PKparameters <- PKparameters %>% ungroup() %>% 
-            select(-any_of("CompoundID")) %>% 
-            left_join(expand.grid(CompoundID = compoundsToExtract, 
-                                  PKparameter = PKparameters$PKparameter), 
-                      by = "PKparameter")
-      }
+      # Apply all combos of CompoundID to all rows.
+      PKparameters <- PKparameters %>% ungroup() %>% 
+         select(-any_of("CompoundID")) %>% 
+         left_join(expand.grid(CompoundID = compoundsToExtract, 
+                               PKparameter = PKparameters$PKparameter), 
+                   by = "PKparameter")
+      
    }
    
    # Setting any missing values to the default
@@ -451,17 +441,12 @@ tidy_input_PK <- function(PKparameters,
    if(("Tissue" %in% names(PKparameters) == FALSE ||
        all(is.na(PKparameters$Tissue)))){
       
-      # If they only want 1 tissue, then apply that to all rows.
-      if(length(sort(unique(tissues))) == 1){
-         PKparameters$Tissue <- sort(unique(tissues))
-      } else {
-         # otherwise, apply all combos to all rows.
-         PKparameters <- PKparameters %>% ungroup() %>% 
-            select(-any_of("Tissue")) %>% 
-            left_join(expand.grid(Tissue = tissues, 
-                                  PKparameter = PKparameters$PKparameter), 
-                      by = "PKparameter")
-      }
+      # Apply all combosof Tissues to all rows.
+      PKparameters <- PKparameters %>% ungroup() %>% 
+         select(-any_of("Tissue")) %>% 
+         left_join(expand.grid(Tissue = tissues, 
+                               PKparameter = PKparameters$PKparameter), 
+                   by = "PKparameter")
    }
    
    # Setting any missing values to the default

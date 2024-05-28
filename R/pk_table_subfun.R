@@ -3,7 +3,7 @@
 #' @param sim_data_file sim_data_file
 #' @param PKparameters data.frame that includes Tissue, CompoundID, and Sheet
 #' @param existing_exp_details harmonized existing_exp_details
-#' @param convert_conc_units
+#' @param convert_conc_units how to convert conc units, if desired
 #' @param MeanType main mean type
 #' @param GMR_mean_type GMR mean type
 #' @param includeTrialMeans determines whether to get individual data
@@ -15,7 +15,8 @@
 #'   has been rounded. 2) "PKrequested" - which PK parameters were requested, 3)
 #'   "PKpulled" - which PK parameters were successfully pulled, 4) "QC" - QC
 #'   info, 5) "ForestData" - forest data formatted appropriately for the
-#'   forest_plot function
+#'   forest_plot function, and 6) "CheckDoseInt" - list of the message and
+#'   dosing interval data
 #'
 #' @examples
 #' # none

@@ -1,38 +1,261 @@
-#' Title
+#' Make tables of PK values from Simulator output Excel files
 #'
-#' @param sim_data_files 
-#' @param compoundsToExtract 
-#' @param tissues 
-#' @param PKparameters 
-#' @param PKorder 
-#' @param sheet_PKparameters 
-#' @param existing_exp_details 
-#' @param mean_type 
-#' @param use_median_for_tmax 
-#' @param includeCV 
-#' @param includeSD 
-#' @param includeConfInt 
-#' @param includeMedian 
-#' @param includeRange 
-#' @param includePerc 
-#' @param includeTrialMeans 
-#' @param concatVariability 
-#' @param variability_format 
-#' @param convert_conc_units 
-#' @param include_dose_num 
-#' @param add_header_for_DDI 
-#' @param rounding 
-#' @param prettify_columns 
-#' @param extract_forest_data 
-#' @param checkDataSource 
-#' @param highlight_gmr_colors 
-#' @param highlight_so_cutoffs 
-#' @param highlight_so_colors 
-#' @param save_table 
-#' @param single_table 
-#' @param page_orientation 
-#' @param fontsize 
-#' @param ... 
+#' \code{pk_table} creates tables of PK parameters for reports and
+#' presentations, including reporting means, CVs, and confidence intervals or
+#' percentiles and, optionally, comparisons to observed data. This function
+#' automatically finds the correct tabs and the correct cells in a Simulator
+#' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Coding
+#' requires having a standardized way to input all the myriad
+#' possibilities for PK parameters, which can be tricky. Please try
+#' running \code{\link{make_example_PK_input}} to see examples for how to
+#' specify the PK parameters you need.} \item{For detailed instructions and
+#' examples, please see the SharePoint file "Simcyp PBPKConsult
+#' R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+#' instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
+#' include a link to it here.)} \item{In the results, tmax will be listed as
+#' median, min, and max rather than mean, lower and higher confidence interval
+#' or percentiles. Similarly, if you request trial means, the values for tmax
+#' will be the range of medians for the trials rather than the range of
+#' means.} \item{We strongly recommend saving the output to a Word file, which
+#' will apply any highlighting you request and some other nice formatting,
+#' will not drop trailing zeroes, and will include some text for possible
+#' table headings and captions.}}
+#'
+#'
+#' @param sim_data_files the Simcyp Simulator output Excel files to use. Options
+#'   for how to specify these: \itemize{\item{NA to extract PK data
+#'   for \emph{all} the Excel files in the current folder or for all the files
+#'   listed in what you supply to the argument \code{PKparameters}}
+#'   \item{"recursive" to extract PK data for all the Excel files
+#'   in the current folder and all subfolders.} \item{a character
+#'   vector of simulator output files, each in quotes and encapsulated with
+#'   \code{c(...)}} } If you do want specific simulations, please take pity on your
+#'   poor R coders and do use the same simulation file names in different
+#'   subfolders in the same function call; it's too confusing and we might give
+#'   you incorrect results.
+#' @param PKparameters the PK parameters to include. Options for this:
+#'   \describe{
+#'
+#'   \item{NA}{If you leave this as NA, by default, if you have a single-dose
+#'   simulation, the parameters will
+#'   include AUC and Cmax for dose 1, or, if you have a multiple-dose
+#'   simulation, AUC and Cmax for the last dose. Also by default, if you have a
+#'   perpetrator present, the parameters will include the AUC and Cmax values with
+#'   and without the perpetrator as well as those ratios.}
+#'
+#'   \item{a csv file or a data.frame of PK parameters}{This
+#'   is the most versatile option and, we think, the clearest in terms of
+#'   getting what you expected. Please try running
+#'   \code{\link{make_example_PK_input}} to see examples for how to set up
+#'   a csv file or data.frame to specify exactly which simulation file should get
+#'   which PK parameter from which tissue and, when user-specified intervals are
+#'   involved, from which tab in the Excel file those data should be pulled.}
+#'
+#'   \item{a character vector of any combination of specific, individual
+#'   parameters}{This character vector must contain SimcypConsultancy package
+#'   coded names for each parameter you want, e.g., \code{c("Cmax_dose1",
+#'   "AUCtau_last").} Be sure to encapsulate the parameters you want with
+#'   \code{c(...)}. Please try running \code{\link{make_example_PK_input}} to
+#'   see examples. To see the full set of all possible parameters to extract, enter
+#'   \code{view(PKParameterDefinitions)} into the console.}}
+#'
+#'   Parameters that don't make sense for your scenario -- such as asking for
+#'   \code{AUCinf_dose1_withInhib} when your simulation did not include a
+#'   perpetrator -- will not be included.
+#'
+#'
+#' @param compoundsToExtract For which compounds do you want to extract PK data?
+#'   Options are any combination of the following:
+#'   \itemize{\item{"substrate" (default)} \item{"primary metabolite 1"}
+#'   \item{"primary metabolite 2"} \item{"secondary metabolite"}
+#'   \item{"inhibitor 1" -- this can be an inducer, inhibitor, activator, or
+#'   suppresesor, but it's labeled as "Inhibitor 1" in the simulator}
+#'   \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation}
+#'   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
+#'   \item{"all" for all possible compounds present in the simulations}} To
+#'   specify multiple compounds, enclose the compound IDs with parentheses,
+#'   e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}, or, and we
+#'   recommend this second option instead for clarity, supply them in a
+#'   data.frame or csv file for the argument \code{PKparameters}.
+#' @param tissues For which tissue(s) would you like the PK parameters to be
+#'   pulled? Options are any combination of: \itemize{\item{"plasma" (default)}
+#'   \item{"unbound plasma"} \item{"blood"} \item{"unbound blood"}
+#'   \item{"peripheral plasma"} \item{"peripheral blood"}} For multiple tissues,
+#'   enclose them with parentheses, e.g., \code{tissues = c("blood", "plasma")}
+#'   or, better, do not supply anything here and instead supply which tissue you
+#'   want for which simulation and which compound, etc. when you supply a
+#'   data.frame or csv file to the argument \code{PKparameters}.
+#' @param PKorder Would you like the order of the PK parameters to be the order
+#'   specified in the Consultancy Report Template (default), or would you like
+#'   the order to match the order you specified with the argument
+#'   \code{PKparameters}? Options are "default" or "user specified".
+#' @param sheet_PKparameters (optional) If you want the PK parameters to be
+#'   pulled from a specific tab in the simulator output file, list that tab
+#'   here. Otherwise, this should be left as NA. \code{sheet_PKparameters} can
+#'   only have a \emph{single value}, though. If you want some parameters from a
+#'   custom-interval tab and others from the regular tabs, you must supply that
+#'   as part of a data.frame or csv file for the argument \code{PKparameters}.
+#'   Please try running \code{\link{make_example_PK_input}} to see examples for
+#'   how to do this.
+#' @param existing_exp_details If you have already run
+#'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
+#'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
+#'   "Summary and Input"} or \code{exp_details = "all"}), you can save some processing
+#'   time by supplying that object here, unquoted. If left as NA, this function
+#'   will run \code{extractExpDetails} behind the scenes anyway to figure out some
+#'   information about your experimental set up.
+#' @param mean_type What kind of means and CVs do you want listed in the output
+#'   table? Options are "arithmetic" or "geometric" (default).
+#' @param use_median_for_tmax TRUE (default) or FALSE for whether to use median
+#'   for tmax values, regardless of what the other summary statistics are. This
+#'   is typically the case, but, if you've got client data where they actually
+#'   gave you tmax using the same summary statistic as the other PK parameters
+#'   (like geometric mean, for example), then set this to FALSE and whatever
+#'   mean type you specified with the argument \code{mean_type} will also be
+#'   used for tmax.
+#' @param includeCV TRUE (default) or FALSE for whether to include rows for CV
+#'   in the table
+#' @param includeSD TRUE or FALSE (default) for whether to include rows for the
+#'   standard deviation in the table
+#' @param includeConfInt TRUE (default) or FALSE for whether to include whatever
+#'   confidence intervals were included in the simulator output file. Note that
+#'   the confidence intervals are geometric since that's what the simulator
+#'   outputs (see an AUC tab and the summary statistics; these values are the
+#'   ones for, e.g., "90\% confidence interval around the geometric mean(lower
+#'   limit)").
+#' @param includeMedian TRUE or FALSE (default) for whether to include rows for
+#'   the median in the table
+#' @param includeRange TRUE or FALSE (default) for whether to include the
+#'   minimum and maximum values
+#' @param includePerc TRUE or FALSE (default) for whether to include 5th to 95th
+#'   percentiles
+#' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
+#'   range of trial means for a given parameter. Note: This is calculated from
+#'   individual values rather than being pulled directly from the output.
+#' @param concatVariability TRUE or FALSE (default) for whether to concatenate
+#'   the variability. If "TRUE", the output will be formatted into a single row
+#'   and listed as the lower confidence interval or percentile to the upper CI
+#'   or percentile, e.g., "2400 to 2700". Please note that the current
+#'   SimcypConsultancy template lists one row for each of the upper and lower
+#'   values, so this should be set to FALSE for official reports.
+#' @param variability_format formatting used to indicate the variability When
+#'   the variability is concatenated. Options are "to" (default) to get output
+#'   like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
+#'   output like "[X, Y]", or "parentheses" for the eponymous symbol if you're
+#'   an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
+#'   ambiguity; this was written by an American who didn't originally realize
+#'   that there was another name for parentheses.)
+#' @param convert_conc_units Would you like to convert the units to something
+#'   other than what was used in the simulation? Default is NA to leave the
+#'   units as is, but if you set the concentration units to something else, this
+#'   will attempt to convert the units to match that. This only adjusts only the
+#'   simulated values, since we're assuming that that's the most likely problem
+#'   and that observed units are relatively easy to fix, and it also only
+#'   affects AUC and Cmax values. Acceptable input is any concentration unit
+#'   listed in the Excel form for PE data entry, e.g. \code{convert_conc_units =
+#'   "ng/mL"} or \code{convert_conc_units = "uM"}. Molar concentrations will be
+#'   automatically converted using the molecular weight of whatever you set for
+#'   \code{compoundToExtract}.
+#' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
+#'   the dose number when listing the PK parameter. By default, the parameter
+#'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
+#'   you have PK data for both the first dose and the last dose. Also by
+#'   default, if you have data only for the first dose or only for the last
+#'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
+#'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
+#'   the default behavior and get exactly what you want.
+#' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
+#'   header row to the top of your table denoting when the PK are for baseline,
+#'   with a perpetrator, or are the geometric mean ratios.
+#' @param rounding option for what rounding to perform, if any. Options are:
+#'   \describe{\item{NA or "Consultancy"}{All output will be rounded according
+#'   to Simcyp Consultancy Team standards: to three significant figures when the
+#'   value is < 100 or to the ones place if the value is >= 100. Please see the
+#'   function \code{\link{round_consultancy}}, which does the rounding here.}
+#'   \item{"none"}{No rounding will be performed.} \item{"significant X" where
+#'   "X" is a number}{Output will be rounded to X significant figures. "signif
+#'   X" also works fine.} \item{"round X" where "X" is a number}{Output will be
+#'   rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
+#'   will be rounded using the function \code{\link{round_consultancy}}, but
+#'   nothing will be rounded in the output R object. This can be useful when you
+#'   want to have nicely rounded and formatted output in a Word file but you
+#'   \emph{also} want to use the results from \code{pksummary_mult} to make
+#'   forest plots, which requires numbers that are \emph{not} rounded.}}
+#' @param prettify_columns TRUE (default) or FALSE for whether to make easily
+#'   human-readable column names. TRUE makes pretty column names such as "AUCinf
+#'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
+#'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
+#'   the same time. This only applies when the compound to extract is the
+#'   substrate or a substrate metabolite. If set to TRUE, this will return a
+#'   list that includes data formatted for use with the function
+#'   \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
+#'   only works with simulations with perpetrators (at least, for now), this
+#'   will only work for simulations that included a perpetrator.
+#' @param checkDataSource TRUE (default) or FALSE for whether to include in the
+#'   output a data.frame that lists exactly where the data were pulled from the
+#'   simulator output file. Useful for QCing.
+#' @param highlight_gmr_colors optionally specify a set of colors to use for
+#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+#'   "green to red" or a vector of 4 colors of your choosing. If left as NA, no
+#'   highlighting for GMR level will be done.
+#' @param highlight_so_cutoffs optionally specify cutoffs for highlighting any
+#'   simulated-to-observed ratios in Word file output. Anything that is above
+#'   those values or below the inverse of those values will be highlighted. To
+#'   figure out what cells to highlight, this looks for a column titled
+#'   "Statistic" or "Stat", then looks for what row contains "S/O" or "simulated
+#'   (something something) observed" (as in, we'll use some wildcards to try to
+#'   match your specific text). Next, it looks for any values in that same row
+#'   that are above those cutoffs. This overrides anything else you specified
+#'   for highlighting. The default is NA, for \emph{not} highlighting based on
+#'   S/O value. Acceptable input for, say, highlighting values that are > 125\%
+#'   or < 80\% of the observed and also, with a second color, values that are >
+#'   150\% or < 66\% would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}. If
+#'   you would like the middle range of values to be highlighted, include 1 in
+#'   your cutoffs. For example, say you would like everything that's < 80\% or >
+#'   125\% to be highlighted red but you'd like the "good" values from 80\% to
+#'   125\% to be green, you can get that by specifying
+#'   \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
+#'   c("green", "red")}. This only applies when you save the table as a Word file.
+#' @param highlight_so_colors optionally specify a set of colors to use in the
+#'   Word file output for highlighting S/O values outside the limits you
+#'   specified with \code{highlight_so_cutoffs}. Options: \describe{
+#'
+#'   \item{"yellow to red" (default)}{A range of light yellow to light orange to
+#'   light red. If you have included 1 in your cutoffs and you leave
+#'   \code{highlight_so_colors} with the default setting, values in the middle,
+#'   "good" range of S/O values will be highlighted a light green.}
+#'
+#'   \item{"traffic"}{light green, yellow, and red designed to display values
+#'   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
+#'   \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O
+#'   values. This color scheme was borrowed from Lisa, so if you've seen her
+#'   slides, these will look familiar.}
+#'
+#'   \item{a character vector of specific colors}{Any R-acceptable colors, will
+#'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
+#'   If you do specify your own bespoke colors, you'll need to make sure that
+#'   you supply one color for every value in \code{highlight_so_cutoffs}.}
+#' @param save_table optionally save the output table and, if requested, the QC
+#'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
+#'   table.docx" or "My table.csv", depending on whether you'd prefer to have
+#'   the table saved as a Word or csv file.  Do not include any slashes, dollar
+#'   signs, or periods in the file name. (You can also save the table to a Word
+#'   file later with the function \code{\link{formatTable_Simcyp}}.) If you
+#'   supply only the file extension, e.g., \code{save_table = "docx"}, the name
+#'   of the file will be "PK summary table" with that extension. If you supply
+#'   something other than just "docx" or just "csv" for the file name but you
+#'   leave off the file extension, we'll assume you want it to be ".csv". All PK
+#'   info will be included in a single Word or csv file, and, if
+#'   \code{checkDataSource = TRUE}, that will be saved in a single csv file.
+#' @param single_table TRUE (default) or FALSE for whether to save all the PK
+#'   data in a single table or break the data up by tissue, compound ID, and
+#'   file into multiple tables. This only applies to the Word output.
+#' @param page_orientation set the page orientation for the Word file output to
+#'   "portrait" (default) or "landscape"
+#' @param fontsize the numeric font size for Word output. Default is 11 point.
+#'   This only applies when you save the table as a Word file.
+#' @param ...
 #'
 #' @return a data.frame
 #' @export
@@ -41,10 +264,9 @@
 #' # none yet
 #' 
 pk_table <- function(sim_data_files = NA, 
+                     PKparameters = NA,
                      compoundsToExtract = "substrate",
                      tissues = "plasma", 
-                     PKparameters = NA,
-                     PKorder = "default", 
                      sheet_PKparameters = NA, 
                      existing_exp_details = NA, 
                      mean_type = NA, 
@@ -60,6 +282,7 @@ pk_table <- function(sim_data_files = NA,
                      variability_format = "to",
                      convert_conc_units = NA, 
                      include_dose_num = NA,
+                     PKorder = "default", 
                      add_header_for_DDI = TRUE, 
                      rounding = NA,
                      prettify_columns = TRUE, 

@@ -2,22 +2,25 @@
 % Please edit documentation in R/make_example_PK_input.R
 \name{make_example_PK_input}
 \alias{make_example_PK_input}
-\title{Examples for supplying PK parameters to pksummary functions}
+\title{Examples for supplying PK parameters to the pk_table function for the
+argument \code{PKparameters}}
 \usage{
 make_example_PK_input()
 }
 \value{
-saves a csv file of example PK parameters
+saves a csv file of example PK parameters for supplying to the
+  argument \code{PKparameters}
 }
 \description{
 \code{make_example_PK_input} gives examples of how to request specific PK
 parameters or supply specific PK data to the functions
-\code{\link{pksummary_table}} or \code{\link{pksummary_mult}}. You can either
-just get a printout in the console of the parameters you want or you can get
-an example csv file to use a as a template.
+\code{\link{pk_table}}, \code{\link{pksummary_table}}, or
+\code{\link{pksummary_mult}}. You can either just get a printout in the
+console of the names of the parameters you want or you can get an example csv
+file to use a as a template.
 }
 \examples{
-# None yet. This is an interactive function. 
+# None yet. This is an interactive function.
 
 
 }
