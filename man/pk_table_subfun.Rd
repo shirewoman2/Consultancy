@@ -34,8 +34,10 @@ w/extractPK}
 \value{
 a list of 1) "PK" - a data.frame of unformatted simulated and, when
   supplied, observed PK data with the columns Stat, PKParam, and Sim. NOTHING
-  has been rounded. 2) "PKrequested" - which PK parameters were requested,
-  and 3) "PKpulled" - which PK parameters were successfully pulled.
+  has been rounded. 2) "PKrequested" - which PK parameters were requested, 3)
+  "PKpulled" - which PK parameters were successfully pulled, 4) "QC" - QC
+  info, 5) "ForestData" - forest data formatted appropriately for the
+  forest_plot function
 }
 \description{
 Subfunction for pk_table. FOR INTERNAL PACKAGE USE.

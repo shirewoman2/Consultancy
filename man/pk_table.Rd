@@ -38,6 +38,7 @@ pk_table(
   single_table = FALSE,
   page_orientation = "portrait",
   fontsize = 11,
+  return_PK_pulled = FALSE,
   ...
 )
 }

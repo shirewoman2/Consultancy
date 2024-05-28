@@ -71,6 +71,11 @@ pk_table_subfun <- function(sim_data_file,
          stop_or_warn = "warn")
    )
    
+   if(CheckDoseInt$message == "mismatch" & any(str_detect(PKpulled, "_last"))){
+      warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n",
+              call. = FALSE)
+   }
+   
    # Sometimes missing problems with extrapolation to infinity. Checking for
    # that here. I thought that there wouldn't be any values for AUCinf, but
    # there definitely are. If any of the AUCinf_X parameters have trouble with
@@ -529,7 +534,7 @@ pk_table_subfun <- function(sim_data_file,
       
       "ForestData" = FD, 
       
-      "CheckDoseInt" = CheckDoseInt$interval))
+      "CheckDoseInt" = CheckDoseInt))
    
 }
 

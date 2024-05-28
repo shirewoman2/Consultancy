@@ -73,6 +73,7 @@ pk_table <- function(sim_data_files = NA,
                      single_table = FALSE,
                      page_orientation = "portrait", 
                      fontsize = 11, 
+                     return_PK_pulled = FALSE, 
                      ...){
    
    # Error catching ----------------------------------------------------------
@@ -365,21 +366,22 @@ pk_table <- function(sim_data_files = NA,
    FD <- list()
    CheckDoseInt <- list()
    
-   PKparameters <- split(PKparameters, 
-                         f = PKparameters$File)
+   # Sheet is often NA, which messes up split. Temporarily filling in
+   # NA values with "default".
+   PKparameters$Sheet[is.na(PKparameters$Sheet)] <- "default"
    
-   for(i in sim_data_files){
+   PKparameters <- split(PKparameters, 
+                         f = list(PKparameters$File, 
+                                  PKparameters$Sheet, 
+                                  PKparameters$CompoundID, 
+                                  PKparameters$Tissue))
+   
+   for(i in names(PKparameters)){
       
-      MyPKResults[[i]] <- list()
-      PKpulled[[i]] <- list()
-      PKrequested[[i]] <- list()
-      OutQC[[i]] <- list()
-      FD[[i]] <- list()
-      CheckDoseInt[[i]] <- list()
+      # message(paste0("Extracting PK data from `", i, "`"))
       
-      message(paste0("Extracting PK data from `", i, "`"))
-      
-      Deets <- existing_exp_details$MainDetails %>% filter(File == i)
+      Deets <- existing_exp_details$MainDetails %>%
+         filter(File == unique(PKparameters[[i]]$File))
       
       # Discovery simulations have only 1 tissue. Need to adjust for that. NB: I
       # considered checking for this in the tidy_input_PK function, but it's
@@ -397,142 +399,81 @@ pk_table <- function(sim_data_files = NA,
             filter(Tissue %in% Deets$PKTissue_Discovery)
       }
       
-      PKparameters[[i]] <- split(PKparameters[[i]], 
-                                 f = PKparameters[[i]]$CompoundID)
+      # message(paste("     for compound =", j))
+      # for(k in names(PKparameters[[i]][[j]])){
+      #    message(paste("          for tissue =", k))
+      #    
+      suppressWarnings(
+         temp <- 
+            pk_table_subfun(
+               sim_data_file = unique(PKparameters[[i]]$File), 
+               PKparameters = PKparameters[[i]], 
+               existing_exp_details = existing_exp_details, 
+               convert_conc_units = convert_conc_units,
+               MeanType = MeanType, 
+               GMR_mean_type = GMR_mean_type, 
+               includeTrialMeans = includeTrialMeans, 
+               use_median_for_tmax = use_median_for_tmax)
+      )
       
-      for(j in names(PKparameters[[i]])){
-         
-         message(paste("     for compound =", j))
-         
-         MyPKResults[[i]][[j]] <- list()
-         PKpulled[[i]][[j]] <- list()
-         PKrequested[[i]][[j]] <- list()
-         OutQC[[i]][[j]] <- list()
-         FD[[i]][[j]] <- list()
-         CheckDoseInt[[i]][[j]] <- list()
-         
-         PKparameters[[i]][[j]] <- split(PKparameters[[i]][[j]],
-                                         f = PKparameters[[i]][[j]]$Tissue)
-         
-         for(k in names(PKparameters[[i]][[j]])){
-            message(paste("          for tissue =", k))
-            
-            # Sheet is often NA, which messes up split. Temporarily filling in
-            # NA values with "default".
-            PKparameters[[i]][[j]][[k]]$Sheet[
-               is.na(PKparameters[[i]][[j]][[k]]$Sheet)] <- "default"
-            
-            PKparameters[[i]][[j]][[k]] <- split(PKparameters[[i]][[j]][[k]], 
-                                                 f = PKparameters[[i]][[j]][[k]]$Sheet)
-            
-            MyPKResults[[i]][[j]][[k]] <- list()
-            PKpulled[[i]][[j]][[k]] <- list()
-            PKrequested[[i]][[j]][[k]] <- list()
-            OutQC[[i]][[j]][[k]] <- list()
-            FD[[i]][[j]][[k]] <- list()
-            CheckDoseInt[[i]][[j]][[k]] <- list()
-            
-            for(ss in names(PKparameters[[i]][[j]][[k]])){
-               suppressWarnings(
-                  temp <- 
-                     pk_table_subfun(
-                        sim_data_file = i, 
-                        PKparameters = PKparameters[[i]][[j]][[k]][[ss]], 
-                        existing_exp_details = existing_exp_details, 
-                        convert_conc_units = convert_conc_units,
-                        MeanType = MeanType, 
-                        GMR_mean_type = GMR_mean_type, 
-                        includeTrialMeans = includeTrialMeans, 
-                        use_median_for_tmax = use_median_for_tmax)
-               )
-               
-               if(length(temp) == 0){
-                  warning(paste0(str_wrap(
-                     paste0("There were no possible PK parameters to be extracted for the ",
-                            j, " in ", k, " for the simulation `", i,
-                            "` on the ", 
-                            ifelse(is.na(ss), 
-                                   "regular sheet for the 1st or last-dose PK", 
-                                   paste0("sheet `", ss, "`")), 
-                            ". Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")),
-                     "\n"), call. = FALSE)
-                  next
-               }
-               
-               # Formatting to account for variability preferences
-               VarOptions <- c("CV" = includeCV & MeanType == "arithmetic", 
-                               "GCV" = includeCV & MeanType == "geometric",
-                               "CI90_low" = includeConfInt,
-                               "CI90_high" = includeConfInt, 
-                               "CI95_low" = includeConfInt,
-                               "CI95_high" = includeConfInt, 
-                               "per5" = includePerc, 
-                               "per95" = includePerc, 
-                               "MinMean" = includeTrialMeans, 
-                               "MaxMean" = includeTrialMeans, 
-                               "min" = includeRange, 
-                               "max" = includeRange, 
-                               "SD" = includeSD, 
-                               "median" = includeMedian)
-               VarOptions <- names(VarOptions)[which(VarOptions)]
-               VarOptions <- intersect(VarOptions, temp$PK$Stat)
-               
-               MyPKResults[[i]][[j]][[k]][[ss]] <- temp$PK %>%
-                  filter(Stat %in% c(VarOptions, 
-                                     switch(MeanType, 
-                                            "geometric" = "geomean", 
-                                            "arithmetic" = "mean")))
-               
-               PKpulled[[i]][[j]][[k]][[ss]] <-
-                  data.frame(File = i, 
-                             CompoundID = j, 
-                             Tissue = k, 
-                             PKpulled = temp$PKpulled, 
-                             Sheet = ss)
-               
-               PKrequested[[i]][[j]][[k]][[ss]] <-
-                  data.frame(File = i, 
-                             CompoundID = j, 
-                             Tissue = k, 
-                             PKrequested = temp$PKrequested, 
-                             Sheet = ss)
-               
-               if(checkDataSource){
-                  OutQC[[i]][[j]][[k]][[ss]] <- temp$QC
-               } 
-               
-               FD[[i]][[j]][[k]][[ss]] <- temp$ForestData
-             
-               CheckDoseInt[[i]][[j]][[k]][[s]] <- temp$CheckDoseInt
-               
-            }
-            
-            PKparameters[[i]][[j]][[k]] <- bind_rows(PKparameters[[i]][[j]][[k]])
-            MyPKResults[[i]][[j]][[k]] <- bind_rows(MyPKResults[[i]][[j]][[k]])
-            PKpulled[[i]][[j]][[k]] <- bind_rows(PKpulled[[i]][[j]][[k]])
-            PKrequested[[i]][[j]][[k]] <- bind_rows(PKrequested[[i]][[j]][[k]])
-            OutQC[[i]][[j]][[k]] <- bind_rows(OutQC[[i]][[j]][[k]])
-            FD[[i]][[j]][[k]] <- bind_rows(FD[[i]][[j]][[k]])
-            CheckDoseInt[[i]][[j]][[k]] <- bind_rows(CheckDoseInt[[i]][[j]][[k]])
-         }
-         
-         PKparameters[[i]][[j]] <- bind_rows(PKparameters[[i]][[j]])
-         MyPKResults[[i]][[j]] <- bind_rows(MyPKResults[[i]][[j]])
-         PKpulled[[i]][[j]] <- bind_rows(PKpulled[[i]][[j]])
-         PKrequested[[i]][[j]] <- bind_rows(PKrequested[[i]][[j]])
-         OutQC[[i]][[j]] <- bind_rows(OutQC[[i]][[j]])
-         FD[[i]][[j]] <- bind_rows(FD[[i]][[j]])
-         CheckDoseInt[[i]][[j]] <- bind_rows(CheckDoseInt[[i]][[j]])
-         
+      if(length(temp) == 0){
+         warning(paste0(str_wrap(
+            paste0("There were no possible PK parameters to be extracted for the ",
+                   j, " in ", k, " for the simulation `", i,
+                   "` on the ", 
+                   ifelse(is.na(ss), 
+                          "regular sheet for the 1st or last-dose PK", 
+                          paste0("sheet `", ss, "`")), 
+                   ". Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")),
+            "\n"), call. = FALSE)
+         next
       }
       
-      PKparameters[[i]] <- bind_rows(PKparameters[[i]])
-      MyPKResults[[i]] <- bind_rows(MyPKResults[[i]])
-      PKpulled[[i]] <- bind_rows(PKpulled[[i]])
-      PKrequested[[i]] <- bind_rows(PKrequested[[i]])
-      OutQC[[i]] <- bind_rows(OutQC[[i]])
-      FD[[i]] <- bind_rows(FD[[i]])
-      CheckDoseInt[[i]] <- bind_rows(CheckDoseInt[[i]])
+      # Formatting to account for variability preferences
+      VarOptions <- c("CV" = includeCV & MeanType == "arithmetic", 
+                      "GCV" = includeCV & MeanType == "geometric",
+                      "CI90_low" = includeConfInt,
+                      "CI90_high" = includeConfInt, 
+                      "CI95_low" = includeConfInt,
+                      "CI95_high" = includeConfInt, 
+                      "per5" = includePerc, 
+                      "per95" = includePerc, 
+                      "MinMean" = includeTrialMeans, 
+                      "MaxMean" = includeTrialMeans, 
+                      "min" = includeRange, 
+                      "max" = includeRange, 
+                      "SD" = includeSD, 
+                      "median" = includeMedian)
+      VarOptions <- names(VarOptions)[which(VarOptions)]
+      VarOptions <- intersect(VarOptions, temp$PK$Stat)
+      
+      MyPKResults[[i]] <- temp$PK %>%
+         filter(Stat %in% c(VarOptions, 
+                            switch(MeanType, 
+                                   "geometric" = "geomean", 
+                                   "arithmetic" = "mean")))
+      
+      PKpulled[[i]] <-
+         data.frame(File = unique(PKparameters[[i]]$File), 
+                    CompoundID = unique(PKparameters[[i]]$CompoundID), 
+                    Tissue = unique(PKparameters[[i]]$Tissue), 
+                    PKpulled = temp$PKpulled, 
+                    Sheet = unique(PKparameters[[i]]$Sheet))
+      
+      PKrequested[[i]] <-
+         data.frame(File = unique(PKparameters[[i]]$File), 
+                    CompoundID = unique(PKparameters[[i]]$CompoundID), 
+                    Tissue = unique(PKparameters[[i]]$Tissue), 
+                    PKrequested = temp$PKrequested, 
+                    Sheet = unique(PKparameters[[i]]$Sheet))
+      
+      if(checkDataSource){
+         OutQC[[i]] <- temp$QC
+      } 
+      
+      FD[[i]] <- temp$ForestData
+      
+      CheckDoseInt[[i]] <- temp$CheckDoseInt
       
    }
    
@@ -550,8 +491,10 @@ pk_table <- function(sim_data_files = NA,
    PKrequested <- bind_rows(PKrequested)
    OutQC <- bind_rows(OutQC)
    FD <- bind_rows(FD)
-   CheckDoseInt <- bind_rows(CheckDoseInt)
-   
+   CheckDoseInt <- list("message" = purrr::map(CheckDoseInt, "message") %>% 
+                           unlist(), 
+                        "interval" = purrr::map(CheckDoseInt, "interval") %>%
+                           bind_rows())
    
    # Formatting --------------------------------------------------------------
    
@@ -852,8 +795,8 @@ pk_table <- function(sim_data_files = NA,
       # Adding time interval to any data that came from custom AUC interval
       # sheets.
       if(any(complete.cases(PKparameters$Sheet)) &
-         length(MyPKResults_all$TimeInterval) > 0){
-         IntToAdd <- MyPKResults_all$TimeInterval %>% 
+         length(CheckDoseInt$TimeInterval) > 0){
+         IntToAdd <- CheckDoseInt$TimeInterval %>% 
             filter(Sheet %in% PKparameters$Sheet) %>% 
             pull(Interval)
          
@@ -969,7 +912,7 @@ pk_table <- function(sim_data_files = NA,
          ColsToInclude <- c(ColsToInclude, "SD")
       }
       
-      OutQC <- MyPKResults_all$QC %>% 
+      OutQC <- OutQC %>% 
          select(PKparam, File, matches(ColsToInclude))
       
    }
@@ -1084,11 +1027,6 @@ pk_table <- function(sim_data_files = NA,
    
    if(length(Out) == 1){
       Out <- Out[["Table"]]
-   }
-   
-   if(CheckDoseInt$message == "mismatch" & any(str_detect(PKpulled, "_last"))){
-      warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n", 
-              call. = FALSE)
    }
    
    return(Out)
