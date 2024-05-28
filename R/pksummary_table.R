@@ -481,13 +481,13 @@ pksummary_table <- function(sim_data_file = NA,
                            sim_data_file, paste0(sim_data_file, ".xlsx"))
    
    # Check for appropriate input for arguments
-   tissues <- tolower(tissues)
+   tissue <- tolower(tissue)
    PossTissues <- c("plasma", "unbound plasma", "blood", "unbound blood", 
                     "peripheral plasma", "peripheral blood")
-   if(any(tissues %in% PossTissues == FALSE)){
+   if(any(tissue %in% PossTissues == FALSE)){
       warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, `unbound blood`, `peripheral plasma`, or `peripheral blood`. The PK parameters will be for plasma.\n", 
               call. = FALSE)
-      tissues <- intersect(tissues, PossTissues)
+      tissue <- "plasma"
    }
    
    PKorder <- tolower(PKorder)
