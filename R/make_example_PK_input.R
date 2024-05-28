@@ -99,7 +99,8 @@ make_example_PK_input <- function(){
    
    if("3" %in% Q1){ # DDI
       
-      ExistingIDs <- bind_rows(Examples) %>% pull(ID)
+      ExistingIDs <- bind_rows(Examples)
+      if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
       
       if("2" %in% Q1){ # last dose
          # If they asked for DDI parameters AND they asked for last dose, just
@@ -124,7 +125,8 @@ make_example_PK_input <- function(){
       }
       
       if("4" %in% Q1){ # specific sheet
-         ExistingIDs <- bind_rows(Examples) %>% pull(ID)
+         ExistingIDs <- bind_rows(Examples)
+         if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
          
          Examples[["A3.4"]] <- 
             PKexamples %>% filter(DDI_sheet == TRUE) %>% 
@@ -139,7 +141,8 @@ make_example_PK_input <- function(){
    }
    
    if("4" %in% Q1){ # specific sheet
-      ExistingIDs <- bind_rows(Examples) %>% pull(ID)
+      ExistingIDs <- bind_rows(Examples)
+      if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
       
       Examples[["A4"]] <- 
          PKexamples %>% filter(complete.cases(Sheet)) %>% 
@@ -153,7 +156,8 @@ make_example_PK_input <- function(){
    }
    
    if("5" %in% Q1){ # specific compounds 
-      ExistingIDs <- bind_rows(Examples) %>% pull(ID)
+      ExistingIDs <- bind_rows(Examples)
+      if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
       
       Examples[["A5"]] <- 
          PKexamples %>% filter(CompoundID != "substrate") %>% 
@@ -168,7 +172,8 @@ make_example_PK_input <- function(){
    }
    
    if("6" %in% Q1){ # specific tissues 
-      ExistingIDs <- bind_rows(Examples) %>% pull(ID)
+      ExistingIDs <- bind_rows(Examples)
+      if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
       
       Examples[["A6"]] <- 
          PKexamples %>% filter(Tissue != "plasma") %>% 
@@ -182,7 +187,8 @@ make_example_PK_input <- function(){
    }
    
    if("7" %in% Q1){ # all AUCs
-      ExistingIDs <- bind_rows(Examples) %>% pull(ID)
+      ExistingIDs <- bind_rows(Examples)
+      if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
       
       Examples[["A7"]] <- 
          PKexamples %>% filter(AUC == TRUE) %>% 
@@ -196,7 +202,8 @@ make_example_PK_input <- function(){
    }
    
    if("8" %in% Q1){ # all CL
-      ExistingIDs <- bind_rows(Examples) %>% pull(ID)
+      ExistingIDs <- bind_rows(Examples)
+      if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
       
       Examples[["A8"]] <- 
          PKexamples %>% filter(AUC == TRUE) %>% 
@@ -210,7 +217,8 @@ make_example_PK_input <- function(){
    }
    
    if("9" %in% Q1){ # mult sims
-      ExistingIDs <- bind_rows(Examples) %>% pull(ID)
+      ExistingIDs <- bind_rows(Examples)
+      if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
       
       Examples[["A9"]] <- 
          PKexamples %>% filter(str_detect(File, ", ")) %>% 
@@ -224,7 +232,8 @@ make_example_PK_input <- function(){
    }
    
    if("10" %in% Q1){ # variability in obs PK
-      ExistingIDs <- bind_rows(Examples) %>% pull(ID)
+      ExistingIDs <- bind_rows(Examples)
+      if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
       
       Examples[["A10"]] <- 
          PKexamples %>% filter(complete.cases(Variability)) %>% 
@@ -240,7 +249,9 @@ make_example_PK_input <- function(){
    Examples <- bind_rows(Examples) %>% unique() %>% 
       arrange(SortOrder) %>% 
       select(File, CompoundID, Tissue, Sheet, PKparameter, Value, Variability,
-             any_of("Notes"))
+             any_of("Notes")) %>% 
+      mutate(across(.cols = any_of("Notes"), 
+                    .fns = \(x) ifelse(is.na(x), "", x)))
    
    
    ## Returning ------------------------------------------------------------
@@ -276,30 +287,33 @@ make_example_PK_input <- function(){
       OutPK <- str_comma(Opts[Q1])
    }
    
-   message(str_wrap(paste0(
-      switch(Q3, 
-             "1" = "Here are examples for the coded PK parameters for ", 
-             "2" = "We'll make you an example with PK for "), 
-      OutPK, ".")))
    
    if(Q3 == "1"){
+      message(str_wrap(paste0("Here are examples for the coded PK parameters for ", 
+                              OutPK, ".")))
       
       message(Examples %>% pull(PKparameter) %>% unique() %>% 
                  sort() %>% str_c(., collapse = "\n"))
    } else {
       
-      MyFile <- "Examples for specifying which PK you want with pksummary functions.csv"
+      MyFile <- "PK examples for SimcypConsultancy package.csv"
       if(file.exists(MyFile)){
          message(str_wrap(paste0("There is already a file with the same name that we're trying to use for saving your examples (`", 
                                  MyFile, 
                                  "`. Please specify what you would like the file to be called instead:\n")))
          MyFile <- readline("    ")
          
-         # If they didn't include ".xlsx" at the end, add that.
-         MyFile <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$", "", MyFile), ".xlsx")
+         # If they supplied quotes here, that messes things up. Removing. 
+         MyFile <- gsub("\"", "", MyFile)
+         
+         # If they didn't include ".csv" at the end, add that.
+         MyFile <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.csv$", "", MyFile), ".csv")
       }
       
-      write.csv(Examples, MyFile, row.names = FALSE)
+      write.csv(Examples, file = MyFile, row.names = FALSE, na = "")
+      message(str_wrap(paste0(
+         "We've made you an example csv file called `", MyFile, 
+         "` with PK for ", OutPK, ".")))
       
    }
    

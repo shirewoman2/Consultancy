@@ -472,11 +472,12 @@ pksummary_mult <- function(sim_data_files = NA,
    }
    
    tissues <- tolower(tissues)
-   if(any(tissues %in% c("plasma", "unbound plasma", "blood", "unbound blood", 
-                         "peripheral plasma", "peripheral blood") == FALSE)){
+   PossTissues <- c("plasma", "unbound plasma", "blood", "unbound blood", 
+                    "peripheral plasma", "peripheral blood")
+   if(any(tissues %in% PossTissues == FALSE)){
       warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, `unbound blood`, `peripheral plasma`, or `peripheral blood`. The PK parameters will be for plasma.\n", 
               call. = FALSE)
-      tissues <- intersect(tissues, c("plasma", "unbound plasma", "blood", "unbound blood"))
+      tissues <- intersect(tissues, PossTissues)
    }
    
    if(extract_forest_data & includeConfInt == FALSE){
