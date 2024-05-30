@@ -1,15 +1,28 @@
 #' Graph the ontogenies of drug-metabolizing enzymes and transporters
 #'
 #' \code{ontogeny_plot} uses the betas from the Simcyp Simulator to make graphs
-#' of the ontogenies of all the DME and transporters included in the Simulator.
-#' \strong{Note:} Only the beta version of the package includes the object
-#' OntogenyEquations, which is required for this function to work.
+#' of the ontogenies of all the enzymes and transporters included in the
+#' Simulator. \strong{Note:} Only the beta version of the package includes the
+#' object OntogenyEquations, which is required for this function to work.
 #'
-#' @param DME drug-metabolizing enzymes (DME) and transporters to plot. Options
-#'   are listed in the column "DME" of the data.frame OntogenyEquations, which
-#'   is saved with this package. To see it, type into the console
-#'   \code{view(OntogenyEquations)}
-#' @param DME_type type of DME or transporter
+#' @param Enzyme drug-metabolizing enzymes and transporters to plot, which
+#'   should be supplied as either a single string, in quotes, that we'll try to
+#'   match (e.g., "CYP3A4" will get you profiles 1 and 2 as well as "CYP3A4 in
+#'   vitro" and "Intestinal CYP3A4") or as a character vector of the enzymes or
+#'   transporters you want. Options are listed in the column "Enzyme" of the
+#'   data.frame OntogenyEquations, which is saved with this package. To see it,
+#'   type into the console \code{view(OntogenyEquations)} There's also a
+#'   slightly different version of the column "Enzyme" called
+#'   "Enzyme_alternative", which tries to make a few things a little clearer for
+#'   graphs. For example, instead of "CYP3A4 Profile 2", it lists "CYP3A4
+#'   (Upreti)". We'll look for whatever you supply for the argument "Enzyme" in
+#'   \emph{both} the column "Enzyme" and the column "Enzyme_alternative" and
+#'   return anything that matches in either place.
+#' @param Enzyme_type type of enzyme or transporter. Instead of graphing only a
+#'   specific enzyme or enzymes, you can request any enzymes or transporters of
+#'   a specific type. Please see the options in "OntogenyEquations" in the
+#'   column "Enzyme_type". This should be supplied as a character vector, e.g.,
+#'   \code{Enzyme_type = c("transporters", "UGTs")}
 #' @param simulator_version Simcyp Simulator version to display. Options are 21,
 #'   22 (default), or 23.
 #' @param compare_to_no_ontogeny TRUE or FALSE (default) for whether to show a
@@ -38,8 +51,8 @@
 #'   specified \code{facet_ncol} or  \code{facet_nrow}, then
 #'   \code{facet2_column} will designate the columns of the output graphs.
 #' @param colorBy_column (optional) the column in \code{OntogenyEquations} that
-#'   should be used for determining which color lines should be.
-#'   This should be unquoted, e.g., \code{colorBy_column = Tissue}.
+#'   should be used for determining which color lines should be. This should be
+#'   unquoted, e.g., \code{colorBy_column = Tissue}.
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -93,6 +106,16 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My ontogeny graph.png"If you leave off ".png"
+#'   or ".docx", the graph will be saved as a png file, but if you specify a
+#'   different graphical file extension, it will be saved as that file format.
+#'   Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
+#'   "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
+#'   or periods in the file name. Leaving this as NA means the file will not be
+#'   saved to disk.
+#' @param fig_height figure height in inches
+#' @param fig_width figure width in inches
 #'
 #' @return a ggplot2 graph
 #' @export
@@ -100,8 +123,8 @@
 #' @examples
 #' # none yet
 #' 
-ontogeny_plot <- function(DME = NA, 
-                          DME_type = NA, 
+ontogeny_plot <- function(Enzyme = NA, 
+                          Enzyme_type = NA, 
                           simulator_version = 22, 
                           compare_to_no_ontogeny = FALSE, 
                           age_range = c(0, 18), 
@@ -112,7 +135,10 @@ ontogeny_plot <- function(DME = NA,
                           facet2_title = NA, 
                           colorBy_column, 
                           color_set = "default", 
-                          legend_position = "right"){
+                          legend_position = "right",
+                          save_graph = NA,
+                          fig_height = NA,
+                          fig_width = NA){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -123,44 +149,37 @@ ontogeny_plot <- function(DME = NA,
    
    warning("The ontogeny equation shown on screen for Simcyp Simulator versions before V24 was INCORRECT. Amita is checking on the corrected equations to use with the Science Team, and these graphs should be considered as PRELIMINARY unless you have confirmed with Amita that the equations are correct. Please ask Laura Sh. about this if you want to use these graphs in a report!\n", 
            call. = FALSE)
-   # Note to self: I need to check back w/Amit after her 3/19/22 email to see
-   # what the status is on this. I also need to clarify with her *exactly* what
-   # equations this should use. -LSh
+   # Note to self: I need to check back w/Amita after her 3/19/22 email to see
+   # what the status is on this. -LSh
    
-   if(length(DME) > 1){
-      DME <- str_c(DME, collapse = "|")
+   if(length(Enzyme) > 1){
+      Enzyme <- str_c(Enzyme, collapse = "|")
    }
    # Remove parentheses
-   DME <- gsub("\\(|\\)", ".", DME)
+   Enzyme <- gsub("\\(|\\)", ".", Enzyme)
    
    
-   if(length(DME_type) > 1){
-      DME_type <- str_c(DME_type, collapse = "|")
+   if(length(Enzyme_type) > 1){
+      Enzyme_type <- str_c(Enzyme_type, collapse = "|")
    }
    
    # Remove parentheses
-   DME_type <- gsub("\\(|\\)", ".", DME_type)
+   Enzyme_type <- gsub("\\(|\\)", ".", Enzyme_type)
    
    
    # Setting up data ----------------------------------------------------------
    
-   Ontogenies <- OntogenyEquations %>%
-      mutate(DME_ch = case_when(DME == "CYP3A4 Profile 2" ~ "CYP3A4 (Upreti)", 
-                                DME == "CYP3A4 Profile 1" ~ "CYP3A4 (Salem)", 
-                                DME == "UGT1A9" ~ "UGT1A9\nan example of a fast ontogeny", 
-                                DME == "UGT2B7" ~ "UGT2B7\nan example of a slow ontogeny", 
-                                DME == "Fast ontogeny" ~ "Generic fast ontogeny (liver only)", 
-                                DME == "Slow ontogeny" ~ "Generic slow ontogeny (liver only)", 
-                                TRUE ~ DME))
+   Ontogenies <- OntogenyEquations
    
-   if(any(complete.cases(DME))){
+   if(any(complete.cases(Enzyme))){
       Ontogenies <- Ontogenies %>% 
-         filter(str_detect(tolower(DME_ch), tolower({{DME}})))
+         filter(str_detect(tolower(Enzyme_alternative), tolower({{Enzyme}})) |
+                   str_detect(tolower(Enzyme), tolower({{Enzyme}})))
    }
    
-   if(any(complete.cases(DME_type))){
+   if(any(complete.cases(Enzyme_type))){
       Ontogenies <- Ontogenies %>% 
-         filter(str_detect(tolower(DME_type), tolower({{DME_type}})))
+         filter(str_detect(tolower(Enzyme_type), tolower({{Enzyme_type}})))
    }
    
    Ontogenies <- Ontogenies %>% 
@@ -169,7 +188,7 @@ ontogeny_plot <- function(DME = NA,
                     "22" = V22 == TRUE, 
                     "23" = V23 == TRUE)) %>% 
       left_join(expand.grid(Age = seq(0, 25, length.out = 1000), 
-                            DME = OntogenyEquations$DME), by = "DME") %>% 
+                            Enzyme = OntogenyEquations$Enzyme), by = "Enzyme") %>% 
       mutate(AgeGroup = case_when(Age <= Age_cap1 ~ 1, 
                                   Age > Age_cap1 & Age <= Age_cap2 ~ 2, 
                                   Age > Age_cap2 ~ 3),
@@ -181,10 +200,18 @@ ontogeny_plot <- function(DME = NA,
                    complete.cases(Fmax) ~ 
                    Fbirth + ( (Fmax - Fbirth) * Age^n) / (Age50^n + Age^n),
                 
-                # exponential between Age_cap1 & 2
-                (Age > Age_cap1 | is.na(Age_cap1)) & 
+                # exponential between Age_cap1 & 2 and different for Upreti vs.
+                # everyone else
+                Enzyme != "CYP3A4 Profile 2" & 
+                   (Age > Age_cap1 | is.na(Age_cap1)) & 
                    Age <= Age_cap2 & complete.cases(C2) ~
                    C0 + C1*exp(C2*(Age - Age_cap2 - C3)), 
+                
+                # Upreti
+                Enzyme == "CYP3A4 Profile 2" & 
+                   (Age > Age_cap1 | is.na(Age_cap1)) & 
+                   Age <= Age_cap2 & complete.cases(C2) ~
+                   C0 + C1*exp(C2*(Age - C3)), 
                 
                 # linear between Age_cap1 & 2
                 (Age > Age_cap1 | is.na(Age_cap1)) &
@@ -198,7 +225,7 @@ ontogeny_plot <- function(DME = NA,
                 Age > Age_cap2 ~ 1), 
              
              # Upreti used a different exponential. Adjusting for that.
-             Fraction = case_when(str_detect(DME_ch, "Upreti") & 
+             Fraction = case_when(str_detect(Enzyme_alternative, "Upreti") & 
                                      (Age > Age_cap1 | is.na(Age_cap1)) & 
                                      Age <= Age_cap2 & complete.cases(C2) ~ 
                                      C0 + C1 * exp(C2 * (Age - C3)), 
@@ -210,8 +237,8 @@ ontogeny_plot <- function(DME = NA,
    if(compare_to_no_ontogeny){
       Ontogenies <- Ontogenies %>% 
          bind_rows(data.frame(Age = c(0, 18), 
-                              DME = "No ontogeny", 
-                              DME_ch = "No ontogeny", 
+                              Enzyme = "No ontogeny", 
+                              Enzyme_alternative = "No ontogeny", 
                               Fraction = 1))
    }
    
@@ -289,7 +316,7 @@ ontogeny_plot <- function(DME = NA,
    }
    
    Ontogenies <- Ontogenies %>% 
-      unite(col = Group, DME, DME_type, Tissue, remove = FALSE)
+      unite(col = Group, Enzyme, Enzyme_type, Tissue, remove = FALSE)
    
    
    # Graphing -----------------------------------------------------------------
@@ -426,6 +453,9 @@ ontogeny_plot <- function(DME = NA,
             # setting the colors needed and then using scale_color_manual
             # instead of scale_color_x. -LSh
             
+            color_set <- ifelse(color_set == "default" & 
+                                   NumColorsNeeded == 2, 
+                                "set1", "set2")
             color_set <- ifelse(str_detect(tolower(color_set), 
                                            "default|brewer.*2|set.*2"), 
                                 "set2", color_set)
@@ -475,25 +505,60 @@ ontogeny_plot <- function(DME = NA,
       theme_consultancy() +
       theme(legend.position = legend_position)
    
+   
+   # Saving -----------------------------------------------------------------
+   
+   if(complete.cases(save_graph)){
+      
+      # Checking for NA for fig_height and width
+      if(is.na(fig_height)){fig_height <- 5}
+      
+      if(is.na(fig_width)){fig_width <- 8}
+      
+      FileName <- save_graph
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                       "png", "bmp", "svg", "jpg") == FALSE){
+            warning(paste0("You have requested the graph's file extension be `", 
+                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+                    call. = FALSE)
+         }
+         Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                  "png", "bmp", "svg", "jpg", "docx"), 
+                       Ext, "png")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".png")
+         Ext <- "png"
+      }
+      
+      # This is when they want any kind of graphical file format.
+      ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+             plot = A)
+   }
+   
    return(A)
 }
 
-# ontogeny_plot(DME = "CYP3A4")
+# ontogeny_plot(Enzyme = "CYP3A4")
 # 
-# ontogeny_plot(DME = "CYP|UGT") +
-#    facet_wrap(~ DME_type)
-# ontogeny_plot(DME = "UGT1A4")
-# ontogeny_plot(DME = "P-gp")
-# ontogeny_plot(DME = "CYP2C9") + scale_color_brewer(palette = "Set1")
-# ontogeny_plot(DME_type = c("CYPs", "UGTs")) +
-#    facet_wrap(~ DME_ch, scales = "free")
+# ontogeny_plot(Enzyme = "CYP|UGT") +
+#    facet_wrap(~ Enzyme_type)
+# ontogeny_plot(Enzyme = "UGT1A4")
+# ontogeny_plot(Enzyme = "P-gp")
+# ontogeny_plot(Enzyme = "CYP2C9") + scale_color_brewer(palette = "Set1")
+# ontogeny_plot(Enzyme_type = c("CYPs", "UGTs")) +
+#    facet_wrap(~ Enzyme_alternative, scales = "free")
 # 
-# unique(OntogenyEquations$EnzymeType)
+# unique(OntogenyEquations$Enzyme_type)
 # 
 # Plots <- list()
-# for(i in unique(OntogenyEquations$EnzymeType)){
-#    Plots[[i]] <- ontogeny_plot(DME_type = i) +
-#       facet_wrap(~ DME_ch, scales = "free", 
+# for(i in unique(OntogenyEquations$Enzyme_type)){
+#    Plots[[i]] <- ontogeny_plot(Enzyme_type = i) +
+#       facet_wrap(~ Enzyme_alternative, scales = "free", 
 #                  ncol = 3) +
 #       ggtitle(i) +
 #       theme(legend.position = "none")
