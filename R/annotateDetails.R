@@ -1712,8 +1712,18 @@ annotateDetails <- function(existing_exp_details,
       # }
       
       for(i in ToWrite){
+         
+         if(nchar(OutputTabs[i]) > 31){
+            warning(paste0("The tab `", 
+                           OutputTabs[i], 
+                           "` has more than 31 characters, which is the maximum. This tab will be shortened to `", 
+                           str_sub(OutputTabs[i], 1, 31), "`.\n"), 
+                    call. = FALSE)
+         }
+         
          write_subfun(item = i, 
-                      output_tab_name = OutputTabs[i])
+                      output_tab_name = str_sub(OutputTabs[i], 1, 31))
+         
       }
       
       openxlsx::saveWorkbook(wb = WB, 
