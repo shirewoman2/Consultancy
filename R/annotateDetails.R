@@ -1271,6 +1271,14 @@ annotateDetails <- function(existing_exp_details,
       write_subfun <- function(item, 
                                output_tab_name){
          
+         if(nchar(output_tab_name) > 31){
+            warning(paste0("The tab `", 
+                           output_tab_name, 
+                           "` has more than 31 characters, which is the maximum. This tab will be shortened to `", 
+                           str_sub(output_tab_name, 1, 31), "`.\n"), 
+                    call. = FALSE)
+         }
+         
          item_char <- switch(item, 
                              "MainDetails" = "main set of simulation details", 
                              "CustomDosing" = "custom-dosing information", 
@@ -1712,14 +1720,6 @@ annotateDetails <- function(existing_exp_details,
       # }
       
       for(i in ToWrite){
-         
-         if(nchar(OutputTabs[i]) > 31){
-            warning(paste0("The tab `", 
-                           OutputTabs[i], 
-                           "` has more than 31 characters, which is the maximum. This tab will be shortened to `", 
-                           str_sub(OutputTabs[i], 1, 31), "`.\n"), 
-                    call. = FALSE)
-         }
          
          write_subfun(item = i, 
                       output_tab_name = str_sub(OutputTabs[i], 1, 31))
