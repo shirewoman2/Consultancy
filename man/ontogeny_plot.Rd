@@ -5,8 +5,8 @@
 \title{Graph the ontogenies of drug-metabolizing enzymes and transporters}
 \usage{
 ontogeny_plot(
-  DME = NA,
-  DME_type = NA,
+  Enzyme = NA,
+  Enzyme_type = NA,
   simulator_version = 22,
   compare_to_no_ontogeny = FALSE,
   age_range = c(0, 18),
@@ -17,16 +17,32 @@ ontogeny_plot(
   facet2_title = NA,
   colorBy_column,
   color_set = "default",
-  legend_position = "right"
+  legend_position = "right",
+  save_graph = NA,
+  fig_height = NA,
+  fig_width = NA
 )
 }
 \arguments{
-\item{DME}{drug-metabolizing enzymes (DME) and transporters to plot. Options
-are listed in the column "DME" of the data.frame OntogenyEquations, which
-is saved with this package. To see it, type into the console
-\code{view(OntogenyEquations)}}
+\item{Enzyme}{drug-metabolizing enzymes and transporters to plot, which
+should be supplied as either a single string, in quotes, that we'll try to
+match (e.g., "CYP3A4" will get you profiles 1 and 2 as well as "CYP3A4 in
+vitro" and "Intestinal CYP3A4") or as a character vector of the enzymes or
+transporters you want. Options are listed in the column "Enzyme" of the
+data.frame OntogenyEquations, which is saved with this package. To see it,
+type into the console \code{view(OntogenyEquations)} There's also a
+slightly different version of the column "Enzyme" called
+"Enzyme_alternative", which tries to make a few things a little clearer for
+graphs. For example, instead of "CYP3A4 Profile 2", it lists "CYP3A4
+(Upreti)". We'll look for whatever you supply for the argument "Enzyme" in
+\emph{both} the column "Enzyme" and the column "Enzyme_alternative" and
+return anything that matches in either place.}
 
-\item{DME_type}{type of DME or transporter}
+\item{Enzyme_type}{type of enzyme or transporter. Instead of graphing only a
+specific enzyme or enzymes, you can request any enzymes or transporters of
+a specific type. Please see the options in "OntogenyEquations" in the
+column "Enzyme_type". This should be supplied as a character vector, e.g.,
+\code{Enzyme_type = c("transporters", "UGTs")}}
 
 \item{simulator_version}{Simcyp Simulator version to display. Options are 21,
 22 (default), or 23.}
@@ -64,8 +80,8 @@ ignored if \code{floating_facet_scale} is TRUE or if you have specified
 \code{facet_ncol} or \code{facet_nrow}.}
 
 \item{colorBy_column}{(optional) the column in \code{OntogenyEquations} that
-should be used for determining which color lines should be.
-This should be unquoted, e.g., \code{colorBy_column = Tissue}.}
+should be used for determining which color lines should be. This should be
+unquoted, e.g., \code{colorBy_column = Tissue}.}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
@@ -121,15 +137,28 @@ This should be unquoted, e.g., \code{colorBy_column = Tissue}.}
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My ontogeny graph.png"If you leave off ".png"
+or ".docx", the graph will be saved as a png file, but if you specify a
+different graphical file extension, it will be saved as that file format.
+Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
+"tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
+or periods in the file name. Leaving this as NA means the file will not be
+saved to disk.}
+
+\item{fig_height}{figure height in inches}
+
+\item{fig_width}{figure width in inches}
 }
 \value{
 a ggplot2 graph
 }
 \description{
 \code{ontogeny_plot} uses the betas from the Simcyp Simulator to make graphs
-of the ontogenies of all the DME and transporters included in the Simulator.
-\strong{Note:} Only the beta version of the package includes the object
-OntogenyEquations, which is required for this function to work.
+of the ontogenies of all the enzymes and transporters included in the
+Simulator. \strong{Note:} Only the beta version of the package includes the
+object OntogenyEquations, which is required for this function to work.
 }
 \examples{
 # none yet
