@@ -1,10 +1,14 @@
-#' Make summary PK tables for reports
+#' Make a summary PK table for a report or slide deck
 #'
 #' \code{pksummary_table} creates tables of PK parameters for reports and
 #' presentations, including reporting means, CVs, and confidence intervals or
-#' percentiles and, optionally, comparisons to observed data. This function
-#' automatically finds the correct tabs and the correct cells in a Simulator
-#' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
+#' percentiles and, optionally, comparisons to observed data. When it's a
+#' standard PK parameter you're after, this function automatically finds the
+#' correct tabs and the correct cells in a Simulator
+#' output Excel file to obtain those data. If you want PK from a user-defined 
+#' AUC interval, that's possible, too, but we'll need you to tell us which sheet 
+#' to use. \strong{Notes:} \itemize{\item{If you want}
+#' \item{Please
 #' see the notes at the bottom of this help file for how to supply observed data
 #' in a standardized fashion that this function can read.} \item{If you would
 #' like to make a single PK table for multiple files at once, please see the
@@ -186,7 +190,7 @@
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
 #'   "peripheral plasma", or "peripheral blood". \strong{NOTE: PK for peripheral
-#'   sampling is not as well tested as for other tissues and is only set up for 
+#'   sampling is not as well tested as for other tissues and is only set up for
 #'   V21+. Please check your results carefully.}
 #' @param compoundToExtract For which compound do you want to extract PK data?
 #'   Options are: \itemize{\item{"substrate" (default),} \item{"primary
@@ -393,9 +397,9 @@
 #'   writing table headings later.
 #' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
 #'   header row to the top of your table denoting when the PK are for baseline,
-#'   with a perpetrator, or are the geometric mean ratios. 
+#'   with a perpetrator, or are the geometric mean ratios.
 #' @param page_orientation set the page orientation for the Word file output to
-#'   "portrait" (default) or "landscape" 
+#'   "portrait" (default) or "landscape"
 #'
 #' @return Returns a data.frame of PK summary data and, if observed data were
 #'   provided, simulated-to-observed ratios. If \code{checkDataSource = TRUE},
@@ -478,9 +482,10 @@ pksummary_table <- function(sim_data_file = NA,
    
    # Check for appropriate input for arguments
    tissue <- tolower(tissue)
-   if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood", 
-                    "peripheral plasma", "peripheral blood") == FALSE){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, `unbound blood`, `peripheral plasma`, or `peripheral blood`. The PK parameters will be for plasma.", 
+   PossTissues <- c("plasma", "unbound plasma", "blood", "unbound blood", 
+                    "peripheral plasma", "peripheral blood")
+   if(any(tissue %in% PossTissues == FALSE)){
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, `unbound blood`, `peripheral plasma`, or `peripheral blood`. The PK parameters will be for plasma.\n", 
               call. = FALSE)
       tissue <- "plasma"
    }
@@ -538,17 +543,6 @@ pksummary_table <- function(sim_data_file = NA,
       sheet_PKparameters[sheet_PKparameters %in% c("AUC", "AUC_CI", "AUC_SD")] <- NA
    }
    
-   # Addressing this elsewhere. PRobably can delete this.
-   # # If the user supplies named character vectors to BOTH sheet_PKparameters AND
-   # # PKparameters, that will be confusing and I bet people will be inconsistent,
-   # # too. Only use the ones listed with sheet_PKparameters, and give a warning.
-   # if(is.null(names(sheet_PKparameters)) == FALSE &
-   #    is.null(names(PKparameters)) == FALSE){
-   #    warning("You supplied a named character vector for both the argument `PKparameters` and the argument `sheet_PKparameters`, so we're not sure which one you want. Please only supply one or the other next time. For now, we'll use what you supplied for `sheet_PKparameters`.\n", 
-   #            call. = FALSE)
-   #    PKparameters <- NA
-   # }
-   
    # Make sure that input to variability_format is ok
    if(variability_format %in% c("to", "hyphen", "brackets", "parentheses") == FALSE){
       warning("The input for variability_format is not among the acceptable options, which are `to`, `hyphen`, `brackets` for square brackets, or `parentheses` for the eponymous symbol if you're an American and a bracket if you're British. We'll use the default of `to`.\n", 
@@ -604,82 +598,82 @@ pksummary_table <- function(sim_data_file = NA,
    # Reading in any observed data, tidying those data, and harmonizing all the
    # possible places they could have specified which PK parameters they want and
    # which sheets they want those PK data to come from.
-   
+
    if(complete.cases(report_input_file)){
-      
+
       # If they didn't include ".xlsx" at the end of whatever they supplied for
       # report_input_file, add that.
-      report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"), 
+      report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"),
                                   report_input_file, paste0(report_input_file, ".xlsx"))
-      
+
       if(is.na(sheet_report)){
-         warning("You must supply a value for `sheet_report` if you supply a report input file.", 
+         warning("You must supply a value for `sheet_report` if you supply a report input file.",
                  call. = FALSE)
          return(list())
       }
-      
+
       sectionInfo <- getSectionInfo(report_input_file = report_input_file,
                                     sheet_report = sheet_report)
-      
+
       if(complete.cases(sim_data_file) & sim_data_file != sectionInfo$File){
-         warning(paste0("The value supplied for `sim_data_file` was `", 
-                        sim_data_file, 
+         warning(paste0("The value supplied for `sim_data_file` was `",
+                        sim_data_file,
                         "``, but the value you supplied in the report input file `",
-                        report_input_file, "` was `", 
+                        report_input_file, "` was `",
                         sectionInfo$File,
-                        "`. The file listed in the report input file will be used."), 
+                        "`. The file listed in the report input file will be used."),
                  call. = FALSE)
       }
-      
+
       sim_data_file <- sectionInfo$sim_data_file
       # Should we add an error catch here for when user fills out
       # report_input_file but doesn't include any observed data to compare?
       # Maybe not. If the user doesn't want to include any obs data there,
       # just fill out sim_data_file.
-      
+
       # If they supplied both a report_input_file and observed_PK, warn the
       # user that this will preferentially read the report_input_file.
       if(complete.cases(observed_PK[1])){
-         warning("You have supplied both a report input file and, separately, observed data. The report input file will be used preferentially and the observed data will be ignored.", 
+         warning("You have supplied both a report input file and, separately, observed data. The report input file will be used preferentially and the observed data will be ignored.",
                  call. = FALSE)
       }
-      
+
       observed_PK <- as.data.frame(sectionInfo$ObsData)
-      
+
    } else {
-      
+
       # Setting this for use later since it's easiest if sectionInfo is
-      # logical when it doesn't apply. 
+      # logical when it doesn't apply.
       sectionInfo <- FALSE
-      
-      if(any(complete.cases(observed_PK)) && 
+
+      if(any(complete.cases(observed_PK)) &&
          "character" %in% class(observed_PK)){
-         observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"), 
-                               "csv" = read.csv(observed_PK, na.strings = "NA"), 
-                               "xlsx" = xlsx::read.xlsx(observed_PK, 
+         observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"),
+                               "csv" = read.csv(observed_PK, na.strings = "NA"),
+                               "xlsx" = xlsx::read.xlsx(observed_PK,
                                                         sheetName = "observed PK"))
-         
+
          # If there's anything named anything like "File", use that for the
          # "File" column. This is useful to deal with capitalization mismatches
          # and also because, if the user saves the file as certain kinds of csv
          # files, R has trouble importing and will add extra symbols to the 1st
          # column name.
-         names(observed_PK)[str_detect(tolower(names(observed_PK)), "file")][1] <- 
+         names(observed_PK)[str_detect(tolower(names(observed_PK)), "file")][1] <-
             "File"
-         
+
       } else if("numeric" %in% class(observed_PK)){ # This is when user has supplied a named numeric vector
-         
+
          observed_PK <- as.data.frame(t(observed_PK))
       }
    }
-   
+
    # At this point, observed_PK, if it exists, should be a data.frame b/c it
    # either was a data.frame at the outset, it has been created by reading an
    # Excel or csv file for observed data, or it came from a report input form.
    # It could be in either wide or long format.
-   MyObsPK <- get_obs_PK(observed_PK, mean_type, use_median_for_tmax, 
+   MyObsPK <- get_obs_PK(observed_PK, mean_type, use_median_for_tmax,
                          sim_data_file, PKparameters)
-   
+
    # If they left PKparameters as NA, make sure any observed PK parameters are
    # included in the PK to extract. If they specified something for
    # PKparameters, then ONLY return those PK data. Make sure that PK names
@@ -690,6 +684,7 @@ pksummary_table <- function(sim_data_file = NA,
    } else {
       PKparameters <- harmonize_PK_names(sort(unique(PKparameters)))
    }
+   
    # If they didn't supply anything for PKparameters, sheet_PKparameters, or
    # observed_PK, then this will be empty. Need this to be NA instead. 
    if(length(PKparameters) == 0){PKparameters <- NA}
@@ -1035,7 +1030,7 @@ pksummary_table <- function(sim_data_file = NA,
    # If they have not requested specific sheets for specific PK parameters, then
    # just add AUCt_dose1 to the set of parameters to pull in case of trouble
    # with extrapolation. If they specified sheets anywhere, then MyPK will have
-   # "Tab" as a column name.
+   # "Sheet" as a column name.
    if(all(is.na(MyPK$Tab))){
       PKparameters_temp <- unique(c(PKToPull,
                                     sub("AUCinf_dose1",
@@ -1465,7 +1460,7 @@ pksummary_table <- function(sim_data_file = NA,
                                                   "arithmetic" = "mean")) %>% 
                             select(-Stat)) %>%
                mutate(Value = Sim / Value) %>% 
-               select(-Sim, -Value) %>% 
+               select(-Sim) %>% 
                mutate(Stat = paste0("S_O_TM_", Stat), 
                       SorO = "S_O_TM") %>%
                select(PKParam, Stat, Value, SorO)

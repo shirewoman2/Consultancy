@@ -48,18 +48,7 @@
 #'
 #'   \item{"all"}{Extract all possible parameters (default). This is the slowest
 #'   option in terms of processing time because it must read multiple Excel
-#'   tabs.}
-#'
-#'   \item{a string of the specific parameters you want, each in quotes and
-#'   encapsulated with \code{c(...)},}{For a complete list, type
-#'   \code{data(ExpDetailDefinitions); view(ExpDetailDefinitions)} into the
-#'   console. Parameters are reported with a suffix depending on which compound
-#'   they pertain to: "_sub" for the substrate, "_met1" for the primary
-#'   metabolite, "_met2" for the second primary metabolite, "_secmet" for the
-#'   secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-#'   "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
-#'   inhibitor 1 metabolite. An example of acceptable input: \code{c("pKa1_sub",
-#'   "fa_inhib2", "Regimen_sub")}}}
+#'   tabs.}}
 #'
 #'   \strong{Note:} While information about custom dosing regimens \emph{can} be
 #'   extracted by the function \code{\link{extractExpDetails}}, that information
@@ -130,14 +119,17 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # recursive.
    if(length(sim_data_files) == 1 &&
       (is.na(sim_data_files) | sim_data_files == "recursive")){
-      sim_data_files <- list.files(pattern = "xlsx$",
+      sim_data_files <- list.files(pattern = "\\.xlsx$|\\.db$",
                                    recursive = (complete.cases(sim_data_files) &&
                                                    sim_data_files == "recursive"))
       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
    }
    
-   # If they didn't include ".xlsx" at the end, add that.
-   sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_files), ".xlsx")
+   # If they didn't include ".xlsx" or ".db" at the end of the file name, assume
+   # they want the more-developed option and add "xlsx".
+   MissingExt <- which(str_detect(sim_data_files, "\\.xlsx$|\\.db$") == FALSE)
+   sim_data_files[MissingExt] <- 
+      sub("\\.wksz$|\\.dscw$", ".xlsx", sim_data_files[MissingExt])
    
    # Making sure that all the files exist before attempting to pull data
    if(any(file.exists(sim_data_files) == FALSE)){
@@ -170,7 +162,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # existing_exp_details, all of those will work. Note to coders: It was REALLY
    # HARD to get this to work with just the perfect magical combination of
    # exists and suppressWarnings, etc.
-   
    
    # If user supplied an unquoted object, this checks whether that object
    # exists. However, if they supplied NA or NULL, this throws an error. 
@@ -214,8 +205,12 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    
    for(i in sim_data_files_topull){ 
       message(paste("Extracting simulation experimental details from file =", i))
-      MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
-                                        exp_details = exp_details) 
+      if(str_detect(i, "\\.db$")){
+         MyDeets[[i]] <- extractExpDetails_DB(sim_data_file = i) 
+      } else {
+         MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
+                                           exp_details = exp_details) 
+      }
    }
    
    if(length(MyDeets) > 0){

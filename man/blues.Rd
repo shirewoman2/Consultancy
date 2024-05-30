@@ -15,7 +15,7 @@ a character vector of colors
 \description{
 \code{blues} is useful for getting a set of pretty blues for graphs. These
 blues come from the 4th through 9th blues from grDevices::blues9, just to
-give credit where it's due.
+give credit where it's due, plus a couple of darker blues at the end.
 }
 \examples{
 # Create a set of 10 blues.

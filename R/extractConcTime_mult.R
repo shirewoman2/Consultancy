@@ -275,7 +275,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    tissue_input <- tissues
    if(all(tissue_input == "all")){
       tissues <- unique(AllTissues %>% filter(ModelType != "ADC") %>% 
-                           pull(Tissue_input))
+                           pull(Tissue))
    }
    
    # Make it so that, if they supply NA, NULL, or "none" for ct_dataframe, all
@@ -312,10 +312,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
    }
    
-   # If user has not included "xlsx" in file name, add that.
-   sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE] <-
-      paste0(sim_data_files[str_detect(sim_data_files, "xlsx$") == FALSE], 
-             ".xlsx")
+   # If they didn't include ".xlsx" or ".db" at the end of the file name, assume
+   # they want the more-developed option and add "xlsx".
+   MissingExt <- which(str_detect(sim_data_files, "\\.xlsx$|\\.db$") == FALSE)
+   sim_data_files[MissingExt] <- 
+      sub("\\.wksz$|\\.dscw$", ".xlsx", sim_data_files[MissingExt])
    
    sim_data_files <- unique(sim_data_files)
    
@@ -400,7 +401,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
       
       existing_exp_details <- harmonize_details(existing_exp_details)
       
-      if(all(sim_data_files %in% existing_exp_details$MainDetails$File) == FALSE){
+      if(all(sim_data_files %in% c(existing_exp_details$MainDetails$File, 
+                                   existing_exp_details$MainDetails$DBFile)) == FALSE){
          existing_exp_details <- 
             extractExpDetails_mult(sim_data_files = sim_data_files, 
                                    exp_details = "Summary and Input", 
@@ -412,16 +414,19 @@ extractConcTime_mult <- function(sim_data_files = NA,
    # If the file is a Simulator output file, we should have it now. Checking and
    # removing any that are not.
    if(all(sim_data_files_topull %in% 
-          existing_exp_details$MainDetails$File) == FALSE){
+          c(existing_exp_details$MainDetails$File, 
+            existing_exp_details$MainDetails$DBFile)) == FALSE){
       
       BadFiles <- setdiff(sim_data_files_topull,
-                          existing_exp_details$MainDetails$File)
+                          c(existing_exp_details$MainDetails$File, 
+                            existing_exp_details$MainDetails$DBFile))
       
       warning(paste0("The following files were requested but to not appear to be Simcyp Simulator files and will be ignored:\n", 
-                     str_c(BadFiles, sep = "\n")), 
+                     str_c(BadFiles, collapse = "\n")), 
               call. = FALSE)
       sim_data_files_topull <- intersect(sim_data_files_topull,
-                                         existing_exp_details$MainDetails$File)
+                                         c(existing_exp_details$MainDetails$File, 
+                                           existing_exp_details$MainDetails$DBFile))
    }
    
    ## Dealing with possible observed data assignments -------------------------
@@ -811,15 +816,26 @@ extractConcTime_mult <- function(sim_data_files = NA,
                   CompoundTypes %>% filter(Type == k) %>%
                   pull(PossCompounds)
                
-               MultData[[ff]][[j]][[k]] <-
-                  extractConcTime(
-                     sim_data_file = ff,
-                     obs_data_file = MyObsFile, 
-                     compoundToExtract = compoundsToExtract_k,
-                     tissue = j,
-                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                     fromMultFunction = TRUE, 
-                     existing_exp_details = existing_exp_details)
+               if(str_detect(ff, "\\.db$")){
+                  MultData[[ff]][[j]][[k]] <-
+                     extractConcTime_DB(
+                        sim_data_file = ff,
+                        # obs_data_file = MyObsFile, 
+                        compoundToExtract = compoundsToExtract_k,
+                        tissue = j,
+                        returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                        existing_exp_details = existing_exp_details)   
+               } else {
+                  MultData[[ff]][[j]][[k]] <-
+                     extractConcTime(
+                        sim_data_file = ff,
+                        obs_data_file = MyObsFile, 
+                        compoundToExtract = compoundsToExtract_k,
+                        tissue = j,
+                        returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                        fromMultFunction = TRUE, 
+                        existing_exp_details = existing_exp_details)
+               }
                
                rm(compoundsToExtract_k)
             }
@@ -895,15 +911,15 @@ extractConcTime_mult <- function(sim_data_files = NA,
             if(nrow(CT_nonadam) > 0){
                CT_nonadam <- CT_nonadam %>% 
                   convert_units(DF_with_good_units = NA, 
-                               conc_units = conc_units_to_use,
-                               time_units = time_units_to_use, 
-                               MW = c("substrate" = Deets$MW_sub, 
-                                      "inhibitor 1" = Deets$MW_inhib,
-                                      "primary metabolite 1" = Deets$MW_met1, 
-                                      "primary metabolite 2" = Deets$MW_met2, 
-                                      "inhibitor 2" = Deets$MW_inhib2, 
-                                      "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
-                                      "secondary metabolite" = Deets$MW_secmet))
+                                conc_units = conc_units_to_use,
+                                time_units = time_units_to_use, 
+                                MW = c("substrate" = Deets$MW_sub, 
+                                       "inhibitor 1" = Deets$MW_inhib,
+                                       "primary metabolite 1" = Deets$MW_met1, 
+                                       "primary metabolite 2" = Deets$MW_met2, 
+                                       "inhibitor 2" = Deets$MW_inhib2, 
+                                       "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                                       "secondary metabolite" = Deets$MW_secmet))
             }
             
             MultData[[ff]][[j]] <- bind_rows(CT_adam, CT_nonadam)

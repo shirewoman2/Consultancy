@@ -53,18 +53,7 @@ this: "myfile - 2023-10-31 07-23-15.xlsx".}
 
   \item{"all"}{Extract all possible parameters (default). This is the slowest
   option in terms of processing time because it must read multiple Excel
-  tabs.}
-
-  \item{a string of the specific parameters you want, each in quotes and
-  encapsulated with \code{c(...)},}{For a complete list, type
-  \code{data(ExpDetailDefinitions); view(ExpDetailDefinitions)} into the
-  console. Parameters are reported with a suffix depending on which compound
-  they pertain to: "_sub" for the substrate, "_met1" for the primary
-  metabolite, "_met2" for the second primary metabolite, "_secmet" for the
-  secondary metabolite, "_inhib" for the 1st inhibitor or inducer listed,
-  "_inhib2" for the 2nd inhibitor or inducer listed, or "_inh1met" for the
-  inhibitor 1 metabolite. An example of acceptable input: \code{c("pKa1_sub",
-  "fa_inhib2", "Regimen_sub")}}}
+  tabs.}}
 
   \strong{Note:} While information about custom dosing regimens \emph{can} be
   extracted by the function \code{\link{extractExpDetails}}, that information

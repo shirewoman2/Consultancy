@@ -93,12 +93,12 @@
 #'   Tools --> Global Options --> General --> Graphics --> And then set
 #'   "Graphics device: backend" to "AGG". Honestly, this is a better option for
 #'   higher-quality graphics anyway!}
-#'   
+#'
 #'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
 #'   for the mean of each trial of simulated data, and open circles for the
 #'   observed data. If a perpetrator were present, lighter dashed lines indicate
 #'   the mean of each trial of simulated data in the presence of the perpetrator.}}
-#'   
+#'
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed; this is the default}
 #'
@@ -152,9 +152,15 @@
 #'   change in intrinsic solubility will affect concentration-time profiles --
 #'   because the direction of the trend will be clear.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"blues"}{a set of blues fading from baby blue to midnight. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
+#'
+#'   \item{"greens"}{a set of greens fading from chartreuse to dark forest
+#'   green. Good for continuous variables.}
+#'
+#'   \item{"purples"}{a set of purples fading from lavender to eggplant. Good
+#'   for continuous variables.}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
@@ -2331,6 +2337,8 @@ ct_plot_overlay <- function(ct_dataframe,
                         1:NumColorsNeeded], 
                      "blue-green" = blueGreens(NumColorsNeeded),
                      "blues" = blues(NumColorsNeeded),
+                     "greens" = chartreuse(NumColorsNeeded, shade = "darker"), 
+                     "purples" = purples(NumColorsNeeded, shade = "darker"), 
                      "rainbow" = rainbow(NumColorsNeeded),
                      "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
                         1:NumColorsNeeded],

@@ -352,3 +352,11 @@
 "OntogenyEquations"
 
 
+#' Examples for specifying PK parameters with pksummary_table and
+#' pk_summary_mult functions
+#'
+#' @format a data.frame
+"PKexamples"
+
+
+

@@ -2,7 +2,7 @@
 % Please edit documentation in R/pksummary_table.R
 \name{pksummary_table}
 \alias{pksummary_table}
-\title{Make summary PK tables for reports}
+\title{Make a summary PK table for a report or slide deck}
 \usage{
 pksummary_table(
   sim_data_file = NA,
@@ -64,7 +64,7 @@ inhibitor 1}}}
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
 Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
 "peripheral plasma", or "peripheral blood". \strong{NOTE: PK for peripheral
-sampling is not as well tested as for other tissues and is only set up for 
+sampling is not as well tested as for other tissues and is only set up for
 V21+. Please check your results carefully.}}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
@@ -389,9 +389,13 @@ Returns a data.frame of PK summary data and, if observed data were
 \description{
 \code{pksummary_table} creates tables of PK parameters for reports and
 presentations, including reporting means, CVs, and confidence intervals or
-percentiles and, optionally, comparisons to observed data. This function
-automatically finds the correct tabs and the correct cells in a Simulator
-output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
+percentiles and, optionally, comparisons to observed data. When it's a
+standard PK parameter you're after, this function automatically finds the
+correct tabs and the correct cells in a Simulator
+output Excel file to obtain those data. If you want PK from a user-defined 
+AUC interval, that's possible, too, but we'll need you to tell us which sheet 
+to use. \strong{Notes:} \itemize{\item{If you want}
+\item{Please
 see the notes at the bottom of this help file for how to supply observed data
 in a standardized fashion that this function can read.} \item{If you would
 like to make a single PK table for multiple files at once, please see the
