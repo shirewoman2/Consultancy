@@ -40,6 +40,28 @@ pk_table_subfun <- function(sim_data_file,
    
    PKrequested <- PKparameters$PKparameter
    
+   # If they requested AUCinf_dose1 but not AUCt_dose1, then add AUCt_dose1 to
+   # the set of parameters to pull in case of trouble with extrapolation.
+   
+   # For checking whether AUCt_dose1 was already included: 
+   PKparameters <- PKparameters %>% 
+      unite(col = ID, c(File, Sheet, CompoundID, Tissue, PKparameter), 
+            remove = FALSE)
+   
+   ToAdd <- PKparameters %>% filter(str_detect(PKparameter, "AUCinf")) %>% 
+      mutate(PKparameter = sub("AUCinf", "AUCt", PKparameter), 
+             Value = NA, 
+             # Variability needs to be character to be able to combine w/other
+             # variability options that user may have entered s/a "1 to 2".
+             Variability = as.character(NA)) %>% 
+      unite(col = ID, c(File, Sheet, CompoundID, Tissue, PKparameter),
+            remove = FALSE) %>% 
+      filter(ID %in% PKparameters$ID == FALSE)
+   
+   PKparameters <- PKparameters %>% 
+      bind_rows(ToAdd) %>% 
+      select(-ID)
+   
    suppressWarnings(
       MyPKResults_all <- extractPK(
          sim_data_file = sim_data_file,
@@ -72,7 +94,8 @@ pk_table_subfun <- function(sim_data_file,
          stop_or_warn = "warn")
    )
    
-   if(CheckDoseInt$message == "mismatch" & any(str_detect(PKpulled, "_last"))){
+   if(CheckDoseInt$message == "mismatch" & 
+      any(str_detect(PKparameters$PKparameter, "_last"))){
       warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n",
               call. = FALSE)
    }
@@ -166,7 +189,7 @@ pk_table_subfun <- function(sim_data_file,
    # AUCinf won't be present in the data but AUCt will be. Check for that and
    # change PKpulled to reflect that change.
    if(any(str_detect(PKrequested, "AUCinf")) & 
-      any(str_detect(PKpulled, "AUCinf") == FALSE)){
+      any(str_detect(PKpulled, "AUCinf")) == FALSE){
       warning(paste0("AUCinf included NA values in the file `", 
                      sim_data_file, 
                      "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt instead."),
@@ -256,7 +279,8 @@ pk_table_subfun <- function(sim_data_file,
    # Most of the time, people want median for tmax, but, if they don't want the
    # median, don't change anything and skip this next section. 
    
-   if(use_median_for_tmax){
+   if(use_median_for_tmax & 
+      any(str_detect(names(MyPKResults), "tmax"))){
       
       # Adjusting tmax values since the mean row will actually be the median, the
       # lower range of conf interval and percentiles will be the min, and the
@@ -356,11 +380,12 @@ pk_table_subfun <- function(sim_data_file,
          ObsPK_var <- PKparameters %>% 
             filter(complete.cases(Value) &
                       complete.cases(Variability)) %>% 
-            select(-Value)
+            select(PKparameter, Variability)
          
          if(nrow(ObsPK_var) == 0){
             # placeholder
-            ObsPK_var <- PKparameters %>% select(-Value) %>% 
+            ObsPK_var <- PKparameters %>% 
+               select(PKparameter) %>% 
                mutate(Stat = switch(MeanType, 
                                     "geometric" = "GCV", 
                                     "arithmetic" = "CV"), 
@@ -372,7 +397,7 @@ pk_table_subfun <- function(sim_data_file,
                rename(PKParam = PKparameter) %>% 
                separate(col = Variability, 
                         into = c("Variability1", "Variability2"), 
-                        sep = "-") %>% 
+                        sep = "-|( )?to( )?") %>% 
                mutate(across(.cols = c(Variability1, Variability2), .fn = as.numeric), 
                       Stat = case_when(complete.cases(Variability2) ~ "range", 
                                        is.na(Variability2) & MeanType == "arithmetic" ~ "CV", 
@@ -389,7 +414,8 @@ pk_table_subfun <- function(sim_data_file,
          }
       } else {
          # placeholder
-         ObsPK_var <- PKparameters %>% select(-Value) %>% 
+         ObsPK_var <- PKparameters %>% 
+            select(PKparameter) %>% 
             mutate(Stat = switch(MeanType, 
                                  "geometric" = "GCV", 
                                  "arithmetic" = "CV"), 
@@ -398,7 +424,8 @@ pk_table_subfun <- function(sim_data_file,
       }
       
       # Pivoting main data longer by stat
-      ObsPK <- PKparameters %>% select(-Variability) %>% 
+      ObsPK <- PKparameters %>% 
+         select(PKparameter, Value) %>% 
          mutate(Value = as.numeric(Value), 
                 SorO = "Obs", 
                 Stat = switch(MeanType, 
@@ -413,11 +440,14 @@ pk_table_subfun <- function(sim_data_file,
             filter(Stat == switch(MeanType, 
                                   "geometric" = "geomean",
                                   "arithmetic" = "mean")) %>%
-            left_join(ObsPK) %>%
-            mutate(Value = Sim / Value,
+            left_join(ObsPK %>% 
+                         rename(Obs = Value) %>% 
+                         select(Stat, PKParam, Obs)) %>%
+            mutate(Value = Sim / Obs,
                    Stat = "S_O", 
                    SorO = "S_O") %>%
-            select(PKParam, Stat, Value, SorO)
+            select(PKParam, Stat, Value, SorO) %>%  
+            filter(complete.cases(Value))
       )
       
       if(includeTrialMeans){

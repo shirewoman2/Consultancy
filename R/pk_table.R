@@ -414,20 +414,23 @@ pk_table <- function(sim_data_files = NA,
    }
    
    # This will get details for any files that weren't already included. 
-   existing_exp_details <- extractExpDetails_mult(
-      sim_data_files = sim_data_files,
-      exp_details = "Summary and Input", 
-      existing_exp_details = existing_exp_details)
+   if(any(sim_data_files %in% existing_exp_details$MainDetails$File == FALSE)){
+      existing_exp_details <- extractExpDetails_mult(
+         sim_data_files = sim_data_files,
+         exp_details = "Summary and Input", 
+         existing_exp_details = existing_exp_details)
+   }
    
    # extractExpDetails will check whether the Excel file provided was, in fact,
    # a Simulator output file and return a list of length 0 if not. Checking for
    # that here.
-   if(any(sim_data_files %in% existing_exp_details$MainDetails$File)){
+   if(any(sim_data_files %in% existing_exp_details$MainDetails$File) == FALSE){
       
       NotSims <- setdiff(sim_data_files, existing_exp_details$MainDetails$File)
       
       warning(paste0("The file(s) ", str_comma(NotSims),
                      " is/are not Simulator output files and will be skipped.\n", call. = FALSE))
+      
       sim_data_files <- intersect(sim_data_files, existing_exp_details$MainDetails$File)
    }
    
@@ -663,18 +666,17 @@ pk_table <- function(sim_data_files = NA,
                       "per95" = includePerc, 
                       "MinMean" = includeTrialMeans, 
                       "MaxMean" = includeTrialMeans, 
-                      "min" = includeRange, 
-                      "max" = includeRange, 
+                      "min" = includeRange | any(str_detect(temp$PK$PKParam, "tmax")), 
+                      "max" = includeRange | any(str_detect(temp$PK$PKParam, "tmax")), 
                       "SD" = includeSD, 
-                      "median" = includeMedian)
+                      "median" = includeMedian, 
+                      "mean" = MeanType == "arithmetic", 
+                      "geomean" = MeanType == "geometric", 
+                      "S_O" = TRUE)
       VarOptions <- names(VarOptions)[which(VarOptions)]
-      VarOptions <- intersect(VarOptions, temp$PK$Stat)
       
       MyPKResults[[i]] <- temp$PK %>%
-         filter(Stat %in% c(VarOptions, 
-                            switch(MeanType, 
-                                   "geometric" = "geomean", 
-                                   "arithmetic" = "mean")))
+         filter(Stat %in% VarOptions)
       
       PKpulled[[i]] <-
          data.frame(File = unique(PKparameters[[i]]$File), 
@@ -782,9 +784,9 @@ pk_table <- function(sim_data_files = NA,
                 complete.cases(Value)) %>% pull(PKParam) %>% unique()
    
    MyPKResults <- MyPKResults %>%
-      filter(PKParam %in% GoodPKParam & 
-                complete.cases(Value)) %>% unique() %>% 
-      pivot_wider(names_from = PKParam, values_from = Value) %>% 
+      filter(PKParam %in% GoodPKParam &
+                complete.cases(Value)) %>% unique() %>%
+      pivot_wider(names_from = PKParam, values_from = Value) %>%
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
              Stat = factor(Stat, levels = c("mean", "geomean", "median",
                                             "CV", "GCV", 
@@ -795,7 +797,7 @@ pk_table <- function(sim_data_files = NA,
                                             "SD", "S_O", 
                                             "S_O_TM_MinMean", 
                                             "S_O_TM_MaxMean"))) %>% 
-      arrange(SorO, Stat) %>% 
+      arrange(File, SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) 
    
@@ -901,16 +903,10 @@ pk_table <- function(sim_data_files = NA,
              Statistic = StatNames[Statistic], 
              Statistic = ifelse(SorO == "Obs" & Statistic == "Simulated", 
                                 "Observed", Statistic)) %>%
-      select(-Stat) %>%
+      select(-Stat, -SorO) %>%
       select(Statistic, everything())
    
-   # setting levels for PK parameters so that they're in a nice order. This
-   # requires values for PKToPull, as does saving output to Word. PKToPull could
-   # be empty depending on user input, so adjusting for that here.
-   PKToPull <- names(MyPKResults)[
-      names(MyPKResults) %in% c(AllPKParameters$PKparameter, 
-                                sub("_dose1|_last", "", AllPKParameters$PKparameter))]
-   
+   # setting levels for PK parameters so that they're in a nice order. 
    PKlevels <- switch(PKorder, 
                       
                       # the default scenario
@@ -924,7 +920,12 @@ pk_table <- function(sim_data_files = NA,
                          pull(PKparameter) %>% unique(), 
                       
                       # user wants a specific order but using default tabs
-                      "user specified" = PKparameters)
+                      "user specified" = PKparameters$PKparameter)
+   
+   MyPKResults <- MyPKResults %>%
+      select(any_of(c("Statistic", as.character(PKlevels))), 
+             everything()) %>% 
+      relocate(File, .after = last_col())
    
    # Checking for whether to include AUCinf, AUCt, or both for dose 1 based on
    # what user requested initially and whether there were any problems with
@@ -934,164 +935,90 @@ pk_table <- function(sim_data_files = NA,
    # problems, then we only want AUCinf values unless they speicifcally
    # requested AUCt.
    
-   AUCParam <- PKToPull[str_detect(PKToPull, "AUC.*_dose1")]
-   NonAUCParam <- setdiff(PKToPull, AUCParam)
-   
-   # Any time AUCinf_dose1 and AUCinf_dose1_withInhib are both included in
-   # PKToPull, only retain any AUCt_X that were specfically requested.
-   if("AUCinf_dose1" %in% PKToPull & 
+   # Any time AUCinf_dose1 was requested, only retain any AUCt_X that were
+   # specfically requested or when AUCinf could not be returned.
+   if("AUCinf_dose1" %in% PKpulled$PKpulled & 
       "AUCt_dose1" %in% PKrequested$PKrequested == FALSE){
-      AUCParam <- setdiff(AUCParam, "AUCt_dose1")
+      MyPKResults <- MyPKResults %>% select(-any_of("AUCt_dose1"))
+      PKpulled <- PKpulled %>% filter(!PKpulled %in% "AUCt_dose1")
    }
    
-   if("AUCinf_dose1_withInhib" %in% PKToPull & 
+   if("AUCinf_dose1_withInhib" %in% PKpulled$PKpulled & 
       "AUCt_dose1_withInhib" %in% PKrequested$PKrequested == FALSE){
-      AUCParam <- setdiff(AUCParam, "AUCt_dose1_withInhib")
+      MyPKResults <- MyPKResults %>% select(-any_of("AUCt_dose1_withInhib"))
+      PKpulled <- PKpulled %>% filter(!PKpulled %in% "AUCt_dose1_withInhib")
    }
    
-   if("AUCinf_ratio_dose1" %in% PKToPull & 
+   if("AUCinf_ratio_dose1" %in% PKpulled$PKpulled & 
       "AUCt_ratio_dose1" %in% PKrequested$PKrequested == FALSE){
-      AUCParam <- setdiff(AUCParam, "AUCt_ratio_dose1")
+      MyPKResults <- MyPKResults %>% select(-any_of("AUCt_ratio_dose1"))
+      PKpulled <- PKpulled %>% filter(!PKpulled %in% "AUCt_ratio_dose1")
    }
-   
-   PKToPull <- c(AUCParam, NonAUCParam)
-   PKToPull <- factor(PKToPull, levels = PKlevels)
-   PKToPull <- sort(unique(PKToPull))
-   
-   # Getting columns in a good order
-   MyPKResults <- MyPKResults %>%
-      select(any_of(c("Statistic", as.character(PKToPull))))
    
    # Optionally adding final column names
    if(prettify_columns){
       
-      # Checking position of columns with custom intervals.
-      CustomIntCols <- which(
-         PKToPull %in% sub("_dose1|_last", "", AllPKParameters$PKparameter))
-      
-      # If user specified tab, then need to adjust PK parameters here, too.
-      if(any(complete.cases(PKparameters$Sheet)) & 
-         any(str_detect(PKpulled$PKpulled, "_dose1|_last")) == FALSE){
-         AllPKParameters_mod <- 
-            AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
-            mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
-                   PrettifiedNames = str_trim(sub("Last dose|Dose 1", "", 
-                                                  PrettifiedNames))) %>% 
-            unique()
-         
-         # We don't know whether an AUC was actually AUCtau, so make it AUCt.
-         # First, though, if there are multiples of AUCt and AUCtau, remove the
-         # AUCtau or we'll get replicate columns. Since the user specified a
-         # sheet here, we do know that AUCt and AUCtau would be the same column
-         # getting pulled twice. Not sure where I messed up that code, but this
-         # fixes that problem.
-         if(all(c("AUCtau", "AUCt") %in% PKToPull) |
-            all(c("AUCtau_withInhib", "AUCt_withInhib") %in% PKToPull) |
-            all(c("AUCtau_ratio", "AUCt_ratio") %in% PKToPull)){
-            
-            PKToPull <- PKToPull[!str_detect(PKToPull, "AUCtau")]
-            MyPKResults <- MyPKResults %>% 
-               select(!matches("AUCtau"))
-         }
-         
-         PKToPull <- sub("AUCtau", "AUCt", PKToPull)
-         
-         suppressMessages(
-            PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
-               left_join(AllPKParameters_mod) %>% 
-               pull(PrettifiedNames)
-         )
-      } else {
-         suppressMessages( 
-            PrettyCol <- data.frame(PKparameter = PKToPull) %>% 
-               left_join(
-                  bind_rows(AllPKParameters, 
-                            AllPKParameters %>% 
-                               mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
-                                      PrettifiedNames = sub("Dose 1 |Last dose ", "", PrettifiedNames))) %>% 
-                     select(PKparameter, PrettifiedNames)) %>% 
-               unique() %>% 
-               pull(PrettifiedNames)
-         )
-      }
+      ColNames <- data.frame(Orig = names(MyPKResults)) %>% 
+         mutate(Pretty = prettify_column_names(PKtable = Orig, 
+                                               prettify_compound_names = prettify_compound_names, 
+                                               pretty_or_ugly_cols = "pretty"), 
+                # Checking position of columns with custom intervals.
+                CustomInt = Orig %in% AllPKParameters$PKparameter_nodosenum)
       
       # Adding time interval to any data that came from custom AUC interval
       # sheets.
       if(any(complete.cases(PKparameters$Sheet)) &
-         length(CheckDoseInt$TimeInterval) > 0){
+         length(CheckDoseInt$TimeInterval) > 0){ # FIXME - Check this. Names aren't correct for cols that are actually in CheckDoseInt. 
+         
+         
+         # FIXME 
          IntToAdd <- CheckDoseInt$TimeInterval %>% 
             filter(Sheet %in% PKparameters$Sheet) %>% 
             pull(Interval)
          
-         UnitsToAdd <- str_extract(PrettyCol[CustomIntCols], 
-                                   " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)")
-         UnitsToAdd[is.na(UnitsToAdd)] <- ""
-         
-         PrettyCol[CustomIntCols] <- 
-            sub(" \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", "", PrettyCol[CustomIntCols])
-         PrettyCol[CustomIntCols] <- paste0(PrettyCol[CustomIntCols], 
-                                            " for interval ", IntToAdd, 
-                                            UnitsToAdd)
+         ColNames <- ColNames %>% 
+            mutate(UnitsToAdd = ifelse(CustomInt, 
+                                       str_extract(Pretty, 
+                                                   " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)"), 
+                                       ""), 
+                   Pretty = ifelse(CustomInt, 
+                                   sub(" \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", "", Pretty), 
+                                   Pretty), 
+                   Pretty = ifelse(CustomInt, 
+                                   paste0(Pretty, 
+                                          " for interval ", IntToAdd, 
+                                          UnitsToAdd), 
+                                   Pretty))
       }
       
       # Adjusting units as needed.
       if("Units_AUC" %in% names(Deets) && complete.cases(Deets$Units_AUC)){
-         PrettyCol <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), PrettyCol)
+         ColNames$Pretty <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), ColNames$Pretty)
       }
       if("Units_CL" %in% names(Deets) && complete.cases(Deets$Units_CL)){
-         PrettyCol <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), PrettyCol)
+         ColNames$Pretty <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), ColNames$Pretty)
       }
       if("Units_Cmax" %in% names(Deets) && complete.cases(Deets$Units_Cmax)){
-         PrettyCol <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), PrettyCol)
+         ColNames$Pretty <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), ColNames$Pretty)
       }
       if("Units_tmax" %in% names(Deets) && complete.cases(Deets$Units_tmax)){
-         PrettyCol <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), PrettyCol)
+         ColNames$Pretty <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), ColNames$Pretty)
       }
-      PrettyCol <- gsub("ug/mL", "µg/mL", PrettyCol)
+      ColNames$Pretty <- gsub("ug/mL", "µg/mL", ColNames$Pretty)
       
       MyPerpetrator <- determine_myperpetrator(Deets, prettify_compound_names)
       
       if(any(complete.cases(MyPerpetrator))){
-         PrettyCol <- sub("perpetrator", MyPerpetrator, PrettyCol)
+         ColNames$Pretty <- sub("perpetrator", MyPerpetrator, ColNames$Pretty)
       }
       
-      names(MyPKResults) <- c("Statistic", PrettyCol)
+      MyPKResults <- MyPKResults[, ColNames$Orig]
+      names(MyPKResults) <- ColNames$Pretty
       
-      
-   } else if(any(complete.cases(PKparameters$Sheet)) & 
-             any(str_detect(PKpulled$PKpulled, "_dose1|_last")) == FALSE){
-      # This is when it's a user-defined sheet but we're not prettifying column
-      # names. We don't know whether an AUC was actually AUCtau, so make it
-      # AUCt.
-      PKToPull <- sub("AUCtau", "AUCt", PKToPull)
-   }
+   } 
    
-   if(is.na(include_dose_num)){
-      # Dropping dose number depending on input. First, checking whether they have
-      # both dose 1 and last-dose data.
-      DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
-                     "last" = any(str_detect(names(MyPKResults), "Last dose")))
-      
-      # Next, checking whether they have a mix of custom AUC intervals and
-      # regular b/c need to retain dose num in that case.
-      if(any(PKparameters %in% 
-             c(setdiff(unique(AllPKParameters$PKparameter_nodosenum), 
-                       unique(AllPKParameters$PKparameter)), 
-               setdiff(unique(AllPKParameters$PrettifiedNames_nodosenum), 
-                       unique(AllPKParameters$PrettifiedNames))))){
-         DoseCheck <- TRUE
-      }
-      
-      include_dose_num <- all(DoseCheck)
-   }
-   
-   # include_dose_num now should be either T or F no matter what, so checking
-   # that.
-   if(is.logical(include_dose_num) == FALSE){
-      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
-              call. = FALSE)
-      include_dose_num <- TRUE
-   }
+   include_dose_num <- check_include_dose_num(MyPKResults, 
+                                              include_dose_num)
    
    if(include_dose_num == FALSE){
       names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
@@ -1104,7 +1031,7 @@ pk_table <- function(sim_data_files = NA,
                                 "arithmetic" = "mean",
                                 "geometric" = "geomean"))
       
-      if(length(PKToPull) > 0 && any(str_detect(PKToPull, "tmax"), na.rm = T)){
+      if(length(PKpulled$PKpulled) > 0 && any(str_detect(PKpulled$PKpulled, "tmax"), na.rm = T)){
          ColsToInclude <- c(ColsToInclude, "min", "max", "median")
       }
       
@@ -1140,7 +1067,11 @@ pk_table <- function(sim_data_files = NA,
       
    }
    
-   PKpulled <- PKToPull # Need to rename here for consistency w/other pksummary functions and Rmd files.
+   PKpulled <- PKpulled$PKpulled # Need to rename here for consistency w/other pksummary functions and Rmd files.
+   
+   # Sheet was still included as of here. Removing b/c don't need it in final
+   # table and it clutters things. 
+   MyPKResults$Sheet <- NULL
    
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
@@ -1180,11 +1111,8 @@ pk_table <- function(sim_data_files = NA,
       if(str_detect(save_table, "docx")){ 
          # This is when they want a Word file as output
          
-         # May need to change the working directory temporarily, so
-         # determining what it is now
-         CurrDir <- getwd()
-         
          OutPath <- dirname(save_table)
+         
          if(OutPath == "."){
             OutPath <- getwd()
          }
@@ -1197,12 +1125,13 @@ pk_table <- function(sim_data_files = NA,
                                 "portrait" = system.file("Word/report_template.dotx",
                                                          package="SimcypConsultancy"))
          
-         rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
-                                       package="SimcypConsultancy"), 
-                           output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
-                           output_dir = OutPath, 
-                           output_file = FileName, 
-                           quiet = TRUE)
+         rmarkdown::render(
+            system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 
+                        package="SimcypConsultancy"),
+            output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
+            output_dir = OutPath, 
+            output_file = FileName, 
+            quiet = TRUE)
          # Note: The "system.file" part of the call means "go to where the
          # package is installed, search for the file listed, and return its
          # full path.

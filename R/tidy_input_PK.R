@@ -507,10 +507,12 @@ tidy_input_PK <- function(PKparameters,
    }
    
    # This will get details for any files that weren't already included. 
-   existing_exp_details <- extractExpDetails_mult(
-      sim_data_files = PKparameters$File, # I think that, if they have supplied files in PKparameters, they will only want those files. 
-      exp_details = "Summary and Input", 
-      existing_exp_details = existing_exp_details)
+   if(any(unique(PKparameters$File) %in% existing_exp_details$MainDetails$File == FALSE)){
+      existing_exp_details <- extractExpDetails_mult(
+         sim_data_files = unique(PKparameters$File), # I think that, if they have supplied files in PKparameters, they will only want those files. 
+         exp_details = "Summary and Input", 
+         existing_exp_details = existing_exp_details)
+   }
    
    # Need to check that the compound they requested was included in the
    # simulation. Also check whether simulation was a DDI sim. 
@@ -618,21 +620,6 @@ tidy_input_PK <- function(PKparameters,
       filter(Harmonious == TRUE) %>% 
       select(File, Sheet, CompoundID, Tissue, PKparameter, 
              any_of(c("Value", "Variability"))) %>% 
-      unite(col = ID, c(File, Sheet, CompoundID, Tissue, PKparameter), 
-            remove = FALSE)
-   
-   # If they requested AUCinf_dose1, then add AUCt_dose1 to the set of
-   # parameters to pull in case of trouble with extrapolation.
-   ToAdd <- PKparameters %>% filter(str_detect(PKparameter, "AUCinf")) %>% 
-      mutate(PKparameter = sub("AUCinf", "AUCt", PKparameter), 
-             Value = NA, 
-             Variability = NA) %>% 
-      unite(col = ID, c(File, Sheet, CompoundID, Tissue, PKparameter),
-            remove = FALSE) %>% 
-      filter(ID %in% PKparameters$ID == FALSE)
-   
-   PKparameters <- bind_rows(PKparameters, 
-                             ToAdd) %>% 
       select(File, Sheet, CompoundID, Tissue, PKparameter, Value, Variability)
    
    # Out
