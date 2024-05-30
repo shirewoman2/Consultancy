@@ -1119,6 +1119,10 @@ so_graph <- function(PKtable,
                axis.title.y = element_text(margin = margin(0, 2.75, 0, 0)),
                axis.title.y.right = element_text(margin = margin(0, 0, 0, 2.75)))
       
+      if(legend_position == "bottom"){
+         G[[i]] <- G[[i]] + theme(legend.box = "vertical")
+      }
+      
       # Adding legend label for color and shape as appropriate
       if(as_label(point_color_column) != "<empty>"){
          if(complete.cases(legend_label_point_color)){
@@ -1149,6 +1153,10 @@ so_graph <- function(PKtable,
    
    if(length(G) == 1){
       G <- G[[1]] + theme(legend.position = legend_position)
+      
+      if(legend_position == "bottom"){
+         G <- G + theme(legend.box = "vertical")
+      }
       
    } else {
       
