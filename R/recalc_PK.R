@@ -487,7 +487,37 @@ recalc_PK <- function(ct_dataframe,
          if(report_progress %in% c("yes", "some")){message("Calculating 1st-dose PK")}
          
          if("logical" %in% class(existing_exp_details) == FALSE){
+            
+            # Check whether the compound of interest has a custom-dosing regimen
+            # and give a warning if so.
             suppressMessages(
+               CustomDoseCheck <- 
+               existing_exp_details$MainDetails %>% 
+               select(File, StartHr_sub, StartHr_inhib, StartHr_inhib2, 
+                      DoseInt_sub, DoseInt_inhib, DoseInt_inhib2) %>% 
+               left_join(CTsubset[["1"]] %>% select(File, CompoundID) %>% unique()) %>% 
+               mutate(Problem = (CompoundID %in% c("substrate", 
+                                                  "primary metabolite 1", 
+                                                  "primary metabolite 2", 
+                                                  "secondary metabolite") & 
+                         DoseInt_sub == "custom dosing") | 
+                         (CompoundID %in% c("inhibitor 1", 
+                                            "inhibitor 1 metabolite") & 
+                             DoseInt_inhib == "custom dosing") |
+                         (CompoundID %in% c("inhibitor 2") & 
+                             DoseInt_inhib2 == "custom dosing"))
+               )
+            
+            if(any(CustomDoseCheck$Problem == TRUE, na.rm = T)){
+               warning(paste0("The ", unique(CustomDoseCheck$CompoundID), 
+                              " had a custom dosing regimen for the following files:\n", 
+                              str_c(CustomDoseCheck$File[which(CustomDoseCheck$Problem == TRUE)], 
+                                    collapse = "\n"), 
+                              "\nWe will treat them as if they were a single-dose regimen, which may not be correct. Please check the results carefully.\n"), 
+                       call. = FALSE)
+            }
+            
+            suppressMessages(suppressWarnings(
                FirstDoseTime <- existing_exp_details$MainDetails %>% 
                   select(File, StartHr_sub, StartHr_inhib, StartHr_inhib2, 
                          DoseInt_sub, DoseInt_inhib, DoseInt_inhib2) %>% 
@@ -505,13 +535,13 @@ recalc_PK <- function(ct_dataframe,
                         CompoundID %in% c("substrate", 
                                           "primary metabolite 1", 
                                           "primary metabolite 2", 
-                                          "secondary metabolite") ~ StartHr_sub + DoseInt_sub, 
+                                          "secondary metabolite") ~ StartHr_sub + as.numeric(DoseInt_sub), 
                         
                         CompoundID %in% c("inhibitor 1", 
-                                          "inhibitor 1 metabolite") ~ StartHr_inhib + DoseInt_inhib, 
+                                          "inhibitor 1 metabolite") ~ StartHr_inhib + as.numeric(DoseInt_inhib), 
                         
-                        CompoundID %in% "inhibitor 2" ~ StartHr_inhib2 + DoseInt_inhib2))
-            )
+                        CompoundID %in% "inhibitor 2" ~ StartHr_inhib2 + as.numeric(DoseInt_inhib2)))
+            ))
             
             MaxPossDoseTime <- CTsubset[["1"]] %>% ungroup() %>%
                filter(complete.cases(Conc)) %>%
