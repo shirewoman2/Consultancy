@@ -1460,7 +1460,7 @@ pksummary_table <- function(sim_data_file = NA,
                                                   "arithmetic" = "mean")) %>% 
                             select(-Stat)) %>%
                mutate(Value = Sim / Value) %>% 
-               select(-Sim) %>% 
+               select(-Sim, -Value) %>% 
                mutate(Stat = paste0("S_O_TM_", Stat), 
                       SorO = "S_O_TM") %>%
                select(PKParam, Stat, Value, SorO)

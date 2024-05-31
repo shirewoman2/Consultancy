@@ -64,7 +64,7 @@ blueGreens <- function(ncolors){
 #'
 #' \code{blues} is useful for getting a set of pretty blues for graphs. These
 #' blues come from the 4th through 9th blues from grDevices::blues9, just to
-#' give credit where it's due, plus a couple of darker blues at the end. 
+#' give credit where it's due. 
 #'
 #' @param ncolors number of colors desired
 #'
@@ -81,7 +81,7 @@ blueGreens <- function(ncolors){
 blues <- function(ncolors){
    
    colBlues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
-                                  "#08519C", "#08306B", "#051D41", "#020B18"))
+                                  "#08519C", "#08306B"))
    
    return(colBlues(ncolors))
    
@@ -96,8 +96,6 @@ blues <- function(ncolors){
 #' only up to 9 colors.
 #'
 #' @param ncolors number of colors desired
-#' @param shade "full range" for all chartreuses, from very light to quite dark,
-#'   "darker" to get only the darker shades
 #'
 #' @return a character vector of colors
 #' @export
@@ -109,22 +107,11 @@ blues <- function(ncolors){
 #' # Try using scales::show_col() to visualize the colors, ex:
 #' scales::show_col(chartreuse(10))
 #' 
-chartreuse <- function(ncolors, 
-                       shade = "full range"){
+chartreuse <- function(ncolors){
    
-   if(shade %in% c("full range", "darker") == FALSE){
-      warning("The options for the argument shade are `full range` or `darker`, and you've supplied something else. We'll use the default of `full range`.\n", 
-              call. = FALSE)
-      shade = "full range"
-   }
-   
-   colChartreuse <- colorRampPalette(
-      switch(shade, 
-             "full range" = c("#FFFFE5", "#F7FCB9", "#D9F0A3", 
-                              "#ADDD8E", "#78C679", "#41AB5D", 
-                              "#238443", "#006837", "#004529"), 
-             "darker" = c("#ADDD8E", "#78C679", "#41AB5D", 
-                          "#238443", "#006837", "#004529", "#001E12")))
+   colChartreuse <- colorRampPalette(c("#FFFFE5", "#F7FCB9", "#D9F0A3", 
+                                  "#ADDD8E", "#78C679", "#41AB5D", 
+                                  "#238443", "#006837", "#004529"))
    
    return(colChartreuse(ncolors))
    
@@ -150,22 +137,11 @@ chartreuse <- function(ncolors,
 #' # Try using scales::show_col() to visualize the colors, ex:
 #' scales::show_col(purples(10))
 #' 
-purples <- function(ncolors, 
-                    shade = "full range"){
+purples <- function(ncolors){
    
-   if(shade %in% c("full range", "darker") == FALSE){
-      warning("The options for the argument shade are `full range` or `darker`, and you've supplied something else. We'll use the default of `full range`.\n", 
-              call. = FALSE)
-      shade = "full range"
-   }
-   
-   colPurple <- colorRampPalette(
-      switch(shade, 
-             "full range" = c("#FCFBFD", "#EFEDF5", "#DADAEB",
-                              "#BCBDDC", "#9E9AC8", "#807DBA", 
-                              "#6A51A3", "#54278F", "#3F007D"), 
-             "darker" = c("#BCBDDC", "#9E9AC8", "#807DBA", 
-                          "#6A51A3", "#54278F", "#3F007D", "#26004C", "#17002E")))
+   colPurple <- colorRampPalette(c("#FCFBFD", "#EFEDF5", "#DADAEB",
+                                   "#BCBDDC", "#9E9AC8", "#807DBA", 
+                                   "#6A51A3", "#54278F", "#3F007D"))
    
    return(colPurple(ncolors))
    
