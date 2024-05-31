@@ -324,6 +324,14 @@ extractPK <- function(sim_data_file,
                                 "primary metabolite 1" = "Sub Met"))))]
    }
    
+   # An unusual situation: Alice had a multiple-dose simulation where the AUC
+   # tab in V21 listed 1st dose PK data instead of last-dose PK data, like I've
+   # seen *everywhere else but here*. For this reason, we're NOT going to pull
+   # data from Tab_AUC when it's a custom-dosing regimen. It's unreliable.
+   if(Deets$DoseInt_sub == "custom dosing"){
+      Tab_AUC <- NULL
+   }
+   
    SimV21plus <- as.numeric(str_extract(Deets$SimulatorVersion, "[0-9]{2}")) >= 21
    
    if(SimV21plus){
@@ -1068,9 +1076,12 @@ extractPK <- function(sim_data_file,
          File = sim_data_file, 
          Sheet = Tab_AUC, 
          Interval = gsub("\\(|\\)", "", str_extract(AUC_xl[2, 3], "from.*"))) %>% 
-         mutate(Interval = sub("\\.00 ", " ", Interval))
+         mutate(Interval = sub("\\.00 ", " ", Interval), 
+                PKparameter = i)
       
    }
+   
+   TimeInterval <- bind_rows(TimeInterval)
    
    # Pulling dose 1 data NOT present on AUC tab ------------------------------
    
@@ -1102,7 +1113,8 @@ extractPK <- function(sim_data_file,
       DataCheck <- DataCheck %>% bind_rows(Out_AUC0$DataCheck)
       Out_agg <- c(Out_agg, Out_AUC0$Out_agg)
       Out_ind <- c(Out_ind, Out_AUC0$Out_ind)
-      TimeInterval <- TimeInterval %>% bind_rows(Out_AUC0$TimeInterval)
+      TimeInterval <- TimeInterval %>% 
+         bind_rows(Out_AUC0$TimeInterval)
       
    }
    
@@ -1134,8 +1146,8 @@ extractPK <- function(sim_data_file,
       DataCheck <- DataCheck %>% bind_rows(Out_AUClast$DataCheck)
       Out_agg <- c(Out_agg, Out_AUClast$Out_agg)
       Out_ind <- c(Out_ind, Out_AUClast$Out_ind)
-      TimeInterval <- TimeInterval %>% bind_rows(Out_AUClast$TimeInterval)
-      
+      TimeInterval <- TimeInterval %>% 
+         bind_rows(Out_AUClast$TimeInterval)
    }
    
    # Pulling parameters from a user-specified sheet --------------------------
@@ -1165,7 +1177,8 @@ extractPK <- function(sim_data_file,
       DataCheck <- DataCheck %>% bind_rows(Out_AUCX$DataCheck)
       Out_agg <- c(Out_agg, Out_AUCX$Out_agg)
       Out_ind <- c(Out_ind, Out_AUCX$Out_ind)
-      TimeInterval <- TimeInterval %>% bind_rows(Out_AUCX$TimeInterval)
+      TimeInterval <- TimeInterval %>% 
+         bind_rows(Out_AUCX$TimeInterval)
       
       rm(Out_AUCX)
       

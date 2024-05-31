@@ -166,6 +166,7 @@ extractAUCXtab <- function(PKparameters,
    TimeInterval <- data.frame(
       File = sim_data_file, 
       Sheet = Sheet, 
+      PKparameter = names(Out_agg), 
       Interval = gsub("\\(|\\)", "", str_extract(AUCX_xl[1, 1], "from.*"))) %>% 
       mutate(Interval = gsub("\\.00 ", " ", Interval))
    
