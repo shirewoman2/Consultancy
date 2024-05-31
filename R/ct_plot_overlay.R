@@ -2304,6 +2304,8 @@ ct_plot_overlay <- function(ct_dataframe,
                MyColors <- color_set
             }
             
+            # FIXME - Add a check here that the colors supplied are all actually colors.
+            
          } else {
             
             # NOTE: For no reason I can discern, if the user has observed

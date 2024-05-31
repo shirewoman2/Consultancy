@@ -8,7 +8,7 @@ optionally compare them to observed demographics.}
 demog_plot(
   demog_dataframe,
   sim_data_file = NA,
-  plot_title = "Demographics",
+  graph_title = "Demographics",
   variables = NA,
   obs_alpha = 0.8,
   sim_alpha = 0.4,
@@ -27,7 +27,7 @@ from observed overlay XML files.}
 \item{sim_data_file}{the simulator output Excel file to use. If left as NA,
 all the files in demog_dataframe will be included.}
 
-\item{plot_title}{title to use on the plots}
+\item{graph_title}{title to use on the plots}
 
 \item{variables}{variables to include. We're starting with a limited set:
 "Age", "Weight_kg" ("Weight" is also fine), "Height_cm" ("Height" is fine),
