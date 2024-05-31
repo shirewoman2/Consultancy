@@ -6,7 +6,7 @@
 #'   from observed overlay XML files.
 #' @param sim_data_file the simulator output Excel file to use. If left as NA,
 #'   all the files in demog_dataframe will be included.
-#' @param plot_title title to use on the plots
+#' @param graph_title title to use on the plots
 #' @param variables variables to include. We're starting with a limited set:
 #'   "Age", "Weight_kg" ("Weight" is also fine), "Height_cm" ("Height" is fine),
 #'   "Weight vs Height", "Height vs Age", "Weight vs Age", "HSA_gL" ("HSA" is
@@ -38,7 +38,7 @@
 #' # none yet
 demog_plot <- function(demog_dataframe, 
                        sim_data_file = NA, 
-                       plot_title = "Demographics", 
+                       graph_title = "Demographics", 
                        variables = NA, 
                        obs_alpha = 0.8, 
                        sim_alpha = 0.4, 
@@ -98,7 +98,7 @@ demog_plot <- function(demog_dataframe,
                                "Sex vs Age", 
                                "RenalFunction")))
    
-   if(length(BadVar) > 0){
+   if(length(BadVar) > 0 && any(complete.cases(BadVar))){
       warning(paste0("The variables ", 
                      str_comma(paste0("`", BadVar, "`")), 
                      " are not among the possible options for variables to graph, so they won't be included. Please check the help file for options.\n"), 
@@ -155,7 +155,7 @@ demog_plot <- function(demog_dataframe,
    
    for(yy in Graphs){
       if(yy == "sex vs age"){
-         MyGraphs[[yy]] <- free(
+         MyGraphs[[yy]] <- patchwork::free(
             ggplot(Demog_sub, 
                    aes(x = age, y = SorO, fill = SorO)) +
                facet_grid(sex ~ ., switch = "y") +
@@ -239,9 +239,10 @@ demog_plot <- function(demog_dataframe,
       patchwork::plot_layout(guides = "collect", 
                              ncol = ncol, 
                              nrow = nrow) + 
-      patchwork::plot_annotation(title = plot_title, 
-                                 tag_level = ifelse(graph_labels == TRUE, 
-                                                    "A", NULL)) & 
+      patchwork::plot_annotation(title = graph_title, 
+                                 tag_levels = switch(as.character(graph_labels), 
+                                                     "TRUE" = "A", 
+                                                     "FALSE" = NULL)) & 
       theme(plot.title = element_text(size = 12, 
                                       hjust = 0.5, 
                                       face = "bold"), 
