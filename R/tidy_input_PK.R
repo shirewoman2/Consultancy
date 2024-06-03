@@ -36,115 +36,61 @@ tidy_input_PK <- function(PKparameters,
                           tissues = "plasma", 
                           sheet_PKparameters = NA){
    
-   # Error catching ----------------------------------------------------------
-   
-   # Main body of function ---------------------------------------------------
-   
    # Reading in any observed data, tidying those data, and harmonizing all the
    # possible places they could have specified which PK parameters they want and
    # which sheets they want those PK data to come from.
    
-   ## Checking files and sheets -----------------------------------------------
+   # NOTE: Two main options: 1) specify a data.frame or 2) specify individual PK
+   # parameters. If they go with option 1, anything for arguments that would be
+   # included in that data.frame will be ignored. If they go with option 2,
+   # they'll get all possible combinations of files, compounds, tissues, etc.
    
-   # Noting sim_data_files input for later and making sure that we're only
-   # extracting each file once
-   sim_data_files <- unique(sim_data_files)
-   sim_data_files_input <- sim_data_files
+   # Subfuns -----------------------------------------------------------------
    
-   # Make sure file extension is xlsx. 
-   sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.db$", "", 
-                                sim_data_files), ".xlsx")
-   
-   # Remove artifacts when there's no file specified. 
-   sim_data_files <- setdiff(sim_data_files, "NA.xlsx")
-   if(length(sim_data_files) == 0){sim_data_files <- NA}
-   
-   # If user did not supply files, then extract all the files in the current
-   # folder that end in "xlsx" or in all subfolders if they wanted it to be
-   # recursive.
-   
-   if(length(sim_data_files) == 1 &&
-      is.na(sim_data_files) | sim_data_files == "recursive"){
-      sim_data_files <- list.files(pattern = "xlsx$",
-                                   recursive = (complete.cases(sim_data_files) &&
-                                                   sim_data_files == "recursive"))
-      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
-   }
-   
-   # Making sure that all the files exist before attempting to pull data
-   if(all(complete.cases(sim_data_files)) && 
-      any(file.exists(sim_data_files) == FALSE)){
-      MissingSimFiles <- sim_data_files[
-         which(file.exists(sim_data_files) == FALSE)]
-      warning(paste0("The file(s) ", 
-                     str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present and thus will not be extracted.
+   get_file_names <- function(sim_data_files){
+      # Noting sim_data_files input for later and making sure that we're only
+      # extracting each file once
+      sim_data_files <- unique(sim_data_files)
+      sim_data_files_input <- sim_data_files
+      
+      # Make sure file extension is xlsx. 
+      sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.db$", "", 
+                                   sim_data_files), ".xlsx")
+      
+      # Remove artifacts when there's no file specified. 
+      sim_data_files <- setdiff(sim_data_files, "NA.xlsx")
+      if(length(sim_data_files) == 0){sim_data_files <- NA}
+      
+      # If user did not supply files, then extract all the files in the current
+      # folder that end in "xlsx" or in all subfolders if they wanted it to be
+      # recursive.
+      
+      if(length(sim_data_files) == 1 &&
+         is.na(sim_data_files) | sim_data_files == "recursive"){
+         sim_data_files <- list.files(pattern = "xlsx$",
+                                      recursive = (complete.cases(sim_data_files) &&
+                                                      sim_data_files == "recursive"))
+         sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+      }
+      
+      # Making sure that all the files exist before attempting to pull data
+      if(all(complete.cases(sim_data_files)) && 
+         any(file.exists(sim_data_files) == FALSE)){
+         MissingSimFiles <- sim_data_files[
+            which(file.exists(sim_data_files) == FALSE)]
+         warning(paste0("The file(s) ", 
+                        str_comma(paste0("`", MissingSimFiles, "`")), 
+                        " is/are not present and thus will not be extracted.
                      "), 
-              call. = FALSE)
-      sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
-   }
-   
-   # sheet_PKparameters should be length 1 and not be named b/c, if they want
-   # more than 1, they need to supply it to PKparameters.
-   if(length(sheet_PKparameters) > 1){
-      stop(str_wrap("The value for sheet_PKparameters must be only 1 item, and it looks like you have more than that. If you want to specify multiple sheets to use for PK parameters, please specify them by supplying a data.frame to the argument `PKparameters`. You can see examples for how to supply this by running `make_PK_example_input()`."), 
-           call. = FALSE)
-   }
-   # Note to self: this check is also present at the top of pk_table. 
-   
-   ## Checking existing_exp_details ------------------------------------------
-   
-   # Getting experimental details for the simulation(s) as needed. For checking
-   # on existing_exp_details, make sure that the order is 1) harmonize anything
-   # that already exists and THEN 2) extract any missing info b/c this will make
-   # sure that we get everything we might need. NB: "Deets" in all pksummary
-   # functions means ONLY the experimental details for the single file in
-   # question -- either the only file for pksummary_table or the specific file
-   # we're dealing with in that iteration of the loop in pksummary_mult. By
-   # contrast, existing_exp_details will include ALL experimental details
-   # provided or extracted inside the function.
-   if("logical" %in% class(existing_exp_details) == FALSE){ # logical when user has supplied NA
-      existing_exp_details <- harmonize_details(existing_exp_details)
-   }
-   
-   # This will get details for any files that weren't already included. 
-   if(any(sim_data_files %in% existing_exp_details$MainDetails$File == FALSE)){
-      existing_exp_details <- extractExpDetails_mult(
-         sim_data_files = sim_data_files,
-         exp_details = "Summary and Input", 
-         existing_exp_details = existing_exp_details)
-   }
-   
-   # extractExpDetails will check whether the Excel file provided was, in fact,
-   # a Simulator output file and return a list of length 0 if not. Checking for
-   # that here.
-   if(any(sim_data_files %in% existing_exp_details$MainDetails$File) == FALSE){
+                 call. = FALSE)
+         sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
+      }
       
-      NotSims <- setdiff(sim_data_files, existing_exp_details$MainDetails$File)
-      
-      warning(paste0("The file(s) ", str_comma(NotSims),
-                     " is/are not Simulator output files and will be skipped.\n", call. = FALSE))
-      
-      sim_data_files <- intersect(sim_data_files, existing_exp_details$MainDetails$File)
-   }
-   
-   if(any(sim_data_files %in% existing_exp_details$MainDetails$File[
-      existing_exp_details$MainDetails$PopRepSim == "Yes"])){
-      
-      PopRepSims <- setdiff(sim_data_files, 
-                            existing_exp_details$MainDetails$File[
-                               existing_exp_details$MainDetails$PopRepSim == "Yes"])
-      
-      existing_exp_details <- filter_sims(existing_exp_details, 
-                                          PopRepSims, "omit")
-      
-      warning(paste0("The file(s) ", str_comma(PopRepSims),
-                     " is/are population representative simulations and thus have no aggregate PK data. They will be skipped.\n", call. = FALSE))
-      sim_data_files <- intersect(sim_data_files, existing_exp_details$MainDetails$File)
+      return(sim_data_files)
    }
    
    
-   ## Setting up PKparameters data.frame ---------------------------------------
+   # Setting up PKparameters data.frame ---------------------------------------
    
    # PKparameters could be a data.frame, character vector, or could be a file to
    # read. Checking.
@@ -154,10 +100,12 @@ tidy_input_PK <- function(PKparameters,
       if(length(PKparameters) == 1 && 
          str_detect(PKparameters, "csv|xlsx")){
          
+         InputWasDF <- TRUE
+         
          PKparameters <- switch(str_extract(PKparameters, "csv|xlsx"), 
                                 "csv" = read.csv(PKparameters, na.strings = "NA"), 
                                 "xlsx" = xlsx::read.xlsx(PKparameters, 
-                                                         sheetName = "observed PK"))
+                                                         sheetName = "PKparameters"))
          
          # If there's anything named anything like "File", use that for the
          # "File" column. This is useful to deal with capitalization mismatches
@@ -169,14 +117,15 @@ tidy_input_PK <- function(PKparameters,
          
       } else {
          # This is when they have supplied a character vector of PK parameters. 
-         PKparameters <- data.frame(
-            File = sort(unique(sim_data_files)), 
-            PKparameter = harmonize_PK_names(PKparameters))
+         PKparameters <- data.frame(PKparameter = harmonize_PK_names(PKparameters))
+         
+         InputWasDF <- FALSE
       }
    } else if("data.frame" %in% class(PKparameters) == FALSE){
       # This is when PKparameters is NA. 
-      PKparameters <- data.frame(PKparameter = PKparameters, 
-                                 File = sim_data_files)
+      PKparameters <- data.frame(PKparameter = harmonize_PK_names(PKparameters))
+      
+      InputWasDF <- FALSE
    }
    
    # PKparameters should now be a data.frame for all input options. 
@@ -185,84 +134,97 @@ tidy_input_PK <- function(PKparameters,
       stop("Tell Laura Shireman that there's a problem with input for PKparameters.")
    }
    
-   # Check whether data format matches template file Mackenzie and I have been
-   # working on and harmonize column names as needed. 
-   if(all(c("Cohort ID", 
-            "Compound PK pertain to",
-            "Tissue", 
-            "Tab to get data from for a user-defined AUC interval", 
-            "Concentration units",
-            "AUC interval",
-            "PK parameter", 
-            "Aggregate value", 
-            "Variability value", 
-            "Summary statistic used for the aggregate value", 
-            "Summary statistic used for the variability", 
-            "PK parameter with dose number when applicable", 
-            "PK parameter for R code",
-            "Validation check - good PK value", 
-            "Validation check - tab", 
-            "Input validation check", 
-            "QC initials", 
-            "QC date", 
-            "Simulation file",
-            "Notes") %in% names(PKparameters))){
-      
-      PKparameters <- PKparameters %>% 
-         rename(CompoundID = `Compound PK pertain to`, 
-                CohortID = `Cohort ID`, 
-                Value = `Aggregate value`, 
-                Variability = `Variability value`, 
-                # MeanType = `Summary statistic used for the aggregate value`, # <--- Not using these for now other than for QCing. 
-                # VarType = `Summary statistic used for the variability`, 
-                PKparameter = `PK parameter for R code`, 
-                File = `Simulation file`, 
-                Tab = `Tab to get data from for a user-defined AUC interval`) %>% 
-         select(File, Tab, CohortID, Tissue, CompoundID, 
-                PKparameter, Value, Variability)
-      
-      # Dealing w/possibly multiple files for the same cohort since user may
-      # be making multiple comparisons. 
-      suppressWarnings(
-         Expand <- PKparameters %>% 
-            select(CohortID, CompoundID, Tissue, File) %>% 
-            mutate(File = str_split(File, pattern = ",( )?")) %>% 
-            unnest(File) %>% 
-            filter(complete.cases(File))
-      )
-      
-      PKparameters <- PKparameters %>% 
-         select(-File) %>% unique() %>% 
-         left_join(Expand, 
-                   by = c("CohortID", "Tissue", "CompoundID"),
-                   relationship = "many-to-many") %>% 
-         unique()
-   }
+   # Tidying and harmonizing when input was DF ------------------------------
    
-   
-   ## Checking for wide vs long input ---------------------------------------
-   
-   # Checking whether data in long or wide format. 
-   Wide <- any(names(PKparameters) %in% 
-                  c(AllPKParameters$PKparameter, 
-                    tolower(AllPKParameters$PKparameter), 
-                    AllPKParameters$PKparameter_nodosenum, 
-                    tolower(AllPKParameters$PKparameter_nodosenum)))
-   
-   if(Wide){
+   if(InputWasDF){
       
-      if("File" %in% names(PKparameters) == FALSE){
+      ## Error catching ------------------------------------------------------
+      LenArgs <- c("tissues" = length(tissues), 
+                   "compoundsToExtract" = length(compoundsToExtract), 
+                   "sheet_PKparameters" = length(sheet_PKparameters))
+      BadArgs <- LenArgs[which(LenArgs > 1)]
+      
+      if(length(BadArgs) > 0){
+         # Not going to guess at what they wanted. It's too easy to guess wrong.
+         stop(str_wrap(paste0("You supplied a file or data.frame with PK parameters, which is great, but then also specified more than one value for the arguments ", 
+                              str_comma(paste0("`", names(BadArgs), "`")), 
+                              " and we need those to only have a single value when you supply a file or data.frame of PK parameters. We don't know which things you want to apply to which scenario. Please check your input and try again.")), 
+              call. = FALSE)
+      }
+      
+      ## Harmonizing data format and col names ----------------------------------
+      
+      # Check whether data format matches template file Mackenzie and I have been
+      # working on and harmonize column names as needed. 
+      if(all(c("Cohort ID", 
+               "Compound PK pertain to",
+               "Tissue", 
+               "Tab to get data from for a user-defined AUC interval", 
+               "Concentration units",
+               "AUC interval",
+               "PK parameter", 
+               "Aggregate value", 
+               "Variability value", 
+               "Summary statistic used for the aggregate value", 
+               "Summary statistic used for the variability", 
+               "PK parameter with dose number when applicable", 
+               "PK parameter for R code",
+               "Validation check - good PK value", 
+               "Validation check - tab", 
+               "Input validation check", 
+               "QC initials", 
+               "QC date", 
+               "Simulation file",
+               "Notes") %in% names(PKparameters))){
          
-         if(nrow(PKparameters) == 1){
-            # If there is only one value for each PK parameter, then use that
-            # set of PK data to compare to ALL of the simulated data.
-            PKparameters <- bind_cols(PKparameters, "File" = sim_data_files)
-         } else {
-            # If there is more than one value for each PK parameter, though,
-            # then we don't know what to compare. Give an error message and
-            # omit the S/O rows.
+         PKparameters <- PKparameters %>% 
+            rename(CompoundID = `Compound PK pertain to`, 
+                   CohortID = `Cohort ID`, 
+                   Value = `Aggregate value`, 
+                   Variability = `Variability value`, 
+                   # MeanType = `Summary statistic used for the aggregate value`, # <--- Not using these for now other than for QCing. 
+                   # VarType = `Summary statistic used for the variability`, 
+                   PKparameter = `PK parameter for R code`, 
+                   File = `Simulation file`, 
+                   Tab = `Tab to get data from for a user-defined AUC interval`) %>% 
+            select(File, Tab, CohortID, Tissue, CompoundID, 
+                   PKparameter, Value, Variability)
+         
+         # Dealing w/possibly multiple files for the same cohort since user may
+         # be making multiple comparisons. 
+         suppressWarnings(
+            Expand <- PKparameters %>% 
+               select(CohortID, CompoundID, Tissue, File) %>% 
+               mutate(File = str_split(File, pattern = ",( )?")) %>% 
+               unnest(File) %>% 
+               filter(complete.cases(File))
+         )
+         
+         PKparameters <- PKparameters %>% 
+            select(-File) %>% unique() %>% 
+            left_join(Expand, 
+                      by = c("CohortID", "Tissue", "CompoundID"),
+                      relationship = "many-to-many") %>% 
+            unique()
+      }
+      
+      # Checking whether data in long or wide format. 
+      Wide <- any(names(PKparameters) %in% 
+                     c(AllPKParameters$PKparameter, 
+                       tolower(AllPKParameters$PKparameter), 
+                       AllPKParameters$PKparameter_nodosenum, 
+                       tolower(AllPKParameters$PKparameter_nodosenum)))
+      
+      if(Wide){
+         
+         if("File" %in% names(PKparameters) == FALSE & 
+            nrow(PKparameters) > 1){
+            
+            # If there is more than one value for each PK parameter, then we
+            # don't know what to compare. Give an error message and omit the S/O
+            # rows.
             warning(paste0(str_wrap(
-               "When you supply a csv file or a data.frame for `PKparameters`, you must either include a column titled 'File' with the PK so that this function knows which simulator output files to use or you must submit only one set of PK parameters and we'll compare them to *all* the simulated files. We don't know what to compare here, so we will use all the PK parameters you listed for all the possible simulations and we will omit the observed data."), 
+               "When you supply a csv file or a data.frame for `PKparameters`, you must either include a column titled 'File' with the PK so that this function knows which simulator output files to use or you must submit only one set of PK parameters and we'll compare them to *all* the simulated files. We don't know what to compare here, so we will use all the PK parameters you listed for all the possible simulations and we will omit any observed data."), 
                "\n"), 
                call. = FALSE)
             
@@ -270,247 +232,351 @@ tidy_input_PK <- function(PKparameters,
             # want.
             PKparameters <- PKparameters[1, ]
          }
+         
+         # At this point, they have a DF that is wide by the PK parameter and
+         # they may or may not have specified sheet, tissue, etc. Reshaping. 
+         PKparam_cols <- names(PKparameters)[
+            names(PKparameters) %in% c(AllPKParameters$PKparameter, 
+                                       tolower(AllPKParameters$PKparameter), 
+                                       AllPKParameters$PKparameter_nodosenum, 
+                                       tolower(AllPKParameters$PKparameter_nodosenum))]
+         PKparameters <- PKparameters %>% 
+            pivot_longer(cols = any_of(PKparam_cols), 
+                         names_to = "PKparameter", 
+                         values_to = "Value")
       }
       
-      # At this point, they have a DF that is wide by the PK parameter and
-      # they may or may not have specified sheet, tissue, etc. Reshaping. 
-      PKparam_cols <- names(PKparameters)[
-         names(PKparameters) %in% c(AllPKParameters$PKparameter, 
-                                    tolower(AllPKParameters$PKparameter), 
-                                    AllPKParameters$PKparameter_nodosenum, 
-                                    tolower(AllPKParameters$PKparameter_nodosenum))]
-      PKparameters <- PKparameters %>% 
-         pivot_longer(cols = any_of(PKparam_cols), 
-                      names_to = "PKparameter", 
-                      values_to = "Value")
+      # PKparameters should now be long by PK parameter instead of wide, but the
+      # column names might be incorrect. Fixing that next. 
+      
+      ### PKparameters ------------------------------------------------------------
+      
+      names(PKparameters)[tolower(names(PKparameters)) == "pkparameter"] <- "PKparameter"
+      if("PKparameter" %in% names(PKparameters) == FALSE &
+         any(c("pkparam", "param", "parameter") %in%
+             tolower(names(PKparameters)))){
+         
+         ColToUse <- which(tolower(names(PKparameters)) %in% 
+                              c("pkparameter", "pkparam", "param", 
+                                "parameter"))[1]
+         
+         warning(paste0("We were looking for a column named `PKparameter` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                        names(PKparameters)[ColToUse],
+                        "`, which we think is what you might want. We'll use the data in that column for the PK parameter name.\n"), 
+                 call. = FALSE)
+         
+         names(PKparameters)[ColToUse] <- "PKparameter"
+         rm(ColToUse)
+      } else {
+         # If they didn't have a column PKparameter, then they want the standard
+         # PK parameters, so set this to NA for now.
+         PKparameters$PKparameter <- NA
+      }
+      
+      
+      ### File -----------------------------------------------------------------
+      
+      names(PKparameters)[tolower(names(PKparameters)) == "file"] <- "File"
+      if(any(c("simulation", "workspace", "sim") %in% tolower(names(PKparameters)))){
+         
+         ColToUse <- c(which(tolower(names(PKparameters)) == "simulation"), 
+                       which(tolower(names(PKparameters)) == "workspace"), 
+                       which(tolower(names(PKparameters)) == "sim"))[1]
+         
+         warning(paste0("We were looking for a column named `File` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                        names(PKparameters)[ColToUse],
+                        "`, which we think is what you might want. We'll use the data that column for the file names.\n"), 
+                 call. = FALSE)
+         
+         names(PKparameters)[ColToUse] <- "File"
+         rm(ColToUse)
+      }
+      
+      if(any(complete.cases(PKparameters$File)) &
+         any(is.na(PKparameters$File))){
+         stop(str_wrap("You have supplied a set of PK parameters to extract where you sometimes have listed the simulation file name and sometimes have not, so we don't know which simultaion files you want. Please check your input and try again."), 
+              call. = FALSE)
+      }
+      
+      # If all values for File are NA, remove this column and then re-add it in
+      # the next tidying step.
+      if(all(is.na(PKparameters$File))){PKparameters$File <- NULL}
+      
+      if("File" %in% names(PKparameters) == FALSE){
+         
+         # If they haven't included "File" column, assume they want all
+         # possible combinations of files. 
+         suppressMessages(
+            PKparameters <- PKparameters %>% 
+               left_join(expand.grid(File = get_file_names(sim_data_files), 
+                                     PKparameter = unique(PKparameters$PKparameter)))
+         )
+      }
       
       # FIXME - Deal w/ instances when they have specified variability in the PK
       # parameter name, e.g. AUCinf_dose1__CV
       
-      # PKparameters should now be long by PK parameter instead of wide. 
+      ### Value ------------------------------------------------------------
       
+      names(PKparameters)[tolower(names(PKparameters)) == "value"] <- "Value"
+      if("Value" %in% names(PKparameters) == FALSE &&
+         any(c("geomean", "gm_mean", "gmean", "mean") %in%
+             tolower(names(PKparameters)))){
+         
+         ColToUse <- c(which(tolower(names(PKparameters)) == "geomean"), 
+                       which(tolower(names(PKparameters)) == "gm_mean"), 
+                       which(tolower(names(PKparameters)) == "gmean"), 
+                       which(tolower(names(PKparameters)) == "mean"))[1]
+         
+         warning(paste0("We were looking for a column named `Value` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                        names(PKparameters)[ColToUse],
+                        "`, which we think is what you might want. We'll use the data in that column for any observed values.\n"), 
+                 call. = FALSE)
+         
+         names(PKparameters)[ColToUse] <- "Value"
+         rm(ColToUse)
+      } else {
+         PKparameters$Value <- NA
+      }
+      
+      
+      ### Variability -------------------------------------------------------------
+      
+      names(PKparameters)[tolower(names(PKparameters)) == "variability"] <- "Variability"
+      if("Variability" %in% names(PKparameters) == FALSE &&
+         (any(c("cv", "var", "sd", "range", "min", "minimum") %in%
+              tolower(names(PKparameters))) |
+          any(str_detect(tolower(names(PKparameters)), "conf")))){
+         
+         ColToUse <- c(which(tolower(names(PKparameters)) == "var"), 
+                       which(tolower(names(PKparameters)) == "cv"), 
+                       which(tolower(names(PKparameters)) == "sd"), 
+                       which(tolower(names(PKparameters)) == "range"), 
+                       which(tolower(names(PKparameters)) == "minimum"), 
+                       which(tolower(names(PKparameters)) == "min"), 
+                       which(str_detect(tolower(names(PKparameters)), "conf")))[1]
+         
+         warning(paste0("We were looking for a column named `Variability` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                        names(PKparameters)[ColToUse],
+                        "`, which we think is what you might want. We'll use the data in that column for any observed variability.\n"), 
+                 call. = FALSE)
+         
+         names(PKparameters)[ColToUse] <- "Variability"
+         rm(ColToUse)
+      } else {
+         PKparameters$Variability <- NA
+      }
+      
+      
+      ### Sheet -------------------------------------------------------------------
+      
+      # NB: Sheet needs to be different b/c we do NOT want to use grid.expand on
+      # Sheet. Input must be either in the data.frame already OR must be length
+      # 1.
+      
+      names(PKparameters)[tolower(names(PKparameters)) == "sheet"] <- "Sheet"
+      if(any(c("tab", "sheets", "sheet_pkparameter", "sheet_pkparameters") %in% 
+             tolower(names(PKparameters)))){
+         
+         ColToUse <- c(which(tolower(names(PKparameters)) == "tab"), 
+                       which(tolower(names(PKparameters)) == "sheets"), 
+                       which(tolower(names(PKparameters)) == "sheet_pkparameter"), 
+                       which(tolower(names(PKparameters)) == "sheet_pkparameters"))[1]
+         
+         warning(paste0("We were looking for a column named `Sheet` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                        names(PKparameters)[ColToUse],
+                        "`, which we think is what you might want. We'll use the data that column for the sheet names for any user-defined intervals.\n"), 
+                 call. = FALSE)
+         
+         names(PKparameters)[ColToUse] <- "Sheet"
+         rm(ColToUse)
+      }
+      
+      if("Sheet" %in% names(PKparameters) == FALSE){
+         # This is ok that it's set to sheet_PKparameters b/c we have already
+         # checked that sheet_PKparameters has length 1. 
+         PKparameters$Sheet <- sheet_PKparameters
+      }
+      
+      
+      ### CompoundID --------------------------------------------------------------
+      
+      names(PKparameters)[tolower(names(PKparameters)) == "compoundid"] <- "CompoundID"
+      if("CompoundID" %in% names(PKparameters) == FALSE &&
+         any(c("compound", "compounds", "compoundids", "cmpd", "drug") %in%
+             tolower(names(PKparameters)))){
+         
+         ColToUse <- c(which(tolower(names(PKparameters)) == "compoundids"), 
+                       which(tolower(names(PKparameters)) == "compound"), 
+                       which(tolower(names(PKparameters)) == "compounds"), 
+                       which(tolower(names(PKparameters)) == "cmpd"), 
+                       which(tolower(names(PKparameters)) == "drug"))[1]
+         
+         warning(paste0("We were looking for a column named `CompoundID` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                        names(PKparameters)[ColToUse],
+                        "`, which we think is what you might want. We'll use the data in that column for specifying which compound it is.\n"), 
+                 call. = FALSE)
+         
+         names(PKparameters)[ColToUse] <- "CompoundID"
+         rm(ColToUse)
+      }
+      
+      if("CompoundID" %in% names(PKparameters) == FALSE){
+         
+         # Check for appropriate input for compound ID
+         compoundsToExtract <- tolower(compoundsToExtract)
+         if(any(compoundsToExtract == "all")){
+            
+            Cmpd_all <- 
+               existing_exp_details$MainDetails[, c("File", AllCompounds$DetailNames)] %>% 
+               pivot_longer(cols = -File, 
+                            names_to = "DetailNames", 
+                            values_to = "Value") %>% 
+               left_join(AllCompounds %>% select(CompoundID, DetailNames), 
+                         by = "DetailNames")
+            
+            compoundsToExtract <- AllCompounds$CompoundID
+         }
+         
+         PKparameters <- PKparameters %>% 
+            left_join(expand.grid(File = unique(PKparameters$File), 
+                                  CompoundID = compoundsToExtract), 
+                      by = "File")
+      }
+      
+      ### Tissue ------------------------------------------------------------------
+      
+      names(PKparameters)[tolower(names(PKparameters)) == "tissue"] <- "Tissue"
+      if("Tissue" %in% names(PKparameters) == FALSE &&
+         any(c("tissues", "matrix") %in%
+             tolower(names(PKparameters)))){
+         
+         ColToUse <- c(which(tolower(names(PKparameters)) == "tissues"), 
+                       which(tolower(names(PKparameters)) == "matrix"))[1]
+         
+         warning(paste0("We were looking for a column named `Tissue` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                        names(PKparameters)[ColToUse],
+                        "`, which we think is what you might want. We'll use the data in that column for specifying which tissue it is.\n"), 
+                 call. = FALSE)
+         
+         names(PKparameters)[ColToUse] <- "Tissue"
+         rm(ColToUse)
+      }
+      
+      if("Tissue" %in% names(PKparameters) == FALSE){
+         PKparameters <- PKparameters %>% 
+            left_join(expand.grid(File = unique(PKparameters$File), 
+                                  Tissue = tissues), 
+                      by = "File")
+      }
    } 
    
-   ## Making names consistent ------------------------------------------------
    
-   # 1. Harmonize col names as needed. 
-   # 2. Set anything that is not specified w/data.frame as NA to add later w/expand.grid. 
+   # Tidying and harmonizing when input was NOT a DF ---------------------------
    
-   ### PKparameters ------------------------------------------------------------
-   
-   names(PKparameters)[tolower(names(PKparameters)) == "pkparameter"] <- "PKparameter"
-   if("PKparameter" %in% names(PKparameters) == FALSE &
-      any(c("pkparam", "param", "parameter") %in%
-          tolower(names(PKparameters)))){
+   if(InputWasDF == FALSE){
       
-      ColToUse <- which(tolower(names(PKparameters)) %in% 
-                           c("pkparameter", "pkparam", "param", 
-                             "parameter"))[1]
+      # At this point, PKparameters is a single column data.frame where the only
+      # column is titled "PKparameter".
       
-      warning(paste0("We were looking for a column named `PKparameter` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                     names(PKparameters)[ColToUse],
-                     "`, which we think is what you might want. We'll use the data in that column for the PK parameter name.\n"), 
+      ## File -----------------------------------------------------------------
+      
+      # Getting all possible files
+      AllFiles <- get_file_names(sim_data_files)
+      PKparameters <- expand.grid(PKparameter = unique(PKparameters$PKparameter), 
+                                  File = AllFiles)
+      
+      ## Checking sheets -----------------------------------------------
+      
+      # sheet_PKparameters should be length 1 and not be named b/c, if they want
+      # more than 1, they need to supply it to PKparameters.
+      if(length(sheet_PKparameters) > 1){
+         stop(str_wrap("The value for sheet_PKparameters must be only 1 item, and it looks like you have more than that. If you want to specify multiple sheets to use for PK parameters, please specify them by supplying a data.frame to the argument `PKparameters`. You can see examples for how to supply this by running `make_PK_example_input()`."), 
               call. = FALSE)
+      }
+      # Note to self: this check is also present at the top of pk_table.
+      # Probably not needed.
       
-      names(PKparameters)[ColToUse] <- "PKparameter"
-      rm(ColToUse)
-   } else {
-      PKparameters$PKparameter <- NA
-   }
-   
-   ### Value ------------------------------------------------------------
-   
-   names(PKparameters)[tolower(names(PKparameters)) == "value"] <- "Value"
-   if("Value" %in% names(PKparameters) == FALSE &&
-      any(c("geomean", "gm_mean", "gmean", "mean") %in%
-          tolower(names(PKparameters)))){
+      PKparameters$Sheet <- sheet_PKparameters
       
-      ColToUse <- c(which(tolower(names(PKparameters)) == "geomean"), 
-                    which(tolower(names(PKparameters)) == "gm_mean"), 
-                    which(tolower(names(PKparameters)) == "gmean"), 
-                    which(tolower(names(PKparameters)) == "mean"))[1]
+      ## Tissue -----------------------------------------------------------
       
-      warning(paste0("We were looking for a column named `Value` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                     names(PKparameters)[ColToUse],
-                     "`, which we think is what you might want. We'll use the data in that column for any observed values.\n"), 
-              call. = FALSE)
+      suppressMessages(
+         PKparameters <- PKparameters %>% 
+            left_join(expand.grid(File = AllFiles, 
+                                  Tissue = tissues))
+      )
       
-      names(PKparameters)[ColToUse] <- "Value"
-      rm(ColToUse)
-   } else {
+      ## CompoundID ------------------------------------------------------
+      
+      # Check for appropriate input for compound ID
+      compoundsToExtract <- tolower(compoundsToExtract)
+      if(any(compoundsToExtract == "all")){
+         
+         Cmpd_all <- 
+            existing_exp_details$MainDetails[, c("File", AllCompounds$DetailNames)] %>% 
+            pivot_longer(cols = -File, 
+                         names_to = "DetailNames", 
+                         values_to = "Value") %>% 
+            left_join(AllCompounds %>% select(CompoundID, DetailNames), 
+                      by = "DetailNames")
+         
+         compoundsToExtract <- AllCompounds$CompoundID
+      }
+      
+      if(any(compoundsToExtract %in% AllCompounds$CompoundID == FALSE)){
+         warning(paste0("The compound(s) ", 
+                        str_comma(paste0("`", setdiff(compoundsToExtract, AllCompounds$CompoundID), "`")),
+                        " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
+                        str_comma(paste0("`", AllCompounds$CompoundID, "`")), "
+                     "), 
+                 call. = FALSE)
+         compoundsToExtract <- intersect(compoundsToExtract, AllCompounds$CompoundID)
+      }
+      
+      suppressMessages(
+         PKparameters <- PKparameters %>% 
+            left_join(expand.grid(File = AllFiles, 
+                                  CompoundID = compoundsToExtract))
+      )
+      
+      ## Value and variability -------------------------------------------
+      
+      # Adding these columns so that format will be the same regardless of input
+      # scenario.
       PKparameters$Value <- NA
-   }
-   
-   
-   ### Variability -------------------------------------------------------------
-   
-   names(PKparameters)[tolower(names(PKparameters)) == "variability"] <- "Variability"
-   if("Variability" %in% names(PKparameters) == FALSE &&
-      (any(c("cv", "var", "sd", "range", "min", "minimum") %in%
-           tolower(names(PKparameters))) |
-       any(str_detect(tolower(names(PKparameters)), "conf")))){
-      
-      ColToUse <- c(which(tolower(names(PKparameters)) == "var"), 
-                    which(tolower(names(PKparameters)) == "cv"), 
-                    which(tolower(names(PKparameters)) == "sd"), 
-                    which(tolower(names(PKparameters)) == "range"), 
-                    which(tolower(names(PKparameters)) == "minimum"), 
-                    which(tolower(names(PKparameters)) == "min"), 
-                    which(str_detect(tolower(names(PKparameters)), "conf")))[1]
-      
-      warning(paste0("We were looking for a column named `Variability` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                     names(PKparameters)[ColToUse],
-                     "`, which we think is what you might want. We'll use the data in that column for any observed variability.\n"), 
-              call. = FALSE)
-      
-      names(PKparameters)[ColToUse] <- "Variability"
-      rm(ColToUse)
-   } else {
       PKparameters$Variability <- NA
    }
    
+   # Harmonizing and tidying generally ----------------------------------------
    
-   ### File -----------------------------------------------------------------
+   # Format of PKparameters at this point: data.frame with columns File, Sheet,
+   # CompoundID, Tissue. Columns may contain NA values and the exact content of
+   # the columns may not be correct, but they should exist. Harmonizing content
+   # of columns next.
    
-   names(PKparameters)[tolower(names(PKparameters)) == "file"] <- "File"
-   if(any(c("simulation", "workspace", "sim") %in% tolower(names(PKparameters)))){
-      
-      ColToUse <- c(which(tolower(names(PKparameters)) == "simulation"), 
-                    which(tolower(names(PKparameters)) == "workspace"), 
-                    which(tolower(names(PKparameters)) == "sim"))[1]
-      
-      warning(paste0("We were looking for a column named `File` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                     names(PKparameters)[ColToUse],
-                     "`, which we think is what you might want. We'll use the data that column for the file names.\n"), 
+   ## File ------------------------------------------------------------------
+   
+   # Make sure file extension is xlsx. 
+   PKparameters$File <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.db$", "", 
+                                   PKparameters$File), ".xlsx")
+   
+   ## PKparameter -----------------------------------------------------------
+   
+   BadParams <- setdiff(PKparameters$PKparameter, 
+                        c(AllPKParameters$PKparameter, 
+                          AllPKParameters$PKparameter_nodosenum))
+   
+   if(length(BadParams) > 0 &&
+      any(complete.cases(BadParams))){
+      warning(paste0("The following PK parameters are not among the possible options and will be ignored:\n", 
+                     str_c(BadParams, collapse = "\n")), 
               call. = FALSE)
-      
-      names(PKparameters)[ColToUse] <- "File"
-      rm(ColToUse)
-   } else {
-      PKparameters$File <- NA
-   }
-   
-   
-   ### Sheet -------------------------------------------------------------------
-   
-   # NB: Sheet needs to be different b/c we do NOT want to use grid.expand on
-   # Sheet. Input must be either in a data.frame OR must be length 1.
-   
-   names(PKparameters)[tolower(names(PKparameters)) == "sheet"] <- "Sheet"
-   if(any(c("tab", "sheets", "sheet_pkparameter", "sheet_pkparameters") %in% 
-          tolower(names(PKparameters)))){
-      
-      ColToUse <- c(which(tolower(names(PKparameters)) == "tab"), 
-                    which(tolower(names(PKparameters)) == "sheets"), 
-                    which(tolower(names(PKparameters)) == "sheet_pkparameter"), 
-                    which(tolower(names(PKparameters)) == "sheet_pkparameters"))[1]
-      
-      warning(paste0("We were looking for a column named `Sheet` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                     names(PKparameters)[ColToUse],
-                     "`, which we think is what you might want. We'll use the data that column for the sheet names for any user-defined intervals.\n"), 
-              call. = FALSE)
-      
-      names(PKparameters)[ColToUse] <- "Sheet"
-      rm(ColToUse)
-   }
-   
-   if("Sheet" %in% names(PKparameters) == FALSE){
-      PKparameters$Sheet <- sheet_PKparameters
-   }
-   
-   
-   ### CompoundID --------------------------------------------------------------
-   
-   names(PKparameters)[tolower(names(PKparameters)) == "compoundid"] <- "CompoundID"
-   if("CompoundID" %in% names(PKparameters) == FALSE &&
-      any(c("compound", "compounds", "compoundids", "cmpd", "drug") %in%
-          tolower(names(PKparameters)))){
-      
-      ColToUse <- c(which(tolower(names(PKparameters)) == "compoundids"), 
-                    which(tolower(names(PKparameters)) == "compound"), 
-                    which(tolower(names(PKparameters)) == "compounds"), 
-                    which(tolower(names(PKparameters)) == "cmpd"), 
-                    which(tolower(names(PKparameters)) == "drug"))[1]
-      
-      warning(paste0("We were looking for a column named `CompoundID` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                     names(PKparameters)[ColToUse],
-                     "`, which we think is what you might want. We'll use the data in that column for specifying which compound it is.\n"), 
-              call. = FALSE)
-      
-      names(PKparameters)[ColToUse] <- "CompoundID"
-      rm(ColToUse)
-   }
-   
-   if("CompoundID" %in% names(PKparameters) == FALSE){
       PKparameters <- PKparameters %>% 
-         left_join(expand.grid(File = unique(PKparameters$File), 
-                               CompoundID = compoundsToExtract), 
-                   by = "File")
+         filter(PKparameter %in% BadParams == FALSE)
    }
    
-   ### Tissue ------------------------------------------------------------------
-   
-   names(PKparameters)[tolower(names(PKparameters)) == "tissue"] <- "Tissue"
-   if("Tissue" %in% names(PKparameters) == FALSE &&
-      any(c("tissues", "matrix") %in%
-          tolower(names(PKparameters)))){
-      
-      ColToUse <- c(which(tolower(names(PKparameters)) == "tissues"), 
-                    which(tolower(names(PKparameters)) == "matrix"))[1]
-      
-      warning(paste0("We were looking for a column named `Tissue` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                     names(PKparameters)[ColToUse],
-                     "`, which we think is what you might want. We'll use the data in that column for specifying which tissue it is.\n"), 
-              call. = FALSE)
-      
-      names(PKparameters)[ColToUse] <- "Tissue"
-      rm(ColToUse)
-   }
-   
-   if("Tissue" %in% names(PKparameters) == FALSE){
-      PKparameters$Tissue <- tissues
-   }
-   
-   
-   ## Checking inputs generally -----------------------------------------------
-   
-   # Specifying CompoundID and Tissue if possible
-   if(("CompoundID" %in% names(PKparameters) == FALSE ||
-       all(is.na(PKparameters$CompoundID)))){
-      
-      # Apply all combos of CompoundID to all rows.
-      PKparameters <- PKparameters %>% ungroup() %>% 
-         select(-any_of("CompoundID")) %>% 
-         left_join(expand.grid(CompoundID = compoundsToExtract, 
-                               PKparameter = PKparameters$PKparameter), 
-                   by = "PKparameter")
-      
-   }
-   
-   # Setting any missing values to the default
-   PKparameters$CompoundID[is.na(PKparameters$CompoundID)] <- "substrate"
-   
-   if(("Tissue" %in% names(PKparameters) == FALSE ||
-       all(is.na(PKparameters$Tissue)))){
-      
-      # Apply all combosof Tissues to all rows.
-      PKparameters <- PKparameters %>% ungroup() %>% 
-         select(-any_of("Tissue")) %>% 
-         left_join(expand.grid(Tissue = tissues, 
-                               PKparameter = PKparameters$PKparameter), 
-                   by = "PKparameter")
-   }
-   
-   # Setting any missing values to the default
-   PKparameters$Tissue[is.na(PKparameters$Tissue)] <- "plasma"
-   
-   # Sheet is a little different b/c they CANNOT enter more than one sheet for
-   # sheet_PKparameters.
-   if(("Sheet" %in% names(PKparameters) == FALSE ||
-       all(is.na(PKparameters$Sheet))) &
-      length(sort(unique(sheet_PKparameters))) == 1){
-      PKparameters$Sheet <- sort(unique(Sheet))
-   }
+   ## Sheet & PKparameter ---------------------------------------------------
    
    # Checking that, when they've supplied a specific sheet, PKparameter does NOT
    # include the dose number. When they have *not* specified a tab, then it
@@ -542,29 +608,96 @@ tidy_input_PK <- function(PKparameters,
          filter(DoseNumProblem == FALSE) %>% select(-DoseNumProblem)
    }
    
+   ## Tissue ---------------------------------------------------------------
+   PKparameters$Tissue <- tolower(PKparameters$Tissue)
+   PKparameters$Tissue[is.na(PKparameters$Tissue)] <- "plasma"
    
-   # At this point, PKparameters, if it exists, should be a data.frame b/c it
-   # either was a data.frame at the outset, it has been created by reading an
-   # Excel or csv file for observed data, or it came from a report input form.
-   # At this point, it should NOT be wide by PKparameter. 
+   PossTissues <- c("plasma", "unbound plasma", "blood", "unbound blood", 
+                    "peripheral plasma", "peripheral blood")
+   if(any(PKparameters$Tissue %in% PossTissues == FALSE)){
+      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, `unbound blood`, `peripheral plasma`, or `peripheral blood`. The PK parameters will be for plasma.\n", 
+              call. = FALSE)
+      PKparameters$Tissue[PKparameters$Tissue %in% PossTissues == FALSE] <- "plasma"
+      PKparameters <- unique(PKparameters)
+   }
    
    
-   ## Checking inputs specific to each sim ------------------------------------
+   ## CompoundID -------------------------------------------------------------
    
-   # For checking on existing_exp_details, make sure that the order is 1)
-   # harmonize anything that already exists and THEN 2) extract any missing info
-   # b/c this will make sure that we get everything we might need.
+   PKparameters$CompoundID <- tolower(PKparameters$CompoundID)
+   PKparameters$CompoundID[is.na(PKparameters$CompoundID)] <- "substrate"
+   
+   if(any(compoundsToExtract %in% AllCompounds$CompoundID == FALSE)){
+      warning(paste0(str_wrap(paste0(
+         "The compound(s) ", 
+         str_comma(paste0("`", setdiff(compoundsToExtract, AllCompounds$CompoundID), "`")),
+         " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
+         str_comma(paste0("`", AllCompounds$CompoundID, "`")))), "\n"), 
+         call. = FALSE)
+      compoundsToExtract <- intersect(compoundsToExtract, AllCompounds$CoampoundID)
+   }
+   
+   PKparameters <- PKparameters %>% 
+      filter(CompoundID %in% AllCompounds$CompoundID)
+   
+   
+   # Checking inputs specific to each sim ------------------------------------
+   
+   ## Checking existing_exp_details ------------------------------------------
+   
+   # Getting experimental details for the simulation(s) as needed. For checking
+   # on existing_exp_details, make sure that the order is 1) harmonize anything
+   # that already exists and THEN 2) extract any missing info b/c this will make
+   # sure that we get everything we might need. NB: "Deets" in all pksummary
+   # functions means ONLY the experimental details for the single file in
+   # question -- either the only file for pksummary_table or the specific file
+   # we're dealing with in that iteration of the loop in pksummary_mult. By
+   # contrast, existing_exp_details will include ALL experimental details
+   # provided or extracted inside the function.
    if("logical" %in% class(existing_exp_details) == FALSE){ # logical when user has supplied NA
       existing_exp_details <- harmonize_details(existing_exp_details)
    }
    
    # This will get details for any files that weren't already included. 
-   if(any(unique(PKparameters$File) %in% existing_exp_details$MainDetails$File == FALSE)){
+   if(any(PKparameters$File %in% existing_exp_details$MainDetails$File == FALSE)){
       existing_exp_details <- extractExpDetails_mult(
-         sim_data_files = unique(PKparameters$File), # I think that, if they have supplied files in PKparameters, they will only want those files. 
+         sim_data_files = PKparameters$File,
          exp_details = "Summary and Input", 
          existing_exp_details = existing_exp_details)
    }
+   
+   # extractExpDetails will check whether the Excel file provided was, in fact,
+   # a Simulator output file and return a list of length 0 if not. Checking for
+   # that here.
+   if(any(PKparameters$File %in% existing_exp_details$MainDetails$File) == FALSE){
+      
+      NotSims <- setdiff(PKparameters$File, existing_exp_details$MainDetails$File)
+      
+      warning(paste0("The file(s) ", str_comma(NotSims),
+                     " is/are not Simulator output files and will be skipped.\n", call. = FALSE))
+      
+      PKparameters <- PKparameters %>% 
+         filter(File %in% existing_exp_details$MainDetails$File)
+   }
+   
+   if(any(PKparameters$File %in% existing_exp_details$MainDetails$File[
+      existing_exp_details$MainDetails$PopRepSim == "Yes"])){
+      
+      PopRepSims <- setdiff(PKparameters$File, 
+                            existing_exp_details$MainDetails$File[
+                               existing_exp_details$MainDetails$PopRepSim == "Yes"])
+      
+      existing_exp_details <- filter_sims(existing_exp_details, 
+                                          PopRepSims, "omit")
+      
+      warning(paste0("The file(s) ", str_comma(PopRepSims),
+                     " is/are population representative simulations and thus have no aggregate PK data. They will be skipped.\n", call. = FALSE))
+      
+      PKparameters <- PKparameters %>% 
+         filter(File %in% existing_exp_details$MainDetails$File)
+   }
+   
+   ## Checking CompoundID -----------------------------------------------------
    
    # Need to check that the compound they requested was included in the
    # simulation. Also check whether simulation was a DDI sim. 
@@ -610,7 +743,7 @@ tidy_input_PK <- function(PKparameters,
          select(File, CompoundID)
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
-      message("Warning:\nThe following simulation files do not contain the compound you requested PK for:\n")
+      message("Warning:\nThe following simulation files do not contain the compound for which you requested PK:\n")
       message(str_c(Problem, collapse = "\n"))
       message("They will be omitted.\n")
       
@@ -621,6 +754,8 @@ tidy_input_PK <- function(PKparameters,
       select(File, Sheet, CompoundID, Tissue, PKparameter, 
              any_of(c("Value", "Variability")), 
              DDI, MD)
+   
+   ## Checking PKparameters again -------------------------------------------
    
    # If they have left PKparameters as NA, then we need to figure out which PK
    # parameters apply.
@@ -663,9 +798,6 @@ tidy_input_PK <- function(PKparameters,
       )
    }
    
-   if("Value" %in% names(PKparameters) == FALSE){PKparameters$Value <- NA}
-   if("Variability" %in% names(PKparameters) == FALSE){PKparameters$Variability <- NA}
-   
    # Checking that we're looking for reasonable PK parameters. 
    PKparameters <- PKparameters %>% 
       mutate(HarmoniousDDI = AppliesOnlyWhenPerpPresent == FALSE |
@@ -676,12 +808,12 @@ tidy_input_PK <- function(PKparameters,
                     MD == TRUE), 
              Harmonious = HarmoniousDDI & HarmoniousRegimen) %>% 
       filter(Harmonious == TRUE) %>% 
-      select(File, Sheet, CompoundID, Tissue, PKparameter, 
-             any_of(c("Value", "Variability"))) %>% 
       select(File, Sheet, CompoundID, Tissue, PKparameter, Value, Variability)
    
    # Out
-   return(PKparameters)
+   return(list(PKparameters = PKparameters, 
+               existing_exp_details = existing_exp_details))
    
 }
+
 

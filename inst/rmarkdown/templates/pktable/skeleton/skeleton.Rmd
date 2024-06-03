@@ -50,10 +50,6 @@ if(FromCalcPKRatios){
    # tissues to tissue. Same w/compounds. 
    tissues <- tissue
    compoundsToExtract <- compoundToExtract
-   PKpulled$PKpulled <- expand.grid(PKpulled$PKpulled = PKToPull, 
-                           File = MyPKResults$File, 
-                           Tissue = unique(MyPKResults$Tissue), 
-                           CompoundID = compoundToExtract)
    
 } 
 
@@ -84,7 +80,8 @@ if(single_table){
    Annotations <- list(
       "TableHeading" = paste0("*Table XXX. Simulated ", 
                               ifelse(Observedincluded, "and observed ", ""), 
-                              MeanType, " mean ", str_comma(tissues),
+                              MeanType, " mean ", 
+                              str_comma(unique(MyPKResults$Tissue)),
                               " PK parameters.*"),
       "TableCaption" = paste0("*Simulated values listed are ",
                               CapText1, ". ", CapText2, 
@@ -109,14 +106,14 @@ if(single_table){
    
    # If they only wanted 1 tissue, don't include a column for that in the table.
    # It'll be listed in the text and takes up room needlessly.
-   if(length(MyPKResults$Tissue) == 1){
+   if(length(unique(MyPKResults$Tissue)) == 1){
       MyPKResults <- MyPKResults %>% 
          select(-any_of("Tissue"))
    }
    
    # Similarly, if they only wanted 1 compoundID, don't include a column for that
    # in the table.
-   if(length(MyPKResults$CompoundID) == 1){
+   if(length(unique(MyPKResults$CompoundID)) == 1){
       MyPKResults <- MyPKResults %>% 
          select(-any_of("CompoundID"))
    }
@@ -125,7 +122,7 @@ if(single_table){
    # interval and there is thus no need for the "Sheet" column. Similarly,
    # regardless of whether they prettified the column names, if there is only
    # one value present for the Sheet column, remove it. 
-   if(prettify_column_name | 
+   if(prettify_columns | 
       length(unique(MyPKResults$Sheet)) == 1){
       MyPKResults <- MyPKResults %>% 
          select(-any_of("Sheet"))
@@ -135,7 +132,7 @@ if(single_table){
                                               include_dose_num)
    
    if(include_dose_num == FALSE){
-      names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
+      names(MyPKResults) <- sub("Dose 1 |Last dose |_dose1|_last", "", names(MyPKResults))
    }
    
    formatTable_Simcyp(MyPKResults,
@@ -159,58 +156,41 @@ if(single_table == FALSE){
       split(MyPKResults, f = list(MyPKResults$File, 
                                   MyPKResults$CompoundID, 
                                   MyPKResults$Tissue))
-   PKpulled$PKpulled <- 
-      split(PKpulled$PKpulled, f = list(PKpulled$PKpulled$File, 
-                               PKpulled$PKpulled$CompoundID, 
-                               PKpulled$PKpulled$Tissue))
+   PKpulled_list <- 
+      split(PKpulled$PKpulled, f = list(PKpulled$File, 
+                                        PKpulled$CompoundID, 
+                                        PKpulled$Tissue))
+   
+   PKparameters <- split(PKparameters, 
+                         f = list(PKparameters$File, 
+                                  PKparameters$CompoundID, 
+                                  PKparameters$Tissue))
    
    MyPKResults <- MyPKResults[which(lapply(MyPKResults, nrow) > 0)]
    
    for(i in names(MyPKResults)){
       # assign("ITERATION_STEP", value = i, envir = global_env())
       
-      TableSettings <- c(Tissue = length(tissues) > 1, 
-                         CompoundID = length(compoundsToExtract) > 1, 
-                         File = TRUE)
-      TableSettings <- str_c(names(TableSettings)[TableSettings == TRUE], 
-                             collapse = " ")
-      
-      Heading <- switch(TableSettings, 
-                        "Tissue CompoundID File" = paste0(
-                           str_to_title(unique(MyPKResults[[i]]$Tissue)), 
+      Heading <- paste0(
+         str_to_title(unique(MyPKResults[[i]]$Tissue)), 
                            " PK for the ", 
                            unique(MyPKResults[[i]]$CompoundID), 
                            " for the file '", 
-                           unique(MyPKResults[[i]]$File), "'"), 
-                        
-                        "CompoundID File" = paste0(
-                           "PK for the ", 
-                           unique(MyPKResults[[i]]$CompoundID), 
-                           " for the file '", 
-                           unique(MyPKResults[[i]]$File), "'"), 
-                        
-                        "Tissue File" = paste0(
-                           str_to_title(unique(MyPKResults[[i]]$Tissue)), 
-                           " PK for the file '", 
-                           unique(MyPKResults[[i]]$File), "'"), 
-                        
-                        "File" = paste0(
-                           "PK for the file '", 
-                           unique(MyPKResults[[i]]$File), "'"))
+                           unique(MyPKResults[[i]]$File), "'")
       
       Heading <- ifelse(FromCalcPKRatios, 
                         sub("for the file", "for the file pair", Heading), 
                         Heading)
       
       TableSection <- knitr::knit_child(
-         system.file("rmarkdown/templates/pktablesection/skeleton/skeleton.Rmd",
+         system.file("rmarkdown/templates/pktableindiv/skeleton/skeleton.Rmd",
                      package="SimcypConsultancy"), 
          envir = environment(), 
          quiet = TRUE)
       
       cat(TableSection, sep = "\n")
       
-      rm(Heading, Deets, MyPerpetrator, MyFiles, MyAnnotations, PKpulled$PKpulled_i)
+      rm(Heading, Deets, MyPerpetrator, MyFiles, MyAnnotations)
       
    }
    

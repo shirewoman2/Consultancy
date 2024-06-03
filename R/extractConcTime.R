@@ -241,16 +241,12 @@ extractConcTime <- function(sim_data_file,
    
    compoundToExtract <- tolower(compoundToExtract)
    
-   MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
-                        "secondary metabolite",
-                        "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
-                        "inhibitor 2 metabolite")
-   
    ADCCompoundIDs <- c("total protein",
                        "conjugated protein",
                        "released payload")
    
-   if(any(compoundToExtract %in% c(MainCompoundIDs, ADCCompoundIDs) == FALSE)){
+   if(any(compoundToExtract %in% c(AllCompounds$CompoundID, 
+                                   ADCCompoundIDs) == FALSE)){
       stop("The compound for which you requested concentration-time data was not one of the possible options. For 'compoundToExtract', please enter 'substrate', 'primary metabolite 1', 'secondary metabolite', 'inhibitor 1', 'inhibitor 2', or 'inhibitor 1 metabolite'.",
            call. = FALSE)
    }

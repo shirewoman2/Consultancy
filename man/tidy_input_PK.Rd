@@ -7,12 +7,10 @@
 tidy_input_PK(
   PKparameters,
   sim_data_files = NA,
+  existing_exp_details = NA,
   compoundsToExtract = "substrate",
   tissues = "plasma",
-  sheet_PKparameters = NA,
-  report_input_file = NA,
-  sheet_report = NA,
-  existing_exp_details = NA
+  sheet_PKparameters = NA
 )
 }
 \arguments{
@@ -22,6 +20,14 @@ vector, or NA.}
 
 \item{sim_data_files}{a character vector of file names. This should no longer
 be NA or "recursive".}
+
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} to get all the details from the "Input
+Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
+"Summary and Input"} or \code{exp_details = "all"}), you can save some processing
+time by supplying that object here, unquoted. If left as NA, this function
+will run \code{extractExpDetails} behind the scenes anyway to figure out some
+information about your experimental set up.}
 
 \item{compoundsToExtract}{the values they supplied for compoundsToExtract in
 the parent function.}

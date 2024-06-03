@@ -22,19 +22,56 @@
 #' table headings and captions.}}
 #'
 #'
-#' @param sim_data_files the Simcyp Simulator output Excel files to use. Options
-#'   for how to specify these: \itemize{\item{NA to extract PK data
-#'   for \emph{all} the Excel files in the current folder or for all the files
-#'   listed in what you supply to the argument \code{PKparameters}}
-#'   \item{"recursive" to extract PK data for all the Excel files
-#'   in the current folder and all subfolders.} \item{a character
-#'   vector of simulator output files, each in quotes and encapsulated with
-#'   \code{c(...)}} } If you do want specific simulations, please take pity on your
-#'   poor R coders and do use the same simulation file names in different
-#'   subfolders in the same function call; it's too confusing and we might give
-#'   you incorrect results.
-#' @param PKparameters the PK parameters to include. Options for this:
-#'   \describe{
+#' @param PKparameters the PK parameters to include. There are two main options
+#'   for this: 1) supply a file to read or a data.frame (R speak for "a table")
+#'   that lists which simulation files, compounds, tissues, and PK you want or
+#'   2) supply a character vector of which PK parameters you want and then also
+#'   specify what you need in terms of tissues, which compounds, which
+#'   simulation files, and which tab to get the data from with the arguments
+#'   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
+#'   \code{sheet_PKparameters}.
+#'   \strong{Details on each option:} \describe{
+#'
+#'   \item{\strong{Option 1: }a file to read or a data.frame}{This
+#'   is the most versatile option and, we think, the clearest in terms of
+#'   getting what you expected. Please try running \code{\link{make_example_PK_input}}
+#'   to see examples for how to set up a csv or Excel file or data.frame to
+#'   specify exactly which simulation file should get which PK parameter from
+#'   which tissue and, when user-specified intervals are involved, from which
+#'   tab in the Excel file those data should be pulled. Whatever you supply, the
+#'   columns that will be read are "File" (same thing as the argument
+#'   \code{sim_data_files}), "Sheet" (same thing as the argument
+#'   \code{sheet_PKparameters}), "Tissue" (same as the argument \code{tissues}),
+#'   "CompoundID" (same as the argument \code{compoundsToExtract}), "Value" for
+#'   any observed data (no equivalent argument), and "Variability" for any
+#'   observed variability (no equivalent argument here, either). If you
+#'   omit any of those columns, whatever you supply for their respective
+#'   arguments will be used instead. If you supply something for one of them
+#'   in the data.frame or file and \emph{also} something for its argument, the
+#'   argument will be ignored. Here is how to specify each of the possible
+#'   inputs for Option 1:\describe{\item{a csv file}{list the file
+#'   name, including the file extension ".csv" inside quotes, e.g., "PK needed.csv"}
+#'
+#'   \item{an Excel file}{list the file name, including the file extension
+#'   ".xlsx", inside quotes, e.g., "PK needed.xlsx". We will be looking for a
+#'   tab titled "PKparameters" (all one word and with the same capitalization).}
+#'
+#'   \item{a data.frame}{If you'd like to supply a data.frame with the same
+#'   columns you would have had in the .csv or Excel file, that works just the
+#'   same.}}}
+#'
+#'   \item{\strong{Option 2: }specify the PK parameters you want for all your
+#'   simulations}{This is a good option when you want the same information
+#'   from all your simulations. List the PK parameters you want here and then,
+#'   in the arguments
+#'   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
+#'   \code{sheet_PKparameters} specify which of each of those items you want.
+#'   You'll get all possible combinations of these, so, for example, if you say
+#'   \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")} and
+#'   \code{tissues = c("blood", "plasma")}, you'll get the dose 1 AUCinf and
+#'   Cmax for both blood and plasma for all the simulation files you list with
+#'   \code{sim_data_files}. If you're going this route, here are the two options
+#'   you have for the argument \code{PKparameters}: \describe{
 #'
 #'   \item{NA}{If you leave this as NA, by default, if you have a single-dose
 #'   simulation, the parameters will
@@ -43,27 +80,29 @@
 #'   perpetrator present, the parameters will include the AUC and Cmax values with
 #'   and without the perpetrator as well as those ratios.}
 #'
-#'   \item{a csv file or a data.frame of PK parameters}{This
-#'   is the most versatile option and, we think, the clearest in terms of
-#'   getting what you expected. Please try running
-#'   \code{\link{make_example_PK_input}} to see examples for how to set up
-#'   a csv file or data.frame to specify exactly which simulation file should get
-#'   which PK parameter from which tissue and, when user-specified intervals are
-#'   involved, from which tab in the Excel file those data should be pulled.}
-#'
 #'   \item{a character vector of any combination of specific, individual
 #'   parameters}{This character vector must contain SimcypConsultancy package
 #'   coded names for each parameter you want, e.g., \code{c("Cmax_dose1",
 #'   "AUCtau_last").} Be sure to encapsulate the parameters you want with
 #'   \code{c(...)}. Please try running \code{\link{make_example_PK_input}} to
-#'   see examples. To see the full set of all possible parameters to extract, enter
-#'   \code{view(PKParameterDefinitions)} into the console.}}
+#'   see examples, or, to see the full set of all possible parameters to extract, enter
+#'   \code{view(PKParameterDefinitions)} into the console.}}}}
 #'
 #'   Parameters that don't make sense for your scenario -- such as asking for
 #'   \code{AUCinf_dose1_withInhib} when your simulation did not include a
 #'   perpetrator -- will not be included.
 #'
-#'
+#' @param sim_data_files the Simcyp Simulator output Excel files to use. Options
+#'   for how to specify these: \itemize{\item{NA to extract PK data
+#'   for \emph{all} the Excel files in the current folder or for all the files
+#'   listed in what you supply to the argument \code{PKparameters}}
+#'   \item{"recursive" to extract PK data for all the Excel files
+#'   in the current folder and all subfolders.} \item{a character
+#'   vector of simulator output files, each in quotes and encapsulated with
+#'   \code{c(...)}} } If you do want specific simulations, please take pity on your
+#'   poor R coders and do not use the same simulation file names in different
+#'   subfolders; duplicate file names are just too confusing, and we might give
+#'   you incorrect results.
 #' @param compoundsToExtract For which compounds do you want to extract PK data?
 #'   Options are any combination of the following:
 #'   \itemize{\item{"substrate" (default)} \item{"primary metabolite 1"}
@@ -102,8 +141,8 @@
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
 #'   "Summary and Input"} or \code{exp_details = "all"}), you can save some processing
 #'   time by supplying that object here, unquoted. If left as NA, this function
-#'   will run \code{extractExpDetails} behind the scenes anyway to figure out some
-#'   information about your experimental set up.
+#'   will run \code{extractExpDetails} behind the scenes anyway to figure out
+#'   some information about your experimental set up.
 #' @param mean_type What kind of means and CVs do you want listed in the output
 #'   table? Options are "arithmetic" or "geometric" (default).
 #' @param use_median_for_tmax TRUE (default) or FALSE for whether to use median
@@ -263,8 +302,8 @@
 #' @examples
 #' # none yet
 #' 
-pk_table <- function(sim_data_files = NA, 
-                     PKparameters = NA,
+pk_table <- function(PKparameters = NA,
+                     sim_data_files = NA, 
                      compoundsToExtract = "substrate",
                      tissues = "plasma", 
                      sheet_PKparameters = NA, 
@@ -334,14 +373,14 @@ pk_table <- function(sim_data_files = NA,
    
    ## Harmonizing PKparameters -------------------------------------------------
    
-   PKparameters <- tidy_input_PK(PKparameters = PKparameters, 
-                                 sim_data_files = sim_data_files, 
-                                 compoundsToExtract = compoundsToExtract, 
-                                 sheet_PKparameters = sheet_PKparameters, 
-                                 existing_exp_details = existing_exp_details)
+   PKparam_tidied <- tidy_input_PK(PKparameters = PKparameters, 
+                                   sim_data_files = sim_data_files, 
+                                   compoundsToExtract = compoundsToExtract, 
+                                   sheet_PKparameters = sheet_PKparameters, 
+                                   existing_exp_details = existing_exp_details)
    
-   sim_data_files <- sort(unique(c(sim_data_files, 
-                                   PKparameters$File)))
+   existing_exp_details <- PKparam_tidied$existing_exp_details
+   PKparameters <- PKparam_tidied$PKparameters
    
    ## Misc arg error catching -------------------------------------------------
    
@@ -487,7 +526,19 @@ pk_table <- function(sim_data_files = NA,
    
    for(i in names(PKparameters)){
       
-      # message(paste0("Extracting PK data from `", i, "`"))
+      if(nrow(PKparameters[[i]]) == 0){next}
+      
+      message(paste0(str_wrap(paste0(
+         "Extracting PK data from simulation `", 
+         unique(PKparameters[[i]]$File),
+         "` ", 
+         ifelse(is.na(unique(PKparameters[[i]]$Sheet)) ||
+                   unique(PKparameters[[i]]$Sheet) == "default", 
+                "", paste0("sheet `", 
+                           unique(PKparameters[[i]]$Sheet), "` ")), 
+         "for the ",
+         unique(PKparameters[[i]]$CompoundID), 
+         " in ", unique(PKparameters[[i]]$Tissue))), ".\n"))
       
       Deets <- existing_exp_details$MainDetails %>%
          filter(File == unique(PKparameters[[i]]$File))
@@ -785,7 +836,20 @@ pk_table <- function(sim_data_files = NA,
       mutate(Statistic = as.character(Stat),
              Statistic = StatNames[Statistic], 
              Statistic = ifelse(SorO == "Obs" & Statistic == "Simulated", 
-                                "Observed", Statistic)) %>%
+                                "Observed", Statistic), 
+             SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
+             Stat = factor(Stat, levels = c("mean", "geomean", "median",
+                                            "CV", "GCV", 
+                                            "min", "max",
+                                            "CI90_low", "CI90_high", "CI95_low", 
+                                            "CI95_high", "per5", "per95",
+                                            "MinMean", "MaxMean", 
+                                            "SD", "S_O", 
+                                            "S_O_TM_MinMean", 
+                                            "S_O_TM_MaxMean"))) %>% 
+      arrange(File, CompoundID, SorO, Stat) %>% 
+      filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
+      mutate(across(.cols = everything(), .fns = as.character)) %>% 
       select(-Stat, -SorO) %>%
       select(Statistic, everything())
    
@@ -901,6 +965,7 @@ pk_table <- function(sim_data_files = NA,
       
    } 
    
+   include_dose_num_orig <- include_dose_num
    include_dose_num <- check_include_dose_num(MyPKResults, 
                                               include_dose_num)
    
