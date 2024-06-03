@@ -1,0 +1,322 @@
+---
+title: "PK tables"
+author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setupPKSummaryOutput, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600, 
+                      fig.width = 6, 
+                      fig.height = 5)
+
+```
+
+```{r FigtextPKSummary}
+
+Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
+
+```
+```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
+
+if(FromCalcPKRatios){
+   
+   highlight_so_cutoffs = NA
+   highlight_so_colors = "yellow to red"
+   
+   if(paired){
+      OptionalSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/pairedci/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(OptionalSection, sep = "\n")
+      
+   } else {
+      OptionalSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/unpairedci/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(OptionalSection, sep = "\n")
+      
+   }
+   
+   # calc_PK_ratios only has a single tissue option for now, so need to set
+   # tissues to tissue. Same w/compounds. 
+   tissues <- tissue
+   compoundsToExtract <- compoundToExtract
+   PKpulled$PKpulled <- expand.grid(PKpulled$PKpulled = PKToPull, 
+                           File = MyPKResults$File, 
+                           Tissue = unique(MyPKResults$Tissue), 
+                           CompoundID = compoundToExtract)
+   
+} 
+
+if(single_table){
+   
+   CapText1 <- ifelse(any(str_detect(names(MyPKResults), "tmax")), 
+                      paste("the", MeanType, "means, except for t~max~, which is median, minimum, and maximum"),
+                      paste("the", MeanType, "means"))
+   
+   CapText2a <- paste0(ifelse(any(str_detect(MyPKResults$Statistic, "CV")),
+                              "CV: coefficient of variation; ", ""), 
+                       ifelse(any(str_detect(MyPKResults$Statistic, " CI")),
+                              "CI: confidence interval; ", ""))
+   
+   CapText2 <- paste0(sub("; $", ".", CapText2a), 
+                      ifelse(Observedincluded, 
+                             " S/O: simulated/observed; source observed data: Clinical Study XXX; ",
+                             ""))
+   
+   AllFiles <- switch(
+      as.character(FromCalcPKRatios), 
+      "TRUE" = # from calc_PK_ratios_mult
+         str_comma(unique(unlist(str_split(MyPKResults$File, " / ")))),
+      
+      "FALSE" = # from pksummary_mult
+         str_comma(basename(unique(MyPKResults$File))))
+   
+   Annotations <- list(
+      "TableHeading" = paste0("*Table XXX. Simulated ", 
+                              ifelse(Observedincluded, "and observed ", ""), 
+                              MeanType, " mean ", str_comma(tissues),
+                              " PK parameters.*"),
+      "TableCaption" = paste0("*Simulated values listed are ",
+                              CapText1, ". ", CapText2, 
+                              " Source simulated data: ", AllFiles, "*"))
+} else {
+   Annotations <- list("TableHeading" = "", 
+                       "TableCaption" = "")
+}
+
+```
+
+`r Annotations[["TableHeading"]]`
+
+```{r makeTablePKSummaryOutput}
+
+if("File" %in% names(MyPKResults)){
+   MyPKResults <- MyPKResults %>% 
+      relocate(File, .after = last_col())
+}
+
+if(single_table){
+   
+   # If they only wanted 1 tissue, don't include a column for that in the table.
+   # It'll be listed in the text and takes up room needlessly.
+   if(length(MyPKResults$Tissue) == 1){
+      MyPKResults <- MyPKResults %>% 
+         select(-any_of("Tissue"))
+   }
+   
+   # Similarly, if they only wanted 1 compoundID, don't include a column for that
+   # in the table.
+   if(length(MyPKResults$CompoundID) == 1){
+      MyPKResults <- MyPKResults %>% 
+         select(-any_of("CompoundID"))
+   }
+   
+   # If the column names were prettified, then they will include the dosing
+   # interval and there is thus no need for the "Sheet" column. Similarly,
+   # regardless of whether they prettified the column names, if there is only
+   # one value present for the Sheet column, remove it. 
+   if(prettify_column_name | 
+      length(unique(MyPKResults$Sheet)) == 1){
+      MyPKResults <- MyPKResults %>% 
+         select(-any_of("Sheet"))
+   }
+   
+   include_dose_num <- check_include_dose_num(MyPKResults, 
+                                              include_dose_num)
+   
+   if(include_dose_num == FALSE){
+      names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
+   }
+   
+   formatTable_Simcyp(MyPKResults,
+                      shading_column = File, 
+                      merge_shaded_cells = TRUE, 
+                      fontsize = fontsize,
+                      prettify_columns = prettify_columns, 
+                      add_header_for_DDI = add_header_for_DDI, 
+                      highlight_gmr_colors = highlight_gmr_colors, 
+                      highlight_so_cutoffs = highlight_so_cutoffs, 
+                      highlight_so_colors = highlight_so_colors)
+}
+
+
+```
+```{r SplitTable, echo = FALSE, results = "asis"}
+
+if(single_table == FALSE){
+   
+   MyPKResults <- 
+      split(MyPKResults, f = list(MyPKResults$File, 
+                                  MyPKResults$CompoundID, 
+                                  MyPKResults$Tissue))
+   PKpulled$PKpulled <- 
+      split(PKpulled$PKpulled, f = list(PKpulled$PKpulled$File, 
+                               PKpulled$PKpulled$CompoundID, 
+                               PKpulled$PKpulled$Tissue))
+   
+   MyPKResults <- MyPKResults[which(lapply(MyPKResults, nrow) > 0)]
+   
+   for(i in names(MyPKResults)){
+      # assign("ITERATION_STEP", value = i, envir = global_env())
+      
+      TableSettings <- c(Tissue = length(tissues) > 1, 
+                         CompoundID = length(compoundsToExtract) > 1, 
+                         File = TRUE)
+      TableSettings <- str_c(names(TableSettings)[TableSettings == TRUE], 
+                             collapse = " ")
+      
+      Heading <- switch(TableSettings, 
+                        "Tissue CompoundID File" = paste0(
+                           str_to_title(unique(MyPKResults[[i]]$Tissue)), 
+                           " PK for the ", 
+                           unique(MyPKResults[[i]]$CompoundID), 
+                           " for the file '", 
+                           unique(MyPKResults[[i]]$File), "'"), 
+                        
+                        "CompoundID File" = paste0(
+                           "PK for the ", 
+                           unique(MyPKResults[[i]]$CompoundID), 
+                           " for the file '", 
+                           unique(MyPKResults[[i]]$File), "'"), 
+                        
+                        "Tissue File" = paste0(
+                           str_to_title(unique(MyPKResults[[i]]$Tissue)), 
+                           " PK for the file '", 
+                           unique(MyPKResults[[i]]$File), "'"), 
+                        
+                        "File" = paste0(
+                           "PK for the file '", 
+                           unique(MyPKResults[[i]]$File), "'"))
+      
+      Heading <- ifelse(FromCalcPKRatios, 
+                        sub("for the file", "for the file pair", Heading), 
+                        Heading)
+      
+      TableSection <- knitr::knit_child(
+         system.file("rmarkdown/templates/pktablesection/skeleton/skeleton.Rmd",
+                     package="SimcypConsultancy"), 
+         envir = environment(), 
+         quiet = TRUE)
+      
+      cat(TableSection, sep = "\n")
+      
+      rm(Heading, Deets, MyPerpetrator, MyFiles, MyAnnotations, PKpulled$PKpulled_i)
+      
+   }
+   
+   MyPKResults <- bind_rows(MyPKResults)
+   
+}
+
+```
+
+`r Annotations[["TableCaption"]]`
+
+```{r}
+
+if(any(complete.cases(highlight_gmr_colors))){
+   TableKeyText_gmr <- "**Key for color-coded GMR values:**"
+} else {
+   TableKeyText_gmr <- ""
+}
+
+```
+
+`r TableKeyText_gmr`
+
+```{r}
+
+if(any(complete.cases(highlight_gmr_colors))){
+   
+   highlight_gmr_colors <- set_boundary_colors(color_set = highlight_gmr_colors, 
+                       boundaries = c(1, 1.25, 2, 5), 
+                       break_type = "GMR")
+   
+   tibble(`Interaction level` = names(highlight_gmr_colors)) %>% 
+      flextable::flextable() %>% 
+      flextable::bold(part = "header") %>% 
+      flextable::bg(i = 1, 
+                    bg = highlight_gmr_colors["negligible"]) %>% 
+      flextable::bg(i = 2, 
+                    bg = highlight_gmr_colors["weak"]) %>% 
+      flextable::bg(i = 3, 
+                    bg = highlight_gmr_colors["moderate"]) %>% 
+      flextable::bg(i = 4, 
+                    bg = highlight_gmr_colors["strong"]) %>% 
+      flextable::width(width = 1.5) %>% 
+      flextable::align(align = "center", part = "all")
+   
+} 
+
+```
+
+
+```{r}
+
+if(any(complete.cases(highlight_so_cutoffs))){
+   TableKeyText_so <- "**Key for color-coded S/O values:**"
+} else {
+   TableKeyText_so <- ""
+}
+
+```
+
+`r TableKeyText_so`
+
+```{r}
+
+if(any(complete.cases(highlight_so_cutoffs))){
+   
+   highlight_so_colors <- set_boundary_colors(color_set = highlight_so_colors, 
+                                              boundaries = highlight_so_cutoffs, 
+                                              break_type = "SO")
+   
+   SOkey <- data.frame(UpperA = highlight_so_cutoffs[1:(length(highlight_so_cutoffs)-1)], 
+                       UpperB = highlight_so_cutoffs[2:(length(highlight_so_cutoffs))], 
+                       LowerA = 1/highlight_so_cutoffs[2:(length(highlight_so_cutoffs))], 
+                       LowerB = 1/highlight_so_cutoffs[1:(length(highlight_so_cutoffs)-1)]) %>% 
+      bind_rows(data.frame(UpperA = NA, 
+                           UpperB = highlight_so_cutoffs[length(highlight_so_cutoffs)], 
+                           LowerA = NA, 
+                           LowerB = 1/highlight_so_cutoffs[length(highlight_so_cutoffs)])) %>% 
+      mutate(across(.fns = round_consultancy), 
+             Text = paste(UpperA, "to", UpperB, "fold or", LowerA, "to", LowerB, "fold"))
+   
+   SOkey$Text[1] <- paste(SOkey$LowerA[1], "to", SOkey$UpperB[1], "fold")
+   SOkey$Text[nrow(SOkey)] <- paste("<", SOkey$LowerB[nrow(SOkey)], 
+                                    "fold or >", SOkey$UpperB[nrow(SOkey)], "fold")
+   
+   SOkey <- SOkey %>% select(Text) %>% 
+      rename(`S/O cutoff` = Text) %>% 
+      flextable::flextable() %>% 
+      flextable::bold(part = "header") %>% 
+      flextable::width(width = 3.5) %>% 
+      flextable::align(align = "center", part = "all")
+   
+   for(i in 1:length(highlight_so_cutoffs)){
+      SOkey <- SOkey %>% 
+         flextable::bg(i = i, 
+                       bg = highlight_so_colors[i])
+   }
+   
+   SOkey 
+   
+   
+} 
+
+```
+
+
+
+
+

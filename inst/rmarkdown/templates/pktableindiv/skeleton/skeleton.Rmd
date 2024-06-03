@@ -1,0 +1,105 @@
+# `r Heading`
+
+```{r}
+
+if(FromCalcPKRatios){
+   MyFiles <- str_split_1(unique(MyPKResults[[i]]$File), " / ")
+} else {
+   MyFiles <- unique(MyPKResults[[i]]$File)
+}
+
+if("logical" %in% class(existing_exp_details)){
+   # This is when existing_exp_details is NA.
+   Deets <- data.frame(Inhibitor1 = "UNKNOWN INHIBITOR", 
+                       File = MyFiles)
+} else {
+   Deets <- existing_exp_details$MainDetails %>% filter(File %in% MyFiles)
+}
+
+MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
+                                         prettify_compound_names = TRUE)
+
+if(FromCalcPKRatios){
+   MyAnnotations <- 
+      list("TableHeading" = 
+              paste0(
+                 "***Table XXX.*** *Simulated ", MeanType, " mean ", 
+                 unique(MyPKResults[[i]]$Tissue),  " PK parameters for the file pair ", 
+                 str_comma(MyFiles), "*"), 
+           
+           "TableCaption" = 
+              paste0("*Simulated values listed are the ", MeanType, 
+                     " means. CV: coefficient of variation; CI: confidence interval. Source simulated data: ", 
+                     str_comma(MyFiles), "*"))
+   
+} else {
+   
+   PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
+   if(any(str_detect(PKpulled_i, " "), na.rm = T)){
+      PKpulled_i <- setdiff(
+         names(prettify_column_names(MyPKResults[[i]],
+                                     pretty_or_ugly_cols = "ugly")), 
+         c("CompoundID", "Compound", "Tissue", "File", "Statistic"))
+      
+   } 
+   
+   MyAnnotations <- make_table_annotations(
+      MyPKResults = MyPKResults[[i]] %>% purrr::discard(~all(is.na(.))), 
+      MyFile = unique(MyPKResults[[i]]$File), 
+      PKpulled = PKpulled_i,  
+      MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
+      prettify_compound_names = TRUE,
+      Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
+                     "TRUE" = data.frame(), 
+                     "FALSE" = Deets), 
+      MeanType = MeanType, 
+      tissue = unique(MyPKResults[[i]]$Tissue))
+}
+
+```
+
+`r MyAnnotations[["TableHeading"]]`
+
+```{r}
+
+if(is.na(include_dose_num)){
+   # Dropping dose number depending on input. First, checking whether they have
+   # both dose 1 and last-dose data.
+   DoseCheck <- c("first" = any(str_detect(names(MyPKResults[[i]] %>% purrr::discard(~all(is.na(.)))), "Dose 1")), 
+                  "last" = any(str_detect(names(MyPKResults[[i]] %>% purrr::discard(~all(is.na(.)))), "Last dose")))
+   include_dose_num_i <- all(DoseCheck)
+   rm(DoseCheck)
+} else {
+   include_dose_num_i <- include_dose_num
+}
+
+# include_dose_num now should be either T or F no matter what, so checking
+# that.
+if(is.logical(include_dose_num_i) == FALSE){
+   warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
+           call. = FALSE)
+   include_dose_num_i <- TRUE
+}
+
+if(include_dose_num_i == FALSE){
+   names(MyPKResults[[i]]) <- sub("Dose 1 |Last dose ", "", names(MyPKResults[[i]]))
+   names(MyPKResults[[i]]) <- sub("_dose1|_last", "", names(MyPKResults[[i]]))
+}
+
+TempTable <- MyPKResults[[i]] %>% ungroup() %>% 
+   purrr::discard(~all(is.na(.))) %>% 
+   select(-any_of(c("CompoundID", "Tissue", "File", "Compound")))
+names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
+
+formatTable_Simcyp(TempTable,
+                   merge_shaded_cells = merge_shaded_cells,
+                   perpetrator_name = MyPerpetrator, 
+                   fontsize = fontsize,
+                   prettify_columns = prettify_columns, 
+                   add_header_for_DDI = add_header_for_DDI, 
+                   highlight_so_cutoffs = highlight_so_cutoffs, 
+                   highlight_so_colors = highlight_so_colors)
+
+```
+
+`r MyAnnotations[["TableCaption"]]`
