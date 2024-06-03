@@ -18,6 +18,16 @@ determine_myperpetrator <- function(Deets,
    Deets <- harmonize_details(Deets)
    Deets <- Deets$MainDetails
    
+   if(length(Deets$File) > 1){
+      if(all(is.na(Deets$Inhibitor1))){
+         return("none")
+      } else {
+         # This is when there are multiple DDI sims. Just list perp as
+         # "perpetrator" in that case.
+         return("perpetrator")
+      }
+   }
+   
    MyPerpetrator <- 
       c("Inhibitor1" = switch(as.character("Inhibitor1" %in% names(Deets)), 
                               "TRUE" = str_comma(Deets$Inhibitor1), 
