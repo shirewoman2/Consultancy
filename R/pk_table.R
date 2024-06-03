@@ -325,128 +325,11 @@ pk_table <- function(sim_data_files = NA,
       tissues <- sys.call()$tissue
    }
    
-   
-   ## Checking files and sheets -----------------------------------------------
-   
-   # Noting sim_data_files input for later and making sure that we're only
-   # extracting each file once
-   sim_data_files <- unique(sim_data_files)
-   sim_data_files_input <- sim_data_files
-   
-   # Make sure file extension is xlsx. 
-   sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.db$", "", 
-                                sim_data_files), ".xlsx")
-   # Remove artifacts when there's no file specified. 
-   sim_data_files <- setdiff(sim_data_files, "NA.xlsx")
-   
-   # If user did not supply files, then extract all the files in the current
-   # folder that end in "xlsx" or in all subfolders if they wanted it to be
-   # recursive.
-   
-   if(length(sim_data_files) == 1 &&
-      (is.na(sim_data_files) | sim_data_files == "recursive")){
-      sim_data_files <- list.files(pattern = "xlsx$",
-                                   recursive = (complete.cases(sim_data_files) &&
-                                                   sim_data_files == "recursive"))
-      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
-   }
-   
-   # Making sure that all the files exist before attempting to pull data
-   if(all(complete.cases(sim_data_files)) && 
-      any(file.exists(sim_data_files) == FALSE)){
-      MissingSimFiles <- sim_data_files[
-         which(file.exists(sim_data_files) == FALSE)]
-      warning(paste0("The file(s) ", 
-                     str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present and thus will not be extracted.
-                     "), 
-              call. = FALSE)
-      sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
-   }
-   
    # sheet_PKparameters should be length 1 and not be named b/c, if they want
    # more than 1, they need to supply it to PKparameters.
    if(length(sheet_PKparameters) > 1){
       stop(str_wrap("The value for sheet_PKparameters must be only 1 item, and it looks like you have more than that. If you want to specify multiple sheets to use for PK parameters, please specify them by supplying a data.frame to the argument `PKparameters`. You can see examples for how to supply this by running `make_PK_example_input()`."), 
            call. = FALSE)
-   }
-   
-   ## Checking CompoundID, Tissues --------------------------------------------
-   
-   # Check for appropriate input for compound ID
-   compoundsToExtract <- tolower(compoundsToExtract)
-   if(any(compoundsToExtract == "all")){
-      compoundsToExtract <- AllCompounds$CompoundID
-   }
-   
-   if(any(compoundsToExtract %in% AllCompounds$CompoundID == FALSE)){
-      warning(paste0("The compound(s) ", 
-                     str_comma(paste0("`", setdiff(compoundsToExtract, AllCompounds$CompoundID), "`")),
-                     " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                     str_comma(paste0("`", AllCompounds$CompoundID, "`")), "
-                     "), 
-              call. = FALSE)
-      compoundsToExtract <- intersect(compoundsToExtract, AllCompounds$CompoundID)
-   }
-   
-   tissues <- tolower(tissues)
-   PossTissues <- c("plasma", "unbound plasma", "blood", "unbound blood", 
-                    "peripheral plasma", "peripheral blood")
-   if(any(tissues %in% PossTissues == FALSE)){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, `unbound blood`, `peripheral plasma`, or `peripheral blood`. The PK parameters will be for plasma.\n", 
-              call. = FALSE)
-      tissues <- intersect(tissues, PossTissues)
-   }
-   
-   ## Checking existing_exp_details ------------------------------------------
-   
-   # Getting experimental details for the simulation(s) as needed. For checking
-   # on existing_exp_details, make sure that the order is 1) harmonize anything
-   # that already exists and THEN 2) extract any missing info b/c this will make
-   # sure that we get everything we might need. NB: "Deets" in all pksummary
-   # functions means ONLY the experimental details for the single file in
-   # question -- either the only file for pksummary_table or the specific file
-   # we're dealing with in that iteration of the loop in pksummary_mult. By
-   # contrast, existing_exp_details will include ALL experimental details
-   # provided or extracted inside the function.
-   if("logical" %in% class(existing_exp_details) == FALSE){ # logical when user has supplied NA
-      existing_exp_details <- harmonize_details(existing_exp_details)
-   }
-   
-   # This will get details for any files that weren't already included. 
-   if(any(sim_data_files %in% existing_exp_details$MainDetails$File == FALSE)){
-      existing_exp_details <- extractExpDetails_mult(
-         sim_data_files = sim_data_files,
-         exp_details = "Summary and Input", 
-         existing_exp_details = existing_exp_details)
-   }
-   
-   # extractExpDetails will check whether the Excel file provided was, in fact,
-   # a Simulator output file and return a list of length 0 if not. Checking for
-   # that here.
-   if(any(sim_data_files %in% existing_exp_details$MainDetails$File) == FALSE){
-      
-      NotSims <- setdiff(sim_data_files, existing_exp_details$MainDetails$File)
-      
-      warning(paste0("The file(s) ", str_comma(NotSims),
-                     " is/are not Simulator output files and will be skipped.\n", call. = FALSE))
-      
-      sim_data_files <- intersect(sim_data_files, existing_exp_details$MainDetails$File)
-   }
-   
-   if(any(sim_data_files %in% existing_exp_details$MainDetails$File[
-      existing_exp_details$MainDetails$PopRepSim == "Yes"])){
-      
-      PopRepSims <- setdiff(sim_data_files, 
-                            existing_exp_details$MainDetails$File[
-                               existing_exp_details$MainDetails$PopRepSim == "Yes"])
-      
-      existing_exp_details <- filter_sims(existing_exp_details, 
-                                          PopRepSims, "omit")
-      
-      warning(paste0("The file(s) ", str_comma(PopRepSims),
-                     " is/are population representative simulations and thus have no aggregate PK data. They will be skipped.\n", call. = FALSE))
-      sim_data_files <- intersect(sim_data_files, existing_exp_details$MainDetails$File)
    }
    
    ## Harmonizing PKparameters -------------------------------------------------
@@ -923,7 +806,8 @@ pk_table <- function(sim_data_files = NA,
                       "user specified" = PKparameters$PKparameter)
    
    MyPKResults <- MyPKResults %>%
-      select(any_of(c("Statistic", as.character(PKlevels))), 
+      select(any_of(c("Statistic", 
+                      unique(as.character(PKlevels)))), 
              everything()) %>% 
       relocate(File, .after = last_col())
    
@@ -1006,7 +890,7 @@ pk_table <- function(sim_data_files = NA,
       }
       ColNames$Pretty <- gsub("ug/mL", "µg/mL", ColNames$Pretty)
       
-      MyPerpetrator <- determine_myperpetrator(Deets, prettify_compound_names)
+      MyPerpetrator <- determine_myperpetrator(existing_exp_details, prettify_compound_names)
       
       if(any(complete.cases(MyPerpetrator))){
          ColNames$Pretty <- sub("perpetrator", MyPerpetrator, ColNames$Pretty)
@@ -1067,12 +951,6 @@ pk_table <- function(sim_data_files = NA,
       
    }
    
-   PKpulled <- PKpulled$PKpulled # Need to rename here for consistency w/other pksummary functions and Rmd files.
-   
-   # Sheet was still included as of here. Removing b/c don't need it in final
-   # table and it clutters things. 
-   MyPKResults$Sheet <- NULL
-   
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
       
@@ -1126,7 +1004,7 @@ pk_table <- function(sim_data_files = NA,
                                                          package="SimcypConsultancy"))
          
          rmarkdown::render(
-            system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd", 
+            system.file("rmarkdown/templates/pktable/skeleton/skeleton.Rmd", 
                         package="SimcypConsultancy"),
             output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
             output_dir = OutPath, 
