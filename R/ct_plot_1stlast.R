@@ -534,9 +534,9 @@ ct_plot_1stlast <- function(ct_dataframe,
          xaxisinterval = x_axis_interval_last) )
    
    if(linear_or_log %in% c("both", "both vertical", "linear", "semi-log")){
-      Out <- A + B + plot_layout(ncol = 2)   
+      Out <- A + B + plot_layout(ncol = 2) + plot_layout(guides = "collect")
    } else {
-      Out <- A + B + plot_layout(nrow = 2)
+      Out <- A + B + plot_layout(nrow = 2) + plot_layout(guides = "collect")
    }
    
    if(complete.cases(save_graph)){
