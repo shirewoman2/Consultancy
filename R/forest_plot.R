@@ -692,6 +692,9 @@ forest_plot <- function(forest_dataframe,
       variability_type <- "90% CI"
    }
    
+   # Removing any grouping user may have included b/c it messes everything up
+   forest_dataframe <- ungroup(forest_dataframe)
+   
    # Allowing for flexibility in case for input column names. Really, I should
    # just make all the columns lower or upper case but I haven't coded
    # everything else like that, so not fixing that now.
@@ -1227,7 +1230,8 @@ forest_plot <- function(forest_dataframe,
                                                           "AUCinf_nounits", 
                                                           "AUCinf_dose1_nounits",
                                                           "AUCinf_ratio",
-                                                          "AUCinf_ratio_dose1")))
+                                                          "AUCinf_ratio_dose1"))) %>% 
+      filter(complete.cases(PKparameter))
    
    # Only use PK parameters where there are all complete cases. 
    ParamToUse <- forest_dataframe %>% select(PKparameter, Centre) %>% 
