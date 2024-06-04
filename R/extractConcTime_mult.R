@@ -411,6 +411,17 @@ extractConcTime_mult <- function(sim_data_files = NA,
       }
    }
    
+   sim_data_files_topull <- intersect(sim_data_files_topull, 
+                                      existing_exp_details$MainDetails$File)
+   
+   # If it wasn't a Simulator file, it will not be in sim_data_files_topull.
+   # Yes, this return was included above, but including it there AND here should
+   # minimize the amount of redundant data extraction and thus improve speed.
+   if(length(sim_data_files_topull) == 0){
+      message("There are no data to pull that are not already present in your current data.frame. Returning current data.frame.")
+      return(ct_dataframe)
+   }
+   
    # If the file is a Simulator output file, we should have it now. Checking and
    # removing any that are not.
    if(all(sim_data_files_topull %in% 
@@ -444,7 +455,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
       } else {
          
          existing_exp_details <- filter_sims(existing_exp_details, 
-                                             sim_data_files, "include")
+                                             sim_data_files_topull, "include")
          existing_exp_details <- harmonize_details(existing_exp_details)
          
          if(all(sim_data_files %in% existing_exp_details$MainDetails$File) == FALSE){

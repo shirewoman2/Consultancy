@@ -171,7 +171,7 @@
 #' @param includeTrialMeans TRUE or FALSE (default) for whether to include the
 #'   range of trial means for a given parameter. Note: This is calculated from
 #'   individual values rather than being pulled directly from the output.
-#' @param concatVariability TRUE or FALSE (default) for whether to concatenate
+#' @param concatVariability TRUE (default) or FALSE for whether to concatenate
 #'   the variability. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
 #'   or percentile, e.g., "2400 to 2700". Please note that the current
@@ -317,7 +317,7 @@ pk_table <- function(PKparameters = NA,
                      includeRange = FALSE,
                      includePerc = FALSE, 
                      includeTrialMeans = FALSE, 
-                     concatVariability = FALSE, 
+                     concatVariability = TRUE, 
                      variability_format = "to",
                      convert_conc_units = NA, 
                      include_dose_num = NA,
@@ -777,39 +777,59 @@ pk_table <- function(PKparameters = NA,
    # requested
    if(concatVariability){
       
-      # Note: When multiple options are chosen for variability type,
-      # concatVariability doesn't work. Will need to fix this later.
-      VarRows <- list("ConfInt90" = c("CI90_low", "CI90_high"), 
-                      "ConfInt95" = c("CI95_low", "CI95_high"),
-                      "Perc" = c("per5", "per95"), 
-                      "Range" = c("min", "max"))
-      VarRows <- VarRows[sapply(VarRows, function(x) unlist(x[[1]])) %in% VarOptions]
+      # This must be done one file, sheet, compound, and tissue at a time.
+      # First, replacing any NA values for Sheet w/"default" so that it won't
+      # mess up splitting.
+      MyPKResults$Sheet[is.na(MyPKResults$Sheet)] <- "default"
       
-      VarRows[["obs"]] <- c("CIL_obs", "CIU_obs")
-      for(j in names(VarRows)){
-         temp <- MyPKResults %>%
-            filter(Stat %in% as.character(unlist(VarRows[[j]]))) %>%
-            mutate(across(.cols = !matches("Stat"),
-                          .fns = function(x) {
-                             ifelse(all(complete.cases(c(x[1], x[2]))),
-                                    switch(variability_format, 
-                                           "to" = paste(x[1], "to", x[2]),
-                                           "hyphen" = paste(x[1], "-", x[2]),
-                                           "brackets" = paste0("[", x[1], ", ", x[2], "]"), 
-                                           "parentheses" = paste0("(", x[1], ", ", x[2], ")")),
-                                    NA)}),
-                   Stat = switch(j,
-                                 "ConfInt90" = "CI90concat",
-                                 "ConfInt95" = "CI95concat",
-                                 "Perc" = "per95concat",
-                                 "Range" = "Rangeconcat",
-                                 "obs" = "CIobsconcat"))
+      MyPKResults <- split(MyPKResults, 
+                           f = list(MyPKResults$File, 
+                                    MyPKResults$Sheet, 
+                                    MyPKResults$Tissue, 
+                                    MyPKResults$CompoundID))
+      
+      for(i in names(MyPKResults)){
+         if(nrow(MyPKResults[[i]]) == 0){next}
          
-         MyPKResults[which(MyPKResults$Stat == VarRows[[j]][1]), ] <-
-            temp[1, ]
-         MyPKResults <- MyPKResults %>% filter(Stat != VarRows[[j]][2])
-         rm(temp)
+         # Note: When multiple options are chosen for variability type,
+         # concatVariability doesn't work. Will need to fix this later.
+         VarRows <- list("ConfInt90" = c("CI90_low", "CI90_high"), 
+                         "ConfInt95" = c("CI95_low", "CI95_high"),
+                         "Perc" = c("per5", "per95"), 
+                         "Range" = c("min", "max"))
+         VarRows <- VarRows[sapply(VarRows, function(x) unlist(x[[1]])) %in% VarOptions]
+         
+         VarRows[["obs"]] <- c("CIL_obs", "CIU_obs")
+         for(j in names(VarRows)){
+            temp <- MyPKResults[[i]] %>%
+               filter(Stat %in% as.character(unlist(VarRows[[j]]))) %>%
+               mutate(across(.cols = !any_of(c("Stat", "SorO", "Statistic",
+                                               "File", "Sheet", 
+                                               "CompoundID", "Tissue")),
+                             .fns = function(x) {
+                                ifelse(all(complete.cases(c(x[1], x[2]))),
+                                       switch(variability_format, 
+                                              "to" = paste(x[1], "to", x[2]),
+                                              "hyphen" = paste(x[1], "-", x[2]),
+                                              "brackets" = paste0("[", x[1], ", ", x[2], "]"), 
+                                              "parentheses" = paste0("(", x[1], ", ", x[2], ")")),
+                                       NA)}),
+                      Stat = switch(j,
+                                    "ConfInt90" = "CI90concat",
+                                    "ConfInt95" = "CI95concat",
+                                    "Perc" = "per95concat",
+                                    "Range" = "Rangeconcat",
+                                    "obs" = "CIobsconcat"))
+            
+            MyPKResults[[i]][which(MyPKResults[[i]]$Stat == VarRows[[j]][1]), ] <-
+               temp[1, ]
+            MyPKResults[[i]] <- MyPKResults[[i]] %>% filter(Stat != VarRows[[j]][2])
+            rm(temp)
+         }
       }
+      
+      MyPKResults <- bind_rows(MyPKResults) %>% 
+         mutate(Sheet = ifelse(Sheet == "default", NA, Sheet))
    }
    
    # Renaming statistics to match what's in template

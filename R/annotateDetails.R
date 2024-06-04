@@ -2,11 +2,12 @@
 #'
 #' \code{annotateDetails} uses output from either
 #' \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}},
-#' formats it into a long data.frame, adds columns for \enumerate{\item{which
+#' formats it, adds columns for \enumerate{\item{which
 #' compound the information pertains to (substrate, inhibitor, etc.),}
 #' \item{which section of the Simcyp Simulator this detail is found in
 #' (physchem, absorption, distribution, etc.),} \item{notes describing what the
-#' detail is, and} \item{which sheet in the Excel file the information was
+#' detail is, and} \item{which sheet in the Simulator output Excel file or in 
+#' the Simulator workspace the information was
 #' pulled from.}} It will also optionally filter the data to return only
 #' specifically requested information. If you find yourself overwhelmed at the
 #' amount of information, we recommend looking at just one compound at a time.
@@ -47,8 +48,8 @@
 #'   file extension}
 #'
 #'   \item{a regular expression}{This will include in the output only files
-#'   that match the regular expression. This must have length = 1, and it IS 
-#'   case sensitive. For example, say you only want to look at development or 
+#'   that match the regular expression. This must have length = 1, and it IS
+#'   case sensitive. For example, say you only want to look at development or
 #'   verification simulations and you included "dev" or "ver" in those file
 #'   names, respectively. Here is how you could specify that (the verical pipe |
 #'   means "or" for regular expressions): \code{sim_to_include = "dev|ver"}}}

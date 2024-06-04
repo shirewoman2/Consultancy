@@ -20,7 +20,7 @@ pk_table(
   includeRange = FALSE,
   includePerc = FALSE,
   includeTrialMeans = FALSE,
-  concatVariability = FALSE,
+  concatVariability = TRUE,
   variability_format = "to",
   convert_conc_units = NA,
   include_dose_num = NA,
@@ -202,7 +202,7 @@ percentiles}
 range of trial means for a given parameter. Note: This is calculated from
 individual values rather than being pulled directly from the output.}
 
-\item{concatVariability}{TRUE or FALSE (default) for whether to concatenate
+\item{concatVariability}{TRUE (default) or FALSE for whether to concatenate
 the variability. If "TRUE", the output will be formatted into a single row
 and listed as the lower confidence interval or percentile to the upper CI
 or percentile, e.g., "2400 to 2700". Please note that the current

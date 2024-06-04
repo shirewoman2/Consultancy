@@ -1233,7 +1233,7 @@ so_graph <- function(PKtable,
                        # specified neither
                        "TRUE TRUE" = NULL),
          legend = legend_position, 
-         common.legend = TRUE)
+         common.legend = TRUE) # FIXME - Switch to patchwork and collect the legends. This makes it so that legend items ONLY include what was in the 1st graph. 
    }
    
    

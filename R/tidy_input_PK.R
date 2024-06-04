@@ -170,15 +170,15 @@ tidy_input_PK <- function(PKparameters,
          PKparameters <- PKparameters %>% 
             rename(CompoundID = `Compound PK pertain to`, 
                    CohortID = `Cohort ID`, 
-                   Value = `Aggregate value`, 
-                   Variability = `Variability value`, 
+                   ObsValue = `Aggregate value`, 
+                   ObsVariability = `Variability value`, 
                    # MeanType = `Summary statistic used for the aggregate value`, # <--- Not using these for now other than for QCing. 
                    # VarType = `Summary statistic used for the variability`, 
                    PKparameter = `PK parameter for R code`, 
                    File = `Simulation file`, 
                    Tab = `Tab to get data from for a user-defined AUC interval`) %>% 
             select(File, Tab, CohortID, Tissue, CompoundID, 
-                   PKparameter, Value, Variability)
+                   PKparameter, ObsValue, ObsVariability)
          
          # Dealing w/possibly multiple files for the same cohort since user may
          # be making multiple comparisons. 
@@ -233,7 +233,7 @@ tidy_input_PK <- function(PKparameters,
          PKparameters <- PKparameters %>% 
             pivot_longer(cols = any_of(PKparam_cols), 
                          names_to = "PKparameter", 
-                         values_to = "Value")
+                         values_to = "ObsValue")
       }
       
       # PKparameters should now be long by PK parameter instead of wide, but the
@@ -312,41 +312,43 @@ tidy_input_PK <- function(PKparameters,
       # FIXME - Deal w/ instances when they have specified variability in the PK
       # parameter name, e.g. AUCinf_dose1__CV
       
-      ### Value ------------------------------------------------------------
+      ### ObsValue ------------------------------------------------------------
       
-      names(PKparameters)[tolower(names(PKparameters)) == "value"] <- "Value"
-      if("Value" %in% names(PKparameters) == FALSE &&
-         any(c("geomean", "gm_mean", "gmean", "mean") %in%
+      names(PKparameters)[tolower(names(PKparameters)) == "obsvalue"] <- "ObsValue"
+      if("ObsValue" %in% names(PKparameters) == FALSE &&
+         any(c("geomean", "gm_mean", "gmean", "mean", "value") %in%
              tolower(names(PKparameters)))){
          
-         ColToUse <- c(which(tolower(names(PKparameters)) == "geomean"), 
+         ColToUse <- c(which(tolower(names(PKparameters)) == "value"), 
+                       which(tolower(names(PKparameters)) == "geomean"), 
                        which(tolower(names(PKparameters)) == "gm_mean"), 
                        which(tolower(names(PKparameters)) == "gmean"), 
                        which(tolower(names(PKparameters)) == "mean"))[1]
          
-         warning(paste0("We were looking for a column named `Value` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+         warning(paste0("We were looking for a column named `ObsValue` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
                         names(PKparameters)[ColToUse],
                         "`, which we think is what you might want. We'll use the data in that column for any observed values.\n"), 
                  call. = FALSE)
          
-         names(PKparameters)[ColToUse] <- "Value"
+         names(PKparameters)[ColToUse] <- "ObsValue"
          rm(ColToUse)
       } 
       
-      if("Value" %in% names(PKparameters) == FALSE){
-         PKparameters$Value <- NA
+      if("ObsValue" %in% names(PKparameters) == FALSE){
+         PKparameters$ObsValue <- NA
       }
       
       
-      ### Variability -------------------------------------------------------------
+      ### ObsVariability -------------------------------------------------------------
       
-      names(PKparameters)[tolower(names(PKparameters)) == "variability"] <- "Variability"
-      if("Variability" %in% names(PKparameters) == FALSE &&
-         (any(c("cv", "var", "sd", "range", "min", "minimum") %in%
+      names(PKparameters)[tolower(names(PKparameters)) == "obsvariability"] <- "ObsVariability"
+      if("ObsVariability" %in% names(PKparameters) == FALSE &&
+         (any(c("variability", "cv", "var", "sd", "range", "min", "minimum") %in%
               tolower(names(PKparameters))) |
           any(str_detect(tolower(names(PKparameters)), "conf")))){
          
-         ColToUse <- c(which(tolower(names(PKparameters)) == "var"), 
+         ColToUse <- c(which(tolower(names(PKparameters)) == "variability"), 
+                       which(tolower(names(PKparameters)) == "var"), 
                        which(tolower(names(PKparameters)) == "cv"), 
                        which(tolower(names(PKparameters)) == "sd"), 
                        which(tolower(names(PKparameters)) == "range"), 
@@ -354,22 +356,22 @@ tidy_input_PK <- function(PKparameters,
                        which(tolower(names(PKparameters)) == "min"), 
                        which(str_detect(tolower(names(PKparameters)), "conf")))[1]
          
-         warning(paste0("We were looking for a column named `Variability` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+         warning(paste0("We were looking for a column named `ObsVariability` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
                         names(PKparameters)[ColToUse],
                         "`, which we think is what you might want. We'll use the data in that column for any observed variability.\n"), 
                  call. = FALSE)
          
-         names(PKparameters)[ColToUse] <- "Variability"
+         names(PKparameters)[ColToUse] <- "ObsVariability"
          rm(ColToUse)
       } 
       
-      if("Variability" %in% names(PKparameters) == FALSE){
-         PKparameters$Variability <- NA
+      if("ObsVariability" %in% names(PKparameters) == FALSE){
+         PKparameters$ObsVariability <- NA
       }
       
       # This needs to be character for possibly combining downstream w/other
       # character varability s/a "1 to 2"
-      PKparameters$Variability <- as.character(PKparameters$Variability)
+      PKparameters$ObsVariability <- as.character(PKparameters$ObsVariability)
       
       
       ### Sheet -------------------------------------------------------------------
@@ -435,7 +437,7 @@ tidy_input_PK <- function(PKparameters,
                existing_exp_details$MainDetails[, c("File", AllCompounds$DetailNames)] %>% 
                pivot_longer(cols = -File, 
                             names_to = "DetailNames", 
-                            values_to = "Value") %>% 
+                            values_to = "ObsValue") %>% 
                left_join(AllCompounds %>% select(CompoundID, DetailNames), 
                          by = "DetailNames")
             
@@ -524,7 +526,7 @@ tidy_input_PK <- function(PKparameters,
             existing_exp_details$MainDetails[, c("File", AllCompounds$DetailNames)] %>% 
             pivot_longer(cols = -File, 
                          names_to = "DetailNames", 
-                         values_to = "Value") %>% 
+                         values_to = "ObsValue") %>% 
             left_join(AllCompounds %>% select(CompoundID, DetailNames), 
                       by = "DetailNames")
          
@@ -547,15 +549,15 @@ tidy_input_PK <- function(PKparameters,
                                   CompoundID = compoundsToExtract))
       )
       
-      ## Value and variability -------------------------------------------
+      ## ObsValue and variability -------------------------------------------
       
       # Adding these columns so that format will be the same regardless of input
       # scenario.
-      PKparameters$Value <- NA
+      PKparameters$ObsValue <- NA
       
       # This needs to be character for possibly combining downstream w/other
       # character varability s/a "1 to 2"
-      PKparameters$Variability <- as.character(NA)
+      PKparameters$ObsVariability <- as.character(NA)
       
    }
    
@@ -724,14 +726,14 @@ tidy_input_PK <- function(PKparameters,
       
       message("Warning:\nThe following simulation files do not contain the compound for which you requested PK:\n")
       message(str_c(Problem, collapse = "\n"))
-      message("They will be omitted.\n")
+      message("\nThey will be omitted.\n")
       
       PKparameters <- PKparameters %>% filter(GoodCmpd == TRUE)
    }
    
    PKparameters <- PKparameters %>% 
       select(File, Sheet, CompoundID, Tissue, PKparameter, 
-             any_of(c("Value", "Variability")), 
+             any_of(c("ObsValue", "ObsVariability")), 
              DDI, MD)
    
    ## Checking PKparameters again -------------------------------------------
@@ -794,9 +796,26 @@ tidy_input_PK <- function(PKparameters,
    }
    
    PKparameters <- PKparameters %>% 
-      mutate(Harmonious = HarmoniousDDI & HarmoniousRegimen) %>% 
+      mutate(Harmonious = HarmoniousDDI & HarmoniousRegimen)
+   
+   if(any(PKparameters$Harmonious == FALSE) &
+      all(complete.cases(PKparameters_orig))){
+      
+      Problem <- PKparameters %>% filter(Harmonious == FALSE) %>% 
+         select(PKparameter, File, CompoundID, Tissue)
+      Problem <- capture.output(print(Problem, row.names = FALSE))
+      
+      message("Warning:\nThe following requested PK parameters do not apply to the following scenarios:\n")
+      message(str_c(Problem, collapse = "\n"))
+      message("\nThey will be ignored.\n")
+   }
+   
+   PKparameters <- PKparameters %>% 
       filter(Harmonious == TRUE) %>% 
-      select(File, Sheet, CompoundID, Tissue, PKparameter, Value, Variability)
+      select(File, Sheet, CompoundID, Tissue, PKparameter,
+             ObsValue, ObsVariability) %>% 
+      rename(Value = ObsValue, 
+             Variability = ObsVariability)
    
    # Checking that, when they've supplied a specific sheet, PKparameter does NOT
    # include the dose number. When they have *not* specified a tab, then it
