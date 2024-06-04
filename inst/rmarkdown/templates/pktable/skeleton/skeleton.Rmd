@@ -114,8 +114,8 @@ if(any(str_detect(CheckDoseInt$message, "mismatch")) &
              "Last-dose interval (h)" = TimeLastInterval, 
              "User-defined interval (h)" = UserIntervalRemaining) %>% 
          flextable::flextable() %>% 
-         flextable::width(x = 1:2, width = 1.5) %>% 
-         flextable::width(x = 3, width = 1), 
+         flextable::width(j = 1:2, width = 1.5) %>% 
+         flextable::width(j = 3, width = 1), 
       
       "***Please check these results carefully.***")
    

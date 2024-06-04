@@ -231,7 +231,7 @@
 #'   \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
 #'   only works with simulations with perpetrators (at least, for now), this
 #'   will only work for simulations that included a perpetrator.
-#' @param checkDataSource TRUE (default) or FALSE for whether to include in the
+#' @param checkDataSource TRUE or FALSE (default) for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
 #' @param highlight_gmr_colors optionally specify a set of colors to use for
@@ -327,7 +327,7 @@ pk_table <- function(PKparameters = NA,
                      prettify_columns = TRUE, 
                      prettify_compound_names = TRUE, 
                      extract_forest_data = FALSE, 
-                     checkDataSource = TRUE, 
+                     checkDataSource = FALSE, 
                      highlight_gmr_colors = NA, 
                      highlight_so_cutoffs = NA, 
                      highlight_so_colors = "yellow to red", 

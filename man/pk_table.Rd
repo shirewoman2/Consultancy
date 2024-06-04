@@ -30,7 +30,7 @@ pk_table(
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   extract_forest_data = FALSE,
-  checkDataSource = TRUE,
+  checkDataSource = FALSE,
   highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
@@ -275,7 +275,7 @@ list that includes data formatted for use with the function
 only works with simulations with perpetrators (at least, for now), this
 will only work for simulations that included a perpetrator.}
 
-\item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
+\item{checkDataSource}{TRUE or FALSE (default) for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
 
