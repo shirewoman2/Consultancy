@@ -3,17 +3,27 @@
 #' @param sim_data_file sim_data_file
 #' @param existing_exp_details existing_exp_details
 #' @param compoundID compoundID
+#' @param interval optionally include a specific interval that you want to check
+#' @param stop_or_warn_missing_file stop or just warn if no info available. NB:
+#'   This is NOT stop or warn if the dose interval dosen't match.
+#' @param warnings "silent" (default) or "show" (really, or anything else) to
+#'   see warnings in this function
 #'
-#' @return character vector of length 1: "custom dosing" (as in, we can't tell
-#'   whether the interval matched), "good", "mismatch", or "can't check -
-#'   missing file"
+#' @return list of 1) message: "custom dosing" (as in, we can't tell whether the
+#'   interval matched), "good", "mismatch", or "can't check - missing file" and
+#'   2) data.frame of File, CompoundID, SimDuration, DoseInt_X, StartHr_X,
+#'   NumDoses_X, LastDoseTime, IntervalRemaining, OneDoseIntRemaining,
+#'   UserIntervalStart, UserIntervalEnd, UserIntervalStartGood,
+#'   UserIntervalEndGood.
 #'
 #' @examples
 #' # none yet
 check_doseint <- function(sim_data_file, 
                           existing_exp_details, 
                           compoundID, 
-                          stop_or_warn = "stop"){
+                          interval = NA, 
+                          stop_or_warn_missing_file = "stop", 
+                          warnings = "silent"){
    
    Deets <- harmonize_details(existing_exp_details)
    Deets <- filter_sims(Deets, sim_data_file, "include")
@@ -26,7 +36,7 @@ check_doseint <- function(sim_data_file,
    Deets <- Deets$MainDetails
    
    if(nrow(Deets) == 0){
-      if(stop_or_warn == "stop"){
+      if(stop_or_warn_missing_file == "stop"){
          stop("sim_data_file is not included in existing_exp_details. We cannot check whether the dose interval is correct.", 
               call. = FALSE)   
       } else {
@@ -89,34 +99,84 @@ check_doseint <- function(sim_data_file,
          # the 1st dose doesn't start at DoseInt_x * 1 but at DoseInt_x * (1 -
          # 1) = 0.
          LastDoseTime = StartHr_X + DoseInt_X * (NumDoses_X - 1), 
-             IntervalRemaining = SimDuration - LastDoseTime, 
-             # If things were set up correctly, then there should be one
-             # dosing interval of time left when the last dose is
-             # administered OR there should be no time left.
-             OneDoseIntRemaining = IntervalRemaining == DoseInt_X |
-                IntervalRemaining == 0, 
-             CompoundID = compoundID, 
-             EndsOnLastDose = IntervalRemaining == 0 & OneDoseIntRemaining == TRUE, 
-             LastDoseTime = ifelse(EndsOnLastDose, 
-                                   StartHr_X + (NumDoses_X - 1) * DoseInt_X, 
-                                   LastDoseTime), 
-             NumDoses_X = ifelse(EndsOnLastDose, 
-                                 NumDoses_X - 1, NumDoses_X), 
-             IntervalRemaining = ifelse(EndsOnLastDose, 
-                                        DoseInt_X, IntervalRemaining)) %>% 
+         IntervalRemaining = SimDuration - LastDoseTime, 
+         # If things were set up correctly, then there should be one
+         # dosing interval of time left when the last dose is
+         # administered OR there should be no time left.
+         OneDoseIntRemaining = IntervalRemaining == DoseInt_X |
+            IntervalRemaining == 0, 
+         CompoundID = compoundID, 
+         EndsOnLastDose = IntervalRemaining == 0 & OneDoseIntRemaining == TRUE, 
+         LastDoseTime = ifelse(EndsOnLastDose, 
+                               StartHr_X + (NumDoses_X - 1) * DoseInt_X, 
+                               LastDoseTime), 
+         NumDoses_X = ifelse(EndsOnLastDose, 
+                             NumDoses_X - 1, NumDoses_X), 
+         IntervalRemaining = ifelse(EndsOnLastDose, 
+                                    DoseInt_X, IntervalRemaining)) %>% 
       select(-EndsOnLastDose) %>% 
       select(File, CompoundID, everything())
-
    
    # DoseInt_x will be NA when it's a single-dose simulation, in which case,
    # the dosing interval is fine.
    IntCheckMessage <- ifelse(IntCheck$OneDoseIntRemaining == TRUE |
                                 is.na(IntCheck$DoseInt_X), 
-                      "good", "mismatch")
+                             "good", "mismatch last dose")
    
-   if(IntCheckMessage == "mismatch"){
-      warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n", 
-              call. = FALSE)
+   
+   # user-defined intervals ---------------------------------------------------
+   
+   # Not adding much error catching here since this is an internal function.
+   # This should either be the text from the top of an AUC tab in the Excel
+   # output, which is something like "36 to 48 h", or it will be a length-2
+   # numeric vector like c(36, 48).
+   
+   if(any(complete.cases(interval))){
+      if("character" %in% class(interval)){
+         Interval <- str_split(gsub("from | h", "", interval), pattern = " to ")
+         Interval <- as.numeric(Interval[[1]])
+      } else if("numeric" %in% class(interval)){
+         Interval <- sort(interval[1:2])
+      }
+      
+      IntGood <- Interval %% IntCheck$DoseInt_X == 0
+      MsgToAdd <- switch(str_c(IntGood, collapse = " "), 
+                         "TRUE FALSE" = "The user-defined AUC interval starts on a dosing time but ends at a different time than the dosing interval.\n", 
+                         "TRUE TRUE" = "", 
+                         "FALSE TRUE" = "The user-defined AUC interval does not start on a dosing time (although it does end on one).\n", 
+                         "FALSE FALSE" = "The user-defined AUC interval starts and ends at times other than dosing intervals.\n")
+      
+      IntCheck <- IntCheck %>% 
+         mutate(UserIntervalStart = Interval[1], 
+                UserIntervalEnd = Interval[2], 
+                UserIntervalStartGood = IntGood[1], 
+                UserIntervalEndGood = IntGood[2], 
+                UserIntervalRemaining = Interval[2] - Interval[1])
+      
+      # If they supplied a user-defined interval, that's clearly important, so
+      # modify the message based on whether that's ok.
+      IntCheckMessage <- ifelse(
+         complete.cases(IntCheck$UserIntervalEndGood) &&
+            all(c(IntCheck$UserIntervalStartGood, 
+                  IntCheck$UserIntervalEndGood)) == FALSE, 
+         "mismatch user-defined interval", "good")
+      
+      if(IntCheckMessage == "mismatch user-defined interval" & warnings != "silent"){
+         warning("The time used for integrating the AUC for the user-defined interval was not the same as the dosing interval.\n", 
+                 call. = FALSE)
+      }
+      
+   } else {
+      IntCheck <- IntCheck %>% 
+         mutate(UserIntervalStart = as.numeric(NA), 
+                UserIntervalEnd = as.numeric(NA), 
+                UserIntervalStartGood = as.logical(NA), 
+                UserIntervalEndGood = as.logical(NA))
+      
+      if(IntCheckMessage == "mismatch last dose" & warnings != "silent"){
+         warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n", 
+                 call. = FALSE)
+      }
    }
    
    return(list("message" = IntCheckMessage, 

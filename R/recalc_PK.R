@@ -930,7 +930,8 @@ recalc_PK <- function(ct_dataframe,
                      
                      TEMP <- check_doseint(sim_data_file = file, 
                                            existing_exp_details = existing_exp_details, 
-                                           compoundID = cmpd, stop_or_warn = "warn")
+                                           compoundID = cmpd, 
+                                           stop_or_warn_missing_file = "warn")
                      
                      DoseIntWarnings[[file]][[cmpd]] <- TEMP$message
                      DoseIntChecks[[file]][[cmpd]] <- TEMP$interval

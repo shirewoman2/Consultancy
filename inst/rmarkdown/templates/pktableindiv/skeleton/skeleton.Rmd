@@ -51,6 +51,68 @@ if(FromCalcPKRatios){
 
 `r MyAnnotations[["TableHeading"]]`
 
+
+```{r}
+
+# Adding a warning if there was a mismatch between the last dosing interval and
+# the AUC interval if any of the PK included last dose.
+Msg <- CheckDoseInt$message[which(
+   str_detect(names(CheckDoseInt$message), sub("xlsx.", "xlsx.*", i)))]
+
+if(Msg == "mismatch last dose"){
+   
+   DoseIntWarning <- list(
+      "***WARNING: The time used for integrating the AUC for the last dose was not the same as the dosing interval.***", 
+      
+      paste0("**Dosing interval: ", CheckDoseInt_list[[i]]$DoseInt_X, " h**"),
+      
+      paste0("**Last dose start time: ", CheckDoseInt_list[[i]]$LastDoseTime, " h**"),
+      
+      paste0("**Simulation end time: ", CheckDoseInt_list[[i]]$SimDuration, " h**"),
+      
+      paste0("**Time used for integrating the last-dose AUC: ", 
+             CheckDoseInt_list[[i]]$IntervalRemaining, " h**"),
+      
+      "***Please check these results carefully.***")
+   
+} else if(Msg == "mismatch user-defined interval"){
+   
+   DoseIntWarning <- list(
+      "***WARNING: The time used for integrating the AUC for the user-defined interval was not the same as the dosing interval.***", 
+      
+      paste0("**Dosing interval: ", CheckDoseInt_list[[i]]$DoseInt_X, " h**"),
+      
+      paste0("**User-defined interval start time: ", CheckDoseInt_list[[i]]$UserIntervalStart, " h**"),
+      
+      paste0("**User-defined interval end time: ", CheckDoseInt_list[[i]]$UserIntervalEnd, " h**"),
+      
+      paste0("**Time used for integrating the user-defined AUC: ", 
+             CheckDoseInt_list[[i]]$UserIntervalRemaining, " h**"),
+      
+      "***Please check these results carefully.***")
+   
+} else {
+   
+   DoseIntWarning <- list(
+      c(), c(), c(), c(), c(), c()
+   )
+}
+
+```
+`r DoseIntWarning[[1]]` 
+
+`r DoseIntWarning[[2]]` 
+
+`r DoseIntWarning[[3]]` 
+
+`r DoseIntWarning[[4]]` 
+
+`r DoseIntWarning[[5]]` 
+
+`r DoseIntWarning[[6]]` 
+
+
+
 ```{r}
 
 if(is.na(include_dose_num_orig)){

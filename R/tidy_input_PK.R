@@ -121,7 +121,11 @@ tidy_input_PK <- function(PKparameters,
          
          InputWasDF <- FALSE
       }
-   } else if("data.frame" %in% class(PKparameters) == FALSE){
+   } else if("data.frame" %in% class(PKparameters)){
+      # This is when they have supplied a data.frame
+      InputWasDF <- TRUE
+      
+   } else {
       # This is when PKparameters is NA. 
       PKparameters <- data.frame(PKparameter = harmonize_PK_names(PKparameters))
       
@@ -137,20 +141,6 @@ tidy_input_PK <- function(PKparameters,
    # Tidying and harmonizing when input was DF ------------------------------
    
    if(InputWasDF){
-      
-      ## Error catching ------------------------------------------------------
-      LenArgs <- c("tissues" = length(tissues), 
-                   "compoundsToExtract" = length(compoundsToExtract), 
-                   "sheet_PKparameters" = length(sheet_PKparameters))
-      BadArgs <- LenArgs[which(LenArgs > 1)]
-      
-      if(length(BadArgs) > 0){
-         # Not going to guess at what they wanted. It's too easy to guess wrong.
-         stop(str_wrap(paste0("You supplied a file or data.frame with PK parameters, which is great, but then also specified more than one value for the arguments ", 
-                              str_comma(paste0("`", names(BadArgs), "`")), 
-                              " and we need those to only have a single value when you supply a file or data.frame of PK parameters. We don't know which things you want to apply to which scenario. Please check your input and try again.")), 
-              call. = FALSE)
-      }
       
       ## Harmonizing data format and col names ----------------------------------
       
@@ -253,11 +243,11 @@ tidy_input_PK <- function(PKparameters,
       
       names(PKparameters)[tolower(names(PKparameters)) == "pkparameter"] <- "PKparameter"
       if("PKparameter" %in% names(PKparameters) == FALSE &
-         any(c("pkparam", "param", "parameter") %in%
+         any(c("pkparam", "param", "parameter", "pkparameters") %in%
              tolower(names(PKparameters)))){
          
          ColToUse <- which(tolower(names(PKparameters)) %in% 
-                              c("pkparameter", "pkparam", "param", 
+                              c("pkparameter", "pkparameters", "pkparam", "param", 
                                 "parameter"))[1]
          
          warning(paste0("We were looking for a column named `PKparameter` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
@@ -267,11 +257,16 @@ tidy_input_PK <- function(PKparameters,
          
          names(PKparameters)[ColToUse] <- "PKparameter"
          rm(ColToUse)
-      } else {
+      } 
+      
+      if("PKparameter" %in% names(PKparameters) == FALSE){
          # If they didn't have a column PKparameter, then they want the standard
          # PK parameters, so set this to NA for now.
          PKparameters$PKparameter <- NA
       }
+      
+      # Noting original value for PKparameters
+      PKparameters_orig <- PKparameters$PKparameter
       
       
       ### File -----------------------------------------------------------------
@@ -292,7 +287,8 @@ tidy_input_PK <- function(PKparameters,
          rm(ColToUse)
       }
       
-      if(any(complete.cases(PKparameters$File)) &
+      if("File" %in% names(PKparameters) &&
+         any(complete.cases(PKparameters$File)) &
          any(is.na(PKparameters$File))){
          stop(str_wrap("You have supplied a set of PK parameters to extract where you sometimes have listed the simulation file name and sometimes have not, so we don't know which simultaion files you want. Please check your input and try again."), 
               call. = FALSE)
@@ -335,7 +331,9 @@ tidy_input_PK <- function(PKparameters,
          
          names(PKparameters)[ColToUse] <- "Value"
          rm(ColToUse)
-      } else {
+      } 
+      
+      if("Value" %in% names(PKparameters) == FALSE){
          PKparameters$Value <- NA
       }
       
@@ -363,9 +361,15 @@ tidy_input_PK <- function(PKparameters,
          
          names(PKparameters)[ColToUse] <- "Variability"
          rm(ColToUse)
-      } else {
+      } 
+      
+      if("Variability" %in% names(PKparameters) == FALSE){
          PKparameters$Variability <- NA
       }
+      
+      # This needs to be character for possibly combining downstream w/other
+      # character varability s/a "1 to 2"
+      PKparameters$Variability <- as.character(PKparameters$Variability)
       
       
       ### Sheet -------------------------------------------------------------------
@@ -479,6 +483,9 @@ tidy_input_PK <- function(PKparameters,
       # At this point, PKparameters is a single column data.frame where the only
       # column is titled "PKparameter".
       
+      # Noting original value for PKparameters
+      PKparameters_orig <- PKparameters$PKparameter
+      
       ## File -----------------------------------------------------------------
       
       # Getting all possible files
@@ -545,7 +552,11 @@ tidy_input_PK <- function(PKparameters,
       # Adding these columns so that format will be the same regardless of input
       # scenario.
       PKparameters$Value <- NA
-      PKparameters$Variability <- NA
+      
+      # This needs to be character for possibly combining downstream w/other
+      # character varability s/a "1 to 2"
+      PKparameters$Variability <- as.character(NA)
+      
    }
    
    # Harmonizing and tidying generally ----------------------------------------
@@ -574,38 +585,6 @@ tidy_input_PK <- function(PKparameters,
               call. = FALSE)
       PKparameters <- PKparameters %>% 
          filter(PKparameter %in% BadParams == FALSE)
-   }
-   
-   ## Sheet & PKparameter ---------------------------------------------------
-   
-   # Checking that, when they've supplied a specific sheet, PKparameter does NOT
-   # include the dose number. When they have *not* specified a tab, then it
-   # should be a PKparameter w/the dose number or it should be something that
-   # applies to the entire simulation.
-   PKparameters <- PKparameters %>% 
-      mutate(PKparameter = case_when(complete.cases(Sheet) ~ 
-                                        sub("_dose1|_last", "", PKparameter), 
-                                     TRUE ~ PKparameter), 
-             PKparameter = harmonize_PK_names(PKparameter), 
-             DoseNumProblem = PKparameter %in%
-                AllPKParameters$PKparameter_nodosenum & is.na(Sheet))
-   
-   if(any(PKparameters$DoseNumProblem)){
-      warning("You have not specified which interval you want for the following PK:\n", 
-              call. = FALSE)
-      
-      Problem <- PKparameters %>% filter(DoseNumProblem == TRUE) %>% 
-         select(File, CompoundID, Tissue, PKparameter)
-      Problem <- capture.output(print(Problem, row.names = FALSE))
-      
-      message(str_c(Problem, collapse = "\n"))
-      
-      message(paste0(str_wrap("These PK parameters need to either end in `_dose1` or `_last` or something must be filled in for the sheet if it's a user-defined interval. These PK data will be omitted.\n"), 
-                     "\n"), 
-              call. = FALSE)
-      
-      PKparameters <- PKparameters %>% 
-         filter(DoseNumProblem == FALSE) %>% select(-DoseNumProblem)
    }
    
    ## Tissue ---------------------------------------------------------------
@@ -805,10 +784,52 @@ tidy_input_PK <- function(PKparameters,
                     DDI == TRUE), 
              HarmoniousRegimen = AppliesToSingleDose == TRUE |
                 (AppliesToSingleDose == FALSE & 
-                    MD == TRUE), 
-             Harmonious = HarmoniousDDI & HarmoniousRegimen) %>% 
+                    MD == TRUE))
+   
+   if(all(is.na(PKparameters_orig))){
+      PKparameters <- PKparameters %>% 
+         mutate(HarmoniousRegimen = 
+                   (AppliesToSingleDose == FALSE & MD == TRUE) |
+                   (AppliesToSingleDose == TRUE & MD == FALSE))
+   }
+   
+   PKparameters <- PKparameters %>% 
+      mutate(Harmonious = HarmoniousDDI & HarmoniousRegimen) %>% 
       filter(Harmonious == TRUE) %>% 
       select(File, Sheet, CompoundID, Tissue, PKparameter, Value, Variability)
+   
+   # Checking that, when they've supplied a specific sheet, PKparameter does NOT
+   # include the dose number. When they have *not* specified a tab, then it
+   # should be a PKparameter w/the dose number or it should be something that
+   # applies to the entire simulation.
+   PKparameters <- PKparameters %>% 
+      mutate(PKparameter = case_when(complete.cases(Sheet) ~ 
+                                        sub("_dose1|_last", "", PKparameter), 
+                                     TRUE ~ PKparameter), 
+             PKparameter = harmonize_PK_names(PKparameter), 
+             DoseNumProblem = PKparameter %in%
+                AllPKParameters$PKparameter_nodosenum & is.na(Sheet))
+   
+   if(any(PKparameters$DoseNumProblem)){
+      warning("You have not specified which interval you want for the following PK:\n", 
+              call. = FALSE)
+      
+      Problem <- PKparameters %>% filter(DoseNumProblem == TRUE) %>% 
+         select(File, CompoundID, Tissue, PKparameter)
+      Problem <- capture.output(print(Problem, row.names = FALSE))
+      
+      message(str_c(Problem, collapse = "\n"))
+      
+      message(paste0(str_wrap("These PK parameters need to either end in `_dose1` or `_last` or something must be filled in for the sheet if it's a user-defined interval. These PK data will be omitted.\n"), 
+                     "\n"), 
+              call. = FALSE)
+      
+      PKparameters <- PKparameters %>% 
+         filter(DoseNumProblem == FALSE) %>% select(-DoseNumProblem)
+   }
+   
+   
+   # Output -------------------------------------------------------------
    
    # Out
    return(list(PKparameters = PKparameters, 

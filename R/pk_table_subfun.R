@@ -86,19 +86,25 @@ pk_table_subfun <- function(sim_data_file,
       return()
    }
    
-   suppressWarnings(
-      CheckDoseInt <- check_doseint(
-         sim_data_file = sim_data_file, 
-         existing_exp_details = existing_exp_details,
-         compoundID = unique(PKparameters$CompoundID),
-         stop_or_warn = "warn")
-   )
+   CheckDoseInt <- check_doseint(
+      sim_data_file = sim_data_file, 
+      existing_exp_details = existing_exp_details,
+      interval = ifelse(all(PKparameters$Sheet != "default"), 
+                        unique(MyPKResults_all$TimeInterval$Interval), 
+                        NA), 
+      compoundID = unique(PKparameters$CompoundID),
+      stop_or_warn_missing_file = "warn")
    
-   if(CheckDoseInt$message == "mismatch" & 
-      any(str_detect(PKparameters$PKparameter, "_last"))){
-      warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n",
+   if(CheckDoseInt$message == "mismatch last dose"){
+      warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n", 
+              call. = FALSE)
+   } else if(CheckDoseInt$message == "mismatch user-defined interval"){
+      warning("The time used for integrating the AUC for the custom AUC interval was not the same as the dosing interval.\n", 
               call. = FALSE)
    }
+   
+   CheckDoseInt$interval$Sheet <- unique(PKparameters$Sheet)
+   CheckDoseInt$interval$Tissue <- unique(PKparameters$Tissue)
    
    # Sometimes missing problems with extrapolation to infinity. Checking for
    # that here. I thought that there wouldn't be any values for AUCinf, but
@@ -420,7 +426,8 @@ pk_table_subfun <- function(sim_data_file,
                                  "geometric" = "GCV", 
                                  "arithmetic" = "CV"), 
                    Value = as.numeric(NA), 
-                   SorO = "Obs")
+                   SorO = "Obs") %>% 
+            rename(PKParam = PKparameter)
       }
       
       # Pivoting main data longer by stat
@@ -461,7 +468,7 @@ pk_table_subfun <- function(sim_data_file,
                                                   "arithmetic" = "mean")) %>% 
                             select(-Stat)) %>%
                mutate(Value = Sim / Value) %>% 
-               select(-Sim, -Value) %>% 
+               select(-Sim) %>% 
                mutate(Stat = paste0("S_O_TM_", Stat), 
                       SorO = "S_O_TM") %>%
                select(PKParam, Stat, Value, SorO)

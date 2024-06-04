@@ -95,6 +95,46 @@ if(single_table){
 
 `r Annotations[["TableHeading"]]`
 
+```{r}
+
+# Adding a warning if there was a mismatch between the last dosing interval and
+# the AUC interval if any of the PK included last dose.
+
+if(any(str_detect(CheckDoseInt$message, "mismatch")) & 
+   single_table){
+   
+   DoseIntWarning <- list(
+      "***WARNING: There was a mismatch between the dosing interval and the AUC interval for the following files and compounds:***\n", 
+      
+      CheckDoseInt$interval[which(str_detect(CheckDoseInt$message, "mismatch")), ] %>% 
+      mutate(TimeLastInterval = ifelse(OneDoseIntRemaining == TRUE, 
+                                       0, SimDuration - LastDoseTime)) %>% 
+      select(File, Sheet, CompoundID, DoseInt_X, UserIntervalRemaining, TimeLastInterval) %>% 
+      rename("Dosing interval" = DoseInt_X, 
+             "Last-dose interval (h)" = TimeLastInterval, 
+             "User-defined interval (h)" = UserIntervalRemaining) %>% 
+         flextable::flextable() %>% 
+         flextable::width(x = 1:2, width = 1.5) %>% 
+         flextable::width(x = 3, width = 1), 
+      
+      "***Please check these results carefully.***")
+   
+} else {
+   
+   DoseIntWarning <- list(
+      c(), c(), c()
+   )
+}
+
+```
+
+`r DoseIntWarning[[1]]` 
+
+`r DoseIntWarning[[2]]` 
+
+`r DoseIntWarning[[3]]` 
+
+
 ```{r makeTablePKSummaryOutput}
 
 if("File" %in% names(MyPKResults)){
@@ -165,6 +205,11 @@ if(single_table == FALSE){
                          f = list(PKparameters$File, 
                                   PKparameters$CompoundID, 
                                   PKparameters$Tissue))
+   
+   CheckDoseInt_list <- split(CheckDoseInt$interval, 
+                         f = list(CheckDoseInt$interval$File, 
+                                  CheckDoseInt$interval$CompoundID, 
+                                  CheckDoseInt$interval$Tissue))
    
    MyPKResults <- MyPKResults[which(lapply(MyPKResults, nrow) > 0)]
    

@@ -2,11 +2,10 @@
 #' argument \code{PKparameters}
 #'
 #' \code{make_example_PK_input} gives examples of how to request specific PK
-#' parameters or supply specific PK data to the functions
-#' \code{\link{pk_table}}, \code{\link{pksummary_table}}, or
-#' \code{\link{pksummary_mult}}. You can either just get a printout in the
-#' console of the names of the parameters you want or you can get an example csv
-#' file to use a as a template.
+#' parameters or supply specific PK data to the function \code{\link{pk_table}}.
+#' You can either just get a printout in the console of the names of the
+#' parameters you want or you can get an example csv file to use a as a
+#' template.
 #'
 #'
 #' @return saves a csv file of example PK parameters for supplying to the
@@ -259,14 +258,14 @@ make_example_PK_input <- function(){
    
    ## Returning ------------------------------------------------------------
    
-   message(str_wrap("Do you want to just see the R code names for these PK parameters or do you want to make a csv file with examples for how to enter data for the pksummary function argument 'PKparameters'?\n"))
+   message(str_wrap("Do you want to just see the R code names for these PK parameters or do you want to make a csv file with examples for how to enter data for the pk_table function argument 'PKparameters'?\n"))
    message("Options are:\n  1) just show me the names to use right here in the console\n  2) make me a csv file example\n")
    Q3 <- readline("    ")
    
    if(Q3 %in% c("1", "2") == FALSE){
       
       message("You entered something other than 1 or 2. Please try again.\n")   
-      message(str_wrap("Do you want to just see the R code names for these PK parameters or do you want to make a csv file with examples for how to enter data for the pksummary function argument 'PKparameters'?\n"))
+      message(str_wrap("Do you want to just see the R code names for these PK parameters or do you want to make a csv file with examples for how to enter data for the pk_table function argument 'PKparameters'?\n"))
       message("Options are:\n  1) just show me the names to use right here in the console\n  2) make me a csv file example\n")
       Q3 <- readline("    ")
       
@@ -325,7 +324,7 @@ make_example_PK_input <- function(){
                            indent = 3, exdent = 5), "\n"))
    message(paste0(str_wrap("- If you don't have any observed PK values for comparisons but you want to specify exactly what PK parameters you want from which simulation file or which tab or which tissue, etc., you can specify that information in a csv file, laid out like in this example, and supply that file for the argument `PKparameters`. For any row where the `Value` column is empty, we'll supply only the simulated results.", 
                            indent = 3, exdent = 5), "\n"))
-   message(paste0(str_wrap("- Don't worry about whether your source data have been appropriately rounded; the pksummary functions will take care of that for you. We recommend saving the results to a Word file because csv files drop trailing zeroes.", 
+   message(paste0(str_wrap("- Don't worry about whether your source data have been appropriately rounded; the pk_table function will take care of that for you. We recommend saving the results to a Word file because csv files drop trailing zeroes.", 
                            indent = 3, exdent = 5), "\n"))
    message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the `Sheet` column blank.",
                            indent = 3, exdent = 5), "\n"))

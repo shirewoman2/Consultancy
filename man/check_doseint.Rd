@@ -8,7 +8,9 @@ check_doseint(
   sim_data_file,
   existing_exp_details,
   compoundID,
-  stop_or_warn = "stop"
+  interval = NA,
+  stop_or_warn_missing_file = "stop",
+  warnings = "silent"
 )
 }
 \arguments{
@@ -17,11 +19,22 @@ check_doseint(
 \item{existing_exp_details}{existing_exp_details}
 
 \item{compoundID}{compoundID}
+
+\item{interval}{optionally include a specific interval that you want to check}
+
+\item{stop_or_warn_missing_file}{stop or just warn if no info available. NB:
+This is NOT stop or warn if the dose interval dosen't match.}
+
+\item{warnings}{"silent" (default) or "show" (really, or anything else) to
+see warnings in this function}
 }
 \value{
-character vector of length 1: "custom dosing" (as in, we can't tell
-  whether the interval matched), "good", "mismatch", or "can't check -
-  missing file"
+list of 1) message: "custom dosing" (as in, we can't tell whether the
+  interval matched), "good", "mismatch", or "can't check - missing file" and
+  2) data.frame of File, CompoundID, SimDuration, DoseInt_X, StartHr_X,
+  NumDoses_X, LastDoseTime, IntervalRemaining, OneDoseIntRemaining,
+  UserIntervalStart, UserIntervalEnd, UserIntervalStartGood,
+  UserIntervalEndGood.
 }
 \description{
 INTERNAL check whether AUC interval ends on a dosing interval

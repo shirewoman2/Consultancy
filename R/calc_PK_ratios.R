@@ -1030,7 +1030,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
                CheckDoseInt_1[[i]] <- check_doseint(sim_data_file = i, 
                                                     existing_exp_details = existing_exp_details,
                                                     compoundID = compoundToExtract,
-                                                    stop_or_warn = "warn")
+                                                    stop_or_warn_missing_file = "warn")
             )
          }
          

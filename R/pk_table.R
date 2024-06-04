@@ -741,27 +741,35 @@ pk_table <- function(PKparameters = NA,
    if(includeTrialMeans){
       TM <- MyPKResults %>% 
          filter(Stat %in% c("MinMean", "MaxMean")) %>%
-         summarize(across(.cols = -c(Stat, SorO),
-                          .fns = function(x) {paste(x[1], "to", x[2])}))
+         summarize(across(.cols = -c(Stat, SorO, Sheet, CompoundID, 
+                                     Tissue, File),
+                          .fns = function(x) {paste(x[1], "to", x[2])})) 
       
       MyPKResults <- MyPKResults %>%
          filter(Stat != "MaxMean")
       
-      MyPKResults[which(MyPKResults$Stat == "MinMean"), 
-                  3:ncol(MyPKResults)] <- TM
-      
+      for(col in names(TM)){
+         MyPKResults[which(MyPKResults$Stat == "MinMean"), col] <- 
+            TM[1, col]
+      }
       
       TM_SO <- MyPKResults %>% 
          filter(Stat %in% c("S_O_TM_MinMean", "S_O_TM_MaxMean")) %>%
-         summarize(across(.cols = -c(Stat, SorO),
-                          .fns = function(x) {paste(x[1], "to", x[2])}))
+         summarize(across(.cols = -c(Stat, SorO, Sheet, CompoundID, 
+                                     Tissue, File),
+                          .fns = function(x) {paste(x[1], "to", x[2])})) %>% 
+         mutate(across(.cols = everything(), 
+                       .fns = function(x) ifelse(x == "NA to NA",
+                                                 as.character(NA), x)))
       
       if(nrow(TM_SO) > 0){
          MyPKResults <- MyPKResults %>%
             filter(Stat != "S_O_TM_MaxMean")
          
-         MyPKResults[which(MyPKResults$Stat == "S_O_TM_MinMean"), 
-                     3:ncol(MyPKResults)] <- TM_SO
+         for(col in names(TM_SO)){
+            MyPKResults[which(MyPKResults$Stat == "MinMean"), col] <- 
+               TM_SO[1, col]
+         }
       }
    }
    
@@ -916,12 +924,12 @@ pk_table <- function(PKparameters = NA,
       # Adding time interval to any data that came from custom AUC interval
       # sheets.
       if(any(complete.cases(PKparameters$Sheet)) &
-         length(CheckDoseInt$TimeInterval) > 0){ # FIXME - Check this. Names aren't correct for cols that are actually in CheckDoseInt. 
+         nrow(CheckDoseInt$interval) > 0){ 
          
-         
-         # FIXME 
-         IntToAdd <- CheckDoseInt$TimeInterval %>% 
+         IntToAdd <- CheckDoseInt$interval %>% 
             filter(Sheet %in% PKparameters$Sheet) %>% 
+            mutate(Interval = paste("from", UserIntervalStart, "h to",
+                                    UserIntervalEnd, "h")) %>% 
             pull(Interval)
          
          ColNames <- ColNames %>% 

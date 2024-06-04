@@ -45,14 +45,12 @@ pk_table(
 \arguments{
 \item{PKparameters}{the PK parameters to include. There are two main options
   for this: 1) supply a file to read or a data.frame (R speak for "a table")
-  that lists which simulation files, compounds, tissues, and which PK you
-  want, leaving the arguments \code{tissues}, \code{compoundsToExtract},
-  \code{sim_data_files}, and \code{sheet_PKparameters} all as NA or 2) supply
-  a character vector of which PK parameters you want and then also specify 
-  what you need in terms of tissues, which compounds, which simulation files, 
-  and which tab to get the data from with the arguments 
-  \code{tissues}, \code{compoundsToExtract},
-  \code{sim_data_files}, and \code{sheet_PKparameters}.
+  that lists which simulation files, compounds, tissues, and PK you want or
+  2) supply a character vector of which PK parameters you want and then also
+  specify what you need in terms of tissues, which compounds, which
+  simulation files, and which tab to get the data from with the arguments
+  \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
+  \code{sheet_PKparameters}.
   \strong{Details on each option:} \describe{
 
   \item{\strong{Option 1: }a file to read or a data.frame}{This
@@ -61,8 +59,18 @@ pk_table(
   to see examples for how to set up a csv or Excel file or data.frame to
   specify exactly which simulation file should get which PK parameter from
   which tissue and, when user-specified intervals are involved, from which
-  tab in the Excel file those data should be pulled. Specifically, here is
-  how to specify each of those:\describe{\item{a csv file}{list the file
+  tab in the Excel file those data should be pulled. Whatever you supply, the
+  columns that will be read are "File" (same thing as the argument
+  \code{sim_data_files}), "Sheet" (same thing as the argument
+  \code{sheet_PKparameters}), "Tissue" (same as the argument \code{tissues}),
+  "CompoundID" (same as the argument \code{compoundsToExtract}), "Value" for
+  any observed data (no equivalent argument), and "Variability" for any
+  observed variability (no equivalent argument here, either). If you
+  omit any of those columns, whatever you supply for their respective
+  arguments will be used instead. If you supply something for one of them
+  in the data.frame or file and \emph{also} something for its argument, the
+  argument will be ignored. Here is how to specify each of the possible
+  inputs for Option 1:\describe{\item{a csv file}{list the file
   name, including the file extension ".csv" inside quotes, e.g., "PK needed.csv"}
 
   \item{an Excel file}{list the file name, including the file extension
@@ -72,18 +80,18 @@ pk_table(
   \item{a data.frame}{If you'd like to supply a data.frame with the same
   columns you would have had in the .csv or Excel file, that works just the
   same.}}}
-  
-  \item{\strong{Option 2: }specify the PK parameters you want for all your 
-  simulations}{This is a good option when you want the same information 
-  from all your simulations. List the PK parameters you want here and then, 
+
+  \item{\strong{Option 2: }specify the PK parameters you want for all your
+  simulations}{This is a good option when you want the same information
+  from all your simulations. List the PK parameters you want here and then,
   in the arguments
   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
   \code{sheet_PKparameters} specify which of each of those items you want.
   You'll get all possible combinations of these, so, for example, if you say
-  \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")} and 
-  \code{tissues = c("blood", "plasma")}, you'll get the dose 1 AUCinf and 
-  Cmax for both blood and plasma for all the simulation files you list with 
-  \code{sim_data_files}. If you're going this route, here are the two options 
+  \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")} and
+  \code{tissues = c("blood", "plasma")}, you'll get the dose 1 AUCinf and
+  Cmax for both blood and plasma for all the simulation files you list with
+  \code{sim_data_files}. If you're going this route, here are the two options
   you have for the argument \code{PKparameters}: \describe{
 
   \item{NA}{If you leave this as NA, by default, if you have a single-dose
@@ -113,8 +121,8 @@ listed in what you supply to the argument \code{PKparameters}}
 in the current folder and all subfolders.} \item{a character
 vector of simulator output files, each in quotes and encapsulated with
 \code{c(...)}} } If you do want specific simulations, please take pity on your
-poor R coders and do use the same simulation file names in different
-subfolders in the same function call; it's too confusing and we might give
+poor R coders and do not use the same simulation file names in different
+subfolders; duplicate file names are just too confusing, and we might give
 you incorrect results.}
 
 \item{compoundsToExtract}{For which compounds do you want to extract PK data?

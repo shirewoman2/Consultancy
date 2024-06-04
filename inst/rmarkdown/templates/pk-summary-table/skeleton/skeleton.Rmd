@@ -54,7 +54,7 @@ Annotations <- make_table_annotations(MyPKResults = MyPKResults,
 
 # Adding a warning if there was a mismatch between the last dosing interval and
 # the AUC interval if any of the PK included last dose.
-if(CheckDoseInt$message == "mismatch" & any(str_detect(PKpulled, "_last"))){
+if(CheckDoseInt$message == "mismatch last dose"){
    
    DoseIntWarning <- list(
       "***WARNING: The time used for integrating the AUC for the last dose was not the same as the dosing interval.***",
