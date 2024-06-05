@@ -173,6 +173,14 @@ label for this legend item, set this to "none".}
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
+  \item{"greens"}{a set of blues fading light blue to dark blue. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
 

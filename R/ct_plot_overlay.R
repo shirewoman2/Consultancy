@@ -156,6 +156,14 @@
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
+#'   \item{"greens"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
 #'
@@ -2333,6 +2341,8 @@ ct_plot_overlay <- function(ct_dataframe,
                         1:NumColorsNeeded], 
                      "blue-green" = blueGreens(NumColorsNeeded),
                      "blues" = blues(NumColorsNeeded),
+                     "greens" = chartreuse(NumColorsNeeded, shade = "darker"), 
+                     "purples" = purples(NumColorsNeeded, shade = "darker"), 
                      "rainbow" = rainbow(NumColorsNeeded),
                      "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
                         1:NumColorsNeeded],
