@@ -96,6 +96,8 @@ blues <- function(ncolors){
 #' only up to 9 colors.
 #'
 #' @param ncolors number of colors desired
+#' @param shade the shade of colors to use, which can be "regular" (default),
+#'   "darker", or "lighter"
 #'
 #' @return a character vector of colors
 #' @export
@@ -107,11 +109,22 @@ blues <- function(ncolors){
 #' # Try using scales::show_col() to visualize the colors, ex:
 #' scales::show_col(chartreuse(10))
 #' 
-chartreuse <- function(ncolors){
+chartreuse <- function(ncolors, 
+                       shade = "regular"){
    
-   colChartreuse <- colorRampPalette(c("#FFFFE5", "#F7FCB9", "#D9F0A3", 
-                                  "#ADDD8E", "#78C679", "#41AB5D", 
-                                  "#238443", "#006837", "#004529"))
+   if(shade == "darker"){
+      colChartreuse <- colorRampPalette(c("#ADDD8E", "#78C679", "#41AB5D", 
+                                          "#238443", "#006837", "#004529", 
+                                          "#002617"))
+   } else if(shade == "lighter"){
+      colChartreuse <- colorRampPalette(c("#FFFFE5", "#F7FCB9", "#D9F0A3", 
+                                          "#ADDD8E", "#78C679", "#41AB5D"))
+   } else {
+      # Anything else, give them "regular". 
+      colChartreuse <- colorRampPalette(c("#FFFFE5", "#F7FCB9", "#D9F0A3", 
+                                          "#ADDD8E", "#78C679", "#41AB5D", 
+                                          "#238443", "#006837", "#004529"))
+   }
    
    return(colChartreuse(ncolors))
    
@@ -120,12 +133,12 @@ chartreuse <- function(ncolors){
 
 #' Create a vector of purples
 #'
-#' \code{purples} is useful for getting a set of yellows to greens for
-#' graphs. These are from the RColorBrewer package, color set "YlGn", just to
-#' give credit where it's due, but they can be any number in length rather than
-#' only up to 9 colors.
+#' \code{purples} is useful for getting a set of purples from lavender to
+#' aubergine for graphs.
 #'
 #' @param ncolors number of colors desired
+#' @param shade the shade of colors to use, which can be "regular" (default),
+#'   "darker", or "lighter"
 #'
 #' @return a character vector of colors
 #' @export
@@ -137,11 +150,22 @@ chartreuse <- function(ncolors){
 #' # Try using scales::show_col() to visualize the colors, ex:
 #' scales::show_col(purples(10))
 #' 
-purples <- function(ncolors){
+purples <- function(ncolors, 
+                    shade = "regular"){
    
-   colPurple <- colorRampPalette(c("#FCFBFD", "#EFEDF5", "#DADAEB",
-                                   "#BCBDDC", "#9E9AC8", "#807DBA", 
-                                   "#6A51A3", "#54278F", "#3F007D"))
+   if(shade == "darker"){
+      colPurple <- colorRampPalette(c("#9E9AC8", "#807DBA", 
+                                      "#6A51A3", "#54278F", "#3F007D", 
+                                      "#37005C", "#23003A"))
+   } else if(shade == "lighter"){
+      colPurple <- colorRampPalette(c("#D8DBF4", "#BCBDDC", "#9E9AC8", "#807DBA", 
+                                      "#6A51A3", "#54278F"))
+   } else {
+      # Anything else, give them "regular". 
+      colPurple <- colorRampPalette(c("#FCFBFD", "#EFEDF5", "#DADAEB",
+                                      "#BCBDDC", "#9E9AC8", "#807DBA", 
+                                      "#6A51A3", "#54278F", "#3F007D"))
+   }
    
    return(colPurple(ncolors))
    

@@ -2,11 +2,10 @@
 #' argument \code{PKparameters}
 #'
 #' \code{make_example_PK_input} gives examples of how to request specific PK
-#' parameters or supply specific PK data to the functions
-#' \code{\link{pk_table}}, \code{\link{pksummary_table}}, or
-#' \code{\link{pksummary_mult}}. You can either just get a printout in the
-#' console of the names of the parameters you want or you can get an example csv
-#' file to use a as a template.
+#' parameters or supply specific PK data to the function \code{\link{pk_table}}.
+#' You can either just get a printout in the console of the names of the
+#' parameters you want or you can get an example csv file to use a as a
+#' template.
 #'
 #'
 #' @return saves a csv file of example PK parameters for supplying to the
@@ -40,7 +39,7 @@ make_example_PK_input <- function(){
    
    
    ## Collecting requests ----------------------------------------------------
-   message("What kind of PK data do you want in your table? Options are:")
+   message(str_wrap("What kind of PK data do you want to include in the PK table you're making? There are examples with or without observed data for comparing to simulated. Options are:"))
    message(paste0("- ", 1:length(Opts), ") ", Opts, "\n"))
    Q1 <- readline("   ")
    
@@ -90,16 +89,19 @@ make_example_PK_input <- function(){
    PKexamples <- PKexamples %>% 
       unite(ID, c(File, Tissue, CompoundID, PKparameter),  remove = FALSE)
    
+   ### dose 1 ------------------------------------------------------------------
    if("1" %in% Q1){ # dose 1
       Examples[["A1"]] <- 
          PKexamples %>% filter(str_detect(PKparameter, "_dose1"))
    }
    
+   ### last dose ------------------------------------------------------------------
    if("2" %in% Q1){ # last dose
       Examples[["A2"]] <- 
          PKexamples %>% filter(str_detect(PKparameter, "_last"))
    }
    
+   ### DDI ------------------------------------------------------------------
    if("3" %in% Q1){ # DDI
       
       ExistingIDs <- bind_rows(Examples)
@@ -143,6 +145,8 @@ make_example_PK_input <- function(){
       }
    }
    
+   ### Sheet ------------------------------------------------------------------
+   
    if("4" %in% Q1){ # specific sheet
       ExistingIDs <- bind_rows(Examples)
       if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
@@ -156,8 +160,9 @@ make_example_PK_input <- function(){
          Examples[["A4"]]$Notes[1] <- 
             "Only fill in the `Sheet` column when you have a specific sheet you want and not when it's the standard first or last dose PK. You can specify more than one user-defined tab for the same simulation; put them in separate rows, though."
       }
-   }
+   } 
    
+   ### CompoundID ------------------------------------------------------------------
    if("5" %in% Q1){ # specific compounds 
       ExistingIDs <- bind_rows(Examples)
       if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
@@ -174,6 +179,7 @@ make_example_PK_input <- function(){
       }
    }
    
+   ### Tissue ------------------------------------------------------------------
    if("6" %in% Q1){ # specific tissues 
       ExistingIDs <- bind_rows(Examples)
       if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
@@ -189,6 +195,7 @@ make_example_PK_input <- function(){
       }
    }
    
+   ### All AUCs ------------------------------------------------------------------
    if("7" %in% Q1){ # all AUCs
       ExistingIDs <- bind_rows(Examples)
       if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
@@ -204,6 +211,7 @@ make_example_PK_input <- function(){
       }
    }
    
+   ### All CL ------------------------------------------------------------------
    if("8" %in% Q1){ # all CL
       ExistingIDs <- bind_rows(Examples)
       if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
@@ -219,6 +227,7 @@ make_example_PK_input <- function(){
       }
    }
    
+   ### multiple sims ------------------------------------------------------------------
    if("9" %in% Q1){ # mult sims
       ExistingIDs <- bind_rows(Examples)
       if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
@@ -234,12 +243,13 @@ make_example_PK_input <- function(){
       }
    }
    
+   ### obs variability ------------------------------------------------------------------
    if("10" %in% Q1){ # variability in obs PK
       ExistingIDs <- bind_rows(Examples)
       if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
       
       Examples[["A10"]] <- 
-         PKexamples %>% filter(complete.cases(Variability)) %>% 
+         PKexamples %>% filter(complete.cases(ObsVariability)) %>% 
          filter(!ID %in% ExistingIDs) %>% 
          mutate(Notes = "")
       
@@ -249,24 +259,42 @@ make_example_PK_input <- function(){
       }
    }
    
+   ### Assembling ------------------------------------------------------------
    Examples <- bind_rows(Examples) %>% unique() %>% 
       arrange(SortOrder) %>% 
-      select(File, CompoundID, Tissue, Sheet, PKparameter, Value, Variability,
+      select(File, CompoundID, Tissue, Sheet, PKparameter, ObsValue, ObsVariability,
              any_of("Notes")) %>% 
       mutate(across(.cols = any_of("Notes"), 
                     .fns = \(x) ifelse(is.na(x), "", x)))
    
+   # If they didn't request specific compounds, only include substrate. 
+   if("5" %in% Q1 == FALSE){
+      Examples <- Examples %>% filter(CompoundID == "substrate")
+   }
+   
+   # If they didn't request specific sheets, only include NA for sheet. 
+   if("4" %in% Q1 == FALSE){
+      Examples <- Examples %>% filter(is.na(Sheet))
+   }
+   
+   # If they didn't request specific tissues, only include plasma. 
+   if("6" %in% Q1 == FALSE){
+      Examples <- Examples %>% filter(Tissue == "plasma")
+   }
+   
+   Examples <- unique(Examples)
+   
    
    ## Returning ------------------------------------------------------------
    
-   message(str_wrap("Do you want to just see the R code names for these PK parameters or do you want to make a csv file with examples for how to enter data for the pksummary function argument 'PKparameters'?\n"))
+   message(str_wrap("Do you want to just see the R code names for these PK parameters or do you want to make a csv file with examples for how to enter data for the pk_table function argument 'PKparameters'?\n"))
    message("Options are:\n  1) just show me the names to use right here in the console\n  2) make me a csv file example\n")
    Q3 <- readline("    ")
    
    if(Q3 %in% c("1", "2") == FALSE){
       
       message("You entered something other than 1 or 2. Please try again.\n")   
-      message(str_wrap("Do you want to just see the R code names for these PK parameters or do you want to make a csv file with examples for how to enter data for the pksummary function argument 'PKparameters'?\n"))
+      message(str_wrap("Do you want to just see the R code names for these PK parameters or do you want to make a csv file with examples for how to enter data for the pk_table function argument 'PKparameters'?\n"))
       message("Options are:\n  1) just show me the names to use right here in the console\n  2) make me a csv file example\n")
       Q3 <- readline("    ")
       
@@ -320,14 +348,14 @@ make_example_PK_input <- function(){
       
    }
    
-   message("A few miscellaneous notes:\n")
+   message("\nA few miscellaneous notes:\n")
    message(paste0(str_wrap("- If you made a csv file here, we recommend replacing the numbers and the file names with your own data and using that csv file as input to the argument 'PKparameters'.", 
                            indent = 3, exdent = 5), "\n"))
-   message(paste0(str_wrap("- If you don't have any observed PK values for comparisons but you want to specify exactly what PK parameters you want from which simulation file or which tab or which tissue, etc., you can specify that information in a csv file, laid out like in this example, and supply that file for the argument `PKparameters`. For any row where the `Value` column is empty, we'll supply only the simulated results.", 
+   message(paste0(str_wrap("- If you don't have any observed PK values for comparisons but you want to specify exactly what PK parameters you want from which simulation file or which tab or which tissue, etc., you can specify that information in a csv file, laid out like in this example, and supply that file for the argument `PKparameters`. For any row where the `ObsValue` column is empty, we'll supply only the simulated results.", 
                            indent = 3, exdent = 5), "\n"))
-   message(paste0(str_wrap("- Don't worry about whether your source data have been appropriately rounded; the pksummary functions will take care of that for you. We recommend saving the results to a Word file because csv files drop trailing zeroes.", 
+   message(paste0(str_wrap("- Don't worry about whether your source data have been appropriately rounded; the pk_table function will take care of that for you. We recommend saving the results to a Word file because csv files drop trailing zeroes.", 
                            indent = 3, exdent = 5), "\n"))
-   message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the `Sheet` column blank.",
+   message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the `Sheet` column blank; you should only list the sheet when it's a user-defined AUC interval.",
                            indent = 3, exdent = 5), "\n"))
    
 }

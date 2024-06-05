@@ -1091,7 +1091,7 @@ pksummary_table <- function(sim_data_file = NA,
       CheckDoseInt <- check_doseint(sim_data_file = sim_data_file, 
                                     existing_exp_details = harmonize_details(Deets),
                                     compoundID = compoundToExtract,
-                                    stop_or_warn = "warn")
+                                    stop_or_warn_missing_file = "warn")
    )
    
    # Sometimes missing problems with extrapolation to infinity. Checking for
@@ -2095,8 +2095,11 @@ pksummary_table <- function(sim_data_file = NA,
       Out <- Out[["Table"]]
    }
    
-   if(CheckDoseInt$message == "mismatch" & any(str_detect(PKpulled, "_last"))){
+   if(CheckDoseInt$message == "mismatch last dose"){
       warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n", 
+              call. = FALSE)
+   } else if(CheckDoseInt$message == "mismatch user-defined interval"){
+      warning("The time used for integrating the AUC for the custom AUC interval was not the same as the dosing interval.\n", 
               call. = FALSE)
    }
    

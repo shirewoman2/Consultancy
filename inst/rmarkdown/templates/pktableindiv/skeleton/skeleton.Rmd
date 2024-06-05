@@ -1,0 +1,143 @@
+# `r Heading`
+
+```{r}
+
+if(FromCalcPKRatios){
+   MyFiles <- str_split_1(unique(MyPKResults[[i]]$File), " / ")
+} else {
+   MyFiles <- unique(MyPKResults[[i]]$File)
+}
+
+if("logical" %in% class(existing_exp_details)){
+   # This is when existing_exp_details is NA.
+   Deets <- data.frame(Inhibitor1 = "UNKNOWN INHIBITOR", 
+                       File = MyFiles)
+} else {
+   Deets <- existing_exp_details$MainDetails %>% filter(File %in% MyFiles)
+}
+
+MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
+                                         prettify_compound_names = TRUE)
+
+if(FromCalcPKRatios){
+   MyAnnotations <- 
+      list("TableHeading" = 
+              paste0(
+                 "***Table XXX.*** *Simulated ", MeanType, " mean ", 
+                 unique(MyPKResults[[i]]$Tissue),  " PK parameters for the file pair ", 
+                 str_comma(MyFiles), "*"), 
+           
+           "TableCaption" = 
+              paste0("*Simulated values listed are the ", MeanType, 
+                     " means. CV: coefficient of variation; CI: confidence interval. Source simulated data: ", 
+                     str_comma(MyFiles), "*"))
+   
+} else {
+   
+   MyAnnotations <- make_table_annotations(
+      MyPKResults = MyPKResults[[i]] %>% purrr::discard(~all(is.na(.))), 
+      MyFile = unique(MyPKResults[[i]]$File), 
+      PKpulled = PKpulled_list[[i]],  
+      MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
+      prettify_compound_names = prettify_compound_names,
+      Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
+                     "TRUE" = data.frame(), 
+                     "FALSE" = Deets), 
+      MeanType = MeanType, 
+      tissue = unique(MyPKResults[[i]]$Tissue))
+}
+
+```
+
+`r MyAnnotations[["TableHeading"]]`
+
+
+```{r}
+
+# Adding a warning if there was a mismatch between the last dosing interval and
+# the AUC interval if any of the PK included last dose.
+Msg <- CheckDoseInt$message[which(
+   str_detect(names(CheckDoseInt$message), sub("xlsx.", "xlsx.*", i)))]
+
+if(Msg == "mismatch last dose"){
+   
+   DoseIntWarning <- list(
+      "***WARNING: The time used for integrating the AUC for the last dose was not the same as the dosing interval.***", 
+      
+      paste0("**Dosing interval: ", CheckDoseInt_list[[i]]$DoseInt_X, " h**"),
+      
+      paste0("**Last dose start time: ", CheckDoseInt_list[[i]]$LastDoseTime, " h**"),
+      
+      paste0("**Simulation end time: ", CheckDoseInt_list[[i]]$SimDuration, " h**"),
+      
+      paste0("**Time used for integrating the last-dose AUC: ", 
+             CheckDoseInt_list[[i]]$IntervalRemaining, " h**"),
+      
+      "***Please check these results carefully.***")
+   
+} else if(Msg == "mismatch user-defined interval"){
+   
+   DoseIntWarning <- list(
+      "***WARNING: The time used for integrating the AUC for the user-defined interval was not the same as the dosing interval.***", 
+      
+      paste0("**Dosing interval: ", CheckDoseInt_list[[i]]$DoseInt_X, " h**"),
+      
+      paste0("**User-defined interval start time: ", CheckDoseInt_list[[i]]$UserIntervalStart, " h**"),
+      
+      paste0("**User-defined interval end time: ", CheckDoseInt_list[[i]]$UserIntervalEnd, " h**"),
+      
+      paste0("**Time used for integrating the user-defined AUC: ", 
+             CheckDoseInt_list[[i]]$UserIntervalRemaining, " h**"),
+      
+      "***Please check these results carefully.***")
+   
+} else {
+   
+   DoseIntWarning <- list(
+      c(), c(), c(), c(), c(), c()
+   )
+}
+
+```
+`r DoseIntWarning[[1]]` 
+
+`r DoseIntWarning[[2]]` 
+
+`r DoseIntWarning[[3]]` 
+
+`r DoseIntWarning[[4]]` 
+
+`r DoseIntWarning[[5]]` 
+
+`r DoseIntWarning[[6]]` 
+
+
+
+```{r}
+
+if(is.na(include_dose_num_orig)){
+   include_dose_num <- check_include_dose_num(MyPKResults[[i]], 
+                                              include_dose_num)
+}
+
+if(include_dose_num == FALSE){
+   names(MyPKResults[[i]]) <- sub("Dose 1 |Last dose |_dose1|_last", "", names(MyPKResults[[i]]))
+}
+
+TempTable <- MyPKResults[[i]] %>% ungroup() %>% 
+   purrr::discard(~all(is.na(.))) %>% 
+   select(-any_of(c("CompoundID", "Tissue", "File", "Compound")))
+names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
+
+formatTable_Simcyp(TempTable,
+                   merge_shaded_cells = merge_shaded_cells,
+                   perpetrator_name = MyPerpetrator, 
+                   fontsize = fontsize,
+                   prettify_columns = prettify_columns, 
+                   add_header_for_DDI = add_header_for_DDI, 
+                   highlight_so_cutoffs = highlight_so_cutoffs, 
+                   highlight_so_colors = highlight_so_colors)
+
+```
+
+`r MyAnnotations[["TableCaption"]]`

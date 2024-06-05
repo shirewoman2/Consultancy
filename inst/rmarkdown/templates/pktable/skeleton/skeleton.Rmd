@@ -1,5 +1,5 @@
 ---
-title: "PK summary tables"
+title: "PK tables"
 author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`
 date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
 output: word_document
@@ -17,7 +17,6 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 ```{r FigtextPKSummary}
 
 Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
-MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
 
 ```
 ```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
@@ -51,10 +50,6 @@ if(FromCalcPKRatios){
    # tissues to tissue. Same w/compounds. 
    tissues <- tissue
    compoundsToExtract <- compoundToExtract
-   PKpulled <- expand.grid(PKpulled = PKToPull, 
-                           File = MyPKResults$File, 
-                           Tissue = unique(MyPKResults$Tissue), 
-                           CompoundID = compoundToExtract)
    
 } 
 
@@ -75,7 +70,7 @@ if(single_table){
                              ""))
    
    AllFiles <- switch(
-      as.character(exists("sim_data_file_pairs", inherits = FALSE)), 
+      as.character(FromCalcPKRatios), 
       "TRUE" = # from calc_PK_ratios_mult
          str_comma(unique(unlist(str_split(MyPKResults$File, " / ")))),
       
@@ -85,7 +80,8 @@ if(single_table){
    Annotations <- list(
       "TableHeading" = paste0("*Table XXX. Simulated ", 
                               ifelse(Observedincluded, "and observed ", ""), 
-                              MeanType, " mean ", str_comma(tissues),
+                              MeanType, " mean ", 
+                              str_comma(unique(MyPKResults$Tissue)),
                               " PK parameters.*"),
       "TableCaption" = paste0("*Simulated values listed are ",
                               CapText1, ". ", CapText2, 
@@ -99,6 +95,46 @@ if(single_table){
 
 `r Annotations[["TableHeading"]]`
 
+```{r}
+
+# Adding a warning if there was a mismatch between the last dosing interval and
+# the AUC interval if any of the PK included last dose.
+
+if(any(str_detect(CheckDoseInt$message, "mismatch")) & 
+   single_table){
+   
+   DoseIntWarning <- list(
+      "***WARNING: There was a mismatch between the dosing interval and the AUC interval for the following files and compounds:***\n", 
+      
+      CheckDoseInt$interval[which(str_detect(CheckDoseInt$message, "mismatch")), ] %>% 
+      mutate(TimeLastInterval = ifelse(OneDoseIntRemaining == TRUE, 
+                                       0, SimDuration - LastDoseTime)) %>% 
+      select(File, Sheet, CompoundID, DoseInt_X, UserIntervalRemaining, TimeLastInterval) %>% 
+      rename("Dosing interval" = DoseInt_X, 
+             "Last-dose interval (h)" = TimeLastInterval, 
+             "User-defined interval (h)" = UserIntervalRemaining) %>% 
+         flextable::flextable() %>% 
+         flextable::width(j = 1:2, width = 1.5) %>% 
+         flextable::width(j = 3, width = 1), 
+      
+      "***Please check these results carefully.***")
+   
+} else {
+   
+   DoseIntWarning <- list(
+      c(), c(), c()
+   )
+}
+
+```
+
+`r DoseIntWarning[[1]]` 
+
+`r DoseIntWarning[[2]]` 
+
+`r DoseIntWarning[[3]]` 
+
+
 ```{r makeTablePKSummaryOutput}
 
 if("File" %in% names(MyPKResults)){
@@ -110,23 +146,33 @@ if(single_table){
    
    # If they only wanted 1 tissue, don't include a column for that in the table.
    # It'll be listed in the text and takes up room needlessly.
-   if(length(tissues) == 1){
+   if(length(unique(MyPKResults$Tissue)) == 1){
       MyPKResults <- MyPKResults %>% 
          select(-any_of("Tissue"))
    }
    
    # Similarly, if they only wanted 1 compoundID, don't include a column for that
    # in the table.
-   if(length(compoundsToExtract) == 1){
+   if(length(unique(MyPKResults$CompoundID)) == 1){
       MyPKResults <- MyPKResults %>% 
          select(-any_of("CompoundID"))
+   }
+   
+   # If the column names were prettified, then they will include the dosing
+   # interval and there is thus no need for the "Sheet" column. Similarly,
+   # regardless of whether they prettified the column names, if there is only
+   # one value present for the Sheet column, remove it. 
+   if(prettify_columns | 
+      length(unique(MyPKResults$Sheet)) == 1){
+      MyPKResults <- MyPKResults %>% 
+         select(-any_of("Sheet"))
    }
    
    include_dose_num <- check_include_dose_num(MyPKResults, 
                                               include_dose_num)
    
    if(include_dose_num == FALSE){
-      names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
+      names(MyPKResults) <- sub("Dose 1 |Last dose |_dose1|_last", "", names(MyPKResults))
    }
    
    formatTable_Simcyp(MyPKResults,
@@ -150,58 +196,46 @@ if(single_table == FALSE){
       split(MyPKResults, f = list(MyPKResults$File, 
                                   MyPKResults$CompoundID, 
                                   MyPKResults$Tissue))
-   PKpulled <- 
-      split(PKpulled, f = list(PKpulled$File, 
-                               PKpulled$CompoundID, 
-                               PKpulled$Tissue))
+   PKpulled_list <- 
+      split(PKpulled$PKpulled, f = list(PKpulled$File, 
+                                        PKpulled$CompoundID, 
+                                        PKpulled$Tissue))
+   
+   PKparameters <- split(PKparameters, 
+                         f = list(PKparameters$File, 
+                                  PKparameters$CompoundID, 
+                                  PKparameters$Tissue))
+   
+   CheckDoseInt_list <- split(CheckDoseInt$interval, 
+                         f = list(CheckDoseInt$interval$File, 
+                                  CheckDoseInt$interval$CompoundID, 
+                                  CheckDoseInt$interval$Tissue))
    
    MyPKResults <- MyPKResults[which(lapply(MyPKResults, nrow) > 0)]
    
    for(i in names(MyPKResults)){
       # assign("ITERATION_STEP", value = i, envir = global_env())
       
-      TableSettings <- c(Tissue = length(tissues) > 1, 
-                         CompoundID = length(compoundsToExtract) > 1, 
-                         File = TRUE)
-      TableSettings <- str_c(names(TableSettings)[TableSettings == TRUE], 
-                             collapse = " ")
-      
-      Heading <- switch(TableSettings, 
-                        "Tissue CompoundID File" = paste0(
-                           str_to_title(unique(MyPKResults[[i]]$Tissue)), 
+      Heading <- paste0(
+         str_to_title(unique(MyPKResults[[i]]$Tissue)), 
                            " PK for the ", 
                            unique(MyPKResults[[i]]$CompoundID), 
                            " for the file '", 
-                           unique(MyPKResults[[i]]$File), "'"), 
-                        
-                        "CompoundID File" = paste0(
-                           "PK for the ", 
-                           unique(MyPKResults[[i]]$CompoundID), 
-                           " for the file '", 
-                           unique(MyPKResults[[i]]$File), "'"), 
-                        
-                        "Tissue File" = paste0(
-                           str_to_title(unique(MyPKResults[[i]]$Tissue)), 
-                           " PK for the file '", 
-                           unique(MyPKResults[[i]]$File), "'"), 
-                        
-                        "File" = paste0(
-                           "PK for the file '", 
-                           unique(MyPKResults[[i]]$File), "'"))
+                           unique(MyPKResults[[i]]$File), "'")
       
       Heading <- ifelse(FromCalcPKRatios, 
                         sub("for the file", "for the file pair", Heading), 
                         Heading)
       
       TableSection <- knitr::knit_child(
-         system.file("rmarkdown/templates/pktablesection/skeleton/skeleton.Rmd",
+         system.file("rmarkdown/templates/pktableindiv/skeleton/skeleton.Rmd",
                      package="SimcypConsultancy"), 
          envir = environment(), 
          quiet = TRUE)
       
       cat(TableSection, sep = "\n")
       
-      rm(Heading, Deets, MyPerpetrator, MyFiles, MyAnnotations, PKpulled_i)
+      rm(Heading, Deets, MyPerpetrator, MyFiles, MyAnnotations)
       
    }
    

@@ -4,19 +4,20 @@
 \alias{purples}
 \title{Create a vector of purples}
 \usage{
-purples(ncolors)
+purples(ncolors, shade = "regular")
 }
 \arguments{
 \item{ncolors}{number of colors desired}
+
+\item{shade}{the shade of colors to use, which can be "regular" (default),
+"darker", or "lighter"}
 }
 \value{
 a character vector of colors
 }
 \description{
-\code{purples} is useful for getting a set of yellows to greens for
-graphs. These are from the RColorBrewer package, color set "YlGn", just to
-give credit where it's due, but they can be any number in length rather than
-only up to 9 colors.
+\code{purples} is useful for getting a set of purples from lavender to
+aubergine for graphs.
 }
 \examples{
 # Create a set of 10 purples.
