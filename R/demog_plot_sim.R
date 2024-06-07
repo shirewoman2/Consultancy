@@ -15,7 +15,7 @@
 #'   "Height_cm", "Weight_kg")}. Plots will be in the order listed.
 #' @param alpha how transparent to make the points, with 0 being completely
 #'   transparent and invisible so I don't know why you'd want that but, hey, you
-#'   do you, dude, to 1, which is fully opaque.
+#'   do you, to 1, which is fully opaque.
 #' @param ncol optionally specify the number of columns. If left as NULL, a
 #'   reasonable guess will be used.
 #' @param nrow optionally specify the number of rows. If left as NULL, a
@@ -90,6 +90,8 @@
 #' # none yet
 demog_plot_sim <- function(demog_dataframe, 
                            colorBy_column, 
+                           color_labels = NA, 
+                           legend_label_color = NA,
                            color_set = "default", 
                            graph_title = "Demographics", 
                            variables = NA, 
@@ -114,12 +116,20 @@ demog_plot_sim <- function(demog_dataframe,
       facet_by_sex = FALSE
    }
    
+   
    # Setting things up for nonstandard evaluation ----------------------------
    
    colorBy_column <- rlang::enquo(colorBy_column)
    
    if(as_label(colorBy_column) == "<empty>"){
-      demog_dataframe$colorBy_column <- demog_dataframe$file
+      if("File" %in% names(demog_dataframe) == FALSE){
+         warning("You have not specified which column in your data you'd like to use for coloring things, and you also don't have a column in your data titled `File`, which is what we use for the default, so there will be only one color in your graphs.\n", 
+                 call. = FALSE)
+         
+         demog_dataframe$File <- "missing file name"
+      }
+      
+      demog_dataframe$colorby_column <- demog_dataframe$File
    } else {
       if(class(demog_dataframe %>% pull(!!colorBy_column)) == "numeric"){
          
@@ -137,6 +147,97 @@ demog_plot_sim <- function(demog_dataframe,
             mutate(colorBy_column = {{colorBy_column}})
       }
    }
+   
+   # If user filled in color_labels but not colorBy_column, give a warning.
+   if(as_label(colorBy_column) == "<empty>" & any(complete.cases(color_labels))){
+      warning("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored.\n", 
+              call. = FALSE)
+   }
+   
+   # If there are any replicate names for color_labels, give a warning.
+   if(any(duplicated(names(color_labels)))){
+      warning(paste0("You have listed this file more than once for the argument `color_labels`:\n", names(color_labels[duplicated(names(color_labels))]), 
+                     "\nand we can only work with unique values here. We won't be able to use anything for `color_labels`. Please check your input."), 
+              call. = FALSE)
+      color_labels <- NA
+   }
+   
+   # If the color labels don't match the items in the colorBy_column, give a
+   # warning.
+   if(as_label(colorBy_column) != "<empty>" && 
+      any(complete.cases(color_labels)) && 
+      all(names(color_labels) %in% sort(t(unique(
+         demog_dataframe[, as_label(colorBy_column)])))) == FALSE){
+      
+      BadLabs <- setdiff(names(color_labels), 
+                         sort(t(unique(demog_dataframe[, as_label(colorBy_column)]))))
+      
+      warning(paste0("The labels you supplied for `color_labels` are not all present in the column ", 
+                     as_label(colorBy_column), 
+                     ". This will mess up the colors and the legend labels on your graph unless that's fixed. Specifically, the following values are not present in the column ",
+                     as_label(colorBy_column), ":\n     ", 
+                     str_comma(BadLabs)), 
+              call. = FALSE)
+      
+      WarningLabel <- paste0("WARNING: There's a mismatch between\nthe label given and the items included in\nthe column used for setting the color.", 
+                             gsub(" - problem no. 1", "", 
+                                  paste(" - problem no.", 
+                                        1:length(unique(demog_dataframe[, as_label(colorBy_column)])))))
+      
+      color_labels[which(names(color_labels) %in% BadLabs)] <-
+         WarningLabel[1:length(BadLabs)]
+      
+      NewNames <- setdiff(sort(t(unique(demog_dataframe[, as_label(colorBy_column)]))),
+                          names(color_labels))
+      
+      if(length(NewNames) == 0){
+         # This happens when the file they named just is not present.
+         color_labels <- color_labels[names(color_labels) %in%
+                                         sort(unique(demog_dataframe[, as_label(colorBy_column)]))]
+      } else {
+         # This happens when the file they named was probably misspelled.
+         NewNames <- NewNames[complete.cases(NewNames)]
+         names(color_labels)[which(names(color_labels) %in% BadLabs)] <- NewNames
+      }
+      rm(NewNames, BadLabs, WarningLabel)
+   }
+   
+   # Setting factors for color_labels. 
+   if(any(complete.cases(color_labels))){
+      demogcheck <- demog_dataframe %>% 
+         filter(colorBy_column %in% names(color_labels)) %>% 
+         select(colorBy_column) %>% unique() %>% pull()
+      
+      if(length(sort(unique(demogcheck))) > 
+         length(color_labels[names(color_labels) %in% demog_dataframe$colorBy_column])){
+         warning(paste0("You have not included enough labels for the colors in the legend. The values in '",
+                        as_label(colorBy_column), 
+                        "' will be used as labels instead.\n"),
+                 call. = FALSE)
+         color_labels <- NA
+      } else {
+         if(length(color_labels[names(color_labels) %in% demog_dataframe$colorBy_column]) == 0 |
+            length(sort(unique(demogcheck))) == 0){
+            warning(paste0("There is some kind of mismatch between the color labels provided and the values actually present in ",
+                           as_label(colorBy_column), ". The specified labels cannot be used.\n"),
+                    call. = FALSE)  
+         } else {
+            
+            MissingLabels <- setdiff(unique(demog_dataframe$colorBy_column), 
+                                     names(color_labels))
+            if(length(MissingLabels) > 0){
+               names(MissingLabels) <- MissingLabels
+               color_labels <- c(color_labels, MissingLabels)
+            }
+            
+            demog_dataframe <- demog_dataframe %>% 
+               mutate(colorBy_column = color_labels[colorBy_column], 
+                      colorBy_column = factor(colorBy_column, levels = color_labels))
+            
+         }
+      }
+   }
+   
    
    # Returning to error catching ---------------------------------------------
    
@@ -236,6 +337,15 @@ demog_plot_sim <- function(demog_dataframe,
       }
       
    } else {
+      
+      # If there are only 2 groups for the colorBy_column and color_set was set to
+      # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
+      # aesthetically pleasing.
+      if(NumColorsNeeded <= 2 &
+         color_set[1] == "default"){
+         color_set <- "Brewer set 1"
+      }
+      
       # NOTE: For no reason I can discern, if the user has observed
       # data that should be all one color but then uses scale_color_X
       # where x is anything except "manual", the observed points
@@ -291,33 +401,51 @@ demog_plot_sim <- function(demog_dataframe,
       names(demog_dataframe)[names(demog_dataframe) == Var] <- "MyVar"
       
       suppressWarnings(
-         ggplot(demog_dataframe, aes(x = MyVar, fill = colorBy_column)) +
+         G <- ggplot(demog_dataframe, aes(x = MyVar, fill = colorBy_column)) +
             geom_density(alpha = 0.5, show.legend = FALSE) +
             ylab("Distribution") +
-            xlab(YLabs[Var]) +
-            labs(fill = NULL) +
-            scale_fill_manual(values = MyColors) +
-            theme_consultancy(border = border_facets) + 
-            theme(legend.position = "none", 
-                  strip.placement = "outside")
+            xlab(YLabs[Var])
       )
+      
+      if(complete.cases(legend_label_color)){
+         G <- G + labs(fill = legend_label_color)
+      } else {
+         G <- G + labs(fill = NULL)
+      }
+      
+      G <- G +
+         scale_fill_manual(values = MyColors) +
+         theme_consultancy(border = border_facets) + 
+         theme(legend.position = "none", 
+               strip.placement = "outside")
+      
+      return(G)
    }
    
    MyGraphs <- list()
    
    for(yy in Graphs){
       if(yy == "sex vs age"){
-         MyGraphs[[yy]] <- patchwork::free(
+         MyGraphs[[yy]] <- 
             ggplot(demog_dataframe, 
                    aes(x = age, y = colorBy_column, fill = colorBy_column)) +
-               facet_grid(sex ~ ., switch = "y") +
-               geom_violin(alpha = 0.7, show.legend = FALSE) +
-               ylab("Sex") +
-               xlab("Age (years)") +
-               scale_fill_manual(values = MyColors) +
-               theme_consultancy(border = border_facets) + 
-               theme(legend.position = "none", 
-                     strip.placement = "outside"))
+            facet_grid(sex ~ ., switch = "y") +
+            geom_violin(alpha = 0.7, show.legend = FALSE) +
+            scale_fill_manual(values = MyColors) +
+            ylab("Sex") +
+            xlab("Age (years)") +
+            theme_consultancy(border = border_facets) + 
+            theme(legend.position = "none", 
+                  strip.placement = "outside")
+         
+         if(complete.cases(legend_label_color)){
+            MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
+         } else {
+            MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = NULL)
+         }
+         
+         MyGraphs[[yy]] <- patchwork::free(MyGraphs[[yy]])
+         
          
       } else if(yy == "sex"){
          
@@ -332,14 +460,20 @@ demog_plot_sim <- function(demog_dataframe,
             ggplot(PercFemale, aes(x = colorBy_column, fill = colorBy_column,
                                    y = PercFemale)) +
             geom_bar(stat = "identity", alpha = 0.7) +
+            scale_fill_manual(values = MyColors) +
+            scale_y_continuous(labels = scales::percent) +
             ylab("Percent female") +
             xlab(NULL) +
             labs(fill = NULL) +
-            scale_fill_manual(values = MyColors) +
-            scale_y_continuous(labels = scales::percent) +
             theme_consultancy(border = border_facets) + 
             theme(legend.position = "none", 
                   strip.placement = "outside")
+         
+         if(complete.cases(legend_label_color)){
+            MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
+         } else {
+            MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = NULL)
+         }
          
       } else if(yy %in% tolower(c("Weight vs Height", 
                                   "Height vs Age", 

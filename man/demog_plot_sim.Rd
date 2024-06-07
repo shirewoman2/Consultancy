@@ -7,6 +7,8 @@
 demog_plot_sim(
   demog_dataframe,
   colorBy_column,
+  color_labels = NA,
+  legend_label_color = NA,
   color_set = "default",
   graph_title = "Demographics",
   variables = NA,
@@ -91,7 +93,7 @@ list them in a character vector, e.g., \code{variables = c("Age",
 
 \item{alpha}{how transparent to make the points, with 0 being completely
 transparent and invisible so I don't know why you'd want that but, hey, you
-do you, dude, to 1, which is fully opaque.}
+do you, to 1, which is fully opaque.}
 
 \item{ncol}{optionally specify the number of columns. If left as NULL, a
 reasonable guess will be used.}
