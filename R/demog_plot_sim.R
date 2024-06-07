@@ -1,18 +1,22 @@
 #' Make plots for comparing populations across simulations
 #'
-#' UNDER CONSTRUCTION. 
+#' UNDER CONSTRUCTION.
 #'
 #' @param demog_dataframe the output from running \code{\link{extractDemog}}.
 #'   Optionally (and we recommend) with added observed demographic data, perhaps
 #'   from observed overlay XML files.
 #' @param graph_title title to use on the plots
-#' @param variables variables to include. We're starting with a limited set:
-#'   "Age", "Weight_kg" ("Weight" is also fine), "Height_cm" ("Height" is fine),
-#'   "Weight vs Height", "Height vs Age", "Weight vs Age", "HSA_gL" ("HSA" is
-#'   fine), "AGP_gL" ("AGP" is fine), "Sex", "Sex vs Age", "BMI_kgm2" ("BMI" is
-#'   fine), and "RenalFunction". If you want only a subset of those,
-#'   list them in a character vector, e.g., \code{variables = c("Age",
+#' @param demog_parameters demographic parameters to include. We're starting
+#'   with a limited set: "Age", "Weight_kg" ("Weight" is also fine), "Height_cm"
+#'   ("Height" is fine), "Weight vs Height", "Height vs Age", "Weight vs Age",
+#'   "HSA_gL" ("HSA" is fine), "AGP_gL" ("AGP" is fine), "Sex", "Sex vs Age",
+#'   "BMI_kgm2" ("BMI" is fine), and "RenalFunction". If you want only a subset
+#'   of those, list them in a character vector, e.g., \code{demog_parameters = c("Age",
 #'   "Height_cm", "Weight_kg")}. Plots will be in the order listed.
+#' @param variability_display How should the variability be shown? Options are
+#'   "kernal density" (default, a type of smoothed histogram) or "boxplot". Any
+#'   demographic parameters requested in the form of "X vs Y", e.g., "weight vs
+#'   height", will always be shown as scatter plots.
 #' @param alpha how transparent to make the points, with 0 being completely
 #'   transparent and invisible so I don't know why you'd want that but, hey, you
 #'   do you, to 1, which is fully opaque.
@@ -89,12 +93,13 @@
 #' @examples
 #' # none yet
 demog_plot_sim <- function(demog_dataframe, 
+                           variability_display = "kernal density", 
                            colorBy_column, 
                            color_labels = NA, 
                            legend_label_color = NA,
                            color_set = "default", 
                            graph_title = "Demographics", 
-                           variables = NA, 
+                           demog_parameters = NA, 
                            alpha = 0.8, 
                            ncol = NULL, 
                            nrow = NULL, 
@@ -242,25 +247,25 @@ demog_plot_sim <- function(demog_dataframe,
    # Returning to error catching ---------------------------------------------
    
    # Addressing any issues w/case and periods for "vs"
-   variables <- tolower(gsub("\\.", "", as.character(variables)))
+   demog_parameters <- tolower(gsub("\\.", "", as.character(demog_parameters)))
    names(demog_dataframe) <- tolower(names(demog_dataframe))
    # Renaming colorBy_column for ease of coding since I'm lifting some of the
    # code from other functions
    demog_dataframe <- demog_dataframe %>% rename(colorBy_column = colorby_column)
    
-   variables <- case_match(variables, 
-                           "height vs weight" ~ "weight vs height", 
-                           "age vs height" ~ "height vs age", 
-                           "age vs weight" ~ "weight vs age", 
-                           "age vs sex" ~ "sex vs age", 
-                           "weight" ~ "weight_kg",
-                           "height" ~ "height_cm",
-                           "hsa" ~ "hsa_gl",
-                           "agp" ~ "agp_gl",
-                           "bmi" ~ "bmi_kgm2",
-                           .default = variables)
+   demog_parameters <- case_match(demog_parameters, 
+                                  "height vs weight" ~ "weight vs height", 
+                                  "age vs height" ~ "height vs age", 
+                                  "age vs weight" ~ "weight vs age", 
+                                  "age vs sex" ~ "sex vs age", 
+                                  "weight" ~ "weight_kg",
+                                  "height" ~ "height_cm",
+                                  "hsa" ~ "hsa_gl",
+                                  "agp" ~ "agp_gl",
+                                  "bmi" ~ "bmi_kgm2",
+                                  .default = demog_parameters)
    
-   BadVar <- setdiff(variables, 
+   BadVar <- setdiff(demog_parameters, 
                      tolower(c("Age", 
                                "AGP_gL", 
                                "BMI_kgm2", 
@@ -275,33 +280,33 @@ demog_plot_sim <- function(demog_dataframe,
                                "RenalFunction")))
    
    if(length(BadVar) > 0 && any(complete.cases(BadVar))){
-      warning(paste0("The variables ", 
+      warning(paste0("The demographic parameters ", 
                      str_comma(paste0("`", BadVar, "`")), 
-                     " are not among the possible options for variables to graph, so they won't be included. Please check the help file for options.\n"), 
+                     " are not among the possible options for demog_parameters, so they won't be included. Please check the help file for options.\n"), 
               call. = FALSE)
       
-      variables <- setdiff(variables, BadVar)
+      demog_parameters <- setdiff(demog_parameters, BadVar)
    }
    
    if("sex" %in% names(demog_dataframe) == FALSE){
       demog_dataframe$Sex <- "unknown"
    }
    
-   YLabs <- c("age" = "Age (years)", 
-              "weight_kg" = "Weight (kg)", 
-              "height_cm" = "Height (cm)", 
-              "hsa_gl" = "HSA (g/L)", 
-              "agp_gl" = "AGP (g/L)", 
-              "sex" = "Sex", 
-              "bmi_kgm2" = "BMI (kg/m2)", 
-              "renalfunction" = "Renal function")
+   DemogLabs <- c("age" = "Age (years)", 
+                  "weight_kg" = "Weight (kg)", 
+                  "height_cm" = "Height (cm)", 
+                  "hsa_gl" = "HSA (g/L)", 
+                  "agp_gl" = "AGP (g/L)", 
+                  "sex" = "Sex", 
+                  "bmi_kgm2" = "BMI (kg/m2)", 
+                  "renalfunction" = "Renal function")
    
-   if(all(is.na(variables))){
+   if(all(is.na(demog_parameters))){
       Graphs <- tolower(c("Age", "Weight_kg", "Height_cm", "Weight vs Height",
                           "Height vs Age", "Weight vs Age", "HSA_gL",
                           "AGP_gL", "Sex", "Sex vs Age", "BMI_kgm2", "RenalFunction"))
    } else {
-      Graphs <- variables
+      Graphs <- demog_parameters
    }
    
    
@@ -404,7 +409,7 @@ demog_plot_sim <- function(demog_dataframe,
          G <- ggplot(demog_dataframe, aes(x = MyVar, fill = colorBy_column)) +
             geom_density(alpha = 0.5, show.legend = FALSE) +
             ylab("Distribution") +
-            xlab(YLabs[Var])
+            xlab(DemogLabs[Var])
       )
       
       if(complete.cases(legend_label_color)){
@@ -421,6 +426,34 @@ demog_plot_sim <- function(demog_dataframe,
       
       return(G)
    }
+   
+   
+   subfun_boxplots <- function(Var){
+      names(demog_dataframe)[names(demog_dataframe) == Var] <- "MyVar"
+      
+      suppressWarnings(
+         G <- ggplot(demog_dataframe, aes(y = MyVar, 
+                                          x = colorBy_column,  fill = colorBy_column)) +
+            geom_boxplot(alpha = 0.5) +
+            ylab(DemogLabs[Var]) +
+            xlab(NULL)
+      )
+      
+      if(complete.cases(legend_label_color)){
+         G <- G + labs(fill = legend_label_color)
+      } else {
+         G <- G + labs(fill = NULL)
+      }
+      
+      G <- G +
+         scale_fill_manual(values = MyColors) +
+         theme_consultancy(border = border_facets) + 
+         theme(legend.position = "none", 
+               strip.placement = "outside")
+      
+      return(G)
+   }
+   
    
    MyGraphs <- list()
    
@@ -461,7 +494,8 @@ demog_plot_sim <- function(demog_dataframe,
                                    y = PercFemale)) +
             geom_bar(stat = "identity", alpha = 0.7) +
             scale_fill_manual(values = MyColors) +
-            scale_y_continuous(labels = scales::percent) +
+            scale_y_continuous(labels = scales::percent, 
+                               limits = c(0, 1)) +
             ylab("Percent female") +
             xlab(NULL) +
             labs(fill = NULL) +
@@ -508,7 +542,11 @@ demog_plot_sim <- function(demog_dataframe,
          
       } else {
          
-         MyGraphs[[yy]] <- subfun_density(yy)
+         if(str_detect(tolower(variability_display), "density")){
+            MyGraphs[[yy]] <- subfun_density(yy)
+         } else {
+            MyGraphs[[yy]] <- subfun_boxplots(yy)
+         }
          
          if(length(unique(demog_dataframe$sex)) == 1){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + guides(shape = "none") 
