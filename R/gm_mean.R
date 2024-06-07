@@ -169,8 +169,8 @@ gm_CV <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 #' distributed.
 #'
 #' @param x A vector of numbers
-#' @param CI The confidence interval desired; default is 95%. Enter this
-#'   value as a decimal, e.g., 0.95.
+#' @param CI The confidence interval desired; default is 90%. Enter this
+#'   value as a decimal, e.g., 0.90.
 #' @param na.rm Should NA values be removed? (logical)
 #' @param distribution_type use a "t" distribution (default) or a "Z"
 #'   distribution. Note: The Simcyp Simulator calculates geometric confidence
@@ -179,12 +179,12 @@ gm_CV <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 #' @examples
 #' x <- rnorm(100, 5, 1)
 #' confInt(x)
-#' confInt(x, CI = 0.9)
+#' confInt(x, CI = 0.95)
 #'
 #' @export
 
 confInt <- function(x, 
-                    CI = 0.95, 
+                    CI = 0.9, 
                     na.rm = TRUE, 
                     distribution_type = "t"){
    
@@ -232,7 +232,7 @@ confInt <- function(x,
 #'
 #' @param x A vector of numbers
 #' @param CI The confidence interval desired; default is 95%. Enter this value
-#'   as a decimal, e.g., 0.95.
+#'   as a decimal, e.g., 0.9.
 #' @param na.rm Should NA values be removed? (logical)
 #' @param zero.propagate Should zeroes be propagated? (logical)
 #' @param distribution_type use a "t" distribution (default) or a "Z"
@@ -242,7 +242,7 @@ confInt <- function(x,
 #' @examples
 #' x <- rnorm(100, 5, 1)
 #' gm_conf(x)
-#' gm_conf(x, CI = 0.9)
+#' gm_conf(x, CI = 0.95)
 #'
 #' # PK data are often log-normally distributed, so try this function with
 #' # some example concentration-time data. (For this, we're not worried
@@ -262,7 +262,7 @@ confInt <- function(x,
 #' @export
 
 gm_conf <- function(x, 
-                    CI = 0.95, 
+                    CI = 0.90, 
                     na.rm = TRUE, 
                     zero.propagate = FALSE, 
                     distribution_type = "t") {
