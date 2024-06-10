@@ -776,12 +776,14 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # If user filled in color_labels but not colorBy_column, give a warning.
    if(as_label(colorBy_column) == "<empty>" & any(complete.cases(color_labels))){
-      warning("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored.")
+      warning("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored.\n", 
+              call. = FALSE)
    }
    
    # If user filled in linetype_labels but not linetype_column, give a warning.
    if(as_label(linetype_column) == "<empty>" & any(complete.cases(linetype_labels))){
-      warning("You have specified something for `linetype_labels` but nothing for `linetype_column`. Since R doesn't know which column contains the data to use for your linetype labels, they will be ignored.")
+      warning("You have specified something for `linetype_labels` but nothing for `linetype_column`. Since R doesn't know which column contains the data to use for your linetype labels, they will be ignored.\n", 
+              call. = FALSE)
    }
    
    # If there are any replicate names for color_labels, give a warning.
