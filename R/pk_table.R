@@ -998,7 +998,8 @@ pk_table <- function(PKparameters = NA,
                                               include_dose_num)
    
    if(include_dose_num == FALSE){
-      names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
+      names(MyPKResults) <- sub("Dose 1 |Last dose |_dose1$|_last$", "", 
+                                names(MyPKResults))
    }
    
    if(checkDataSource){

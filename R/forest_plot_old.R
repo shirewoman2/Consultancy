@@ -1,4 +1,7 @@
-#' Create a forest plot --  WARNING! TO BE DEPRECATED!
+#' Create a forest plot --  WARNING! TO BE DEPRECATED! This function is no
+#' longer being supported and may stop working as internal subfunction
+#' dependencies get updated. Please talk to Laura Sh. if you need help with
+#' this.
 #'
 #' Please see the newer version of the forest plot function:
 #' \code{\link{forest_plot}}. \code{forest_plot_old} creates a forest plot of
@@ -20,8 +23,8 @@
 #'   must have only one tab.) If this is a forest plot of perpetrator drug-drug
 #'   interactions (DDIs), the column "VictimCompound" will be what is used to
 #'   label the y axis. If it is a forest plot of victim DDIs, it will be the
-#'   column "PerpCompound". If, instead of the substrate or perpetrator names, you
-#'   would like some other label to appear on the y axis, please see the
+#'   column "PerpCompound". If, instead of the substrate or perpetrator names,
+#'   you would like some other label to appear on the y axis, please see the
 #'   argument \code{y_axis_labels}.
 #' @param perp_or_victim specify whether the drug of interest is a "victim" or
 #'   "perpetrator". This will determine whether the graphs will be labeled on
@@ -137,9 +140,9 @@
 #'   \code{y_axis_column_secondary}, this will be ignored.
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier. This was designed for simulations where the
-#'   substrates or perpetrators are among the standard options for the simulator,
-#'   and leaving \code{prettify_compound_names = TRUE} will make the name of
-#'   those compounds something more human readable. For example,
+#'   substrates or perpetrators are among the standard options for the
+#'   simulator, and leaving \code{prettify_compound_names = TRUE} will make the
+#'   name of those compounds something more human readable. For example,
 #'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 #'   become "midazolam".
 #' @param legend_position specify where you want the legend to be. Options are
@@ -185,7 +188,8 @@
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 #'   be saved as a png file, but if you specify a different graphical file
 #'   extension, it will be saved as that file format. Acceptable graphical file
-#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name.
+#'   extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+#'   Do not include any slashes, dollar signs, or periods in the file name.
 #'   Leaving this as NA means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5

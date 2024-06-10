@@ -719,25 +719,12 @@ so_graph <- function(PKtable,
    
    names(SO) <- PKCols$Ugly
    
-   if(is.na(include_dose_num)){
-      # Dropping dose number depending on input. First, checking whether they have
-      # both dose 1 and last-dose data.
-      DoseCheck <- c("first" = any(str_detect(PKparameters, "dose1")), 
-                     "user-defined" = any(str_detect(PKparameters, "dose1|last")) == FALSE, 
-                     "last" = any(str_detect(PKparameters, "last")))
-      include_dose_num <- length(which(DoseCheck)) > 1
-   }
-   
-   # include_dose_num now should be either T or F no matter what, so checking
-   # that.
-   if(is.logical(include_dose_num) == FALSE){
-      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
-              call. = FALSE)
-      include_dose_num <- TRUE
-   }
+   include_dose_num <- check_include_dose_num(PK = PKparameters, 
+                                              include_dose_num = include_dose_num)
    
    if(include_dose_num == FALSE){
-      PKparameters <- sub("_dose1|_last", "", PKparameters)
+      PKparameters <- sub("Dose 1 |Last dose |_dose1$|_last$", "",
+                          PKparameters)
       names(SO) <- sub("_dose1|_last", "", names(SO))
       PKCols$Ugly <- sub("_dose1|_last", "", PKCols$Ugly)
    }

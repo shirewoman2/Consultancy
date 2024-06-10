@@ -842,20 +842,12 @@ forest_plot <- function(forest_dataframe,
            call. = FALSE)
    }
    
-   if(is.na(include_dose_num)){
-      # Dropping dose number depending on input. First, checking whether they have
-      # both dose 1 and last-dose data.
-      DoseCheck <- c("first" = any(str_detect(forest_dataframe$PKparameter, "dose1")), 
-                     "last" = any(str_detect(forest_dataframe$PKparameter, "last")))
-      include_dose_num <- all(DoseCheck)
-   }
+   include_dose_num <- check_include_dose_num(PK = forest_dataframe, 
+                                              include_dose_num = include_dose_num)
    
-   # include_dose_num now should be either T or F no matter what, so checking
-   # that.
-   if(is.logical(include_dose_num) == FALSE){
-      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
-              call. = FALSE)
-      include_dose_num <- TRUE
+   if(include_dose_num == FALSE){
+      names(forest_dataframe) <- sub("Dose 1 |Last dose ", "",
+                                names(forest_dataframe))
    }
    
    if(include_dose_num == FALSE){

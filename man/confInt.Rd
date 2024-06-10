@@ -4,13 +4,13 @@
 \alias{confInt}
 \title{Calculate the X percent confidence interval}
 \usage{
-confInt(x, CI = 0.9, na.rm = TRUE, distribution_type = "t")
+confInt(x, CI = 0.95, na.rm = TRUE, distribution_type = "t")
 }
 \arguments{
 \item{x}{A vector of numbers}
 
-\item{CI}{The confidence interval desired; default is 90%. Enter this
-value as a decimal, e.g., 0.90.}
+\item{CI}{The confidence interval desired; default is 95%. Enter this
+value as a decimal, e.g., 0.95.}
 
 \item{na.rm}{Should NA values be removed? (logical)}
 
@@ -28,6 +28,6 @@ distributed.
 \examples{
 x <- rnorm(100, 5, 1)
 confInt(x)
-confInt(x, CI = 0.95)
+confInt(x, CI = 0.9)
 
 }

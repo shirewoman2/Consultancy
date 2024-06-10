@@ -2,7 +2,10 @@
 % Please edit documentation in R/forest_plot_old.R
 \name{forest_plot_old}
 \alias{forest_plot_old}
-\title{Create a forest plot --  WARNING! TO BE DEPRECATED!}
+\title{Create a forest plot --  WARNING! TO BE DEPRECATED! This function is no
+longer being supported and may stop working as internal subfunction
+dependencies get updated. Please talk to Laura Sh. if you need help with
+this.}
 \usage{
 forest_plot_old(
   forest_dataframe,
@@ -42,8 +45,8 @@ files or a csv or Excel file with the same data. (If it's an Excel file, it
 must have only one tab.) If this is a forest plot of perpetrator drug-drug
 interactions (DDIs), the column "VictimCompound" will be what is used to
 label the y axis. If it is a forest plot of victim DDIs, it will be the
-column "PerpCompound". If, instead of the substrate or perpetrator names, you
-would like some other label to appear on the y axis, please see the
+column "PerpCompound". If, instead of the substrate or perpetrator names,
+you would like some other label to appear on the y axis, please see the
 argument \code{y_axis_labels}.}
 
 \item{perp_or_victim}{specify whether the drug of interest is a "victim" or
@@ -177,9 +180,9 @@ Dose_sub or Dose_inhib for \code{facet_column_x}, \code{y_axis_column}, or
 
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier. This was designed for simulations where the
-substrates or perpetrators are among the standard options for the simulator,
-and leaving \code{prettify_compound_names = TRUE} will make the name of
-those compounds something more human readable. For example,
+substrates or perpetrators are among the standard options for the
+simulator, and leaving \code{prettify_compound_names = TRUE} will make the
+name of those compounds something more human readable. For example,
 "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 become "midazolam".}
 
@@ -232,7 +235,8 @@ in quotes here, e.g., "My conc time graph.png" or "My conc time
 graph.docx". If you leave off ".png" or ".docx" from the file name, it will
 be saved as a png file, but if you specify a different graphical file
 extension, it will be saved as that file format. Acceptable graphical file
-extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name.
+extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg".
+Do not include any slashes, dollar signs, or periods in the file name.
 Leaving this as NA means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 6}

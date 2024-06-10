@@ -1067,41 +1067,13 @@ pksummary_mult <- function(sim_data_files = NA,
              # diagnose in the future.
              everything()) 
    
-   if(is.na(include_dose_num)){
-      # Dropping dose number depending on input. First, checking whether they have
-      # both dose 1 and last-dose data.
-      DoseCheck <- c("first" = any(str_detect(names(MyPKResults), "Dose 1")), 
-                     "last" = any(str_detect(names(MyPKResults), "Last dose")))
-      
-      # Next, checking whether they have a mix of custom AUC intervals and
-      # regular b/c need to retain dose num in that case.
-      if(any(unique(PKpulled$PKpulled) %in% 
-             c(setdiff(unique(AllPKParameters$PKparameter_nodosenum), 
-                       unique(AllPKParameters$PKparameter)), 
-               setdiff(unique(AllPKParameters$PrettifiedNames_nodosenum), 
-                       unique(AllPKParameters$PrettifiedNames)))) |
-         # check whether we have prettified column names where some are 1st or
-         # last dose and some are for a user-specified interval
-         (any(str_detect(unique(PKpulled$PKpulled), "Dose 1|Last dose")) &
-          any(str_detect(unique(PKpulled$PKpulled), "for interval")))){
-         DoseCheck <- TRUE
-      }
-      
-      include_dose_num <- all(DoseCheck)
-   }
-   
-   # include_dose_num now should be either T or F no matter what, so checking
-   # that.
-   if(is.logical(include_dose_num) == FALSE){
-      warning("Something is amiss with your input for `include_dose_num`, which should be NA, TRUE, or FALSE. We'll assume you meant for it to be TRUE.", 
-              call. = FALSE)
-      include_dose_num <- TRUE
-   }
+   include_dose_num <- check_include_dose_num(PK = MyPKResults, 
+                                              include_dose_num = include_dose_num)
    
    if(include_dose_num == FALSE){
-      names(MyPKResults) <- sub("Dose 1 |Last dose ", "", names(MyPKResults))
+      names(MyPKResults) <- sub("Dose 1 |Last dose ", "",
+                                names(MyPKResults))
    }
-   
    
    ## Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
