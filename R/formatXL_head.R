@@ -40,7 +40,7 @@ formatXL_head <- function(DF, file, sheet = NA){
     GoodWidths <- guess_col_widths(DF)
     
     ## Setting column widths, applying styles, and saving --------------------
-    formatXL(DF, file = file, sheet = sheet,
+    formatXL(DF %>% ungroup(), file = file, sheet = sheet,
              colWidth = list(colNum = NULL, width = GoodWidths),
              styles = list(list(rows = 0,
                                 font = list(bold = TRUE),

@@ -207,7 +207,7 @@ formatXL <- function(DF, file, sheet = NA,
    
    NewSheet <- xlsx::createSheet(WB, sheetName = sheet)
    SheetRows <- xlsx::createRow(NewSheet, rowIndex = 1:(nrow(DF) + 1))
-   xlsx::addDataFrame(DF %>% as.data.frame(),
+   xlsx::addDataFrame(DF %>% as.data.frame() %>% ungroup(),
                       sheet = NewSheet, row.names = FALSE)
    
    # Getting all the cells in that object and then their names
@@ -428,7 +428,9 @@ formatXL <- function(DF, file, sheet = NA,
    # Guessing at appropriate column width based on max number of characters
    # in that column. First, need to include headers as a row so that it will
    # count those.
-   DFwithHead <- DF %>% dplyr::mutate_all(as.character) %>%
+   DFwithHead <- DF %>% 
+      ungroup() %>% 
+      dplyr::mutate_all(as.character) %>%
       rbind(names(DF))
    
    Nchar <- DFwithHead %>%

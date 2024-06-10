@@ -12,7 +12,11 @@ guess_col_widths <- function(DF){
    # Guessing at appropriate column width based on max number of characters
    # in that column. First, need to include headers as a row so that it will
    # count those.
-   DFwithHead <- DF %>% dplyr::mutate_all(as.character) %>%
+   DFwithHead <- DF %>% 
+      ungroup() %>% 
+      dplyr::mutate(across(.cols = is.numeric, 
+                           .fns = round, digits = 4)) %>% 
+      dplyr::mutate_all(as.character) %>%
       rbind(names(DF))
    
    Nchar <- DFwithHead %>%
@@ -67,10 +71,10 @@ guess_col_widths <- function(DF){
                               Header_nchar[i], Nchar_word[i])
    }
    
-   # Using 10 pixels for values < 10, 15 for values from 11 to 15, 20 for
+   # Using 11 pixels for values < 10, 15 for values from 11 to 15, 20 for
    # values up to 30 characters and then 30 pixels for values even larger.
    GoodWidths <- cutNumeric(as.numeric(Nchar_word)*1.15, # 1.15 factor gives a little padding
-                            breaks = c(0, 10, 15, 20, 30, 100, 1000))
+                            breaks = c(0, 11, 15, 20, 30, 100, 1000))
    GoodWidths[which(GoodWidths > 30)] <- 30
    
    # However, if there were more than 5 words for that column, set the column
