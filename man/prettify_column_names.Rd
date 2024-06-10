@@ -8,8 +8,7 @@ names}
 prettify_column_names(
   PKtable,
   prettify_compound_names = TRUE,
-  pretty_or_ugly_cols = "pretty",
-  return_which_are_PK = FALSE
+  pretty_or_ugly_cols = "pretty"
 )
 }
 \arguments{

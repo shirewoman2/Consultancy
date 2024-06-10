@@ -43,8 +43,7 @@
 #' 
 prettify_column_names <- function(PKtable, 
                                   prettify_compound_names = TRUE, 
-                                  pretty_or_ugly_cols = "pretty", 
-                                  return_which_are_PK = FALSE){
+                                  pretty_or_ugly_cols = "pretty"){
    
    
    # Error catching ----------------------------------------------------------
@@ -164,11 +163,6 @@ prettify_column_names <- function(PKtable,
    # Some columns may need prettifying and others may need uglifying. Need to
    # figure out what values to fill in for any NA values in either
    # PrettifiedNames or in PKparameter, so splitting table here.
-   
-   # If they just want to know which are PK parameters, return that here. 
-   if(return_which_are_PK){
-      return(TableNames$OrigColNames[TableNames$IsPKParam])
-   }
    
    TableNamesToPrettify <- TableNames %>% filter(is.na(PrettifiedNames)) %>% 
       select(-PrettifiedNames) %>% 

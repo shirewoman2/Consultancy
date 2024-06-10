@@ -29,10 +29,8 @@ check_include_dose_num <- function(PK,
       return(TRUE)
    }
    
-   PKparameters <- prettify_column_names(PKparameters, return_which_are_PK = TRUE)
-   
    DoseCheck <- c("first" = any(str_detect(PKparameters, "dose1|Dose 1")), 
-                  "user-defined" = any(str_detect(PKparameters, "dose1|Dose 1|last|Last dose")) == FALSE, 
+                  "user-defined" = any(str_detect(PKparameters, "dose1|Dose 1|last|Last dose")), # stet, this is checking for both here
                   "last" = any(str_detect(PKparameters, "last|Last dose")))
    include_dose_num <- length(which(DoseCheck)) > 1
    
