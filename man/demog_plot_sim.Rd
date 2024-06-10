@@ -6,13 +6,10 @@
 \usage{
 demog_plot_sim(
   demog_dataframe,
-  variability_display = "kernal density",
   colorBy_column,
-  color_labels = NA,
-  legend_label_color = NA,
   color_set = "default",
   graph_title = "Demographics",
-  demog_parameters = NA,
+  variables = NA,
   alpha = 0.8,
   ncol = NULL,
   nrow = NULL,
@@ -25,11 +22,6 @@ demog_plot_sim(
 \item{demog_dataframe}{the output from running \code{\link{extractDemog}}.
 Optionally (and we recommend) with added observed demographic data, perhaps
 from observed overlay XML files.}
-
-\item{variability_display}{How should the variability be shown? Options are
-"kernal density" (default, a type of smoothed histogram) or "boxplot". Any
-demographic parameters requested in the form of "X vs Y", e.g., "weight vs
-height", will always be shown as scatter plots.}
 
 \item{colorBy_column}{the column in \code{demog_dataframe} that should be
 used for determining which color lines and/or points will be. This should
@@ -89,17 +81,17 @@ color by the simulation file name.}
 
 \item{graph_title}{title to use on the plots}
 
-\item{demog_parameters}{demographic parameters to include. We're starting
-with a limited set: "Age", "Weight_kg" ("Weight" is also fine), "Height_cm"
-("Height" is fine), "Weight vs Height", "Height vs Age", "Weight vs Age",
-"HSA_gL" ("HSA" is fine), "AGP_gL" ("AGP" is fine), "Sex", "Sex vs Age",
-"BMI_kgm2" ("BMI" is fine), and "RenalFunction". If you want only a subset
-of those, list them in a character vector, e.g., \code{demog_parameters = c("Age",
+\item{variables}{variables to include. We're starting with a limited set:
+"Age", "Weight_kg" ("Weight" is also fine), "Height_cm" ("Height" is fine),
+"Weight vs Height", "Height vs Age", "Weight vs Age", "HSA_gL" ("HSA" is
+fine), "AGP_gL" ("AGP" is fine), "Sex", "Sex vs Age", "BMI_kgm2" ("BMI" is
+fine), and "RenalFunction". If you want only a subset of those,
+list them in a character vector, e.g., \code{variables = c("Age",
 "Height_cm", "Weight_kg")}. Plots will be in the order listed.}
 
 \item{alpha}{how transparent to make the points, with 0 being completely
 transparent and invisible so I don't know why you'd want that but, hey, you
-do you, to 1, which is fully opaque.}
+do you, dude, to 1, which is fully opaque.}
 
 \item{ncol}{optionally specify the number of columns. If left as NULL, a
 reasonable guess will be used.}

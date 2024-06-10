@@ -194,9 +194,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
             unique(setdiff(sim_data_files, existing_exp_details$MainDetails$File))
       } else {
          sim_data_files_topull <- unique(sim_data_files)
-         existing_exp_details <- filter_sims(existing_exp_details, 
-                                             which_sims = sim_data_files_topull, 
-                                             include_or_omit = "omit")
+         existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>%
+            filter(!File %in% existing_exp_details$MainDetails$File)
       }
    } else {
       sim_data_files_topull <- unique(sim_data_files)
