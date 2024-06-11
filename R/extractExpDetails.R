@@ -1092,6 +1092,10 @@ extractExpDetails <- function(sim_data_file,
                                              "\\(.*\\)")
                         Units <- gsub("\\(|\\)", "", Units)
                         Units <- gsub("/| ", "_", Units)
+                        # Dealing with mu since it's causing some problems
+                        # downstream when a symbol
+                        Units <- gsub(rlang::chr_unserialise_unicode("<U+00B5>"), 
+                                      "u", Units)
                         
                         suppressWarnings(
                            Out[[paste0(

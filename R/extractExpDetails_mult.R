@@ -194,8 +194,9 @@ extractExpDetails_mult <- function(sim_data_files = NA,
             unique(setdiff(sim_data_files, existing_exp_details$MainDetails$File))
       } else {
          sim_data_files_topull <- unique(sim_data_files)
-         existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>%
-            filter(!File %in% existing_exp_details$MainDetails$File)
+         existing_exp_details <- filter_sims(existing_exp_details, 
+                                             which_sims = sim_data_files_topull, 
+                                             include_or_omit = "omit")
       }
    } else {
       sim_data_files_topull <- unique(sim_data_files)
@@ -216,6 +217,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    if(length(MyDeets) > 0){
       MyDeets <- MyDeets[which(sapply(MyDeets, \(x) length(x) > 0))]
    }
+   
    Out <- c(list(existing_exp_details), MyDeets)
    names(Out)[1] <- ifelse(names(Out)[1] == "", "existing", names(Out)[1])
    # Retaining only files that were simulations.
@@ -243,15 +245,18 @@ extractExpDetails_mult <- function(sim_data_files = NA,
          summarize(Problem = length(sort(unique(Class))) > 1) %>% 
          filter(Problem)
       
-      for(i in names(Out)){
-         Out[[i]][["MainDetails"]] <- Out[[i]][["MainDetails"]] %>% 
-            mutate(across(.cols = any_of(Classes$Detail), 
-                          .fns = as.character))
+      if(nrow(Classes) > 0){
+         for(i in names(Out)){
+            Out[[i]][["MainDetails"]] <- Out[[i]][["MainDetails"]] %>% 
+               mutate(across(.cols = any_of(Classes$Detail), 
+                             .fns = as.character))
+         }
       }
    }
    
    Out <- Out %>% list_transpose() %>% 
-      map(.f = bind_rows) 
+      map(.f = bind_rows) %>% 
+      map(.f = remove_rownames)
    
    if(length(Out) == 0 | nrow(Out$MainDetails) == 0){
       stop("It was not possible to extract any simulation experimental details.")
