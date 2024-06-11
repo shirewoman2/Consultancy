@@ -200,18 +200,11 @@ ontogeny_plot <- function(Enzyme = NA,
                    complete.cases(Fmax) ~ 
                    Fbirth + ( (Fmax - Fbirth) * Age^n) / (Age50^n + Age^n),
                 
-                # exponential between Age_cap1 & 2 and different for Upreti vs.
-                # everyone else
-                Enzyme != "CYP3A4 Profile 2" & 
-                   (Age > Age_cap1 | is.na(Age_cap1)) & 
+                # exponential between Age_cap1 & 2. Will address Upreti, which
+                # is different, at the bottom.
+                (Age > Age_cap1 | is.na(Age_cap1)) & 
                    Age <= Age_cap2 & complete.cases(C2) ~
                    C0 + C1*exp(C2*(Age - Age_cap2 - C3)), 
-                
-                # Upreti
-                Enzyme == "CYP3A4 Profile 2" & 
-                   (Age > Age_cap1 | is.na(Age_cap1)) & 
-                   Age <= Age_cap2 & complete.cases(C2) ~
-                   C0 + C1*exp(C2*(Age - C3)), 
                 
                 # linear between Age_cap1 & 2
                 (Age > Age_cap1 | is.na(Age_cap1)) &
