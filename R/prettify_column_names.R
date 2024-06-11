@@ -97,68 +97,65 @@ prettify_column_names <- function(PKtable,
    AllPKParameters_mod <- bind_rows(AllPKParameters_mod, 
                                     ExtraPKParam)
    
-   # Dealing with unit differences b/c could have units in table other than the
-   # most common ng/mL and h.
-   TableUnits <- list("OrigColNames" = OrigColNames, 
-                      "Conc" = str_extract(OrigColNames, 
-                                           "mg/L|mg/mL|µg/L|ug/L|µg/mL|ug/mL|ng/L|ng/mL|µM|nM") %>% 
-                         sort() %>% unique(), 
-                      "Time" = str_extract(OrigColNames, 
-                                           "\\(L/(h|day|min)|\\(h|day|min\\)") %>% # haven't yet seen any time units other than h but leaving this open to minutes or days just in case
-                         gsub("\\(L?|\\)|/", "", .) %>% 
-                         sort() %>% unique())
-   
-   # I'm not sure what to do if there's more than 1 conc or time unit. I don't
-   # think there ever should be, but adding this warning just in case.
-   if(length(TableUnits$Conc) > 1){
-      warning(paste0("You have concentration units of ", 
-                     str_comma(paste0("`", TableUnits$Conc, "`")), 
-                     " in your PK table, and we were only expecting one concentration unit. Please check your units in the output.\n"), 
-              call. = FALSE)
-      TableUnits$Conc <- TableUnits$Conc[1]
-   }
-   
-   if(length(TableUnits$Time) > 1){
-      warning(paste0("You have time units of ", 
-                     str_comma(paste0("`", TableUnits$Time, "`")), 
-                     " in your PK table, and we were only expecting one time unit. Please check your units in the output.\n"), 
-              call. = FALSE)
-      TableUnits$Time <- TableUnits$Time[1]
-   }
-   
-   # TEMPORARILY replacing the actual units w/the standard units in AllPKParameters
-   if(is.null(TableUnits$Conc) == FALSE &&
-      length(TableUnits$Conc) > 0 &&
-      TableUnits$Conc != "ng/mL"){
-      OrigColNames <- sub(TableUnits$Conc, "ng/mL", OrigColNames)
-   }
-   
-   if(is.null(TableUnits$Time) == FALSE && 
-      length(TableUnits$Time) > 0 &&
-      TableUnits$Time != "h"){
-      OrigColNames <- sub(paste0("\\(", TableUnits$Time, "\\)"),
-                            "(h)", OrigColNames)
-      OrigColNames <- sub(paste0("\\(L", TableUnits$Time, "\\)"),
-                            "(L/h)", OrigColNames)
-   }
-   
-   # 1st step: This will leave some values as NA for the column PrettifiedNames.
+   # Noting original names
    TableNames <-
       data.frame(OrigColNames = OrigColNames, 
                  OrigOrder = switch(PKtable_class, 
                                     "data.frame" = 1:ncol(PKtable), 
                                     "character" = 1:length(PKtable))) %>% 
-      mutate(IsPretty = OrigColNames %in% c(AllPKParameters$PrettifiedNames, 
-                                                AllPKParameters_mod$PrettifiedNames), 
-             IsNotPretty = OrigColNames %in% c(AllPKParameters_mod$PKparameter, 
-                                                   AllPKParameters$PKparameter),
+      # Dealing with unit differences b/c could have units in table other than the
+      # most common ng/mL and h.
+      mutate(Conc = str_extract(OrigColNames, 
+                                "mg/L|mg/mL|µg/L|ug/L|µg/mL|ug/mL|ng/L|ng/mL|µM|nM"), 
+             # haven't yet seen any time units other than h but leaving this open
+             # to minutes or days just in case
+             Time = str_extract(OrigColNames, 
+                                "\\(L/(h|day|min)|\\(h|day|min\\)|\\.h\\)"), 
+             Time = gsub("\\(L?|\\)|/|\\.", "", Time), 
+             # placeholder for if we need to adjust column names to deal
+             # w/nonstandard units
+             OrigWithGoodUnits = OrigColNames)
+   
+   # Dealing w/multiple conc or time units
+   ConcUnits <- sort(unique(TableNames$Conc))
+   if(length(ConcUnits) > 1){
+      message(paste0(str_wrap(paste0(
+         "You have more than one concentration unit in your PK table; specifically, you have units of ", 
+         str_comma(paste0("`", ConcUnits, "`")), 
+         ". Just fyi, if you're running a function for making a PK table, and you see this message, we can adjust concentration units for you if you request that with the argument convert_conc_units.")), 
+         "\n"))
+      
+      TableNames$OrigWithGoodUnits <- 
+         sub(str_c(setdiff(ConcUnits, "ng/mL"), collapse = "|"), 
+             "ng/mL", TableNames$OrigWithGoodUnits)
+   }
+   
+   # I haven't encountered a table with more than 1 time unit, so this has not
+   # been well tested.
+   TimeUnits <- sort(unique(TableNames$Time)) 
+   if(length(TimeUnits) > 1){
+      TableNames$OrigWithGoodUnits <- 
+         sub(paste0("\\(", setdiff(TimeUnits, "h"), "\\)"),
+             "(h)", TableNames$OrigWithGoodUnits)
+      
+      TableNames$OrigWithGoodUnits <- 
+         sub(paste0("\\(L/", setdiff(TimeUnits, "h"), "\\)"),
+             "(L/h)", TableNames$OrigWithGoodUnits)
+   }
+   
+   # 1st step: This will leave some values as NA for the column PrettifiedNames.
+   TableNames <- TableNames %>% 
+      mutate(IsPretty = OrigWithGoodUnits %in% c(AllPKParameters$PrettifiedNames, 
+                                                 AllPKParameters_mod$PrettifiedNames), 
+             IsNotPretty = OrigWithGoodUnits %in% c(AllPKParameters_mod$PKparameter, 
+                                                    AllPKParameters$PKparameter),
              IsPKParam = IsPretty | IsNotPretty, 
              NeedsPrettifying = IsPKParam & IsNotPretty, 
-             PKparameter = case_when(NeedsPrettifying == TRUE ~ OrigColNames, 
-                                     NeedsPrettifying == FALSE & IsPKParam == FALSE ~ OrigColNames, 
+             PKparameter = case_when(NeedsPrettifying == TRUE ~ OrigWithGoodUnits, 
+                                     NeedsPrettifying == FALSE & IsPKParam == FALSE ~ OrigWithGoodUnits, 
                                      NeedsPrettifying == FALSE & IsPKParam ~ NA), 
-             PrettifiedNames = case_when(NeedsPrettifying == FALSE ~ OrigColNames, 
-                                         NeedsPrettifying == FALSE & IsPKParam == FALSE ~ OrigColNames, 
+             PrettifiedNames = case_when(NeedsPrettifying == FALSE ~ OrigWithGoodUnits, 
+                                         NeedsPrettifying == FALSE & IsPKParam == FALSE ~ OrigWithGoodUnits, 
                                          TRUE ~ NA))
    # Some columns may need prettifying and others may need uglifying. Need to
    # figure out what values to fill in for any NA values in either
@@ -182,8 +179,8 @@ prettify_column_names <- function(PKtable,
       bind_rows(TableNamesToPrettify, TableNamesToUglify) %>% 
       arrange(OrigOrder)
    
-   if(any(str_detect(OrigColNames, "NumeratorSim|DenominatorSim"))){
-      Suffix <- str_extract(OrigColNames, "NumeratorSim|DenominatorSim")
+   if(any(str_detect(TableNames$OrigColNames, "NumeratorSim|DenominatorSim"))){
+      Suffix <- str_extract(TableNames$OrigColNames, "NumeratorSim|DenominatorSim")
       Suffix[is.na(Suffix)] <- ""
       
       TableNames$PrettifiedNames <- str_trim(paste(TableNames$PrettifiedNames, Suffix))
@@ -192,8 +189,7 @@ prettify_column_names <- function(PKtable,
    # Setting semi-finalized column names. 
    TableNames <- TableNames %>% 
       mutate(FinalNames = case_when({pretty_or_ugly_cols} == "pretty" ~ PrettifiedNames, 
-                                    {pretty_or_ugly_cols} == "ugly" ~ PKparameter)) %>% 
-      select(OrigColNames, OrigOrder, FinalNames) %>% unique()
+                                    {pretty_or_ugly_cols} == "ugly" ~ PKparameter))
    
    # Making sure that we don't have duplicates for OrigOrder b/c that would mean
    # that final column names might be offset. An example of when this can
@@ -231,7 +227,11 @@ prettify_column_names <- function(PKtable,
    
    # Check that all column names would be unique.
    if(any(duplicated(TableNames$FinalNames))){
-      warning("Some table names would be duplicated after prettification. Please check the output. For now, we're adding a number to the end of each replicate column name.\n", 
+      warning(paste0(str_wrap(paste0("Some table names would be duplicated after ",
+                                     ifelse(pretty_or_ugly_cols == "pretty", 
+                                            "prettification", "uglification"), 
+                                            ". Please check the output. For now, we're adding a number to the end of each replicate column name.")), 
+                     "\n"), 
               call. = FALSE)
       TableNames$FinalNames[duplicated(TableNames$FinalNames)] <- 
          paste(TableNames$FinalNames[duplicated(TableNames$FinalNames)], 
@@ -239,22 +239,34 @@ prettify_column_names <- function(PKtable,
    }
    
    # Returning to original conc and time units as necessary
-   if(is.null(TableUnits$Conc) == FALSE && 
-      length(TableUnits$Conc) > 0 &&
-      TableUnits$Conc != "ng/mL"){
-      TableNames$FinalNames <- sub("ng/mL", TableUnits$Conc, TableNames$FinalNames)
+   if(any(TableNames$Conc != "ng/mL", na.rm = T)){
+      TableNames <- TableNames %>% 
+         mutate(FinalNames = case_when(
+            complete.cases(Conc) &
+               Conc != "ng/mL" ~ str_replace(FinalNames, "ng/mL", Conc), 
+            TRUE ~ FinalNames))
    }
    
-   if(is.null(TableUnits$Time) == FALSE && 
-      length(TableUnits$Time) > 0 &&
-      TableUnits$Time != "h"){
-      TableNames$FinalNames <- sub("(h)", paste0("\\(", TableUnits$Time, "\\)"), 
-                                   names(PKtable))
-      TableNames$FinalNames <- sub("(L/h)", paste0("\\(L", TableUnits$Time, "\\)"), 
-                                   names(PKtable))
+   if(any(TableNames$Time != "h", na.rm = T)){
+      TableNames <- TableNames %>% 
+         mutate(FinalNames = case_when(
+            complete.cases(Time) &
+               Time != "h" & 
+               str_detect(OrigWithGoodUnits, "\\(h\\)") ~ 
+               str_replace(FinalNames, "\\(h\\)", paste0("(", Time, ")")), 
+            
+            complete.cases(Time) & 
+               Time != "h" & 
+               str_detect(OrigWithGoodUnits, "\\(L/h\\)") ~ 
+               str_replace(FinalNames, "\\(L/h\\)", paste0("(L/", Time, ")")),
+               
+            TRUE ~ FinalNames))
    }
+   
+   TableNames <- TableNames %>% arrange(OrigOrder)
    
    if(PKtable_class == "data.frame"){
+      PKtable <- PKtable[, TableNames$OrigColNames]
       names(PKtable) <- TableNames$FinalNames
    } else {
       # This is when it was a character vector rather than a data.frame. 

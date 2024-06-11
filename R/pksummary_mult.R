@@ -1049,7 +1049,9 @@ pksummary_mult <- function(sim_data_files = NA,
                       # user wants a specific order but using default tabs
                       "user specified" = PKparameters)
    
-   ColOrder <- prettify_column_names(MyPKResults, pretty_or_ugly_cols = "ugly")
+   suppressWarnings(
+      ColOrder <- prettify_column_names(MyPKResults, 
+                                        pretty_or_ugly_cols = "ugly"))
    ColOrder <- data.frame(Orig = names(MyPKResults), 
                           Ugly = names(ColOrder)) %>% 
       mutate(Ugly = factor(Ugly, levels = PKlevels)) %>% 
