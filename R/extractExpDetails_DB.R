@@ -23,14 +23,21 @@ extractExpDetails_DB <- function(sim_data_file){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   # FIXME - Will need to figure out how to check whether engine has been
-   # initialized. If it has not, then initialize or give a stop message.
-   
-   # # Intialise the system files path. Not sure whether the version number will
-   # # matter for this.
-   # suppressMessages(Simcyp::Initialise(
-   #    species = as.numeric(Simcyp::SpeciesID[str_to_title(species)]),
-   #    verbose = FALSE))
+   # Check whether Simulator has been initialized. 
+   SimInit <- check_simulator_initialized()
+   if(SimInit == FALSE){
+      warning(paste0(str_wrap(paste0(
+         "The Simcyp Simulator has not been initialized, which must happen to pull data from the database file '", 
+         sim_data_file, 
+         "'. To initialize it, please run something like")), 
+         
+         "\n", 
+         
+         "   Simcyp::Initialise(species = Simcyp::SpeciesID$Human, requestedVersion = 22) \n"), 
+         call. = FALSE)
+      
+      return(list())
+   }
    
    # If they didn't include ".db" at the end, add that.
    sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.db", "", sim_data_file), ".db")

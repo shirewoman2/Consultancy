@@ -432,7 +432,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                           c(existing_exp_details$MainDetails$File, 
                             existing_exp_details$MainDetails$DBFile))
       
-      warning(paste0("The following files were requested but to not appear to be Simcyp Simulator files and will be ignored:\n", 
+      warning(paste0("The following files were requested but do not appear to be Simcyp Simulator files and will be ignored:\n", 
                      str_c(BadFiles, collapse = "\n")), 
               call. = FALSE)
       sim_data_files_topull <- intersect(sim_data_files_topull,
@@ -754,39 +754,65 @@ extractConcTime_mult <- function(sim_data_files = NA,
             # iteration of the loop. Feces are special and there's one tab for
             # substrate and one for inhibitor 1. 
             
-            MultData[[ff]][[j]] <- extractConcTime(
-               sim_data_file = ff,
-               obs_data_file = MyObsFile, 
-               compoundToExtract = intersect(compoundsToExtract_n,
-                                             c("substrate", "inhibitor 1")),
-               tissue = j,
-               returnAggregateOrIndiv = returnAggregateOrIndiv, 
-               fromMultFunction = TRUE, 
-               existing_exp_details = existing_exp_details)
-            
-            
-         } else if(TissueType == "faeces"){
-            
-            if("substrate" %in% compoundsToExtract_n){
-               MultData[[ff]][[j]][["substrate"]] <- extractConcTime(
+            if(str_detect(ff, "\\.db$")){
+               MultData[[ff]][[j]] <- extractConcTime_DB(
+                  sim_data_file = ff,
+                  # obs_data_file = MyObsFile, 
+                  compoundToExtract = intersect(compoundsToExtract_n,
+                                                c("substrate", "inhibitor 1")),
+                  tissue = j,
+                  returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                  fromMultFunction = TRUE, 
+                  existing_exp_details = existing_exp_details)
+               
+            } else {
+               
+               MultData[[ff]][[j]] <- extractConcTime(
                   sim_data_file = ff,
                   obs_data_file = MyObsFile, 
-                  compoundToExtract = "substrate",
+                  compoundToExtract = intersect(compoundsToExtract_n,
+                                                c("substrate", "inhibitor 1")),
                   tissue = j,
                   returnAggregateOrIndiv = returnAggregateOrIndiv, 
                   fromMultFunction = TRUE, 
                   existing_exp_details = existing_exp_details)
             }
             
-            if("inhibitor 1" %in% compoundsToExtract_n){
-               MultData[[ff]][[j]][["inhibitor 1"]] <- extractConcTime(
+         } else if(TissueType == "faeces"){
+            
+            if(str_detect(ff, "\\.db$")){
+               MultData[[ff]][[j]] <- extractConcTime_DB(
                   sim_data_file = ff,
-                  obs_data_file = MyObsFile, 
-                  compoundToExtract = "inhibitor 1",
+                  # obs_data_file = MyObsFile, 
+                  compoundToExtract = intersect(compoundsToExtract_n,
+                                                c("substrate", "inhibitor 1")),
                   tissue = j,
                   returnAggregateOrIndiv = returnAggregateOrIndiv, 
                   fromMultFunction = TRUE, 
                   existing_exp_details = existing_exp_details)
+               
+            } else {
+               if("substrate" %in% compoundsToExtract_n){
+                  MultData[[ff]][[j]][["substrate"]] <- extractConcTime(
+                     sim_data_file = ff,
+                     obs_data_file = MyObsFile, 
+                     compoundToExtract = "substrate",
+                     tissue = j,
+                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                     fromMultFunction = TRUE, 
+                     existing_exp_details = existing_exp_details)
+               }
+               
+               if("inhibitor 1" %in% compoundsToExtract_n){
+                  MultData[[ff]][[j]][["inhibitor 1"]] <- extractConcTime(
+                     sim_data_file = ff,
+                     obs_data_file = MyObsFile, 
+                     compoundToExtract = "inhibitor 1",
+                     tissue = j,
+                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                     fromMultFunction = TRUE, 
+                     existing_exp_details = existing_exp_details)
+               }
             }
             
             MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
@@ -794,16 +820,29 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
          } else if(TissueType == "liver"){
             
-            MultData[[ff]][[j]] <-
-               extractConcTime(
+            if(str_detect(ff, "\\.db$")){
+               MultData[[ff]][[j]] <- extractConcTime_DB(
                   sim_data_file = ff,
-                  obs_data_file = MyObsFile, 
-                  compoundToExtract = compoundsToExtract_n,
+                  # obs_data_file = MyObsFile, 
+                  compoundToExtract = intersect(compoundsToExtract_n,
+                                                c("substrate", "inhibitor 1")),
                   tissue = j,
                   returnAggregateOrIndiv = returnAggregateOrIndiv, 
                   fromMultFunction = TRUE, 
                   existing_exp_details = existing_exp_details)
-            
+               
+            } else {
+               
+               MultData[[ff]][[j]] <-
+                  extractConcTime(
+                     sim_data_file = ff,
+                     obs_data_file = MyObsFile, 
+                     compoundToExtract = compoundsToExtract_n,
+                     tissue = j,
+                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                     fromMultFunction = TRUE, 
+                     existing_exp_details = existing_exp_details)
+            }
             
          } else if(TissueType == "systemic"){
             # If TissueType is systemic, then substrate and
@@ -828,14 +867,20 @@ extractConcTime_mult <- function(sim_data_files = NA,
                   pull(PossCompounds)
                
                if(str_detect(ff, "\\.db$")){
-                  MultData[[ff]][[j]][[k]] <-
+                  for(l in compoundsToExtract_k){
+                  
+                  MultData[[ff]][[j]][[k]][[l]] <-
                      extractConcTime_DB(
                         sim_data_file = ff,
                         # obs_data_file = MyObsFile, 
-                        compoundToExtract = compoundsToExtract_k,
+                        compoundToExtract = l,
                         tissue = j,
                         returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                        existing_exp_details = existing_exp_details)   
+                        existing_exp_details = existing_exp_details) 
+                  }
+                  
+                  MultData[[ff]][[j]][[k]] <- bind_rows(MultData[[ff]][[j]][[k]])
+                  
                } else {
                   MultData[[ff]][[j]][[k]] <-
                      extractConcTime(
