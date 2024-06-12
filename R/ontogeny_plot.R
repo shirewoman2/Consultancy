@@ -147,10 +147,10 @@ ontogeny_plot <- function(Enzyme = NA,
            call. = FALSE)
    }
    
-   warning("The ontogeny equation shown on screen for Simcyp Simulator versions before V24 was INCORRECT. Amita is checking on the corrected equations to use with the Science Team, and these graphs should be considered as PRELIMINARY unless you have confirmed with Amita that the equations are correct. Please ask Laura Sh. about this if you want to use these graphs in a report!\n", 
-           call. = FALSE)
-   # Note to self: I need to check back w/Amita after her 3/19/22 email to see
-   # what the status is on this. -LSh
+   # warning("The ontogeny equation shown on screen for Simcyp Simulator versions before V24 was INCORRECT. Amita is checking on the corrected equations to use with the Science Team, and these graphs should be considered as PRELIMINARY unless you have confirmed with Amita that the equations are correct. Please ask Laura Sh. about this if you want to use these graphs in a report!\n", 
+   #         call. = FALSE)
+   # # Note to self: I need to check back w/Amita after her 3/19/22 email to see
+   # # what the status is on this. -LSh
    
    if(length(Enzyme) > 1){
       Enzyme <- str_c(Enzyme, collapse = "|")
@@ -194,24 +194,20 @@ ontogeny_plot <- function(Enzyme = NA,
                                   Age > Age_cap2 ~ 3),
              
              Fraction = case_when(
+                
+                # no ontogeny
+                is.na(Age50) & is.na(C0) ~ 1, 
+                
                 # sigmoidal below Age_cap1
                 complete.cases(Age_cap1) & 
                    Age <= Age_cap1 & 
                    complete.cases(Fmax) ~ 
                    Fbirth + ( (Fmax - Fbirth) * Age^n) / (Age50^n + Age^n),
                 
-                # exponential between Age_cap1 & 2 and different for Upreti vs.
-                # everyone else
-                Enzyme != "CYP3A4 Profile 2" & 
-                   (Age > Age_cap1 | is.na(Age_cap1)) & 
+                # exponential between Age_cap1 & 2
+                (Age > Age_cap1 | is.na(Age_cap1)) & 
                    Age <= Age_cap2 & complete.cases(C2) ~
-                   C0 + C1*exp(C2*(Age - Age_cap2 - C3)), 
-                
-                # Upreti
-                Enzyme == "CYP3A4 Profile 2" & 
-                   (Age > Age_cap1 | is.na(Age_cap1)) & 
-                   Age <= Age_cap2 & complete.cases(C2) ~
-                   C0 + C1*exp(C2*(Age - C3)), 
+                   C0 + C1*exp(C2*(Age - Age_cap1 - C3)), 
                 
                 # linear between Age_cap1 & 2
                 (Age > Age_cap1 | is.na(Age_cap1)) &
@@ -224,12 +220,10 @@ ontogeny_plot <- function(Enzyme = NA,
                 # same as adult above Age_cap2
                 Age > Age_cap2 ~ 1), 
              
-             # Upreti used a different exponential. Adjusting for that.
-             Fraction = case_when(str_detect(Enzyme_alternative, "Upreti") & 
-                                     (Age > Age_cap1 | is.na(Age_cap1)) & 
-                                     Age <= Age_cap2 & complete.cases(C2) ~ 
-                                     C0 + C1 * exp(C2 * (Age - C3)), 
-                                  TRUE ~ Fraction), 
+             Fraction = case_when(str_detect(Enzyme, "Upreti") &
+                                     !str_detect(Enzyme_alternative, "modified") &
+                                     Age > 8 ~ NA,
+                                  .default = Fraction),
              
              Age_mo = Age * 12)  
    
