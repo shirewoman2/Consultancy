@@ -196,7 +196,7 @@ ontogeny_plot <- function(Enzyme = NA,
              Fraction = case_when(
                 
                 # no ontogeny
-                is.na(Age50) ~ 1, 
+                is.na(Age50) & is.na(C0) ~ 1, 
                 
                 # sigmoidal below Age_cap1
                 complete.cases(Age_cap1) & 
