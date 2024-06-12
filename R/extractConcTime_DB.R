@@ -6,19 +6,8 @@
 #'   simulator
 #' @param tissue From which tissue should the desired concentrations be
 #'   extracted? Default is plasma for typical plasma concentration-time data.
-#'   Other options are "blood" or any tissues included in "Sheet Options",
-#'   "Tissues" in the simulator. All possible options:\describe{
-#'   \item{First-order absorption models}{"plasma", "blood", "unbound blood",
-#'   "unbound plasma", "additional organ", "adipose", "bone", "brain",
-#'   "feto-placenta", "gut tissue", "heart", "kidney", "liver", "lung", "muscle",
-#'   "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
-#'   blood", "peripheral unbound plasma", "portal vein blood", "portal vein
-#'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
-#'   or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
-#'   "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
-#'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-#'   released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
-#'   SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.
+#'   All options: "plasma", "blood", "peripheral plasma", "portal vein plasma",
+#'   "Kp,uu,brain", "Kp,uu,ICF", or "Kp,uu,ISF". We're working on adding more.
 #' @param compoundToExtract For which compound do you want to extract
 #'   concentration-time data? Options are: \itemize{\item{"substrate"
 #'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
@@ -66,6 +55,22 @@ extractConcTime_DB <- function(sim_data_file,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
+   # Check whether Simulator has been initialized. 
+   SimInit <- check_simulator_initialized()
+   if(SimInit == FALSE){
+      warning(paste0(str_wrap(paste0(
+         "The Simcyp Simulator has not been initialized, which must happen to pull data from the database file '", 
+         sim_data_file, 
+         "'. To initialize it, please run something like")), 
+         
+         "\n", 
+         
+         "   Simcyp::Initialise(species = Simcyp::SpeciesID$Human, requestedVersion = 22) \n"), 
+         call. = FALSE)
+      
+      return(list())
+   }
+   
    if(returnAggregateOrIndiv[1] == "both"){
       returnAggregateOrIndiv <- c("aggregate", "individual")
    }
@@ -86,6 +91,42 @@ extractConcTime_DB <- function(sim_data_file,
    
    conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
    
+   ## Getting exp details as needed --------------------------------------------
+   
+   if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA and we have not yet extracted any details
+      existing_exp_details <- 
+         extractExpDetails_mult(sim_data_files = sim_data_file, 
+                                exp_details = "Summary and Input", 
+                                existing_exp_details = existing_exp_details)
+      
+   } else {
+      
+      existing_exp_details <- harmonize_details(existing_exp_details)
+      
+      if(sim_data_file %in% c(existing_exp_details$MainDetails$File, 
+                              existing_exp_details$MainDetails$DBFile) == FALSE){
+         existing_exp_details <- 
+            extractExpDetails_mult(sim_data_files = sim_data_file, 
+                                   exp_details = "Summary and Input", 
+                                   existing_exp_details = existing_exp_details)
+         
+      }
+   }
+   
+   # If the file is a Simulator output file, we should have it now. Checking and
+   # removing any that are not.
+   if(sim_data_file %in% c(existing_exp_details$MainDetails$File, 
+                           existing_exp_details$MainDetails$DBFile) == FALSE){
+      
+      warning(str_wrap(paste0("The file '",
+                              sim_data_file, 
+                              "' was requested but does not appear to be a Simcyp Simulator file.\n")), 
+              call. = FALSE)
+      
+      return()
+      
+   }
+   
    Deets <- harmonize_details(existing_exp_details) %>% 
       filter_sims(which_sims = sim_data_file, 
                   include_or_omit = "include")
@@ -96,24 +137,44 @@ extractConcTime_DB <- function(sim_data_file,
                                    tissue = tissue, 
                                    DDI = FALSE){
       
-      data.frame(
-         Time = Simcyp::GetProfile_DB(
-            profileID = Simcyp::ProfileID$nTimeSub, 
-            compound = -1, # 
-            inhibition = DDI, 
-            conn = conn, 
-            individual = individual), 
-         
-         Conc = Simcyp::GetProfile_DB(
-            profileID = as.numeric(Simcyp::ProfileID[
-               AllTissues$Simcyp_ProfileName[
-                  AllTissues$Tissue == tissue]]),
+      # Need to account for the fact that some tissues are actually tissue sub
+      # types.
+      if(tissue %in% AllTissues$Tissue){
+         TissueID <- AllTissues %>% 
+            mutate(ValToUse = Tissue)
+      } else {
+         TissueID <- AllTissues %>% 
+            mutate(ValToUse = TissueSubType)
+      }
+      
+      TissueID <- TissueID$Simcyp_ProfileName[which(TissueID$ValToUse == tissue)]
+      TissueID <- as.numeric(Simcyp::ProfileID[TissueID])
+      
+      Time <- Simcyp::GetProfile_DB(
+         profileID = Simcyp::ProfileID$nTimeSub, 
+         compound = -1, # 
+         inhibition = DDI, 
+         conn = conn, 
+         individual = individual)
+      
+      suppressWarnings(
+         Conc <- Simcyp::GetProfile_DB(
+            profileID = TissueID,
             compound = as.numeric(Simcyp::CompoundID[
                AllCompounds$CompoundID_Simcyp[
                   AllCompounds$CompoundID == compoundToExtract]]), 
             inhibition = DDI, 
             conn = conn, 
-            individual = individual)) %>% 
+            individual = individual)
+      )
+      
+      if(length(Conc) == 0){
+         return(list())
+      }
+      
+      data.frame(
+         Time = Time, 
+         Conc = Conc) %>% 
          mutate(CompoundID = compoundToExtract, 
                 Compound = as.character(Deets[
                    AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
@@ -127,13 +188,33 @@ extractConcTime_DB <- function(sim_data_file,
       
    }
    
-   # Get all the conc-time profiles for all individuals
-   CT_indiv <- map(.x = 1:(Deets$NumTrials * Deets$NumSubjTrial), 
-                   .f = function(x){get_ConcTime_subfun(
-                      individual = x, 
-                      compoundToExtract = compoundToExtract, 
-                      tissue = tissue)}) %>% 
-      bind_rows()
+   # Try just one individual to see whether we can get any data for this tissue.
+   CT1 <- get_ConcTime_subfun(individual = 1, 
+                              compoundToExtract = compoundToExtract, 
+                              tissue = tissue)
+   
+   if(length(CT1) == 0){
+      warning(str_wrap(paste0("Concentrations for the ", 
+                              compoundToExtract, 
+                              " in ", 
+                              tissue, 
+                              "' are not available for the simulation '", 
+                              sim_data_file, 
+                              "'. No concentration-time data can be returned.")), 
+              call. = FALSE)
+      
+      return(list())
+   }
+   
+   # Get all the remaining conc-time profiles for all individuals
+   CT_indiv <- 
+      bind_rows(CT1) %>% 
+      bind_rows(
+         map(.x = 2:(Deets$NumTrials * Deets$NumSubjTrial), 
+             .f = function(x){get_ConcTime_subfun(
+                individual = x, 
+                compoundToExtract = compoundToExtract, 
+                tissue = tissue)}))
    
    if(is.null(Deets$Inhibitor1) == FALSE){
       
@@ -150,7 +231,7 @@ extractConcTime_DB <- function(sim_data_file,
    
    CT_indiv <- CT_indiv %>% 
       mutate(Simulated = TRUE,
-             Conc_units = "mg/L", # default. Not sure how to change this.
+             Conc_units = "mg/L", # default. Can't change this.
              Time_units = "hours")
    
    

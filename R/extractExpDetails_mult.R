@@ -222,6 +222,13 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    names(Out)[1] <- ifelse(names(Out)[1] == "", "existing", names(Out)[1])
    # Retaining only files that were simulations.
    Out <- Out[which(sapply(Out, \(x) all(is.null(names(x))) == FALSE))]
+   
+   if(length(Out) == 0){
+      warning("No Simcyp Simulator results could be found.\n", 
+              call. = FALSE)
+      return()
+   }
+   
    Out <- Out[which(sapply(Out, FUN = function(x) all(x != "none")))]
    
    # If MyDeets was length 0, which will happen if there are no new simulations
