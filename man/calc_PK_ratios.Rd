@@ -8,6 +8,7 @@ calc_PK_ratios(
   sim_data_file_numerator,
   sim_data_file_denominator,
   paired = TRUE,
+  match_subjects_by = "individual and trial",
   distribution_type = "t",
   compoundToExtract = "substrate",
   tissue = "plasma",
@@ -42,19 +43,35 @@ provide the denominator for the calculated ratios}
 as in, the subjects are \emph{identical} between the two simulations.
 \strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
 CALCULATIONS ARE PERFORMED!} An example of a paired study would be a DDI
-study where each subject has a measurement without the perpetrator of interest
-and then has a second measurement \emph{with} the perpetrator. The comparison
-is for repeated measurements of the \emph{same subject}. An example of an
-unpaired study design would be comparing healthy volunteers to subjects
-with hepatic impairment because those are measurements on \emph{different}
-subjects. For paired study designs, the order of operations is to calculate
-each subject's mean ratio and then to calculate the mean of those ratios.
-For unpaired study designs, the order of operations is to calculate the
-mean for the numerator simulation and then divide it by the mean for the
-denominator simulation. Would this be clearer if you could see the
-mathematical equations? We agree but can't easily include equations in the
-help file. However, if you run this and save the output to a Word file, the
-equations will be included in the output.}
+study where each subject has a measurement without the perpetrator of
+interest and then has a second measurement \emph{with} the perpetrator. The
+comparison is for repeated measurements of the \emph{same subject}. An
+example of an unpaired study design would be comparing healthy volunteers
+to subjects with hepatic impairment because those are measurements on
+\emph{different} subjects. For paired study designs, the order of
+operations is to calculate each subject's mean ratio and then to calculate
+the mean of those ratios. For unpaired study designs, the order of
+operations is to calculate the mean for the numerator simulation and then
+divide it by the mean for the denominator simulation. Would this be clearer
+if you could see the mathematical equations? We agree but can't easily
+include equations in the help file. However, if you run this and save the
+output to a Word file, the equations will be included in the output.}
+
+\item{match_subjects_by}{For a paired study design, how would you like to
+match your subjects? Options are "individual and trial" (default), which
+matches by both the simulated individual ID number AND by the trial number,
+or "individual only", which matches only by the individual ID number. This
+will be ignored for unpaired study designs. Why are we even bothering with
+this, you ask? Just to be totally safe, we normally match simulated
+subjects by both the individual subject ID and by the trial number. We
+thought that this would always work and would be the safest option, but we
+discovered that, for some scenarios where you might expect the individuals
+to be \emph{exactly} the same between two simulations, they actually were
+randomly assigned to different trials. Mismatched subjects would lead to
+inaccurate calculations, so we want to avoid that. If you use the default
+setting of "individual and trial" but the trials are NOT the same between
+simulations, you'll get a warning and no results, which we think is vastly
+superior to getting \emph{incorrect} results.}
 
 \item{distribution_type}{use a "t" distribution (default) or a "Z"
 distribution. Note: The Simcyp Simulator calculates geometric confidence
@@ -165,7 +182,8 @@ make it look just right!}
 \item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
 compound names prettier in the prettified column titles and in any Word
 output files. This was designed for simulations where the substrate and any
-metabolites, perpetrators, or perpetrator metabolites are among the standard
+metabolites, perpetrators, or perpetrator metabolites are among the
+standard
 options for the simulator, and leaving \code{prettify_compound_names =
 TRUE} will make the name of those compounds something more human readable.
 For example, "SV-Rifampicin-MD" will become "rifampicin", and
@@ -173,8 +191,9 @@ For example, "SV-Rifampicin-MD" will become "rifampicin", and
 you'd prefer to see in your column titles if you would like something
 different. For example, \code{prettify_compound_names = c("inhibitor" =
 "teeswiftavir", "substrate" = "superstatin")}. Please note that "inhibitor"
-includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
-you're setting the perpetrator name, you really should use something like this
+includes \emph{all} the perpetrators and perpetrator metabolites present,
+so, if you're setting the perpetrator name, you really should use something
+like this
 if you're including perpetrator metabolites: \code{prettify_compound_names =
 c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
@@ -222,48 +241,6 @@ its own and will have "- QC" added to the end of the file name.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
-
-\item{highlight_so_cutoffs}{DOES NOT CURRENTLY APPLY. Will need to add option
-of including obs PK for this to work. -LSh optionally specify cutoffs for
-highlighting any simulated-to-observed ratios. Anything that is above those
-values or below the inverse of those values will be highlighted. To figure
-out what cells to highlight, this looks for a column titled "Statistic" or
-"Stat", then looks for what row contains "S/O" or "simulated (something
-something) observed" (as in, we'll use some wildcards to try to match your
-specific text). Next, it looks for any values in that same row that are
-above those cutoffs. This overrides anything else you specified for
-highlighting. The default is NA, for \emph{not} highlighting based on S/O
-value. Acceptable input for, say, highlighting values that are > 125\% or <
-80\% of the observed and also, with a second color, values that are > 150\%
-or < 66\% would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}. If you
-would like the middle range of values to be highlighted, include 1 in your
-cutoffs. For example, say you would like everything that's < 80\% or >
-125\% to be highlighted red but you'd like the "good" values from 80\% to
-125\% to be green, you can get that by specifying
-\code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
-c("green", "red")}. This only applies when you save the table as a Word file.}
-
-\item{highlight_so_colors}{DOES NOT CURRENTLY APPLY. Will need to add option
-  of including obs PK for this to work. -LSh optionally specify a set of
-  colors to use in the Word file output for highlighting S/O values outside
-  the limits you
-  specified with \code{highlight_so_cutoffs}. Options: \describe{
-
-  \item{"yellow to red" (default)}{A range of light yellow to light orange to
-  light red. If you have included 1 in your cutoffs and you leave
-  \code{highlight_so_colors} with the default setting, values in the middle,
-  "good" range of S/O values will be highlighted a light green.}
-
-  \item{"traffic"}{light green, yellow, and red designed to display values
-  outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
-  \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O
-  values. This color scheme was borrowed from Lisa, so if you've seen her
-  slides, these will look familiar.}
-
-  \item{a character vector of specific colors}{Any R-acceptable colors, will
-  work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
-  If you do specify your own bespoke colors, you'll need to make sure that
-  you supply one color for every value in \code{highlight_so_cutoffs}.}}
 }
 \value{
 A list or a data.frame of PK data that optionally includes where the
