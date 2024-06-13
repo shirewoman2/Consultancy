@@ -5,8 +5,8 @@
 \title{Graph the ontogenies of drug-metabolizing enzymes and transporters}
 \usage{
 ontogeny_plot(
-  Enzyme = NA,
-  Enzyme_type = NA,
+  enzyme = NA,
+  enzyme_type = NA,
   simulator_version = 22,
   compare_to_no_ontogeny = FALSE,
   age_range = c(0, 18),
@@ -24,25 +24,23 @@ ontogeny_plot(
 )
 }
 \arguments{
-\item{Enzyme}{drug-metabolizing enzymes and transporters to plot, which
+\item{enzyme}{drug-metabolizing enzymes and transporters to plot, which
 should be supplied as either a single string, in quotes, that we'll try to
-match (e.g., "CYP3A4" will get you profiles 1 and 2 as well as "CYP3A4 in
-vitro" and "Intestinal CYP3A4") or as a character vector of the enzymes or
-transporters you want. Options are listed in the column "Enzyme" of the
-data.frame OntogenyEquations, which is saved with this package. To see it,
-type into the console \code{view(OntogenyEquations)} There's also a
-slightly different version of the column "Enzyme" called
-"Enzyme_alternative", which tries to make a few things a little clearer for
-graphs. For example, instead of "CYP3A4 Profile 2", it lists "CYP3A4
-(Upreti)". We'll look for whatever you supply for the argument "Enzyme" in
-\emph{both} the column "Enzyme" and the column "Enzyme_alternative" and
-return anything that matches in either place.}
+match (e.g., "CYP3A4" will get you both the Upreti and Salem CYP3A4
+ontogeny profiles as well as "CYP3A4 in vitro" and "Intestinal CYP3A4") or
+as a character vector of the enzymes or transporters you want. Options are
+listed in the data.frame OntogenyEquations. Whatever you supply, we'll look
+for it in either the column "Enzyme", which is just the actual isoform
+name, or in the column EnzymeDescription, which specifies exactly which
+ontogeny profile it is. To see the object OntogenyEquations and get a
+better idea of what we mean, type this into the console: 
+\code{view(OntogenyEquations)}}
 
-\item{Enzyme_type}{type of enzyme or transporter. Instead of graphing only a
+\item{enzyme_type}{type of enzyme or transporter. Instead of graphing only a
 specific enzyme or enzymes, you can request any enzymes or transporters of
 a specific type. Please see the options in "OntogenyEquations" in the
-column "Enzyme_type". This should be supplied as a character vector, e.g.,
-\code{Enzyme_type = c("transporters", "UGTs")}}
+column "EnzymeType". This should be supplied as a character vector, e.g.,
+\code{enzyme_type = c("transporters", "UGTs")}}
 
 \item{simulator_version}{Simcyp Simulator version to display. Options are 21,
 22 (default), or 23.}
@@ -139,8 +137,8 @@ unquoted, e.g., \code{colorBy_column = Tissue}.}
 you don't want one at all.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
-in quotes here, e.g., "My ontogeny graph.png"If you leave off ".png"
-or ".docx", the graph will be saved as a png file, but if you specify a
+in quotes here, e.g., "My ontogeny graph.png"If you leave off ".png" or
+".docx", the graph will be saved as a png file, but if you specify a
 different graphical file extension, it will be saved as that file format.
 Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
 "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
