@@ -38,19 +38,8 @@ correct data.}
 
 \item{tissue}{From which tissue should the desired concentrations be
 extracted? Default is plasma for typical plasma concentration-time data.
-Other options are "blood" or any tissues included in "Sheet Options",
-"Tissues" in the simulator. All possible options:\describe{
-\item{First-order absorption models}{"plasma", "blood", "unbound blood",
-"unbound plasma", "additional organ", "adipose", "bone", "brain",
-"feto-placenta", "gut tissue", "heart", "kidney", "liver", "lung", "muscle",
-"pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
-blood", "peripheral unbound plasma", "portal vein blood", "portal vein
-plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
-or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
-"jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
-"faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
-SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.}
+All options: "plasma", "blood", "peripheral plasma", "portal vein plasma",
+"Kp,uu,brain", "Kp,uu,ICF", or "Kp,uu,ISF". We're working on adding more.}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to

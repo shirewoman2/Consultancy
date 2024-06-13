@@ -67,7 +67,7 @@ much clearer Excel file.}
 
   \item{a character vector of the file names you want}{The items in the character
   vector must \emph{exactly} match file names in the column "File" of the
-  "MainDetails" item in \code{existing_exp_details}, including the ".xlsx"
+  "MainDetails" item in \code{existing_exp_details}, including the ".xlsx" or ".db"
   file extension}
 
   \item{a regular expression}{This will include in the output only files
@@ -245,7 +245,7 @@ formats it, adds columns for \enumerate{\item{which
 compound the information pertains to (substrate, inhibitor, etc.),}
 \item{which section of the Simcyp Simulator this detail is found in
 (physchem, absorption, distribution, etc.),} \item{notes describing what the
-detail is, and} \item{which sheet in the Simulator output Excel file or in 
+detail is, and} \item{which sheet in the Simulator output Excel file or in
 the Simulator workspace the information was
 pulled from.}} It will also optionally filter the data to return only
 specifically requested information. If you find yourself overwhelmed at the
