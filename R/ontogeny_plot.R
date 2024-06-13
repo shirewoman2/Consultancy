@@ -221,7 +221,7 @@ ontogeny_plot <- function(enzyme = NA,
              
              Fraction = case_when(str_detect(EnzymeDescription, "Upreti") &
                                      !str_detect(EnzymeDescription, "modified") &
-                                     Age > 8 ~ NA,
+                                     Age > 10 ~ NA,
                                   .default = Fraction),
              
              Age_mo = Age * 12)  
