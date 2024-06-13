@@ -6,7 +6,7 @@
 #' compound the information pertains to (substrate, inhibitor, etc.),}
 #' \item{which section of the Simcyp Simulator this detail is found in
 #' (physchem, absorption, distribution, etc.),} \item{notes describing what the
-#' detail is, and} \item{which sheet in the Simulator output Excel file or in 
+#' detail is, and} \item{which sheet in the Simulator output Excel file or in
 #' the Simulator workspace the information was
 #' pulled from.}} It will also optionally filter the data to return only
 #' specifically requested information. If you find yourself overwhelmed at the
@@ -44,7 +44,7 @@
 #'
 #'   \item{a character vector of the file names you want}{The items in the character
 #'   vector must \emph{exactly} match file names in the column "File" of the
-#'   "MainDetails" item in \code{existing_exp_details}, including the ".xlsx"
+#'   "MainDetails" item in \code{existing_exp_details}, including the ".xlsx" or ".db"
 #'   file extension}
 #'
 #'   \item{a regular expression}{This will include in the output only files
@@ -1095,8 +1095,8 @@ annotateDetails <- function(existing_exp_details,
             suppressMessages(
                AllSame <- DF %>% 
                   select(any_of(c("CompoundID", "Compound", GroupingDetails)), 
-                         matches("xlsx$")) %>% 
-                  pivot_longer(cols = matches("xlsx$"), 
+                         matches("xlsx$|\\.db$")) %>% 
+                  pivot_longer(cols = matches("xlsx$|\\.db$"), 
                                names_to = "File", values_to = "Value") %>% 
                   group_by(across(.cols = any_of(c(GroupingDetails, "CompoundID", "Compound")))) %>% 
                   summarize(Length = length(unique(Value)), 
@@ -1179,7 +1179,7 @@ annotateDetails <- function(existing_exp_details,
          
          # Removing anything that was all NA's if that's what user requested
          if(omit_all_missing){
-            DF$AllNA <- apply(DF[, names(DF)[str_detect(names(DF), "xlsx$")]], 
+            DF$AllNA <- apply(DF[, names(DF)[str_detect(names(DF), "xlsx$|\\.db$")]], 
                               MARGIN = 1, FUN = function(.) all(is.na(.)))    
             
             DF <- DF %>% filter(AllNA == FALSE) %>% select(-AllNA)
