@@ -20,19 +20,34 @@
 #'   as in, the subjects are \emph{identical} between the two simulations.
 #'   \strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
 #'   CALCULATIONS ARE PERFORMED!} An example of a paired study would be a DDI
-#'   study where each subject has a measurement without the perpetrator of interest
-#'   and then has a second measurement \emph{with} the perpetrator. The comparison
-#'   is for repeated measurements of the \emph{same subject}. An example of an
-#'   unpaired study design would be comparing healthy volunteers to subjects
-#'   with hepatic impairment because those are measurements on \emph{different}
-#'   subjects. For paired study designs, the order of operations is to calculate
-#'   each subject's mean ratio and then to calculate the mean of those ratios.
-#'   For unpaired study designs, the order of operations is to calculate the
-#'   mean for the numerator simulation and then divide it by the mean for the
-#'   denominator simulation. Would this be clearer if you could see the
-#'   mathematical equations? We agree but can't easily include equations in the
-#'   help file. However, if you run this and save the output to a Word file, the
-#'   equations will be included in the output.
+#'   study where each subject has a measurement without the perpetrator of
+#'   interest and then has a second measurement \emph{with} the perpetrator. The
+#'   comparison is for repeated measurements of the \emph{same subject}. An
+#'   example of an unpaired study design would be comparing healthy volunteers
+#'   to subjects with hepatic impairment because those are measurements on
+#'   \emph{different} subjects. For paired study designs, the order of
+#'   operations is to calculate each subject's mean ratio and then to calculate
+#'   the mean of those ratios. For unpaired study designs, the order of
+#'   operations is to calculate the mean for the numerator simulation and then
+#'   divide it by the mean for the denominator simulation. Would this be clearer
+#'   if you could see the mathematical equations? We agree but can't easily
+#'   include equations in the help file. However, if you run this and save the
+#'   output to a Word file, the equations will be included in the output.
+#' @param match_subjects_by For a paired study design, how would you like to
+#'   match your subjects? Options are "individual and trial" (default), which
+#'   matches by both the simulated individual ID number AND by the trial number,
+#'   or "individual only", which matches only by the individual ID number. This
+#'   will be ignored for unpaired study designs. Why are we even bothering with
+#'   this, you ask? Just to be totally safe, we normally match simulated
+#'   subjects by both the individual subject ID and by the trial number. We
+#'   thought that this would always work and would be the safest option, but we
+#'   discovered that, for some scenarios where you might expect the individuals
+#'   to be \emph{exactly} the same between two simulations, they actually were
+#'   randomly assigned to different trials. Mismatched subjects would lead to
+#'   inaccurate calculations, so we want to avoid that. If you use the default
+#'   setting of "individual and trial" but the trials are NOT the same between
+#'   simulations, you'll get a warning and no results, which we think is vastly
+#'   superior to getting \emph{incorrect} results.
 #' @param distribution_type use a "t" distribution (default) or a "Z"
 #'   distribution. Note: The Simcyp Simulator calculates geometric confidence
 #'   intervals with a t distribution.
@@ -134,7 +149,8 @@
 #' @param prettify_compound_names TRUE (default) or FALSE on whether to make
 #'   compound names prettier in the prettified column titles and in any Word
 #'   output files. This was designed for simulations where the substrate and any
-#'   metabolites, perpetrators, or perpetrator metabolites are among the standard
+#'   metabolites, perpetrators, or perpetrator metabolites are among the
+#'   standard
 #'   options for the simulator, and leaving \code{prettify_compound_names =
 #'   TRUE} will make the name of those compounds something more human readable.
 #'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
@@ -142,8 +158,9 @@
 #'   you'd prefer to see in your column titles if you would like something
 #'   different. For example, \code{prettify_compound_names = c("inhibitor" =
 #'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "inhibitor"
-#'   includes \emph{all} the perpetrators and perpetrator metabolites present, so, if
-#'   you're setting the perpetrator name, you really should use something like this
+#'   includes \emph{all} the perpetrators and perpetrator metabolites present,
+#'   so, if you're setting the perpetrator name, you really should use something
+#'   like this
 #'   if you're including perpetrator metabolites: \code{prettify_compound_names =
 #'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
@@ -230,7 +247,7 @@
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #' @param page_orientation set the page orientation for the Word file output to
-#'   "portrait" or "landscape" (default) 
+#'   "portrait" or "landscape" (default)
 #'
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from and data to use for making forest plots
@@ -240,6 +257,7 @@
 #' 
 calc_PK_ratios_mult <- function(sim_data_file_pairs,  
                                 paired = TRUE,
+                                match_subjects_by = "individual and trial", 
                                 distribution_type = "t",
                                 compoundToExtract = "substrate",
                                 tissue = "plasma",
@@ -291,6 +309,15 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    page_orientation <- tolower(page_orientation)[1]
    if(page_orientation %in% c("portrait", "landscape") == FALSE){
       warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+   }
+   
+   match_subjects_by <- tolower(match_subjects_by)
+   if(match_subjects_by %in% c("individual and trial", 
+                               "individual only") == FALSE & 
+      paired == TRUE){
+      warning(paste0(str_wrap("You have specified that you would like us to match the subjects in your paired study design by something other than `individual and trial` or `individual only`, which are the only options. We'll use the default of `individual and trial`."), 
+                     "\n"), 
               call. = FALSE)
    }
    
