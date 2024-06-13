@@ -206,7 +206,7 @@ ontogeny_plot <- function(enzyme = NA,
                 # exponential between Age_cap1 & 2
                 (Age > Age_cap1 | is.na(Age_cap1)) & 
                    Age <= Age_cap2 & complete.cases(C2) ~
-                   C0 + C1*exp(C2*(Age - Age_cap1 - C3)), 
+                   C0 + C1*exp(C2*(Age - C3)), 
                 
                 # linear between Age_cap1 & 2
                 (Age > Age_cap1 | is.na(Age_cap1)) &
