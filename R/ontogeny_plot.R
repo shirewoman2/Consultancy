@@ -14,13 +14,22 @@
 #'   for it in either the column "Enzyme", which is just the actual isoform
 #'   name, or in the column EnzymeDescription, which specifies exactly which
 #'   ontogeny profile it is. To see the object OntogenyEquations and get a
-#'   better idea of what we mean, type this into the console: 
-#'   \code{view(OntogenyEquations)} 
+#'   better idea of what we mean, type this into the console:
+#'   \code{view(OntogenyEquations)}
 #' @param enzyme_type type of enzyme or transporter. Instead of graphing only a
 #'   specific enzyme or enzymes, you can request any enzymes or transporters of
 #'   a specific type. Please see the options in "OntogenyEquations" in the
 #'   column "EnzymeType". This should be supplied as a character vector, e.g.,
 #'   \code{enzyme_type = c("transporters", "UGTs")}
+#' @param ontogeny_equations_to_use By default, the ontogeny equations are from
+#'   the object OntogenyEquations, which is from the Simcyp Simulator help file.
+#'   This can be useful for more-advanced R users if, for example, you want to
+#'   filter OntogenyEquations more flexibly than just listing a string or
+#'   character vector of enzymes to match for the arguments \code{enzyme} and
+#'   \code{enzyme_type} or if you want to supply your own set of equations to
+#'   describe the profiles as long as the data.frame is set up like
+#'   OntogenyEquations. If you supply something here, the arguments
+#'   \code{enzyme} and \code{enzyme_type} will be ignored.
 #' @param simulator_version Simcyp Simulator version to display. Options are 21,
 #'   22 (default), or 23.
 #' @param compare_to_no_ontogeny TRUE or FALSE (default) for whether to show a
@@ -123,6 +132,7 @@
 #' 
 ontogeny_plot <- function(enzyme = NA, 
                           enzyme_type = NA, 
+                          ontogeny_equations_to_use = NA, 
                           simulator_version = 22, 
                           compare_to_no_ontogeny = FALSE, 
                           age_range = c(0, 18), 
@@ -167,24 +177,29 @@ ontogeny_plot <- function(enzyme = NA,
    
    # Setting up data ----------------------------------------------------------
    
-   Ontogenies <- OntogenyEquations
-   
-   if(any(complete.cases(enzyme))){
-      Ontogenies <- Ontogenies %>% 
-         filter(str_detect(tolower(EnzymeDescription), tolower({{enzyme}})) |
-                   str_detect(tolower(Enzyme), tolower({{enzyme}})))
-   }
-   
-   if(any(complete.cases(enzyme_type))){
-      Ontogenies <- Ontogenies %>% 
-         filter(str_detect(tolower(EnzymeType), tolower({{enzyme_type}})))
+   if("data.frame" %in% class(ontogeny_equations_to_use)){
+      Ontogenies <- ontogeny_equations_to_use
+   } else {
+      
+      Ontogenies <- OntogenyEquations %>% 
+         filter(switch(as.character(simulator_version), 
+                       "21" = V21 == TRUE, 
+                       "22" = V22 == TRUE, 
+                       "23" = V23 == TRUE)) 
+      
+      if(any(complete.cases(enzyme))){
+         Ontogenies <- Ontogenies %>% 
+            filter(str_detect(tolower(EnzymeDescription), tolower({{enzyme}})) |
+                      str_detect(tolower(Enzyme), tolower({{enzyme}})))
+      }
+      
+      if(any(complete.cases(enzyme_type))){
+         Ontogenies <- Ontogenies %>% 
+            filter(str_detect(tolower(EnzymeType), tolower({{enzyme_type}})))
+      }
    }
    
    Ontogenies <- Ontogenies %>% 
-      filter(switch(as.character(simulator_version), 
-                    "21" = V21 == TRUE, 
-                    "22" = V22 == TRUE, 
-                    "23" = V23 == TRUE)) %>% 
       left_join(expand.grid(Age = seq(0, 25, length.out = 1000), 
                             EnzymeDescription = OntogenyEquations$EnzymeDescription),
                 by = "EnzymeDescription") %>% 
@@ -206,7 +221,7 @@ ontogeny_plot <- function(enzyme = NA,
                 # exponential between Age_cap1 & 2
                 (Age > Age_cap1 | is.na(Age_cap1)) & 
                    Age <= Age_cap2 & complete.cases(C2) ~
-                   C0 + C1*exp(C2*(Age - Age_cap1 - C3)), 
+                   C0 + C1*exp(C2*(Age - C3)), 
                 
                 # linear between Age_cap1 & 2
                 (Age > Age_cap1 | is.na(Age_cap1)) &
@@ -495,7 +510,8 @@ ontogeny_plot <- function(enzyme = NA,
    }
    
    A <- A +
-      theme_consultancy() +
+      theme_consultancy(border = any(c(as_label(facet1_column) != "<empty>", 
+                                       as_label(facet2_column) != "<empty>"))) +
       theme(legend.position = legend_position)
    
    

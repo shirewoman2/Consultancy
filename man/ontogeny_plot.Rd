@@ -7,6 +7,7 @@
 ontogeny_plot(
   enzyme = NA,
   enzyme_type = NA,
+  ontogeny_equations_to_use = NA,
   simulator_version = 22,
   compare_to_no_ontogeny = FALSE,
   age_range = c(0, 18),
@@ -33,7 +34,7 @@ listed in the data.frame OntogenyEquations. Whatever you supply, we'll look
 for it in either the column "Enzyme", which is just the actual isoform
 name, or in the column EnzymeDescription, which specifies exactly which
 ontogeny profile it is. To see the object OntogenyEquations and get a
-better idea of what we mean, type this into the console: 
+better idea of what we mean, type this into the console:
 \code{view(OntogenyEquations)}}
 
 \item{enzyme_type}{type of enzyme or transporter. Instead of graphing only a
@@ -41,6 +42,16 @@ specific enzyme or enzymes, you can request any enzymes or transporters of
 a specific type. Please see the options in "OntogenyEquations" in the
 column "EnzymeType". This should be supplied as a character vector, e.g.,
 \code{enzyme_type = c("transporters", "UGTs")}}
+
+\item{ontogeny_equations_to_use}{By default, the ontogeny equations are from
+the object OntogenyEquations, which is from the Simcyp Simulator help file.
+This can be useful for more-advanced R users if, for example, you want to
+filter OntogenyEquations more flexibly than just listing a string or
+character vector of enzymes to match for the arguments \code{enzyme} and
+\code{enzyme_type} or if you want to supply your own set of equations to
+describe the profiles as long as the data.frame is set up like
+OntogenyEquations. If you supply something here, the arguments
+\code{enzyme} and \code{enzyme_type} will be ignored.}
 
 \item{simulator_version}{Simcyp Simulator version to display. Options are 21,
 22 (default), or 23.}
