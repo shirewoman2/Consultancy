@@ -762,7 +762,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                                 c("substrate", "inhibitor 1")),
                   tissue = j,
                   returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                  fromMultFunction = TRUE, 
                   existing_exp_details = existing_exp_details)
                
             } else {
@@ -788,7 +787,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                                 c("substrate", "inhibitor 1")),
                   tissue = j,
                   returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                  fromMultFunction = TRUE, 
                   existing_exp_details = existing_exp_details)
                
             } else {
@@ -828,7 +826,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                                 c("substrate", "inhibitor 1")),
                   tissue = j,
                   returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                  fromMultFunction = TRUE, 
                   existing_exp_details = existing_exp_details)
                
             } else {
