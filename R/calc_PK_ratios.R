@@ -579,7 +579,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       # Making sure that subjects were matched between numerator and
       # denominator
       if(any(MyPKResults$MatchProblem)){
-         warning(paste0(str_wrap("You do not appear to have perfectly matched subjects in your numerator and denominator simulations. Since you have requested calculations for a paired study design, something is amiss. We don't want to give you *incorrect* results, so we are returning *no results* here. If you actually have an unpaired study design, in which case this is not a problem, please change `paired` to `FALSE` and try again."), 
+         warning(paste0(str_wrap("You do not appear to have perfectly matched subjects in your numerator and denominator simulations. Since you have requested calculations for a paired study design, something is amiss. We don't want to give you *incorrect* results, so we are returning *no results* here. If you have the same individuals but they're not in the same trials, please try setting `match_subjects_by = 'individual only'`. If you actually have an unpaired study design, in which case this mismatch is not a problem, please change `paired` to `FALSE` and try again."), 
                         "\n"),
                  call. = FALSE)
          
