@@ -266,7 +266,7 @@ recalc_PK <- function(ct_dataframe,
    }
    
    if(is.na(last_dose_time) & any(ct_dataframe$DoseNum > 1) & 
-      "logical" %in% class(existing_exp_details)){
+      "logical" %in% class(existing_exp_details) & "last" %in% which_dose){
       warning("You have not specified the time of the last dose. We'll assume it's the minimum time for the maxmimum dose number in your data.\n", 
               call. = FALSE)
    }
@@ -290,16 +290,32 @@ recalc_PK <- function(ct_dataframe,
          Missing <- setdiff(AllCompounds$CompoundID, names(compound_name))
          ToAdd <- rep(NA, each = length(Missing))
          names(ToAdd) <- Missing
-         compound_name <- c(compound_name, ToAdd)
+         compound_name <- ToAdd
          rm(Missing, ToAdd)
       }
    }
+   
+   if("File" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$File <- "unknown file"
+   }
+   
+   ct_dataframe$File[is.na(ct_dataframe$File)] <- "unknown file"
+   
+   if("ObsFile" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$ObsFile <- "unknown obs file"
+   }
+   
+   ct_dataframe$ObsFile[is.na(ct_dataframe$ObsFile)] <- "unknown obs file"
    
    # If they already had a compound name in the data, this will change it to
    # what they set with compound_name, but if they did not specify
    # compound_name, then this will leave all compound names alone.
    if(any(complete.cases(compound_name))){
       ct_dataframe$Compound <- compound_name[ct_dataframe$CompoundID]
+   }
+   
+   if("Compound" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$Compound <- "unknown compound"
    }
    
    if("Inhibitor" %in% names(ct_dataframe) == FALSE){
@@ -492,21 +508,21 @@ recalc_PK <- function(ct_dataframe,
             # and give a warning if so.
             suppressMessages(
                CustomDoseCheck <- 
-               existing_exp_details$MainDetails %>% 
-               select(File, StartHr_sub, StartHr_inhib, StartHr_inhib2, 
-                      DoseInt_sub, DoseInt_inhib, DoseInt_inhib2) %>% 
-               left_join(CTsubset[["1"]] %>% select(File, CompoundID) %>% unique()) %>% 
-               mutate(Problem = (CompoundID %in% c("substrate", 
-                                                  "primary metabolite 1", 
-                                                  "primary metabolite 2", 
-                                                  "secondary metabolite") & 
-                         DoseInt_sub == "custom dosing") | 
-                         (CompoundID %in% c("inhibitor 1", 
-                                            "inhibitor 1 metabolite") & 
-                             DoseInt_inhib == "custom dosing") |
-                         (CompoundID %in% c("inhibitor 2") & 
-                             DoseInt_inhib2 == "custom dosing"))
-               )
+                  existing_exp_details$MainDetails %>% 
+                  select(File, StartHr_sub, StartHr_inhib, StartHr_inhib2, 
+                         DoseInt_sub, DoseInt_inhib, DoseInt_inhib2) %>% 
+                  left_join(CTsubset[["1"]] %>% select(File, CompoundID) %>% unique()) %>% 
+                  mutate(Problem = (CompoundID %in% c("substrate", 
+                                                      "primary metabolite 1", 
+                                                      "primary metabolite 2", 
+                                                      "secondary metabolite") & 
+                                       DoseInt_sub == "custom dosing") | 
+                            (CompoundID %in% c("inhibitor 1", 
+                                               "inhibitor 1 metabolite") & 
+                                DoseInt_inhib == "custom dosing") |
+                            (CompoundID %in% c("inhibitor 2") & 
+                                DoseInt_inhib2 == "custom dosing"))
+            )
             
             if(any(CustomDoseCheck$Problem == TRUE, na.rm = T)){
                warning(paste0("The ", unique(CustomDoseCheck$CompoundID), 
@@ -569,8 +585,11 @@ recalc_PK <- function(ct_dataframe,
             suppressMessages(suppressWarnings(
                FirstDoseTime <- CTsubset[["1"]] %>% ungroup() %>%
                   filter(complete.cases(Conc)) %>%
-                  group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial,
-                           Simulated, File, ObsFile, DoseNum, ID) %>%
+                  group_by(across(.cols = any_of(c("Compound", "CompoundID",
+                                                   "Inhibitor", "Tissue",
+                                                   "Individual", "Trial",
+                                                   "Simulated", "File",
+                                                   "ObsFile", "DoseNum", "ID")))) %>%
                   summarize(t0 = min(Time, na.rm = T),
                             MaxTime = max(Time, na.rm = T),
                             # For reasons that utterly baffle and infuriate me,
@@ -675,6 +694,7 @@ recalc_PK <- function(ct_dataframe,
                ElimFits[[j]] <- NULL
                ExtrapProbs <- NA
                AUCextrap_temp <- NA
+               TEMP <- NULL
             }
             
             # Checking for whether any estimates were negative, which would
@@ -1226,7 +1246,8 @@ recalc_PK <- function(ct_dataframe,
       filter(!PKparameter %in% c("Cmin_dose1", "AUCinf_last", 
                                  "AUCinf_fraction_extrapolated_last")) 
    
-   if(any(PKtemp$ExtrapProbs, na.rm = TRUE)){
+   if(any(PKtemp$ExtrapProbs, na.rm = TRUE) & 
+      effort_to_get_elimination_rate != "don't try"){
       warning(paste0(
          "There were problems extrapolating to infinity for some data. The sets of data with problems are listed here by CompoundID, Inhibitor, Tissue, Individual, Trial, whether the data were simulated or observed, File, ObsFile, and DoseNum:\n", 
          str_c(sort(unique(PKtemp$ID[PKtemp$ExtrapProbs])), collapse = "\n")), 
@@ -1288,6 +1309,11 @@ recalc_PK <- function(ct_dataframe,
       
    }
    
+   if(effort_to_get_elimination_rate == "don't try"){
+      PKtemp <- PKtemp %>% 
+         filter(!str_detect(PKparameter, "AUCinf|CLinf"))
+   }
+   
    ## Calculating aggregate stats --------------------------------------------
    
    if(returnAggregateOrIndiv %in% c("aggregate", "both")){
@@ -1313,6 +1339,11 @@ recalc_PK <- function(ct_dataframe,
                Maximum = max(Value, na.rm = T)) 
       ))
       
+   }
+   
+   if(effort_to_get_elimination_rate == "don't try"){
+      PK_agg_temp <- PK_agg_temp %>% 
+         filter(!str_detect(PKparameter, "AUCinf|CLinf"))
    }
    
    if(save_graphs_of_fits){
