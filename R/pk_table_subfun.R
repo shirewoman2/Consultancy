@@ -537,10 +537,16 @@ pk_table_subfun <- function(sim_data_file,
                                            
                                            complete.cases(Deets$Inhibitor1) & 
                                               complete.cases(Deets$Inhibitor1Metabolite) & 
+                                              is.na(Deets$Inhibitor2) ~ str_comma(c(Deets$Inhibitor1,
+                                                                                    Deets$Inhibitor1Metabolite)), 
+                                           
+                                           complete.cases(Deets$Inhibitor1) & 
+                                              complete.cases(Deets$Inhibitor1Metabolite) & 
                                               complete.cases(Deets$Inhibitor2) ~ 
                                               str_comma(c(Deets$Inhibitor1, 
                                                           Deets$Inhibitor1Metabolite,
                                                           Deets$Inhibitor2))),
+                   
                    Dose_inhib = ifelse("Dose_inhib" %in% names(Deets),
                                        Deets$Dose_inhib, NA), 
                    Dose_inhib2 = ifelse("Dose_inhib2" %in% names(Deets),
