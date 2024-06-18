@@ -969,7 +969,7 @@ extractPK <- function(sim_data_file,
             
             # Looking for the correct subheading 
             ColsStart_subcol <- which(str_detect(as.vector(t(AUC_xl[IndexRow - 1, ])), 
-                                         ToDetect$AUCtab_StartColText))[1]
+                                                 ToDetect$AUCtab_StartColText))[1]
             
             if(length(ColsStart_subcol) == 0){
                ColsStart_subcol <- 1
@@ -1108,15 +1108,17 @@ extractPK <- function(sim_data_file,
                                  DataCheck = DataCheck,
                                  includeTrialInfo = includeTrialInfo)
       
-      names(Out_AUC0$Out_ind)[which(names(Out_AUC0$Out_ind) == "AUCXtab")] <- 
-         "AUC0tab"
-      
-      DataCheck <- DataCheck %>% bind_rows(Out_AUC0$DataCheck)
-      Out_agg <- c(Out_agg, Out_AUC0$Out_agg)
-      Out_ind <- c(Out_ind, Out_AUC0$Out_ind)
-      TimeInterval <- TimeInterval %>% 
-         bind_rows(Out_AUC0$TimeInterval)
-      
+      if(length(Out_AUC0) > 0){
+         
+         names(Out_AUC0$Out_ind)[which(names(Out_AUC0$Out_ind) == "AUCXtab")] <- 
+            "AUC0tab"
+         
+         DataCheck <- DataCheck %>% bind_rows(Out_AUC0$DataCheck)
+         Out_agg <- c(Out_agg, Out_AUC0$Out_agg)
+         Out_ind <- c(Out_ind, Out_AUC0$Out_ind)
+         TimeInterval <- TimeInterval %>% 
+            bind_rows(Out_AUC0$TimeInterval)
+      }
    }
    
    
