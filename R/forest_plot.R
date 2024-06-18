@@ -51,10 +51,10 @@
 #'   up by the simulation file name behind the scenes, but that's likely not the
 #'   prettiest way to label the y axis, which is where this argument comes in.
 #'   If you already have a column in \code{forest_dataframe} with the label you
-#'   want -- for example the column "Inhibitor1" when your drug of interest is a
-#'   victim or "Substrate" when it's the perpetrator -- use that by specifying,
-#'   for example, \code{y_axis_labels = Inhibitor1}. You can optionally make the
-#'   compound names prettier automatically with the argument
+#'   want -- for example the column "Perpetrator" when your drug of interest is
+#'   a victim or "Victim" when it's the perpetrator -- use that by specifying,
+#'   for example, \code{y_axis_labels = Perpetrator}. You can optionally make
+#'   the compound names prettier automatically with the argument
 #'   \code{prettify_ylabel}. If you would like to manually specify which
 #'   simulation file should be labeled what here, do so with a named character
 #'   vector, e.g.,
@@ -578,19 +578,29 @@ forest_plot <- function(forest_dataframe,
       } else if(str_detect(forest_dataframe, "xlsx$")){
          forest_dataframe <- readxl::read_excel(forest_dataframe)
       } else {
-         stop("It looks like you are supplying a file to be read for `forest_dataframe`, but we're not sure whether it's a csv or Excel file, so we can't read it. Please add the file extension to the file name and try again.", 
+         stop(str_wrap("It looks like you are supplying a file to be read for `forest_dataframe`, but we're not sure whether it's a csv or Excel file, so we can't read it. Please add the file extension to the file name and try again."), 
+              call. = FALSE)
+      }
+   } else if("list" %in% class(forest_dataframe)){
+      # this is when they've just supplied the output from running pk_table or
+      # pksummary_mult where they've requested forest data. That will be a list.
+      if("ForestData" %in% names(forest_dataframe)){
+         forest_dataframe <- forest_dataframe$ForestData
+      } else {
+         stop(str_wrap("Please check your input. You supplied a list for `forest_dataframe`, which is only something we can work with when that list includes a data.frame called `ForestData`, and your list does not. Please check your input and try again."), 
               call. = FALSE)
       }
    }
    
    if(nrow(forest_dataframe) == 0){
-      stop("Please check your input. The data.frame you supplied for `forest_dataframe` doesn't have any rows.", 
+      stop(str_wrap("Please check your input. The data.frame you supplied for `forest_dataframe` doesn't have any rows."), 
            call. = FALSE)
    }
    
    # Cleaning up inputs
    if(class(prettify_ylabel) != "logical"){
-      warning("You appear to have supplied something to the argument `prettify_ylabel` other than TRUE, FALSE, or NA. Unfortunately, those are the only permissible values. We'll set this to NA.", 
+      warning(paste0(str_wrap("You appear to have supplied something to the argument `prettify_ylabel` other than TRUE, FALSE, or NA. Unfortunately, those are the only permissible values. We'll set this to NA."), 
+                     "\n"), 
               call. = FALSE)
       prettify_ylabel <- NA
    }
@@ -605,7 +615,8 @@ forest_plot <- function(forest_dataframe,
                                 "percents", x_axis_number_type)
    if(length(x_axis_number_type) != 1 |
       x_axis_number_type %in% c("ratios", "percents", "keep trailing zeroes") == FALSE){
-      warning("The value for `x_axis_number_type` must be `ratios`, `percents`, or `keep trailing zeroes` and you've specified something else. Please check your input. For now, we'll assume you want ratios, the default.", 
+      warning(paste0(str_wrap("The value for `x_axis_number_type` must be `ratios`, `percents`, or `keep trailing zeroes` and you've specified something else. Please check your input. For now, we'll assume you want ratios, the default."), 
+                     "\n"), 
               call. = FALSE)
       x_axis_number_type <- "ratios"
    }
@@ -615,7 +626,8 @@ forest_plot <- function(forest_dataframe,
       if(str_detect(observed_PK, "\\.csv$")){
          observed_PK <- read.csv(observed_PK)
       } else {
-         warning("You appear to have provided a file name for the observed PK data, but it's not a csv file, which is the only kind this function can read. We won't be able to include any observed data.\n", 
+         warning(paste0(str_wrap("You appear to have provided a file name for the observed PK data, but it's not a csv file, which is the only kind this function can read. We won't be able to include any observed data."), 
+                        "\n"), 
                  call. = FALSE)
          observed_PK <- NA
       }
@@ -667,20 +679,22 @@ forest_plot <- function(forest_dataframe,
    }
    
    # Making some guesses about how user might mis-specify variability type.
-   variability_type <- ifelse(variability_type %in% c("5th to 95th", 
-                                                      "percentiles"), 
-                              "5th to 95th percentiles", variability_type)
-   variability_type <- ifelse(str_detect(variability_type, "CI|conf int") 
-                              & !str_detect(variability_type, "95"), 
-                              "90% CI", variability_type)
-   variability_type <- ifelse(variability_type %in% c("CV", "cv") &
-                                 mean_type == "geometric", 
-                              "geometric CV", variability_type)
-   variability_type <- ifelse(variability_type %in% c("CV", "cv") &
-                                 mean_type == "arithmetic", 
-                              "arithmetic CV", variability_type)
-   variability_type <- ifelse(variability_type %in% c("sd", "SD"), 
-                              "standard deviation", variability_type)
+   variability_type <- case_when(
+      variability_type %in% c("5th to 95th", 
+                              "percentiles") ~ "5th to 95th percentiles", 
+      
+      str_detect(variability_type, "CI|conf int") &
+         !str_detect(variability_type, "95") ~ "90% CI", 
+      
+      variability_type %in% c("CV", "cv") &
+         mean_type == "geometric" ~ "geometric CV",
+      
+      variability_type %in% c("CV", "cv") &
+         mean_type == "arithmetic" ~ "arithmetic CV",
+      
+      variability_type %in% c("sd", "SD") ~ "standard deviation", 
+      
+      .default = variability_type)
    
    if(variability_type %in% c("90% CI", "95% CI", "5th to 95th percentiles", 
                               "range", "geometric CV", "arithmetic CV", 
@@ -705,9 +719,9 @@ forest_plot <- function(forest_dataframe,
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "^cv$"))][1] <- "ArithCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "ci(90|95)?_lower"))][1] <- "CI_Lower"
+                                            "ci(90|95)?_low(er)?"))][1] <- "CI_Lower"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "ci(90|95)?_upper"))][1] <- "CI_Upper"
+                                            "ci(90|95)?_up(per)?|ci(90|95)?_high"))][1] <- "CI_Upper"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "centile_lower"))][1] <- "Centile_Lower"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 

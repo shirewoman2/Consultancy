@@ -152,6 +152,11 @@ extractAUCXtab <- function(PKparameters,
                               EndRow_ind = EndRow_ind))
    }   
    
+   # If no parameters were found, then return an empty list. 
+   if(length(Out_agg) == 0){
+      return(list())
+   }
+   
    if(includeTrialInfo & length(PKparameters) > 0){
       # Subject and trial info
       SubjTrial_AUCX <- AUCX_xl[3:EndRow_ind, 1:2] %>%

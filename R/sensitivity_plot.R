@@ -164,8 +164,8 @@ sensitivity_plot <- function(SA_file,
                 "plasma conc" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
                 "plasma concentrations" = AllSheets[str_detect(AllSheets, "Plasma Concentration")])
    
-   Summary <- xlsx::read.xlsx(SA_file, sheetName = "ASA Summary", 
-                              header = FALSE)
+   Summary <- openxlsx::read.xlsx(SA_file, sheet = "ASA Summary", 
+                                  colNames = FALSE)
    
    # Getting the names of the independent variables
    SensParam <- Summary$X2[which(Summary$X1 == "Run Number")]
@@ -182,7 +182,7 @@ sensitivity_plot <- function(SA_file,
    RunInfo <- RunInfo %>% mutate_all(.funs = as.numeric)
    
    # Reading data
-   SAdata.xl <- xlsx::read.xlsx(SA_file, sheetName = DVsheets[dependent_variable])
+   SAdata.xl <- openxlsx::read.xlsx(SA_file, sheet = DVsheets[dependent_variable])
    
    if(str_detect(dependent_variable, "plasma")){
       ObsRow <- which(SAdata.xl[, 1] == "Observed Data")

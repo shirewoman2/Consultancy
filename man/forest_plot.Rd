@@ -78,10 +78,10 @@ simulations on the y axis. In all forest plots, the y axis will be broken
 up by the simulation file name behind the scenes, but that's likely not the
 prettiest way to label the y axis, which is where this argument comes in.
 If you already have a column in \code{forest_dataframe} with the label you
-want -- for example the column "Inhibitor1" when your drug of interest is a
-victim or "Substrate" when it's the perpetrator -- use that by specifying,
-for example, \code{y_axis_labels = Inhibitor1}. You can optionally make the
-compound names prettier automatically with the argument
+want -- for example the column "Perpetrator" when your drug of interest is
+a victim or "Victim" when it's the perpetrator -- use that by specifying,
+for example, \code{y_axis_labels = Perpetrator}. You can optionally make
+the compound names prettier automatically with the argument
 \code{prettify_ylabel}. If you would like to manually specify which
 simulation file should be labeled what here, do so with a named character
 vector, e.g.,

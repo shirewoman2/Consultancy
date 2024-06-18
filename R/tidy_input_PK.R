@@ -104,8 +104,8 @@ tidy_input_PK <- function(PKparameters,
          
          PKparameters <- switch(str_extract(PKparameters, "csv|xlsx"), 
                                 "csv" = read.csv(PKparameters, na.strings = "NA"), 
-                                "xlsx" = xlsx::read.xlsx(PKparameters, 
-                                                         sheetName = "PKparameters"))
+                                "xlsx" = openxlsx::read.xlsx(PKparameters, 
+                                                             sheet = "PKparameters"))
          
          # If there's anything named anything like "File", use that for the
          # "File" column. This is useful to deal with capitalization mismatches

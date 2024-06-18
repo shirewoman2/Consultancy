@@ -598,23 +598,23 @@ pksummary_table <- function(sim_data_file = NA,
    # Reading in any observed data, tidying those data, and harmonizing all the
    # possible places they could have specified which PK parameters they want and
    # which sheets they want those PK data to come from.
-
+   
    if(complete.cases(report_input_file)){
-
+      
       # If they didn't include ".xlsx" at the end of whatever they supplied for
       # report_input_file, add that.
       report_input_file <- ifelse(str_detect(report_input_file, "xlsx$"),
                                   report_input_file, paste0(report_input_file, ".xlsx"))
-
+      
       if(is.na(sheet_report)){
          warning("You must supply a value for `sheet_report` if you supply a report input file.",
                  call. = FALSE)
          return(list())
       }
-
+      
       sectionInfo <- getSectionInfo(report_input_file = report_input_file,
                                     sheet_report = sheet_report)
-
+      
       if(complete.cases(sim_data_file) & sim_data_file != sectionInfo$File){
          warning(paste0("The value supplied for `sim_data_file` was `",
                         sim_data_file,
@@ -624,35 +624,35 @@ pksummary_table <- function(sim_data_file = NA,
                         "`. The file listed in the report input file will be used."),
                  call. = FALSE)
       }
-
+      
       sim_data_file <- sectionInfo$sim_data_file
       # Should we add an error catch here for when user fills out
       # report_input_file but doesn't include any observed data to compare?
       # Maybe not. If the user doesn't want to include any obs data there,
       # just fill out sim_data_file.
-
+      
       # If they supplied both a report_input_file and observed_PK, warn the
       # user that this will preferentially read the report_input_file.
       if(complete.cases(observed_PK[1])){
          warning("You have supplied both a report input file and, separately, observed data. The report input file will be used preferentially and the observed data will be ignored.",
                  call. = FALSE)
       }
-
+      
       observed_PK <- as.data.frame(sectionInfo$ObsData)
-
+      
    } else {
-
+      
       # Setting this for use later since it's easiest if sectionInfo is
       # logical when it doesn't apply.
       sectionInfo <- FALSE
-
+      
       if(any(complete.cases(observed_PK)) &&
          "character" %in% class(observed_PK)){
          observed_PK <- switch(str_extract(observed_PK, "csv|xlsx"),
                                "csv" = read.csv(observed_PK, na.strings = "NA"),
-                               "xlsx" = xlsx::read.xlsx(observed_PK,
-                                                        sheetName = "observed PK"))
-
+                               "xlsx" = openxlsx::read.xlsx(observed_PK,
+                                                            sheet = "observed PK"))
+         
          # If there's anything named anything like "File", use that for the
          # "File" column. This is useful to deal with capitalization mismatches
          # and also because, if the user saves the file as certain kinds of csv
@@ -660,20 +660,20 @@ pksummary_table <- function(sim_data_file = NA,
          # column name.
          names(observed_PK)[str_detect(tolower(names(observed_PK)), "file")][1] <-
             "File"
-
+         
       } else if("numeric" %in% class(observed_PK)){ # This is when user has supplied a named numeric vector
-
+         
          observed_PK <- as.data.frame(t(observed_PK))
       }
    }
-
+   
    # At this point, observed_PK, if it exists, should be a data.frame b/c it
    # either was a data.frame at the outset, it has been created by reading an
    # Excel or csv file for observed data, or it came from a report input form.
    # It could be in either wide or long format.
    MyObsPK <- get_obs_PK(observed_PK, mean_type, use_median_for_tmax,
                          sim_data_file, PKparameters)
-
+   
    # If they left PKparameters as NA, make sure any observed PK parameters are
    # included in the PK to extract. If they specified something for
    # PKparameters, then ONLY return those PK data. Make sure that PK names
