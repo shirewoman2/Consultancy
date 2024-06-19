@@ -169,14 +169,27 @@ get_obs_PK <- function(observed_PK,
          summarize(NVals = n())
       
       if(any(ObsFileCheck$NVals > 1)){
-         warning("You have supplied more than one value for a given PK parameter for this simulator output file, so we don't know which one to use. We will not be able to include observed data in your table.", 
-                 call. = FALSE)
-         observed_PK <- data.frame()
+         
+         DupParam <- ObsFileCheck$PKparameter[which(ObsFileCheck$NVals > 1)]
+         
+         warning(paste0(
+            "You have supplied more than one value for the following PK parameters:\n", 
+            str_c(DupParam, collaps = "\n"), 
+            "for the simulator output file '",
+            sim_data_file, "', so we don't know which one to use. We will not be able to include these observed data in your table.\n"), 
+            call. = FALSE)
+         
+         observed_PK <- observed_PK %>% 
+            filter(!PKparameter %in% DupParam)
       } 
       
       if(nrow(observed_PK) < 1){
-         warning("None of the supplied observed PK were for the supplied sim_data_file. We cannot make any comparisons between simulated and observed PK.", 
-                 call. = FALSE)
+         warning(paste0(str_wrap(paste0(
+            "None of the supplied observed PK were for the supplied sim_data_file '", 
+            sim_data_file, "'. We cannot make any comparisons between simulated and observed PK.")), 
+            "\n"), 
+            call. = FALSE)
+         
          observed_PK <- NA
       }  
       

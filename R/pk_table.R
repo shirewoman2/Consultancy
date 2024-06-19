@@ -699,11 +699,14 @@ pk_table <- function(PKparameters = NA,
                                           "parentheses" = paste0("(", min, ", ", max, ")")), 
                                 TRUE ~ min)) %>% 
          select(-max) %>% 
-         pivot_longer(cols = -any_of(c("PKParam", "SorO", "File", "Sheet", 
-                                       "CompoundID", "Tissue")), 
+         pivot_longer(cols = -c(PKParam, SorO), 
                       names_to = "Stat", 
                       values_to = "Value") %>% 
-         mutate(Stat = ifelse(Stat == "min", "range", Stat))
+         mutate(Stat = ifelse(Stat == "min", 
+                              switch(MeanType, 
+                                     "geometric" = "GCV", 
+                                     "arithmetic" = "CV"), 
+                              Stat))
    }
    
    # Checking for any PK parameters where there are no simulated data.
@@ -721,7 +724,7 @@ pk_table <- function(PKparameters = NA,
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
              Stat = factor(Stat, levels = c("mean", "geomean", "median",
                                             "CV", "GCV", 
-                                            "min", "max", "range", 
+                                            "min", "max",
                                             "CI90_low", "CI90_high", "CI95_low", 
                                             "CI95_high", "per5", "per95",
                                             "MinMean", "MaxMean", 
