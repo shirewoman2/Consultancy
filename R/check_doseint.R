@@ -10,11 +10,13 @@
 #'   see warnings in this function
 #'
 #' @return list of 1) message: "custom dosing" (as in, we can't tell whether the
-#'   interval matched), "good", "mismatch", or "can't check - missing file" and
-#'   2) data.frame of File, CompoundID, SimDuration, DoseInt_X, StartHr_X,
-#'   NumDoses_X, LastDoseTime, IntervalRemaining, OneDoseIntRemaining,
-#'   UserIntervalStart, UserIntervalEnd, UserIntervalStartGood,
-#'   UserIntervalEndGood.
+#'   interval matched), "good", "mismatch last dose", "mismatch user-defined
+#'   interval", or "can't check - missing file" and 2) data.frame of File,
+#'   CompoundID, SimDuration, DoseInt_X, StartHr_X, NumDoses_X, LastDoseTime,
+#'   IntervalRemaining, OneDoseIntRemaining, UserIntervalStart, UserIntervalEnd,
+#'   UserIntervalStartGood, UserIntervalEndGood. If info is not available, e.g.,
+#'   custom dosing or missing file, then not all of those columns will be
+#'   included in the data.frame.
 #'
 #' @examples
 #' # none yet
@@ -42,9 +44,14 @@ check_doseint <- function(sim_data_file,
       } else {
          warning("sim_data_file is not included in existing_exp_details. We cannot check whether the dose interval is correct.", 
                  call. = FALSE)   
-         return("can't check - missing file")
+         return(
+            list("message" = "can't check - missing file", 
+                 "interval" = data.frame(DoseInt_X = NA, 
+                                         NumDoses_X = NA, 
+                                         StartHr_X = NA, 
+                                         File = sim_data_file))
+         )
       }
-      
    }
    
    # Adding some NA values to Deets as needed for the next bit to
@@ -63,7 +70,14 @@ check_doseint <- function(sim_data_file,
    
    # Dealing with custom dosing
    if(nrow(CustomDosing > 0)){
-      return("custom dosing")
+      
+      return(
+         list("message" = "custom dosing", 
+              "interval" = data.frame(DoseInt_X = NA, 
+                                      NumDoses_X = NA, 
+                                      StartHr_X = NA, 
+                                      File = sim_data_file))
+      )
    }
    
    IntCheck <- Deets %>% 

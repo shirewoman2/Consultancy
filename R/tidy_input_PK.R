@@ -102,10 +102,14 @@ tidy_input_PK <- function(PKparameters,
          
          InputWasDF <- TRUE
          
-         PKparameters <- switch(str_extract(PKparameters, "csv|xlsx"), 
-                                "csv" = read.csv(PKparameters, na.strings = "NA"), 
-                                "xlsx" = openxlsx::read.xlsx(PKparameters, 
-                                                             sheet = "PKparameters"))
+         PKparameters <- switch(
+            str_extract(PKparameters, "csv|xlsx"), 
+            "csv" = read.csv(PKparameters, na.strings = "NA"), 
+            "xlsx" = tryCatch(
+               openxlsx::read.xlsx(PKparameters, 
+                                   sheet = "PKparameters"), 
+               error = function(e) openxlsx::read.xlsx(PKparameters, 
+                                                       sheet = "observed PK")))
          
          # If there's anything named anything like "File", use that for the
          # "File" column. This is useful to deal with capitalization mismatches
@@ -635,7 +639,10 @@ tidy_input_PK <- function(PKparameters,
    # we're dealing with in that iteration of the loop in pksummary_mult. By
    # contrast, existing_exp_details will include ALL experimental details
    # provided or extracted inside the function.
-   if("logical" %in% class(existing_exp_details) == FALSE){ # logical when user has supplied NA
+   if("logical" %in% class(existing_exp_details)){
+      # logical when user has supplied NA
+      existing_exp_details <- extractExpDetails_mult(sim_data_files = sim_data_files)
+   } else { 
       existing_exp_details <- harmonize_details(existing_exp_details)
    }
    

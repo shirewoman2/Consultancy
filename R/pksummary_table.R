@@ -671,8 +671,9 @@ pksummary_table <- function(sim_data_file = NA,
    # either was a data.frame at the outset, it has been created by reading an
    # Excel or csv file for observed data, or it came from a report input form.
    # It could be in either wide or long format.
-   MyObsPK <- get_obs_PK(observed_PK, mean_type, use_median_for_tmax,
-                         sim_data_file, PKparameters)
+   MyObsPK <- 
+      get_obs_PK(observed_PK, mean_type, use_median_for_tmax,
+                 sim_data_file, PKparameters)
    
    # If they left PKparameters as NA, make sure any observed PK parameters are
    # included in the PK to extract. If they specified something for
@@ -1065,7 +1066,8 @@ pksummary_table <- function(sim_data_file = NA,
    
    ## extracting PK ------------------------------------------------------------
    
-   suppressWarnings(
+   withCallingHandlers(
+   # suppressWarnings(
       MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                    PKparameters = PKparameters_temp,
                                    tissue = tissue,

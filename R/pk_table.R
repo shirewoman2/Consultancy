@@ -687,7 +687,7 @@ pk_table <- function(PKparameters = NA,
    # b/c it just makes things so much easier.
    if(nrow(MyPKResults %>% filter(Stat == "min" & SorO == "Obs")) > 0){
       
-      MyPKResults <- MyPKResults %>% 
+      MyPKResults <- MyPKResults %>% unique() %>% 
          pivot_wider(names_from = Stat, 
                      values_from = Value) %>% 
          mutate(min = case_when(complete.cases(min) & 
@@ -944,7 +944,9 @@ pk_table <- function(PKparameters = NA,
       # Adding time interval to any data that came from custom AUC interval
       # sheets.
       if(any(complete.cases(PKparameters$Sheet)) &
-         nrow(CheckDoseInt$interval) > 0){ 
+         nrow(CheckDoseInt$interval) > 0 & 
+         CheckDoseInt$message %in% c("custom dosing", 
+                                     "can't check - missing file") == FALSE){ 
          
          IntToAdd <- CheckDoseInt$interval %>% 
             filter(Sheet %in% PKparameters$Sheet) %>% 
