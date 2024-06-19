@@ -687,7 +687,7 @@ pk_table <- function(PKparameters = NA,
    # b/c it just makes things so much easier.
    if(nrow(MyPKResults %>% filter(Stat == "min" & SorO == "Obs")) > 0){
       
-      MyPKResults <- MyPKResults %>% 
+      MyPKResults <- MyPKResults %>% unique() %>% 
          pivot_wider(names_from = Stat, 
                      values_from = Value) %>% 
          mutate(min = case_when(complete.cases(min) & 
@@ -699,14 +699,11 @@ pk_table <- function(PKparameters = NA,
                                           "parentheses" = paste0("(", min, ", ", max, ")")), 
                                 TRUE ~ min)) %>% 
          select(-max) %>% 
-         pivot_longer(cols = -c(PKParam, SorO), 
+         pivot_longer(cols = -any_of(c("PKParam", "SorO", "File", "Sheet", 
+                                       "CompoundID", "Tissue")), 
                       names_to = "Stat", 
                       values_to = "Value") %>% 
-         mutate(Stat = ifelse(Stat == "min", 
-                              switch(MeanType, 
-                                     "geometric" = "GCV", 
-                                     "arithmetic" = "CV"), 
-                              Stat))
+         mutate(Stat = ifelse(Stat == "min", "range", Stat))
    }
    
    # Checking for any PK parameters where there are no simulated data.
@@ -724,7 +721,7 @@ pk_table <- function(PKparameters = NA,
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
              Stat = factor(Stat, levels = c("mean", "geomean", "median",
                                             "CV", "GCV", 
-                                            "min", "max",
+                                            "min", "max", "range", 
                                             "CI90_low", "CI90_high", "CI95_low", 
                                             "CI95_high", "per5", "per95",
                                             "MinMean", "MaxMean", 
@@ -944,7 +941,9 @@ pk_table <- function(PKparameters = NA,
       # Adding time interval to any data that came from custom AUC interval
       # sheets.
       if(any(complete.cases(PKparameters$Sheet)) &
-         nrow(CheckDoseInt$interval) > 0){ 
+         nrow(CheckDoseInt$interval) > 0 & 
+         CheckDoseInt$message %in% c("custom dosing", 
+                                     "can't check - missing file") == FALSE){ 
          
          IntToAdd <- CheckDoseInt$interval %>% 
             filter(Sheet %in% PKparameters$Sheet) %>% 
