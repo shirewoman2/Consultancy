@@ -944,9 +944,20 @@ pk_table <- function(PKparameters = NA,
       # Adding time interval to any data that came from custom AUC interval
       # sheets.
       if(any(complete.cases(PKparameters$Sheet)) &
-         nrow(CheckDoseInt$interval) > 0 & 
-         CheckDoseInt$message %in% c("custom dosing", 
-                                     "can't check - missing file") == FALSE){ 
+         nrow(CheckDoseInt$interval) > 0){ 
+         
+         # Dealing with instances where we just don't have the info needed
+         UselessCheckDoseInt <- CheckDoseInt$message %in% 
+            c("custom dosing", 
+              "can't check - missing file")
+         UselessCheckDoseInt <- UselessCheckDoseInt[which(UselessCheckDoseInt)]
+         
+         if(length(UselessCheckDoseInt) > 0){
+            UselessCheckDoseInt <- names(UselessCheckDoseInt)
+            CheckDoseInt$interval <- CheckDoseInt$interval %>% 
+               unite(col = "ID", File, Sheet, CompoundID, Tissue, sep = ".") %>% 
+               filter(!ID %in% UselessCheckDoseInt)
+         }
          
          IntToAdd <- CheckDoseInt$interval %>% 
             filter(Sheet %in% PKparameters$Sheet) %>% 

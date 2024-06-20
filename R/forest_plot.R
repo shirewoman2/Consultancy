@@ -19,12 +19,12 @@
 #' are unable to include a link to it here.)
 #'
 #' @param forest_dataframe a data.frame with extracted forest-plot data,
-#'   generated from running \code{\link{extractForestData}} or
+#'   generated from running \code{\link{pk_table}} or
 #'   \code{\link{pksummary_mult}} with the argument \code{extract_forest_data}
-#'   set to TRUE on Simulator output files. Alternatively, if you already have
-#'   some saved forest-plot data, supply a csv or Excel file with the same data.
-#'   (If it's an Excel file, it must have only one tab.) The following columns
-#'   are required:
+#'   set to TRUE on Simulator output files. This can also included observed PK
+#'   data. Alternatively, if you already have some saved forest-plot data,
+#'   supply a csv or Excel file with the same data. (If it's an Excel file, it
+#'   must have only one tab.) The following columns are required:
 #'
 #'   \describe{\item{File}{Simulation file name. You can hack this and set the values to
 #'   whatever you want rather than simulation file names, but this column is
@@ -736,7 +736,6 @@ forest_plot <- function(forest_dataframe,
                                               c("file", "mean", "median", "min", "max", 
                                                 "fold", "substrate", "inhibitor1")])
    
-   
    if(ObsIncluded){
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "geomean|geometric"))] <- "GeoMean"
@@ -761,6 +760,17 @@ forest_plot <- function(forest_dataframe,
          str_to_title(names(observed_PK)[tolower(names(observed_PK)) %in% 
                                             c("file", "mean", "median", "min", "max", 
                                               "fold", "substrate", "inhibitor1")])
+   } else {
+      # If the user supplied observed data when they extracted the PK, then the
+      # forest data should include observed PK. Checking for that if they did not
+      # supply observed data as a separate data.frame.
+      
+      if(any(forest_dataframe$SorO == "Obs")){
+         observed_PK <- forest_dataframe %>% filter(SorO == "Obs")
+         forest_dataframe <- forest_dataframe %>% filter(SorO == "Sim")
+         
+         ObsIncluded <- TRUE
+      }
    }
    
    # Checking for acceptable input for PK_labels
@@ -1888,7 +1898,7 @@ forest_plot <- function(forest_dataframe,
                                                           linewidth = 0.25)), 
          # legend.key = element_rect(colour="black", size = 0.5), # <-- Alternate attempt to add borders around legend boxes, but this one results in a box with a little bit of space between the rectangle glyph and the border. The "guides" option earlier works better.
          legend.position = legend_position, ### KEEP THIS
-         legend.box = ifelse(legend_position == "bottom", "vertical", "horizontal"),
+         legend.box = "vertical", 
          legend.margin = margin(0, 0, 0, 0), 
          strip.text = element_text(face = "bold"),
          strip.text.y.left = element_text(angle = 0),
