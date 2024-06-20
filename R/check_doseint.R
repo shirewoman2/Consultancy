@@ -49,7 +49,8 @@ check_doseint <- function(sim_data_file,
                  "interval" = data.frame(DoseInt_X = NA, 
                                          NumDoses_X = NA, 
                                          StartHr_X = NA, 
-                                         File = sim_data_file))
+                                         File = sim_data_file, 
+                                         CompoundID = compoundID))
          )
       }
    }
@@ -66,18 +67,6 @@ check_doseint <- function(sim_data_file,
          bind_cols(as.data.frame(matrix(data = NA, 
                                         ncol = length(MissingCols),
                                         dimnames = list(NULL, MissingCols))))
-   }
-   
-   # Dealing with custom dosing
-   if(nrow(CustomDosing > 0)){
-      
-      return(
-         list("message" = "custom dosing", 
-              "interval" = data.frame(DoseInt_X = NA, 
-                                      NumDoses_X = NA, 
-                                      StartHr_X = NA, 
-                                      File = sim_data_file))
-      )
    }
    
    IntCheck <- Deets %>% 
@@ -191,6 +180,13 @@ check_doseint <- function(sim_data_file,
          warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n", 
                  call. = FALSE)
       }
+   }
+   
+   if(nrow(CustomDosing > 0)){
+      IntCheckMessage <- ifelse(IntCheckMessage == "good", 
+                                # This probably can't be anything but "good",
+                                # but checking just in case.
+                                "custom dosing", IntCheckMessage)
    }
    
    return(list("message" = IntCheckMessage, 
