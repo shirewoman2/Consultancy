@@ -1067,7 +1067,7 @@ pksummary_table <- function(sim_data_file = NA,
    ## extracting PK ------------------------------------------------------------
    
    withCallingHandlers(
-   # suppressWarnings(
+      # suppressWarnings(
       MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                    PKparameters = PKparameters_temp,
                                    tissue = tissue,
@@ -1211,8 +1211,10 @@ pksummary_table <- function(sim_data_file = NA,
    }
    
    if(length(Missing) > 0 & complete.cases(PKparameters[1])){
-      warning(paste("The following parameters were requested but not found in your simulator output file:",
-                    str_comma(Missing)),
+      warning(wrapn(paste0("The following parameters were requested for the simulation '", 
+                           sim_data_file, 
+                           "' but not found in your simulator output file:",
+                           str_comma(Missing))),
               call. = FALSE)
    }
    
@@ -1239,18 +1241,20 @@ pksummary_table <- function(sim_data_file = NA,
    # Adding trial means since they're not part of the default output
    if(includeTrialMeans){
       
-      TrialMeans <- MyPKResults_all$individual %>%
-         group_by(Trial) %>%
-         summarize(across(.cols = -Individual,
-                          .fns = list("geomean" = gm_mean, 
-                                      "mean" = mean, 
-                                      "median" = median), 
-                          .names = "{.col}-{.fn}")) %>%
-         ungroup() %>%
-         pivot_longer(cols = -Trial, names_to = "Parameter",
-                      values_to = "Value") %>%
-         separate(col = Parameter, into = c("Parameter", "Stat"), 
-                  sep = "-") 
+      suppressWarnings(
+         TrialMeans <- MyPKResults_all$individual %>%
+            group_by(Trial) %>%
+            summarize(across(.cols = -Individual,
+                             .fns = list("geomean" = gm_mean, 
+                                         "mean" = mean, 
+                                         "median" = median), 
+                             .names = "{.col}-{.fn}")) %>%
+            ungroup() %>%
+            pivot_longer(cols = -Trial, names_to = "Parameter",
+                         values_to = "Value") %>%
+            separate(col = Parameter, into = c("Parameter", "Stat"), 
+                     sep = "-") 
+      )
       
       if(use_median_for_tmax){
          TrialMeans <- TrialMeans %>% 
@@ -1402,22 +1406,25 @@ pksummary_table <- function(sim_data_file = NA,
    if("Value" %in% names(MyObsPK)){
       
       if("CV" %in% names(MyObsPK)){
-         MyObsPK_var <- MyObsPK %>% select(-Value) %>% 
-            rename(PKParam = PKparameter) %>% 
-            separate(col = CV, into = c("CV1", "CV2"), sep = "-") %>% 
-            mutate(across(.cols = c(CV1, CV2), .fn = as.numeric), 
-                   Stat = case_when(complete.cases(CV2) ~ "range", 
-                                    is.na(CV2) & MeanType == "arithmetic" ~ "CV", 
-                                    is.na(CV2) & MeanType == "geometric" ~ "GCV")) %>% 
-            pivot_longer(cols = c(CV1, CV2), 
-                         names_to = "VariableType", 
-                         values_to = "Value") %>% 
-            mutate(Stat = case_when(Stat == "range" & VariableType == "CV1" ~ "min", 
-                                    Stat == "range" & VariableType == "CV2" ~ "max", 
-                                    TRUE ~ Stat), 
-                   SorO = "Obs") %>% 
-            filter(complete.cases(Value)) %>% 
-            select(-VariableType)
+         
+         suppressWarnings(
+            MyObsPK_var <- MyObsPK %>% select(-Value) %>% 
+               rename(PKParam = PKparameter) %>% 
+               separate(col = CV, into = c("CV1", "CV2"), sep = "-") %>% 
+               mutate(across(.cols = c(CV1, CV2), .fn = as.numeric), 
+                      Stat = case_when(complete.cases(CV2) ~ "range", 
+                                       is.na(CV2) & MeanType == "arithmetic" ~ "CV", 
+                                       is.na(CV2) & MeanType == "geometric" ~ "GCV")) %>% 
+               pivot_longer(cols = c(CV1, CV2), 
+                            names_to = "VariableType", 
+                            values_to = "Value") %>% 
+               mutate(Stat = case_when(Stat == "range" & VariableType == "CV1" ~ "min", 
+                                       Stat == "range" & VariableType == "CV2" ~ "max", 
+                                       TRUE ~ Stat), 
+                      SorO = "Obs") %>% 
+               filter(complete.cases(Value)) %>% 
+               select(-VariableType)
+         )        
          
       } else {
          MyObsPK_var <- MyObsPK %>% select(-Value) %>% 

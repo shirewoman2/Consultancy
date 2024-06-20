@@ -854,36 +854,34 @@ pksummary_mult <- function(sim_data_files = NA,
             }
             
             message(paste("          for tissue =", k))
-            suppressWarnings(
-               temp <- pksummary_table(
-                  sim_data_file = i,
-                  compoundToExtract = j,
-                  tissue = k, 
-                  observed_PK = ObsPK_temp,
-                  PKparameters = PKparameters, 
-                  PKorder = PKorder, 
-                  sheet_PKparameters = sheet_PKparameters, 
-                  return_PK_pulled = TRUE,
-                  existing_exp_details = Deets,
-                  mean_type = mean_type,
-                  use_median_for_tmax = use_median_for_tmax,
-                  includeCV = includeCV,
-                  includeSD = includeSD, 
-                  includeMedian = includeMedian,
-                  includeRange = includeRange,
-                  includeConfInt = includeConfInt, 
-                  includePerc = includePerc, 
-                  includeTrialMeans = includeTrialMeans,
-                  concatVariability = concatVariability,
-                  variability_format = variability_format,
-                  include_dose_num = TRUE, # will remove later if needed but we need this for some of the table heading info
-                  rounding = rounding,
-                  convert_conc_units = convert_conc_units,
-                  prettify_columns = prettify_columns, 
-                  extract_forest_data = extract_forest_data,
-                  checkDataSource = checkDataSource,
-                  prettify_compound_names = prettify_compound_names)
-            )
+            temp <- pksummary_table(
+               sim_data_file = i,
+               compoundToExtract = j,
+               tissue = k, 
+               observed_PK = ObsPK_temp,
+               PKparameters = PKparameters, 
+               PKorder = PKorder, 
+               sheet_PKparameters = sheet_PKparameters, 
+               return_PK_pulled = TRUE,
+               existing_exp_details = Deets,
+               mean_type = mean_type,
+               use_median_for_tmax = use_median_for_tmax,
+               includeCV = includeCV,
+               includeSD = includeSD, 
+               includeMedian = includeMedian,
+               includeRange = includeRange,
+               includeConfInt = includeConfInt, 
+               includePerc = includePerc, 
+               includeTrialMeans = includeTrialMeans,
+               concatVariability = concatVariability,
+               variability_format = variability_format,
+               include_dose_num = TRUE, # will remove later if needed but we need this for some of the table heading info
+               rounding = rounding,
+               convert_conc_units = convert_conc_units,
+               prettify_columns = prettify_columns, 
+               extract_forest_data = extract_forest_data,
+               checkDataSource = checkDataSource,
+               prettify_compound_names = prettify_compound_names)
             
             if(length(temp) == 0){
                warning(paste0("There were no possible PK parameters to be extracted for the ",

@@ -275,14 +275,14 @@ annotateDetails <- function(existing_exp_details,
                             "inhibitor 1", "inhibitor 2", 
                             "inhibitor 1 metabolite") == FALSE)){
       
-      warning(paste0("You requested the following compoundIDs that are not among the permissible options: ",
-                     str_comma(setdiff(compoundID, c("substrate", 
-                                                     "primary metabolite 1",
-                                                     "primary metabolite 2",
-                                                     "secondary metabolite",
-                                                     "inhibitor 1", "inhibitor 2", 
-                                                     "inhibitor 1 metabolite"))),
-                     ". These will not be included in the output. Please check the help file for acceptable options for compoundID.\n"),
+      warning(wrapn(paste0("You requested the following compoundIDs that are not among the permissible options: ",
+                           str_comma(setdiff(compoundID, c("substrate", 
+                                                           "primary metabolite 1",
+                                                           "primary metabolite 2",
+                                                           "secondary metabolite",
+                                                           "inhibitor 1", "inhibitor 2", 
+                                                           "inhibitor 1 metabolite"))),
+                           ". These will not be included in the output. Please check the help file for acceptable options for compoundID.")),
               call. = FALSE)
       
       compoundID <- intersect(c("substrate", "primary metabolite 1",
@@ -297,9 +297,9 @@ annotateDetails <- function(existing_exp_details,
                           "secondary metabolite",
                           "inhibitor 1", "inhibitor 2", 
                           "inhibitor 1 metabolite"))){
-      warning(paste0("You requested `", compound, 
-                     "` for the compound, but we think you actually want that for the argument `compoundID`, so we're going to set `compound = NA` and compoundID = `",
-                     compound, "`. Please see the help file for the distinction between the arguments `compound` (uses actual name of the compound) and `compoundID` (uses position in the simulation, e.g., `substrate`).\n"), 
+      warning(wrapn(paste0("You requested `", compound, 
+                           "` for the compound, but we think you actually want that for the argument `compoundID`, so we're going to set `compound = NA` and compoundID = `",
+                           compound, "`. Please see the help file for the distinction between the arguments `compound` (uses actual name of the compound) and `compoundID` (uses position in the simulation, e.g., `substrate`).")), 
               call. = FALSE)
       compoundID <- compound
       compound <- NA
@@ -321,11 +321,11 @@ annotateDetails <- function(existing_exp_details,
    # that should be simpler for the user.
    if(any(complete.cases(filename_text))){
       if(any(complete.cases(sims_to_include))){
-         warning("You have specified values for both `filename_text`, an argument we plan to deprecate, and `sims_to_include`. We'll only look at the information in `sims_to_include` to determine which simulations you want.\n", 
+         warning(wrapn("You have specified values for both `filename_text`, an argument we plan to deprecate, and `sims_to_include`. We'll only look at the information in `sims_to_include` to determine which simulations you want."), 
                  call. = FALSE)
          filename_text <- NA
       } else {
-         warning("You have specified which simulations to include with the argument `filename_text`, which we plan to deprecate in the near future and replace with the (hopefully clearer and more versatile) argument `sims_to_include`. For now, we will assign your input for `filename_text` to the argument `sims_to_include`.\n", 
+         warning(wrapn("You have specified which simulations to include with the argument `filename_text`, which we plan to deprecate in the near future and replace with the (hopefully clearer and more versatile) argument `sims_to_include`. For now, we will assign your input for `filename_text` to the argument `sims_to_include`."), 
                  call. = FALSE)
          sims_to_include <- filename_text
       }
@@ -364,8 +364,8 @@ annotateDetails <- function(existing_exp_details,
    if("Substrate" %in% names(existing_exp_details$MainDetails) == FALSE & 
       (show_compound_col == TRUE | show_compound_col == "concatenate") & 
       "Compound" %in% names(existing_exp_details$MainDetails) == FALSE){
-      warning(paste0("You set show_compound_col to ", show_compound_col,
-                     ", but you appear to have already run annotateDetails on these data with show_compound_col = FALSE. This column no longer exists in your data, so we can't show it.\n"), 
+      warning(wrapn(paste0("You set show_compound_col to ", show_compound_col,
+                           ", but you appear to have already run annotateDetails on these data with show_compound_col = FALSE. This column no longer exists in your data, so we can't show it.")), 
               call. = FALSE)
       show_compound_col <- FALSE
       compound <- NA
@@ -374,7 +374,7 @@ annotateDetails <- function(existing_exp_details,
    # Checking input for template_sim 
    if(length(template_sim) > 1){
       template_sim <- template_sim[complete.cases(template_sim)]
-      warning("You can only enter one value for `template_sim` and you've entered more than that. We'll only use the first one as a template simulation.\n", 
+      warning(wrapn("You can only enter one value for `template_sim` and you've entered more than that. We'll only use the first one as a template simulation."), 
               call. = FALSE)
    }
    
@@ -383,7 +383,7 @@ annotateDetails <- function(existing_exp_details,
    }
    
    if(show_only_diff_from_template & is.na(template_sim)){
-      warning("You requested that we only show you differences from the template simulation, but you haven't specified which file to use as the template. We don't know what details to show you, so we'll set `show_only_diff_from_template` to be FALSE.\n", 
+      warning(wrapn("You requested that we only show you differences from the template simulation, but you haven't specified which file to use as the template. We don't know what details to show you, so we'll set `show_only_diff_from_template` to be FALSE."), 
               call. = FALSE)
       show_only_diff_from_template <- FALSE
    }
@@ -406,9 +406,9 @@ annotateDetails <- function(existing_exp_details,
    
    if(complete.cases(template_sim) && 
       template_sim %in% existing_exp_details$MainDetails$File == FALSE){
-      warning(paste0("You requested a template_sim of `", 
-                     template_sim, 
-                     "`, but that is not one of the files included in `existing_exp_details`. We won't be able to compare parameters to a template simulation in the output.\n"), 
+      warning(wrapn(paste0("You requested a template_sim of `", 
+                           template_sim, 
+                           "`, but that is not one of the files included in `existing_exp_details`. We won't be able to compare parameters to a template simulation in the output.")), 
               call. = FALSE)
       template_sim <- NA
    }
@@ -678,23 +678,23 @@ annotateDetails <- function(existing_exp_details,
             # specifically requested this item with the detail_set argument.
             if(item %in% c(detail_set, "MainDetails")){
                if(complete.cases(compoundID)){
-                  warning(paste0("None of the simulations in the ", 
-                                 item_char, 
-                                 " included the specific compound and compound ID you requested. You requested a compound with `", 
-                                 compound, 
-                                 "` in the name as the ", compoundID, 
-                                 ", but the compounds present in these simulations for the ", 
-                                 compoundID, 
-                                 " are: ", 
-                                 str_comma(sort(unique(DF$Compound))), ". All the information specific to only those compounds will be omitted from your output.\n"), 
+                  warning(wrapn(paste0("None of the simulations in the ", 
+                                       item_char, 
+                                       " included the specific compound and compound ID you requested. You requested a compound with `", 
+                                       compound, 
+                                       "` in the name as the ", compoundID, 
+                                       ", but the compounds present in these simulations for the ", 
+                                       compoundID, 
+                                       " are: ", 
+                                       str_comma(sort(unique(DF$Compound))), ". All the information specific to only those compounds will be omitted from your output.")), 
                           call. = FALSE)   
                } else {
-                  warning(paste0("None of the simulations in the ", 
-                                 item_char, 
-                                 " included the specific compound you requested. You requested a compound with `", 
-                                 compound, 
-                                 "`` in the name, but the compounds present in these simulations are: ", 
-                                 str_comma(sort(unique(DF$Compound))), ". All the information specific to only those compounds will be omitted from your output.\n"), 
+                  warning(wrapn(paste0("None of the simulations in the ", 
+                                       item_char, 
+                                       " included the specific compound you requested. You requested a compound with `", 
+                                       compound, 
+                                       "`` in the name, but the compounds present in these simulations are: ", 
+                                       str_comma(sort(unique(DF$Compound))), ". All the information specific to only those compounds will be omitted from your output.")), 
                           call. = FALSE)   
                }
             }
@@ -780,8 +780,8 @@ annotateDetails <- function(existing_exp_details,
          MySections <- sort(unique(MySections))
          
          if(length(MySections) == 0){
-            warning(paste0("You entered ", simulator_section_orig), 
-                    " for the argument `simulator_section`, but that is not among the acceptable options, which are listed in the help file. We will not filter your results based on simulator section.\n", 
+            warning(wrapn(paste0("You entered ", simulator_section_orig, 
+                                 " for the argument `simulator_section`, but that is not among the acceptable options, which are listed in the help file. We will not filter your results based on simulator section.")), 
                     call. = FALSE)
          }
          
@@ -994,9 +994,9 @@ annotateDetails <- function(existing_exp_details,
             
             if(any(CmpdCheck$N > 1)){
                
-               warning(paste0("You have asked to concatenate the compound column and also requested all details that match `", 
-                              compound, 
-                              "`. The problem, though, is that you have requested information for compounds that occupy more than one position in the Simulator, e.g., one is the substrate and one is inhibitor 1 in the same simulation, which means that there would be more than one value for a given detail. This wouldn't be workable in the results, so we cannot concatenate the compound column in this situation.\n"), 
+               warning(wrapn(paste0("You have asked to concatenate the compound column and also requested all details that match `", 
+                                    compound, 
+                                    "`. The problem, though, is that you have requested information for compounds that occupy more than one position in the Simulator, e.g., one is the substrate and one is inhibitor 1 in the same simulation, which means that there would be more than one value for a given detail. This wouldn't be workable in the results, so we cannot concatenate the compound column in this situation.")), 
                        call. = FALSE)
             } else {
                
@@ -1065,11 +1065,11 @@ annotateDetails <- function(existing_exp_details,
             # Only giving the warning when it's for MainDetails b/c otherwise
             # it's confusing. 
             if(item == "MainDetails"){
-               warning(paste0("Your template simulation file, `", 
-                              template_sim, 
-                              "`, was originally included in the object you supplied for `existing_exp_details`, but that particular simulation didn't have any of the combination of details or compound IDs or compounds that you requested we filter the results by for the ", 
-                              item_char, 
-                              ". We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim` for this part of the output.\n"), 
+               warning(wrapn(paste0("Your template simulation file, `", 
+                                    template_sim, 
+                                    "`, was originally included in the object you supplied for `existing_exp_details`, but that particular simulation didn't have any of the combination of details or compound IDs or compounds that you requested we filter the results by for the ", 
+                                    item_char, 
+                                    ". We thus don't have a good template simulation to compare other files to, so we'll have to ignore your input for `template_sim` for this part of the output.")), 
                        call. = FALSE)
             }
             
@@ -1273,10 +1273,10 @@ annotateDetails <- function(existing_exp_details,
                                output_tab_name){
          
          if(nchar(output_tab_name) > 31){
-            warning(paste0("The tab `", 
-                           output_tab_name, 
-                           "` has more than 31 characters, which is the maximum. This tab will be shortened to `", 
-                           str_sub(output_tab_name, 1, 31), "`.\n"), 
+            warning(wrapn(paste0("The tab `", 
+                                 output_tab_name, 
+                                 "` has more than 31 characters, which is the maximum. This tab will be shortened to `", 
+                                 str_sub(output_tab_name, 1, 31), "`.")), 
                     call. = FALSE)
          }
          
@@ -1302,10 +1302,10 @@ annotateDetails <- function(existing_exp_details,
          # example, extractExpDetails pulls only the "Summary" tab by default, so
          # it won't have a LOT of useful information.
          if(nrow(Out[[item]][["DF"]]) == 1){
-            warning(paste0(
+            warning(wrapn(paste0(
                "There is only 1 row in your output for the ",
                item_char, 
-               ". When you ran `extractExpDetails` or `extractExpDetails_mult`, did you request all the information you wanted? For example, if you only requested information from the population tab, that won't include any elimination information.\n"), 
+               ". When you ran `extractExpDetails` or `extractExpDetails_mult`, did you request all the information you wanted? For example, if you only requested information from the population tab, that won't include any elimination information.")), 
                call. = FALSE)
          }
          

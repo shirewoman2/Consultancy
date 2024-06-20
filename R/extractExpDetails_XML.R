@@ -464,9 +464,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       
       switch(Ext, 
              "csv" = write.csv(as.data.frame(Deets), FileName, row.names = F), 
-             "xlsx" = formatXL_head(as.data.frame(Deets), 
-                                    FileName, 
-                                    sheet = "Simulation experimental details"))
+             "xlsx" = openxlsx::write.xlsx(as.data.frame(Out$MainDetails), 
+                                           FileName))
    }
    
    Out <- harmonize_details(Deets)
