@@ -172,7 +172,8 @@ create_doses_from_file <- function(study_file,
     }
     
     if(complete.cases(num_doses) & complete.cases(end_time)){
-        warning("You have supplied values for both `num_doses` and `end_time`. We will use the number of doses requested and ignore anything specified for the end time of dosing.")
+        warning(wrapn("You have supplied values for both `num_doses` and `end_time`. We will use the number of doses requested and ignore anything specified for the end time of dosing."), 
+		call. = FALSE)
     }
     
     # Main body of function --------------------------------------------------

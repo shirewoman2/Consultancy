@@ -161,7 +161,8 @@ create_doses <- function(dose_interval = NA,
    }
    
    if(complete.cases(num_doses) & complete.cases(end_time)){
-      warning("You have supplied values for both `num_doses` and `end_time`. We will use the number of doses requested and ignore anything specified for the end time of dosing.")
+      warning(wrapn("You have supplied values for both `num_doses` and `end_time`. We will use the number of doses requested and ignore anything specified for the end time of dosing."), 
+	  call. = FALSE)
    }
    
    # Checking for disparate lengths of entered values b/c can result in user
@@ -271,7 +272,7 @@ create_doses <- function(dose_interval = NA,
    StartTimeCheck <- MyStartTimes %>% group_by(Compound_ID) %>% 
       summarize(Nrow = n())
    if(any(StartTimeCheck$Nrow != 1)){
-      warning("You have listed more than one start time for one of the compounds, so we're not sure which one to use. All start times will be 0.",
+      warning(wrapn("You have listed more than one start time for one of the compounds, so we're not sure which one to use. All start times will be 0."),
               call. = FALSE)
    }
    
@@ -380,8 +381,8 @@ create_doses <- function(dose_interval = NA,
          if(str_detect(save_output, "\\.csv") == FALSE){
             # Give a warning if they used any file extension other than csv
             # that their file will be saved as csv.
-            warning(paste0("You supplied a file extension other than csv, but this function only supports csv output. Your file will be saved as `", 
-                           sub("\\..*", ".csv", save_output), "`."), 
+            warning(wrapn(paste0("You supplied a file extension other than csv, but this function only supports csv output. Your file will be saved as `", 
+                           sub("\\..*", ".csv", save_output), "`.")), 
                     call. = FALSE)
          }
          

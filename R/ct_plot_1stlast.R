@@ -422,14 +422,14 @@ ct_plot_1stlast <- function(ct_dataframe,
    
    if(any(complete.cases(time_range_1st)) &&
       length(time_range_1st) < 2){
-      warning("You must supply 2 values (beginning and end) for the 1st dose for time_range_1st or leave this as NA. We're settin this to NA.\n", 
+      warning(wrapn("You must supply 2 values (beginning and end) for the 1st dose for time_range_1st or leave this as NA. We're settin this to NA."), 
               call. = FALSE)
       time_range_1st <- NA
    }
    
    if(any(complete.cases(time_range_last)) &&
       length(time_range_last) < 2){
-      warning("You must supply 2 values (beginning and end) for the last dose for time_range_1st or leave this as NA. We're settin this to NA.\n", 
+      warning(wrapn("You must supply 2 values (beginning and end) for the last dose for time_range_1st or leave this as NA. We're settin this to NA."), 
               call. = FALSE)
       time_range_last <- NA
    }
@@ -571,8 +571,8 @@ ct_plot_1stlast <- function(ct_dataframe,
          FileName <- sub(paste0(".", Ext), "", FileName)
          if(Ext %in% c("eps", "ps", "jpeg", "tiff",
                        "png", "bmp", "svg", "jpg", "docx") == FALSE){
-            warning(paste0("You have requested the graph's file extension be `", 
-                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+            warning(wrapn(paste0("You have requested the graph's file extension be `", 
+                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
                     call. = FALSE)
          }
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
