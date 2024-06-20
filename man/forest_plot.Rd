@@ -46,12 +46,12 @@ forest_plot(
 }
 \arguments{
 \item{forest_dataframe}{a data.frame with extracted forest-plot data,
-  generated from running \code{\link{extractForestData}} or
+  generated from running \code{\link{pk_table}} or
   \code{\link{pksummary_mult}} with the argument \code{extract_forest_data}
-  set to TRUE on Simulator output files. Alternatively, if you already have
-  some saved forest-plot data, supply a csv or Excel file with the same data.
-  (If it's an Excel file, it must have only one tab.) The following columns
-  are required:
+  set to TRUE on Simulator output files. This can also included observed PK
+  data. Alternatively, if you already have some saved forest-plot data,
+  supply a csv or Excel file with the same data. (If it's an Excel file, it
+  must have only one tab.) The following columns are required:
 
   \describe{\item{File}{Simulation file name. You can hack this and set the values to
   whatever you want rather than simulation file names, but this column is
