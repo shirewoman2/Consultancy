@@ -96,10 +96,12 @@ pk_table_subfun <- function(sim_data_file,
       stop_or_warn_missing_file = "warn")
    
    if(CheckDoseInt$message == "mismatch last dose"){
-      warning("The time used for integrating the AUC for the last dose was not the same as the dosing interval.\n", 
+      warning(wrapn(paste0("The time used for integrating the AUC for the last dose was not the same as the dosing interval for the simulation '", 
+                           sim_data_file, "'.")), 
               call. = FALSE)
    } else if(CheckDoseInt$message == "mismatch user-defined interval"){
-      warning("The time used for integrating the AUC for the custom AUC interval was not the same as the dosing interval.\n", 
+      warning(wrapn(paste0("The time used for integrating the AUC for the custom AUC interval was not the same as the dosing interval for the simulation'", 
+                           sim_data_file, "'.")),
               call. = FALSE)
    }
    
@@ -212,8 +214,10 @@ pk_table_subfun <- function(sim_data_file,
    Missing <- setdiff(Missing, "AUCinf_dose1")
    
    if(length(Missing) > 0){
-      warning(paste("The following parameters were requested but not found in your simulator output file:",
-                    str_comma(Missing)),
+      warning(wrapn(paste0("The following parameters were requested for the simulation '", 
+                           sim_data_file, 
+                           "' but not found in your simulator output file:",
+                           str_comma(Missing))),
               call. = FALSE)
    }
    
@@ -240,18 +244,20 @@ pk_table_subfun <- function(sim_data_file,
    # Adding trial means since they're not part of the default output
    if(includeTrialMeans){
       
-      TrialMeans <- MyPKResults_all$individual %>%
-         group_by(Trial) %>%
-         summarize(across(.cols = -Individual,
-                          .fns = list("geomean" = gm_mean, 
-                                      "mean" = mean, 
-                                      "median" = median), 
-                          .names = "{.col}-{.fn}")) %>%
-         ungroup() %>%
-         pivot_longer(cols = -Trial, names_to = "Parameter",
-                      values_to = "Value") %>%
-         separate(col = Parameter, into = c("Parameter", "Stat"), 
-                  sep = "-") 
+      suppressWarnings(
+         TrialMeans <- MyPKResults_all$individual %>%
+            group_by(Trial) %>%
+            summarize(across(.cols = -Individual,
+                             .fns = list("geomean" = gm_mean, 
+                                         "mean" = mean, 
+                                         "median" = median), 
+                             .names = "{.col}-{.fn}")) %>%
+            ungroup() %>%
+            pivot_longer(cols = -Trial, names_to = "Parameter",
+                         values_to = "Value") %>%
+            separate(col = Parameter, into = c("Parameter", "Stat"), 
+                     sep = "-") 
+      )
       
       if(use_median_for_tmax){
          TrialMeans <- TrialMeans %>% 
@@ -399,24 +405,26 @@ pk_table_subfun <- function(sim_data_file,
                       SorO = "Obs")
          } else {
             
-            ObsPK_var <- ObsPK_var %>% 
-               rename(PKParam = PKparameter) %>% 
-               separate(col = Variability, 
-                        into = c("Variability1", "Variability2"), 
-                        sep = "-|( )?to( )?") %>% 
-               mutate(across(.cols = c(Variability1, Variability2), .fn = as.numeric), 
-                      Stat = case_when(complete.cases(Variability2) ~ "range", 
-                                       is.na(Variability2) & MeanType == "arithmetic" ~ "CV", 
-                                       is.na(Variability2) & MeanType == "geometric" ~ "GCV")) %>% 
-               pivot_longer(cols = c(Variability1, Variability2), 
-                            names_to = "VariableType", 
-                            values_to = "Value") %>% 
-               mutate(Stat = case_when(Stat == "range" & VariableType == "Variability1" ~ "min", 
-                                       Stat == "range" & VariableType == "Variability2" ~ "max", 
-                                       TRUE ~ Stat), 
-                      SorO = "Obs") %>% 
-               filter(complete.cases(Value)) %>% 
-               select(-VariableType)
+            suppressWarnings(
+               ObsPK_var <- ObsPK_var %>% 
+                  rename(PKParam = PKparameter) %>% 
+                  separate(col = Variability, 
+                           into = c("Variability1", "Variability2"), 
+                           sep = "-|( )?to( )?") %>% 
+                  mutate(across(.cols = c(Variability1, Variability2), .fn = as.numeric), 
+                         Stat = case_when(complete.cases(Variability2) ~ "range", 
+                                          is.na(Variability2) & MeanType == "arithmetic" ~ "CV", 
+                                          is.na(Variability2) & MeanType == "geometric" ~ "GCV")) %>% 
+                  pivot_longer(cols = c(Variability1, Variability2), 
+                               names_to = "VariableType", 
+                               values_to = "Value") %>% 
+                  mutate(Stat = case_when(Stat == "range" & VariableType == "Variability1" ~ "min", 
+                                          Stat == "range" & VariableType == "Variability2" ~ "max", 
+                                          TRUE ~ Stat), 
+                         SorO = "Obs") %>% 
+                  filter(complete.cases(Value)) %>% 
+                  select(-VariableType)
+            )
          }
       } else {
          # placeholder

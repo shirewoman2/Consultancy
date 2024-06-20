@@ -219,9 +219,9 @@ calc_dosenumber <- function(ct_dataframe,
                # this would be), then there are two dose numbers listed for t0.
                # Removing the earlier one so that this will work.
                if(any(duplicated(CD_i[[j]]$Time))){
-                  warning(paste0("There were multiple dose numbers listed at the same time for the ",
+                  warning(wrapn(paste0("There were multiple dose numbers listed at the same time for the ",
                                  j," in the file ", i, 
-                                 "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed.\n"),
+                                 "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed.")),
                           call. = FALSE)
                   TimeToRemove <- which(duplicated(
                      CD_i[[j]]$Time, fromLast = TRUE))
