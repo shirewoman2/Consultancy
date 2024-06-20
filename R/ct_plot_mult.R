@@ -309,7 +309,7 @@ ct_plot_mult <- function(ct_dataframe,
       }
       
       if(class(Deets)[1] == "character"){
-         warning("We couldn't find the source Excel files for this graph, so we can't QC it.", 
+         warning(wrapn("We couldn't find the source Excel files for this graph, so we can't QC it."), 
                  call. = FALSE)
          qc_graph <- FALSE
       }
@@ -587,10 +587,10 @@ ct_plot_mult <- function(ct_dataframe,
          # this gives unexpected output if there are not enough slots to fit
          # all the graphs.
          if(nrow * ncol < length(AllGraphs)){
-            warning(paste0("You requested ", nrow, " row(s) and ", 
+            warning(wrapn(paste0("You requested ", nrow, " row(s) and ", 
                            ncol, " column(s) of graphs, which allows space for up to ", 
                            nrow * ncol, " graphs. However, you have ", 
-                           length(AllGraphs), " graphs. We're going to guess at more reasonable numbers of rows and columns for you."),
+                           length(AllGraphs), " graphs. We're going to guess at more reasonable numbers of rows and columns for you.")),
                     call. = FALSE)
             nrow <- NULL
             ncol <- NULL
@@ -646,8 +646,8 @@ ct_plot_mult <- function(ct_dataframe,
             FileName <- sub(paste0(".", Ext), "", FileName)
             if(Ext %in% c("eps", "ps", "jpeg", "tiff",
                           "png", "bmp", "svg", "jpg", "docx") == FALSE){
-               warning(paste0("You have requested the graph's file extension be `", 
-                              Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+               warning(wrapn(paste0("You have requested the graph's file extension be `", 
+                              Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
                        call. = FALSE)
             }
             Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",

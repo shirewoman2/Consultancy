@@ -236,7 +236,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    # Check for appropriate input for arguments
    tissue <- tolower(tissue)
    if(tissue %in% c("plasma", "blood", "unbound plasma", "unbound") == FALSE){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma.", 
+      warning(wrapn("You have not supplied a permissible value for tissue. Options are `plasma`, `unbound plasma`, `blood`, or `unbound blood`. The PK parameters will be for plasma."), 
               call. = FALSE)
       tissue <- "plasma"
    }
@@ -244,7 +244,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    # Only returning geometric means and CI's if they want unpaired data.
    # Uncertain how to set things up otherwise.
    if(paired == FALSE & mean_type != "geometric"){
-      warning("You have supplied unpaired data and requested something other than geometric means and confidence intervals. We have only set this function up for unpaired data with geometric means and confidence intervals, so that is what will be returned.", 
+      warning(wrapn("You have supplied unpaired data and requested something other than geometric means and confidence intervals. We have only set this function up for unpaired data with geometric means and confidence intervals, so that is what will be returned."), 
               call = FALSE)
       mean_type <- "geometric"
    }
@@ -281,7 +281,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    
    page_orientation <- tolower(page_orientation)[1]
    if(page_orientation %in% c("portrait", "landscape") == FALSE){
-      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+      warning(wrapn("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`."), 
               call. = FALSE)
    }
    
@@ -289,8 +289,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    if(match_subjects_by %in% c("individual and trial", 
                                "individual only") == FALSE & 
       paired == TRUE){
-      warning(paste0(str_wrap("You have specified that you would like us to match the subjects in your paired study design by something other than `individual and trial` or `individual only`, which are the only options. We'll use the default of `individual and trial`."), 
-                     "\n"), 
+      warning(wrapn("You have specified that you would like us to match the subjects in your paired study design by something other than `individual and trial` or `individual only`, which are the only options. We'll use the default of `individual and trial`."),                      
               call. = FALSE)
    }
    
@@ -335,10 +334,10 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       }
       
       if(nrow(Deets) != 2){
-         warning(paste0("We were attempting to find the simulation details for ", 
+         warning(wrapn(paste0("We were attempting to find the simulation details for ", 
                         str_comma(c(sim_data_file_numerator, 
                                     sim_data_file_denominator)), 
-                        " and failed to find them, so we cannot return information on these files.\n"), 
+                        " and failed to find them, so we cannot return information on these files.")), 
                  call. = FALSE)
          return(data.frame())
       }
@@ -367,7 +366,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    )
    
    if(length(PKnumerator) == 0){
-      warning("We couldn't find PK values matching the requested compound ID and tissue for the numerator simulation, so we can't return any PK comparisons.\n", 
+      warning(wrapn("We couldn't find PK values matching the requested compound ID and tissue for the numerator simulation, so we can't return any PK comparisons."), 
               call. = FALSE)
       return(data.frame())
    }
@@ -384,7 +383,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
    )
    
    if(length(PKdenominator) == 0){
-      warning("We couldn't find PK values matching the requested compound ID and tissue for the denominator simulation, so we can't return any PK comparisons.\n", 
+      warning(wrapn("We couldn't find PK values matching the requested compound ID and tissue for the denominator simulation, so we can't return any PK comparisons."), 
               call. = FALSE)
       return(data.frame())
    }
@@ -430,12 +429,12 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       # trouble extrapolating to infinity.
       
       if(any(Comparisons$PKparam_num %in% names(PKnumerator$aggregate) == FALSE)){
-         warning(
+         warning(wrapn(
             paste0("The parameters ", 
                    str_comma(paste0("`", setdiff(Comparisons$PKparam_num,
                                                  names(PKnumerator$aggregate)), 
                                     "`")), 
-                   " were not available in the numerator simulation and thus will not be included in your output.\n"),
+                   " were not available in the numerator simulation and thus will not be included in your output.")),
             call. = FALSE)
          
          Comparisons <- Comparisons %>% 
@@ -443,12 +442,12 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       }
       
       if(any(Comparisons$PKparam_denom %in% names(PKdenominator$aggregate) == FALSE)){
-         warning(
+         warning(wrapn(
             paste0("The parameters ", 
                    str_comma(paste0("`", setdiff(Comparisons$PKparam_denom,
                                                  names(PKdenominator$aggregate)), 
                                     "`")), 
-                   " were not available in the denominator simulation and thus will not be included in your output.\n"),
+                   " were not available in the denominator simulation and thus will not be included in your output.")),
             call. = FALSE)
          
          Comparisons <- Comparisons %>% 
@@ -456,12 +455,12 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       }
       
       if(all(names(PKnumerator$aggregate) %in% names(PKdenominator$aggregate)) == FALSE){
-         warning(
+         warning(wrapn(
             paste0("The parameters ", 
                    str_comma(paste0("`", setdiff(names(PKnumerator$aggregate),
                                                  names(PKdenominator$aggregate)), 
                                     "`")), 
-                   " were available in the numerator but not in the denominator simulation and thus will not be included in your output.\n"),
+                   " were available in the numerator but not in the denominator simulation and thus will not be included in your output.")),
             call. = FALSE)
          
          Comparisons <- Comparisons %>% 
@@ -469,12 +468,12 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       }
       
       if(all(names(PKdenominator$aggregate) %in% names(PKnumerator$aggregate)) == FALSE){
-         warning(
+         warning(wrapn(
             paste0("The parameters ", 
                    str_comma(paste0("`", setdiff(names(PKdenominator$aggregate),
                                                  names(PKnumerator$aggregate)), 
                                     "`")), 
-                   " were available in the denominator but not in the numerator simulation and thus cannot be included in your output.\n"),
+                   " were available in the denominator but not in the numerator simulation and thus cannot be included in your output.")),
             call. = FALSE)
          
          Comparisons <- Comparisons %>% 
@@ -579,8 +578,7 @@ calc_PK_ratios <- function(sim_data_file_numerator,
       # Making sure that subjects were matched between numerator and
       # denominator
       if(any(MyPKResults$MatchProblem)){
-         warning(paste0(str_wrap("You do not appear to have perfectly matched subjects in your numerator and denominator simulations. Since you have requested calculations for a paired study design, something is amiss. We don't want to give you *incorrect* results, so we are returning *no results* here. If you have the same individuals but they're not in the same trials, please try setting `match_subjects_by = 'individual only'`. If you actually have an unpaired study design, in which case this mismatch is not a problem, please change `paired` to `FALSE` and try again."), 
-                        "\n"),
+         warning(wrapn("You do not appear to have perfectly matched subjects in your numerator and denominator simulations. Since you have requested calculations for a paired study design, something is amiss. We don't want to give you *incorrect* results, so we are returning *no results* here. If you have the same individuals but they're not in the same trials, please try setting `match_subjects_by = 'individual only'`. If you actually have an unpaired study design, in which case this mismatch is not a problem, please change `paired` to `FALSE` and try again."), 
                  call. = FALSE)
          
          # Using warning rather than stop so that it doesn't crash

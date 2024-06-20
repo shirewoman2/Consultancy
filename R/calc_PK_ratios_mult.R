@@ -288,13 +288,13 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    # Check for appropriate input for arguments
    tissue <- tolower(tissue)
    if(tissue %in% c("plasma", "blood", "unbound plasma", "unbound blood") == FALSE){
-      warning("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma.", 
+      warning(wrapn("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma."), 
               call. = FALSE)
       tissue <- "plasma"
    }
    
    if(extract_forest_data & includeConfInt == FALSE){
-      warning("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data.", 
+      warning(wrapn("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data."), 
               call. = FALSE)
       includeConfInt <- TRUE
    }
@@ -308,7 +308,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    
    page_orientation <- tolower(page_orientation)[1]
    if(page_orientation %in% c("portrait", "landscape") == FALSE){
-      warning("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`.\n", 
+      warning(wrapn("You must specify `portrait` or `landscape` for the argument page_orientation, and you've specified something else. We'll use the default of `portrait`."), 
               call. = FALSE)
    }
    
@@ -316,8 +316,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    if(match_subjects_by %in% c("individual and trial", 
                                "individual only") == FALSE & 
       paired == TRUE){
-      warning(paste0(str_wrap("You have specified that you would like us to match the subjects in your paired study design by something other than `individual and trial` or `individual only`, which are the only options. We'll use the default of `individual and trial`."), 
-                     "\n"), 
+      warning(wrapn("You have specified that you would like us to match the subjects in your paired study design by something other than `individual and trial` or `individual only`, which are the only options. We'll use the default of `individual and trial`."), 
               call. = FALSE)
    }
    
@@ -416,7 +415,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
       
       if(str_detect(round_fun, "signif|round") & 
          !str_detect(round_fun, "[0-9]{1,}")){
-         warning("You appear to want some rounding, but we're not sure how many digits. We'll use 3 for now, but please check the help file for appropriate input for the argument `rounding`.", 
+         warning(wrapn("You appear to want some rounding, but we're not sure how many digits. We'll use 3 for now, but please check the help file for appropriate input for the argument `rounding`."), 
                  call. = FALSE)
          NumDig <- 3
       }
@@ -592,7 +591,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
          pivot_wider(names_from = Statistic, values_from = Value)
       
       if(nrow(FD) == 0){
-         warning("The PK parameters selected don't work for forest plots, which can only take PK parameters for AUCinf, AUCt, AUCtau, and Cmax. We cannot return any forest-plot data.", 
+         warning(wrapn("The PK parameters selected don't work for forest plots, which can only take PK parameters for AUCinf, AUCt, AUCtau, and Cmax. We cannot return any forest-plot data."), 
                  call. = FALSE)
          FD <- data.frame()
          

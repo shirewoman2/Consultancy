@@ -143,14 +143,15 @@ call. = FALSE)
    if(switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
              "median" = "median") %in% ct_dataframe$Trial == FALSE){
       
-      warning(paste0("You requested the ", 
+      warning(wrapn(paste0("You requested the ", 
                      switch(mean_type, "arithmetic" = "arithmetic means",
                             "geometric" = "geometric means", 
                             "median" = "medians"), 
                      ", but those are not included in your data. Instead, the ",
                      ifelse(MyMeanType[1] == "mean", 
                             "arithmetic mean", MyMeanType[1]),
-                     "s will be used."))
+                     "s will be used.")), 
+					 call. = FALSE)
       MyMeanType <- MyMeanType[1] %>% as.character()
       
    } else {
