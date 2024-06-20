@@ -25,8 +25,10 @@ recalc_PK(
   first_dose_time = NA,
   last_dose_time = NA,
   dosing_interval = NA,
+  trapezoidal_method = "LULD",
   fit_points_after_x_time = NA,
   fit_last_x_number_of_points = NA,
+  add_t0_point = TRUE,
   omit_0_concs = TRUE,
   weights = NULL,
   effort_to_get_elimination_rate = "try really hard",
@@ -159,6 +161,10 @@ AUCtau using data from 168 to 192 h rather than from 168 to 336 h. This is
 only set up to accommodate a single dosing interval and not custom dosing
 regimens.}
 
+\item{trapezoidal_method}{which trapezoidal method should be used for
+calculating the AUC? Options are "LULD" (default) for "linear up/log down"
+or "linear".}
+
 \item{fit_points_after_x_time}{optionally specify that you want to fit only
 points after a certain time after the most-recent dose. Default of NA means
 that we'll fit all the data after tmax. Keep in mind that this will apply
@@ -181,12 +187,18 @@ and yield more predictable results if you specify a value for
 \code{fit_points_after_x_time} rather than
 \code{fit_last_x_number_of_points}.}
 
+\item{add_t0_point}{TRUE (default) or FALSE for whether to add a point a t =
+0 with a concentration of 0 to the data to be integrated. This ONLY applies
+to dose 1 data. If your data did not include a t0 point and you leave this
+off, you will miss the initial part of the AUC. If there is already a point
+at t = 0, this will be ignored and nothing in your data will change.}
+
 \item{omit_0_concs}{TRUE (default) or FALSE for whether to omit any points
 where the concentration = 0 since A) they were presumably below the LLOQ
 and B) they will mess up weighting should you choose to use a "1/y" or
-"1/y^2" weighting scheme. Concentrations of 0 at t0 will be retained,
+"1/y^2" weighting scheme. \strong{Concentrations of 0 at t0 will be retained,
 though, to allow for a more accurate calculation of the absorption-phase
-contribution to AUCinf and since 0 values at t0 would not be included in
+contribution to AUCinf} and since 0 values at t0 would not be included in
 any regression of the elimination phase anyway.}
 
 \item{weights}{Weighting scheme to use for the regression. User may supply a

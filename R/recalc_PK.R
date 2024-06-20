@@ -133,10 +133,15 @@
 #' @param omit_0_concs TRUE (default) or FALSE for whether to omit any points
 #'   where the concentration = 0 since A) they were presumably below the LLOQ
 #'   and B) they will mess up weighting should you choose to use a "1/y" or
-#'   "1/y^2" weighting scheme. Concentrations of 0 at t0 will be retained,
+#'   "1/y^2" weighting scheme. \strong{Concentrations of 0 at t0 will be retained,
 #'   though, to allow for a more accurate calculation of the absorption-phase
-#'   contribution to AUCinf and since 0 values at t0 would not be included in
+#'   contribution to AUCinf} and since 0 values at t0 would not be included in
 #'   any regression of the elimination phase anyway.
+#' @param add_t0_point TRUE (default) or FALSE for whether to add a point a t =
+#'   0 with a concentration of 0 to the data to be integrated. This ONLY applies
+#'   to dose 1 data. If your data did not include a t0 point and you leave this
+#'   off, you will miss the initial part of the AUC. If there is already a point
+#'   at t = 0, this will be ignored and nothing in your data will change.
 #' @param weights Weighting scheme to use for the regression. User may supply a
 #'   numeric vector of weights to use or choose from "1/x", "1/x^2", "1/y" or
 #'   "1/y^2". If left as NULL, no weighting scheme will be used. Be careful that
@@ -175,6 +180,9 @@
 #'   individual, perpetrator, etc. has been completed. Setting this to "yes" can
 #'   fill up your console pretty rapidly but can also be reassuring that things
 #'   are, in fact, progressing.
+#' @param trapezoidal_method which trapezoidal method should be used for
+#'   calculating the AUC? Options are "LULD" (default) for "linear up/log down"
+#'   or "linear".
 #'
 #' @return returns a list of individual and/or aggregate PK data
 #' @export
@@ -202,8 +210,10 @@ recalc_PK <- function(ct_dataframe,
                       first_dose_time = NA, 
                       last_dose_time = NA,
                       dosing_interval = NA,
+                      trapezoidal_method = "LULD", 
                       fit_points_after_x_time = NA,
                       fit_last_x_number_of_points = NA, 
+                      add_t0_point = TRUE, 
                       omit_0_concs = TRUE,
                       weights = NULL, 
                       effort_to_get_elimination_rate = "try really hard",
@@ -229,9 +239,16 @@ recalc_PK <- function(ct_dataframe,
    }
    
    if("character" %in% class(which_dose) == FALSE){
-      warning("You requested something for the argument `which_dose` that was not a character vector, which is what we were expecting. We will return PK for the default doses: the first and the last.\n", 
+      warning(wrapn("You requested something for the argument `which_dose` that was not a character vector, which is what we were expecting. We will return PK for the default doses: the first and the last."), 
               call. = FALSE)
       which_dose = c("first", "last")
+   }
+   
+   if(trapezoidal_method %in% c("LULD", "linear") == FALSE){
+      warning(wrapn("The only options for the trapezoidal method are 'LULD' for 'linear up/log down' or 'linear', and you have requested something else. We'll use the default of 'LULD'."), 
+              .call = FALSE)
+      
+      trapezoidal_method <- "LULD"
    }
    
    which_dose <- sub("1st", "first", tolower(which_dose))
@@ -484,6 +501,25 @@ recalc_PK <- function(ct_dataframe,
                         ifelse(Simulated == TRUE, "simulated", "observed"),
                         File, ObsFile, DoseNum)) %>% 
       filter(DoseNum %in% c(1, MaxDoseNum))
+   
+   if(add_t0_point){
+      T0 <- CTsubset %>% 
+         filter(DoseNum == 1) %>% 
+         group_by(across(
+            .cols = c(ID, CompoundID, Inhibitor, Tissue, Individual, Trial, 
+                      Simulated, File, ObsFile, DoseNum, 
+                      any_of(c("Dose_sub", "Dose_inhib", "Dose_inhib2",
+                               "Compound", "Conc_units", "Time_units", 
+                               "MaxDoseNum"))))) %>% 
+         summarize(Time = min(Time)) %>% 
+         ungroup() %>% 
+         filter(Time != 0) %>% 
+         mutate(Conc = 0, 
+                Time = 0)
+      
+      CTsubset <- CTsubset %>% bind_rows(T0)
+      
+   }
    
    
    ### Calculating PK parameters for individual datasets ------------------------
@@ -778,7 +814,7 @@ recalc_PK <- function(ct_dataframe,
                AUCextrap_temp <- noncompAUC(DF = CTsubset[["1"]][[j]], 
                                             concentration = Conc, 
                                             time = Time, 
-                                            type = "LULD", 
+                                            type = trapezoidal_method, 
                                             extrap_inf = TRUE, 
                                             extrap_inf_coefs = ElimFits[[j]], 
                                             reportFractExtrap = TRUE)
@@ -787,7 +823,7 @@ recalc_PK <- function(ct_dataframe,
             AUCt_temp <- noncompAUC(DF = CTsubset[["1"]][[j]], 
                                     concentration = Conc, 
                                     time = Time, 
-                                    type = "LULD", 
+                                    type = trapezoidal_method, 
                                     extrap_inf = FALSE)
             
             suppressMessages(
@@ -1032,7 +1068,7 @@ recalc_PK <- function(ct_dataframe,
                AUCt_temp <- noncompAUC(DF = CTsubset[[i]][[j]], 
                                        concentration = Conc, 
                                        time = Time, 
-                                       type = "LULD", 
+                                       type = trapezoidal_method, 
                                        extrap_inf = FALSE)
                
                CmaxTmax_temp <- CTsubset[[i]][[j]] %>% 
@@ -1186,7 +1222,7 @@ recalc_PK <- function(ct_dataframe,
             AUCt_temp <- noncompAUC(DF = CTtemp[[j]], 
                                     concentration = Conc, 
                                     time = Time, 
-                                    type = "LULD", 
+                                    type = trapezoidal_method, 
                                     extrap_inf = FALSE)
             
             CmaxTmax_temp <- CTtemp[[j]] %>% 

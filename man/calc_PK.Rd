@@ -14,8 +14,10 @@ calc_PK(
   first_dose_time = NA,
   last_dose_time = NA,
   dosing_interval = NA,
+  trapezoidal_method = "LULD",
   fit_points_after_x_time = NA,
   fit_last_x_number_of_points = NA,
+  add_t0_point = TRUE,
   omit_0_concs = TRUE,
   weights = NULL,
   effort_to_get_elimination_rate = "try really hard",
@@ -123,6 +125,12 @@ approach. If you supply simulated data, it will probably be less confusing
 and yield more predictable results if you specify a value for
 \code{fit_points_after_x_time} rather than
 \code{fit_last_x_number_of_points}.}
+
+\item{add_t0_point}{TRUE (default) or FALSE for whether to add a point a t =
+0 with a concentration of 0 to the data to be integrated. This ONLY applies
+to dose 1 data. If your data did not include a t0 point and you leave this
+off, you will miss the initial part of the AUC. If there is already a point
+at t = 0, this will be ignored and nothing in your data will change.}
 
 \item{omit_0_concs}{TRUE (default) or FALSE for whether to omit any points
 where the concentration = 0 since A) they were presumably below the LLOQ

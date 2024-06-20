@@ -62,6 +62,9 @@ trapRule <- function(ct_dataframe,
                      time = Time,
                      type = "LULD") {
     
+   
+   # !!! Note to self: Why do I have both this *and* noncompAUC? Maybe delete this function? 
+   
     # Error catching ---------------------------------------------------------
     # Check whether tidyverse is loaded
     if("package:tidyverse" %in% search() == FALSE){

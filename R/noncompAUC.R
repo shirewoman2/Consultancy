@@ -87,7 +87,7 @@
 #'
 #'   \item I intentionally omitted the option of using cubic splines for
 #'   calculating the AUC because they can become unstable with noisy
-#'   concentration-time data and are thus less desireable than the trapezoidal
+#'   concentration-time data and are thus less desirable than the trapezoidal
 #'   rule. For more details, please see
 #'   \url{https://www.certara.com/2011/04/02/calculating-auc-linear-and-log-linear/}.}
 #'
