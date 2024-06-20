@@ -11,8 +11,6 @@
 #'
 #' @param DF a data.frame or a flextable, usually output from
 #'   \code{\link{pksummary_table}} or \code{\link{pksummary_mult}}
-#' @param fontsize the numeric font size for the output table. Default is 11
-#'   point.
 #' @param shading_column If you would like to alternate the shading of the rows
 #'   in the output table, supply here the unquoted name of the column to check
 #'   for when to change the shading; every time that column's value changes, the
@@ -117,6 +115,14 @@
 #' @param highlight_color color to use for highlighting; default is yellow.
 #'   Color can be specified using any R-friendly color name or hex code, e.g.,
 #'   "red" or "#D8212D".
+#' @param font font to use. Default is "Arial" and any fonts available on your
+#'   machine in either Word or PowerPoint should be acceptable. If you get Times
+#'   New Roman in your table when you asked for something else, it means that
+#'   that font isn't available or maybe wasn't spelled the way R is expecting
+#'   it. For example, "Calibri" works but "Calibri (Body)" doesn't even though
+#'   the latter is listed in PowerPoint and Word.
+#' @param fontsize the numeric font size for the output table. Default is 11
+#'   point.
 #' @param save_table optionally save the output table by supplying a file name
 #'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
 #'   slashes, dollar signs, or periods in the file name. If you leave off the
@@ -139,7 +145,7 @@
 #'   perpetrator, or GMRs. If we don't know what the perpetrator drug name is,
 #'   it's really hard to do that just right.
 #' @param page_orientation set the page orientation for the Word file output to
-#'   "portrait" (default) or "landscape" 
+#'   "portrait" (default) or "landscape"
 #'
 #' @return a formatted table
 #' @export
@@ -210,7 +216,6 @@
 
 
 formatTable_Simcyp <- function(DF, 
-                               fontsize = 11, 
                                shading_column, 
                                merge_shaded_cells = TRUE,
                                merge_columns = NA, 
@@ -225,6 +230,8 @@ formatTable_Simcyp <- function(DF,
                                highlight_so_colors = "yellow to red",
                                highlight_cells = NA, 
                                highlight_color = "yellow",
+                               font = "Arial", 
+                               fontsize = 11, 
                                save_table = NA, 
                                page_orientation = "portrait", 
                                title_document = NA, 
@@ -243,6 +250,16 @@ formatTable_Simcyp <- function(DF,
               call. = FALSE)
       page_orientation <- "portrait"
    }
+   
+   # Catching instances where the font name isn't *exactly* the same as what's
+   # in Word or PowerPoint. Will have to slowly gather examples of this.
+   font <- case_when(
+      # "Calibri (Body)" dosen't work; just "Calibri" does.
+      str_detect(font, "Calibri") ~ "Calibri", 
+                     .default = font)
+   
+   
+   # Main body of function ----------------------------------------------------
    
    TemplatePath <- switch(page_orientation, 
                           "landscape" = system.file("Word/landscape_report_template.dotx",
@@ -560,7 +577,7 @@ formatTable_Simcyp <- function(DF,
          ShadeRows <- which(DF$Shade)
          FT <- FT %>% 
             flextable::bg(i = ShadeRows, bg = "#F2F2F2") %>% 
-            flextable::bg(i = NoShadeRows, bg = "white") %>% 
+            flextable::bg(i = NoShadeRows, bg = "white") %>%
             flextable::bg(part = "header", bg = "white")
          
          if(merge_shaded_cells){
@@ -848,6 +865,10 @@ formatTable_Simcyp <- function(DF,
       
       # Set the font size
       flextable::fontsize(part = "all", size = fontsize) %>% 
+      
+      # SEt the font
+      flextable::font(part = "all", 
+                      fontname = font) %>% 
       
       # setting up which borderlines to show
       flextable::border_remove() %>% 

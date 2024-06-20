@@ -6,7 +6,6 @@
 \usage{
 formatTable_Simcyp(
   DF,
-  fontsize = 11,
   shading_column,
   merge_shaded_cells = TRUE,
   merge_columns = NA,
@@ -21,6 +20,8 @@ formatTable_Simcyp(
   highlight_so_colors = "yellow to red",
   highlight_cells = NA,
   highlight_color = "yellow",
+  font = "Arial",
+  fontsize = 11,
   save_table = NA,
   page_orientation = "portrait",
   title_document = NA,
@@ -30,9 +31,6 @@ formatTable_Simcyp(
 \arguments{
 \item{DF}{a data.frame or a flextable, usually output from
 \code{\link{pksummary_table}} or \code{\link{pksummary_mult}}}
-
-\item{fontsize}{the numeric font size for the output table. Default is 11
-point.}
 
 \item{shading_column}{If you would like to alternate the shading of the rows
 in the output table, supply here the unquoted name of the column to check
@@ -160,6 +158,16 @@ vectors. Please see the examples at the bottom of the help file.}
 \item{highlight_color}{color to use for highlighting; default is yellow.
 Color can be specified using any R-friendly color name or hex code, e.g.,
 "red" or "#D8212D".}
+
+\item{font}{font to use. Default is "Arial" and any fonts available on your
+machine in either Word or PowerPoint should be acceptable. If you get Times
+New Roman in your table when you asked for something else, it means that
+that font isn't available or maybe wasn't spelled the way R is expecting
+it. For example, "Calibri" works but "Calibri (Body)" doesn't even though
+the latter is listed in PowerPoint and Word.}
+
+\item{fontsize}{the numeric font size for the output table. Default is 11
+point.}
 
 \item{save_table}{optionally save the output table by supplying a file name
 in quotes here, e.g., "My nicely formatted table.docx".  Do not include any

@@ -30,11 +30,13 @@ see warnings in this function}
 }
 \value{
 list of 1) message: "custom dosing" (as in, we can't tell whether the
-  interval matched), "good", "mismatch", or "can't check - missing file" and
-  2) data.frame of File, CompoundID, SimDuration, DoseInt_X, StartHr_X,
-  NumDoses_X, LastDoseTime, IntervalRemaining, OneDoseIntRemaining,
-  UserIntervalStart, UserIntervalEnd, UserIntervalStartGood,
-  UserIntervalEndGood.
+  interval matched), "good", "mismatch last dose", "mismatch user-defined
+  interval", or "can't check - missing file" and 2) data.frame of File,
+  CompoundID, SimDuration, DoseInt_X, StartHr_X, NumDoses_X, LastDoseTime,
+  IntervalRemaining, OneDoseIntRemaining, UserIntervalStart, UserIntervalEnd,
+  UserIntervalStartGood, UserIntervalEndGood. If info is not available, e.g.,
+  custom dosing or missing file, then not all of those columns will be
+  included in the data.frame.
 }
 \description{
 INTERNAL check whether AUC interval ends on a dosing interval
