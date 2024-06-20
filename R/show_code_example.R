@@ -22,8 +22,7 @@ show_code_example <- function(){
    
    
    switch(as.character(Q1), 
-          "1" = message(str_wrap("pk_table(PKparameters = NA, sim_data_files = c(\"file name A.xlsx\", \"file name B.xlsx\"), compoundsToExtract = \"substrate\", tissues = \"plasma\")", 
-                                 indent = 1, exdent = 3)), 
+          "1" = message(paste0("pk_table(PKparameters = NA,\n         sim_data_files = c(\"file name A.xlsx\",\n                            \"file name B.xlsx\"),\n        compoundsToExtract = \"substrate\",\n        tissues = \"plasma\")")), 
           "2" = message(str_wrap("ct_plot(ct_dataframe = CT, figure_type = \"percentiles\", save_graph = \"My CT plot.docx\", existing_exp_details = Details)", 
                                  indent = 1, exdent = 3)))
    
