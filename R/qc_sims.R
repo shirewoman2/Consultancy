@@ -181,23 +181,27 @@ qc_sims <- function(existing_exp_details,
                # including a column noting when a given value was the same for
                # all simulations.
                
-               formatXL(
-                  DF = Out[[j]], 
-                  file = FileName, 
-                  sheet = j,
-                  styles = list(
-                     list(columns = which(names(Out[[j]]) == "Notes"), 
-                          textposition = list(wrapping = TRUE)),
-                     list(rows = 0, font = list(bold = TRUE),
-                          textposition = list(alignment = "middle",
-                                              wrapping = TRUE)), 
-                     list(columns = which(str_detect(names(Out[[j]]), "All files have this value")),
-                          fill = "#E7F3FF"), 
-                     list(rows = 0, columns = which(str_detect(names(Out[[j]]), "All files have this value")), 
-                          font = list(bold = TRUE), 
-                          textposition = list(alignment = "middle",
-                                              wrapping = TRUE), 
-                          fill = "#E7F3FF")))
+               # FIXME - Set styles.
+               openxlsx::write.xlsx(as.data.frame(Out[[j]]), 
+                                    FileName)
+               
+               # formatXL(
+               #    DF = Out[[j]], 
+               #    file = FileName, 
+               #    sheet = j,
+               #    styles = list(
+               #       list(columns = which(names(Out[[j]]) == "Notes"), 
+               #            textposition = list(wrapping = TRUE)),
+               #       list(rows = 0, font = list(bold = TRUE),
+               #            textposition = list(alignment = "middle",
+               #                                wrapping = TRUE)), 
+               #       list(columns = which(str_detect(names(Out[[j]]), "All files have this value")),
+               #            fill = "#E7F3FF"), 
+               #       list(rows = 0, columns = which(str_detect(names(Out[[j]]), "All files have this value")), 
+               #            font = list(bold = TRUE), 
+               #            textposition = list(alignment = "middle",
+               #                                wrapping = TRUE), 
+               #            fill = "#E7F3FF")))
             } else {
                # This is when there IS a template simulation. Formatting to
                # highlight in red all the places where things differ.
@@ -244,11 +248,16 @@ qc_sims <- function(existing_exp_details,
                
                MyStyles <- append(MyStyles, Diffs)
                
-               formatXL(
-                  DF = Out[[j]], 
-                  file = FileName, 
-                  sheet = j,
-                  styles = MyStyles)
+               # formatXL(
+               #    DF = Out[[j]], 
+               #    file = FileName, 
+               #    sheet = j,
+               #    styles = MyStyles)
+               
+               # FIXME - Set styles.
+               openxlsx::write.xlsx(as.data.frame(Out[[j]]), 
+                                    FileName)
+               
                
             }
          }

@@ -288,9 +288,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       
       switch(Ext, 
              "csv" = write.csv(as.data.frame(Out$MainDetails), FileName, row.names = F), 
-             "xlsx" = formatXL_head(as.data.frame(Out$MainDetails), 
-                                    FileName, 
-                                    sheet = "Simulation experimental details"))
+             "xlsx" = openxlsx::write.xlsx(as.data.frame(Out$MainDetails), 
+                                           FileName))
    }
    
    return(Out)
