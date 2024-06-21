@@ -60,6 +60,11 @@ format_scripts <- function(DF,
       mutate(Parameter = {{parameter_column}})
    
    FT <- FT %>% 
+      
+      # First, all the places where we replace the ENTIRE cell contents. These
+      # don't need to be run in a loop b/c we replace EVERYTHING with the same
+      # value, so, even if there were more than one place with, e.g., "ka
+      # (h^-1)", ALL of those places would be replaced with the same thing.
       compose(i = which(DF$Parameter == "ka (h^-1)"), 
               j = which(names(DF) == "Parameter"), 
               part = "body", 
@@ -75,26 +80,52 @@ format_scripts <- function(DF,
               part = "body", 
               value = as_paragraph("fu", as_sub("gut"))) %>% 
       
+      compose(i = which(DF$Parameter == "CLint,biliary"), 
+              j = which(names(DF) == "Parameter"), 
+              part = "body", 
+              value = as_paragraph("CLint", as_sub("biliary"))) %>% 
+      
+      compose(i = which(DF$Parameter == "CLint,additional HLM"), 
+              j = which(names(DF) == "Parameter"), 
+              part = "body", 
+              value = as_paragraph("CLint", as_sub("additional HLM"))) %>% 
+      
       compose(i = which(DF$Parameter == "tlag (h)"), 
               j = which(names(DF) == "Parameter"), 
               part = "body", 
-              value = as_paragraph("t", as_sub("lag"), " (h)")) %>% 
+              value = as_paragraph("t", as_sub("lag"), " (h)"))
+   
+   # Next, all the places where there might be multiple matches b/c we're only
+   # matching, e.g., the 1st part of the string and then need to fill in the
+   # rest of the string with variable text.
+   MultPieceVars <- c("^fu,mic", "^fu,mic.*\\(Ki\\)$", "^Ki")
+   
+   for(mpv in MultPieceVars){
       
-      compose(i = which(str_detect(DF$Parameter, "^fu,mic")), 
-              j = which(names(DF) == "Parameter"), 
-              part = "body", 
-              value = as_paragraph("fu", as_sub("mic"), 
-                                   sub("fu,mic", "", 
-                                       DF[which(str_detect(DF$Parameter, "fu,mic")), 
-                                          which(names(DF) == "Parameter")]))) %>% 
+      rows <- which(str_detect(DF$Parameter, mpv))
       
-      compose(i = which(str_detect(DF$Parameter, "^Ki")), 
-              j = which(names(DF) == "Parameter"), 
-              part = "body", 
-              value = as_paragraph("K", as_sub("i"), 
-                                   sub("^Ki", "", 
-                                       DF[which(str_detect(DF$Parameter, "fu,mic")), 
-                                          which(names(DF) == "Parameter")])))
+      for(r in rows){
+         FT <- FT %>% 
+            compose(i = r, 
+                    j = which(names(DF) == "Parameter"), 
+                    part = "body", 
+                    value = switch(
+                       mpv, 
+                       "^fu,mic" = as_paragraph("fu", as_sub("mic"), 
+                                                sub(mpv, "", 
+                                                    DF[r, which(names(DF) == "Parameter")])), 
+                       
+                       "^fu,mic.*\\(Ki\\)$" = as_paragraph("fu", as_sub("mic"), 
+                                                           gsub("^fu,mic|\\(Ki\\)", "", 
+                                                                DF[r, which(names(DF) == "Parameter")]), 
+                                                           "(K", as_sub("i"), ")"), 
+                       
+                       "^Ki" = as_paragraph("K", as_sub("i"), 
+                                            sub(mpv, "", 
+                                                DF[r, which(names(DF) == "Parameter")])))
+            )
+      }
+   }
    
    return(FT)
 }
