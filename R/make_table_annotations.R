@@ -5,13 +5,11 @@
 #' for a table with a single set of results. This is meant for use with
 #' pksummary_table or for pksummary_mult when the results are split into
 #' multiple tables rather than all together in one. Note that this is designed
-#' for scenarios where, if there's a perpetrator, there's only one. The text won't
-#' be quite right if there are 2 perpetrators. UNDER CONSTRUCTION.
+#' for scenarios where, if there's a perpetrator, there's only one. The text
+#' won't be quite right if there are 2 perpetrators. UNDER CONSTRUCTION.
 #'
 #' @param MyPKResults only the PK table
 #' @param MyFile the specific sim_data_file in question
-#' @param PKpulled PK that was pulled -- the coded version, i.e., "AUCinf_dose1"
-#'   or "Cmax_last"
 #' @param MyCompoundID substrate, inhibitor 1, etc. for this specific table
 #' @param prettify_compound_names pass through from parent function
 #' @param Deets experimental details for only the single sim_data_file in
@@ -19,6 +17,15 @@
 #'   existing_exp_details
 #' @param MeanType mean type used
 #' @param tissue tissue in which the PK parameters were measured
+#' @param DosesIncluded which doses were included? options: "Dose1 Last" when
+#'   both 1st and last-dose or user-defined interval info included, "Dose1" when
+#'   it's only dose 1, "Last" when it's either last or user-defined info
+#'   included. Leave as NA to make a guess, which works well when
+#'   include_dose_num = TRUE in original PK table call but less so when
+#'   include_dose_num = FALSE. Set to "no dose num included" to use the
+#'   most-generic text for the annotations.
+#' @param return_all_objects T or F (default) for whether to return a ton of
+#'   objects for use downstream
 #'
 #' @return a list with a) TableHeading text and b) TableCaption text
 #' @export
@@ -28,35 +35,58 @@
 #'
 #' 
 make_table_annotations <- function(MyPKResults, # only PK table
-                                   MyFile, # specific sim_data_file in question
-                                   PKpulled,
-                                   MyCompoundID,
+                                   MyFile = NA, # specific sim_data_file in question
+                                   MyCompoundID = NA,
                                    prettify_compound_names,
                                    Deets = NA,
                                    MeanType,
-                                   tissue, 
+                                   tissue = NA, 
+                                   DosesIncluded = NA, 
                                    return_all_objects = FALSE){
    
    
    # Main info ------------------------------------------------------------
    
-   Dose1included <- any(str_detect(names(MyPKResults), "_dose1|Dose 1"))
-   LastDoseincluded <- any(str_detect(names(MyPKResults), "_last|Last dose"))
+   PKpulled <- prettify_column_names(MyPKResults, return_which_are_PK = TRUE)
+   PKpulled <- PKpulled$ColName[which(PKpulled$IsPKParam)]
+   
+   Dose1included <- any(str_detect(names(PKpulled), "_dose1|Dose 1"))
+   LastDoseincluded <- any(str_detect(names(PKpulled), "_last|Last dose"))
    Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
    
    MeanType <- ifelse(MeanType == "arithmetic for most, geometric for ratios", 
                       "arithmetic (except for DDI ratios, which are geometric)", 
                       MeanType)
    
+   if(all(is.na(MyFile))){
+      if("File" %in% names(MyPKResults)){
+         MyFile <- str_comma(sort(unique(MyPKResults$File)))
+      } else {
+         MyFile <- "***SIMULATION FILE NAME***"
+      }
+   } 
+   
+   if(all(is.na(MyCompoundID))){
+      if("CompoundID" %in% names(MyPKResults)){
+         MyCompoundID <- str_comma(sort(unique(MyPKResults$CompoundID)))
+      }
+   }
+   
+   if(all(is.na(tissue))){
+      if("Tissue" %in% names(MyPKResults)){
+         tissue <- str_comma(sort(unique(MyPKResults$Tissue)))
+      }
+   }
+   
    # There are some situations where we want to just pass through generic info,
    # so that's why I'm returning things here rather than stopping.
    if("logical" %in% class(Deets) | 
       ("data.frame" %in% class(Deets) && nrow(Deets) == 0)){
-      return(list(TableHeading = paste0("***Table XXX.*** *Simulated ",
+      return(list(TableHeading = paste0("Simulated ",
                                         ifelse(Observedincluded, "and observed ", ""),
-                                        "PK data*"),
-                  TableCaption = paste0("*Source simulated data: ",
-                                        basename(MyFile), "*")))
+                                        "PK data"),
+                  TableCaption = paste0("Source simulated data: ",
+                                        basename(MyFile))))
       
    }
    
@@ -196,10 +226,13 @@ make_table_annotations <- function(MyPKResults, # only PK table
    }
    
    # Heading --------------------------------------------------------------
-   DosesIncluded <- c("Dose1" = Dose1included, "Last" = LastDoseincluded)
-   DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded == TRUE], 
-                          collapse = " ")
-   DosesIncluded <- ifelse(DosesIncluded == "", "no dose num included", DosesIncluded)
+   
+   if(all(is.na(DosesIncluded))){
+      DosesIncluded <- c("Dose1" = Dose1included, "Last" = LastDoseincluded)
+      DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded == TRUE], 
+                             collapse = " ")
+      DosesIncluded <- ifelse(DosesIncluded == "", "no dose num included", DosesIncluded)
+   }
    
    FigText2 <- switch(
       DosesIncluded, 
@@ -229,7 +262,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
             MyPerpetrator, DoseFreq_inhib),
       "")
    
-   Heading <- paste0("***Table XXX.*** *Simulated ",
+   Heading <- paste0("Simulated ",
                      ifelse(Observedincluded, "and observed ", ""),
                      MeanType, " mean ", 
                      str_comma(tissue), " PK parameters for ",
@@ -237,7 +270,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                      paste(sub("custom dosing", "**CUSTOM DOSING**", Deets[[MyDose]]), 
                            "mg", MyDosedCompound), 
                      FigText3, " in ", 
-                     tidyPop(Deets$Population)$Population, ".*")
+                     tidyPop(Deets$Population)$Population, ".")
    
    
    # Caption ---------------------------------------------------------------
@@ -256,9 +289,9 @@ make_table_annotations <- function(MyPKResults, # only PK table
                              "S/O: simulated/observed. Source observed data: **Clinical Study XXX**; ",
                              ""))
    
-   Caption <- paste0("*Simulated values listed are ", 
+   Caption <- paste0("Simulated values listed are ", 
                      CapText1, ". ", CapText2, "Source simulated data: ",
-                     basename(MyFile), "*")
+                     basename(MyFile))
    
    
    # Return -----------------------------------------------------------

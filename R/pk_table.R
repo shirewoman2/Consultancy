@@ -830,7 +830,20 @@ pk_table <- function(PKparameters = NA,
       }
       
       MyPKResults <- bind_rows(MyPKResults) %>% 
-         mutate(Sheet = ifelse(Sheet == "default", NA, Sheet))
+         mutate(Sheet = ifelse(Sheet == "default", NA, Sheet)) 
+      
+      if(includeConfInt == FALSE){
+         MyPKResults <- MyPKResults %>% filter(!Stat %in% c("CI90concat", 
+                                                            "CI95concat"))
+      }
+      
+      if(includeRange == FALSE){
+         MyPKResults <- MyPKResults %>% filter(!Stat %in% c("Rangeconcat"))
+      }
+      
+      if(includePerc == FALSE){
+         MyPKResults <- MyPKResults %>% filter(!Stat %in% c("per95concat"))
+      }
    }
    
    # Renaming statistics to match what's in template
