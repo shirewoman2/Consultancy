@@ -996,7 +996,7 @@ pk_table <- function(PKparameters = NA,
                         values_from = Value)
          
          ColNames <- ColNames %>% 
-            left_join(expand.grid(Interval = IntToAdd$Interval, 
+            left_join(expand.grid(Interval = unique(IntToAdd$Interval), 
                                   Orig = ColNames$Orig) %>% 
                          mutate(Orig_int = paste(Orig, Interval)) %>% 
                          filter(Orig_int %in% names(MyPKResults)), 

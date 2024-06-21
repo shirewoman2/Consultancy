@@ -813,20 +813,13 @@ tidy_input_PK <- function(PKparameters,
       )
       
    } else {
-      suppressMessages(
          PKparameters <- PKparameters %>% 
-            left_join(bind_rows(
-               AllPKParameters %>% 
-                  select(PKparameter, AppliesToSingleDose, 
-                         AppliesOnlyWhenPerpPresent) %>% 
-                  unique(), 
-               
-               AllPKParameters %>% 
-                  select(PKparameter_nodosenum, AppliesToSingleDose, 
-                         AppliesOnlyWhenPerpPresent) %>% 
-                  rename(PKparameter = PKparameter_nodosenum) %>% 
-                  unique()))
-      )
+            mutate(UserInterval = complete.cases(Sheet)) %>% 
+            left_join(AllPKParameters %>% 
+                         select(PKparameter, AppliesToSingleDose, 
+                                AppliesOnlyWhenPerpPresent, UserInterval) %>% 
+                         unique(), 
+                      by = join_by(PKparameter, UserInterval))
    }
    
    # Checking that we're looking for reasonable PK parameters. 
@@ -852,7 +845,7 @@ tidy_input_PK <- function(PKparameters,
       all(complete.cases(PKparameters_orig))){
       
       Problem <- PKparameters %>% filter(Harmonious == FALSE) %>% 
-         select(PKparameter, File, CompoundID, Tissue)
+         select(PKparameter, File, Sheet, CompoundID, Tissue)
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
       message("Warning:\nThe following requested PK parameters do not apply to the following scenarios:\n")
