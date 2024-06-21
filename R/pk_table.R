@@ -691,7 +691,7 @@ pk_table <- function(PKparameters = NA,
          pivot_wider(names_from = Stat, 
                      values_from = Value) %>% 
          mutate(min = case_when(complete.cases(min) & 
-                                   complete.cases(max) ~ 
+                                   complete.cases(max) & SorO == "Obs" ~ 
                                    switch(variability_format, 
                                           "to" = paste(min, "to", max), 
                                           "hyphen" = paste(min, "-", max), 
@@ -699,10 +699,11 @@ pk_table <- function(PKparameters = NA,
                                           "parentheses" = paste0("(", min, ", ", max, ")")), 
                                 TRUE ~ min)) %>% 
          select(-max) %>% 
-         pivot_longer(cols = -c(PKParam, SorO), 
+         pivot_longer(cols = -c(any_of(c("PKParam", "SorO", "File", "Sheet", 
+                                         "CompoundID", "Tissue"))), 
                       names_to = "Stat", 
                       values_to = "Value") %>% 
-         mutate(Stat = ifelse(Stat == "min", 
+         mutate(Stat = ifelse(Stat == "min" & SorO == "Obs", 
                               switch(MeanType, 
                                      "geometric" = "GCV", 
                                      "arithmetic" = "CV"), 
@@ -855,6 +856,7 @@ pk_table <- function(PKparameters = NA,
                   "geomean_obs" = "Observed",
                   "mean_obs" = "Observed", 
                   "CV_obs" = "Observed CV%",
+                  "GCV_obs" = "Observed CV%", 
                   "CIL_obs" = "observed CI - Lower",
                   "CIU_obs" = "observed CI - Upper",
                   "CIconcat_obs" = "Observed CI",
@@ -1021,8 +1023,8 @@ pk_table <- function(PKparameters = NA,
       }
       ColNames$Pretty <- gsub("ug/mL", "µg/mL", ColNames$Pretty)
       
-      # FIXME - Check whether this works w/multiple perpetrators 
-      MyPerpetrator <- determine_myperpetrator(existing_exp_details, prettify_compound_names)
+      MyPerpetrator <- determine_myperpetrator(existing_exp_details,
+                                               prettify_compound_names)
       
       if(any(complete.cases(MyPerpetrator))){
          ColNames$Pretty <- sub("perpetrator", MyPerpetrator, ColNames$Pretty)
