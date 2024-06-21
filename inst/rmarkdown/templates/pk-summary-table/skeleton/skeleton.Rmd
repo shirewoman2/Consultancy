@@ -45,7 +45,6 @@ if(FromCalcPKRatios){
 
 Annotations <- make_table_annotations(MyPKResults = MyPKResults,
                                       MyFile = sim_data_file, 
-                                      PKpulled = PKpulled, 
                                       MyCompoundID = compoundToExtract, 
                                       prettify_compound_names = prettify_compound_names, 
                                       Deets = Deets %>% mutate(File = sim_data_file), 

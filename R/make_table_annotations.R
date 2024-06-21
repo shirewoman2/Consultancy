@@ -115,6 +115,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
    MyDoseRoute <- switch(MyDoseRoute, 
                          "Oral" = "oral", 
                          "IV" = "IV", 
+                         "i.v. infusion" = "IV", 
                          "Inhaled" = "inhaled", 
                          "custom dosing" = "**CUSTOM DOSING - CHECK ADMINISTRATION ROUTE**")
    
