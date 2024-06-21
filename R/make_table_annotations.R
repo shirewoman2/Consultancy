@@ -128,6 +128,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                     "inhibitor 2" = "Dose_inhib2",
                     "inhibitor 1 metabolite" = "Dose_inhib")
    MyDose <- sub("custom dosing", "**CUSTOM DOSING**", MyDose)
+   MyDose <- ifelse(is.na(MyDose), "**MISSING VALUE FOR DOSE; CHECK THIS**", MyDose)
    
    if(class(prettify_compound_names) == "logical" &&
       # NB: prettify_compound_names is the argument; prettify_compound_name is the function.

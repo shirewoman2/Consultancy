@@ -63,11 +63,13 @@ if(FromCalcPKRatios){
 ```{r}
 
 # Adding a warning if there was a mismatch between the last dosing interval and
-# the AUC interval if any of the PK included last dose.
-Msg <- CheckDoseInt$message[which(
-   str_detect(names(CheckDoseInt$message), sub("xlsx.", "xlsx.*", i)))]
+# the AUC interval if any of the PK included last dose. Note that you can have
+# more than one message per file, which is why there's the str_c part.
+Msg <- str_c(sort(unique(CheckDoseInt$message[which(
+   str_detect(names(CheckDoseInt$message), sub("xlsx.", "xlsx.*", i)))])), 
+   collapse = " ")
 
-if(Msg == "mismatch last dose"){
+if(str_detect(Msg, "mismatch last dose")){
    
    DoseIntWarning <- list(
       "***WARNING: The time used for integrating the AUC for the last dose was not the same as the dosing interval.***", 
@@ -83,7 +85,7 @@ if(Msg == "mismatch last dose"){
       
       "***Please check these results carefully.***")
    
-} else if(Msg == "mismatch user-defined interval"){
+} else if(str_detect(Msg, "mismatch user-defined interval")){
    
    DoseIntWarning <- list(
       "***WARNING: The time used for integrating the AUC for the user-defined interval was not the same as the dosing interval.***", 
