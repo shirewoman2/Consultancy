@@ -1,6 +1,6 @@
 #' INTERNAL - make caption for conc-time plots
 #'
-#' @param ct_dataframe
+#' @param ct_dataframe ct_dataframe
 #' @param single_or_multiple whether this is for a ct_plot graph (only 1
 #'   compound, tissue, file, etc.) or a graph with multiple profiles (multipel
 #'   compounds, tissues, files, etc.). Options are "single" (default) or
@@ -16,6 +16,10 @@
 #' @param compoundID default is substrate
 #' @param prettify_compound_names default is TRUE
 #' @param figure_type default is percentiles
+#' @param hline_position hline_position
+#' @param hline_style hline_style
+#' @param vline_position vline_position
+#' @param vline_style vline_style
 #'
 #' @return a string of text for making a caption
 #'

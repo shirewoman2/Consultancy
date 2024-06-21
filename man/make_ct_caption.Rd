@@ -12,10 +12,17 @@ make_ct_caption(
   linear_or_log = "linear",
   tissue = "plasma",
   compoundID = "substrate",
-  prettify_compound_names = TRUE
+  figure_type = "percentiles",
+  prettify_compound_names = TRUE,
+  hline_position = NA,
+  hline_style = "red dotted",
+  vline_position = NA,
+  vline_style = "red dotted"
 )
 }
 \arguments{
+\item{ct_dataframe}{ct_dataframe}
+
 \item{single_or_multiple}{whether this is for a ct_plot graph (only 1
 compound, tissue, file, etc.) or a graph with multiple profiles (multipel
 compounds, tissues, files, etc.). Options are "single" (default) or
@@ -35,7 +42,17 @@ vertical", "log", "semi-log", "horizontal and vertical"}
 
 \item{compoundID}{default is substrate}
 
+\item{figure_type}{default is percentiles}
+
 \item{prettify_compound_names}{default is TRUE}
+
+\item{hline_position}{hline_position}
+
+\item{hline_style}{hline_style}
+
+\item{vline_position}{vline_position}
+
+\item{vline_style}{vline_style}
 }
 \value{
 a string of text for making a caption
