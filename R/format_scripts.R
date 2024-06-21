@@ -47,6 +47,44 @@ format_scripts <- function(DF,
       # logical when NA
       FT <- flextable::flextable(DF)
    }
+   
+   # Dealing with subscripts for PK parameters in column names
+   ColNames <- sub("AUCt( |$)", "AUC~t~ ", names(DF))
+   ColNames <- sub("AUCinf( |$)", "AUC~inf~ ", ColNames)
+   ColNames <- sub("AUCt$", "AUC~t~", ColNames)
+   ColNames <- sub("AUCtau", "AUC~tau~", ColNames)
+   ColNames <- sub("Cmax", "C~max~", ColNames)
+   ColNames <- sub("Cmin", "C~min~", ColNames)
+   ColNames <- sub("tmax", "t~max~", ColNames)
+   ColNames <- sub("tlag", "t~lag~", ColNames)
+   ColNames <- sub(" ka ", " k~a~ ", ColNames)
+   ColNames <- sub("^ka ", "k~a~ ", ColNames)
+   ColNames <- sub(" fa ", " f~a~ ", ColNames)
+   ColNames <- sub("^fa ", "f~a~ ", ColNames)
+   ColNames <- sub(" fh ", " f~h~ ", ColNames)
+   ColNames <- sub("^fh ", "f~h~ ", ColNames)
+   ColNames <- sub(" fg ", " f~g~ ", ColNames)
+   ColNames <- sub("^fg ", "f~g~ ", ColNames)
+   ColNames <- sub("Indmax", "Ind~max~", ColNames)
+   ColNames <- sub("Emax", "E~max~", ColNames)
+   ColNames <- sub("IndC50", "IndC~50~", ColNames)
+   ColNames <- sub("EC50", "EC~50~", ColNames)
+   
+   ColNames <- str_split(ColNames, pattern = "~", simplify = T)
+   
+   if(ncol(ColNames) == 3){
+      for(cols in which(ColNames[,2] != "")){
+         FT <- FT %>% 
+            flextable::compose(part = "header",
+                               i = 1,
+                               j = cols,
+                               value = flextable::as_paragraph(
+                                  ColNames[cols, 1],
+                                  flextable::as_sub(ColNames[cols, 2]), 
+                                  ColNames[cols, 3]))
+      }
+   }
+   
    # Setting up for nonstandard evaluation
    parameter_column <- rlang::enquo(parameter_column)
    
