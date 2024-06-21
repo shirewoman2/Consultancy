@@ -47,13 +47,21 @@ format_scripts <- function(DF,
       # logical when NA
       FT <- flextable::flextable(DF)
    }
-   
    # Setting up for nonstandard evaluation
    parameter_column <- rlang::enquo(parameter_column)
    
    if("Parameter" %in% names(DF) & 
       as_label(parameter_column) != "Parameter"){
       DF <- DF %>% rename(Parameter_orig = Parameter)
+   }
+   
+   if(as_label(parameter_column) %in% names(DF) == FALSE){
+      warning(wrapn(paste0("You specified the parameter column name to be `", 
+                           as_label(parameter_column), 
+                           "`, but that column is not present in DF. We cannot format the subscripts, superscripts, or special characters in your data.frame and will only be able to return a generic flextable object.")), 
+              call. = FALSE)
+      
+      return(FT)
    }
    
    DF <- DF %>%
@@ -93,7 +101,16 @@ format_scripts <- function(DF,
       compose(i = which(DF$Parameter == "tlag (h)"), 
               j = which(names(DF) == "Parameter"), 
               part = "body", 
-              value = as_paragraph("t", as_sub("lag"), " (h)"))
+              value = as_paragraph("t", as_sub("lag"), " (h)")) %>% 
+      
+      # Special characters
+      
+      compose(i = which(str_detect(DF$Parameter, "uL")),
+              j = which(names(DF) == "Parameter"), 
+              part = "body", 
+              value = as_paragraph(sub("uL", "\u03BCL", 
+                                       DF[which(str_detect(DF$Parameter, "uL")), 
+                                          which(names(DF) == "Parameter")])))
    
    # Next, all the places where there might be multiple matches b/c we're only
    # matching, e.g., the 1st part of the string and then need to fill in the
