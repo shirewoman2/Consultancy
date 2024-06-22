@@ -211,7 +211,7 @@ format_scripts <- function(DF,
                                 "fu", flextable::as_sub("inc"), 
                                 gsub("^Ind fu,inc", "", 
                                      DF[r, which(names(DF) == "Parameter")]), 
-                                "(induction)"), 
+                                " (induction)"), 
                           
                           "^IndC50" = 
                              flextable::as_paragraph(

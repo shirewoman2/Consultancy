@@ -65,15 +65,15 @@ make_ct_caption <- function(ct_dataframe,
       MyCompound <- case_when(
          "logical" %in% class(prettify_compound_names) &&
             prettify_compound_names == TRUE ~ 
-            prettify_compound_name(unique(ct_dataframe$Compound)), 
+            str_comma(prettify_compound_name(unique(ct_dataframe$Compound))), 
          
          "logical" %in% class(prettify_compound_names) &&
             prettify_compound_names == FALSE ~ 
-            unique(ct_dataframe$Compound), 
+            str_comma(unique(ct_dataframe$Compound)), 
          
          "character" %in% class(prettify_compound_names) & 
             compoundID %in% names(prettify_compound_names) ~ 
-            prettify_compound_names[compoundID], 
+            str_comma(prettify_compound_names[compoundID]), 
          
          TRUE ~ unique(ct_dataframe$Compound)
       )
