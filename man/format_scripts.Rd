@@ -5,7 +5,7 @@
 \title{Format common PBPK model parameters to have appropriate subscripts and
 superscripts. UNDER CONSTRUCTION.}
 \usage{
-format_scripts(DF, FT = NA, parameter_column)
+format_scripts(DF, parameter_column, remove_compound_suffix = TRUE)
 }
 \arguments{
 \item{DF}{a data.frame with a column containing, e.g., "ka (h^-1)", "fu,p",
@@ -14,19 +14,16 @@ column "Notes" in the object AllExpDetails, which is included with this
 package and is used extensively for figuring out how simulations were set
 up.}
 
-\item{FT}{optionally supply a flextable if you've already got one started.
-This MUST be the flextable version of DF because DF is what we'll use to
-figure out which cells should be changed to what values and NOT the
-flextable itself. If you don't supply a flextable for FT, we'll make DF
-into a generic flextable and use that, and that -- NOT supplying anything
-for FT -- is actually the preferable option. Honestly, we're tempted to
-just not let you supply a separate flextable and ONLY use DF to make the
-output, but we're trying to be flexible here. So please play nice and ONLY
-supply a value for FT that has EVERYTHING in the same position as it is in
-DF.}
-
 \item{parameter_column}{the name of the column in DF that contains your PK
 parameters, unquoted. For example, supply \code{parameter_column = Notes}}
+
+\item{remove_compound_suffix}{TRUE (default) or FALSE to remove the suffix
+that shows up in many PBPK elimination and interaction parameters to
+indicate which compound ID the parameter refers to. For example, "Vsac_sub"
+will be just "Vsac" and "Peff_human_inhib" will become "Peff,human" with
+the "eff,human" as a subscript. You should ONLY do this if your whole table
+refers to the same compound; otherwise, it will be completely unclear
+what's what.}
 }
 \value{
 a flextable

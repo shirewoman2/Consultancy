@@ -50,11 +50,8 @@ a list with a) TableHeading text and b) TableCaption text
 }
 \description{
 \code{make_table_annotations} is meant to make a table heading and caption
-for a table with a single set of results. This is meant for use with
-pksummary_table or for pksummary_mult when the results are split into
-multiple tables rather than all together in one. Note that this is designed
-for scenarios where, if there's a perpetrator, there's only one. The text
-won't be quite right if there are 2 perpetrators. UNDER CONSTRUCTION.
+for a table with a single set of results but will return more generic info
+for tables with multiple sets of results. UNDER CONSTRUCTION.
 }
 \examples{
 # None yet
