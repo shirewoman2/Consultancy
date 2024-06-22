@@ -18,6 +18,13 @@
 #'   DF.
 #' @param parameter_column the name of the column in DF that contains your PK
 #'   parameters, unquoted. For example, supply \code{parameter_column = Notes}
+#' @param remove_compound_suffix TRUE (default) or FALSE to remove the suffix
+#'   that shows up in many PBPK elimination and interaction parameters to
+#'   indicate which compound ID the parameter refers to. For example, "Vsac_sub"
+#'   will be just "Vsac" and "Peff_human_inhib" will become "Peff,human" with
+#'   the "eff,human" as a subscript. You should ONLY do this if your whole table
+#'   refers to the same compound; otherwise, it will be completely unclear
+#'   what's what. 
 #'
 #' @return a flextable
 #' @export
@@ -31,7 +38,8 @@
 #' 
 format_scripts <- function(DF, 
                            FT = NA,
-                           parameter_column){
+                           parameter_column, 
+                           remove_compound_suffix = TRUE){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -93,6 +101,10 @@ format_scripts <- function(DF,
       DF <- DF %>% rename(Parameter_orig = Parameter)
    }
    
+   if(as_label(parameter_column) == "<empty>"){
+      return(FT)
+   }
+   
    if(as_label(parameter_column) %in% names(DF) == FALSE){
       warning(wrapn(paste0("You specified the parameter column name to be `", 
                            as_label(parameter_column), 
@@ -104,6 +116,27 @@ format_scripts <- function(DF,
    
    DF <- DF %>%
       mutate(Parameter = {{parameter_column}})
+   
+   if(remove_compound_suffix){
+      DF <- DF %>%
+         mutate(Parameter = str_replace(Parameter, "_sub$|_inhib$|_met1$|_met2$|_secmet$|_inhib2$", ""))
+   }
+   
+   DF <- DF %>%
+      # FIXME - Do more to clean up elim and interaction params
+      mutate(Parameter = str_replace_all(Parameter, "_", " "), 
+             Parameter = str_replace_all(Parameter, "Pathway[0-9]( )?", ""), 
+             Parameter = str_replace_all(Parameter, "fu mic", "fu,mic"), 
+             Parameter = case_when(str_detect(Parameter, "Ki fu,mic") ~ 
+                                      paste0(str_replace(Parameter, "Ki ", ""), 
+                                             " (Ki)"), 
+                                   .default = Parameter), 
+             Parameter = case_match(Parameter, 
+                                    "CLint CYP3A4 uL min pmol" ~ "CLint CYP3A4 (uL/min/pmol)", 
+                                    "CLint AddHLM" ~ "CLint,additional HLM", 
+                                    "CLint biliary" ~ "CLint,biliary", 
+                                    "Ki fu,mic CYP2D6" ~ "fu,mic CYP2D6 (Ki)", 
+                                    .default = Parameter))
    
    FT <- FT %>% 
       
@@ -141,6 +174,13 @@ format_scripts <- function(DF,
               part = "body", 
               value = as_paragraph("t", as_sub("lag"), " (h)")) %>% 
       
+      compose(i = which(DF$Parameter == "Peff,human (10-4 cm/s)"),
+              j = which(names(DF) == "Parameter"), 
+              part = "body", 
+              value = as_paragraph("P", as_sub("eff,human"), 
+                                   " (10", as_sup("-4"), 
+                                   " cm/s)")) %>% 
+      
       # Special characters
       
       compose(i = which(str_detect(DF$Parameter, "uL")),
@@ -153,7 +193,7 @@ format_scripts <- function(DF,
    # Next, all the places where there might be multiple matches b/c we're only
    # matching, e.g., the 1st part of the string and then need to fill in the
    # rest of the string with variable text.
-   MultPieceVars <- c("^fu,mic", "^fu,mic.*\\(Ki\\)$", "^Ki")
+   MultPieceVars <- c("^fu,mic", "^fu,mic.*\\(Ki\\)$", "^Ki", "Peff,human \\(10-4 cm/s\\)")
    
    for(mpv in MultPieceVars){
       
@@ -166,19 +206,22 @@ format_scripts <- function(DF,
                     part = "body", 
                     value = switch(
                        mpv, 
-                       "^fu,mic" = as_paragraph("fu", as_sub("mic"), 
-                                                sub(mpv, "", 
-                                                    DF[r, which(names(DF) == "Parameter")])), 
+                       "^fu,mic" = 
+                          as_paragraph("fu", as_sub("mic"), 
+                                       sub(mpv, "", 
+                                           DF[r, which(names(DF) == "Parameter")])), 
                        
-                       "^fu,mic.*\\(Ki\\)$" = as_paragraph("fu", as_sub("mic"), 
-                                                           gsub("^fu,mic|\\(Ki\\)", "", 
-                                                                DF[r, which(names(DF) == "Parameter")]), 
-                                                           "(K", as_sub("i"), ")"), 
+                       "^fu,mic.*\\(Ki\\)$" = 
+                          as_paragraph("fu", as_sub("mic"), 
+                                       gsub("^fu,mic|\\(Ki\\)", "", 
+                                            DF[r, which(names(DF) == "Parameter")]), 
+                                       "(K", as_sub("i"), ")"), 
                        
-                       "^Ki" = as_paragraph("K", as_sub("i"), 
-                                            sub(mpv, "", 
-                                                DF[r, which(names(DF) == "Parameter")])))
-            )
+                       "^Ki" = 
+                          as_paragraph("K", as_sub("i"), 
+                                       sub(mpv, "", 
+                                           DF[r, which(names(DF) == "Parameter")])) 
+                    ))
       }
    }
    
