@@ -6,16 +6,6 @@
 #'   column "Notes" in the object AllExpDetails, which is included with this
 #'   package and is used extensively for figuring out how simulations were set
 #'   up.
-#' @param FT optionally supply a flextable if you've already got one started.
-#'   This MUST be the flextable version of DF because DF is what we'll use to
-#'   figure out which cells should be changed to what values and NOT the
-#'   flextable itself. If you don't supply a flextable for FT, we'll make DF
-#'   into a generic flextable and use that, and that -- NOT supplying anything
-#'   for FT -- is actually the preferable option. Honestly, we're tempted to
-#'   just not let you supply a separate flextable and ONLY use DF to make the
-#'   output, but we're trying to be flexible here. So please play nice and ONLY
-#'   supply a value for FT that has EVERYTHING in the same position as it is in
-#'   DF.
 #' @param parameter_column the name of the column in DF that contains your PK
 #'   parameters, unquoted. For example, supply \code{parameter_column = Notes}
 #' @param remove_compound_suffix TRUE (default) or FALSE to remove the suffix
@@ -37,7 +27,6 @@
 #' format_scripts(DF = DF)
 #' 
 format_scripts <- function(DF, 
-                           FT = NA,
                            parameter_column, 
                            remove_compound_suffix = TRUE){
    
@@ -51,10 +40,227 @@ format_scripts <- function(DF,
    
    # Main body of function ----------------------------------------------------
    
-   if(class(FT) %in% "logical"){
-      # logical when NA
+   # Setting up for nonstandard evaluation
+   parameter_column <- rlang::enquo(parameter_column)
+   
+   OrigColNames <- names(DF)
+   
+   if("Parameter" %in% names(DF) & 
+      as_label(parameter_column) != "Parameter"){
+      DF <- DF %>% rename(Parameter_orig = Parameter)
+   }
+   
+   if(as_label(parameter_column) != "<empty>"){
+      
+      if(as_label(parameter_column) %in% names(DF) == FALSE){
+         warning(wrapn(paste0("You specified the parameter column name to be `", 
+                              as_label(parameter_column), 
+                              "`, but that column is not present in DF. We cannot format the subscripts, superscripts, or special characters in your data.frame and will only be able to return a generic flextable object.")), 
+                 call. = FALSE)
+         
+         return(FT)
+      }
+      
+      DF <- DF %>%
+         mutate(Parameter = {{parameter_column}})
+      
+      if(remove_compound_suffix){
+         DF <- DF %>%
+            mutate(Parameter = str_replace(Parameter, "_sub$|_inhib$|_met1$|_met2$|_secmet$|_inhib2$", ""))
+      }
+      
+      DF <- DF %>%
+         mutate(Parameter = str_replace_all(Parameter, "_", " "), 
+                Parameter = str_replace_all(Parameter, "\\.\\.1", ""), # sometimes shows up for Km and Vmax
+                Parameter = str_replace_all(Parameter, "Pathway[0-9]( )?", ""), 
+                Parameter = str_replace_all(Parameter, "fu mic", "fu,mic"), 
+                Parameter = str_replace_all(Parameter, "fu inc", "fu,inc"), 
+                Parameter = str_replace(Parameter, "uL min mg protein", "(uL/min/mg protein)"), 
+                Parameter = str_replace(Parameter, "uL min pmol", "(uL/min/pmol)"), 
+                Parameter = str_replace_all(Parameter, "CYP2B6\\.1", "CYP2B6"), # not sure why this looks like this
+                Parameter = case_when(str_detect(Parameter, "Ki fu,mic") ~ 
+                                         paste0(str_replace(Parameter, "Ki ", ""), 
+                                                " (Ki)"), 
+                                      .default = Parameter), 
+                Parameter = case_match(Parameter, 
+                                       "CLint AddHLM" ~ "CLint,additional HLM", 
+                                       "CLint biliary" ~ "CLint,biliary", 
+                                       .default = Parameter))
+      
+      # Can't get rename to work w/NSE, so renaming parameter_column back to
+      # original value in steps.
+      DFtemp <- DF
+      names(DFtemp)[which(names(DFtemp) == "Parameter")] <- as_label(parameter_column)
+      names(DFtemp)[which(names(DFtemp) == "Parameter_orig")] <- "Parameter"
+      
+      FT <- flextable::flextable(DFtemp) %>% 
+         
+         # First, all the places where we replace the ENTIRE cell contents. These
+         # don't need to be run in a loop b/c we replace EVERYTHING with the same
+         # value, so, even if there were more than one place with, e.g., "ka
+         # (h^-1)", ALL of those places would be replaced with the same thing.
+         compose(i = which(DF$Parameter == "ka (h^-1)"), 
+                 j = which(names(DF) == "Parameter"), 
+                 part = "body", 
+                 value = flextable::as_paragraph(
+                    "k", flextable::as_sub("a"), " (h", flextable::as_sup("-1"), ")")) %>% 
+         
+         compose(i = which(DF$Parameter == "fu,p"), 
+                 j = which(names(DF) == "Parameter"), 
+                 part = "body", 
+                 value = flextable::as_paragraph(
+                    "fu", flextable::as_sub("p"))) %>% 
+         
+         compose(i = which(DF$Parameter == "fu,gut"), 
+                 j = which(names(DF) == "Parameter"), 
+                 part = "body", 
+                 value = flextable::as_paragraph(
+                    "fu", flextable::as_sub("gut"))) %>% 
+         
+         compose(i = which(DF$Parameter == "CLint,biliary"), 
+                 j = which(names(DF) == "Parameter"), 
+                 part = "body", 
+                 value = flextable::as_paragraph(
+                    "CLint", flextable::as_sub("biliary"))) %>% 
+         
+         compose(i = which(DF$Parameter == "CLint,additional HLM"), 
+                 j = which(names(DF) == "Parameter"), 
+                 part = "body", 
+                 value = flextable::as_paragraph(
+                    "CLint", flextable::as_sub("additional HLM"))) %>% 
+         
+         compose(i = which(DF$Parameter == "tlag (h)"), 
+                 j = which(names(DF) == "Parameter"), 
+                 part = "body", 
+                 value = flextable::as_paragraph(
+                    "t", flextable::as_sub("lag"), " (h)")) %>% 
+         
+         compose(i = which(DF$Parameter == "Peff,human (10-4 cm/s)"),
+                 j = which(names(DF) == "Parameter"), 
+                 part = "body", 
+                 value = flextable::as_paragraph(
+                    "P", flextable::as_sub("eff,human"), 
+                    " (10", flextable::as_sup("-4"), 
+                    " cm/s)")) %>% 
+         
+         compose(i = which(DF$Parameter == "Papp determined in Caco-2 cells (10^-6 cm/s)"),
+                 j = which(names(DF) == "Parameter"), 
+                 part = "body", 
+                 value = flextable::as_paragraph(
+                    "P", flextable::as_sub("app"), 
+                    " determined in Caco-2 cells (10",
+                    flextable::as_sup("-6"), 
+                    " cm/s)")) %>% 
+         
+         compose(i = which(DF$Parameter == "Papp for the reference compound (10^-6 cm/s)"),
+                 j = which(names(DF) == "Parameter"), 
+                 part = "body", 
+                 value = flextable::as_paragraph(
+                    "P", flextable::as_sub("app"), 
+                    " for the reference compound (10", 
+                    flextable::as_sup("-6"), 
+                    " cm/s)")) %>% 
+         
+         compose(i = which(DF$Parameter == "Calibrator compound used for calculating Papp"),
+                 j = which(names(DF) == "Parameter"), 
+                 part = "body", 
+                 value = flextable::as_paragraph(
+                    "Calibrator compound used for calculating P",
+                    flextable::as_sub("app"))) 
+      
+      # Next, all the places where there might be multiple matches b/c we're only
+      # matching, e.g., the 1st part of the string and then need to fill in the
+      # rest of the string with variable text.
+      MultPieceVars <- c("^fu,mic", "^fu,inc", "^Ki fu,mic", "^Ki",
+                         "^Km", "^Vmax", "^IndC50", "^IndMax", "^Ind gamma", 
+                         "^Ind fu,inc", "uL")
+      
+      for(mpv in MultPieceVars){
+         
+         rows <- which(str_detect(DF$Parameter, mpv))
+         
+         for(r in rows){
+            FT <- FT %>% 
+               compose(i = r, 
+                       j = which(names(DF) == "Parameter"), 
+                       part = "body", 
+                       value = switch(
+                          mpv,
+                          
+                          "^fu,mic" = 
+                             flextable::as_paragraph(
+                                "fu", flextable::as_sub("mic"), 
+                                sub(mpv, "", 
+                                    DF[r, which(names(DF) == "Parameter")])), 
+                          
+                          "^fu,inc" = 
+                             flextable::as_paragraph(
+                                "fu", flextable::as_sub("inc"), 
+                                sub(mpv, "", 
+                                    DF[r, which(names(DF) == "Parameter")])), 
+                          
+                          "^Ki fu,mic" = 
+                             flextable::as_paragraph(
+                                "fu", flextable::as_sub("mic"), 
+                                gsub(mpv, "", 
+                                     DF[r, which(names(DF) == "Parameter")]), 
+                                "(K", flextable::as_sub("i"), ")"), 
+                          
+                          "^Ind fu,inc" = 
+                             flextable::as_paragraph(
+                                "fu", flextable::as_sub("inc"), 
+                                gsub("^Ind fu,inc", "", 
+                                     DF[r, which(names(DF) == "Parameter")]), 
+                                "(induction)"), 
+                          
+                          "^IndC50" = 
+                             flextable::as_paragraph(
+                                "IndC", flextable::as_sub("50"), 
+                                sub(mpv, "", 
+                                    DF[r, which(names(DF) == "Parameter")])), 
+                          
+                          "^IndMax" = 
+                             flextable::as_paragraph(
+                                "Ind", flextable::as_sub("max"), 
+                                sub(mpv, "", 
+                                    DF[r, which(names(DF) == "Parameter")])), 
+                          
+                          "^Ind gamma" = 
+                             flextable::as_paragraph(
+                                "\u03B3 (induction)", 
+                                sub(mpv, "", 
+                                    DF[r, which(names(DF) == "Parameter")])), 
+                          
+                          "^Ki" = 
+                             flextable::as_paragraph(
+                                "K", flextable::as_sub("i"), 
+                                sub(mpv, "", 
+                                    DF[r, which(names(DF) == "Parameter")])), 
+                          
+                          "^Km" = 
+                             flextable::as_paragraph(
+                                "K", flextable::as_sub("M"), 
+                                sub(mpv, "", 
+                                    DF[r, which(names(DF) == "Parameter")])), 
+                          
+                          "^Vmax" = 
+                             flextable::as_paragraph(
+                                "V", flextable::as_sub("max"), 
+                                sub(mpv, "", 
+                                    DF[r, which(names(DF) == "Parameter")])), 
+                          
+                          # Special characters
+                          "uL" = flextable::as_paragraph(
+                             sub("uL", "\u03BCL", 
+                                 DF[r, which(names(DF) == "Parameter")]))
+                       ))
+         }
+      }
+      
+   } else {
       FT <- flextable::flextable(DF)
    }
+   
    
    # Dealing with subscripts for PK parameters in column names
    ColNames <- sub("AUCt( |$)", "AUC~t~ ", names(DF))
@@ -93,137 +299,7 @@ format_scripts <- function(DF,
       }
    }
    
-   # Setting up for nonstandard evaluation
-   parameter_column <- rlang::enquo(parameter_column)
    
-   if("Parameter" %in% names(DF) & 
-      as_label(parameter_column) != "Parameter"){
-      DF <- DF %>% rename(Parameter_orig = Parameter)
-   }
-   
-   if(as_label(parameter_column) == "<empty>"){
-      return(FT)
-   }
-   
-   if(as_label(parameter_column) %in% names(DF) == FALSE){
-      warning(wrapn(paste0("You specified the parameter column name to be `", 
-                           as_label(parameter_column), 
-                           "`, but that column is not present in DF. We cannot format the subscripts, superscripts, or special characters in your data.frame and will only be able to return a generic flextable object.")), 
-              call. = FALSE)
-      
-      return(FT)
-   }
-   
-   DF <- DF %>%
-      mutate(Parameter = {{parameter_column}})
-   
-   if(remove_compound_suffix){
-      DF <- DF %>%
-         mutate(Parameter = str_replace(Parameter, "_sub$|_inhib$|_met1$|_met2$|_secmet$|_inhib2$", ""))
-   }
-   
-   DF <- DF %>%
-      # FIXME - Do more to clean up elim and interaction params
-      mutate(Parameter = str_replace_all(Parameter, "_", " "), 
-             Parameter = str_replace_all(Parameter, "Pathway[0-9]( )?", ""), 
-             Parameter = str_replace_all(Parameter, "fu mic", "fu,mic"), 
-             Parameter = case_when(str_detect(Parameter, "Ki fu,mic") ~ 
-                                      paste0(str_replace(Parameter, "Ki ", ""), 
-                                             " (Ki)"), 
-                                   .default = Parameter), 
-             Parameter = case_match(Parameter, 
-                                    "CLint CYP3A4 uL min pmol" ~ "CLint CYP3A4 (uL/min/pmol)", 
-                                    "CLint AddHLM" ~ "CLint,additional HLM", 
-                                    "CLint biliary" ~ "CLint,biliary", 
-                                    "Ki fu,mic CYP2D6" ~ "fu,mic CYP2D6 (Ki)", 
-                                    .default = Parameter))
-   
-   FT <- FT %>% 
-      
-      # First, all the places where we replace the ENTIRE cell contents. These
-      # don't need to be run in a loop b/c we replace EVERYTHING with the same
-      # value, so, even if there were more than one place with, e.g., "ka
-      # (h^-1)", ALL of those places would be replaced with the same thing.
-      compose(i = which(DF$Parameter == "ka (h^-1)"), 
-              j = which(names(DF) == "Parameter"), 
-              part = "body", 
-              value = as_paragraph("k", as_sub("a"), " (h", as_sup("-1"), ")")) %>% 
-      
-      compose(i = which(DF$Parameter == "fu,p"), 
-              j = which(names(DF) == "Parameter"), 
-              part = "body", 
-              value = as_paragraph("fu", as_sub("p"))) %>% 
-      
-      compose(i = which(DF$Parameter == "fu,gut"), 
-              j = which(names(DF) == "Parameter"), 
-              part = "body", 
-              value = as_paragraph("fu", as_sub("gut"))) %>% 
-      
-      compose(i = which(DF$Parameter == "CLint,biliary"), 
-              j = which(names(DF) == "Parameter"), 
-              part = "body", 
-              value = as_paragraph("CLint", as_sub("biliary"))) %>% 
-      
-      compose(i = which(DF$Parameter == "CLint,additional HLM"), 
-              j = which(names(DF) == "Parameter"), 
-              part = "body", 
-              value = as_paragraph("CLint", as_sub("additional HLM"))) %>% 
-      
-      compose(i = which(DF$Parameter == "tlag (h)"), 
-              j = which(names(DF) == "Parameter"), 
-              part = "body", 
-              value = as_paragraph("t", as_sub("lag"), " (h)")) %>% 
-      
-      compose(i = which(DF$Parameter == "Peff,human (10-4 cm/s)"),
-              j = which(names(DF) == "Parameter"), 
-              part = "body", 
-              value = as_paragraph("P", as_sub("eff,human"), 
-                                   " (10", as_sup("-4"), 
-                                   " cm/s)")) %>% 
-      
-      # Special characters
-      
-      compose(i = which(str_detect(DF$Parameter, "uL")),
-              j = which(names(DF) == "Parameter"), 
-              part = "body", 
-              value = as_paragraph(sub("uL", "\u03BCL", 
-                                       DF[which(str_detect(DF$Parameter, "uL")), 
-                                          which(names(DF) == "Parameter")])))
-   
-   # Next, all the places where there might be multiple matches b/c we're only
-   # matching, e.g., the 1st part of the string and then need to fill in the
-   # rest of the string with variable text.
-   MultPieceVars <- c("^fu,mic", "^fu,mic.*\\(Ki\\)$", "^Ki", "Peff,human \\(10-4 cm/s\\)")
-   
-   for(mpv in MultPieceVars){
-      
-      rows <- which(str_detect(DF$Parameter, mpv))
-      
-      for(r in rows){
-         FT <- FT %>% 
-            compose(i = r, 
-                    j = which(names(DF) == "Parameter"), 
-                    part = "body", 
-                    value = switch(
-                       mpv, 
-                       "^fu,mic" = 
-                          as_paragraph("fu", as_sub("mic"), 
-                                       sub(mpv, "", 
-                                           DF[r, which(names(DF) == "Parameter")])), 
-                       
-                       "^fu,mic.*\\(Ki\\)$" = 
-                          as_paragraph("fu", as_sub("mic"), 
-                                       gsub("^fu,mic|\\(Ki\\)", "", 
-                                            DF[r, which(names(DF) == "Parameter")]), 
-                                       "(K", as_sub("i"), ")"), 
-                       
-                       "^Ki" = 
-                          as_paragraph("K", as_sub("i"), 
-                                       sub(mpv, "", 
-                                           DF[r, which(names(DF) == "Parameter")])) 
-                    ))
-      }
-   }
    
    return(FT)
 }
