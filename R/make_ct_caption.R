@@ -65,17 +65,17 @@ make_ct_caption <- function(ct_dataframe,
       MyCompound <- case_when(
          "logical" %in% class(prettify_compound_names) &&
             prettify_compound_names == TRUE ~ 
-            str_comma(prettify_compound_name(unique(ct_dataframe$Compound))), 
+            str_comma(sort(unique(prettify_compound_name(ct_dataframe$Compound)))), 
          
          "logical" %in% class(prettify_compound_names) &&
             prettify_compound_names == FALSE ~ 
-            str_comma(unique(ct_dataframe$Compound)), 
+            str_comma(sort(unique(ct_dataframe$Compound))), 
          
          "character" %in% class(prettify_compound_names) & 
             compoundID %in% names(prettify_compound_names) ~ 
-            str_comma(prettify_compound_names[compoundID]), 
+            str_comma(sort(unique(prettify_compound_names[compoundID]))), 
          
-         TRUE ~ unique(ct_dataframe$Compound)
+         .default = str_comma(sort(unique(ct_dataframe$Compound)))
       )
       
       if("logical" %in% class(existing_exp_details) ||
@@ -195,27 +195,27 @@ make_ct_caption <- function(ct_dataframe,
       CapText2 <- switch(
          figure_type, 
          "trial means" = 
-            paste0("The grey lines represent ",
+            paste0("The lighter lines represent ",
                    mean_type, 
-                   " mean values of simulated individual trials and the black lines portray the ",
+                   " mean values of simulated individual trials and the darker lines portray the ",
                    mean_type, 
                    " mean data of the simulated population (n = ", N_trials, " trials of ", N_subjpertrial, " subjects per trial)."), 
          "percentiles" = 
-            paste0("The grey lines represent the 5^th^ and 95^th^ percentiles and the solid black line the ",
+            paste0("The lighter lines represent the 5^th^ and 95^th^ percentiles and the solid darker line the ",
                    mean_type, 
                    " mean data for the simulated population (n = ", N_indiv, ")."), 
          "percentile ribbon" = 
-            paste0("The shaded regions represent the 5^th^ to the 95^th^ percentiles and the solid black line the ",
+            paste0("The shaded regions represent the 5^th^ to the 95^th^ percentiles and the solid darker line the ",
                    mean_type, 
                    " mean data for the simulated population (n = ", N_indiv, ")."), 
          "means only" = 
-            paste0("The solid black line represents the ", 
+            paste0("The solid line represents the ", 
                    mean_type, 
                    " mean data for the simulated population (n = ", N_indiv, ")."), 
          "Freddy" = 
-            paste0("The grey lines represent the ", 
+            paste0("The lighter lines represent the ", 
                    mean_type, 
-                   " mean values of simulated individual trials and the black lines portray the ",
+                   " mean values of simulated individual trials and the darker lines portray the ",
                    mean_type, 
                    " mean data of the simulated population (n = ", N_indiv, "). The dashed lines represent the 5^th^ and 95^th^ percentiles."))
       
