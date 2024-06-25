@@ -216,6 +216,36 @@ convert_conc_units <- function(DF_to_convert,
             mutate(Factor = MW * FactorNoMW)
       )
       
+      if(any(str_detect(ConvTable_conc$OrigUnits, "<U+"))){
+         Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
+         
+         suppressMessages(
+            ConvTable_conc <- data.frame(
+               
+               OrigUnits = rep(c("µM", "nM"), 6), 
+               
+               RevUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
+                              each = 2)) %>% 
+               mutate(
+                  FactorNoMW = c(
+                     # uM then nM
+                     1/1000,    1/10^6,  # mg/L
+                     1/10^6,    1/10^9,  # mg/mL
+                     1,         1/1000,  # ug/L
+                     1/1000,    1/10^6,  # ug/mL
+                     1*1000,    1,  # ng/L
+                     1,         1/1000  # ng/mL
+                  )) %>% 
+               left_join(
+                  left_join(data.frame(MW = MW, 
+                                       CompoundID = names(MW)),
+                            expand_grid(CompoundID = names(MW), 
+                                        OrigUnits = c("µM", "nM")))) %>% 
+               mutate(Factor = MW * FactorNoMW)
+         )
+      }
+      
+      
    } else if(unique(DF_with_good_units$Conc_units) %in% MolarUnits &
              unique(DF_to_convert$Conc_units) %in% MassUnits){
       
@@ -242,6 +272,36 @@ convert_conc_units <- function(DF_to_convert,
                                      RevUnits = c("µM", "nM")))) %>% 
             mutate(Factor = FactorNoMW / MW)
       )
+      
+      if(any(str_detect(ConvTable_conc$OrigUnits, "<U+"))){
+         Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
+         
+         suppressMessages(
+            ConvTable_conc <- data.frame(
+               OrigUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
+                               each = 2),
+               
+               RevUnits = rep(c("µM", "nM"), 6)) %>% 
+               mutate(
+                  FactorNoMW = c(
+                     # uM then nM
+                     1000,    10^6,  # mg/L
+                     10^6,    10^9,  # mg/mL
+                     1,       1000,  # ug/L
+                     1000,    10^6,  # ug/mL
+                     1000,    1,  # ng/L
+                     1,       1000  # ng/mL
+                  )) %>% 
+               left_join(
+                  left_join(data.frame(MW = MW, 
+                                       CompoundID = names(MW)),
+                            expand_grid(CompoundID = names(MW), 
+                                        RevUnits = c("µM", "nM")))) %>% 
+               mutate(Factor = FactorNoMW / MW)
+         )
+      }
+      
+      
       
    } else {
       
@@ -288,6 +348,56 @@ convert_conc_units <- function(DF_to_convert,
                     1, # mL
                     1 # PD response
          ) )
+      
+      if(any(str_detect(ConvTable_conc$OrigUnits, "<U+"))){
+         Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
+         
+         ConvTable_conc <- data.frame(
+            OrigUnits = c(
+               rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
+                     "ng/mL"), 6),
+               
+               rep(c("µM", "nM"), 2),
+               
+               rep(c("mg", "µg", "ng"), 3),
+               
+               "mL", "PD response"),
+            
+            RevUnits = c(
+               rep("mg/L", 6),
+               rep("mg/mL", 6),
+               rep("µg/L", 6),
+               rep("µg/mL", 6),
+               rep("ng/L", 6),
+               rep("ng/mL", 6),
+               
+               rep("µM", 2),
+               rep("nM", 2),
+               
+               rep(c("mg", "µg", "ng"), each = 3),
+               
+               "mL", "PD response"),
+            
+            Factor = c(1,    10^3, 10^-3, 1,     10^6,  10^-3, # mg/L
+                       10^3, 1,    10^-6, 10^-3, 10^9,  10^-6, # mg/mL
+                       10^3, 10^6, 1,     10^3,  10^-3, 1,    # ug/L
+                       1,    10^3, 10^-3, 1,     10^-6, 10^-3,# ug/mL
+                       10^6, 10^9, 10^3,  10^6,  1,     10^3, # ng/L
+                       10^3, 10^6, 1,     10^3,  10^-3, 1,    # ng/mL
+                       
+                       1,    10^-3, # uM
+                       10^3, 1,     # nM
+                       
+                       1,    10^-3, 10^-6, # mg
+                       1^3,  1,     10^-3, # ug
+                       10^6, 10^3,  1, # ng
+                       
+                       1, # mL
+                       1 # PD response
+            ) )
+         
+      }
+      
    }
    
    if(unique(DF_with_good_units$Conc_units) %in% ConvTable_conc$RevUnits == FALSE |
