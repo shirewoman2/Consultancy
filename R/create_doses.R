@@ -162,7 +162,7 @@ create_doses <- function(dose_interval = NA,
    
    if(complete.cases(num_doses) & complete.cases(end_time)){
       warning(wrapn("You have supplied values for both `num_doses` and `end_time`. We will use the number of doses requested and ignore anything specified for the end time of dosing."), 
-	  call. = FALSE)
+              call. = FALSE)
    }
    
    # Checking for disparate lengths of entered values b/c can result in user
@@ -196,14 +196,14 @@ create_doses <- function(dose_interval = NA,
    
    # Checking for bad input
    if(all(compoundID %in% c("Substrate", "Inhibitor 1", "Inhibitor 2",
-                             "Inhibitor 3")) == FALSE){
+                            "Inhibitor 3")) == FALSE){
       stop("The entry for the argument `compoundID` is incorrect. The only options for compoundID are `Substrate`, `Inhiitor `, `Inhibitor 2`, or `Inhibitor 3`.", 
            call. = FALSE)
    }
    
    if(all(compound_dose_route %in% c("Oral", "Intravenous", "Dermal", "Inhaled",
-                                "SC-First Order", "SC-Mechanistic", 
-                                "Auto-detect")) == FALSE){
+                                     "SC-First Order", "SC-Mechanistic", 
+                                     "Auto-detect")) == FALSE){
       stop("The entry for the argument `compound_dose_route` is incorrect. Please check the help file for acceptable options.", 
            call. = FALSE)
    }
@@ -289,42 +289,59 @@ create_doses <- function(dose_interval = NA,
    
    # Figuring out which columns we need
    # Column names by Simulator version
-   ColNames <- list("V22" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
-                              "SD_SE",
-                              "Compound_ID", "Compound_route",
-                              "Compound_dose_unit", "Compound_dose_amount",
-                              "Compound_inf_duration", "InjectionSite",
-                              "Period", "Subj_age", "Subj_weight",
-                              "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
-                              "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                              "SmokingStatus", "GestationalAge_wk", 
-                              "PlacentaVol_L", "FetalWt_kg"), 
-                    "V21" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
-                              "Compound_ID", "Compound_route", 
-                              "Compound_dose_unit", "Compound_dose_amount",
-                              "Compound_inf_duration", "Period", 
-                              "Subj_age", "Subj_weight",
-                              "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
-                              "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                              "SmokingStatus", "GestationalAge_wk", 
-                              "PlacentaVol_L", "FetalWt_kg"),
-                    "V20" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
-                              "Compound_ID", "Compound_route",
-                              "Compound_dose_unit", "Compound_dose_amount",
-                              "Compound_inf_duration", "Period",
-                              "Subj_age", "Subj_weight",
-                              "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
-                              "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                              "SmokingStatus", "GestationalAge_wk", 
-                              "FetalWt_kg"),
-                    "V19" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
-                              "Compound_ID", "Compound_route",
-                              "Compound_dose_unit", "Compound_dose_amount",
-                              "Compound_inf_duration", "Period", 
-                              "Subj_age", "Subj_weight",
-                              "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
-                              "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                              "SmokingStatus")
+   ColNames <- list(
+      "V23" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
+                "SD_SE",
+                "Compound_ID", "Compound_route",
+                "Compound_dose_unit", "Compound_dose_amount",
+                "Compound_inf_duration", "InjectionSite",
+                "DoseVolume_mL", "DoseConc_mgmL", 
+                "Period", "Treatment_VBE", "Sequence", 
+                "Subj_age", "Subj_weight",
+                "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
+                "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                "SmokingStatus", "GestationalAge_wk", 
+                "PlacentaVol_L", "FetalWt_kg", "PostPartumAge_months"), 
+      
+      "V22" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
+                "SD_SE",
+                "Compound_ID", "Compound_route",
+                "Compound_dose_unit", "Compound_dose_amount",
+                "Compound_inf_duration", "InjectionSite",
+                "Period", "Subj_age", "Subj_weight",
+                "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
+                "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                "SmokingStatus", "GestationalAge_wk", 
+                "PlacentaVol_L", "FetalWt_kg"), 
+      
+      "V21" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
+                "Compound_ID", "Compound_route", 
+                "Compound_dose_unit", "Compound_dose_amount",
+                "Compound_inf_duration", "Period", 
+                "Subj_age", "Subj_weight",
+                "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
+                "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                "SmokingStatus", "GestationalAge_wk", 
+                "PlacentaVol_L", "FetalWt_kg"),
+      
+      "V20" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
+                "Compound_ID", "Compound_route",
+                "Compound_dose_unit", "Compound_dose_amount",
+                "Compound_inf_duration", "Period",
+                "Subj_age", "Subj_weight",
+                "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
+                "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                "SmokingStatus", "GestationalAge_wk", 
+                "FetalWt_kg"),
+      
+      "V19" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
+                "Compound_ID", "Compound_route",
+                "Compound_dose_unit", "Compound_dose_amount",
+                "Compound_inf_duration", "Period", 
+                "Subj_age", "Subj_weight",
+                "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
+                "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                "SmokingStatus")
    )
    
    ColNames <- ColNames[[paste0("V", simulator_version)]]
@@ -382,7 +399,7 @@ create_doses <- function(dose_interval = NA,
             # Give a warning if they used any file extension other than csv
             # that their file will be saved as csv.
             warning(wrapn(paste0("You supplied a file extension other than csv, but this function only supports csv output. Your file will be saved as `", 
-                           sub("\\..*", ".csv", save_output), "`.")), 
+                                 sub("\\..*", ".csv", save_output), "`.")), 
                     call. = FALSE)
          }
          
