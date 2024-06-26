@@ -44,10 +44,6 @@ make_ct_caption <- function(ct_dataframe,
       
       # Getting general info and setting up heading ------------------------------
       
-      existing_exp_details <- filter_sims(existing_exp_details, 
-                                          unique(ct_dataframe$File), 
-                                          "include")
-      
       Text1 <- switch(linear_or_log, 
                       "both" = "Linear (A) and log-linear (B)",
                       "both horizontal" ="Linear (A) and log-linear (B)",
@@ -103,6 +99,10 @@ make_ct_caption <- function(ct_dataframe,
          N_indiv <- "**XXX**"
          
       } else {
+         
+         existing_exp_details <- filter_sims(existing_exp_details, 
+                                             unique(ct_dataframe$File), 
+                                             "include")
          
          WarningText <- NA
          
