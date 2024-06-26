@@ -1566,8 +1566,34 @@ ct_plot_overlay <- function(ct_dataframe,
    time_range_relative <- XStuff$time_range_relative
    t0 <- XStuff$t0
    TimeUnits <- XStuff$TimeUnits
-   sim_dataframe <- XStuff$Data %>% filter(Simulated == TRUE)
-   obs_dataframe <- XStuff$Data %>% filter(Simulated == FALSE)
+   # When you bind_rows, it drops factors that aren't present in both
+   # data.frames, apparently. Adding them back in and assuming that the factors
+   # and levels in sim_dataframe are the ones we want.
+   sim_dataframe_temp <- XStuff$Data %>% filter(Simulated == TRUE)
+   FctCols <- sapply(sim_dataframe, class)
+   FctCols <- FctCols[FctCols == "factor"]
+   for(col in names(FctCols)){
+      MyLevels <- levels(sim_dataframe %>% select(col) %>% pull())
+      sim_dataframe_temp <- sim_dataframe_temp %>% 
+         mutate(across(.cols = col, 
+                       .fns = function(x) factor(x, levels = MyLevels)))
+      rm(MyLevels)
+   }
+   sim_dataframe <- sim_dataframe_temp
+   rm(sim_dataframe_temp)
+   
+   obs_dataframe_temp <- XStuff$Data %>% filter(Simulated == FALSE)
+   FctCols <- sapply(obs_dataframe, class)
+   FctCols <- FctCols[FctCols == "factor"]
+   for(col in names(FctCols)){
+      MyLevels <- levels(obs_dataframe %>% select(col) %>% pull())
+      obs_dataframe_temp <- obs_dataframe_temp %>% 
+         mutate(across(.cols = col, 
+                       .fns = function(x) factor(x, levels = MyLevels)))
+      rm(MyLevels)
+   }
+   obs_dataframe <- obs_dataframe_temp
+   rm(obs_dataframe_temp)
    
    # Setting up the y axis using the subfunction ct_y_axis
    Ylim_data <- bind_rows(sim_dataframe, obs_dataframe) %>%
