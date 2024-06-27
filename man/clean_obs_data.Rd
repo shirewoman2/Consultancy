@@ -7,6 +7,7 @@
 clean_obs_data(
   untidy_data,
   untidy_data_sheet = NA,
+  cohort_column,
   subject_column,
   time_column,
   DV_column,
@@ -21,6 +22,7 @@ clean_obs_data(
   injection_site_column,
   dose_unit = "mg",
   weighting = 1,
+  split_columns = c("Dose"),
   save_csv = NA
 )
 }
@@ -30,6 +32,9 @@ data or an Excel file with the untidy data. This should be in quotes.}
 
 \item{untidy_data_sheet}{if you supplied an Excel file with the untidy data,
 specify what sheet to read here. This should be in quotes.}
+
+\item{cohort_column}{the column in the observed concentration-time data.frame
+that contains the cohorts, unquoted}
 
 \item{subject_column}{the column in the observed concentration-time
 data.frame that contains the subject IDs, unquoted.}
@@ -72,6 +77,12 @@ contains the injection site, unquoted.}
 
 \item{weighting}{weighting to use for parameter estimation. Defaults to 1.}
 
+\item{split_columns}{Which columns should the data be split up by? This
+\emph{should} be quoted. Apologies for the difference here since the other
+column assignments are \emph{un}quoted, but, since this can have multiple
+columns, the coding is easiest to do if these are in quotes. We're trying
+to figure out how to get around that.}
+
 \item{save_csv}{optionally specify a file name for saving the tidied data as
 a csv. If you have more than one dose level in the data, the files will be
 split up by dose level, and we'll include a suffix with the dose amount at
@@ -84,7 +95,7 @@ a list of tidied data, split by dose level
 Tidy up messy observed data. UNDER CONSTRUCTION!!!
 }
 \examples{
-# none yet 
+# none yet
 
 
 }

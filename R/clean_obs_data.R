@@ -4,6 +4,8 @@
 #'   data or an Excel file with the untidy data. This should be in quotes.
 #' @param untidy_data_sheet if you supplied an Excel file with the untidy data,
 #'   specify what sheet to read here. This should be in quotes.
+#' @param cohort_column the column in the observed concentration-time data.frame
+#'   that contains the cohorts, unquoted
 #' @param subject_column the column in the observed concentration-time
 #'   data.frame that contains the subject IDs, unquoted.
 #' @param time_column the column in the untidy data.frame that contains times,
@@ -31,6 +33,11 @@
 #' @param dose_unit the unit of dosing. Options are "mg" (default), "mg/m2", or
 #'   "mg/kg".
 #' @param weighting weighting to use for parameter estimation. Defaults to 1.
+#' @param split_columns Which columns should the data be split up by? This
+#'   \emph{should} be quoted. Apologies for the difference here since the other
+#'   column assignments are \emph{un}quoted, but, since this can have multiple
+#'   columns, the coding is easiest to do if these are in quotes. We're trying
+#'   to figure out how to get around that.
 #' @param save_csv optionally specify a file name for saving the tidied data as
 #'   a csv. If you have more than one dose level in the data, the files will be
 #'   split up by dose level, and we'll include a suffix with the dose amount at
@@ -39,11 +46,12 @@
 #' @return a list of tidied data, split by dose level
 #' @export
 #' @examples
-#' # none yet 
-#' 
+#' # none yet
+#'
 #' 
 clean_obs_data <- function(untidy_data, 
                            untidy_data_sheet = NA, 
+                           cohort_column, 
                            subject_column, 
                            time_column, 
                            DV_column, 
@@ -58,6 +66,7 @@ clean_obs_data <- function(untidy_data,
                            injection_site_column, 
                            dose_unit = "mg", 
                            weighting = 1, 
+                           split_columns = c("Dose"), 
                            save_csv = NA){
    
    # Error catching ---------------------------------------------------------
@@ -86,6 +95,7 @@ clean_obs_data <- function(untidy_data,
    
    # Main body of function ---------------------------------------------------
    
+   cohort_column <- rlang::enquo(cohort_column)
    subject_column <- rlang::enquo(subject_column)
    time_column <- rlang::enquo(time_column)
    DV_column <- rlang::enquo(DV_column)
@@ -99,7 +109,8 @@ clean_obs_data <- function(untidy_data,
    SDSE_column <- rlang::enquo(SDSE_column)
    injection_site_column <- rlang::enquo(injection_site_column)
    
-   GoodCols <- c("Subject" = as_label(subject_column), 
+   GoodCols <- c("Cohort" = as_label(cohort_column), 
+                 "Subject" = as_label(subject_column), 
                  "Time" = as_label(time_column),
                  "DV" = as_label(DV_column),
                  "Analyte" = as_label(analyte_column),
@@ -155,30 +166,38 @@ clean_obs_data <- function(untidy_data,
       }
    }
    
+   # Need to note original and revised column names for determining which
+   # columns to split by
+   ColNames <- data.frame(Orig = names(untidy_data), 
+                          Rev = names(tidy_data))
+   
    if(all(c("Time", "Day") %in% names(tidy_data))){
       tidy_data <- tidy_data %>% 
          mutate(Conttime = 24 * Day - 24 + Time)
    }
    
-   
    tidy_data <- tidy_data %>% 
       mutate(Weighting = weighting, 
              DoseUnits = dose_unit, 
              DVID = 1) %>% 
-      select(any_of(c("Subject", "Day", "Time", "Conttime", "DV", "Analyte", "Dose", "Day", 
+      select(any_of(c("Cohort", "Subject", "Day", "Time", "Conttime", "DV", 
+                      "Analyte", "Dose", "Day", 
                       "Age", "Weight", "Height", "Sex", "SDSE", 
                       "InjectionSite", "Weighting", "DoseUnits")), 
              everything())
    
    
-   ## Split by dose ----------------------------------------------------------
+   ## Split by ... ----------------------------------------------------------
    
-   if("Dose" %in% names(tidy_data) && 
-      length(unique(tidy_data$Dose)) > 1){
-      tidy_data <- split(tidy_data, f = tidy_data$Dose)
-   } else {
-      tidy_data <- list("alldata" = tidy_data)
-   }
+   # Finding the columns to split by since their names may have changed. This
+   # will omit any columns not actually present in the data.
+   split_columns_for_realsies <- ColNames$Rev[ColNames$Orig %in% split_columns]
+   
+   # Create a list of vectors to split by
+   split_list <- lapply(split_columns_for_realsies, function(col) tidy_data[[col]])
+   
+   # Split the data.frame
+   tidy_data <- split(tidy_data, split_list)
    
    # Output ------------------------------------------------------------------
    
