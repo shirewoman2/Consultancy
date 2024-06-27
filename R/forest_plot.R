@@ -97,6 +97,15 @@
 #'   to include a parameter that's not already present in
 #'   \code{forest_dataframe}, it will be ignored. User a character vector here,
 #'   e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}
+#' @param use_AUCt_when_AUCinf_NA TRUE or FALSE (default) for whether to swap
+#'   out AUCt for dose 1 when the Simulator failed to extrapolate to infinity.
+#'   Here's the deal: If you have some simulations with AUCinf for dose 1 and
+#'   then some where you have AUCt, you'll have both AUCinf \emph{and} AUCt on
+#'   the y axis for all the simulations \emph{but} there will only be points for
+#'   AUCt for the simulations where extrapolation failed. That makes a graph
+#'   that's a little redundant and even a little confusing. If you set this to
+#'   TRUE, we will use AUCt whenever AUCinf wasn't available and we will not
+#'   include AUCt on the graph. 
 #' @param observed_PK observed PK data, with the following columns: \describe{
 #'
 #'   \item{File}{the simulation file you'd like the observed data to be graphed
@@ -522,6 +531,7 @@ forest_plot <- function(forest_dataframe,
                         y_order = NA,
                         PKparameters = NA, 
                         observed_PK = NA,
+                        use_AUCt_when_AUCinf_NA = FALSE, 
                         facet_column_x, 
                         facet_title_x = NA, 
                         show_numbers_on_right = FALSE,
@@ -765,7 +775,8 @@ forest_plot <- function(forest_dataframe,
       # forest data should include observed PK. Checking for that if they did not
       # supply observed data as a separate data.frame.
       
-      if(any(forest_dataframe$SorO == "Obs")){
+      if("SorO" %in% names(forest_dataframe) &&
+         any(forest_dataframe$SorO == "Obs")){
          observed_PK <- forest_dataframe %>% filter(SorO == "Obs")
          forest_dataframe <- forest_dataframe %>% filter(SorO == "Sim")
          
@@ -871,7 +882,7 @@ forest_plot <- function(forest_dataframe,
    
    if(include_dose_num == FALSE){
       names(forest_dataframe) <- sub("Dose 1 |Last dose ", "",
-                                names(forest_dataframe))
+                                     names(forest_dataframe))
    }
    
    if(include_dose_num == FALSE){
@@ -1050,6 +1061,61 @@ forest_plot <- function(forest_dataframe,
          forest_dataframe <- forest_dataframe %>% bind_rows(observed_PK)
       }
    } 
+   
+   # Dealing with missing AUCinf values
+   if(use_AUCt_when_AUCinf_NA){
+      
+      forest_dataframe <- forest_dataframe %>% 
+         unite(col = ID, File, PKparameter, remove = FALSE)
+      
+      ExtrapProbs <- forest_dataframe %>% 
+         filter(PKparameter %in% c("AUCinf_ratio_dose1", 
+                                   "AUCinf_ratio") & 
+                   is.na(GeoMean))
+      if(nrow(ExtrapProbs) > 0){
+         ProbID <- ExtrapProbs$ID
+      } else {
+         ProbID <- NULL
+      }
+      
+      ExtrapProbs <- ExtrapProbs %>% pull(File)
+      
+      ExtrapProbs <- sort(unique(c(
+         ExtrapProbs, 
+         
+         setdiff(forest_dataframe$File, 
+                 forest_dataframe %>% 
+                    filter(PKparameter %in% c("AUCinf_ratio_dose1", 
+                                              "AUCinf_ratio")) %>% 
+                    pull(File)))))
+      
+      ToAdd <- forest_dataframe %>% 
+         filter(File %in% ExtrapProbs & 
+                   PKparameter %in% c("AUCt_ratio_dose1", 
+                                      "AUCt_ratio")) %>% 
+         mutate(PKparameter = ifelse(include_dose_num, 
+                                     "AUCinf_ratio_dose1", 
+                                     "AUCinf_ratio"))
+      
+      forest_dataframe <- forest_dataframe %>% 
+         bind_rows(ToAdd)
+      
+      if(all(is.na(PKparameters))){
+         forest_dataframe <- forest_dataframe %>% 
+            filter(!PKparameter %in% c("AUCt_ratio_dose1", 
+                                       "AUCt_ratio"))
+      } else {
+         PKparameters <- setdiff(PKparameters, 
+                                 c("AUCt_ratio_dose1", 
+                                   "AUCt_ratio"))
+      }
+      
+      warning(paste0(str_wrap("The following simulations had missing values for the AUCinf ratio for dose 1 and, by request, have had those values replaced with the AUCt ratio for dose 1:"), 
+                     "\n", str_c(paste0("     ", ExtrapProbs), collapse = "\n"), 
+                     "\nPLEASE NOTE THIS IN YOUR FIGURE CAPTION."), 
+              call. = FALSE)
+      
+   }
    
    # Setting up y_axis_labels and checking for possible problems. This has to
    # come AFTER rbinding the observed data.
