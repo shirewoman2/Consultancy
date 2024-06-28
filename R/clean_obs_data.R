@@ -1,4 +1,25 @@
-#' Tidy up messy observed data. UNDER CONSTRUCTION!!!
+#' Tidy up messy observed concentration-time data. UNDER CONSTRUCTION!!!
+#'
+#' The function \code{clean_obs_data} is meant to perform the following
+#' automated data cleaning steps: \enumerate{\item{Make all the main columns
+#' that you probably want in concentration-time data -- Subject, Day, Time, DV,
+#' Conttime, etc. -- be the 1st columns listed and have standardized
+#' names.}\item{Remove "mg" or "mg/kg" or "mg/m2" from any column with the
+#' dose info.} \item{If there's a column for the day and a column for the time, calculate
+#' the continuous time.} \item{Set any times < 0 to 0.} \item{Split the data
+#' into separate csv files or list items by user-specified columns.}} \strong{A note:}
+#' When you specify which columns are which in the arguments, the names must
+#' EXACTLY match what R reads in for an Excel file. This can be tricky if there
+#' are any spaces or especially any carriage returns in the column headings in
+#' an Excel file. Put tick marks around any column names with spaces or special
+#' characters, e.g., `Subject ID`. \code{clean_obs_data} will not do
+#' \emph{everything} you'll probably need since messy data are messy in their
+#' own unique ways in every case, but it will make a start. Once your observed
+#' concentration-time data are in good shape, we recommend checking out
+#' \code{\link{format_obs_for_XML}} for getting the data into the shape
+#' necessary for pasting into a Simcyp Simulator PE template Excel file,
+#' including adding dosing rows automatically based your specifications for the
+#' dosing interval.
 #'
 #' @param untidy_data a data.frame to be tidied or a csv file with the untidy
 #'   data or an Excel file with the untidy data. This should be in quotes.
@@ -66,7 +87,7 @@ clean_obs_data <- function(untidy_data,
                            injection_site_column, 
                            dose_unit = "mg", 
                            weighting = 1, 
-                           split_columns = c("Dose"), 
+                           split_columns = NA, 
                            save_csv = NA){
    
    # Error catching ---------------------------------------------------------
@@ -193,11 +214,15 @@ clean_obs_data <- function(untidy_data,
    # will omit any columns not actually present in the data.
    split_columns_for_realsies <- ColNames$Rev[ColNames$Orig %in% split_columns]
    
-   # Create a list of vectors to split by
-   split_list <- lapply(split_columns_for_realsies, function(col) tidy_data[[col]])
-   
-   # Split the data.frame
-   tidy_data <- split(tidy_data, split_list)
+   if(length(split_columns_for_realsies) > 0){
+      # Create a list of vectors to split by
+      split_list <- lapply(split_columns_for_realsies, function(col) tidy_data[[col]])
+      
+      # Split the data.frame
+      tidy_data <- split(tidy_data, split_list)
+   } else {
+      tidy_data <- list("alldata" = tidy_data)
+   }
    
    # Output ------------------------------------------------------------------
    
