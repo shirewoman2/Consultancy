@@ -10,6 +10,7 @@ ct_plot_overlay(
   mean_type = "arithmetic",
   figure_type = "means only",
   linear_or_log = "semi-log",
+  normalize_by_dose = FALSE,
   colorBy_column,
   color_labels = NA,
   legend_label_color = NA,
@@ -122,6 +123,9 @@ simulator output, you'll receive a warning message and we'll plot one that
 
   \item{"both horizontal"}{both the linear and the semi-log graphs will be
   returned, and graphs are stacked horizontally}}}
+
+\item{normalize_by_dose}{TRUE or FALSE (default) for whether to show
+dose-normalized concentration-time profiles}
 
 \item{colorBy_column}{(optional) the column in \code{ct_dataframe} that
 should be used for determining which color lines and/or points will be.

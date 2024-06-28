@@ -99,6 +99,8 @@
 #'   observed data. If a perpetrator were present, lighter dashed lines indicate
 #'   the mean of each trial of simulated data in the presence of the perpetrator.}}
 #'   
+#' @param normalize_by_dose TRUE or FALSE (default) for whether to show
+#'   dose-normalized concentration-time profiles
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed; this is the default}
 #'
@@ -484,6 +486,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             mean_type = "arithmetic",
                             figure_type = "means only", 
                             linear_or_log = "semi-log",
+                            normalize_by_dose = FALSE, 
                             colorBy_column,
                             color_labels = NA, 
                             legend_label_color = NA,
@@ -620,8 +623,8 @@ ct_plot_overlay <- function(ct_dataframe,
    if(figure_type %in% c("means only", "percentiles", "percentile ribbon", 
                          "trial means") == FALSE){
       warning(wrapn(paste0("The value used for `figure_type` was `", 
-                     figure_type,
-                     "`, but only the only acceptable options are `means only`, `trial means`, `percentiles`, or `percentile ribbon`. The default figure type, `means only`, will be used.")),
+                           figure_type,
+                           "`, but only the only acceptable options are `means only`, `trial means`, `percentiles`, or `percentile ribbon`. The default figure type, `means only`, will be used.")),
               call. = FALSE)
       figure_type <- "means only"
    }
@@ -705,8 +708,8 @@ ct_plot_overlay <- function(ct_dataframe,
       time_units_to_use <- tolower(time_units_to_use[1])
       if(time_units_to_use %in% c("hours", "minutes", "days", "weeks") == FALSE){
          warning(wrapn(paste0("You requested that the graph have time units of `", 
-                        time_units_to_use, 
-                        "`, which is not among the acceptable options. We'll use hours instead.")), 
+                              time_units_to_use, 
+                              "`, which is not among the acceptable options. We'll use hours instead.")), 
                  call. = FALSE)
          time_units_to_use <- "hours"
       }
@@ -718,8 +721,8 @@ ct_plot_overlay <- function(ct_dataframe,
                                   "ug/mL", "ng/L", "ng/mL", "µM", "uM", 
                                   "nM") == FALSE){
          warning(wrapn(paste0("You requested that the graph have concentration units of `", 
-                        conc_units_to_use, 
-                        "`, which is not among the acceptable options. We'll use ng/mL instead.")), 
+                              conc_units_to_use, 
+                              "`, which is not among the acceptable options. We'll use ng/mL instead.")), 
                  call. = FALSE)
          conc_units_to_use <- "ng/mL"
       }
@@ -727,6 +730,15 @@ ct_plot_overlay <- function(ct_dataframe,
    
    
    # Main body of function -------------------------------------------------
+   
+   # Noting whether the tissue was from an ADAM model
+   ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
+                                                  "jejunum II", "ileum I", "ileum II",
+                                                  "ileum III", "ileum IV", "colon", 
+                                                  "faeces", "gut tissue",
+                                                  "cumulative absorption", 
+                                                  "cumulative dissolution")) &
+      EnzPlot == FALSE
    
    # Noting user's original preferences for a few things
    obs_line_trans_user <- obs_line_trans
@@ -753,6 +765,43 @@ ct_plot_overlay <- function(ct_dataframe,
          mutate(Individual = as.factor(Individual), 
                 Individual = fct_relevel(Individual,
                                          AggStats, after = Inf))
+   }
+   
+   # Dose normalizing concs if requested
+   if(normalize_by_dose){
+      if(ADAM){
+         warning(paste0(str_wrap("You requested a dose-normalized concentration-time plot, but you are plotting ADAM-model concentrations, and we haven't set this up yet for ADAM-model concentrations. We won't be able to give you the dose-normalized plot here, but please tell Laura Shireman if this is an option you would like to have."), 
+                        "\n"), 
+                 call. = FALSE)
+         
+         normalize_by_dose <- FALSE
+      } else if(EnzPlot){
+         warning(paste0(str_wrap("You requested a dose-normalized concentration-time plot, but you are plotting enzyme abundances, which don't make sense to dose-normalize. We won't be able to give you the dose-normalized plot here."), 
+                        "\n"), 
+                 call. = FALSE)
+         
+         normalize_by_dose <- FALSE
+      } else if(all(c("Dose_sub", "Dose_inhib", "Dose_inhib2") %in% 
+             names(ct_dataframe))){
+         ct_dataframe <- ct_dataframe %>% 
+            mutate(Conc = case_when(
+               CompoundID %in% AllCompounds$CompoundID[
+                  AllCompounds$DosedCompoundID == "substrate"] ~ Conc / Dose_sub, 
+               
+               CompoundID %in% AllCompounds$CompoundID[
+                  AllCompounds$DosedCompoundID == "inhibitor 1"] ~ Conc / Dose_inhib, 
+               
+               CompoundID %in% AllCompounds$CompoundID[
+                  AllCompounds$DosedCompoundID == "inhibitor 2"] ~ Conc / Dose_inhib2))
+         
+      } else if(all(c("Dose_sub", "Dose_inhib", "Dose_inhib2") %in% 
+                    names(ct_dataframe)) == FALSE){
+         warning(paste0(str_wrap("You requested a dose-normalized concentration-time plot, but your data do not contain the columns 'Dose_sub', 'Dose_inhib', and 'Dose_inhib2', and we need those to normalize the data. We won't be able to give you the dose-normalized plot here."), 
+                        "\n"), 
+                 call. = FALSE)
+         
+         normalize_by_dose <- FALSE
+      }
    }
    
    # Setting things up for nonstandard evaluation ----------------------------
@@ -789,7 +838,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # If there are any replicate names for color_labels, give a warning.
    if(any(duplicated(names(color_labels)))){
       warning(paste0("You have listed this file more than once for the argument `color_labels`:\n", 
-	  str_c(names(color_labels[duplicated(names(color_labels))]), collapse = "\n"), 
+                     str_c(names(color_labels[duplicated(names(color_labels))]), collapse = "\n"), 
                      "\nand we can only work with unique values here. We won't be able to use anything for `color_labels`. Please check your input.\n"), 
               call. = FALSE)
       color_labels <- NA
@@ -988,8 +1037,8 @@ ct_plot_overlay <- function(ct_dataframe,
       
       if(length(unique(ct_dataframe$FC1)) == 1){
          warning(wrapn(paste0("You requested the column `", 
-                        as_label(facet1_column), 
-                        "` for facet1_column, but that column contains only 1 unique value. Are you sure that's what you want?")), 
+                              as_label(facet1_column), 
+                              "` for facet1_column, but that column contains only 1 unique value. Are you sure that's what you want?")), 
                  call. = FALSE)
       }
    }
@@ -1000,20 +1049,11 @@ ct_plot_overlay <- function(ct_dataframe,
       
       if(length(unique(ct_dataframe$FC2)) == 1){
          warning(wrapn(paste0("You requested the column `", 
-                        as_label(facet2_column), 
-                        "` for facet2_column, but that column contains only 1 unique value. Are you sure that's what you want?")), 
+                              as_label(facet2_column), 
+                              "` for facet2_column, but that column contains only 1 unique value. Are you sure that's what you want?")), 
                  call. = FALSE)
       }
    }
-   
-   # Noting whether the tissue was from an ADAM model
-   ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
-                                                  "jejunum II", "ileum I", "ileum II",
-                                                  "ileum III", "ileum IV", "colon", 
-                                                  "faeces", "gut tissue",
-                                                  "cumulative absorption", 
-                                                  "cumulative dissolution")) &
-      EnzPlot == FALSE
    
    if(length(time_range) == 1 && complete.cases(time_range[1]) &&
       !str_detect(time_range, "dose|last obs|all obs")){
@@ -1053,13 +1093,13 @@ ct_plot_overlay <- function(ct_dataframe,
       mean_type != "none"){
       
       warning(wrapn(paste0("You requested the ", 
-                     switch(mean_type, "arithmetic" = "arithmetic means",
-                            "geometric" = "geometric means", 
-                            "median" = "medians"), 
-                     ", but those are not included in your data. Instead, the ",
-                     ifelse(MyMeanType[1] == "mean", 
-                            "arithmetic mean", MyMeanType[1]),
-                     "s will be used.")),
+                           switch(mean_type, "arithmetic" = "arithmetic means",
+                                  "geometric" = "geometric means", 
+                                  "median" = "medians"), 
+                           ", but those are not included in your data. Instead, the ",
+                           ifelse(MyMeanType[1] == "mean", 
+                                  "arithmetic mean", MyMeanType[1]),
+                           "s will be used.")),
               call. = FALSE)
       MyMeanType <- MyMeanType[1] %>% as.character()
       mean_type <-  switch(MyMeanType,
@@ -1248,8 +1288,8 @@ ct_plot_overlay <- function(ct_dataframe,
          length(color_labels[names(color_labels) %in% c(sim_dataframe$colorBy_column, 
                                                         obs_dataframe$colorBy_column)])){
          warning(wrapn(paste0("You have not included enough labels for the colors in the legend. The values in '",
-                        as_label(colorBy_column), 
-                        "' will be used as labels instead.")),
+                              as_label(colorBy_column), 
+                              "' will be used as labels instead.")),
                  call. = FALSE)
          color_labels <- NA
       } else {
@@ -1257,7 +1297,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                                            obs_dataframe$colorBy_column)]) == 0 |
             length(sort(unique(c(simcheck, obscheck)))) == 0){
             warning(wrapn(paste0("There is some kind of mismatch between the color labels provided and the values actually present in ",
-                           as_label(colorBy_column), ". The specified labels cannot be used.")),
+                                 as_label(colorBy_column), ". The specified labels cannot be used.")),
                     call. = FALSE)  
          } else {
             
@@ -1299,8 +1339,8 @@ ct_plot_overlay <- function(ct_dataframe,
          length(linetype_labels[names(linetype_labels) %in% c(sim_dataframe$linetype_column, 
                                                               obs_dataframe$linetype_column)])){
          warning(wrapn(paste0("You have not included enough labels for the linetypes in the legend. The values in '",
-                        as_label(linetype_column), 
-                        "' will be used as labels instead.")),
+                              as_label(linetype_column), 
+                              "' will be used as labels instead.")),
                  call. = FALSE)
          linetype_labels <- NA
       } else {
@@ -1438,13 +1478,7 @@ ct_plot_overlay <- function(ct_dataframe,
       }
    }
    
-   MyUniqueData <- sim_dataframe %>% 
-      filter(Trial == MyMeanType) %>% ungroup() %>% 
-      select(any_of(union(UniqueAES, 
-                          c("File", "Tissue", "CompoundID", "Compound", "Enzyme", "Inhibitor")))) %>% 
-      unique()
-   
-   UniqueGroups1 <- sim_dataframe %>% ungroup() %>% 
+   UniqueGroups1 <- ct_dataframe %>% ungroup() %>% 
       summarize(across(.cols = any_of(union(UniqueAES, 
                                             c("File", "Tissue", "CompoundID",
                                               "Compound", "Inhibitor", 
@@ -1621,6 +1655,7 @@ ct_plot_overlay <- function(ct_dataframe,
                        time_range_relative = time_range_relative,
                        Ylim_data = Ylim_data, 
                        pad_y_axis = pad_y_axis,
+                       normalize_by_dose = normalize_by_dose, 
                        y_axis_limits_lin = y_axis_limits_lin, 
                        y_axis_limits_log = y_axis_limits_log, 
                        y_axis_interval = y_axis_interval)

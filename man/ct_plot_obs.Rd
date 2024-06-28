@@ -9,6 +9,7 @@ ct_plot_obs(
   mean_type = "arithmetic",
   nominal_times = NA,
   linear_or_log = "semi-log",
+  normalize_by_dose = FALSE,
   colorBy_column,
   color_labels = NA,
   legend_label_color = NA,
@@ -96,6 +97,9 @@ another draw time at, say, 3.95 h; they'll both be put into the 4-hour bin.}
 
   \item{"both horizontal"}{both the linear and the semi-log graphs will be
   returned, and graphs are stacked horizontally}}}
+
+\item{normalize_by_dose}{TRUE or FALSE (default) for whether to show
+dose-normalized concentration-time profiles}
 
 \item{colorBy_column}{(optional) the column in \code{ct_dataframe} that
 should be used for determining which color lines and/or points will be.
@@ -211,6 +215,10 @@ transparent.}
 
 \item{connect_obs_points}{TRUE (default) or FALSE for whether to add
 connecting lines between observed data points from the same individual}
+
+\item{indiv_on_top}{TRUE (default) or FALSE for whether to show the
+individual observed data on top of the mean observed data. If FALSE, the
+mean data will be on top.}
 
 \item{include_errorbars}{TRUE or FALSE (default) for whether to include error
 bars for observed data points. This ONLY applies when you have supplied

@@ -13,6 +13,7 @@ ct_y_axis(
   time_range,
   y_axis_interval = NA,
   prettify_compound_names = TRUE,
+  normalize_by_dose = FALSE,
   y_axis_limits_log,
   Ylim_data,
   pad_y_axis,
@@ -35,6 +36,10 @@ the data include}
 \item{time_range}{user-specified time range}
 
 \item{y_axis_interval}{user input for y axis tick-mark interval}
+
+\item{prettify_compound_names}{prettify?}
+
+\item{normalize_by_dose}{T or F for whether to normalize concs by dose}
 
 \item{y_axis_limits_log}{user input for y axis limits for a semi-log plot}
 
