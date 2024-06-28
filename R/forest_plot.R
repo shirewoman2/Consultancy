@@ -105,7 +105,11 @@
 #'   AUCt for the simulations where extrapolation failed. That makes a graph
 #'   that's a little redundant and even a little confusing. If you set this to
 #'   TRUE, we will use AUCt whenever AUCinf wasn't available and we will not
-#'   include AUCt on the graph. 
+#'   include AUCt on the graph.
+#' @param include_AUCt_for_AUCinf_caption TRUE (default) or FALSE for whether to
+#'   include a caption on the forest plot noting which simulations had AUCt used
+#'   in place of AUCinf when the Simulator had trouble extrapolating to
+#'   infinity. This only applies when \code{use_AUCt_when_AUCinf_NA = TRUE}
 #' @param observed_PK observed PK data, with the following columns: \describe{
 #'
 #'   \item{File}{the simulation file you'd like the observed data to be graphed
@@ -525,13 +529,13 @@
 #'
 #' 
 
-
 forest_plot <- function(forest_dataframe, 
                         y_axis_labels,
                         y_order = NA,
                         PKparameters = NA, 
                         observed_PK = NA,
                         use_AUCt_when_AUCinf_NA = FALSE, 
+                        include_AUCt_for_AUCinf_caption = TRUE, 
                         facet_column_x, 
                         facet_title_x = NA, 
                         show_numbers_on_right = FALSE,
@@ -1089,7 +1093,7 @@ forest_plot <- function(forest_dataframe,
                                               "AUCinf_ratio")) %>% 
                     pull(File)))))
       
-      ToAdd <- forest_dataframe %>% 
+      AUCt_swap <- forest_dataframe %>% 
          filter(File %in% ExtrapProbs & 
                    PKparameter %in% c("AUCt_ratio_dose1", 
                                       "AUCt_ratio")) %>% 
@@ -1098,7 +1102,7 @@ forest_plot <- function(forest_dataframe,
                                      "AUCinf_ratio"))
       
       forest_dataframe <- forest_dataframe %>% 
-         bind_rows(ToAdd)
+         bind_rows(AUCt_swap)
       
       if(all(is.na(PKparameters))){
          forest_dataframe <- forest_dataframe %>% 
@@ -2048,6 +2052,16 @@ forest_plot <- function(forest_dataframe,
             NumTable <- NumTable + ggtitle(TableTitle) 
          }
       }
+   }
+   
+   if(use_AUCt_when_AUCinf_NA && nrow(AUCt_swap) > 0){
+      CaptionText <- forest_dataframe %>% filter(File %in% AUCt_swap$File) %>% 
+         pull(YCol) %>% unique %>% as.character %>% str_comma
+      CaptionText <- gsub("\\n", " ", CaptionText)
+      
+      G <- G + labs(caption = paste0("For ", CaptionText, 
+                                     ", AUCt was used in lieu of AUCinf"))
+      
    }
    
    if(complete.cases(save_graph)){

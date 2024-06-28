@@ -11,6 +11,7 @@ forest_plot(
   PKparameters = NA,
   observed_PK = NA,
   use_AUCt_when_AUCinf_NA = FALSE,
+  include_AUCt_for_AUCinf_caption = TRUE,
   facet_column_x,
   facet_title_x = NA,
   show_numbers_on_right = FALSE,
@@ -175,6 +176,11 @@ AUCt for the simulations where extrapolation failed. That makes a graph
 that's a little redundant and even a little confusing. If you set this to
 TRUE, we will use AUCt whenever AUCinf wasn't available and we will not
 include AUCt on the graph.}
+
+\item{include_AUCt_for_AUCinf_caption}{TRUE (default) or FALSE for whether to
+include a caption on the forest plot noting which simulations had AUCt used
+in place of AUCinf when the Simulator had trouble extrapolating to
+infinity. This only applies when \code{use_AUCt_when_AUCinf_NA = TRUE}}
 
 \item{facet_column_x}{optionally break up the graph horizontally into small
 multiples. The designated column name should be unquoted, e.g.,
