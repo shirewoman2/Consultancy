@@ -188,7 +188,9 @@ format_obs_for_XML <- function(obs_dataframe,
    GoodNames <- names(GoodNames_step1)
    names(GoodNames) <- GoodNames_step1
    
-   obs_dataframe <- obs_dataframe %>% ungroup() %>% 
+   obs_dataframe <- obs_dataframe %>% 
+      bind_rows() %>% 
+      ungroup() %>% 
       select(any_of(c(rlang::as_label(conc_column),
                       rlang::as_label(conc_sd_column),
                       rlang::as_label(time_column),
