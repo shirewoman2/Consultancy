@@ -1,12 +1,13 @@
-#' Make a summary PK table for a report or slide deck
+#' Make a summary PK table for a report or slide deck - NOTE: WE PLAN TO
+#' DEPRECATE THIS FUNCTION IN FAVOR OF THE FUNCTION pk_table.
 #'
 #' \code{pksummary_table} creates tables of PK parameters for reports and
 #' presentations, including reporting means, CVs, and confidence intervals or
 #' percentiles and, optionally, comparisons to observed data. When it's a
 #' standard PK parameter you're after, this function automatically finds the
-#' correct tabs and the correct cells in a Simulator
-#' output Excel file to obtain those data. If you want PK from a user-defined 
-#' AUC interval, that's possible, too, but we'll need you to tell us which sheet 
+#' correct tabs and the correct cells in a Simulator output Excel file to obtain
+#' those data. If you want PK from a user-defined AUC interval, that's possible,
+#' too, but we'll need you to tell us which sheet
 #' to use. \strong{Notes:} \itemize{\item{If you want}
 #' \item{Please
 #' see the notes at the bottom of this help file for how to supply observed data
@@ -475,6 +476,8 @@ pksummary_table <- function(sim_data_file = NA,
    if("package:tidyverse" %in% search() == FALSE){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
+   
+   warning(wrapn("We are working toward deprecating the pksummary_table function in favor of the more versatile pk_table function. Please consider using pk_table going forward."))
    
    # If they didn't include ".xlsx" at the end, add that.
    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
