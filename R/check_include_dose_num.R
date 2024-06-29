@@ -19,10 +19,11 @@ check_include_dose_num <- function(PK,
       return(include_dose_num)
    }
    
-   if("data.frame" %in% class(PK)){
-      PKparameters <- names(PK)
-   } else if("character" %in% class(PK)){
-      PKparameters <- PK
+   if("data.frame" %in% class(PK) | "character" %in% class(PK)){
+      PKparameters <- prettify_column_names(PKtable = PK, 
+                                            return_which_are_PK = TRUE)
+      PKparameters <- PKparameters$ColName[which(PKparameters$IsPKParam)]
+   
    } else {
       warning("We're trying to check whether to include dose numbers in the PK table headings, and we're not sure because we got input data we weren't expecting. We'll set include_dose_num to TRUE.\n", 
               call. = FALSE)
@@ -30,7 +31,9 @@ check_include_dose_num <- function(PK,
    }
    
    DoseCheck <- c("first" = any(str_detect(PKparameters, "dose1|Dose 1")), 
-                  "user-defined" = any(str_detect(PKparameters, "dose1|Dose 1|last|Last dose")), # stet, this is checking for both here
+                  "user-defined" = any(str_detect(PKparameters, 
+                                                  "dose1|Dose 1|last|Last dose") == FALSE, 
+                                       na.rm = T), # stet, this is checking for both here
                   "last" = any(str_detect(PKparameters, "last|Last dose")))
    include_dose_num <- length(which(DoseCheck)) > 1
    
