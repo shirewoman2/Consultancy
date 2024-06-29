@@ -400,18 +400,20 @@ sensitivity_plot <- function(SA_file,
                   label = paste0("target = ", prettyNum(target_DV, big.mark = ",")))
    }
    
-   LogBreaks <- make_log_breaks(
-      data_range = switch(as.character(all(complete.cases(y_axis_limits_log))), 
-                          "TRUE" = y_axis_limits_log, 
-                          "FALSE" = range(SAdata$Conc, na.rm = T)))
-   
-   Glog <- G + scale_y_log10(breaks = LogBreaks$breaks, 
-                             labels = LogBreaks$labels)
-   
-   if(linear_or_log %in% c("both", "both vertical")){
-      G <- ggpubr::ggarrange(G, Glog, nrow = 2, align = "hv", common.legend = TRUE)
-   } else if(linear_or_log %in% c("both horizontal")){
-      G <- ggpubr::ggarrange(G, Glog, nrow = 1, align = "hv", common.legend = TRUE)
+   if(str_detect(dependent_variable, "plasma|conc")){
+      LogBreaks <- make_log_breaks(
+         data_range = switch(as.character(all(complete.cases(y_axis_limits_log))), 
+                             "TRUE" = y_axis_limits_log, 
+                             "FALSE" = range(SAdata$Conc, na.rm = T)))
+      
+      Glog <- G + scale_y_log10(breaks = LogBreaks$breaks, 
+                                labels = LogBreaks$labels)
+      
+      if(linear_or_log %in% c("both", "both vertical")){
+         G <- ggpubr::ggarrange(G, Glog, nrow = 2, align = "hv", common.legend = TRUE)
+      } else if(linear_or_log %in% c("both horizontal")){
+         G <- ggpubr::ggarrange(G, Glog, nrow = 1, align = "hv", common.legend = TRUE)
+      }
    }
    
    if(complete.cases(save_graph)){
