@@ -196,10 +196,6 @@ if(single_table == FALSE){
       split(MyPKResults, f = list(MyPKResults$File, 
                                   MyPKResults$CompoundID, 
                                   MyPKResults$Tissue))
-   PKpulled_list <- 
-      split(PKpulled$PKpulled, f = list(PKpulled$File, 
-                                        PKpulled$CompoundID, 
-                                        PKpulled$Tissue))
    
    PKparameters <- split(PKparameters, 
                          f = list(PKparameters$File, 

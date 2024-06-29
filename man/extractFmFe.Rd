@@ -2,7 +2,8 @@
 % Please edit documentation in R/extractFmFe.R
 \name{extractFmFe}
 \alias{extractFmFe}
-\title{Extract dynamic fm and fe values from a Simulator output Excel file}
+\title{Extract fm and fe valuesthat change with time from a Simulator output Excel
+file}
 \usage{
 extractFmFe(
   sim_data_file,
@@ -19,10 +20,10 @@ fm and fe data, in quotes}
 maximum and minimum fm values -- basically, return the table in the upper
 left corner of the "Time variant \%fm and fe" tab.}
 
-\item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
-enzyme abundance data? Options are "individual", "aggregate", or "both"
-(default). Aggregated data are not calculated here but are pulled from the
-simulator output rows labeled as "mean".}
+\item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated fm
+and fe data? Options are "individual", "aggregate", or "both" (default).
+Aggregated data are not calculated here but are pulled from the simulator
+output rows labeled as "mean".}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
@@ -37,11 +38,9 @@ about your experimental set up.}
 a data.frame
 }
 \description{
-\code{extractFmFe} extracts enzyme abundance data from a simulator output
-Excel file. A tab named something like "Time variant \%fm and fe" must be
-present. A note: This has not yet been set up to deal with custom dosing
-regimens, so if you have a simulation that involves that, please contact
-Laura Shireman.
+\code{extractFmFe} extracts time-dependent fm and fe data from a simulator
+output Excel file. A tab named something like "Time variant \%fm and fe" must
+be present.
 }
 \examples{
 # None yet

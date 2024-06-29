@@ -574,6 +574,38 @@ tidy_input_PK <- function(PKparameters,
    
    ## File ------------------------------------------------------------------
    
+   # Separating file names if there are more than one. 
+   PKparameters <- PKparameters %>% 
+      mutate(MultFiles = str_detect(File, ","))
+   
+   FilesToExpand <- PKparameters %>% filter(MultFiles == TRUE)
+   if(nrow(FilesToExpand) > 0){
+      
+      FilesToExpand <- split(FilesToExpand, f = FilesToExpand$File)
+      
+      for(ff in names(FilesToExpand)){
+         FileNames <- data.frame(File = ff, 
+                                 NewFile = str_split(string = ff, 
+                                                     pattern = ",( )?", 
+                                                     simplify = TRUE) %>% 
+                                    as.character())
+         
+         FilesToExpand[[ff]] <- FilesToExpand[[ff]] %>% 
+            left_join(FileNames, by = "File", relationship = "many-to-many") %>% 
+            select(-File) %>% 
+            rename(File = NewFile)
+         
+         rm(FileNames)
+      }
+      
+      FilesToExpand <- bind_rows(FilesToExpand)
+      
+      PKparameters <- PKparameters %>% 
+         filter(MultFiles == FALSE) %>% 
+         bind_rows(FilesToExpand) %>% 
+         select(-MultFiles)
+   }
+   
    # Make sure file extension is xlsx. 
    PKparameters$File <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.db$", "", 
                                    PKparameters$File), ".xlsx")
@@ -648,24 +680,36 @@ tidy_input_PK <- function(PKparameters,
    
    # This will get details for any files that weren't already included. 
    if(any(PKparameters$File %in% existing_exp_details$MainDetails$File == FALSE)){
-      existing_exp_details <- extractExpDetails_mult(
-         sim_data_files = PKparameters$File,
-         exp_details = "Summary and Input", 
-         existing_exp_details = existing_exp_details)
+      suppressWarnings(
+         existing_exp_details <- extractExpDetails_mult(
+            sim_data_files = PKparameters$File,
+            exp_details = "Summary and Input", 
+            existing_exp_details = existing_exp_details)
+      )
    }
    
    # extractExpDetails will check whether the Excel file provided was, in fact,
    # a Simulator output file and return a list of length 0 if not. Checking for
    # that here.
-   if(any(PKparameters$File %in% existing_exp_details$MainDetails$File) == FALSE){
+   if(any(PKparameters$File %in% existing_exp_details$MainDetails$File == FALSE)){
       
-      NotSims <- setdiff(PKparameters$File, existing_exp_details$MainDetails$File)
+      ProbFiles <- setdiff(PKparameters$File, existing_exp_details$MainDetails$File)
+      MissingFiles <- ProbFiles[which(ProbFiles %in% list.files() == FALSE)]
+      NotSims <- setdiff(ProbFiles, MissingFiles)
       
-      warning(paste0("The file(s) ", str_comma(NotSims),
-                     " is/are not Simulator output files and will be skipped.\n", call. = FALSE))
+      if(length(MissingFiles) > 0){
+         warning(paste0("The following simulation files are not present and will be ignored:\n", 
+                        str_c(paste0("  ", MissingFiles), collapse = "\n")), 
+                 call. = FALSE)
+      }
       
-      PKparameters <- PKparameters %>% 
-         filter(File %in% existing_exp_details$MainDetails$File)
+      if(length(NotSims) > 0){
+         warning(paste0("The following files do not appear to be Simcyp Simulator files and will be ignored:\n", 
+                        str_c(paste0("  ", NotSims), collapse = "\n")), 
+                 call. = FALSE)
+      }
+      
+      PKparameters <- PKparameters %>% filter(!File %in% ProbFiles)
    }
    
    if(any(PKparameters$File %in% existing_exp_details$MainDetails$File[
@@ -675,14 +719,11 @@ tidy_input_PK <- function(PKparameters,
                             existing_exp_details$MainDetails$File[
                                existing_exp_details$MainDetails$PopRepSim == "Yes"])
       
-      existing_exp_details <- filter_sims(existing_exp_details, 
-                                          PopRepSims, "omit")
+      warning(paste0(wrapn("The following files are population representative simulations and thus have no aggregate PK data. They will be skipped."), 
+                     str_c(paste0("  ", PopRepSims), collapse = "\n")), 
+                     call. = FALSE)
       
-      warning(paste0("The file(s) ", str_comma(PopRepSims),
-                     " is/are population representative simulations and thus have no aggregate PK data. They will be skipped.\n", call. = FALSE))
-      
-      PKparameters <- PKparameters %>% 
-         filter(File %in% existing_exp_details$MainDetails$File)
+      PKparameters <- PKparameters %>% filter(!File %in% PopRepSims)
    }
    
    ## Checking CompoundID -----------------------------------------------------
@@ -727,8 +768,10 @@ tidy_input_PK <- function(PKparameters,
                     complete.cases(DoseInt_inhib2)))
    
    if(any(PKparameters$GoodCmpd == FALSE)){
-      Problem <- PKparameters %>% filter(GoodCmpd == FALSE) %>% 
+      Problem <- PKparameters %>%
+         filter(GoodCmpd == FALSE) %>% 
          select(File, CompoundID)
+      
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
       message("Warning:\nThe following simulation files do not contain the compound for which you requested PK:\n")
@@ -770,20 +813,13 @@ tidy_input_PK <- function(PKparameters,
       )
       
    } else {
-      suppressMessages(
          PKparameters <- PKparameters %>% 
-            left_join(bind_rows(
-               AllPKParameters %>% 
-                  select(PKparameter, AppliesToSingleDose, 
-                         AppliesOnlyWhenPerpPresent) %>% 
-                  unique(), 
-               
-               AllPKParameters %>% 
-                  select(PKparameter_nodosenum, AppliesToSingleDose, 
-                         AppliesOnlyWhenPerpPresent) %>% 
-                  rename(PKparameter = PKparameter_nodosenum) %>% 
-                  unique()))
-      )
+            mutate(UserInterval = complete.cases(Sheet)) %>% 
+            left_join(AllPKParameters %>% 
+                         select(PKparameter, AppliesToSingleDose, 
+                                AppliesOnlyWhenPerpPresent, UserInterval) %>% 
+                         unique(), 
+                      by = join_by(PKparameter, UserInterval))
    }
    
    # Checking that we're looking for reasonable PK parameters. 
@@ -809,7 +845,7 @@ tidy_input_PK <- function(PKparameters,
       all(complete.cases(PKparameters_orig))){
       
       Problem <- PKparameters %>% filter(Harmonious == FALSE) %>% 
-         select(PKparameter, File, CompoundID, Tissue)
+         select(PKparameter, File, Sheet, CompoundID, Tissue)
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
       message("Warning:\nThe following requested PK parameters do not apply to the following scenarios:\n")

@@ -67,7 +67,9 @@
 #'   will be used to determine the number of doses administered. If this is NA
 #'   and so is \code{dose_interval}, we'll assume you want a single dose.
 #' @param end_time the end time of the study in hours. If \code{num_doses} is
-#'   filled out, that value will be used preferentially.
+#'   filled out, that value will be used preferentially. If \code{num_doses},
+#'   \code{end_time}, and \code{custom_dosing_schedule} are all NA, we'll use
+#'   the maximum time in the data as the end time.
 #' @param custom_dosing_schedule a custom dosing schedule to be used for each
 #'   subject in hours, e.g., \code{custom_dosing_schedule = c(0, 12, 24, 168,
 #'   180, 192)}; if this is filled out, values in \code{dose_interval},
@@ -186,7 +188,9 @@ format_obs_for_XML <- function(obs_dataframe,
    GoodNames <- names(GoodNames_step1)
    names(GoodNames) <- GoodNames_step1
    
-   obs_dataframe <- obs_dataframe %>% ungroup() %>% 
+   obs_dataframe <- obs_dataframe %>% 
+      bind_rows() %>% 
+      ungroup() %>% 
       select(any_of(c(rlang::as_label(conc_column),
                       rlang::as_label(conc_sd_column),
                       rlang::as_label(time_column),
@@ -323,6 +327,13 @@ format_obs_for_XML <- function(obs_dataframe,
    # conc-time data.
    demog_dataframe <- demog_dataframe %>% 
       filter(Subject %in% unique(FinalObsDF$`Subject ID`))
+   
+   # Including end time if not specified. In that case, just assuming it's the
+   # last time in the data.
+   if(all(is.na(custom_dosing_schedule)) & 
+      is.na(num_doses) & is.na(end_time)){
+      end_time <- max(FinalObsDF$Time)
+   }
    
    Out <- create_doses(
       dose_interval = dose_interval,

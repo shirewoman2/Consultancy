@@ -349,6 +349,11 @@
 #'   saved to disk.
 #' @param fig_height figure height in inches
 #' @param fig_width figure width in inches
+#' @param normalize_by_dose TRUE or FALSE (default) for whether to show
+#'   dose-normalized concentration-time profiles
+#' @param indiv_on_top TRUE (default) or FALSE for whether to show the
+#'   individual observed data on top of the mean observed data. If FALSE, the
+#'   mean data will be on top.
 #'
 #' @return returns a ggplot2 graph
 #' @export
@@ -360,6 +365,7 @@ ct_plot_obs <- function(ct_dataframe,
                         mean_type = "arithmetic", 
                         nominal_times = NA, 
                         linear_or_log = "semi-log",
+                        normalize_by_dose = FALSE, 
                         colorBy_column,
                         color_labels = NA, 
                         legend_label_color = NA,
@@ -493,6 +499,7 @@ ct_plot_obs <- function(ct_dataframe,
                              File = ObsFile, 
                              Simulated = ifelse(
                                 Trial %in% c("mean", "geomean", "median"), TRUE, FALSE)), 
+                   normalize_by_dose = normalize_by_dose, 
                    colorBy_column = !!colorBy_column,
                    linetype_column = !!linetype_column,
                    facet1_column = !!facet1_column,

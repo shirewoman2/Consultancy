@@ -16,6 +16,8 @@
 #' @param Ylim_data data used for determining y axis limits
 #' @param pad_y_axis user-specified value for pad_y_axis
 #' @param time_range_relative relative time range
+#' @param prettify_compound_names prettify? 
+#' @param normalize_by_dose T or F for whether to normalize concs by dose
 #'
 #' @return values to use for ct_plots
 
@@ -24,6 +26,7 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
                       time_range,
                       y_axis_interval = NA,
                       prettify_compound_names = TRUE, 
+                      normalize_by_dose = FALSE, 
                       y_axis_limits_log, Ylim_data, pad_y_axis,
                       time_range_relative){
    
@@ -123,19 +126,31 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
       
       # PossConcUnits is slightly different between ADAM, AdvBrain, and regular
       # tissues, so do NOT interchange them in the code.
-      PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
-                            "µg/L" = "Concentration (µg/L)", 
-                            "µg/mL" = "Concentration (µg/mL)",
-                            "ng/mL" = "Concentration (ng/mL)",
-                            "ng/L" = "Concentration (ng/L)",
-                            "µM" = "Concentration (µM)",
-                            "nM" = "Concentration (nM)",
-                            "mg" = "Amount (mg)",
-                            "mg/h" = "Absorption rate (mg/h)",
-                            "mg/L" = "Concentration (µg/mL)",
-                            "mL" = "Volume (mL)",
-                            "PD response" = "PD response",
-                            "Relative abundance" = "Relative abundance")
+      
+      if(normalize_by_dose){
+         PossConcUnits <- list("mg/mL" = "Dose-normalized\nconcentration (mg/mL/mg)",
+                               "µg/L" = "Dose-normalized\nconcentration (µg/L/mg)", 
+                               "µg/mL" = "Dose-normalized\nconcentration (µg/mL/mg)",
+                               "ng/mL" = "Dose-normalized\nconcentration (ng/mL/mg)",
+                               "ng/L" = "Dose-normalized\nconcentration (ng/L/mg)",
+                               "µM" = "Dose-normalized\nconcentration (µM/mg)",
+                               "nM" = "Dose-normalized\nconcentration (nM/mg)",
+                               "µg/mL" = "Dose-normalized\nconcentration (µg/mL/mg)")
+      } else {
+         PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
+                               "µg/L" = "Concentration (µg/L)", 
+                               "µg/mL" = "Concentration (µg/mL)",
+                               "ng/mL" = "Concentration (ng/mL)",
+                               "ng/L" = "Concentration (ng/L)",
+                               "µM" = "Concentration (µM)",
+                               "nM" = "Concentration (nM)",
+                               "mg" = "Amount (mg)",
+                               "mg/h" = "Absorption rate (mg/h)",
+                               "µg/mL" = "Concentration (µg/mL)",
+                               "mL" = "Volume (mL)",
+                               "PD response" = "PD response",
+                               "Relative abundance" = "Relative abundance")
+      }
       
       ylab <- ifelse(length(ObsConcUnits) > 0, 
                      PossConcUnits[[ObsConcUnits]], "Amount")

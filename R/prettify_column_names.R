@@ -34,6 +34,9 @@
 #' @param pretty_or_ugly_cols Do you want "pretty" column names such as "Dose 1
 #'   AUCinf (ng/mL.h)" or do you want "ugly" but R friendly column names such as
 #'   "AUCinf_dose1"? Options are "pretty" (default) or "ugly".
+#' @param return_which_are_PK TRUE or FALSE (default) for whether to, instead of
+#'   prettifying, return a data.frame saying which column names are PK
+#'   parameters and which are not.
 #'
 #' @return a PK table with prettier column names
 #' @export
@@ -43,7 +46,8 @@
 #' 
 prettify_column_names <- function(PKtable, 
                                   prettify_compound_names = TRUE, 
-                                  pretty_or_ugly_cols = "pretty"){
+                                  pretty_or_ugly_cols = "pretty", 
+                                  return_which_are_PK = FALSE){
    
    
    # Error catching ----------------------------------------------------------
@@ -158,6 +162,13 @@ prettify_column_names <- function(PKtable,
              PrettifiedNames = case_when(NeedsPrettifying == FALSE ~ ColNames3, 
                                          NeedsPrettifying == FALSE & IsPKParam == FALSE ~ ColNames3, 
                                          TRUE ~ NA))
+   
+   # Returning which are PK if that's all user wanted
+   if(return_which_are_PK){
+      return(TableNames %>% select(ColNames1, IsPKParam) %>%
+                rename(ColName = ColNames1))
+   }
+   
    # Some columns may need prettifying and others may need uglifying. Need to
    # figure out what values to fill in for any NA values in either
    # PrettifiedNames or in PKparameter, so splitting table here.

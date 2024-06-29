@@ -22,11 +22,19 @@
 #'   lines for the 5th and 95th percentiles of the simulated data}
 #'
 #'   \item{"percentile ribbon"}{show an opaque line for the mean data and
-#'   transparent shading for the 5th to 95th percentiles. Note: You may
-#'   sometimes see some artifacts -- especially for semi-log plots -- where the
-#'   ribbon gets partly cut off. For arcane reasons we don't want to bore you
-#'   with here, we can't easily prevent this. To fix this, increase your y axis
-#'   limits for the semi-log plot.}}
+#'   transparent shading for the 5th to 95th percentiles. \strong{NOTE: There is
+#'   a known bug within RStudio that can cause filled semi-transparent areas
+#'   like you get with the "percentile ribbon" figure type to NOT get graphed
+#'   for certain versions of RStudio.} To get around this, within RStudio, go to
+#'   Tools --> Global Options --> General --> Graphics --> And then set
+#'   "Graphics device: backend" to "AGG". Honestly, this is a better option for
+#'   higher-quality graphics anyway!}
+#'   
+#'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
+#'   for the mean of each trial of simulated data, and open circles for the
+#'   observed data. If a perpetrator were present, lighter dashed lines indicate
+#'   the mean of each trial of simulated data in the presence of the perpetrator.}}
+#'   
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed}
 #'
@@ -284,8 +292,9 @@
 #'   or ".docx", it will be saved as a png file, but if you specify a different
 #'   graphical file extension, it will be saved as that file format. Acceptable
 #'   graphical file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png",
-#'   "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA means the file will not be
-#'   automatically saved to disk. 
+#'   "bmp", or "svg". Do not include any slashes, dollar signs, or periods in
+#'   the file name. Leaving this as NA means the file will not be automatically
+#'   saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #'

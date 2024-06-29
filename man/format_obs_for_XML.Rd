@@ -110,7 +110,9 @@ will be used to determine the number of doses administered. If this is NA
 and so is \code{dose_interval}, we'll assume you want a single dose.}
 
 \item{end_time}{the end time of the study in hours. If \code{num_doses} is
-filled out, that value will be used preferentially.}
+filled out, that value will be used preferentially. If \code{num_doses},
+\code{end_time}, and \code{custom_dosing_schedule} are all NA, we'll use
+the maximum time in the data as the end time.}
 
 \item{custom_dosing_schedule}{a custom dosing schedule to be used for each
 subject in hours, e.g., \code{custom_dosing_schedule = c(0, 12, 24, 168,

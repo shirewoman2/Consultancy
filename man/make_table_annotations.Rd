@@ -7,13 +7,13 @@ Word}
 \usage{
 make_table_annotations(
   MyPKResults,
-  MyFile,
-  PKpulled,
-  MyCompoundID,
+  MyFile = NA,
+  MyCompoundID = NA,
   prettify_compound_names,
   Deets = NA,
   MeanType,
-  tissue,
+  tissue = NA,
+  DosesIncluded = NA,
   return_all_objects = FALSE
 )
 }
@@ -21,9 +21,6 @@ make_table_annotations(
 \item{MyPKResults}{only the PK table}
 
 \item{MyFile}{the specific sim_data_file in question}
-
-\item{PKpulled}{PK that was pulled -- the coded version, i.e., "AUCinf_dose1"
-or "Cmax_last"}
 
 \item{MyCompoundID}{substrate, inhibitor 1, etc. for this specific table}
 
@@ -36,17 +33,25 @@ existing_exp_details}
 \item{MeanType}{mean type used}
 
 \item{tissue}{tissue in which the PK parameters were measured}
+
+\item{DosesIncluded}{which doses were included? options: "Dose1 Last" when
+both 1st and last-dose or user-defined interval info included, "Dose1" when
+it's only dose 1, "Last" when it's either last or user-defined info
+included. Leave as NA to make a guess, which works well when
+include_dose_num = TRUE in original PK table call but less so when
+include_dose_num = FALSE. Set to "no dose num included" to use the
+most-generic text for the annotations.}
+
+\item{return_all_objects}{T or F (default) for whether to return a ton of
+objects for use downstream}
 }
 \value{
 a list with a) TableHeading text and b) TableCaption text
 }
 \description{
 \code{make_table_annotations} is meant to make a table heading and caption
-for a table with a single set of results. This is meant for use with
-pksummary_table or for pksummary_mult when the results are split into
-multiple tables rather than all together in one. Note that this is designed
-for scenarios where, if there's a perpetrator, there's only one. The text won't
-be quite right if there are 2 perpetrators. UNDER CONSTRUCTION.
+for a table with a single set of results but will return more generic info
+for tables with multiple sets of results. UNDER CONSTRUCTION.
 }
 \examples{
 # None yet

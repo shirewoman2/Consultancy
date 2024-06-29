@@ -1,4 +1,5 @@
-#' Make PK summary tables from multiple simulator output files at once
+#' Make PK summary tables from multiple simulator output files at once - NOTE:
+#' WE PLAN TO DEPRECATE THIS FUNCTION IN FAVOR OF THE FUNCTION pk_table.
 #'
 #' \code{pksummary_mult} creates tables of PK parameters for reports and
 #' presentations, including reporting means, CVs, and confidence intervals or
@@ -85,10 +86,10 @@
 #'   e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}
 #' @param tissues For which tissue(s) would you like the PK parameters to be
 #'   pulled? Options are any combination of "plasma" (default), "unbound
-#'   plasma", "blood", "unbound blood", "peripheral plasma", or "peripheral 
-#'   blood". \strong{NOTE: PK for peripheral sampling is not as well tested as 
-#'   for other tissues and is only set up for V21+. Please check your results 
-#'   carefully.}. For multiple tissues, enclose them with parentheses, e.g., 
+#'   plasma", "blood", "unbound blood", "peripheral plasma", or "peripheral
+#'   blood". \strong{NOTE: PK for peripheral sampling is not as well tested as
+#'   for other tissues and is only set up for V21+. Please check your results
+#'   carefully.}. For multiple tissues, enclose them with parentheses, e.g.,
 #'   \code{tissues = c("blood", "plasma")}
 #' @param PKparameters (optional) the PK parameters to include as a character
 #'   vector. \itemize{
@@ -398,6 +399,8 @@ pksummary_mult <- function(sim_data_files = NA,
    if("package:tidyverse" %in% search() == FALSE){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
+   
+   warning(wrapn("We are working toward deprecating the pksummary_mult function in favor of the more versatile pk_table function. Please consider using pk_table going forward."))
    
    # Checking whether they've supplied pksummary_table args instead of
    # pksummary_mult args

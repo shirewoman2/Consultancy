@@ -691,7 +691,7 @@ pk_table <- function(PKparameters = NA,
          pivot_wider(names_from = Stat, 
                      values_from = Value) %>% 
          mutate(min = case_when(complete.cases(min) & 
-                                   complete.cases(max) ~ 
+                                   complete.cases(max) & SorO == "Obs" ~ 
                                    switch(variability_format, 
                                           "to" = paste(min, "to", max), 
                                           "hyphen" = paste(min, "-", max), 
@@ -699,10 +699,11 @@ pk_table <- function(PKparameters = NA,
                                           "parentheses" = paste0("(", min, ", ", max, ")")), 
                                 TRUE ~ min)) %>% 
          select(-max) %>% 
-         pivot_longer(cols = -c(PKParam, SorO), 
+         pivot_longer(cols = -c(any_of(c("PKParam", "SorO", "File", "Sheet", 
+                                         "CompoundID", "Tissue"))), 
                       names_to = "Stat", 
                       values_to = "Value") %>% 
-         mutate(Stat = ifelse(Stat == "min", 
+         mutate(Stat = ifelse(Stat == "min" & SorO == "Obs", 
                               switch(MeanType, 
                                      "geometric" = "GCV", 
                                      "arithmetic" = "CV"), 
@@ -829,7 +830,20 @@ pk_table <- function(PKparameters = NA,
       }
       
       MyPKResults <- bind_rows(MyPKResults) %>% 
-         mutate(Sheet = ifelse(Sheet == "default", NA, Sheet))
+         mutate(Sheet = ifelse(Sheet == "default", NA, Sheet)) 
+      
+      if(includeConfInt == FALSE){
+         MyPKResults <- MyPKResults %>% filter(!Stat %in% c("CI90concat", 
+                                                            "CI95concat"))
+      }
+      
+      if(includeRange == FALSE){
+         MyPKResults <- MyPKResults %>% filter(!Stat %in% c("Rangeconcat"))
+      }
+      
+      if(includePerc == FALSE){
+         MyPKResults <- MyPKResults %>% filter(!Stat %in% c("per95concat"))
+      }
    }
    
    # Renaming statistics to match what's in template
@@ -851,30 +865,27 @@ pk_table <- function(PKparameters = NA,
                   "max" = "Maximum",
                   "median" = "Median",
                   "Rangeconcat" = "Range",
-                  # "geomean_obs" = "Observed",
-                  # "CV_obs" = "CV%",
-                  # "CIL_obs" = "observed CI - Lower",
-                  # "CIU_obs" = "observed CI - Upper",
-                  # "CIobsconcat" = "Observed CI",
+                  
+                  "geomean_obs" = "Observed",
+                  "mean_obs" = "Observed", 
+                  "CV_obs" = "Observed CV%",
+                  "GCV_obs" = "Observed CV%", 
+                  "CIL_obs" = "observed CI - Lower",
+                  "CIU_obs" = "observed CI - Upper",
+                  "CIconcat_obs" = "Observed CI",
+                  
                   "S_O" = "S/O",
                   "S_O_TM_MinMean" = "S/O range for trial means",
                   "MinMean" = "Range of trial means")
    
    MyPKResults <- MyPKResults %>%
-      mutate(Statistic = as.character(Stat),
+      mutate(Statistic = ifelse(SorO == "Obs", 
+                                paste0(Stat, "_obs"), Stat),
              Statistic = StatNames[Statistic], 
              Statistic = ifelse(SorO == "Obs" & Statistic == "Simulated", 
                                 "Observed", Statistic), 
              SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
-             Stat = factor(Stat, levels = c("mean", "geomean", "median",
-                                            "CV", "GCV", 
-                                            "min", "max",
-                                            "CI90_low", "CI90_high", "CI95_low", 
-                                            "CI95_high", "per5", "per95",
-                                            "MinMean", "MaxMean", 
-                                            "SD", "S_O", 
-                                            "S_O_TM_MinMean", 
-                                            "S_O_TM_MaxMean"))) %>% 
+             Stat = factor(Stat, levels = names(StatNames))) %>% 
       arrange(File, CompoundID, SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
@@ -934,10 +945,15 @@ pk_table <- function(PKparameters = NA,
    # Optionally adding final column names
    if(prettify_columns){
       
+      # Step 1 for setting column names. Note that this does NOT YET account for
+      # the possibility that there were multiple user-defined intervals.
       ColNames <- data.frame(Orig = names(MyPKResults)) %>% 
          mutate(Pretty = prettify_column_names(PKtable = Orig, 
                                                prettify_compound_names = prettify_compound_names, 
                                                pretty_or_ugly_cols = "pretty"), 
+                IsPK = prettify_column_names(PKtable = Orig, 
+                                             return_which_are_PK = TRUE) %>% 
+                   pull(IsPKParam), 
                 # Checking position of columns with custom intervals.
                 CustomInt = Orig %in% AllPKParameters$PKparameter_nodosenum)
       
@@ -948,14 +964,14 @@ pk_table <- function(PKparameters = NA,
          
          # Dealing with instances where we just don't have the info needed
          UselessCheckDoseInt <- CheckDoseInt$message %in% 
-            c("custom dosing", 
-              "can't check - missing file")
+            c("can't check - missing file")
          UselessCheckDoseInt <- UselessCheckDoseInt[which(UselessCheckDoseInt)]
          
          if(length(UselessCheckDoseInt) > 0){
             UselessCheckDoseInt <- names(UselessCheckDoseInt)
             CheckDoseInt$interval <- CheckDoseInt$interval %>% 
-               unite(col = "ID", File, Sheet, CompoundID, Tissue, sep = ".") %>% 
+               unite(col = "ID", File, Sheet, CompoundID, Tissue, sep = ".", 
+                     remove = FALSE) %>% 
                filter(!ID %in% UselessCheckDoseInt)
          }
          
@@ -963,22 +979,47 @@ pk_table <- function(PKparameters = NA,
             filter(Sheet %in% PKparameters$Sheet) %>% 
             mutate(Interval = paste("from", UserIntervalStart, "h to",
                                     UserIntervalEnd, "h")) %>% 
-            pull(Interval)
+            select(File, Sheet, Interval)
+         
+         # There could be multiple user-defined intervals; accounting for that.
+         MyPKResults <- MyPKResults %>% 
+            pivot_longer(cols = any_of(ColNames$Orig[ColNames$IsPK == TRUE]), 
+                         names_to = "PKparameter", 
+                         values_to = "Value") %>% 
+            left_join(IntToAdd, by = join_by(Sheet, File)) %>% 
+            mutate(PKparameter = ifelse(is.na(Interval), 
+                                        PKparameter, 
+                                        paste(PKparameter, Interval))) %>% 
+            select(-Interval, -Sheet) %>%
+            filter(complete.cases(Value)) %>% 
+            pivot_wider(names_from = PKparameter,
+                        values_from = Value)
          
          ColNames <- ColNames %>% 
+            left_join(expand.grid(Interval = unique(IntToAdd$Interval), 
+                                  Orig = ColNames$Orig) %>% 
+                         mutate(Orig_int = paste(Orig, Interval)) %>% 
+                         filter(Orig_int %in% names(MyPKResults)), 
+                      by = join_by(Orig)) %>% 
+            mutate(Orig = ifelse(is.na(Orig_int), Orig, Orig_int)) %>% 
+            select(-Orig_int) %>% 
             mutate(UnitsToAdd = ifelse(CustomInt, 
                                        str_extract(Pretty, 
                                                    " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)"), 
                                        ""), 
                    Pretty = ifelse(CustomInt, 
-                                   sub(" \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", "", Pretty), 
+                                   str_replace(Pretty, " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", ""), 
                                    Pretty), 
                    Pretty = ifelse(CustomInt, 
                                    paste0(Pretty, 
-                                          " for interval ", IntToAdd, 
+                                          " for interval ", Interval, 
                                           UnitsToAdd), 
-                                   Pretty))
+                                   Pretty)) %>% 
+            # We had to remove the sheet or this would have unnecessary rows. Remove that column name. 
+            filter(Orig != "Sheet")
       }
+      
+      # FIXME - CHeck whether this works w/multiple units in table. 
       
       # Adjusting units as needed.
       if("Units_AUC" %in% names(Deets) && complete.cases(Deets$Units_AUC)){
@@ -995,7 +1036,8 @@ pk_table <- function(PKparameters = NA,
       }
       ColNames$Pretty <- gsub("ug/mL", "µg/mL", ColNames$Pretty)
       
-      MyPerpetrator <- determine_myperpetrator(existing_exp_details, prettify_compound_names)
+      MyPerpetrator <- determine_myperpetrator(existing_exp_details,
+                                               prettify_compound_names)
       
       if(any(complete.cases(MyPerpetrator))){
          ColNames$Pretty <- sub("perpetrator", MyPerpetrator, ColNames$Pretty)

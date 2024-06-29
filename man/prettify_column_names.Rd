@@ -8,7 +8,8 @@ names}
 prettify_column_names(
   PKtable,
   prettify_compound_names = TRUE,
-  pretty_or_ugly_cols = "pretty"
+  pretty_or_ugly_cols = "pretty",
+  return_which_are_PK = FALSE
 )
 }
 \arguments{
@@ -41,6 +42,10 @@ prettify_column_names(
 \item{pretty_or_ugly_cols}{Do you want "pretty" column names such as "Dose 1
 AUCinf (ng/mL.h)" or do you want "ugly" but R friendly column names such as
 "AUCinf_dose1"? Options are "pretty" (default) or "ugly".}
+
+\item{return_which_are_PK}{TRUE or FALSE (default) for whether to, instead of
+prettifying, return a data.frame saying which column names are PK
+parameters and which are not.}
 }
 \value{
 a PK table with prettier column names

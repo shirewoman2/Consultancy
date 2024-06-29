@@ -34,26 +34,26 @@ if(FromCalcPKRatios){
    
 } else {
    
-   PKpulled_i <- setdiff(PKpulled[[i]]$PKpulled, c("CompoundID", "Tissue", "File"))
-   if(any(str_detect(PKpulled_i, " "), na.rm = T)){
-      PKpulled_i <- setdiff(
-         names(prettify_column_names(MyPKResults[[i]],
-                                     pretty_or_ugly_cols = "ugly")), 
-         c("CompoundID", "Compound", "Tissue", "File", "Statistic"))
-      
-   } 
+   DosesIncluded <- c("Dose1" = any(str_detect(PKparameters[[i]]$PKparameter, "_dose1")),
+                      "Last" = any(str_detect(PKparameters[[i]]$PKparameter, "_last")), 
+                      "User" = any(complete.cases(PKparameters[[i]]$Sheet)))
+   DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
    
    MyAnnotations <- make_table_annotations(
       MyPKResults = MyPKResults[[i]] %>% purrr::discard(~all(is.na(.))), 
       MyFile = unique(MyPKResults[[i]]$File), 
-      PKpulled = PKpulled_i,  
       MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
-      prettify_compound_names = TRUE,
+      prettify_compound_names = prettify_compound_names,
       Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
                      "TRUE" = data.frame(), 
                      "FALSE" = Deets), 
       MeanType = MeanType, 
+      DosesIncluded = case_match(DosesIncluded, 
+                                 "Dose1 User" ~ "Dose1 Last", 
+                                 "Last User" ~ "Last", 
+                                 .default = DosesIncluded), 
       tissue = unique(MyPKResults[[i]]$Tissue))
+   
 }
 
 ```

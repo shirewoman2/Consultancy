@@ -162,6 +162,13 @@ convert_conc_units <- function(DF_to_convert,
       }
    }
    
+   # Having trouble sometimes w/encoding. Getting original value and setting as
+   # needed and then re-setting to original.
+   OrigEncoding <- Sys.getlocale(category = "LC_CTYPE")
+   if(OrigEncoding %in% c("English_United States.utf8", "en_US.UTF-8") == FALSE){
+      Sys.setlocale("LC_CTYPE", "en_US.UTF-8")
+   }
+   
    # Converting concentration units --------------------------------------
    
    if("data.frame" %in% class(DF_with_good_units)){
@@ -243,6 +250,7 @@ convert_conc_units <- function(DF_to_convert,
             mutate(Factor = FactorNoMW / MW)
       )
       
+      
    } else {
       
       ConvTable_conc <- data.frame(
@@ -288,6 +296,8 @@ convert_conc_units <- function(DF_to_convert,
                     1, # mL
                     1 # PD response
          ) )
+      
+      
    }
    
    if(unique(DF_with_good_units$Conc_units) %in% ConvTable_conc$RevUnits == FALSE |
@@ -343,6 +353,10 @@ convert_conc_units <- function(DF_to_convert,
    }
    
    ## Output -----------------------------------------------------------
+   
+   if(OrigEncoding %in% c("English_United States.utf8", "en_US.UTF-8") == FALSE){
+      Sys.setlocale("LC_CTYPE", OrigEncoding)
+   }
    
    return(DF_to_convert)
    

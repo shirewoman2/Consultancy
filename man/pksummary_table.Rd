@@ -2,7 +2,8 @@
 % Please edit documentation in R/pksummary_table.R
 \name{pksummary_table}
 \alias{pksummary_table}
-\title{Make a summary PK table for a report or slide deck}
+\title{Make a summary PK table for a report or slide deck - NOTE: WE PLAN TO
+DEPRECATE THIS FUNCTION IN FAVOR OF THE FUNCTION pk_table.}
 \usage{
 pksummary_table(
   sim_data_file = NA,
@@ -391,9 +392,9 @@ Returns a data.frame of PK summary data and, if observed data were
 presentations, including reporting means, CVs, and confidence intervals or
 percentiles and, optionally, comparisons to observed data. When it's a
 standard PK parameter you're after, this function automatically finds the
-correct tabs and the correct cells in a Simulator
-output Excel file to obtain those data. If you want PK from a user-defined 
-AUC interval, that's possible, too, but we'll need you to tell us which sheet 
+correct tabs and the correct cells in a Simulator output Excel file to obtain
+those data. If you want PK from a user-defined AUC interval, that's possible,
+too, but we'll need you to tell us which sheet
 to use. \strong{Notes:} \itemize{\item{If you want}
 \item{Please
 see the notes at the bottom of this help file for how to supply observed data

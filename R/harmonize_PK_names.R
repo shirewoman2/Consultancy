@@ -12,6 +12,9 @@
 #' 
 harmonize_PK_names <- function(PKparameters){
    
+   # Remove extra spaces
+   PKparameters <- str_trim(PKparameters)
+   
    # hyphens instead of underscores
    PKparameters <- gsub("-", "_", PKparameters)
    

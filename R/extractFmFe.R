@@ -1,20 +1,19 @@
-#' Extract dynamic fm and fe values from a Simulator output Excel file
+#' Extract fm and fe valuesthat change with time from a Simulator output Excel
+#' file
 #'
-#' \code{extractFmFe} extracts enzyme abundance data from a simulator output
-#' Excel file. A tab named something like "Time variant \%fm and fe" must be
-#' present. A note: This has not yet been set up to deal with custom dosing
-#' regimens, so if you have a simulation that involves that, please contact
-#' Laura Shireman.
+#' \code{extractFmFe} extracts time-dependent fm and fe data from a simulator
+#' output Excel file. A tab named something like "Time variant \%fm and fe" must
+#' be present.
 #'
 #' @param sim_data_file name of the Excel file containing the simulated dynamic
 #'   fm and fe data, in quotes
 #' @param returnOnlyMaxMin TRUE (default) or FALSE for whether to return only
 #'   maximum and minimum fm values -- basically, return the table in the upper
-#'   left corner of the "Time variant \%fm and fe" tab. 
-#' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
-#'   enzyme abundance data? Options are "individual", "aggregate", or "both"
-#'   (default). Aggregated data are not calculated here but are pulled from the
-#'   simulator output rows labeled as "mean".
+#'   left corner of the "Time variant \%fm and fe" tab.
+#' @param returnAggregateOrIndiv Return aggregate and/or individual simulated fm
+#'   and fe data? Options are "individual", "aggregate", or "both" (default).
+#'   Aggregated data are not calculated here but are pulled from the simulator
+#'   output rows labeled as "mean".
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
 #'   get all the details from the "Input Sheet" (e.g., when you ran
@@ -44,9 +43,7 @@ extractFmFe <- function(sim_data_file,
    }
    
    # If they didn't include ".xlsx" at the end, add that.
-   sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
-                           sim_data_file, paste0(sim_data_file, ".xlsx"))
-   
+   sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_file), ".xlsx")
    
    # Checking for file name issues
    CheckFileNames <- check_file_name(sim_data_file)
@@ -142,14 +139,6 @@ extractFmFe <- function(sim_data_file,
    
    # Extracting aggregate data ---------------------------------------------
    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
-      
-      # Looking for anything with liver, kidney, or renal in the header column.
-      Tissues <- c("liver", "kidney", "renal")[
-         c(any(str_detect(tolower(sim_data_xl$...1), "\\(liver\\)")),
-           any(str_detect(tolower(sim_data_xl$...1), "\\(kidney\\)")), 
-           any(str_detect(tolower(sim_data_xl$...1), "\\(renal\\)")))]
-      
-      Tissues <- Tissues[complete.cases(Tissues)]
       
       StartRow_agg <- which(sim_data_xl$...1 == "Population Statistics")
       TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
@@ -250,7 +239,7 @@ extractFmFe <- function(sim_data_file,
    # Putting everything together ------------------------------------------
    
    TimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
-   TimeUnits <- ifelse(TimeUnits == "Time (h)", "Hours", "Minutes")
+   TimeUnits <- ifelse(TimeUnits == "Time (h)", "hours", "minutes")
    
    Data <- list()
    

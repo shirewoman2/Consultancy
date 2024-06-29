@@ -34,32 +34,42 @@ if(FromCalcPKRatios){
    
 } else {
    
+   DosesIncluded <- c("Dose1" = any(str_detect(PKparameters[[i]]$PKparameter, "_dose1")),
+                      "Last" = any(str_detect(PKparameters[[i]]$PKparameter, "_last")), 
+                      "User" = any(complete.cases(PKparameters[[i]]$Sheet)))
+   DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
+   
    MyAnnotations <- make_table_annotations(
       MyPKResults = MyPKResults[[i]] %>% purrr::discard(~all(is.na(.))), 
       MyFile = unique(MyPKResults[[i]]$File), 
-      PKpulled = PKpulled_list[[i]],  
       MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
       prettify_compound_names = prettify_compound_names,
       Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
                      "TRUE" = data.frame(), 
                      "FALSE" = Deets), 
       MeanType = MeanType, 
+      DosesIncluded = case_match(DosesIncluded, 
+                                 "Dose1 User" ~ "Dose1 Last", 
+                                 "Last User" ~ "Last", 
+                                 .default = DosesIncluded), 
       tissue = unique(MyPKResults[[i]]$Tissue))
 }
 
 ```
 
-`r MyAnnotations[["TableHeading"]]`
+*`r MyAnnotations[["TableHeading"]]`*
 
 
 ```{r}
 
 # Adding a warning if there was a mismatch between the last dosing interval and
-# the AUC interval if any of the PK included last dose.
-Msg <- CheckDoseInt$message[which(
-   str_detect(names(CheckDoseInt$message), sub("xlsx.", "xlsx.*", i)))]
+# the AUC interval if any of the PK included last dose. Note that you can have
+# more than one message per file, which is why there's the str_c part.
+Msg <- str_c(sort(unique(CheckDoseInt$message[which(
+   str_detect(names(CheckDoseInt$message), sub("xlsx.", "xlsx.*", i)))])), 
+   collapse = " ")
 
-if(Msg == "mismatch last dose"){
+if(str_detect(Msg, "mismatch last dose")){
    
    DoseIntWarning <- list(
       "***WARNING: The time used for integrating the AUC for the last dose was not the same as the dosing interval.***", 
@@ -75,7 +85,7 @@ if(Msg == "mismatch last dose"){
       
       "***Please check these results carefully.***")
    
-} else if(Msg == "mismatch user-defined interval"){
+} else if(str_detect(Msg, "mismatch user-defined interval")){
    
    DoseIntWarning <- list(
       "***WARNING: The time used for integrating the AUC for the user-defined interval was not the same as the dosing interval.***", 

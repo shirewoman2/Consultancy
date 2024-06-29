@@ -2,7 +2,8 @@
 % Please edit documentation in R/pksummary_mult.R
 \name{pksummary_mult}
 \alias{pksummary_mult}
-\title{Make PK summary tables from multiple simulator output files at once}
+\title{Make PK summary tables from multiple simulator output files at once - NOTE:
+WE PLAN TO DEPRECATE THIS FUNCTION IN FAVOR OF THE FUNCTION pk_table.}
 \usage{
 pksummary_mult(
   sim_data_files = NA,
@@ -66,10 +67,10 @@ e.g., \code{compoundsToExtract = c("substrate", "inhibitor 1")}}
 
 \item{tissues}{For which tissue(s) would you like the PK parameters to be
 pulled? Options are any combination of "plasma" (default), "unbound
-plasma", "blood", "unbound blood", "peripheral plasma", or "peripheral 
-blood". \strong{NOTE: PK for peripheral sampling is not as well tested as 
-for other tissues and is only set up for V21+. Please check your results 
-carefully.}. For multiple tissues, enclose them with parentheses, e.g., 
+plasma", "blood", "unbound blood", "peripheral plasma", or "peripheral
+blood". \strong{NOTE: PK for peripheral sampling is not as well tested as
+for other tissues and is only set up for V21+. Please check your results
+carefully.}. For multiple tissues, enclose them with parentheses, e.g.,
 \code{tissues = c("blood", "plasma")}}
 
 \item{PKparameters}{(optional) the PK parameters to include as a character
