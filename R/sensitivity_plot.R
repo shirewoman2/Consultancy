@@ -332,13 +332,17 @@ sensitivity_plot <- function(SA_file,
       }
       
       if(length(ObsRow) > 0){
+         
+         MyShapes <- rep(c(15:18, 0:14), length(unique(ObsData$Subject)))[1:length(unique(ObsData$Subject))]
+         
          G <- G +
             geom_point(data = ObsData, 
                        switch(as.character(length(unique(ObsData$Subject)) == 1), 
                               "TRUE" = aes(x = Time, y = Conc),
                               "FALSE" = aes(x = Time, y = Conc, 
                                             shape = Subject, group = Subject)), 
-                       inherit.aes = FALSE) 
+                       inherit.aes = FALSE) +
+            scale_shape_manual(values = MyShapes)
       }
       
       if(complete.cases(SensParam2)){
@@ -359,18 +363,9 @@ sensitivity_plot <- function(SA_file,
          xlab("Time (h)") +
          ylab("Concentration (ng/mL)")
       
-      if(linear_or_log != "linear"){
-         if(all(complete.cases(y_axis_limits_log))){
-            G <- G + scale_y_log10(limits = y_axis_limits_log)
-         } else {
-            G <- G + scale_y_log10()
-         }
-      } else {
-         if(all(complete.cases(y_axis_limits_lin))){
-            G <- G + scale_y_continuous(limits = y_axis_limits_lin)
-         }
+      if(all(complete.cases(y_axis_limits_lin))){
+         G <- G + scale_y_continuous(limits = y_axis_limits_lin)
       }
-      
       
    } else {
       
@@ -403,6 +398,20 @@ sensitivity_plot <- function(SA_file,
                   vjust = -0.5, hjust = -0.5, color = "red", 
                   fontface = "italic",
                   label = paste0("target = ", prettyNum(target_DV, big.mark = ",")))
+   }
+   
+   LogBreaks <- make_log_breaks(
+      data_range = switch(as.character(all(complete.cases(y_axis_limits_log))), 
+                          "TRUE" = y_axis_limits_log, 
+                          "FALSE" = range(SAdata$Conc, na.rm = T)))
+   
+   Glog <- G + scale_y_log10(breaks = LogBreaks$breaks, 
+                             labels = LogBreaks$labels)
+   
+   if(linear_or_log %in% c("both", "both vertical")){
+      G <- ggpubr::ggarrange(G, Glog, nrow = 2, align = "hv", common.legend = TRUE)
+   } else if(linear_or_log %in% c("both horizontal")){
+      G <- ggpubr::ggarrange(G, Glog, nrow = 1, align = "hv", common.legend = TRUE)
    }
    
    if(complete.cases(save_graph)){
