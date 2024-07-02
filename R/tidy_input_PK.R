@@ -835,7 +835,8 @@ tidy_input_PK <- function(PKparameters,
       PKparameters <- PKparameters %>% 
          mutate(HarmoniousRegimen = 
                    (AppliesToSingleDose == FALSE & MD == TRUE) |
-                   (AppliesToSingleDose == TRUE & MD == FALSE))
+                   AppliesToSingleDose == TRUE) %>% 
+         filter(!PKparameter %in% AllPKParameters$PKparameter[AllPKParameters$UserInterval])
    }
    
    PKparameters <- PKparameters %>% 
