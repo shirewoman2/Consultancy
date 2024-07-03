@@ -570,7 +570,7 @@ ct_plot_overlay <- function(ct_dataframe,
    if(EnzPlot){ct_dataframe$Simulated <- TRUE}
    
    # Checking whether this is a release-profile plot or a dissolution-profile plot
-   ReleaseProfPlot <- all(c("Release_mean", "Release_CV") %in% names(ct_dataframe)) &
+   ReleaseProfPlot <- all(c("Release_mean", "ReleaseSD") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
    
    if(ReleaseProfPlot){
