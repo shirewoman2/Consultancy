@@ -1128,23 +1128,27 @@ pk_table <- function(PKparameters = NA,
             # If they didn't specify a file extension at all, make it .csv. 
             save_table <- paste0(save_table, ".csv")
          }
-         
-         # Now that the file should have an appropriate extension, check what
-         # the path and basename should be.
-         OutPath <- dirname(save_table)
-         save_table <- basename(save_table)
       }
+      
+      
+      # Now that the file should have an appropriate extension, check what
+      # the path and basename should be.
+      OutPath <- dirname(save_table)
+      
+      # May need to change the working directory temporarily, so
+      # determining what it is now
+      CurrDir <- getwd()
+      
+      if(OutPath == "."){
+         OutPath <- getwd()
+      }
+      
+      save_table <- basename(save_table)
+      setwd(OutPath)
       
       if(str_detect(save_table, "docx")){ 
          # This is when they want a Word file as output
          
-         OutPath <- dirname(save_table)
-         
-         if(OutPath == "."){
-            OutPath <- getwd()
-         }
-         
-         FileName <- basename(save_table)
          FromCalcPKRatios <- FALSE
          TemplatePath <- switch(page_orientation, 
                                 "landscape" = system.file("Word/landscape_report_template.dotx",
@@ -1157,7 +1161,7 @@ pk_table <- function(PKparameters = NA,
                         package="SimcypConsultancy"),
             output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
             output_dir = OutPath, 
-            output_file = FileName, 
+            output_file = save_table, 
             quiet = TRUE)
          # Note: The "system.file" part of the call means "go to where the
          # package is installed, search for the file listed, and return its
@@ -1196,7 +1200,7 @@ pk_table <- function(PKparameters = NA,
       Out[["ForestData"]] <- FD
       
       if(complete.cases(save_table)){ 
-         write.csv(OutQC, sub(".csv|.docx", " - forest data.csv", save_table), row.names = F)
+         write.csv(FD, sub(".csv|.docx", " - forest data.csv", save_table), row.names = F)
       }
    }
    
@@ -1207,6 +1211,8 @@ pk_table <- function(PKparameters = NA,
    if(length(Out) == 1){
       Out <- Out[["Table"]]
    }
+   
+   setwd(CurrDir)
    
    return(Out)
    

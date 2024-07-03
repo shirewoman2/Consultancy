@@ -1260,6 +1260,9 @@ inductFit <- function(DF,
       }
       
       FileName <- basename(FileName)
+      
+      setwd(OutPath)
+      
       TemplatePath <- switch(page_orientation, 
                              "landscape" = system.file("Word/landscape_report_template.dotx",
                                                        package="SimcypConsultancy"), 
@@ -1287,6 +1290,8 @@ inductFit <- function(DF,
                     .fns = round_opt, 
                     round_fun = rounding,
                     is_this_for_Word = FALSE))
+   
+   setwd(CurrDir)
    
    return(Out)
    

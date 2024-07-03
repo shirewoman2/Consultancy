@@ -477,7 +477,8 @@ pksummary_table <- function(sim_data_file = NA,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   warning(wrapn("We are working toward deprecating the pksummary_table function in favor of the more versatile pk_table function. Please consider using pk_table going forward."))
+   warning(wrapn("We are working toward deprecating the pksummary_table function in favor of the more versatile pk_table function. Please consider using pk_table going forward."), 
+           call. = FALSE)
    
    # If they didn't include ".xlsx" at the end, add that.
    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
@@ -1069,8 +1070,7 @@ pksummary_table <- function(sim_data_file = NA,
    
    ## extracting PK ------------------------------------------------------------
    
-   withCallingHandlers(
-      # suppressWarnings(
+   suppressWarnings(
       MyPKResults_all <- extractPK(sim_data_file = sim_data_file,
                                    PKparameters = PKparameters_temp,
                                    tissue = tissue,
@@ -2002,27 +2002,28 @@ pksummary_table <- function(sim_data_file = NA,
             # If they didn't specify a file extension at all, make it .csv. 
             save_table <- paste0(save_table, ".csv")
          }
-         
-         # Now that the file should have an appropriate extension, check what
-         # the path and basename should be.
-         OutPath <- dirname(save_table)
-         save_table <- basename(save_table)
       }
+      
+      # Now that the file should have an appropriate extension, check what
+      # the path and basename should be.
+      OutPath <- dirname(save_table)
+      
+      # May need to change the working directory temporarily, so
+      # determining what it is now
+      CurrDir <- getwd()
+      
+      if(OutPath == "."){
+         OutPath <- getwd()
+      }
+      
+      save_table <- basename(save_table)
+      setwd(OutPath)
       
       if(str_detect(save_table, "docx")){ 
          # This is when they want a Word file as output
          
-         # May need to change the working directory temporarily, so
-         # determining what it is now
-         CurrDir <- getwd()
-         
-         OutPath <- dirname(save_table)
-         if(OutPath == "."){
-            OutPath <- getwd()
-         }
-         
-         FileName <- basename(save_table)
          FromCalcPKRatios <- FALSE
+         
          TemplatePath <- switch(page_orientation, 
                                 "landscape" = system.file("Word/landscape_report_template.dotx",
                                                           package="SimcypConsultancy"), 
@@ -2031,13 +2032,14 @@ pksummary_table <- function(sim_data_file = NA,
          
          rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 
-                           output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
-                           output_dir = OutPath, 
-                           output_file = FileName, 
+                           output_format = rmarkdown::word_document(reference_docx = TemplatePath),
+                           output_dir = OutPath,
+                           output_file = save_table, 
                            quiet = TRUE)
          # Note: The "system.file" part of the call means "go to where the
          # package is installed, search for the file listed, and return its
          # full path.
+         
          
       } else {
          # This is when they want a .csv file as output. In this scenario,
@@ -2063,7 +2065,9 @@ pksummary_table <- function(sim_data_file = NA,
       
       if(complete.cases(save_table)){
          
-         write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
+         write.csv(OutQC, 
+                   paste0(OutPath, "/", sub(".csv|.docx", " - QC.csv", save_table)),
+                   row.names = F)
          
       }
    }
@@ -2072,7 +2076,9 @@ pksummary_table <- function(sim_data_file = NA,
       Out[["ForestData"]] <- FD
       
       if(complete.cases(save_table)){ 
-         write.csv(OutQC, sub(".csv|.docx", " - forest data.csv", save_table), row.names = F)
+         write.csv(FD, 
+                   paste0(OutPath, "/", sub(".csv|.docx", " - forest data.csv", save_table)), 
+                   row.names = F)
       }
    }
    
@@ -2091,6 +2097,8 @@ pksummary_table <- function(sim_data_file = NA,
       warning("The time used for integrating the AUC for the custom AUC interval was not the same as the dosing interval.\n", 
               call. = FALSE)
    }
+   
+   setwd(CurrDir)
    
    return(Out)
    
