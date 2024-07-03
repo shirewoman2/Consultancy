@@ -357,7 +357,7 @@ extractExpDetails <- function(sim_data_file,
          
       }
       
-      # Simcyp Discovery only allows simulations with a substrate or metaboltie
+      # Simcyp Discovery only allows simulations with a substrate or metabolite
       # 1 and no other compounds, so everything else will be NA or NULL.
       if(str_detect(SummaryTab[1, 1], "Discovery")){
          Out[c("Inhibitor1", "Inhibitor2", "Inhibitor1Metabolite", 
@@ -653,50 +653,69 @@ extractExpDetails <- function(sim_data_file,
       
       ### Checking on release profiles -----------------------------------------
       if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
-         exists("InputTab", inherits = FALSE) &&
-         any(str_detect(unlist(c(InputTab[, ColLocations])), "Release Mean"),
-             na.rm = TRUE)){
+         exists("InputTab", inherits = FALSE)){
          
          ReleaseProfs <- list()
          
          for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
-            StartRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "CR/MR Input"))[1] + 1
-            EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Release Mean"))
-            EndRow <- EndRow[which.max(EndRow)] + 1 # Looking for last "Release Mean" row and then the next row will be the CV for that. 
             
-            # It could be that one compound has release profiles and another
-            # compound does not. Checking that here since I did not check it in
-            # the original if statement at the top of this section.
-            if(is.na(StartRow)){
-               next
+            if(any(str_detect(t(InputTab[, as.numeric(ColLocations[i])]), "Release Mean"),
+                   na.rm = TRUE)){
+               
+               StartRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "CR/MR Input"))[1] + 1
+               EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), "Release Mean"))
+               EndRow <- EndRow[which.max(EndRow)] + 1 # Looking for last "Release Mean" row and then the next row will be the CV for that. 
+               
+               Release_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
+               names(Release_temp) <- c("NameCol", "ValCol")
+               
+               # Older versions of simulator do not have CV. Checking. 
+               ReleaseCV <- Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "CV"))]
+               if(all(is.null(ReleaseCV))){ReleaseCV <- NA}
+               
+               ReleaseProfs[[i]] <- data.frame(
+                  CR_MR_input = Out[[paste0("CR_MR_Input", Suffix)]], 
+                  Time = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Time"))], 
+                  Release_mean = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Release Mean"))], 
+                  Release_CV = ReleaseCV) %>% 
+                  mutate(across(.cols = everything(), .fns = as.numeric), 
+                         Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
+                         File = sim_data_file, 
+                         CompoundID = i, 
+                         Compound = as.character(Out[AllCompounds$DetailNames[
+                            AllCompounds$CompoundID == i]])) %>% 
+                  select(File, CompoundID, Compound, Time, Release_mean, Release_CV)
+               
+               rm(StartRow, EndRow, Release_temp)
+               
+            } else if(
+               complete.cases(Out[[paste0("CR_MR_Input", 
+                                          AllCompounds$Suffix[AllCompounds$CompoundID == i])]]) &&
+               Out[[paste0("CR_MR_Input", 
+                           AllCompounds$Suffix[AllCompounds$CompoundID == i])]] == 
+               "Weibull"){
+               
+               Suffix <- AllCompounds$Suffix[AllCompounds$CompoundID == i]
+               
+               ReleaseProfs <- data.frame(
+                  CompoundID = i, 
+                  CR_MR_input = Out[[paste0("CR_MR_Input", Suffix)]], 
+                  Parameter = c("Fmax", "alpha", "beta", "lag"), 
+                  Value = c(Out[[paste0("ReleaseProfile_Fmax", Suffix)]], 
+                            Out[[paste0("ReleaseProfile_alpha", Suffix)]], 
+                            Out[[paste0("ReleaseProfile_beta", Suffix)]], 
+                            Out[[paste0("ReleaseProfile_lag", Suffix)]]), 
+                  CV = c(Out[[paste0("ReleaseProfile_Fmax_CV", Suffix)]], 
+                         Out[[paste0("ReleaseProfile_alpha_CV", Suffix)]], 
+                         Out[[paste0("ReleaseProfile_beta_CV", Suffix)]], 
+                         Out[[paste0("ReleaseProfile_lag_CV", Suffix)]]))
+               
+            } else {
+               ReleaseProfs <- NULL
             }
-            
-            Release_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
-            names(Release_temp) <- c("NameCol", "ValCol")
-            
-            # Older versions of simulator do not have CV. Checking. 
-            ReleaseCV <- Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "CV"))]
-            if(all(is.null(ReleaseCV))){ReleaseCV <- NA}
-            
-            ReleaseProfs[[i]] <- data.frame(
-               Time = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Time"))], 
-               Release_mean = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Release Mean"))], 
-               Release_CV = ReleaseCV) %>% 
-               mutate(across(.cols = everything(), .fns = as.numeric), 
-                      Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
-                      File = sim_data_file, 
-                      CompoundID = i, 
-                      Compound = as.character(Out[AllCompounds$DetailNames[
-                         AllCompounds$CompoundID == i]])) %>% 
-               select(File, CompoundID, Compound, Time, Release_mean, Release_CV)
-            
-            rm(StartRow, EndRow, Release_temp)
-            
          }
          
          ReleaseProfs <- bind_rows(ReleaseProfs)
-      } else {
-         ReleaseProfs <- NULL
       }
       
       ### Checking on dissolution profiles ------------------------------------

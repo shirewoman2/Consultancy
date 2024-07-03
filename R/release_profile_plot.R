@@ -274,6 +274,8 @@
 #' 
 #' 
 release_profile_plot <- function(existing_exp_details, 
+                                 sims_to_include = NA, 
+                                 compoundsToExtract = NA, 
                                  figure_type = "percentile ribbon", 
                                  linear_or_log = "linear",
                                  colorBy_column,
@@ -324,7 +326,6 @@ release_profile_plot <- function(existing_exp_details,
            call. = FALSE)
    }
    
-   
    if(figure_type %in% c("means only", "percentile ribbon") == FALSE){
       warning("The only acceptable options for `figure_type` are `means_only` or `percentile ribbon`. We'll set this to the default, `percentile ribbon`.\n", 
               call. = FALSE)
@@ -343,22 +344,196 @@ release_profile_plot <- function(existing_exp_details,
       time_range <- NA
    }
    
+   # Need to harmonize input to check some of these other bits
+   existing_exp_details <- harmonize_details(existing_exp_details)
+   
+   # If user has supplied regex, that should have length 1. If they supplied a
+   # character vector of files, that should probably have length > 1. Even if
+   # they only supplied a single file name here, it should still work to use
+   # regex instead of a perfect match.
+   if(any(complete.cases(sims_to_include)) && 
+      length(sims_to_include) == 1){
+      sims_to_include <- existing_exp_details$MainDetails$File[
+         str_detect(existing_exp_details$MainDetails$File, 
+                    sims_to_include)]
+      # At this point, sims_to_include should be a character vector of file
+      # names.
+   }
+   
+   # Keeping only the requested sims for sims_to_include
+   if(any(complete.cases(sims_to_include))){
+      existing_exp_details <- filter_sims(which_object = existing_exp_details, 
+                                          which_sims = sims_to_include,
+                                          include_or_omit = "include")
+   }
+   
+   if(all(is.na(compoundsToExtract))){
+      compoundsToExtract <- AllCompounds$CompoundID
+   }
+   
+   # Checking for bad inputs on compounds
+   BadCmpd <- tolower(compoundsToExtract)[
+      which(tolower(compoundsToExtract) %in% AllCompounds$CompoundID == FALSE)]
+   GoodCmpd <- intersect(AllCompounds$CompoundID, 
+                         tolower(compoundsToExtract))
+   
+   if(length(BadCmpd) > 0){
+      if(length(GoodCmpd) == 0){
+         stop(wrapn(paste0("None of the compounds you entered are among the possible options for compoundsToExtract: ", 
+                           str_comma(paste0("'", BadCmpd, "'")), 
+                           ". Please check your inputs and try again.")), 
+              call. = FALSE)
+      } else {
+         warning(wrapn(paste0("The following compounds are not among the possible options for compoundsToExtract: ", 
+                              str_comma(paste0("'", BadCmpd, "'")), 
+                              ". They will be ignored.")), 
+                 call. = FALSE)
+      }
+   }
+   compoundsToExtract <- GoodCmpd
+   
+   
    # Main body of function -------------------------------------------------
    
-   Release <- existing_exp_details$ReleaseProfiles %>% 
-      mutate(Release_mean = Release_mean / 100,
-             ReleaseUpper = Release_mean + Release_mean * Release_CV, 
-             ReleaseLower = Release_mean - Release_mean * Release_CV, 
-             ReleaseSD = Release_mean * Release_CV, 
-             subsection_ADAM = NA, 
-             Simulated = TRUE, 
-             # placeholders only
-             Inhibitor = "none",
-             Trial = "mean",
-             Tissue = "plasma",
-             Conc_units = "ng/mL",  
-             Time_units = "hours", 
-             DoseNum = 1)
+   Release <- list()
+   
+   for(ff in sims_to_include){
+      
+      Release[[ff]] <- list()
+      Deets <- filter_sims(existing_exp_details, 
+                           which_sims = ff, 
+                           include_or_omit = "include")
+      
+      for(cmpd in compoundsToExtract){
+         
+         Suffix <- AllCompounds$Suffix[AllCompounds$CompoundID == cmpd]
+         
+         # Different input data depending on the CR/MR input
+         if(Deets$MainDetails[[paste0("CR_MR_Input", Suffix)]] ==
+            "Weibull"){
+            
+            Release[[ff]][[cmpd]] <- 
+               data.frame(CompoundID = cmpd, 
+                          Time = seq(from = 0, 
+                                     to = Deets$MainDetails$SimDuration, 
+                                     length.out = 500))
+            
+            suppressWarnings(
+               Release[[ff]][[cmpd]]$Release_mean <- 
+                  pweibull(q =  Release[[ff]][[cmpd]]$Time, 
+                           
+                           scale = Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
+                                                             Suffix)]], 
+                           
+                           shape = Deets$MainDetails[[paste0("ReleaseProfile_beta", 
+                                                             Suffix)]]) * 
+                  Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]]
+            )
+            
+            suppressWarnings(
+               Release[[ff]][[cmpd]]$ReleaseUpper <- 
+                  pweibull(q =  Release[[ff]][[cmpd]]$Time, 
+                           
+                           scale = Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
+                                                             Suffix)]] + 
+                              Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
+                                                        Suffix)]] * 
+                              Deets$MainDetails[[paste0("ReleaseProfile_alpha_CV", 
+                                                        Suffix)]], 
+                           
+                           shape = Deets$MainDetails[[paste0("ReleaseProfile_beta", 
+                                                             Suffix)]] +
+                              Deets$MainDetails[[paste0("ReleaseProfile_beta", 
+                                                        Suffix)]] * 
+                              Deets$MainDetails[[paste0("ReleaseProfile_beta_CV", 
+                                                        Suffix)]]) * 
+                  (Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] +
+                      Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] * 
+                      Deets$MainDetails[[paste0("ReleaseProfile_Fmax_CV", Suffix)]])
+            )
+            
+            suppressWarnings(
+               Release[[ff]][[cmpd]]$ReleaseLower <- 
+                  pweibull(q =  Release[[ff]][[cmpd]]$Time, 
+                           
+                           scale = Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
+                                                             Suffix)]] - 
+                              Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
+                                                        Suffix)]] * 
+                              Deets$MainDetails[[paste0("ReleaseProfile_alpha_CV", 
+                                                        Suffix)]], 
+                           
+                           shape = Deets$MainDetails[[paste0("ReleaseProfile_beta", 
+                                                             Suffix)]] -
+                              Deets$MainDetails[[paste0("ReleaseProfile_beta", 
+                                                        Suffix)]] * 
+                              Deets$MainDetails[[paste0("ReleaseProfile_beta_CV", 
+                                                        Suffix)]]) * 
+                  (Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] -
+                      Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] * 
+                      Deets$MainDetails[[paste0("ReleaseProfile_Fmax_CV", Suffix)]])
+            )
+            
+            Release[[ff]][[cmpd]] <- Release[[ff]][[cmpd]] %>% 
+               mutate(Release_mean = Release_mean / 100, 
+                      ReleaseUpper = ReleaseUpper / 100, 
+                      ReleaseLower = ReleaseLower / 100, 
+                      ReleaseSD = NA, # FIXME - return to this later. This isn't going to have conventional SD, so I want to use ReleaseUpper and ReleaseLower instead. 
+                      subsection_ADAM = NA, 
+                      Simulated = TRUE, 
+                      # placeholders only
+                      Inhibitor = "none",
+                      Trial = "mean",
+                      Tissue = "plasma",
+                      Conc_units = "ng/mL",  
+                      Time_units = "hours", 
+                      DoseNum = 1)
+            
+         } else {
+            
+            Release[[ff]][[cmpd]] <- Deets$ReleaseProfiles %>% 
+               filter(CompoundID == cmpd) %>% 
+               mutate(Release_mean = Release_mean / 100,
+                      ReleaseUpper = Release_mean + Release_mean * Release_CV, 
+                      ReleaseLower = Release_mean - Release_mean * Release_CV, 
+                      ReleaseSD = Release_mean * Release_CV, 
+                      subsection_ADAM = NA, 
+                      Simulated = TRUE, 
+                      # placeholders only
+                      Inhibitor = "none",
+                      Trial = "mean",
+                      Tissue = "plasma",
+                      Conc_units = "ng/mL",  
+                      Time_units = "hours", 
+                      DoseNum = 1)
+         }
+      }
+      
+      Release[[ff]] <- bind_rows(Release[[ff]])
+      
+   }
+   
+   Release <- bind_rows(Release)
+   
+   
+   # Adding compounds names
+   suppressMessages(
+      MyCompounds <- existing_exp_details$MainDetails %>% 
+         select(any_of(c("File", "Substrate", "PrimaryMetabolite1", 
+                         "PrimaryMetabolite2", "SecondaryMetabolite", 
+                         "Inhibitor1", "Inhibitor1Metabolite", 
+                         "Inhibitor2"))) %>% 
+         pivot_longer(cols = -File, 
+                      names_to = "DetailNames", 
+                      values_to = "Compound") %>% 
+         left_join(AllCompounds) %>% 
+         select(File, CompoundID, Compound) %>% 
+         filter(complete.cases(Compound))
+   )
+   
+   suppressMessages(
+      Release <- Release %>% left_join(MyCompounds)
+   )
    
    # ggplot(Release, aes(x = Time, y = Release_mean, 
    #                     ymax = ReleaseUpper, ymin = ReleaseLower)) +
