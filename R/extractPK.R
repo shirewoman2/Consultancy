@@ -587,7 +587,7 @@ extractPK <- function(sim_data_file,
              
              SheetAUClast = PKparameter %in% 
                 (AllPKParameters %>% 
-                    filter(Sheet == "AUCX" & !str_detect(PKparameter, "_dose1")) %>% 
+                    filter(Sheet == "AUCX" & str_detect(PKparameter, "_last")) %>% 
                     pull(PKparameter) %>% unique()), 
              
              SheetDrugPop = PKparameter %in% 
