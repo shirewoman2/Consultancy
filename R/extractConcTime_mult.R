@@ -454,8 +454,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
          
       } else {
          
-         existing_exp_details <- filter_sims(existing_exp_details, 
-                                             sim_data_files_topull, "include")
          existing_exp_details <- harmonize_details(existing_exp_details)
          
          if(all(sim_data_files %in% existing_exp_details$MainDetails$File) == FALSE){

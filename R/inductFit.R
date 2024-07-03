@@ -411,6 +411,12 @@ inductFit <- function(DF,
                 DonorID = !! donor_column)
    }
    
+   # DonorID must be character or factor for the colors to work well in the
+   # graphs.
+   if(any(c("character", "factor") %in% class(DF$DonorID)) == FALSE){
+      DF$DonorID <- as.character(DF$DonorID)
+   }
+   
    LegendTitle <- rlang::as_label(donor_column)
    
    
