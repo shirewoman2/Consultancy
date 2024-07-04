@@ -1181,6 +1181,10 @@ inductFit <- function(DF,
    
    # saving and formatting output ---------------------------------------------
    
+   # May need to change the working directory temporarily, so determining
+   # what it is now
+   CurrDir <- getwd()
+   
    if(include_fit_stats == FALSE){
       Out$Fit <- Out$Fit %>% select(-any_of(matches("_SE|_pvalue|AIC")))
    }
@@ -1249,10 +1253,6 @@ inductFit <- function(DF,
       
       # Setting file extension to be docx
       FileName <- sub("\\..*$", ".docx", save_output)
-      
-      # May need to change the working directory temporarily, so determining
-      # what it is now
-      CurrDir <- getwd()
       
       OutPath <- dirname(FileName)
       if(OutPath == "."){
