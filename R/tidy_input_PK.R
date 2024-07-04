@@ -64,14 +64,13 @@ tidy_input_PK <- function(PKparameters,
       # If user did not supply files, then extract all the files in the current
       # folder that end in "xlsx" or in all subfolders if they wanted it to be
       # recursive.
-      
       if(length(sim_data_files) == 1 &&
          (is.na(sim_data_files) | sim_data_files == "recursive")){
          sim_data_files <- list.files(pattern = "xlsx$",
                                       recursive = (complete.cases(sim_data_files) &&
                                                       sim_data_files == "recursive"))
          sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
-      }
+      } 
       
       # Making sure that all the files exist before attempting to pull data
       if(all(complete.cases(sim_data_files)) && 
@@ -610,6 +609,20 @@ tidy_input_PK <- function(PKparameters,
    PKparameters$File <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.db$", "", 
                                    PKparameters$File), ".xlsx")
    
+   # If user specified values for sim_data_files, then remove any others.
+   if(all(complete.cases(sim_data_files))){
+      TEMP <- PKparameters %>% 
+         filter(File %in% sim_data_files)
+      
+      if(nrow(TEMP) == 0){
+         warning(wrapn("None of the simulation files you specified for the argument 'sim_data_files' were present in the column 'File' in the data you supplied for the argument 'PKparameters'. We don't know which simulation files you want, so we will return PK for all the possible simulation files."), 
+                 call. = FALSE)
+      } else {
+         PKparameters <- TEMP
+      }
+   }
+   
+   
    ## PKparameter -----------------------------------------------------------
    
    BadParams <- setdiff(PKparameters$PKparameter, 
@@ -721,7 +734,7 @@ tidy_input_PK <- function(PKparameters,
       
       warning(paste0(wrapn("The following files are population representative simulations and thus have no aggregate PK data. They will be skipped."), 
                      str_c(paste0("  ", PopRepSims), collapse = "\n")), 
-                     call. = FALSE)
+              call. = FALSE)
       
       PKparameters <- PKparameters %>% filter(!File %in% PopRepSims)
    }
@@ -813,13 +826,13 @@ tidy_input_PK <- function(PKparameters,
       )
       
    } else {
-         PKparameters <- PKparameters %>% 
-            mutate(UserInterval = complete.cases(Sheet)) %>% 
-            left_join(AllPKParameters %>% 
-                         select(PKparameter, AppliesToSingleDose, 
-                                AppliesOnlyWhenPerpPresent, UserInterval) %>% 
-                         unique(), 
-                      by = join_by(PKparameter, UserInterval))
+      PKparameters <- PKparameters %>% 
+         mutate(UserInterval = complete.cases(Sheet)) %>% 
+         left_join(AllPKParameters %>% 
+                      select(PKparameter, AppliesToSingleDose, 
+                             AppliesOnlyWhenPerpPresent, UserInterval) %>% 
+                      unique(), 
+                   by = join_by(PKparameter, UserInterval))
    }
    
    # Checking that we're looking for reasonable PK parameters. 

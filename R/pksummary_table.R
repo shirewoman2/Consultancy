@@ -1975,6 +1975,11 @@ pksummary_table <- function(sim_data_file = NA,
    PKpulled <- PKToPull # Need to rename here for consistency w/other pksummary functions and Rmd files.
    
    # Saving --------------------------------------------------------------
+   
+   # May need to change the working directory temporarily, so
+   # determining what it is now
+   CurrDir <- getwd()
+   
    if(complete.cases(save_table)){
       
       # Checking whether they have specified just "docx" or just "csv" for
@@ -2007,10 +2012,6 @@ pksummary_table <- function(sim_data_file = NA,
       # Now that the file should have an appropriate extension, check what
       # the path and basename should be.
       OutPath <- dirname(save_table)
-      
-      # May need to change the working directory temporarily, so
-      # determining what it is now
-      CurrDir <- getwd()
       
       if(OutPath == "."){
          OutPath <- getwd()

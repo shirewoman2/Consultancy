@@ -1080,6 +1080,11 @@ pksummary_mult <- function(sim_data_files = NA,
    }
    
    ## Saving --------------------------------------------------------------
+   
+   # May need to change the working directory temporarily, so
+   # determining what it is now
+   CurrDir <- getwd()
+   
    if(complete.cases(save_table)){
       
       # Checking whether they have specified just "docx" or just "csv" for
@@ -1106,10 +1111,6 @@ pksummary_mult <- function(sim_data_files = NA,
       # Now that the file should have an appropriate extension, check what
       # the path and basename should be.
       OutPath <- dirname(save_table)
-      
-      # May need to change the working directory temporarily, so
-      # determining what it is now
-      CurrDir <- getwd()
       
       if(OutPath == "."){
          OutPath <- getwd()
