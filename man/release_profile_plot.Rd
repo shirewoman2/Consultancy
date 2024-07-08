@@ -6,6 +6,8 @@
 \usage{
 release_profile_plot(
   existing_exp_details,
+  sims_to_include = NA,
+  compoundsToExtract = NA,
   figure_type = "percentile ribbon",
   linear_or_log = "linear",
   colorBy_column,

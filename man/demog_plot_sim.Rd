@@ -6,13 +6,13 @@
 \usage{
 demog_plot_sim(
   demog_dataframe,
-  variability_display = "kernal density",
+  demog_parameters = NA,
+  variability_display = "kernel density",
   colorBy_column,
   color_labels = NA,
   legend_label_color = NA,
   color_set = "default",
   graph_title = "Demographics",
-  demog_parameters = NA,
   alpha = 0.8,
   ncol = NULL,
   nrow = NULL,
@@ -22,12 +22,45 @@ demog_plot_sim(
 )
 }
 \arguments{
-\item{demog_dataframe}{the output from running \code{\link{extractDemog}}.
-Optionally (and we recommend) with added observed demographic data, perhaps
-from observed overlay XML files.}
+\item{demog_dataframe}{the output from running \code{\link{extractDemog}}.}
+
+\item{demog_parameters}{demographic parameters to include. We're starting
+  with a limited set: \itemize{\item{Individual parameters, which will be
+  displayed as either a kernel density plot or a boxplot depending on your 
+  choice for \code{variability_display}: \itemize{\item{"Age" (age in years)}
+
+  \item{"Weight_kg" (weight in kg; "Weight" is also fine)}
+
+  \item{"Height_cm" (height in cm; "Height" is fine)}
+
+  \item{"HSA_gL" (human serum albumin in g/L; "HSA" is fine)}
+
+  \item{"AGP_gL" (alpha-1-acid glycoprotein in g/L; "AGP" is fine)}
+
+  \item{"Sex"}
+
+  \item{"BMI_kgm2" ("BMI" is fine)}
+
+  \item{"RenalFunction" (renal function as calculated by the GFR in 
+  mL/min/m squared body surface area divided by the reference GFR for that 
+  sex: 120 for female subjects and 130 for male subjects as of V23 of the 
+  Simcyp Simulator)}}}
+
+  \itemize{Comparisons of two parameters, which will create a scatter
+  plot: \itemize{\item{"Weight vs Height"}
+
+  \item{"Height vs Age"}
+
+  \item{"Weight vs Age"}
+
+  \item{"Sex vs Age"}}}}
+
+  If you want only a subset
+  of those, list them in a character vector, e.g., \code{demog_parameters = c("Age",
+  "Height_cm", "Weight_kg")}. Plots will be in the order you list.}
 
 \item{variability_display}{How should the variability be shown? Options are
-"kernal density" (default, a type of smoothed histogram) or "boxplot". Any
+"kernel density" (default, a type of smoothed histogram) or "boxplot". Any
 demographic parameters requested in the form of "X vs Y", e.g., "weight vs
 height", will always be shown as scatter plots.}
 
@@ -88,14 +121,6 @@ color by the simulation file name.}
   \link{colorRampPalette}.}}}
 
 \item{graph_title}{title to use on the plots}
-
-\item{demog_parameters}{demographic parameters to include. We're starting
-with a limited set: "Age", "Weight_kg" ("Weight" is also fine), "Height_cm"
-("Height" is fine), "Weight vs Height", "Height vs Age", "Weight vs Age",
-"HSA_gL" ("HSA" is fine), "AGP_gL" ("AGP" is fine), "Sex", "Sex vs Age",
-"BMI_kgm2" ("BMI" is fine), and "RenalFunction". If you want only a subset
-of those, list them in a character vector, e.g., \code{demog_parameters = c("Age",
-"Height_cm", "Weight_kg")}. Plots will be in the order listed.}
 
 \item{alpha}{how transparent to make the points, with 0 being completely
 transparent and invisible so I don't know why you'd want that but, hey, you

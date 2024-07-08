@@ -15,12 +15,18 @@
 #' @param overwrite TRUE or FALSE for whether to overwrite any existing data
 #'
 #' @return a data.frame of demographic data for simulated subjects. Columns
-#'   included: File, Trial, Individual, Population, Sex, Age, Weight_kg,
-#'   Height_cm, BSA_m2, BrainWt_g, KidneyWt_g, LiverWt_g, BMI_kgm2, CardiacOut,
-#'   Haematocrit, HSA_gL, AGP_gL, Other_uM, Creatinine_umolL, GFR_mLminm2,
-#'   RenalFunction, AllometricScalar, SimDuration, GFR_mLmin, ObsFile,
-#'   SerumCreatinine_umolL, PhenotypeCYP2D6, and Simulated (TRUE for simulated
-#'   data)
+#'   included: File (simulation results file), Trial, Individual, Population,
+#'   Sex (M or F), Age (years), Weight_kg (weight in kg), Height_cm (height in
+#'   cm), BSA_m2 (body surface area in meters squared), BrainWt_g (brain weight
+#'   in g), KidneyWt_g (kidney weight in g), LiverWt_g (liver weight in g),
+#'   BMI_kgm2 (body mass index in kg/meter squared), CardiacOut (cardiac output
+#'   in L/h), Haematocrit (percent), HSA_gL (human serum albumin in g/L), AGP_gL
+#'   (alpha-1-acid glycoprotein in g/L), Other_uM (user-defined value in uM),
+#'   Creatinine_umolL (creatinine in umol/L), GFR_mLminm2 (glomerular filtration
+#'   rate in mL/min/m squared of body surface area), RenalFunction (the GFR
+#'   divided by the reference GFR, which is 130 mL/min/m2 for male subjects and
+#'   120 mL/min/m2 for female subjects), AllometricScalar (allometric scalar
+#'   used), and Simulated (TRUE for simulated data).
 #' @export
 #'
 #' @examples
@@ -69,7 +75,7 @@ extractDemog <- function(sim_data_files = NA,
       demog_dataframe <- "none"
    }
    
-   # Checking for existing conc-time data
+   # Checking for existing demographic data
    if(exists(deparse(substitute(demog_dataframe))) && 
       "logical" %in% class(demog_dataframe) == FALSE &&
       "data.frame" %in% class(demog_dataframe) && 
@@ -182,7 +188,7 @@ extractDemog <- function(sim_data_files = NA,
       
       suppressWarnings(
          Demog[[ff]] <- Demog[[ff]] %>% 
-            select(-SexCode) %>% 
+            select(-SexCode, -SimDuration) %>% 
             mutate(across(.cols = any_of(setdiff(ColNames, "Sex")), 
                           .fns = as.numeric), 
                    File = ff, 

@@ -25,12 +25,18 @@ some calculations, those files will be skipped.}
 }
 \value{
 a data.frame of demographic data for simulated subjects. Columns
-  included: File, Trial, Individual, Population, Sex, Age, Weight_kg,
-  Height_cm, BSA_m2, BrainWt_g, KidneyWt_g, LiverWt_g, BMI_kgm2, CardiacOut,
-  Haematocrit, HSA_gL, AGP_gL, Other_uM, Creatinine_umolL, GFR_mLminm2,
-  RenalFunction, AllometricScalar, SimDuration, GFR_mLmin, ObsFile,
-  SerumCreatinine_umolL, PhenotypeCYP2D6, and Simulated (TRUE for simulated
-  data)
+  included: File (simulation results file), Trial, Individual, Population,
+  Sex (M or F), Age (years), Weight_kg (weight in kg), Height_cm (height in
+  cm), BSA_m2 (body surface area in meters squared), BrainWt_g (brain weight
+  in g), KidneyWt_g (kidney weight in g), LiverWt_g (liver weight in g),
+  BMI_kgm2 (body mass index in kg/meter squared), CardiacOut (cardiac output
+  in L/h), Haematocrit (percent), HSA_gL (human serum albumin in g/L), AGP_gL
+  (alpha-1-acid glycoprotein in g/L), Other_uM (user-defined value in uM),
+  Creatinine_umolL (creatinine in umol/L), GFR_mLminm2 (glomerular filtration
+  rate in mL/min/m squared of body surface area), RenalFunction (the GFR
+  divided by the reference GFR, which is 130 mL/min/m2 for male subjects and
+  120 mL/min/m2 for female subjects), AllometricScalar (allometric scalar
+  used), and Simulated (TRUE for simulated data).
 }
 \description{
 Extract simulated demographic data from the "Demographic Data" tab of a
