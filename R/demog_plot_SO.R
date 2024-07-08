@@ -1,5 +1,5 @@
 #' Make a set of plots showing the demographics used in a set of simulations and
-#' optionally compare them to observed demographics. UNDER CONSTRUCTION. 
+#' optionally compare them to observed demographics. UNDER CONSTRUCTION.
 #'
 #' @param demog_dataframe the output from running \code{\link{extractDemog}}.
 #'   Optionally (and we recommend) with added observed demographic data, perhaps
@@ -36,23 +36,23 @@
 #'
 #' @examples
 #' # none yet
-demog_plot <- function(demog_dataframe, 
-                       sim_data_file = NA, 
-                       graph_title = "Demographics", 
-                       variables = NA, 
-                       obs_alpha = 0.8, 
-                       sim_alpha = 0.4, 
-                       ncol = NULL, 
-                       nrow = NULL, 
-                       facet_by_sex = FALSE, 
-                       border_facets = TRUE, 
-                       graph_labels = TRUE){
+demog_plot_SO <- function(demog_dataframe, 
+                          sim_data_file = NA, 
+                          graph_title = "Demographics", 
+                          variables = NA, 
+                          obs_alpha = 0.8, 
+                          sim_alpha = 0.4, 
+                          ncol = NULL, 
+                          nrow = NULL, 
+                          facet_by_sex = FALSE, 
+                          border_facets = TRUE, 
+                          graph_labels = TRUE){
    
    # Error catching ----------------------------------------------------------
    
    # FIXME: !!!! NOTE TO SELF: This needs some tidying. It replicates needlessly
-   # some of the stuff I have set up in demog_plot_sim. Really, I shoudl change
-   # this to just use demog_plot_sim with some modification rather than having
+   # some of the stuff I have set up in demog_plot_SO_sim. Really, I shoudl change
+   # this to just use demog_plot_SO_sim with some modification rather than having
    # this be a separate function.
    
    
