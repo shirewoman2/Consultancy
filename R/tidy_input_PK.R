@@ -103,7 +103,7 @@ tidy_input_PK <- function(PKparameters,
          
          PKparameters <- switch(
             str_extract(PKparameters, "csv|xlsx"), 
-            "csv" = read.csv(PKparameters, na.strings = "NA"), 
+            "csv" = read.csv(PKparameters, na.strings = c("NA", "")), 
             "xlsx" = tryCatch(
                openxlsx::read.xlsx(PKparameters, 
                                    sheet = "PKparameters"), 
@@ -827,7 +827,8 @@ tidy_input_PK <- function(PKparameters,
       
    } else {
       PKparameters <- PKparameters %>% 
-         mutate(UserInterval = complete.cases(Sheet)) %>% 
+         mutate(UserInterval = complete.cases(Sheet) & 
+                   Sheet != "") %>% 
          left_join(AllPKParameters %>% 
                       select(PKparameter, AppliesToSingleDose, 
                              AppliesOnlyWhenPerpPresent, UserInterval) %>% 
@@ -879,7 +880,7 @@ tidy_input_PK <- function(PKparameters,
    # should be a PKparameter w/the dose number or it should be something that
    # applies to the entire simulation.
    PKparameters <- PKparameters %>% 
-      mutate(PKparameter = case_when(complete.cases(Sheet) ~ 
+      mutate(PKparameter = case_when(complete.cases(Sheet) & Sheet != "" ~ 
                                         sub("_dose1|_last", "", PKparameter), 
                                      TRUE ~ PKparameter), 
              PKparameter = harmonize_PK_names(PKparameter), 
