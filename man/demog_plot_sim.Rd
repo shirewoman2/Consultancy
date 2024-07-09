@@ -27,9 +27,11 @@ demog_plot_sim(
 \item{demog_parameters}{demographic parameters to include. We're starting
   with a limited set: \itemize{\item{Individual parameters, which will be
   displayed as either a kernel density plot or a boxplot depending on your 
-  choice for \code{variability_display}: \itemize{\item{"Age" (age in years)}
+  choice for \code{variability_display}: \itemize{
+  
+  \item{"Age" (age in years)}
 
-  \item{"Weight_kg" (weight in kg; "Weight" is also fine)}
+  \item{"Weight_kg" (weight in kg; "Weight" is fine)}
 
   \item{"Height_cm" (height in cm; "Height" is fine)}
 
@@ -37,7 +39,7 @@ demog_plot_sim(
 
   \item{"AGP_gL" (alpha-1-acid glycoprotein in g/L; "AGP" is fine)}
 
-  \item{"Sex"}
+  \item{"Sex" (graph shows the percent female by population)}
 
   \item{"BMI_kgm2" ("BMI" is fine)}
 
@@ -47,7 +49,9 @@ demog_plot_sim(
   Simcyp Simulator)}}}
 
   \itemize{Comparisons of two parameters, which will create a scatter
-  plot: \itemize{\item{"Weight vs Height"}
+  plot: \itemize{
+  
+  \item{"Weight vs Height"}
 
   \item{"Height vs Age"}
 

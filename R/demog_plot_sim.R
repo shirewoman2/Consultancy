@@ -7,9 +7,11 @@
 #' @param demog_parameters demographic parameters to include. We're starting
 #'   with a limited set: \itemize{\item{Individual parameters, which will be
 #'   displayed as either a kernel density plot or a boxplot depending on your 
-#'   choice for \code{variability_display}: \itemize{\item{"Age" (age in years)}
+#'   choice for \code{variability_display}: \itemize{
+#'   
+#'   \item{"Age" (age in years)}
 #'
-#'   \item{"Weight_kg" (weight in kg; "Weight" is also fine)}
+#'   \item{"Weight_kg" (weight in kg; "Weight" is fine)}
 #'
 #'   \item{"Height_cm" (height in cm; "Height" is fine)}
 #'
@@ -17,7 +19,7 @@
 #'
 #'   \item{"AGP_gL" (alpha-1-acid glycoprotein in g/L; "AGP" is fine)}
 #'
-#'   \item{"Sex"}
+#'   \item{"Sex" (graph shows the percent female by population)}
 #'
 #'   \item{"BMI_kgm2" ("BMI" is fine)}
 #'
@@ -27,7 +29,9 @@
 #'   Simcyp Simulator)}}}
 #'
 #'   \itemize{Comparisons of two parameters, which will create a scatter
-#'   plot: \itemize{\item{"Weight vs Height"}
+#'   plot: \itemize{
+#'   
+#'   \item{"Weight vs Height"}
 #'
 #'   \item{"Height vs Age"}
 #'
@@ -159,7 +163,7 @@ demog_plot_sim <- function(demog_dataframe,
          demog_dataframe$File <- "missing file name"
       }
       
-      demog_dataframe$colorby_column <- demog_dataframe$File
+      demog_dataframe$colorBy_column <- demog_dataframe$File
    } else {
       if(class(demog_dataframe %>% pull(!!colorBy_column)) == "numeric"){
          
@@ -268,6 +272,47 @@ demog_plot_sim <- function(demog_dataframe,
       }
    }
    
+   PossDemogParams <- data.frame(Parameter = c("Age", 
+                                               "AGP_gL",
+                                               "AllometricScalar", 
+                                               "BMI_kgm2", 
+                                               "BrainWt_g", 
+                                               "CardiacOut", 
+                                               "Creatinine_umolL", 
+                                               "GFR_mLminm2",
+                                               "Haematocrit", 
+                                               "Height_cm", 
+                                               "Height vs Age", 
+                                               "HSA_gL",
+                                               "KidneyWt_g", 
+                                               "LiverWt_g", 
+                                               "Weight_kg",
+                                               "Weight vs Age", 
+                                               "Weight vs Height",
+                                               "Sex", 
+                                               "Sex vs Age", 
+                                               "RenalFunction"), 
+                                 Label = c("Age (years)", 
+                                           "AGP (g/L)", 
+                                           "allometric scalar", 
+                                           "BMI (kg/m2)", 
+                                           "Brain weight (g)", 
+                                           "Cardiac output (L/h)", 
+                                           "Creatinine (uM)", 
+                                           "Glomerular filtration rate\n(mL/min/m2 body surface area)", 
+                                           "Haematocrit (%)", 
+                                           "Height (cm)", 
+                                           NA, 
+                                           "Human serum albumin (g/L)", 
+                                           "Kidney weight (g)", 
+                                           "Liver weight (g)", 
+                                           "Weight (kg)", 
+                                           NA,
+                                           NA, 
+                                           "Percent female", 
+                                           NA, 
+                                           "renalfunction" = "Renal function"))
+   
    
    # Returning to error catching ---------------------------------------------
    
@@ -275,7 +320,8 @@ demog_plot_sim <- function(demog_dataframe,
    demog_parameters <- tolower(gsub("\\.", "", as.character(demog_parameters)))
    names(demog_dataframe) <- tolower(names(demog_dataframe))
    # Renaming colorBy_column for ease of coding since I'm lifting some of the
-   # code from other functions
+   # code from other functions. This is just fixing the case since I just made
+   # everything lower.
    demog_dataframe <- demog_dataframe %>% rename(colorBy_column = colorby_column)
    
    demog_parameters <- case_match(demog_parameters, 
@@ -288,21 +334,11 @@ demog_plot_sim <- function(demog_dataframe,
                                   "hsa" ~ "hsa_gl",
                                   "agp" ~ "agp_gl",
                                   "bmi" ~ "bmi_kgm2",
+                                  "gfr" ~ "gfr_mlminm2", 
                                   .default = demog_parameters)
    
    BadVar <- setdiff(demog_parameters, 
-                     tolower(c("Age", 
-                               "AGP_gL", 
-                               "BMI_kgm2", 
-                               "Height_cm", 
-                               "Height vs Age", 
-                               "HSA_gL",
-                               "Weight_kg",
-                               "Weight vs Age", 
-                               "Weight vs Height",
-                               "Sex", 
-                               "Sex vs Age", 
-                               "RenalFunction")))
+                     tolower(PossDemogParams$Parameter))
    
    if(length(BadVar) > 0 && any(complete.cases(BadVar))){
       warning(paste0("The demographic parameters ", 
@@ -317,21 +353,13 @@ demog_plot_sim <- function(demog_dataframe,
       demog_dataframe$Sex <- "unknown"
    }
    
-   DemogLabs <- c("age" = "Age (years)", 
-                  "weight_kg" = "Weight (kg)", 
-                  "height_cm" = "Height (cm)", 
-                  "hsa_gl" = "HSA (g/L)", 
-                  "agp_gl" = "AGP (g/L)", 
-                  "sex" = "Sex", 
-                  "bmi_kgm2" = "BMI (kg/m2)", 
-                  "renalfunction" = "Renal function")
+   DemogLabs <- PossDemogParams$Label
+   names(DemogLabs) <- tolower(PossDemogParams$Parameter)
    
    if(all(is.na(demog_parameters))){
-      Graphs <- tolower(c("Age", "Weight_kg", "Height_cm", "Weight vs Height",
-                          "Height vs Age", "Weight vs Age", "HSA_gL",
-                          "AGP_gL", "Sex", "Sex vs Age", "BMI_kgm2", "RenalFunction"))
+      Graphs <- tolower(PossDemogParams$Parameter)
    } else {
-      Graphs <- demog_parameters
+      Graphs <- tolower(demog_parameters)
    }
    
    
