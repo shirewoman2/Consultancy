@@ -264,7 +264,7 @@ so_graph <- function(PKtable,
                      boundary_color_set_Guest = "red black", 
                      boundary_line_types = "default",
                      boundary_line_types_Guest = "default",
-                     boundary_line_width = 0.7, 
+                     boundary_line_width = 0.3, 
                      point_color_column, 
                      point_color_set = "default",
                      legend_label_point_color = NA, 
@@ -668,9 +668,12 @@ so_graph <- function(PKtable,
    
    # Will need to figure out what PK parameters are and will need deprettified
    # names when reshaping and organizing data here and lower in function. 
-   PKCols <- data.frame(Orig = names(PKtable)) %>% 
-      mutate(Pretty = prettify_column_names(Orig), 
-             Ugly = prettify_column_names(Orig, pretty_or_ugly_cols = "ugly"))
+   PKCols <- data.frame(ColName = names(PKtable)) %>% 
+      mutate(Pretty = prettify_column_names(ColName), 
+             Ugly = prettify_column_names(ColName, pretty_or_ugly_cols = "ugly")) %>% 
+      left_join(prettify_column_names(names(PKtable), return_which_are_PK = TRUE), 
+                by = "ColName") %>% 
+      rename(Orig = ColName)
    
    # Find all the parameters that were for a user-defined AUC interval and
    # adjust those.
@@ -704,11 +707,9 @@ so_graph <- function(PKtable,
    }
    
    PKCols <- PKCols %>% filter(!str_detect(Orig, " for interval"))
-   PKCols$IsPK <- PKCols$Ugly %in% c(AllPKParameters$PKparameter, 
-                                     AllPKParameters$PKparameter_nodosenum)
    
    if(any(is.na(PKparameters))){
-      PKparameters <- PKCols$Ugly[PKCols$IsPK]
+      PKparameters <- PKCols$Ugly[PKCols$IsPKParam]
    }
    
    # Arranging and tidying input data. First, de-prettifying column names.
@@ -729,9 +730,11 @@ so_graph <- function(PKtable,
       PKCols$Ugly <- sub("_dose1|_last", "", PKCols$Ugly)
    }
    
-   # Removing additional columns since they mess up pivoting. 
-   SO <- SO[, PKCols %>% filter(IsPK == FALSE | Ugly %in% PKparameters) %>% 
-               pull(Ugly)]
+   # Removing additional columns since they mess up pivoting.
+   SO <- SO %>% 
+      select(Statistic, File, any_of(c(PKparameters, 
+                                       as_label(point_color_column), 
+                                       as_label(point_shape_column))))
    
    suppressWarnings(
       SO <- SO %>% 
