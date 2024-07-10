@@ -365,7 +365,20 @@ release_profile_plot <- function(existing_exp_details,
       existing_exp_details <- filter_sims(which_object = existing_exp_details, 
                                           which_sims = sims_to_include,
                                           include_or_omit = "include")
+      
+      # existing_exp_details should now only have the sims they requested.
+      # Noting if any sims are missing.
+      MissingSims <- setdiff(sims_to_include, 
+                             existing_exp_details$MainDetails$File)
+      if(length(MissingSims) > 0){
+         warning(paste0("The following simulation files were not found in the ReleaseProfiles data for existing_exp_details:\n", 
+                        str_c(MissingSims, collapse = "\n"), "They will be ignored.\n"), 
+                 call. = FALSE)
+      }
+   } else {
+      sims_to_include <- unique(existing_exp_details$ReleaseProfiles$File)
    }
+   
    
    if(all(is.na(compoundsToExtract))){
       compoundsToExtract <- AllCompounds$CompoundID
@@ -405,6 +418,12 @@ release_profile_plot <- function(existing_exp_details,
                            include_or_omit = "include")
       
       for(cmpd in compoundsToExtract){
+         
+         # Checking on whether compound was included in sim
+         if(as.logical(is.na(Deets$MainDetails[
+            AllCompounds$DetailNames[AllCompounds$CompoundID == cmpd]]))){
+            next
+         }
          
          Suffix <- AllCompounds$Suffix[AllCompounds$CompoundID == cmpd]
          
