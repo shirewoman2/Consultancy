@@ -561,7 +561,7 @@ extractConcTime <- function(sim_data_file,
                                       returnAggregateOrIndiv = c("aggregate", "individual")))
          }
          
-         # Adding trial means. 
+         # Adding trial means 
          suppressMessages(
             sim_data_trial <- sim_data[[cmpd]][[ss]] %>%
                filter(Trial %in% c("mean", "geomean", "per5", "per95", 
@@ -588,6 +588,28 @@ extractConcTime <- function(sim_data_file,
          
          sim_data[[cmpd]][[ss]] <- bind_rows(sim_data[[cmpd]][[ss]], 
                                              sim_data_trial)
+         
+         # Adding geometric means if they're not already # present. Adding b/c
+         # the Simulator doesn't output that in some cases.
+         if("geomean" %in% sim_data[[cmpd]][[ss]]$Trial == FALSE){
+            suppressMessages(
+               sim_data_geomean <- sim_data[[cmpd]][[ss]] %>%
+                  filter(Trial %in% c("mean", "geomean", "per5", "per95", 
+                                      "per10", "per90", "median") == FALSE) %>%
+                  group_by(across(any_of(c("Compound", "CompoundID", "Tissue",
+                                           "Inhibitor", "Simulated", 
+                                           "Time", "Time_orig", "subsection_ADAM",
+                                           "Time_units", "Conc_units")))) %>%
+                  summarize(Conc = gm_mean(Conc, na.rm = T)) %>%
+                  ungroup() %>%
+                  mutate(Trial = "geomean", 
+                         Individual = NA)
+            )
+            
+            sim_data[[cmpd]][[ss]] <- bind_rows(sim_data[[cmpd]][[ss]], 
+                                                sim_data_geomean)
+            
+         }
          
          rm(sim_data_trial)
          
