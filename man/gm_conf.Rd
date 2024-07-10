@@ -6,7 +6,7 @@
 \usage{
 gm_conf(
   x,
-  CI = 0.95,
+  CI = 0.9,
   na.rm = TRUE,
   zero.propagate = FALSE,
   distribution_type = "t"
@@ -15,7 +15,7 @@ gm_conf(
 \arguments{
 \item{x}{A vector of numbers}
 
-\item{CI}{The confidence interval desired; default is 95%. Enter this value
+\item{CI}{The confidence interval desired; default is 90%. Enter this value
 as a decimal, e.g., 0.95.}
 
 \item{na.rm}{Should NA values be removed? (logical)}

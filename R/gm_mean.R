@@ -169,7 +169,7 @@ gm_CV <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 #' distributed.
 #'
 #' @param x A vector of numbers
-#' @param CI The confidence interval desired; default is 95%. Enter this
+#' @param CI The confidence interval desired; default is 90%. Enter this
 #'   value as a decimal, e.g., 0.95.
 #' @param na.rm Should NA values be removed? (logical)
 #' @param distribution_type use a "t" distribution (default) or a "Z"
@@ -184,7 +184,7 @@ gm_CV <- function(x, na.rm = TRUE, zero.propagate = FALSE) {
 #' @export
 
 confInt <- function(x, 
-                    CI = 0.95, 
+                    CI = 0.9, 
                     na.rm = TRUE, 
                     distribution_type = "t"){
    
@@ -231,7 +231,7 @@ confInt <- function(x,
 #' distributed.
 #'
 #' @param x A vector of numbers
-#' @param CI The confidence interval desired; default is 95%. Enter this value
+#' @param CI The confidence interval desired; default is 90%. Enter this value
 #'   as a decimal, e.g., 0.95.
 #' @param na.rm Should NA values be removed? (logical)
 #' @param zero.propagate Should zeroes be propagated? (logical)
@@ -262,7 +262,7 @@ confInt <- function(x,
 #' @export
 
 gm_conf <- function(x, 
-                    CI = 0.95, 
+                    CI = 0.9, 
                     na.rm = TRUE, 
                     zero.propagate = FALSE, 
                     distribution_type = "t") {
