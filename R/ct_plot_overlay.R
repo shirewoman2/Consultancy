@@ -740,6 +740,12 @@ ct_plot_overlay <- function(ct_dataframe,
                                                   "cumulative dissolution")) &
       EnzPlot == FALSE
    
+   AdvBrainModel <- "subsection_ADAM" %in% names(ct_dataframe) && 
+      any(ct_dataframe$Tissue == "brain") &
+      any(ct_dataframe$subsection_ADAM %in% 
+             c("intracranial", "brain ICF", "brain ISF", "spinal CSF", "cranial CSF", 
+               "total brain", "Kp,uu,brain", "Kp,uu,ICF", "Kp,uu,ISF"))
+   
    # Noting user's original preferences for a few things
    obs_line_trans_user <- obs_line_trans
    obs_fill_trans_user <- obs_fill_trans
@@ -1645,7 +1651,7 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    YStuff <- ct_y_axis(Data = Ylim_data, 
-                       ADAM = ADAM, 
+                       ADAMorAdvBrain = any(ADAM, AdvBrainModel),
                        subsection_ADAM = switch(as.character(EnzPlot), 
                                                 "TRUE" = NA, 
                                                 "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
