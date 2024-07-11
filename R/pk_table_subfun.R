@@ -558,10 +558,18 @@ pk_table_subfun <- function(sim_data_file,
                    Dose_inhib = ifelse("Dose_inhib" %in% names(Deets),
                                        Deets$Dose_inhib, NA), 
                    Dose_inhib2 = ifelse("Dose_inhib2" %in% names(Deets),
-                                        Deets$Dose_inhib2, NA)) %>% 
+                                        Deets$Dose_inhib2, NA), 
+                   Substrate = Deets$Substrate, 
+                   PrimaryMetabolite1 = Deets$PrimaryMetabolite1, 
+                   PrimaryMetabolite2 = Deets$PrimaryMetabolite2, 
+                   SecondaryMetabolite = Deets$SecondaryMetabolite, 
+                   Inhibitor1 = Deets$Inhibitor1, 
+                   Inhibitor2 = Deets$Inhibitor2, 
+                   Inhibitor1Metabolite = Deets$Inhibitor1Metabolite) %>% 
             pivot_wider(names_from = Stat, values_from = Value) %>% 
             select(File, Victim, Dose_sub, Perpetrator, Dose_inhib, Dose_inhib2,
-                   everything()) 
+                   everything()) %>% 
+            select(-CompoundID)
          
          # Need to deal with possible character data for custom dosing before
          # row binding for FD
