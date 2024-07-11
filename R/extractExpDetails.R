@@ -659,6 +659,8 @@ extractExpDetails <- function(sim_data_file,
          
          for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
             
+            Suffix <- AllCompounds$Suffix[AllCompounds$CompoundID == i]
+            
             if(any(str_detect(t(InputTab[, as.numeric(ColLocations[i])]), "Release Mean"),
                    na.rm = TRUE)){
                
