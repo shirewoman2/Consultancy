@@ -273,7 +273,10 @@ substrate or a substrate metabolite. If set to TRUE, this will return a
 list that includes data formatted for use with the function
 \code{\link{forest_plot}}. Since the \code{\link{forest_plot}} function
 only works with simulations with perpetrators (at least, for now), this
-will only work for simulations that included a perpetrator.}
+will only work for simulations that included a perpetrator. All PK
+parameters in any forest data will be for the victim compound listed. The
+data.frame also includes columns for all the compounds that were included
+for the simulation, but all PK are for the victim compound listed.}
 
 \item{checkDataSource}{TRUE or FALSE (default) for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the

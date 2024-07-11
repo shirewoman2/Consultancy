@@ -355,16 +355,31 @@
 #' Example output from \code{extractForestData}
 #'
 #' Example output from running \code{extractForestData} on some simulations with
-#' bufuralol as the substrate and then 4 different perpetrators.
+#' bufuralol as the substrate and then 4 different perpetrators. All PK
+#' parameters in any forest data will be for the victim compound listed. The
+#' data.frame also includes columns for all the compounds that were included for
+#' the simulation, but all PK are for the victim compound listed.
 #'
-#' @format a data.frame 
+#' @format a data.frame
 "BufForestData"
+
+
+#' Example output from \code{extractForestData}
+#'
+#' Example output from running \code{extractForestData} on some simulations with
+#' bufuralol dosed at 20 mg as the substrate and then 4 different perpetrators.
+#' All PK parameters in any forest data will be for the victim compound listed.
+#' The data.frame also includes columns for all the compounds that were included
+#' for the simulation, but all PK are for the victim compound listed.
+#'
+#' @format a data.frame
+"BufForestData_20mg"
 
 
 #' Example observed PK data for working with \code{forest_plot}
 #'
 #' Fake observed bufuralol PK data for showing examples with the forest_plot
-#' function
+#' function. 
 #'
 #' @format a data.frame 
 "BufObsForestData"

@@ -12,6 +12,6 @@ BufObsForestData
 }
 \description{
 Fake observed bufuralol PK data for showing examples with the forest_plot
-function
+function.
 }
 \keyword{datasets}

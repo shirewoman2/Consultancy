@@ -12,6 +12,9 @@ BufForestData
 }
 \description{
 Example output from running \code{extractForestData} on some simulations with
-bufuralol as the substrate and then 4 different perpetrators.
+bufuralol as the substrate and then 4 different perpetrators. All PK
+parameters in any forest data will be for the victim compound listed. The
+data.frame also includes columns for all the compounds that were included for
+the simulation, but all PK are for the victim compound listed.
 }
 \keyword{datasets}
