@@ -47,9 +47,9 @@ detect_file_timestamp <- function(sim_data_files = NA,
    if(length(sim_data_files) == 1 &&
       (is.na(sim_data_files) | sim_data_files == "recursive")){
       Regex <- ifelse(is.na(regex_to_match), 
-                      "xlsx$",
-                      paste0(regex_to_match, ".*\\.xlsx$"))
-      sim_data_files <- list.files(pattern = "xlsx$",
+                      "\\.xlsx$|\\.db$",
+                      paste0(regex_to_match, ".*\\.xlsx$|", regex_to_match, ".*\\.db$"))
+      sim_data_files <- list.files(pattern = "\\.xlsx$|\\.db$",
                                    recursive = (complete.cases(sim_data_files) &&
                                                    sim_data_files == "recursive"))
       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
