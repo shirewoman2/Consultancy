@@ -107,12 +107,12 @@ if(any(str_detect(CheckDoseInt$message, "mismatch")) &
       "***WARNING: There was a mismatch between the dosing interval and the AUC interval for the following files and compounds:***\n", 
       
       CheckDoseInt$interval[which(str_detect(CheckDoseInt$message, "mismatch")), ] %>% 
-      mutate(TimeLastInterval = ifelse(OneDoseIntRemaining == TRUE, 
-                                       0, SimDuration - LastDoseTime)) %>% 
-      select(File, Sheet, CompoundID, DoseInt_X, UserIntervalRemaining, TimeLastInterval) %>% 
-      rename("Dosing interval" = DoseInt_X, 
-             "Last-dose interval (h)" = TimeLastInterval, 
-             "User-defined interval (h)" = UserIntervalRemaining) %>% 
+         mutate(TimeLastInterval = ifelse(OneDoseIntRemaining == TRUE, 
+                                          0, SimDuration - LastDoseTime)) %>% 
+         select(File, Sheet, CompoundID, DoseInt_X, UserIntervalRemaining, TimeLastInterval) %>% 
+         rename("Dosing interval" = DoseInt_X, 
+                "Last-dose interval (h)" = TimeLastInterval, 
+                "User-defined interval (h)" = UserIntervalRemaining) %>% 
          flextable::flextable() %>% 
          flextable::width(j = 1:2, width = 1.5) %>% 
          flextable::width(j = 3, width = 1), 
@@ -203,9 +203,9 @@ if(single_table == FALSE){
                                   PKparameters$Tissue))
    
    CheckDoseInt_list <- split(CheckDoseInt$interval, 
-                         f = list(CheckDoseInt$interval$File, 
-                                  CheckDoseInt$interval$CompoundID, 
-                                  CheckDoseInt$interval$Tissue))
+                              f = list(CheckDoseInt$interval$File, 
+                                       CheckDoseInt$interval$CompoundID, 
+                                       CheckDoseInt$interval$Tissue))
    
    MyPKResults <- MyPKResults[which(lapply(MyPKResults, nrow) > 0)]
    
@@ -214,10 +214,10 @@ if(single_table == FALSE){
       
       Heading <- paste0(
          str_to_title(unique(MyPKResults[[i]]$Tissue)), 
-                           " PK for the ", 
-                           unique(MyPKResults[[i]]$CompoundID), 
-                           " for the file '", 
-                           unique(MyPKResults[[i]]$File), "'")
+         " PK for the ", 
+         unique(MyPKResults[[i]]$CompoundID), 
+         " for the file '", 
+         unique(MyPKResults[[i]]$File), "'")
       
       Heading <- ifelse(FromCalcPKRatios, 
                         sub("for the file", "for the file pair", Heading), 
@@ -259,21 +259,21 @@ if(any(complete.cases(highlight_gmr_colors))){
 
 if(any(complete.cases(highlight_gmr_colors))){
    
-   highlight_gmr_colors <- set_boundary_colors(color_set = highlight_gmr_colors, 
-                       boundaries = c(1, 1.25, 2, 5), 
-                       break_type = "GMR")
+   highlight_gmr_colors_v <- set_boundary_colors(color_set = highlight_gmr_colors, 
+                                               boundaries = c(1, 1.25, 2, 5), 
+                                               break_type = "GMR")
    
-   tibble(`Interaction level` = names(highlight_gmr_colors)) %>% 
+   tibble(`Interaction level` = names(highlight_gmr_colors_v)) %>% 
       flextable::flextable() %>% 
       flextable::bold(part = "header") %>% 
       flextable::bg(i = 1, 
-                    bg = highlight_gmr_colors["negligible"]) %>% 
+                    bg = highlight_gmr_colors_v["negligible"]) %>% 
       flextable::bg(i = 2, 
-                    bg = highlight_gmr_colors["weak"]) %>% 
+                    bg = highlight_gmr_colors_v["weak"]) %>% 
       flextable::bg(i = 3, 
-                    bg = highlight_gmr_colors["moderate"]) %>% 
+                    bg = highlight_gmr_colors_v["moderate"]) %>% 
       flextable::bg(i = 4, 
-                    bg = highlight_gmr_colors["strong"]) %>% 
+                    bg = highlight_gmr_colors_v["strong"]) %>% 
       flextable::width(width = 1.5) %>% 
       flextable::align(align = "center", part = "all")
    
@@ -311,7 +311,7 @@ if(any(complete.cases(highlight_so_cutoffs))){
                            LowerA = NA, 
                            LowerB = 1/highlight_so_cutoffs[length(highlight_so_cutoffs)])) %>% 
       mutate(across(.fns = round_consultancy), 
-             Text = paste(UpperA, "to", UpperB, "fold or", LowerA, "to", LowerB, "fold"))
+             Text = paste(LowerA, "to", LowerB, "fold or", UpperA, "to", UpperB, "fold"))
    
    SOkey$Text[1] <- paste(SOkey$LowerA[1], "to", SOkey$UpperB[1], "fold")
    SOkey$Text[nrow(SOkey)] <- paste("<", SOkey$LowerB[nrow(SOkey)], 

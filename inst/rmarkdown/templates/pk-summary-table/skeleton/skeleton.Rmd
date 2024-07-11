@@ -181,7 +181,7 @@ if(any(complete.cases(highlight_so_cutoffs))){
                            LowerA = NA, 
                            LowerB = 1/highlight_so_cutoffs[length(highlight_so_cutoffs)])) %>% 
       mutate(across(.fns = round_consultancy), 
-             Text = paste(UpperA, "to", UpperB, "fold or", LowerA, "to", LowerB, "fold"))
+             Text = paste(LowerA, "to", LowerB, "fold or", UpperA, "to", UpperB, "fold"))
    
    SOkey$Text[1] <- paste(SOkey$LowerA[1], "to", SOkey$UpperB[1], "fold")
    SOkey$Text[nrow(SOkey)] <- paste("<", SOkey$LowerB[nrow(SOkey)], 

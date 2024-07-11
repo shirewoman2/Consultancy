@@ -11,17 +11,33 @@
 #'   
 #'   \item{"Age" (age in years)}
 #'
-#'   \item{"Weight_kg" (weight in kg; "Weight" is fine)}
+#'   \item{"AGP_gL" (alpha-1-acid glycoprotein in g/L; "AGP" is fine)}
+#'   
+#'   \item{"BMI_kgm2" ("BMI" is fine)}
+#'
+#'   \item{"BrainWt_g" (brain weight; "Brain" is fine)}
+#'
+#'   \item{"BSA_m2" (body surface area in m2; "BSA" is fine)}
+#'
+#'   \item{"CardiacOut" (cardiac output in L/h; "Cardiac" is fine)}
+#'
+#'   \item{"Creatinine_umolL" (creatinine in umol/L; "Creatinine" is fine)}
+#'
+#'   \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/m2; "GFR" is fine)}
+#'
+#'   \item{"Haematocrit" (haematocrit)}
 #'
 #'   \item{"Height_cm" (height in cm; "Height" is fine)}
 #'
 #'   \item{"HSA_gL" (human serum albumin in g/L; "HSA" is fine)}
 #'
-#'   \item{"AGP_gL" (alpha-1-acid glycoprotein in g/L; "AGP" is fine)}
+#'   \item{"KidneyWt_g" (kidney weight; "Kidney" is fine)}
+#'
+#'   \item{"LiverWt_g" (liver weight; "Liver" is fine)}
 #'
 #'   \item{"Sex" (graph shows the percent female by population)}
 #'
-#'   \item{"BMI_kgm2" ("BMI" is fine)}
+#'   \item{"Weight_kg" (weight in kg; "Weight" is fine)}
 #'
 #'   \item{"RenalFunction" (renal function as calculated by the GFR in 
 #'   mL/min/m squared body surface area divided by the reference GFR for that 
@@ -276,6 +292,7 @@ demog_plot_sim <- function(demog_dataframe,
                                                "AGP_gL",
                                                "AllometricScalar", 
                                                "BMI_kgm2", 
+                                               "BSA_m2", 
                                                "BrainWt_g", 
                                                "CardiacOut", 
                                                "Creatinine_umolL", 
@@ -296,6 +313,7 @@ demog_plot_sim <- function(demog_dataframe,
                                            "AGP (g/L)", 
                                            "allometric scalar", 
                                            "BMI (kg/m2)", 
+                                           "Body surface area (m2)", 
                                            "Brain weight (g)", 
                                            "Cardiac output (L/h)", 
                                            "Creatinine (uM)", 
@@ -334,6 +352,18 @@ demog_plot_sim <- function(demog_dataframe,
                                   "hsa" ~ "hsa_gl",
                                   "agp" ~ "agp_gl",
                                   "bmi" ~ "bmi_kgm2",
+                                  "bsa" ~ "bsa_m2", 
+                                  "brain" ~ "brainwt_g", 
+                                  "brainwt" ~ "brainwt_g", 
+                                  "cardiac" ~ "cardiacout", 
+                                  "creatinine" ~ "creatinine_umolL", 
+                                  "creatinine_uM"  ~ "creatinine_umolL", 
+                                  "gfr" ~ "gfr_mlminm2", 
+                                  "hematocrit" ~ "haematocrit", 
+                                  "kidney" ~ "kidneywt_g", 
+                                  "kidneywt" ~ "kidneywt_g", 
+                                  "liverwt" ~ "liverwt_g", 
+                                  "liver" ~ "liverwt_g", 
                                   "gfr" ~ "gfr_mlminm2", 
                                   .default = demog_parameters)
    
@@ -487,7 +517,7 @@ demog_plot_sim <- function(demog_dataframe,
       suppressWarnings(
          G <- ggplot(demog_dataframe, aes(y = MyVar, 
                                           x = colorBy_column,  fill = colorBy_column)) +
-            geom_boxplot(alpha = 0.5) +
+            geom_boxplot(alpha = 0.8) +
             ylab(DemogLabs[Var]) +
             xlab(NULL)
       )

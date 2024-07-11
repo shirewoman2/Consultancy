@@ -15,7 +15,7 @@ so_graph(
   boundary_color_set_Guest = "red black",
   boundary_line_types = "default",
   boundary_line_types_Guest = "default",
-  boundary_line_width = 0.7,
+  boundary_line_width = 0.3,
   point_color_column,
   point_color_set = "default",
   legend_label_point_color = NA,

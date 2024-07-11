@@ -31,17 +31,33 @@ demog_plot_sim(
   
   \item{"Age" (age in years)}
 
-  \item{"Weight_kg" (weight in kg; "Weight" is fine)}
+  \item{"AGP_gL" (alpha-1-acid glycoprotein in g/L; "AGP" is fine)}
+  
+  \item{"BMI_kgm2" ("BMI" is fine)}
+
+  \item{"BrainWt_g" (brain weight; "Brain" is fine)}
+
+  \item{"BSA_m2" (body surface area in m2; "BSA" is fine)}
+
+  \item{"CardiacOut" (cardiac output in L/h; "Cardiac" is fine)}
+
+  \item{"Creatinine_umolL" (creatinine in umol/L; "Creatinine" is fine)}
+
+  \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/m2; "GFR" is fine)}
+
+  \item{"Haematocrit" (haematocrit)}
 
   \item{"Height_cm" (height in cm; "Height" is fine)}
 
   \item{"HSA_gL" (human serum albumin in g/L; "HSA" is fine)}
 
-  \item{"AGP_gL" (alpha-1-acid glycoprotein in g/L; "AGP" is fine)}
+  \item{"KidneyWt_g" (kidney weight; "Kidney" is fine)}
+
+  \item{"LiverWt_g" (liver weight; "Liver" is fine)}
 
   \item{"Sex" (graph shows the percent female by population)}
 
-  \item{"BMI_kgm2" ("BMI" is fine)}
+  \item{"Weight_kg" (weight in kg; "Weight" is fine)}
 
   \item{"RenalFunction" (renal function as calculated by the GFR in 
   mL/min/m squared body surface area divided by the reference GFR for that 
