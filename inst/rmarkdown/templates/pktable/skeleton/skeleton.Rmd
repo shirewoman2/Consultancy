@@ -259,21 +259,21 @@ if(any(complete.cases(highlight_gmr_colors))){
 
 if(any(complete.cases(highlight_gmr_colors))){
    
-   highlight_gmr_colors <- set_boundary_colors(color_set = highlight_gmr_colors, 
+   highlight_gmr_colors_v <- set_boundary_colors(color_set = highlight_gmr_colors, 
                                                boundaries = c(1, 1.25, 2, 5), 
                                                break_type = "GMR")
    
-   tibble(`Interaction level` = names(highlight_gmr_colors)) %>% 
+   tibble(`Interaction level` = names(highlight_gmr_colors_v)) %>% 
       flextable::flextable() %>% 
       flextable::bold(part = "header") %>% 
       flextable::bg(i = 1, 
-                    bg = highlight_gmr_colors["negligible"]) %>% 
+                    bg = highlight_gmr_colors_v["negligible"]) %>% 
       flextable::bg(i = 2, 
-                    bg = highlight_gmr_colors["weak"]) %>% 
+                    bg = highlight_gmr_colors_v["weak"]) %>% 
       flextable::bg(i = 3, 
-                    bg = highlight_gmr_colors["moderate"]) %>% 
+                    bg = highlight_gmr_colors_v["moderate"]) %>% 
       flextable::bg(i = 4, 
-                    bg = highlight_gmr_colors["strong"]) %>% 
+                    bg = highlight_gmr_colors_v["strong"]) %>% 
       flextable::width(width = 1.5) %>% 
       flextable::align(align = "center", part = "all")
    
