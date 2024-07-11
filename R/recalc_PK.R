@@ -1057,7 +1057,11 @@ recalc_PK <- function(ct_dataframe,
                # they're integrating what they *think* they're integrating.
                ElimFitGraphs[[j]] <- 
                   ct_plot(CTsubset[[i]][[j]] %>% 
-                             mutate(Trial = "mean"), 
+                             # NB: This is hacking the ct_plot function to work
+                             # here. It doesn't actually matter which trial it
+                             # is or whether the data were simulated. We just
+                             # want to see a line here.
+                             mutate(Trial = "mean", Simulated = TRUE), 
                           figure_type = "means only", 
                           linear_or_log = "linear", 
                           graph_title = sub("observed ", "observed\n", 
