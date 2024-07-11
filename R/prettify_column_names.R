@@ -163,12 +163,6 @@ prettify_column_names <- function(PKtable,
                                          NeedsPrettifying == FALSE & IsPKParam == FALSE ~ ColNames3, 
                                          TRUE ~ NA))
    
-   # Returning which are PK if that's all user wanted
-   if(return_which_are_PK){
-      return(TableNames %>% select(ColNames1, IsPKParam) %>%
-                rename(ColName = ColNames1))
-   }
-   
    # Some columns may need prettifying and others may need uglifying. Need to
    # figure out what values to fill in for any NA values in either
    # PrettifiedNames or in PKparameter, so splitting table here.
@@ -202,6 +196,13 @@ prettify_column_names <- function(PKtable,
    TableNames <- TableNames %>% 
       mutate(FinalNames = case_when({pretty_or_ugly_cols} == "pretty" ~ PrettifiedNames, 
                                     {pretty_or_ugly_cols} == "ugly" ~ PKparameter))
+   
+   # Returning which are PK if that's all user wanted
+   if(return_which_are_PK){
+      return(TableNames %>% 
+                select(ColNames1, IsPKParam, PrettifiedNames, PKparameter) %>%
+                rename(ColName = ColNames1))
+   }
    
    # Making sure that we don't have duplicates for OrigOrder b/c that would mean
    # that final column names might be offset. An example of when this can
