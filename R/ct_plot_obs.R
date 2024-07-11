@@ -449,22 +449,16 @@ ct_plot_obs <- function(ct_dataframe,
       obs_line_trans <- 0
    } 
    
-   if("obs mean" %in% ct_dataframe$Trial == FALSE & 
+   if(any(c("obs mean", "obs geomean") %in% ct_dataframe$Trial) == FALSE & 
       mean_type != "none"){
       
       # For calculating means, grouping by everything except conc and columns
-      # that would be just for one individual. Also omitting DoseNum b/c people
-      # don't consistently include accurate and COMPLETE dosing information,
-      # which means that the graph will look disjointed b/c dosing at the same
-      # time will be listed for a different DoseNum. I'm not positive that this
-      # is the right course of action, though, b/c I wouldn't want people who
-      # missed a dose to be included in mean calculation. STILL THINKING ABOUT
-      # THIS.
+      # that would be just for one individual. 
       GroupingCols <- 
          setdiff(names(ct_dataframe), 
                  c(names(ct_dataframe)[
-                    str_detect(tolower(names(ct_dataframe)), "conc|dosenum")], 
-                   "Individual", "Conc", "Age", "Weight_kg", "Height_cm", "Sex", 
+                    str_detect(tolower(names(ct_dataframe)), "conc")], 
+                   "Individual", "Conc", "SD_SE", "Age", "Weight_kg", "Height_cm", "Sex", 
                    "SerumCreatinine_umolL", "HSA_gL", "Haematocrit",
                    "PhenotypeCYP2D6", "SmokingStatus"))
       # We do need Conc_units to be included, though. Adding that back in.
