@@ -700,7 +700,6 @@ extractExpDetails <- function(sim_data_file,
                Suffix <- AllCompounds$Suffix[AllCompounds$CompoundID == i]
                
                ReleaseProfs <- data.frame(
-                  CompoundID = i, 
                   CR_MR_input = Out[[paste0("CR_MR_Input", Suffix)]], 
                   Parameter = c("Fmax", "alpha", "beta", "lag"), 
                   Value = c(Out[[paste0("ReleaseProfile_Fmax", Suffix)]], 
@@ -710,7 +709,13 @@ extractExpDetails <- function(sim_data_file,
                   CV = c(Out[[paste0("ReleaseProfile_Fmax_CV", Suffix)]], 
                          Out[[paste0("ReleaseProfile_alpha_CV", Suffix)]], 
                          Out[[paste0("ReleaseProfile_beta_CV", Suffix)]], 
-                         Out[[paste0("ReleaseProfile_lag_CV", Suffix)]]))
+                         Out[[paste0("ReleaseProfile_lag_CV", Suffix)]])) %>% 
+                  mutate(CV = CV / 100, # Making this a fraction instead of a number up to 100
+                         File = sim_data_file, 
+                         CompoundID = i, 
+                         Compound = as.character(Out[AllCompounds$DetailNames[
+                            AllCompounds$CompoundID == i]])) %>% 
+                  select(File, CompoundID, Compound, CR_MR_input, Parameter, Value, CV)
                
             } else {
                ReleaseProfs <- NULL
