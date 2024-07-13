@@ -7,7 +7,8 @@
 #'
 #' @param MyPKResults only the PK table
 #' @param MyFile the specific sim_data_file in question
-#' @param MyCompoundID substrate, inhibitor 1, etc. for this specific table
+#' @param MyCompoundID substrate, inhibitor 1, etc. for this specific table. If
+#'   length > 1, then generic info will be used.
 #' @param prettify_compound_names pass through from parent function
 #' @param Deets experimental details for only the single sim_data_file in
 #'   question rather than for all possible files that may have been contained in
@@ -45,11 +46,13 @@ make_table_annotations <- function(MyPKResults, # only PK table
    # Main info ------------------------------------------------------------
    
    PKpulled <- prettify_column_names(MyPKResults, return_which_are_PK = TRUE)
-   PKpulled <- PKpulled$ColName[which(PKpulled$IsPKParam)]
+   PKpulled <- PKpulled$PKparameter[which(PKpulled$IsPKParam)]
    
-   Dose1included <- any(str_detect(names(PKpulled), "_dose1|Dose 1"))
-   LastDoseincluded <- any(str_detect(names(PKpulled), "_last|Last dose"))
-   Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
+   Dose1included <- any(str_detect(names(PKpulled), "_dose1|Dose 1")) |
+      str_detect(tolower(DosesIncluded), "dose( )?1")
+   LastDoseincluded <- any(str_detect(names(PKpulled), "_last|Last dose")) |
+      str_detect(tolower(DosesIncluded), "last")
+   Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O|Observed"))
    
    MeanType <- ifelse(MeanType == "arithmetic for most, geometric for ratios", 
                       "arithmetic (except for DDI ratios, which are geometric)", 
@@ -57,22 +60,43 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    if(all(is.na(MyFile))){
       if("File" %in% names(MyPKResults)){
+         MyFileLen <- length(sort(unique(MyPKResults$File)))
          MyFile <- str_comma(sort(unique(MyPKResults$File)))
       } else {
+         MyFileLen <- 1
          MyFile <- "***SIMULATION FILE NAME***"
       }
-   } 
+   } else {
+      MyFileLen <- length(MyFile)
+      MyFile <- str_comma(unique(MyFile))
+   }
    
    if(all(is.na(MyCompoundID))){
       if("CompoundID" %in% names(MyPKResults)){
+         MyCompoundIDLen <- length(sort(unique(MyPKResults$CompoundID)))
          MyCompoundID <- str_comma(sort(unique(MyPKResults$CompoundID)))
+      } else {
+         # Assume it's the substrate
+         MyCompoundIDLen <- 1
+         MyCompoundID <- "substrate"
       }
+   } else {
+      MyCompoundIDLen <- length(MyCompoundID)
+      MyCompoundID <- str_comma(MyCompoundID)
    }
    
    if(all(is.na(tissue))){
       if("Tissue" %in% names(MyPKResults)){
+         MyTissueLen <- length(sort(unique(MyPKResults$Tissue)))
          tissue <- str_comma(sort(unique(MyPKResults$Tissue)))
+      } else {
+         # Assume it's plasma
+         MyTissueLen <- 1
+         tissue <- "plasma"
       }
+   } else {
+      MyTissueLen <- length(tissue)
+      tissue <- str_comma(tissue)
    }
    
    # Caption ---------------------------------------------------------------
@@ -102,14 +126,15 @@ make_table_annotations <- function(MyPKResults, # only PK table
    # so that's why I'm returning things here rather than stopping.
    if("logical" %in% class(Deets) | 
       ("data.frame" %in% class(Deets) && nrow(Deets) == 0) |
-      length(sort(unique(MyPKResults$CompoundID))) > 1 |
-      length(sort(unique(MyPKResults$File))) == 1){
+      any(c(MyTissueLen, MyCompoundIDLen, MyFileLen) > 1)){
       return(list(TableHeading = paste0("Simulated ",
                                         ifelse(Observedincluded, "and observed ", ""),
-                                        "PK data"),
+                                        tissue, " PK data"),
                   TableCaption = Caption))
       
    }
+   
+   # From here down, there is only 1 value for MyCompoundID, tissue, and MyFile.
    
    Deets <- harmonize_details(Deets)$MainDetails %>% 
       filter(File == MyFile)
@@ -177,22 +202,25 @@ make_table_annotations <- function(MyPKResults, # only PK table
                            "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
    }
    
-   if("DoseInt_sub" %in% names(Deets)){
-      DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
-                             "12" = "BID", 
-                             "24" = "QD", 
-                             "8" = "three times per day", 
-                             "6" = "four times per day", 
-                             "48" = "every other day", 
-                             "NA" = "single dose")
+   MyDoseInt <- paste0("DoseInt", AllCompounds$Suffix[
+      AllCompounds$CompoundID == MyCompoundID])
+   
+   if(MyDoseInt %in% names(Deets)){
+      MyDoseFreq <- switch(as.character(Deets[MyDoseInt]),
+                           "12" = "BID", 
+                           "24" = "QD", 
+                           "8" = "three times per day", 
+                           "6" = "four times per day", 
+                           "48" = "every other day", 
+                           "NA" = "single dose")
    } else {
-      DoseFreq_sub <- "single dose"
+      MyDoseFreq <- "single dose"
    }
    
-   DoseFreq_sub <- ifelse(is.null(DoseFreq_sub), 
-                          # paste("Q", DoseFreq_sub, "H"), 
-                          "**CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY**",
-                          DoseFreq_sub)
+   MyDoseFreq <- ifelse(is.null(MyDoseFreq), 
+                        # paste("Q", MyDoseFreq, "H"), 
+                        "**CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY**",
+                        MyDoseFreq)
    
    ## Info on any perpetrators included ---------------------------------
    
@@ -232,6 +260,33 @@ make_table_annotations <- function(MyPKResults, # only PK table
          Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
       NumDaysInhib <- ifelse(is.na(NumDaysInhib), "**CUSTOM DOSING - FILL IN MANUALLY**",
                              NumDaysInhib)
+      
+      # FIXME - Started to set this up for when there are 2 inhibitors but
+      # haven't finished b/c not applicable to my current situation
+      if(complete.cases(Deets$Inhibitor2)){
+         if("DoseInt_inhib2" %in% names(Deets)){
+            DoseFreq_inhib2 <- switch(as.character(Deets$DoseInt_inhib2),
+                                      "12" = "BID", 
+                                      "24" = "QD", 
+                                      "8" = "three times per day", 
+                                      "6" = "four times per day", 
+                                      "48" = "every other day", 
+                                      "NA" = "single dose")
+         } else {
+            DoseFreq_inhib2 <- "single dose"
+         }
+         
+         DoseFreq_inhib2 <- ifelse(is.null(DoseFreq_inhib2), 
+                                   # paste("Q", DoseFreq_inhib2, "H"), 
+                                   "**CUSTOM DOSING OR ATYPICAL DOSING INTERVAL - FILL IN MANUALLY**",
+                                   DoseFreq_inhib2)
+         
+         NumDaysInhib2 <- suppressWarnings(
+            Deets$NumDoses_inhib2*as.numeric(Deets$DoseInt_inhib2)/24)
+         NumDaysInhib2 <- ifelse(is.na(NumDaysInhib2), "**CUSTOM DOSING - FILL IN MANUALLY**",
+                                 NumDaysInhib2)
+         
+      }
       
       DoseDay_sub <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
       LastDig <- as.numeric(str_sub(DoseDay_sub, start = -1, end = -1))
@@ -273,36 +328,26 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                       paste("the first and/or multiple", MyDoseRoute, "doses"))
    )
    
-   if(length(sort(unique(MyPKResults$CompoundID))) == 1 & 
-      length(sort(unique(MyPKResults$File))) == 1){
-      
-      FigText3 <- ifelse(
-         MyPerpetrator != "none" & 
-            (MyCompoundID %in% c("inhibitor 1", "inhibitor 2",
-                                 "inhibitor 1 metabolite") == FALSE |
-                length(setdiff(names(AllPerpetrators), MyCompoundID)) > 0),
-         paste(" with or without", 
-               sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
-               "mg",
-               MyPerpetrator, DoseFreq_inhib),
-         "")
-      
-      Heading <- paste0("Simulated ",
-                        ifelse(Observedincluded, "and observed ", ""),
-                        MeanType, " mean ", 
-                        str_comma(tissue), " PK parameters for ",
-                        MyCompound, " after ", FigText2, " of ",
-                        paste(sub("custom dosing", "**CUSTOM DOSING**", Deets[[MyDose]]), 
-                              "mg", MyDosedCompound), 
-                        FigText3, " in ", 
-                        tidyPop(Deets$Population)$Population, ".")
-   } else {
-      
-      Heading <- paste0("Simulated ",
-                        ifelse(Observedincluded, "and observed ", ""),
-                        MeanType, " mean PK parameters")
-      
-   }
+   FigText3 <- ifelse(
+      MyPerpetrator != "none" & 
+         (MyCompoundID %in% c("inhibitor 1", "inhibitor 2",
+                              "inhibitor 1 metabolite") == FALSE |
+             length(setdiff(names(AllPerpetrators), MyCompoundID)) > 0),
+      paste(" with or without", 
+            sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
+            "mg",
+            MyPerpetrator, DoseFreq_inhib),
+      "")
+   
+   Heading <- paste0("Simulated ",
+                     ifelse(Observedincluded, "and observed ", ""),
+                     MeanType, " mean ", 
+                     str_comma(tissue), " PK parameters for ",
+                     MyCompound, " after ", FigText2, " of ",
+                     paste(sub("custom dosing", "**CUSTOM DOSING**", Deets[[MyDose]]), 
+                           "mg", MyDosedCompound), 
+                     FigText3, " in ", 
+                     tidyPop(Deets$Population)$Population, ".")
    
    
    # Return -----------------------------------------------------------
@@ -315,7 +360,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                   "MyDosedCompound" = MyDosedCompound, 
                   "MyDoseRoute" = MyDoseRoute, 
                   "MyDose" = MyDose, 
-                  "DoseFreq_sub" = DoseFreq_sub,
+                  "MyDoseFreq" = MyDoseFreq,
                   "Dose1included" = Dose1included, 
                   "LastDoseincluded" = LastDoseincluded, 
                   "Observedincluded" = Observedincluded, 
