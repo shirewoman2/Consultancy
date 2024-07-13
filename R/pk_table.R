@@ -582,11 +582,13 @@ pk_table <- function(PKparameters = NA,
       if(length(temp) == 0){
          warning(paste0(str_wrap(
             paste0("There were no possible PK parameters to be extracted for the ",
-                   j, " in ", k, " for the simulation `", i,
+                   unique(PKparameters[[i]]$CompoundID),
+                   " in ", unique(PKparameters[[i]]$Tissue), 
+                   " for the simulation `", i,
                    "` on the ", 
-                   ifelse(is.na(ss), 
+                   ifelse(is.na(unique(PKparameters[[i]]$Sheet)), 
                           "regular sheet for the 1st or last-dose PK", 
-                          paste0("sheet `", ss, "`")), 
+                          paste0("sheet `", unique(PKparameters[[i]]$Sheet), "`")), 
                    ". Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")),
             "\n"), call. = FALSE)
          next
