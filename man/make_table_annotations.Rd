@@ -22,7 +22,8 @@ make_table_annotations(
 
 \item{MyFile}{the specific sim_data_file in question}
 
-\item{MyCompoundID}{substrate, inhibitor 1, etc. for this specific table}
+\item{MyCompoundID}{substrate, inhibitor 1, etc. for this specific table. If
+length > 1, then generic info will be used.}
 
 \item{prettify_compound_names}{pass through from parent function}
 
