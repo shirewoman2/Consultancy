@@ -118,9 +118,9 @@ extractAUCXtab <- function(PKparameters,
          # parameters b/c we don't really need the warning if they did.
          # They'll get what they get! :-D
          if(any(PKparameters_orig %in% c("all", "AUC tab", "Absorption tab")) == FALSE){
-            warning(paste0("The column with information for ", i,
+            warning(wrapn(paste0("The column with information for ", i,
                            " on the tab '", Sheet, "' cannot be found in the file '", 
-                           sim_data_file, "'."), 
+                           sim_data_file, "'.")), 
                     call. = FALSE)
          }
          suppressMessages(rm(ToDetect, ColNum))
