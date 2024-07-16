@@ -825,6 +825,22 @@ tidy_input_PK <- function(PKparameters,
             left_join(MainPKParams)
       )
       
+      # If it's a multiple-dose sim, only show the last-dose PK. 
+      PKparameters <- PKparameters %>% 
+         left_join(AllCompounds %>% 
+                      select(CompoundID, DosedCompoundID, DosedCompoundSuffix),
+                             by = "CompoundID") %>% 
+         left_join(existing_exp_details$MainDetails %>% 
+                      select(File, matches("DoseInt")), by = "File") %>% 
+         mutate(MyDoseInt = case_match(DosedCompoundID, 
+                                     "substrate" ~ DoseInt_sub, 
+                                     "inhibitor 1" ~ DoseInt_inhib, 
+                                     "inhibitor 2" ~ DoseInt_inhib2), 
+                Keep = (complete.cases(MyDoseInt) & !str_detect(PKparameter, "_dose1")) |
+                   (is.na(MyDoseInt) & !str_detect(PKparameter, "_last"))) %>% 
+         filter(Keep == TRUE)
+         
+      
    } else {
       PKparameters <- PKparameters %>% 
          mutate(UserInterval = complete.cases(Sheet) & 

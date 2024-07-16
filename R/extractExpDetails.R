@@ -700,7 +700,6 @@ extractExpDetails <- function(sim_data_file,
                Suffix <- AllCompounds$Suffix[AllCompounds$CompoundID == i]
                
                ReleaseProfs <- data.frame(
-                  CompoundID = i, 
                   CR_MR_input = Out[[paste0("CR_MR_Input", Suffix)]], 
                   Parameter = c("Fmax", "alpha", "beta", "lag"), 
                   Value = c(Out[[paste0("ReleaseProfile_Fmax", Suffix)]], 
@@ -710,7 +709,13 @@ extractExpDetails <- function(sim_data_file,
                   CV = c(Out[[paste0("ReleaseProfile_Fmax_CV", Suffix)]], 
                          Out[[paste0("ReleaseProfile_alpha_CV", Suffix)]], 
                          Out[[paste0("ReleaseProfile_beta_CV", Suffix)]], 
-                         Out[[paste0("ReleaseProfile_lag_CV", Suffix)]]))
+                         Out[[paste0("ReleaseProfile_lag_CV", Suffix)]])) %>% 
+                  mutate(CV = CV / 100, # Making this a fraction instead of a number up to 100
+                         File = sim_data_file, 
+                         CompoundID = i, 
+                         Compound = as.character(Out[AllCompounds$DetailNames[
+                            AllCompounds$CompoundID == i]])) %>% 
+                  select(File, CompoundID, Compound, CR_MR_input, Parameter, Value, CV)
                
             } else {
                ReleaseProfs <- NULL
@@ -1522,6 +1527,22 @@ extractExpDetails <- function(sim_data_file,
                TransRows <- TransRows[TransRows > StartTrans]
                
                if(length(TransRows) > 0){
+                  
+                  # Sometimes, the organ is only listed once and then not listed
+                  # again for subsequent transporters until it changes. 
+                  OrganRows <- which(str_detect(InputTab[, NameCol] %>% pull(), 
+                                                "Organ/Tissue"))
+                  OrganRows <- OrganRows[OrganRows >= min(TransRows) - 1 & 
+                                            OrganRows < max(TransRows)]
+                  
+                  # BBB transporter parameters are set up differently, so
+                  # removing any organ rows for those scenarios.
+                  BrainRows <- OrganRows + 1
+                  BrainRows <- BrainRows[which(str_detect(
+                     InputTab[BrainRows, NameCol] %>% pull(), "BBB|BCSFB|ISF.ICF"))]
+                  
+                  OrganRows <- setdiff(OrganRows, BrainRows - 1)
+                  
                   for(i in TransRows){
                      
                      # Last row always seems to contain RAF/REF or ISEF,T
@@ -1535,11 +1556,14 @@ extractExpDetails <- function(sim_data_file,
                      Location <- gsub(" |\\(|\\)|-|/", "", 
                                       InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],
                                                ValueCol] %>% pull(1))
-                     Organ <- which(str_detect(as.character(t(
-                        InputTab[(i-1):TransRowLast, NameCol])), "Organ/Tissue"))
-                     Organ <- ifelse(length(Organ) > 0, 
-                                     as.character(InputTab[((i-1):TransRowLast)[Organ], ValueCol]), 
-                                     "")
+                     Organ <- InputTab[max(OrganRows[OrganRows < i]), ValueCol] %>% 
+                        pull() %>% str_comma() # This should have length 1, but adding str_comma just in case. 
+                     
+                     # Organ <- which(str_detect(as.character(t(
+                     #    InputTab[(i-1):TransRowLast, NameCol])), "Organ/Tissue"))
+                     # Organ <- ifelse(length(Organ) > 0, 
+                     #                 as.character(InputTab[((i-1):TransRowLast)[Organ], ValueCol]), 
+                     #                 "")
                      
                      ParamPrefix <- paste("Transporter", Organ, Transporter, Location, sep = "_")
                      
