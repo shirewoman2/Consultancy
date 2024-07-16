@@ -62,19 +62,18 @@ pk_table_subfun <- function(sim_data_file,
       bind_rows(ToAdd) %>% 
       select(-ID)
    
-   suppressWarnings(
-      MyPKResults_all <- extractPK(
-         sim_data_file = sim_data_file,
-         PKparameters = PKparameters$PKparameter,
-         tissue = unique(PKparameters$Tissue),
-         compoundToExtract = unique(PKparameters$CompoundID),
-         sheet = ifelse(unique(PKparameters$Sheet) == "default", 
-                        NA, unique(PKparameters$Sheet)), 
-         existing_exp_details = existing_exp_details,
-         returnAggregateOrIndiv =
-            switch(as.character(includeTrialMeans),
-                   "TRUE" = c("aggregate", "individual"),
-                   "FALSE" = "aggregate")))
+   MyPKResults_all <- extractPK(
+      sim_data_file = sim_data_file,
+      PKparameters = PKparameters$PKparameter,
+      tissue = unique(PKparameters$Tissue),
+      compoundToExtract = unique(PKparameters$CompoundID),
+      sheet = ifelse(unique(PKparameters$Sheet) == "default", 
+                     NA, unique(PKparameters$Sheet)), 
+      existing_exp_details = existing_exp_details,
+      returnAggregateOrIndiv =
+         switch(as.character(includeTrialMeans),
+                "TRUE" = c("aggregate", "individual"),
+                "FALSE" = "aggregate"))
    
    # If there were no PK parameters to be pulled, MyPKResults_all will have
    # length 0 and we can't proceed.

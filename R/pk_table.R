@@ -374,6 +374,13 @@ pk_table <- function(PKparameters = NA,
            call. = FALSE)
    }
    
+   # If user requested their own order, then omit the DDI header b/c it won't
+   # necessarily be clear.
+   if(PKorder != "default"){
+      add_header_for_DDI <- FALSE
+   }
+   
+   
    ## Harmonizing PKparameters -------------------------------------------------
    
    PKparam_tidied <- tidy_input_PK(PKparameters = PKparameters, 
@@ -566,18 +573,16 @@ pk_table <- function(PKparameters = NA,
       # for(k in names(PKparameters[[i]][[j]])){
       #    message(paste("          for tissue =", k))
       #    
-      suppressWarnings(
-         temp <- 
-            pk_table_subfun(
-               sim_data_file = unique(PKparameters[[i]]$File), 
-               PKparameters = PKparameters[[i]], 
-               existing_exp_details = existing_exp_details, 
-               convert_conc_units = convert_conc_units,
-               MeanType = MeanType, 
-               GMR_mean_type = GMR_mean_type, 
-               includeTrialMeans = includeTrialMeans, 
-               use_median_for_tmax = use_median_for_tmax)
-      )
+      temp <- 
+         pk_table_subfun(
+            sim_data_file = unique(PKparameters[[i]]$File), 
+            PKparameters = PKparameters[[i]], 
+            existing_exp_details = existing_exp_details, 
+            convert_conc_units = convert_conc_units,
+            MeanType = MeanType, 
+            GMR_mean_type = GMR_mean_type, 
+            includeTrialMeans = includeTrialMeans, 
+            use_median_for_tmax = use_median_for_tmax)
       
       if(length(temp) == 0){
          warning(paste0(str_wrap(
