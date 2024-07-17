@@ -9,6 +9,7 @@ fm_treemap(
   fm_dataframe,
   pathway_column,
   fm_column,
+  show_numbers_on_graph = TRUE,
   rounding = NA,
   color_set = "default",
   label_fm_cutoff = 0.05,
@@ -40,6 +41,9 @@ this should be the values as decimals, e.g., 0.8 for 80\%. The total area
 occupied by boxes in your treemap will sum to 100\%, even if these numbers
 do not, so pay attention to what data you're graphing and make sure things
 sum to 1.}
+
+\item{show_numbers_on_graph}{TRUE (default) or FALSE for whether to list the
+numerical fm value for each pathway on the graph}
 
 \item{rounding}{option for what rounding to perform, if any. Options are:
   \describe{
