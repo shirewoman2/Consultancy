@@ -33,6 +33,10 @@
 #'   that object here, unquoted. If left as NA, this function will run
 #'   \code{extractExpDetails} behind the scenes to figure out some information
 #'   about your experimental set up.
+#' @param conc_units desired concentration units; options are the same as the
+#'   ones in the Excel form for PE data entry: "ng/mL" (default), "mg/L",
+#'   "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"), "ng/L", "µM" (or "uM"),
+#'   or "nM".
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are "aggregate", "individual", or "both"
 #'   (default). Aggregated data are not calculated here but are pulled from the
@@ -46,7 +50,8 @@
 extractConcTime_DB <- function(sim_data_file, 
                                compoundToExtract = "substrate", 
                                tissue = "plasma", 
-                               existing_exp_details = NA, 
+                               existing_exp_details = NA,
+                               conc_units = "ng/mL", 
                                returnAggregateOrIndiv = "aggregate"){
    
    # Error catching ----------------------------------------------------------
@@ -86,8 +91,7 @@ extractConcTime_DB <- function(sim_data_file,
    sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.db$", "", sim_data_file), ".db")
    
    # Main body of function ----------------------------------------------------
-   suppressMessages(Simcyp::SetWorkspace(sub("\\.db", ".wksz", sim_data_file), 
-                                         verbose = FALSE))
+   suppressMessages(Simcyp::SetWorkspace(sim_data_file, verbose = FALSE))
    
    conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
    
@@ -132,10 +136,16 @@ extractConcTime_DB <- function(sim_data_file,
                   include_or_omit = "include")
    Deets <- Deets$MainDetails
    
+   # conctime subfun --------------------------------------------------------
+   
    get_ConcTime_subfun <- function(individual, 
                                    compoundToExtract = compoundToExtract, 
                                    tissue = tissue, 
                                    DDI = FALSE){
+      
+      compound_num <- as.numeric(Simcyp::CompoundID[
+         AllCompounds$CompoundID_Simcyp[
+            AllCompounds$CompoundID == compoundToExtract]])
       
       # Need to account for the fact that some tissues are actually tissue sub
       # types.
@@ -160,13 +170,25 @@ extractConcTime_DB <- function(sim_data_file,
       suppressWarnings(
          Conc <- Simcyp::GetProfile_DB(
             profileID = TissueID,
-            compound = as.numeric(Simcyp::CompoundID[
-               AllCompounds$CompoundID_Simcyp[
-                  AllCompounds$CompoundID == compoundToExtract]]), 
+            compound = compound_num, 
             inhibition = DDI, 
             conn = conn, 
             individual = individual)
       )
+      
+      # Need to adjust if tissue was actually unbound. 
+      if(AllTissues$Simcyp_calculation_required[AllTissues$Tissue == tissue] == 
+         "Multiply by fu"){
+         
+         # Get fu for the individual
+         fu_indiv <- Simcyp::GetCompoundResult_DB(individual = individual,
+                                      id = "idfuAdj",
+                                      compound = compound_num, 
+                                      conn = conn)
+         
+         Conc_unbound <- Conc * fu_indiv
+         
+      }
       
       if(length(Conc) == 0){
          return(list())
@@ -174,7 +196,9 @@ extractConcTime_DB <- function(sim_data_file,
       
       data.frame(
          Time = Time, 
-         Conc = Conc) %>% 
+         Conc = switch(as.character(str_detect(tissue, "unbound")), 
+                       "TRUE" = Conc_unbound, 
+                       "FALSE" = Conc)) %>% 
          mutate(CompoundID = compoundToExtract, 
                 Compound = as.character(Deets[
                    AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
@@ -297,14 +321,18 @@ extractConcTime_DB <- function(sim_data_file,
    # }
    
    Data <- bind_rows(Data) %>%
-      mutate(Simulated = TRUE,
-             Species = "human", # FIXME - placeholder for now
+      mutate(Species = "human", # FIXME - placeholder for now
              Individual = ifelse(is.na(Individual), Trial, Individual)) %>% 
       mutate(File = sim_data_file, 
              subsection_ADAM = NA)
    
    Data <- calc_dosenumber(ct_dataframe = Data, 
                            existing_exp_details = existing_exp_details)
+   
+   # Adjusting concentration units as needed
+   Data <- Data %>% convert_conc_units(conc_units = conc_units, 
+                                       MW = existing_exp_details$MainDetails %>% 
+                                          select(matches("MW")))
    
    # Finalizing
    Data <- Data %>%

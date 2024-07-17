@@ -134,21 +134,21 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    
    # Main body of function ---------------------------------------------------
    
-   XMLDeets <- AllExpDetails %>% filter(Sheet == "workspace XML file")
+   XMLDeets <- AllExpDetails %>% filter(DataSource == "workspace or database")
    
    if("all" %in% exp_details){
       exp_details <- XMLDeets %>% pull(Detail)
    }
    
    CompoundDetails <- XMLDeets %>% 
-      filter(Sheet == "workspace XML file" & Level1 == "Compounds" & 
+      filter(DataSource == "workspace or database" & Level1 == "Compounds" & 
                 !Detail %in% c("Substrate", "Inhibitor1", "Inhibitor2", 
                                "PrimaryMetabolite1", "PrimaryMetabolite2", 
                                "SecondaryMetabolite", "Inhibitor1Metabolite")) %>% 
       pull(Detail)
    
    PopulationDetails <- XMLDeets %>% 
-      filter(Sheet == "workspace XML file" & Level1 == "Populations")
+      filter(DataSource == "workspace or database" & Level1 == "Populations")
    
    Deets <- list()
    
@@ -166,8 +166,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             exp_details, 
             
             AllExpDetails %>% 
-               filter(Sheet == "workspace XML file" & 
-                         DiscoveryParameter %in% c("Simulator and Discovery", 
+               filter(DataSource == "workspace or database" & 
+                         SimulatorAvailability %in% c("Simulator and Discovery", 
                                                    "Simulator only")) %>% 
                pull(Detail)
          )
@@ -176,8 +176,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             exp_details, 
             
             AllExpDetails %>% 
-               filter(Sheet == "workspace XML file" & 
-                         DiscoveryParameter %in% c("Simulator and Discovery", 
+               filter(DataSource == "workspace or database" & 
+                         SimulatorAvailability %in% c("Simulator and Discovery", 
                                                    "Discovery only")) %>% 
                pull(Detail)
          )
@@ -218,7 +218,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             for(k in exp_details_cmpd){
                
                DeetInfo <- XMLDeets %>% 
-                  filter(Sheet == "workspace XML file" & Detail == k)
+                  filter(DataSource == "workspace or database" & Detail == k)
                DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
                DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
                
@@ -332,7 +332,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                   
                } else {
                   Deets[[i]][[paste0("Peff_prediction_method", Suffix)]] <- 
-                     paste("Apologies, but you have a value we don't know how to decode. Value listed in workspace XML file:", 
+                     paste("Apologies, but you have a value we don't know how to decode. Value listed in workspace or database:", 
                            Deets[[i]][[paste0("Peff_prediction_method", Suffix)]])
                   
                   Deets[[i]][[paste0("Peff_user_input_Ptrans0", Suffix)]] <- as.character(NA)
@@ -360,7 +360,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          for(m in setdiff(exp_details, CompoundDetails)){
             
             DeetInfo <- XMLDeets %>% 
-               filter(Sheet == "workspace XML file" & Detail == m) %>% 
+               filter(DataSource == "workspace or database" & Detail == m) %>% 
                mutate(Level2 = ifelse(m %in% PopulationDetails, 
                                       as.numeric(Level2), as.character(Level2)))
             DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])

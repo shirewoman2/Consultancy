@@ -80,9 +80,10 @@ extractExpDetails_DB <- function(sim_data_file){
    #               Tag = as.character(unlist(Simcyp::PopulationID)))
    
    ParameterConversion <- AllExpDetails %>% 
-      filter(Sheet == "workspace XML file" &
+      filter(DataSource == "workspace or database" &
                 complete.cases(SimcypParameterType)) %>% 
-      select(Detail, CompoundID, matches("Level"), XMLswitch, SimcypParameterType,
+      select(Detail, CompoundID, matches("Level"), XMLswitch,
+             SimcypParameterType, SimcypTag, SimcypSubcategory, 
              ColsChangeWithCmpd) %>% 
       mutate(Detail_nosuffix = case_when(
          ColsChangeWithCmpd == TRUE ~ sub("_sub|_inhib2|_inhib$|_met1|_met2|_secmet|_inhib1met", 
@@ -102,7 +103,7 @@ extractExpDetails_DB <- function(sim_data_file){
    
    CmpdParam <- unique(
       ParameterConversion$Detail_nosuffix[
-         ParameterConversion$SimcypParameterType == "compound parameter"])
+         ParameterConversion$SimcypParameterType == "compound"])
    CmpdParam <- setdiff(CmpdParam, AllCompounds$DetailNames)
    
    for(k in CmpdParam){
@@ -110,11 +111,15 @@ extractExpDetails_DB <- function(sim_data_file){
       ParamConv_subset <- ParameterConversion %>% 
          filter(Detail_nosuffix == k)
       
-      Details_toadd <- 
+      suppressMessages(Details_toadd <- 
          map(.x = Simcyp::CompoundID[ParamConv_subset$CompoundID_Simcyp], 
              .f = function(x){Simcyp::GetCompoundParameter(
-                Tag = unique(ParamConv_subset$Level3), 
-                Compound = x)})
+                Tag = unique(ParamConv_subset$SimcypTag), 
+                Compound = x)}))
+      
+      Details_toadd <- Details_toadd[sapply(Details_toadd, length) > 0]
+      
+      if(length(Details_toadd) == 0){next}
       
       # Decoding as necessary. Add to the options for k as needed.
       Details_toadd <- lapply(Details_toadd, as.character)
@@ -170,7 +175,8 @@ extractExpDetails_DB <- function(sim_data_file){
    # Removing info for compounds that are not active
    Details <- Details[
       which(str_detect(names(Details), 
-                       str_c(AllCompounds$Suffix[AllCompounds$DetailNames %in% ActiveCompounds], 
+                       str_c(paste0(AllCompounds$Suffix[AllCompounds$DetailNames %in% ActiveCompounds], 
+                                    "$"), 
                              collapse = "|")))]
    
    
@@ -178,7 +184,11 @@ extractExpDetails_DB <- function(sim_data_file){
    
    GenParam <- unique(
       ParameterConversion$Detail_nosuffix[
-         ParameterConversion$SimcypParameterType == "general parameter"])
+         ParameterConversion$SimcypParameterType == "general"])
+   
+   # Not sure why, but NumTimeSamples is not working, probably b/c I haven't set
+   # up the subcategory correctly.
+   GenParam <- setdiff(GenParam, c("NumTimeSamples"))
    
    # Have to deal w/NumDoses, StartHr specially b/c they're not set up not as a
    # compound parameter but as a general parameter.
@@ -200,10 +210,10 @@ extractExpDetails_DB <- function(sim_data_file){
          filter(Detail_nosuffix == k)
       
       Details_toadd <- Simcyp::GetParameter(
-         Tag = ParamConv_subset$Level2, 
+         Tag = ParamConv_subset$SimcypTag, 
          Category = Simcyp::CategoryID$SimulationData, 
-         SubCategory = ifelse(is.na(ParamConv_subset$Level3),
-                              0, ParamConv_subset$Level3))
+         SubCategory = ifelse(is.na(ParamConv_subset$SimcypTag),
+                              0, ParamConv_subset$SimcypSubcategory))
       
       names(Details_toadd) <- k
       Details <- c(Details, Details_toadd)
@@ -221,6 +231,8 @@ extractExpDetails_DB <- function(sim_data_file){
       
    }
    
+   # Compound names --------------------------------------------------------
+   
    # Getting compound names separately.
    CmpdNames <- 
       map(.x = AllCompounds$CompoundID_num_Simcyp, 
@@ -233,6 +245,9 @@ extractExpDetails_DB <- function(sim_data_file){
                 CmpdNames[intersect(AllCompounds$DetailNames, ActiveCompounds)])
    
    # t(as.data.frame(Details))
+   
+   
+   # Finishing up --------------------------------------------------------
    
    RSQLite::dbDisconnect(conn)
    

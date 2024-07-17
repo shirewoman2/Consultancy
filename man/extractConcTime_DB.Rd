@@ -10,6 +10,7 @@ extractConcTime_DB(
   compoundToExtract = "substrate",
   tissue = "plasma",
   existing_exp_details = NA,
+  conc_units = "ng/mL",
   returnAggregateOrIndiv = "aggregate"
 )
 }
@@ -49,6 +50,11 @@ extractExpDetails you said \code{exp_details = "Input Sheet"} or
 that object here, unquoted. If left as NA, this function will run
 \code{extractExpDetails} behind the scenes to figure out some information
 about your experimental set up.}
+
+\item{conc_units}{desired concentration units; options are the same as the
+ones in the Excel form for PE data entry: "ng/mL" (default), "mg/L",
+"mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"), "ng/L", "µM" (or "uM"),
+or "nM".}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are "aggregate", "individual", or "both"
