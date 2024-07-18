@@ -22,7 +22,7 @@ prettify_compound_name <- function(CompoundName, case = "lower"){
     
     CompoundName <-
         gsub(
-            "[sS][vV]-|[sS]im-|[wW][sS][pP]-|_[eE][cC]|_[sS][rR]|-[mM][dD]|-[sS][dD]|_[fF][oO]|-[1-9]00 mg [QqMmSsTtBbIidD]{1,3}|_fasted soln|_fed capsule",
+            "[sS][vV]-|[sS]im-|[wW][sS][pP]-|_[eE][cC]|_[sS][rR]|-[mM][dD]|-[sS][dD]|_[fF][oO]|-[1-9]00 mg [QqMmSsTtBbIidD]{1,3}|_fasted soln|_fed capsule|RES-",
             "", CompoundName)
     
     # Dealing with case
