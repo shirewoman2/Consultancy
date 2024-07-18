@@ -9,6 +9,7 @@ fm_treemap(
   fm_dataframe,
   pathway_column,
   fm_column,
+  DDI_option = "baseline only",
   show_numbers_on_graph = TRUE,
   rounding = NA,
   color_set = "default",
@@ -41,6 +42,13 @@ this should be the values as decimals, e.g., 0.8 for 80\%. The total area
 occupied by boxes in your treemap will sum to 100\%, even if these numbers
 do not, so pay attention to what data you're graphing and make sure things
 sum to 1.}
+
+\item{DDI_option}{If the fm_dataframe included fm and fe values for when any
+DDI perpetrator drugs are present, then you've got some options for how to
+display this. Acceptable options are: "baseline only" (default) to show
+only fm values at baseline, "DDI only", to show only fm values in the
+presence of the perpetrator drug(s), or "facet by DDI" to show two graphs,
+broken up by whether there is a DDI.}
 
 \item{show_numbers_on_graph}{TRUE (default) or FALSE for whether to list the
 numerical fm value for each pathway on the graph}

@@ -432,8 +432,12 @@ extractConcTime <- function(sim_data_file,
    # want.
    if(ADAM|AdvBrainModel){
       PopStatRow <- which(sim_data_xl$...1 == "Population Statistics")
+      PopStatRow <- ifelse(length(PopStatRow) == 0 & Deets$Species != "human", 
+                           which(sim_data_xl$...1 == "Individual Statistics"), 
+                           PopStatRow)
       Blank1 <- which(is.na(sim_data_xl$...1))
       Blank1 <- Blank1[Blank1 > PopStatRow][1]
+      Blank1 <- ifelse(any(is.na(Blank1)), nrow(sim_data_xl), Blank1)
       
       # For cumulative release and for gut tissue, the tab in Excel is laid out
       # slightly differently (because YOLO so why not?), and the row that
@@ -603,7 +607,7 @@ extractConcTime <- function(sim_data_file,
                   summarize(Conc = gm_mean(Conc, na.rm = T)) %>%
                   ungroup() %>%
                   mutate(Trial = "geomean", 
-                         Individual = NA)
+                         Individual = as.character(NA))
             )
             
             sim_data[[cmpd]][[ss]] <- bind_rows(sim_data[[cmpd]][[ss]], 

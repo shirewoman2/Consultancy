@@ -204,40 +204,46 @@ eCT_pulldata <- function(sim_data_xl,
             which(str_detect(NamesToCheck, "median")),
             Include))
       
-      suppressWarnings(
-         Out[["agg"]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
-            t() %>%
-            as.data.frame() %>%
-            slice(-(1:3)) %>%
-            mutate_all(as.numeric)
-      )
-      
-      names(Out[["agg"]]) <- c("Time", names(RowsToUse))
-      Out[["agg"]] <- Out[["agg"]] %>%
-         pivot_longer(names_to = "Trial", values_to = "Conc",
-                      cols = -c(Time)) %>%
-         mutate(Compound = MyCompound,
-                CompoundID = cmpd,
-                Inhibitor = ifelse(pull_interaction_data |
-                                      cmpd %in% c("inhibitor 1", 
-                                                  "inhibitor 2", 
-                                                  "inhibitor 1 metabolite"), 
-                                   str_comma(AllPerpsPresent), 
-                                   "none"),
-                Time_units = SimTimeUnits,
-                Conc_units = ifelse(ADAM|AdvBrainModel,
-                                    SimConcUnits$ConcUnit[
-                                       SimConcUnits$Type == ss],
-                                    SimConcUnits),
-                Tissue = tissue,
-                subsection_ADAM = ifelse(ADAM|AdvBrainModel, ss, NA))
-      
+      # dealing with instances where there are no aggregate data s/a animal sims
+      if(length(RowsToUse) == 0){
+         Out[["agg"]] <- list()
+      } else {
+         suppressWarnings(
+            Out[["agg"]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
+               t() %>%
+               as.data.frame() %>%
+               slice(-(1:3)) %>%
+               mutate_all(as.numeric)
+         )
+         
+         names(Out[["agg"]]) <- c("Time", names(RowsToUse))
+         Out[["agg"]] <- Out[["agg"]] %>%
+            pivot_longer(names_to = "Trial", values_to = "Conc",
+                         cols = -c(Time)) %>%
+            mutate(Compound = MyCompound,
+                   CompoundID = cmpd,
+                   Inhibitor = ifelse(pull_interaction_data |
+                                         cmpd %in% c("inhibitor 1", 
+                                                     "inhibitor 2", 
+                                                     "inhibitor 1 metabolite"), 
+                                      str_comma(AllPerpsPresent), 
+                                      "none"),
+                   Time_units = SimTimeUnits,
+                   Conc_units = ifelse(ADAM|AdvBrainModel,
+                                       SimConcUnits$ConcUnit[
+                                          SimConcUnits$Type == ss],
+                                       SimConcUnits),
+                   Tissue = tissue,
+                   subsection_ADAM = ifelse(ADAM|AdvBrainModel, ss, NA))
+      }
    } 
    
    if("individual" %in% returnAggregateOrIndiv){
       
-      RowsToUse <- Include[which(Include > 
-                                    which(str_detect(sim_data_xl$...1, "Individual Statistics")))]
+      # Certain animal sims will only have "Statistics" above to the single row
+      # of conc time data since they only have 1 individual.
+      RowsToUse <- Include[which(Include > which(str_detect(
+         sim_data_xl$...1, "^(Individual )?Statistics")))]
       
       suppressWarnings(
          Out[["indiv"]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
@@ -247,35 +253,45 @@ eCT_pulldata <- function(sim_data_xl,
             rename(Time = "V1")
       )
       
-      SubjTrial <- sim_data_xl[RowsToUse, 2:3] %>%
-         rename(Individual = ...2, Trial = ...3) %>%
-         mutate(SubjTrial = paste0("ID", Individual, "_", Trial))
+      if(length(RowsToUse) > 1){
+         SubjTrial <- sim_data_xl[RowsToUse, 2:3] %>%
+            rename(Individual = ...2, Trial = ...3) %>%
+            mutate(SubjTrial = paste0("ID", Individual, "_", Trial))
+         
+         names(Out[["indiv"]])[2:ncol(Out[["indiv"]])] <- SubjTrial$SubjTrial
+      }
       
-      names(Out[["indiv"]])[2:ncol(Out[["indiv"]])] <- SubjTrial$SubjTrial
+      suppressWarnings(
+         Out[["indiv"]] <- Out[["indiv"]] %>%
+            pivot_longer(names_to = "SubjTrial", values_to = "Conc",
+                         cols = -Time) %>%
+            mutate(Compound = MyCompound,
+                   CompoundID = cmpd,
+                   Inhibitor = ifelse(pull_interaction_data |
+                                         cmpd %in% c("inhibitor 1", 
+                                                     "inhibitor 2", 
+                                                     "inhibitor 1 metabolite"), 
+                                      str_comma(AllPerpsPresent), 
+                                      "none"), 
+                   SubjTrial = sub("ID", "", SubjTrial),
+                   Time_units = SimTimeUnits,
+                   Conc_units = ifelse(ADAM|AdvBrainModel,
+                                       SimConcUnits$ConcUnit[
+                                          SimConcUnits$Type == ss],
+                                       SimConcUnits),
+                   Tissue = tissue,
+                   subsection_ADAM = ifelse(ADAM|AdvBrainModel, ss, NA)) %>%
+            separate(SubjTrial, into = c("Individual", "Trial"),
+                     sep = "_") %>% 
+            mutate(Individual = as.character(Individual),
+                   Trial = as.character(Trial))
+      )
       
-      Out[["indiv"]] <- Out[["indiv"]] %>%
-         pivot_longer(names_to = "SubjTrial", values_to = "Conc",
-                      cols = -Time) %>%
-         mutate(Compound = MyCompound,
-                CompoundID = cmpd,
-                Inhibitor = ifelse(pull_interaction_data |
-                                      cmpd %in% c("inhibitor 1", 
-                                                  "inhibitor 2", 
-                                                  "inhibitor 1 metabolite"), 
-                                   str_comma(AllPerpsPresent), 
-                                   "none"), 
-                SubjTrial = sub("ID", "", SubjTrial),
-                Time_units = SimTimeUnits,
-                Conc_units = ifelse(ADAM|AdvBrainModel,
-                                    SimConcUnits$ConcUnit[
-                                       SimConcUnits$Type == ss],
-                                    SimConcUnits),
-                Tissue = tissue,
-                subsection_ADAM = ifelse(ADAM|AdvBrainModel, ss, NA)) %>%
-         separate(SubjTrial, into = c("Individual", "Trial"),
-                  sep = "_") %>% 
-         mutate(Individual = as.character(Individual),
-                Trial = as.character(Trial))
+      # Adjusting for when there was only 1 individual
+      if(length(RowsToUse) == 1){
+         Out[["indiv"]]$Individual <- "1"
+         Out[["indiv"]]$Trial <- "mean"
+      }
       
       rm(RowsToUse)
       

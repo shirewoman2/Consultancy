@@ -106,6 +106,11 @@ eCT_readxl <- function(sim_data_file,
                                  "peripheral unbound blood" = "cublood"
                           ))]
             
+            # Animal sims aren't labeled the same way. 
+            if(length(PossSheets) == 0 & Deets$Species != "human"){
+               PossSheets <- "Conc Profiles"
+            }
+            
             # add criteria for peripheral when needed
             if(str_detect(tissue, "peripheral")){
                Cond1 <- str_extract(tissue, "peripheral")

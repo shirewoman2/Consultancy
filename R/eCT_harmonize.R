@@ -88,8 +88,17 @@ eCT_harmonize <- function(sim_data_xl,
       # compounds were listed under "Population Statistics" b/c that's where
       # they use that kind of coding.
       StartRow     <- which(str_detect(sim_data_xl$...1, "Population Statistics"))[1]
+      StartRow <- ifelse(is.na(StartRow), 
+                         # Need to deal w/animal sim data, which will not have
+                         # any aggregate data. Instead, there will be a row
+                         # titled "Statistics" for plasma data. It's different
+                         # for brain tissue, fyi.
+                         which(str_detect(sim_data_xl$...1, "^(Individual )?Statistics"))[1], 
+                         StartRow)
       EndRow       <- which(str_detect(sim_data_xl$...1, "Individual Statistics"))[1]-1
-      EndRow       <- max(which(complete.cases(sim_data_xl$...1[1:EndRow])))
+      EndRow       <- ifelse(is.na(EndRow),
+                             nrow(sim_data_xl), 
+                             max(which(complete.cases(sim_data_xl$...1[1:EndRow]))))
       CmpdMatches2 <- sim_data_xl$...1[StartRow:EndRow]
       CmpdMatches2 <- CmpdMatches2[which(str_detect(CmpdMatches2, "^(P)?[CM](2)?(II)?(Sys|liver|pv|Tissue| lumen free|Peripheral)(.*[iI]nteraction)?|I(Sys|liver|pv| lumen free|Peripheral) [1-9]?|ITissue.Inh|InhM"))]
       CmpdMatches2 <- str_trim(str_extract(CmpdMatches2, "^(P)?[CM](2)?(II)?(Sys|liver|pv|Tissue| lumen free|Peripheral)(.*[iI]nteraction)?|I(Sys|liver|pv| lumen free|Peripheral) [1-9]?|ITissue.Inh|InhM"))
