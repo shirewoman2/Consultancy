@@ -211,9 +211,9 @@ in \code{forest_dataframe}. If you list the mean type as "mean", we'll
 assume you want arithmetic means.}
 
 \item{variability_type}{type of variability to show as whiskers; options are
-"90\% CI" (default), "95\% CI", "5th to 95th percentiles", "range",
-"geometric CV", "arithmetic CV", or "standard deviation" ("sd" is also ok
-for that last one).}
+"90\% CI" (default, geometric), "95\% CI" (also geometric), "5th to 95th
+percentiles", "range", "geometric CV", "arithmetic CV", or "standard
+deviation" ("sd" is also ok for that last one, and it's arithmetic).}
 
 \item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
 
