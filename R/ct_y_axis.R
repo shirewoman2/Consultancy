@@ -61,7 +61,8 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
             conjunction = "or")
       }
       
-      if(length(unique(subsection_ADAM)) == 1){
+      if(length(unique(subsection_ADAM)) == 1 & 
+         length(unique(Data$Conc_units)) == 1){
          
          ylab1 <- 
             switch(subsection_ADAM, 
