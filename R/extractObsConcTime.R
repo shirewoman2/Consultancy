@@ -111,7 +111,7 @@ extractObsConcTime <- function(obs_data_file,
    if(length(obs_data_xl) == 0){
       warning(paste("The file", obs_data_file, "does not appear to be an Excel file of observed data that's ready to be converted to an XML file. We cannot extract any data."), 
               call. = FALSE)
-      return(list())
+      return(data.frame())
    }
    
    # Checking on whether this was animal data
@@ -163,7 +163,7 @@ extractObsConcTime <- function(obs_data_file,
         `Organ Conc` = "solid organ",
         `Organ Conc (Inb)` = "solid organ", 
         `PM1(Sub) PD Response` = "PD response",
-        `Spinal CSF (Sub)` = "CSF", 
+        `Spinal CSF (Sub)` = "spinal CSF", 
         `Sub (Inb) Blood` = "blood", 
         `Sub (Inb) PD Response` = "PD response", 
         `Sub (Inb) Plasma` = "plasma",
@@ -313,7 +313,23 @@ extractObsConcTime <- function(obs_data_file,
    } else {
       
       if(any(str_detect(MainColNames, "Period"), na.rm = TRUE)){
-         if(any(str_detect(MainColNames, "SD/SE"), na.rm = TRUE)){   
+         if(any(str_detect(MainColNames, "Treatment .VBE"))){
+            SimVersion <- "V23"
+            # FIXME - Named new V23 columns on the fly, so RETURN TO THIS and
+            # check that I'm using good names.
+            names(obs_data) <- c("Individual", "Time", "Conc", "DVID",
+                                 "Weighting", "SD_SE", "Compound", "DoseRoute", 
+                                 "Dose_units", "DoseAmount",
+                                 "InfDuration", "InjectionSite",
+                                 "DoseVol", "DoseConc", 
+                                 "Period", "Treatment_VBE", "Sequence", 
+                                 "Age", "Weight_kg", "Height_cm", "Sex", 
+                                 "SerumCreatinine_umolL",
+                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
+                                 "SmokingStatus", "GestationalAge_wk", 
+                                 "PlacentaVol_L", "FetalWt_kg", "PostpartumAge")
+            
+         } else if(any(str_detect(MainColNames, "SD/SE"), na.rm = TRUE)){   
             SimVersion <- "V22"
             
             names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
