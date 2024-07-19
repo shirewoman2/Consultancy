@@ -171,7 +171,7 @@ extractConcTime <- function(sim_data_file,
                             fromMultFunction = FALSE){
    
    # Error catching ------------------------------------------------------
-   
+   tic(msg = "error catching")
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
@@ -257,10 +257,13 @@ extractConcTime <- function(sim_data_file,
                          "cumulative absorption", "cumulative dissolution", 
                          "cumulative fraction released", "gut tissue")
    
+   toc(log = TRUE)
    
    # Main body of function -----------------------------------------------------
    
    ## Getting exp details ------------------------------------------------------
+   tic(msg = "getting exp details")
+   
    if(fromMultFunction || ("logical" %in% class(existing_exp_details) == FALSE)){
       
       Deets <- filter_sims(existing_exp_details, sim_data_file, "include")
@@ -295,9 +298,10 @@ extractConcTime <- function(sim_data_file,
                  call. = FALSE)
       }
    }
-   
+   toc(log = T)
    
    ## Additional error catching now that we have Deets -------------------------
+   tic(msg = "additional error catching now that we have Deets")
    
    # Checking that the file is, indeed, a simulator output file.
    SheetNames <- gsub("`", "", str_split_1(Deets$SheetNames, "` `"))
@@ -333,9 +337,11 @@ extractConcTime <- function(sim_data_file,
          return(data.frame())
       }
    }
-   
+   toc(log = T)
    
    ## Checking a few things based on Deets -------------------------------------
+   tic(msg = "Checking a few things based on Deets")
+   
    # Noting whether this was animal data
    Animal <- str_detect(tolower(Deets$Species), "monkey|rat|mouse|dog|beagle")
    Animal <- ifelse(is.na(Animal), FALSE, Animal)
@@ -379,8 +385,9 @@ extractConcTime <- function(sim_data_file,
       compoundToExtract <- 
          compoundToExtract[!str_detect(compoundToExtract, "metabolite|inhibitor 2")]
    }
-   
+   toc(log = T)
    ## Determining correct Excel tab and reading it in --------------------------
+   tic(msg = "Determining correct excel tab and reading")
    
    # If extractConcTime is called alone, there will be only 1 compound ID. If
    # it's called from extractConcTime_mult, then we've already filtered to make
@@ -399,8 +406,9 @@ extractConcTime <- function(sim_data_file,
    }
    
    AdvBrainModel <- any(str_detect(sim_data_xl$...1, "Intracranial"), na.rm = TRUE)
-   
+   toc(log = T)
    ## Harmonizing compound names ---------------------------------------------
+   tic(msg = "Harmonizing cmpd names")
    
    sim_data_xl <- eCT_harmonize(sim_data_xl = sim_data_xl, 
                                 compoundToExtract = compoundToExtract, 
@@ -437,7 +445,9 @@ extractConcTime <- function(sim_data_file,
                            PopStatRow)
       Blank1 <- which(is.na(sim_data_xl$...1))
       Blank1 <- Blank1[Blank1 > PopStatRow][1]
-      Blank1 <- ifelse(any(is.na(Blank1)), nrow(sim_data_xl), Blank1)
+      Blank1 <- ifelse(any(is.na(Blank1)), 
+                       nrow(sim_data_xl) + 1, # blank when it's from animal simulator and then we need 1 more number here to match regular simulator output
+                       Blank1)
       
       # For cumulative release and for gut tissue, the tab in Excel is laid out
       # slightly differently (because YOLO so why not?), and the row that
@@ -446,7 +456,10 @@ extractConcTime <- function(sim_data_file,
          rename(OrigVal = ...1) %>%
          mutate(TypeCode = str_extract(
             OrigVal,
-            "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|ITissue|dissolved|absorbed|^C Enterocyte|Release fraction|CIntracranial|CBrainI[CS]F|CCSF(Spinal|Cranial)|Kpuu_I[CS]F|Kpuu_BrainMass|CTotalBrain"),
+            "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|ITissue|dissolved|absorbed|^C Enterocyte|Release fraction|CIntracranial|CBrainI[CS]F|CCSF(Spinal|Cranial)|Kpuu_I[CS]F|Kpuu I[CS]F|Kpuu_BrainMass|Kpuu brain mass|CTotal( )?Brain"),
+            # IMPORTANT: If you change the above regex b/c you find some new
+            # weird way that the Simulator output refers to things, ALSO CHANGE
+            # IT IN eCT_pulldata and below.
             Type = case_match(TypeCode,
                               "Ms" ~ "undissolved compound",
                               "Dissolution Rate Solid State" ~ "dissolution rate of solid state",
@@ -469,9 +482,13 @@ extractConcTime <- function(sim_data_file,
                               "CCSFSpinal" ~ "spinal CSF", # CSF = cerebrospinal fluid
                               "CCSFCranial" ~ "cranial CSF",
                               "CTotalBrain" ~ "total brain",
+                              "CTotal Brain" ~ "total brain",
                               "Kpuu_BrainMass" ~ "Kp,uu,brain", # unbound brain-to-plasma partition coefficient
+                              "Kpuu brain mass" ~ "Kp,uu,brain", # unbound brain-to-plasma partition coefficient
                               "Kpuu_ICF" ~ "Kp,uu,ICF",
-                              "Kpuu_ISF" ~ "Kp,uu,ISF"),
+                              "Kpuu ICF" ~ "Kp,uu,ICF",
+                              "Kpuu_ISF" ~ "Kp,uu,ISF", 
+                              "Kpuu ISF" ~ "Kp,uu,ISF"),
             ConcUnit = str_extract(OrigVal, "mg/h|mg/L|mg/mL|µg/L|µg/mL|ng/L|ng/mL|µM|nM|mg|µg|ng|mmol|µmol|nmol|mM|L/h|mg/h|Cumulative fraction"),
             # Making "Cumulative" lower case
             ConcUnit = sub("Cumulative", "cumulative", ConcUnit),
@@ -510,15 +527,15 @@ extractConcTime <- function(sim_data_file,
    SimTimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
    SimTimeUnits <- ifelse(str_detect(SimTimeUnits, "Time.* \\(h\\)"), "hours", "days")
    
-   
+   toc(log = T)
    # Extracting each compound ----------------------------------------------
-   
    # Note: This is a loop for use by extractConcTime_mult. For just running
    # extractConcTime, this will only have a single iteration.
    
    sim_data <- list()
    
    for(cmpd in compoundToExtract){
+      tic(msg = paste("Extracting", cmpd))
       
       if(fromMultFunction){
          message(paste("          for compound ID =", cmpd))
@@ -527,6 +544,7 @@ extractConcTime <- function(sim_data_file,
       sim_data[[cmpd]] <- list() 
       
       for(ss in subsection_ADAMs){
+         tic(msg = paste("Extracting", ss))
          
          # Pull the data needed 
          sim_data[[cmpd]][[ss]] <- 
@@ -612,18 +630,21 @@ extractConcTime <- function(sim_data_file,
             
             sim_data[[cmpd]][[ss]] <- bind_rows(sim_data[[cmpd]][[ss]], 
                                                 sim_data_geomean)
-            
          }
          
          rm(sim_data_trial)
+         toc(log = T)
          
       }
       
       sim_data[[cmpd]] <- bind_rows(sim_data[[cmpd]])
+      
+      toc(log = T)
    }
    
-   sim_data <- bind_rows(sim_data)
+   tic(msg = "everything after extracting each cmpd")
    
+   sim_data <- bind_rows(sim_data)
    
    ## observed data -------------------------------------------------------
    
@@ -760,20 +781,23 @@ extractConcTime <- function(sim_data_file,
             obs_data_file <- Deets$ObsOverlayFile
          }
          
-         obs_data <- extractObsConcTime(obs_data_file) %>%
-            mutate(CompoundID = as.character(CompoundID), # Need to include this b/c sometimes it could be a named character vector, which messes up the next step. 
-                   Compound = ObsCompounds[CompoundID],
-                   Inhibitor = ifelse(Inhibitor == "inhibitor" &
-                                         complete.cases(AllPerps_comma),
-                                      AllPerps_comma, Inhibitor))
+         obs_data <- extractObsConcTime(obs_data_file)
          
-         # if(CompoundType == "ADC"){
-         #    obs_data <- obs_data %>%
-         #       mutate(CompoundID = ifelse(CompoundID == "primary metabolite 1",
-         #                                  "released payload", CompoundID))
-         # }
-         
-         obs_data <- obs_data %>% filter(CompoundID %in% compoundToExtract)
+         if("CompoundID" %in% names(obs_data)){
+            obs_data <- obs_data %>% 
+               filter(CompoundID %in% compoundToExtract) %>%
+               mutate(CompoundID = as.character(CompoundID), # Need to include this b/c sometimes it could be a named character vector, which messes up the next step. 
+                      Compound = ObsCompounds[CompoundID],
+                      Inhibitor = ifelse(Inhibitor == "inhibitor" &
+                                            complete.cases(AllPerps_comma),
+                                         AllPerps_comma, Inhibitor))
+            
+            # if(CompoundType == "ADC"){
+            #    obs_data <- obs_data %>%
+            #       mutate(CompoundID = ifelse(CompoundID == "primary metabolite 1",
+            #                                  "released payload", CompoundID))
+            # }
+         }
          
          if(nrow(obs_data) == 0){
             rm(obs_data)
@@ -909,6 +933,7 @@ extractConcTime <- function(sim_data_file,
       Data <- Data %>%
          filter(CompoundID %in% c(compoundToExtract, "UNKNOWN"))
    }
+   toc()
    
    return(Data)
 }

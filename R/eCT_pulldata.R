@@ -85,7 +85,7 @@ eCT_pulldata <- function(sim_data_xl,
    # Figuring out which rows contain which data
    FirstBlank <- intersect(which(is.na(sim_data_xl$...1)),
                            which(1:nrow(sim_data_xl) > TimeRow))[1]
-   FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
+   FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl) + 1, FirstBlank)
    # NamesToCheck <- sim_data_xl$...1[TimeRow:(FirstBlank-1)]
    NamesToCheck <- sim_data_xl$...1
    
@@ -114,7 +114,10 @@ eCT_pulldata <- function(sim_data_xl,
       
       # Step 1: Find all rows w/ADAM model concentrations
       CompoundIndices <- which(str_detect(NamesToCheck, 
-                                          "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|dissolved|absorbed|^C Enterocyte|Release Fraction|CIntracranial|CBrainI[CS]F|CCSF(Spinal|Cranial)|Kpuu_I[CS]F|Kpuu_BrainMass|CTotalBrain"))
+                                          "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|ITissue|dissolved|absorbed|^C Enterocyte|Release fraction|CIntracranial|CBrainI[CS]F|CCSF(Spinal|Cranial)|Kpuu_I[CS]F|Kpuu I[CS]F|Kpuu_BrainMass|Kpuu brain mass|CTotal( )?Brain"))
+      # IMPORTANT: If you change the above regex b/c you find some new weird way
+      # that the Simulator output refers to things, ALSO CHANGE IT IN
+      # extractConcTime.
       
       # Step 2: Find only those rows with this particular tissue subtype
       temp_regex <- paste0(ifelse(
