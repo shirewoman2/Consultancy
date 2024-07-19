@@ -430,7 +430,7 @@ ct_plot_obs <- function(ct_dataframe,
    # If they didn't include the column "Simulated" and they're using this
    # particular function, that's probably b/c all of the data are observed.
    if("Simulated" %in% names(ct_dataframe) == FALSE){
-         ct_dataframe$Simulated <- FALSE
+      ct_dataframe$Simulated <- FALSE
    }
    
    # Main body of function -------------------------------------------------
@@ -454,15 +454,12 @@ ct_plot_obs <- function(ct_dataframe,
       
       # For calculating means, grouping by everything except conc and columns
       # that would be just for one individual. 
-      GroupingCols <- 
-         setdiff(names(ct_dataframe), 
-                 c(names(ct_dataframe)[
-                    str_detect(tolower(names(ct_dataframe)), "conc")], 
-                   "Individual", "Conc", "SD_SE", "Age", "Weight_kg", "Height_cm", "Sex", 
-                   "SerumCreatinine_umolL", "HSA_gL", "Haematocrit",
-                   "PhenotypeCYP2D6", "SmokingStatus"))
-      # We do need Conc_units to be included, though. Adding that back in.
-      GroupingCols <- c(GroupingCols, "Conc_units")
+      GroupingCols <- c("Compound", "CompoundID", "Inhibitor", "Simulated",
+                        "Tissue", "Time", "Time_units", "Conc_units",
+                        "Dose_sub", "Dose_inhib", "Dose_inhib2", 
+                        "InfDuration_sub", "InfDuration_inhib", 
+                        "InfDuration_inhib2", "Dose_units", "DoseNum", 
+                        "ObsFile", "Period", "Species")
       
       suppressMessages(
          CTagg <- ct_dataframe %>% 
