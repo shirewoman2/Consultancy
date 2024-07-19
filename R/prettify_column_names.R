@@ -129,11 +129,12 @@ prettify_column_names <- function(PKtable,
          str_comma(paste0("`", ConcUnits, "`")), 
          ". Just fyi, if you're running a function for making a PK table, and you see this message, we can adjust concentration units for you if you request that with the argument convert_conc_units.")), 
          "\n"))
-      
-      TableNames$ColNames3 <- 
-         sub(str_c(setdiff(ConcUnits, "ng/mL"), collapse = "|"), 
-             "ng/mL", TableNames$ColNames3)
-   }
+   }   
+   
+   TableNames$ColNames3 <- 
+      sub(str_c(setdiff(ConcUnits, "ng/mL"), collapse = "|"), 
+          "ng/mL", TableNames$ColNames3)
+   
    
    # I haven't encountered a table with more than 1 time unit, so this has not
    # been well tested.
@@ -151,9 +152,9 @@ prettify_column_names <- function(PKtable,
    # 1st step: This will leave some values as NA for the column PrettifiedNames.
    TableNames <- TableNames %>% 
       mutate(IsPretty = ColNames3 %in% c(AllPKParameters$PrettifiedNames, 
-                                                 AllPKParameters_mod$PrettifiedNames), 
+                                         AllPKParameters_mod$PrettifiedNames), 
              IsNotPretty = ColNames3 %in% c(AllPKParameters_mod$PKparameter, 
-                                                    AllPKParameters$PKparameter),
+                                            AllPKParameters$PKparameter),
              IsPKParam = IsPretty | IsNotPretty, 
              NeedsPrettifying = IsPKParam & IsNotPretty, 
              PKparameter = case_when(NeedsPrettifying == TRUE ~ ColNames3, 
@@ -161,7 +162,10 @@ prettify_column_names <- function(PKtable,
                                      NeedsPrettifying == FALSE & IsPKParam ~ NA), 
              PrettifiedNames = case_when(NeedsPrettifying == FALSE ~ ColNames3, 
                                          NeedsPrettifying == FALSE & IsPKParam == FALSE ~ ColNames3, 
-                                         TRUE ~ NA))
+                                         TRUE ~ NA),
+             # Dealing with any differences in units
+             PrettifiedNames = str_replace(PrettifiedNames, "ng/mL", Conc), 
+             PrettifiedNames = str_replace(PrettifiedNames, "h", Time))
    
    # Some columns may need prettifying and others may need uglifying. Need to
    # figure out what values to fill in for any NA values in either
@@ -175,7 +179,8 @@ prettify_column_names <- function(PKtable,
                 by = "PKparameter") %>% unique()
    
    TableNamesToUglify <- TableNames %>% filter(is.na(PKparameter)) %>% 
-      select(-PKparameter) %>% 
+      select(-PKparameter, -PrettifiedNames) %>% 
+      rename(PrettifiedNames = ColNames3) %>% 
       left_join(bind_rows(AllPKParameters, AllPKParameters_mod) %>% 
                    select(PKparameter, PrettifiedNames) %>% 
                    bind_rows(ExtraPKParam), 
@@ -195,14 +200,9 @@ prettify_column_names <- function(PKtable,
    # Setting semi-finalized column names. 
    TableNames <- TableNames %>% 
       mutate(FinalNames = case_when({pretty_or_ugly_cols} == "pretty" ~ PrettifiedNames, 
-                                    {pretty_or_ugly_cols} == "ugly" ~ PKparameter))
-   
-   # Returning which are PK if that's all user wanted
-   if(return_which_are_PK){
-      return(TableNames %>% 
-                select(ColNames1, IsPKParam, PrettifiedNames, PKparameter) %>%
-                rename(ColName = ColNames1))
-   }
+                                    {pretty_or_ugly_cols} == "ugly" ~ PKparameter), 
+             FinalNames = ifelse(is.na(FinalNames), ColNames1, FinalNames)) %>% 
+      unique()
    
    # Making sure that we don't have duplicates for OrigOrder b/c that would mean
    # that final column names might be offset. An example of when this can
@@ -286,6 +286,15 @@ prettify_column_names <- function(PKtable,
       PKtable <- TableNames$FinalNames
    }
    
-   return(PKtable)
+   # Returning which are PK if that's all user wanted
+   if(return_which_are_PK){
+      return(TableNames %>% 
+                select(ColNames1, IsPKParam, FinalNames, PKparameter) %>%
+                rename(ColName = ColNames1, 
+                       PrettifiedNames = FinalNames) %>% unique())
+   } else {
+      return(PKtable)
+   }
    
 }
+
