@@ -366,6 +366,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
             DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
             
+            if(DeetLevels == 0){next} # This is 0 when it's only set up for getting database parameters and not for extracting from workspace.
+            
             DeetValue <- 
                switch(DeetLevels, 
                       "2" = XML::xmlValue(RootNode[[DeetInfo$Level1]][[

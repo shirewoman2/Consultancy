@@ -1609,7 +1609,7 @@ extractExpDetails <- function(sim_data_file,
                      
                      # Checking for RAF/REF values b/c they're not always there
                      RAFREF <- as.numeric(
-                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
+                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "ISEF|RAF|REF"))],
                                  ValueCol] %>% pull(1))
                      
                      if(length(RAFREF) > 0){
