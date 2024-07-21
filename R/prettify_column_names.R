@@ -131,10 +131,11 @@ prettify_column_names <- function(PKtable,
          "\n"))
    }   
    
-   TableNames$ColNames3 <- 
-      sub(str_c(setdiff(ConcUnits, "ng/mL"), collapse = "|"), 
-          "ng/mL", TableNames$ColNames3)
-   
+   if(length(ConcUnits) > 0){
+      TableNames$ColNames3 <- 
+         sub(str_c(setdiff(ConcUnits, "ng/mL"), collapse = "|"), 
+             "ng/mL", TableNames$ColNames3)
+   }
    
    # I haven't encountered a table with more than 1 time unit, so this has not
    # been well tested.

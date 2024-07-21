@@ -957,15 +957,10 @@ pk_table <- function(PKparameters = NA,
       
       # Step 1 for setting column names. Note that this does NOT YET account for
       # the possibility that there were multiple user-defined intervals.
-      ColNames <- data.frame(Orig = names(MyPKResults)) %>% 
-         mutate(Pretty = prettify_column_names(PKtable = Orig, 
-                                               prettify_compound_names = prettify_compound_names, 
-                                               pretty_or_ugly_cols = "pretty"), 
-                IsPK = prettify_column_names(PKtable = Orig, 
-                                             return_which_are_PK = TRUE) %>% 
-                   pull(IsPKParam), 
-                # Checking position of columns with custom intervals.
-                CustomInt = Orig %in% AllPKParameters$PKparameter_nodosenum)
+      ColNames <- prettify_column_names(MyPKResults,
+                                        return_which_are_PK = TRUE) %>% 
+         mutate(# Checking position of columns with custom intervals.
+            CustomInt = ColName %in% AllPKParameters$PKparameter_nodosenum)
       
       # Adding time interval to any data that came from custom AUC interval
       # sheets.
@@ -993,7 +988,7 @@ pk_table <- function(PKparameters = NA,
          
          # There could be multiple user-defined intervals; accounting for that.
          MyPKResults <- MyPKResults %>% 
-            pivot_longer(cols = any_of(ColNames$Orig[ColNames$IsPK == TRUE]), 
+            pivot_longer(cols = any_of(ColNames$ColName[ColNames$IsPK == TRUE]), 
                          names_to = "PKparameter", 
                          values_to = "Value") %>% 
             left_join(IntToAdd, by = join_by(Sheet, File)) %>% 
@@ -1007,54 +1002,54 @@ pk_table <- function(PKparameters = NA,
          
          ColNames <- ColNames %>% 
             left_join(expand.grid(Interval = unique(IntToAdd$Interval), 
-                                  Orig = ColNames$Orig) %>% 
-                         mutate(Orig_int = paste(Orig, Interval)) %>% 
-                         filter(Orig_int %in% names(MyPKResults)), 
-                      by = join_by(Orig)) %>% 
-            mutate(Orig = ifelse(is.na(Orig_int), Orig, Orig_int)) %>% 
-            select(-Orig_int) %>% 
+                                  ColName = ColNames$ColName) %>% 
+                         mutate(ColName_int = paste(ColName, Interval)) %>% 
+                         filter(ColName_int %in% names(MyPKResults)), 
+                      by = join_by(ColName)) %>% 
+            mutate(ColName = ifelse(is.na(ColName_int), ColName, ColName_int)) %>% 
+            select(-ColName_int) %>% 
             mutate(UnitsToAdd = ifelse(CustomInt, 
-                                       str_extract(Pretty, 
+                                       str_extract(PrettifiedNames, 
                                                    " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)"), 
                                        ""), 
-                   Pretty = ifelse(CustomInt, 
-                                   str_replace(Pretty, " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", ""), 
-                                   Pretty), 
-                   Pretty = ifelse(CustomInt, 
-                                   paste0(Pretty, 
-                                          " for interval ", Interval, 
-                                          UnitsToAdd), 
-                                   Pretty)) %>% 
+                   PrettifiedNames = ifelse(CustomInt, 
+                                            str_replace(PrettifiedNames, " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", ""), 
+                                            PrettifiedNames), 
+                   PrettifiedNames = ifelse(CustomInt, 
+                                            paste0(PrettifiedNames, 
+                                                   " for interval ", Interval, 
+                                                   UnitsToAdd), 
+                                            PrettifiedNames)) %>% 
             # We had to remove the sheet or this would have unnecessary rows. Remove that column name. 
-            filter(Orig != "Sheet")
+            filter(ColName != "Sheet")
       }
       
       # FIXME - CHeck whether this works w/multiple units in table. 
       
       # Adjusting units as needed.
       if("Units_AUC" %in% names(Deets) && complete.cases(Deets$Units_AUC)){
-         ColNames$Pretty <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), ColNames$Pretty)
+         ColNames$PrettifiedNames <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), ColNames$PrettifiedNames)
       }
       if("Units_CL" %in% names(Deets) && complete.cases(Deets$Units_CL)){
-         ColNames$Pretty <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), ColNames$Pretty)
+         ColNames$PrettifiedNames <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), ColNames$PrettifiedNames)
       }
       if("Units_Cmax" %in% names(Deets) && complete.cases(Deets$Units_Cmax)){
-         ColNames$Pretty <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), ColNames$Pretty)
+         ColNames$PrettifiedNames <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), ColNames$PrettifiedNames)
       }
       if("Units_tmax" %in% names(Deets) && complete.cases(Deets$Units_tmax)){
-         ColNames$Pretty <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), ColNames$Pretty)
+         ColNames$PrettifiedNames <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), ColNames$PrettifiedNames)
       }
-      ColNames$Pretty <- gsub("ug/mL", "µg/mL", ColNames$Pretty)
+      ColNames$PrettifiedNames <- gsub("ug/mL", "µg/mL", ColNames$PrettifiedNames)
       
       MyPerpetrator <- determine_myperpetrator(existing_exp_details,
                                                prettify_compound_names)
       
       if(any(complete.cases(MyPerpetrator))){
-         ColNames$Pretty <- sub("perpetrator", MyPerpetrator, ColNames$Pretty)
+         ColNames$PrettifiedNames <- sub("perpetrator", MyPerpetrator, ColNames$PrettifiedNames)
       }
       
-      MyPKResults <- MyPKResults[, ColNames$Orig]
-      names(MyPKResults) <- ColNames$Pretty
+      MyPKResults <- MyPKResults[, ColNames$ColName]
+      names(MyPKResults) <- ColNames$PrettifiedNames
       
    } 
    
