@@ -2339,11 +2339,11 @@ ct_plot_overlay <- function(ct_dataframe,
             pull(colorBy_column) %>% unique() %>% length()
       } else {
          NumColorsNeeded <-
-            ifelse(MapObsData,
-                   bind_rows(sim_dataframe, obs_dataframe) %>% 
-                      pull(colorBy_column) %>% unique() %>% length(),
-                   sim_dataframe %>% 
-                      pull(colorBy_column) %>% unique() %>% length())
+         #    ifelse(MapObsData,
+                   bind_rows(sim_dataframe, obs_dataframe) %>%
+                      pull(colorBy_column) %>% unique() %>% length()#,
+                   # sim_dataframe %>% 
+                   #    pull(colorBy_column) %>% unique() %>% length())
          
       }
       
@@ -2478,11 +2478,11 @@ ct_plot_overlay <- function(ct_dataframe,
             pull(linetype_column) %>% unique() %>% length()
       } else {
          NumlinetypesNeeded <-
-            ifelse(MapObsData,
+            # ifelse(MapObsData,
                    bind_rows(sim_dataframe, obs_dataframe) %>% 
-                      pull(linetype_column) %>% unique() %>% length(),
-                   sim_dataframe %>% 
-                      pull(linetype_column) %>% unique() %>% length())
+                      pull(linetype_column) %>% unique() %>% length()#,
+                   # sim_dataframe %>% 
+                   #    pull(linetype_column) %>% unique() %>% length())
          
       }
       
