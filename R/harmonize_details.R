@@ -182,13 +182,16 @@ harmonize_details <- function(existing_exp_details){
          SheetNames <- as.character(c())
          for(i in existing_exp_details$MainDetails$File){
             if(file.exists(i)){
-               SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
-                                         error = openxlsx::getSheetNames(i))
+               SheetNames[i] <- 
+                  str_c(paste0("'", 
+                               tryCatch(readxl::excel_sheets(i),
+                                        error = openxlsx::getSheetNames(i)), 
+                               "'"), collapse = " ")
             } else { SheetNames[i] <- NA}
             
             existing_exp_details$MainDetails$SheetNames[
-               existing_exp_details$MainDetails$File == i] <- 
-               str_c(paste0("`", SheetNames, "`"), collapse = " ")
+               existing_exp_details$MainDetails$File == i] <- SheetNames[i]
+            
          }
       }
       
