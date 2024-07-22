@@ -287,64 +287,8 @@ create_doses <- function(dose_interval = NA,
    # Joining the two data.frames.
    Info <- expand_grid(SubjInfo, CmpdInfo)
    
-   # Figuring out which columns we need
-   # Column names by Simulator version
-   ColNames <- list(
-      "V23" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
-                "SD_SE",
-                "Compound_ID", "Compound_route",
-                "Compound_dose_unit", "Compound_dose_amount",
-                "Compound_inf_duration", "InjectionSite",
-                "DoseVolume_mL", "DoseConc_mgmL", 
-                "Period", "Treatment_VBE", "Sequence", 
-                "Subj_age", "Subj_weight",
-                "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
-                "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                "SmokingStatus", "GestationalAge_wk", 
-                "PlacentaVol_L", "FetalWt_kg", "PostPartumAge_months"), 
-      
-      "V22" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
-                "SD_SE",
-                "Compound_ID", "Compound_route",
-                "Compound_dose_unit", "Compound_dose_amount",
-                "Compound_inf_duration", "InjectionSite",
-                "Period", "Subj_age", "Subj_weight",
-                "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
-                "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                "SmokingStatus", "GestationalAge_wk", 
-                "PlacentaVol_L", "FetalWt_kg"), 
-      
-      "V21" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
-                "Compound_ID", "Compound_route", 
-                "Compound_dose_unit", "Compound_dose_amount",
-                "Compound_inf_duration", "Period", 
-                "Subj_age", "Subj_weight",
-                "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
-                "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                "SmokingStatus", "GestationalAge_wk", 
-                "PlacentaVol_L", "FetalWt_kg"),
-      
-      "V20" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
-                "Compound_ID", "Compound_route",
-                "Compound_dose_unit", "Compound_dose_amount",
-                "Compound_inf_duration", "Period",
-                "Subj_age", "Subj_weight",
-                "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
-                "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                "SmokingStatus", "GestationalAge_wk", 
-                "FetalWt_kg"),
-      
-      "V19" = c("Subj_ID", "Time", "DV", "DVID", "Weighting",
-                "Compound_ID", "Compound_route",
-                "Compound_dose_unit", "Compound_dose_amount",
-                "Compound_inf_duration", "Period", 
-                "Subj_age", "Subj_weight",
-                "Subj_height", "Subj_sex", "SerumCreatinine_umolL",
-                "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                "SmokingStatus")
-   )
-   
-   ColNames <- ColNames[[paste0("V", simulator_version)]]
+   # Figuring out which columns we need Column names by Simulator version
+   ColNames <- ObsColNames[[paste0("V", simulator_version)]]$ColName
    
    Out <- Info %>% 
       mutate(across(.cols = everything(), 
@@ -355,37 +299,8 @@ create_doses <- function(dose_interval = NA,
              Compound_dose_unit = sub("m2", "m²", Compound_dose_unit))
    
    Out[, setdiff(ColNames, names(Out))] <- ""
-   
-   # Syntax: currentname = newname
-   NameKey <- c("Subj_ID" = "Subject ID",
-                "Time" = "Time", 
-                "DV" = "DV",
-                "DVID" = "DV ID",
-                "Weighting" = "Weighting",
-                "SD_SE" = "SD SE",
-                "Compound_ID" = "Compound",
-                "Compound_route" = "Route of administration",
-                "Compound_dose_unit" = "Dose Unit",
-                "Compound_dose_amount" = "Dose Amount",
-                "Compound_inf_duration" = "Infusion Duration (min)",
-                "InjectionSite" = "Injection site",
-                "Period" = "Period",
-                "Subj_age" = "Age (year)",
-                "Subj_weight" = "Weight (kg)",
-                "Subj_height" = "Height (cm)",
-                "Subj_sex" = "Sex",
-                "SerumCreatinine_umolL" = "Serum Creatinine (umol/L)",
-                "HSA_gL" = "HSA (g/L)",
-                "Haematocrit" = "Haematocrit",
-                "PhenotypeCYP2D6" = "Phenotype CYP2D6",
-                "SmokingStatus" = "Smoking Status",
-                "GestationalAge_wk" = "Gestational Age (weeks)", 
-                "PlacentaVol_L" = "Placenta Volume (L)",
-                "FetalWt_kg" = "Fetal Weight (kg)")
-   
-   GoodCols <- NameKey[which(names(NameKey) %in% ColNames)]
-   Out <- Out[, names(GoodCols)]
-   names(Out) <- GoodCols
+   Out <- Out[, ObsColNames[[paste0("V", simulator_version)]]$ColName]
+   names(Out) <- ObsColNames[[paste0("V", simulator_version)]]$PEColName
    
    ## Saving & returning output ----------------------------------------------
    if(complete.cases(save_output)){

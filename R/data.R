@@ -418,4 +418,9 @@
 "PKexamples"
 
 
+#' Column names for observed concentration-time data by Simulator version
+#' 
+#' @format a data.frame
+"ObsColNames"
+
 
