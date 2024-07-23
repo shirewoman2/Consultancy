@@ -70,7 +70,7 @@ extractConcTime_DB <- function(sim_data_file,
          
          "\n", 
          
-         "   Simcyp::Initialise(species = Simcyp::SpeciesID$Human, requestedVersion = 22) \n"), 
+         "   Simcyp::Initialise(species = Simcyp::SpeciesID$Human, requestedVersion = 23) \n"), 
          call. = FALSE)
       
       return(list())

@@ -1459,14 +1459,15 @@ recalc_PK <- function(ct_dataframe,
       
    }
    
-   if(exists("DoseIntChecks", inherits = FALSE) &&
-      any(unlist(map(DoseIntChecks, c(1, 1))) == "mismatch")){
-      Problems <- unlist(map(DoseIntChecks, c(1, 1)))
-      Problems <- Problems[Problems == "mismatch"]
+   if(exists("DoseIntChecks", inherits = FALSE)){
       
-      warning(paste0("For the following files, the dosing interval does not match the AUC interval for the last dose:\n", 
-                     str_c(Problems, collapse = "\n")), 
-              call. = FALSE)
+      if(any(DoseIntChecks$OneDoseIntRemaining == FALSE, na.rm = T)){
+         Problems <- DoseIntChecks$File[DoseIntChecks$OneDoseIntRemaining == FALSE]
+         
+         warning(paste0("For the following files, the dosing interval does not match the AUC interval for the last dose:\n", 
+                        str_c(Problems, collapse = "\n")), 
+                 call. = FALSE)
+      }
    }
    
    return(Out)
