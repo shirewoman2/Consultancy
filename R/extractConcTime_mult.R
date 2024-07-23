@@ -301,7 +301,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # Main body of function -----------------------------------------------
    
-   tic(msg = "Main body of function - mult")
+   # tic(msg = "Main body of function - mult")
    
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx" or in all subfolders if they wanted it to be
@@ -643,12 +643,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                            complete.cases(ObsFile) &
                                            File %in% sim_data_files_topull) 
    }
-   toc(log = TRUE)
+   # toc(log = TRUE)
    
    ## Start of loop through files ------------------------------------------
    MultData <- list()
    
-   tic(msg = "start of loop through files - mult")
+   # tic(msg = "start of loop through files - mult")
    
    for(ff in sim_data_files_topull){
       message(paste("Extracting concentration-time data from file =", ff))
@@ -994,11 +994,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    MultData <- bind_rows(MultData)
    
-   toc(log = TRUE)
+   # toc(log = TRUE)
    
    # all data together -------------------------------------------------
    
-   tic(msg = "all data together - mult")
+   # tic(msg = "all data together - mult")
    
    # Dealing with custom dosing regimens
    if("Dose_sub" %in% names(ct_dataframe) &
@@ -1043,7 +1043,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                       "File", "ObsFile"))) %>% 
       unique()
    
-   toc(log = TRUE)
+   # toc(log = TRUE)
    
    return(ct_dataframe)
    
