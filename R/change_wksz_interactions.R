@@ -57,14 +57,15 @@
 #'   inhibitor 1}}
 #' @param enzymes enzymes whose interaction parameters you want to change, e.g.,
 #'   \code{enzymes = c("CYP3A4", "CYP3A5")}. Note: This is currently only set up
-#'   to change CYP, some UGT, P-gp, and BCRP interaction parameters. If you need
-#'   to change interaction parameters for other enzymes or transporters, please
-#'   talk to Laura Shireman.
+#'   to change CYP, some UGT, P-gp, BCRP, MATE1, and MATE2-K interaction
+#'   parameters. If you need to change interaction parameters for other enzymes
+#'   or transporters, please talk to Laura Shireman.
 #' @param tissues tissues where the enzyme of interest may be found. Leave as
 #'   "all" if not applicable (CYPs and UGTS) or where you want all the possible
 #'   tissues. For transporters, where the Simulator allows you to set different
 #'   values for different tissues, you can alternatively set this to
-#'   "intestine", "liver", or "kidney".
+#'   "intestine", "liver", or "kidney" if you don't want to change it in all
+#'   possible tissues.
 #' @param competitive_inhibition_switch turn competitive inhibition "on" or
 #'   "off" or set to "no change" to leave the original value
 #' @param Ki Ki value to use for competitive inhibition (uM) or set to "no
@@ -272,7 +273,8 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                    relationship = "many-to-many", 
                    by = "tissues_orig") %>% 
          # no tissue specification for DME. Removing that to avoid duplicates.
-         mutate(tissues = ifelse(enzymes %in% c("P-gp", "BCRP"), 
+         mutate(tissues = ifelse(enzymes %in% c("P-gp", "BCRP", 
+                                                "MATE1", "MATE2-K"), 
                                  tissues, NA)) %>% 
          select(-tissues_orig) %>% 
          unique()
@@ -435,7 +437,17 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                                 "liver" = "LiverTransporterSet", 
                                                 "kidney" = "KidneyTransporterSet",
                                                 "intestine" = "GutTransporterSet"), 
+                                "MATE1" = switch(Changes[[i]]$tissues[j], 
+                                                 "liver" = "LiverTransporterSet", 
+                                                 "kidney" = "KidneyTransporterSet"), 
+                                "MATE2-K" = "KidneyTransporterSet", 
                                 "OATP1B" = "LiverTransporterSet")
+         
+         # If that particular tissue is not available, EnzIntRoutes will be
+         # null. Skipping in that case.
+         if(is.null(EnzIntRoutes)){
+            next
+         }
          
          EnzNum_Enzyme <- switch(Changes[[i]]$enzymes[j],
                                  # !!! WARNING: I have checked this for V22.
@@ -482,6 +494,10 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                                  "liver" = 21, 
                                                  "kidney" = 22,
                                                  "intestine" = 12), 
+                                 "MATE1" = switch(Changes[[i]]$tissues[j], 
+                                                  "liver" = 22, 
+                                                  "kidney" = 23), 
+                                 "MATE2-K" = 24, # only in kidney
                                  "OATP1B1" =  6, # only in liver
                                  "OATP1B3" = 7 # only in liver
          )

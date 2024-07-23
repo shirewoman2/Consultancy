@@ -78,15 +78,16 @@ inhibitor 1}}}
 
 \item{enzymes}{enzymes whose interaction parameters you want to change, e.g.,
 \code{enzymes = c("CYP3A4", "CYP3A5")}. Note: This is currently only set up
-to change CYP, some UGT, P-gp, and BCRP interaction parameters. If you need
-to change interaction parameters for other enzymes or transporters, please
-talk to Laura Shireman.}
+to change CYP, some UGT, P-gp, BCRP, MATE1, and MATE2-K interaction
+parameters. If you need to change interaction parameters for other enzymes
+or transporters, please talk to Laura Shireman.}
 
 \item{tissues}{tissues where the enzyme of interest may be found. Leave as
 "all" if not applicable (CYPs and UGTS) or where you want all the possible
 tissues. For transporters, where the Simulator allows you to set different
 values for different tissues, you can alternatively set this to
-"intestine", "liver", or "kidney".}
+"intestine", "liver", or "kidney" if you don't want to change it in all
+possible tissues.}
 
 \item{competitive_inhibition_switch}{turn competitive inhibition "on" or
 "off" or set to "no change" to leave the original value}
