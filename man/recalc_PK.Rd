@@ -257,11 +257,12 @@ returns a list of individual and/or aggregate PK data
 recalculates the PK for any concentration-time profiles specified. A few
 notes about the output and calculations: \enumerate{\item{Aggregated PK
 will be recalculated to include the newly calculated individual PK
-parameters.} \item{AUCs calculated with the trapezoidal rule are calculated with the
-linear-up/log-down method. If anyone needs that to be linear up and linear
-down for some reason, please contact Laura Shireman.} \item{Graphs show the
-time since the start of the dosing interval on the x axis rather than the time since the
-first dose.}}
+parameters.} \item{Graphs show the time since the start of the dosing
+interval on the x axis rather than the time since the first dose.}
+\item{The ID you'll see listed on graphs or in the console if you ask for 
+all of the progress to be shown is the compound ID, any perpetrator present,
+the tissue, the individual, the trial, whether the data were simulated or 
+observed, the file name, the observed file name, and the dose number.}}
 }
 \examples{
 # None yet
