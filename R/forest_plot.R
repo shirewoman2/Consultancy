@@ -2054,7 +2054,8 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
-   if(use_AUCt_when_AUCinf_NA && nrow(AUCt_swap) > 0){
+   if(use_AUCt_when_AUCinf_NA && nrow(AUCt_swap) > 0 &
+      include_AUCt_for_AUCinf_caption == TRUE){
       CaptionText <- forest_dataframe %>% filter(File %in% AUCt_swap$File) %>% 
          pull(YCol) %>% unique %>% as.character %>% str_comma
       CaptionText <- gsub("\\n", " ", CaptionText)
