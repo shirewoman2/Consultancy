@@ -74,14 +74,17 @@ if(str_detect(Msg, "mismatch last dose")){
    DoseIntWarning <- list(
       "***WARNING: The time used for integrating the AUC for the last dose was not the same as the dosing interval.***", 
       
-      paste0("**Dosing interval: ", CheckDoseInt_list[[i]]$DoseInt_X, " h**"),
+      paste0("**Dosing interval: ", 
+             unique(CheckDoseInt_list[[i]]$DoseInt_X), " h**"),
       
-      paste0("**Last dose start time: ", CheckDoseInt_list[[i]]$LastDoseTime, " h**"),
+      paste0("**Last dose start time: ",
+             unique(CheckDoseInt_list[[i]]$LastDoseTime), " h**"),
       
-      paste0("**Simulation end time: ", CheckDoseInt_list[[i]]$SimDuration, " h**"),
+      paste0("**Simulation end time: ",
+             unique(CheckDoseInt_list[[i]]$SimDuration), " h**"),
       
       paste0("**Time used for integrating the last-dose AUC: ", 
-             CheckDoseInt_list[[i]]$IntervalRemaining, " h**"),
+             unique(CheckDoseInt_list[[i]]$IntervalRemaining), " h**"),
       
       "***Please check these results carefully.***")
    
@@ -90,14 +93,17 @@ if(str_detect(Msg, "mismatch last dose")){
    DoseIntWarning <- list(
       "***WARNING: The time used for integrating the AUC for the user-defined interval was not the same as the dosing interval.***", 
       
-      paste0("**Dosing interval: ", CheckDoseInt_list[[i]]$DoseInt_X, " h**"),
+      paste0("**Dosing interval: ", 
+             unique(CheckDoseInt_list[[i]]$DoseInt_X), " h**"),
       
-      paste0("**User-defined interval start time: ", CheckDoseInt_list[[i]]$UserIntervalStart, " h**"),
+      paste0("**User-defined interval start time: ",
+             unique(CheckDoseInt_list[[i]]$UserIntervalStart), " h**"),
       
-      paste0("**User-defined interval end time: ", CheckDoseInt_list[[i]]$UserIntervalEnd, " h**"),
+      paste0("**User-defined interval end time: ", 
+             unique(CheckDoseInt_list[[i]]$UserIntervalEnd), " h**"),
       
       paste0("**Time used for integrating the user-defined AUC: ", 
-             CheckDoseInt_list[[i]]$UserIntervalRemaining, " h**"),
+             unique(CheckDoseInt_list[[i]]$UserIntervalRemaining), " h**"),
       
       "***Please check these results carefully.***")
    

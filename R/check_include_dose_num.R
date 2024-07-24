@@ -32,8 +32,9 @@ check_include_dose_num <- function(PK,
    
    DoseCheck <- c("first" = any(str_detect(PKparameters, "dose1|Dose 1")), 
                   "user-defined" = any(str_detect(PKparameters, 
-                                                  "dose1|Dose 1|last|Last dose") == FALSE, 
-                                       na.rm = T), # stet, this is checking for both here
+                                                  "dose1|Dose 1|last|Last dose") == FALSE, # stet, this is checking for both here
+                                       na.rm = T) |
+                     any(str_detect(PKparameters, "from.*to")), 
                   "last" = any(str_detect(PKparameters, "last|Last dose")))
    include_dose_num <- length(which(DoseCheck)) > 1
    
