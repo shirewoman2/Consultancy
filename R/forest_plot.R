@@ -1734,7 +1734,8 @@ forest_plot <- function(forest_dataframe,
    }
    
    # Checking that the 1st item is color.
-   if(is.matrix(col2rgb(VlineParams["color"])) == FALSE){
+   if(tryCatch(is.matrix(col2rgb(VlineParams["color"])),
+               error = function(x) FALSE) == FALSE){
       warning("The value you set for the line color for vline_at_1 is not a valid color in R. We'll set this to gray instead.", 
               call. = FALSE)
       VlineParams["color"] <- "gray"

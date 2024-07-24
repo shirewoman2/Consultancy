@@ -256,7 +256,7 @@ formatTable_Simcyp <- function(DF,
    font <- case_when(
       # "Calibri (Body)" dosen't work; just "Calibri" does.
       str_detect(font, "Calibri") ~ "Calibri", 
-                     .default = font)
+      .default = font)
    
    
    # Main body of function ----------------------------------------------------
@@ -360,7 +360,8 @@ formatTable_Simcyp <- function(DF,
          warning("We need 4 colors for highlighting geometric mean ratios, one each for negligible, weak, moderate, and strong interactions, and you have provided a different number of colors. We'll use yellow to red values for highlighting these.\n", 
                  call. = FALSE)
          highlight_gmr_colors <- "yellow to red"
-      } else if(is.matrix(col2rgb(highlight_gmr_colors)) == FALSE){
+      } else if(tryCatch(is.matrix(col2rgb(highlight_gmr_colors)),
+                         error = function(x) FALSE) == FALSE){
          warning("The values you used for highlighting geometric mean ratios are not all valid colors in R. We'll used the default colors instead.\n", 
                  call. = FALSE)
          highlight_gmr_colors <- "yellow to red"
@@ -369,7 +370,8 @@ formatTable_Simcyp <- function(DF,
    
    if(any(complete.cases(highlight_so_colors)) &&
       highlight_so_colors[1] %in% c("yellow to red", "green to red", "traffic") == FALSE &&
-      is.matrix(col2rgb(highlight_so_colors)) == FALSE){
+      tryCatch(is.matrix(col2rgb(highlight_so_colors)),
+               error = function(x) FALSE) == FALSE){
       warning("The values you used for highlighting S/O values are not all valid colors in R. We'll used the default colors instead.\n", 
               call. = FALSE)
       highlight_so_colors <- "yellow to red"
@@ -710,7 +712,8 @@ formatTable_Simcyp <- function(DF,
       highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
       
       if(highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE && 
-         is.matrix(col2rgb(highlight_so_colors)) == FALSE){
+         tryCatch(is.matrix(col2rgb(highlight_so_colors)),
+                  error = function(x) FALSE) == FALSE){
          warning("The values you used for highlighting problematic S/O ratios are not all valid colors in R. We'll used the default colors instead.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"

@@ -788,7 +788,7 @@ ct_plot_overlay <- function(ct_dataframe,
          
          normalize_by_dose <- FALSE
       } else if(all(c("Dose_sub", "Dose_inhib", "Dose_inhib2") %in% 
-             names(ct_dataframe))){
+                    names(ct_dataframe))){
          ct_dataframe <- ct_dataframe %>% 
             mutate(Conc = case_when(
                CompoundID %in% AllCompounds$CompoundID[
@@ -2339,67 +2339,70 @@ ct_plot_overlay <- function(ct_dataframe,
             pull(colorBy_column) %>% unique() %>% length()
       } else {
          NumColorsNeeded <-
-         #    ifelse(MapObsData,
-                   bind_rows(sim_dataframe, obs_dataframe) %>%
-                      pull(colorBy_column) %>% unique() %>% length()#,
-                   # sim_dataframe %>% 
-                   #    pull(colorBy_column) %>% unique() %>% length())
+            #    ifelse(MapObsData,
+            bind_rows(sim_dataframe, obs_dataframe) %>%
+            pull(colorBy_column) %>% unique() %>% length()#,
+         # sim_dataframe %>% 
+         #    pull(colorBy_column) %>% unique() %>% length())
          
       }
       
-      # If there's only one unique value in the colorBy_column, then make that
-      # item black.
-      if(length(sort(unique(c(sim_dataframe$colorBy_column, 
-                              obs_dataframe$colorBy_column)))) == 1){
-         A <- A + scale_color_manual(values = "black") +
-            scale_fill_manual(values = "black")
+      # # If there's only one unique value in the colorBy_column, then make that
+      # # item black.
+      # if(length(sort(unique(c(sim_dataframe$colorBy_column, 
+      #                         obs_dataframe$colorBy_column)))) == 1){
+      #    A <- A + scale_color_manual(values = "black") +
+      #       scale_fill_manual(values = "black")
+      # } else {
+      
+      # This is when the user wants specific user-specified colors rather
+      # that one of the pre-made sets.
+      if(length(color_set) > 1){
+         
+         # If they supply a named character vector whose values are not
+         # present in the data, convert it to an unnamed character vector.
+         if(is.null(names(color_set)) == FALSE && 
+            all(unique(sim_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
+            warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
+                           as_label(colorBy_column),
+                           " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
+                           as_label(colorBy_column), ".\n"), 
+                    call. = FALSE)
+            
+            MyColors <- as.character(color_set)
+         } else if(length(color_set) < NumColorsNeeded){
+            warning(paste("There are", NumColorsNeeded,
+                          "unique values in the column you have specified for the colors, but you have only specified", 
+                          length(color_set), 
+                          "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph.\n"), 
+                    call. = FALSE)
+            
+            MyColors <- rep(color_set, 100)[1:NumColorsNeeded]
+         } else {
+            MyColors <- color_set
+         }
+         
+         # FIXME - Add a check here that the colors supplied are all actually colors.
+         
       } else {
          
-         # This is when the user wants specific user-specified colors rather
-         # that one of the pre-made sets.
-         if(length(color_set) > 1){
-            
-            # If they supply a named character vector whose values are not
-            # present in the data, convert it to an unnamed character vector.
-            if(is.null(names(color_set)) == FALSE && 
-               all(unique(sim_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
-               warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
-                              as_label(colorBy_column),
-                              " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
-                              as_label(colorBy_column), ".\n"), 
-                       call. = FALSE)
-               
-               MyColors <- as.character(color_set)
-            } else if(length(color_set) < NumColorsNeeded){
-               warning(paste("There are", NumColorsNeeded,
-                             "unique values in the column you have specified for the colors, but you have only specified", 
-                             length(color_set), 
-                             "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph.\n"), 
-                       call. = FALSE)
-               
-               MyColors <- rep(color_set, 100)[1:NumColorsNeeded]
-            } else {
-               MyColors <- color_set
-            }
-            
-            # FIXME - Add a check here that the colors supplied are all actually colors.
-            
+         # NOTE: For no reason I can discern, if the user has observed
+         # data that should be all one color but then uses scale_color_X
+         # where x is anything except "manual", the observed points
+         # DISAPPEAR. That's why, below, whenever it's scale_color_x, I'm
+         # setting the colors needed and then using scale_color_manual
+         # instead of scale_color_x. -LSh
+         
+         color_set <- ifelse(str_detect(tolower(color_set), 
+                                        "default|brewer.*2|set.*2"), 
+                             "set2", color_set)
+         color_set <- ifelse(str_detect(tolower(color_set),
+                                        "brewer.*1|set.*1"), 
+                             "set1", color_set)
+         
+         if(tryCatch(is.matrix(col2rgb(color_set)), error = function(x) FALSE)){
+            MyColors <- color_set
          } else {
-            
-            # NOTE: For no reason I can discern, if the user has observed
-            # data that should be all one color but then uses scale_color_X
-            # where x is anything except "manual", the observed points
-            # DISAPPEAR. That's why, below, whenever it's scale_color_x, I'm
-            # setting the colors needed and then using scale_color_manual
-            # instead of scale_color_x. -LSh
-            
-            color_set <- ifelse(str_detect(tolower(color_set), 
-                                           "default|brewer.*2|set.*2"), 
-                                "set2", color_set)
-            color_set <- ifelse(str_detect(tolower(color_set),
-                                           "brewer.*1|set.*1"), 
-                                "set1", color_set)
-            
             
             suppressWarnings(
                MyColors <- 
@@ -2432,36 +2435,37 @@ ct_plot_overlay <- function(ct_dataframe,
                MyColors <- rainbow(NumColorsNeeded)
             }
          }
-         
-         if(MapObsFile_color){
-            names(MyColors) <- unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
-                                         arrange(colorBy_column) %>% 
-                                         pull(colorBy_column))
-         } else if(length(color_set) == 1){
-            if(AESCols["color"] == "Individual"){
-               # Figuring out all the colorBy_column values
-               AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
-                                   pull(colorBy_column))
-               
-               MyColors <- c(MyColors, "black")
-               names(MyColors) <- levels(ct_dataframe$colorBy_column)
-               
-            } else {
-               # This is when the colors are NOT set by the observed file
-               # AND the user hasn't supplied a named character vector for
-               # how to assign the colors AND the colors are not assigned
-               # to the individual subject.
-               names(MyColors) <- levels(c(sim_dataframe$colorBy_column,
-                                           obs_dataframe$colorBy_column))
-               
-            }
-         }
-         
-         suppressWarnings(
-            A <-  A + scale_color_manual(values = MyColors, drop = FALSE) +
-               scale_fill_manual(values = MyColors, drop = FALSE)
-         )
       }
+      
+      if(MapObsFile_color){
+         names(MyColors) <- unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
+                                      arrange(colorBy_column) %>% 
+                                      pull(colorBy_column))
+      } else if(length(color_set) == 1){
+         if(AESCols["color"] == "Individual"){
+            # Figuring out all the colorBy_column values
+            AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
+                                pull(colorBy_column))
+            
+            MyColors <- c(MyColors, "black")
+            names(MyColors) <- levels(ct_dataframe$colorBy_column)
+            
+         } else {
+            # This is when the colors are NOT set by the observed file
+            # AND the user hasn't supplied a named character vector for
+            # how to assign the colors AND the colors are not assigned
+            # to the individual subject.
+            names(MyColors) <- levels(c(sim_dataframe$colorBy_column,
+                                        obs_dataframe$colorBy_column))
+            
+         }
+      }
+      
+      suppressWarnings(
+         A <-  A + scale_color_manual(values = MyColors, drop = FALSE) +
+            scale_fill_manual(values = MyColors, drop = FALSE)
+      )
+      # }
    }
    
    # Specifying linetypes
@@ -2479,10 +2483,10 @@ ct_plot_overlay <- function(ct_dataframe,
       } else {
          NumlinetypesNeeded <-
             # ifelse(MapObsData,
-                   bind_rows(sim_dataframe, obs_dataframe) %>% 
-                      pull(linetype_column) %>% unique() %>% length()#,
-                   # sim_dataframe %>% 
-                   #    pull(linetype_column) %>% unique() %>% length())
+            bind_rows(sim_dataframe, obs_dataframe) %>% 
+            pull(linetype_column) %>% unique() %>% length()#,
+         # sim_dataframe %>% 
+         #    pull(linetype_column) %>% unique() %>% length())
          
       }
       

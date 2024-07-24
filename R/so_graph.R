@@ -374,7 +374,8 @@ so_graph <- function(PKtable,
    
    if(boundary_color_set[1] %in% c("red green", "muted red green", 
                                    "red black") == FALSE && 
-      is.matrix(col2rgb(boundary_color_set)) == FALSE){
+      tryCatch(is.matrix(col2rgb(boundary_color_set)),
+               error = function(x) FALSE) == FALSE){
       warning("The values you used for boundary colors are not all valid colors in R. We'll used the default colors instead.\n", 
               call. = FALSE)
       boundary_color_set <- "red black"
@@ -389,7 +390,8 @@ so_graph <- function(PKtable,
    
    if(boundary_color_set_Guest[1] %in% c("red green", "muted red green", 
                                          "red black") == FALSE && 
-      is.matrix(col2rgb(boundary_color_set_Guest)) == FALSE){
+      tryCatch(is.matrix(col2rgb(boundary_color_set_Guest)),
+               error = function(x) FALSE) == FALSE){
       warning("The values you used for BoundariesGuest boundary colors are not all valid colors in R. We'll used the default colors instead.\n", 
               call. = FALSE)
       boundary_color_set_Guest <- "red black"
