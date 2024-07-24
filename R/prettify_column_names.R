@@ -131,9 +131,10 @@ prettify_column_names <- function(PKtable,
          "\n"))
    }   
    
-   if(length(ConcUnits) > 0){
+   OtherConcUnits <- setdiff(ConcUnits, "ng/mL")
+   if(length(ConcUnits) > 0 & length(OtherConcUnits) > 0){
       TableNames$ColNames3 <- 
-         sub(str_c(setdiff(ConcUnits, "ng/mL"), collapse = "|"), 
+         sub(str_c(OtherConcUnits, collapse = "|"), 
              "ng/mL", TableNames$ColNames3)
    }
    
@@ -161,12 +162,16 @@ prettify_column_names <- function(PKtable,
              PKparameter = case_when(NeedsPrettifying == TRUE ~ ColNames3, 
                                      NeedsPrettifying == FALSE & IsPKParam == FALSE ~ ColNames3, 
                                      NeedsPrettifying == FALSE & IsPKParam ~ NA), 
-             PrettifiedNames = case_when(NeedsPrettifying == FALSE ~ ColNames3, 
-                                         NeedsPrettifying == FALSE & IsPKParam == FALSE ~ ColNames3, 
-                                         TRUE ~ NA),
+             PrettifiedNames = case_when(IsPretty == TRUE ~ ColNames3, 
+                                         IsPretty == FALSE & NeedsPrettifying == FALSE ~ ColNames3, 
+                                         .default = NA),
              # Dealing with any differences in units
-             PrettifiedNames = str_replace(PrettifiedNames, "ng/mL", Conc), 
-             PrettifiedNames = str_replace(PrettifiedNames, "h", Time))
+             PrettifiedNames = ifelse(complete.cases(Conc), 
+                                      str_replace(PrettifiedNames, "ng/mL", Conc), 
+                                      PrettifiedNames), 
+             PrettifiedNames = ifelse(complete.cases(Time), 
+                                      str_replace(PrettifiedNames, "h", Time),
+                                      PrettifiedNames))
    
    # Some columns may need prettifying and others may need uglifying. Need to
    # figure out what values to fill in for any NA values in either
