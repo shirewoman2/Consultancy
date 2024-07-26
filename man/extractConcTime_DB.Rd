@@ -7,9 +7,10 @@ UNDER CONSTRUCTION!!!}
 \usage{
 extractConcTime_DB(
   sim_data_file,
+  existing_exp_details = NA,
   compoundToExtract = "substrate",
   tissue = "plasma",
-  existing_exp_details = NA,
+  obs_to_sim_assignment = "use existing_exp_details",
   conc_units = "ng/mL",
   returnAggregateOrIndiv = "aggregate"
 )
@@ -18,6 +19,15 @@ extractConcTime_DB(
 \item{sim_data_file}{name of the Excel file containing the simulated
 concentration-time data, in quotes; must be an output file from the Simcyp
 simulator}
+
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
+get all the details from the "Input Sheet" (e.g., when you ran
+extractExpDetails you said \code{exp_details = "Input Sheet"} or
+\code{exp_details = "all"}), you can save some processing time by supplying
+that object here, unquoted. If left as NA, this function will run
+\code{extractExpDetails} behind the scenes to figure out some information
+about your experimental set up.}
 
 \item{compoundToExtract}{For which compound do you want to extract
 concentration-time data? Options are: \itemize{\item{"substrate"
@@ -42,14 +52,63 @@ extracted? Default is plasma for typical plasma concentration-time data.
 All options: "plasma", "blood", "peripheral plasma", "portal vein plasma",
 "Kp,uu,brain", "Kp,uu,ICF", or "Kp,uu,ISF". We're working on adding more.}
 
-\item{existing_exp_details}{If you have already run
-\code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
-get all the details from the "Input Sheet" (e.g., when you ran
-extractExpDetails you said \code{exp_details = "Input Sheet"} or
-\code{exp_details = "all"}), you can save some processing time by supplying
-that object here, unquoted. If left as NA, this function will run
-\code{extractExpDetails} behind the scenes to figure out some information
-about your experimental set up.}
+\item{obs_to_sim_assignment}{the assignment of which observed files go with
+  which simulated files. (NA, which is the default, means no observed data
+  will be extracted.) There are four ways to supply this:
+
+  \describe{\item{"use existing_exp_details"}{If you have already
+  extracted the simulation experimental details with the function
+  \code{\link{extractExpDetails_mult}} and you included observed data overlay
+  files in your simulations, as long as those XML files have their
+  corresponding Excel files in the \emph{same} location, we can use that
+  information to figure out which observed Excel file should go with which
+  simulation. Note that this \strong{does} require you to supply something
+  for the argument \code{existing_exp_details} to work.}
+
+  \item{a character vector of the observed data files, each in
+  quotes and encapsulated with \code{c(...)}}{If all the observed data can be
+  compared to all the simulated data, then an example of acceptable input
+  would be: \code{obs_to_sim_assignment = "obsdata1.xlsx"}. However, if you
+  would like to specify which observed file goes with which simulated file,
+  you can do this with a named character vector, e.g.,
+  \code{c("obsdata1.xlsx" = "simfileA.xlsx", "obsdata2.xlsx" =
+  "simfileB.xlsx")}. If one observed file needs to match more than one
+  simulated file but not \emph{all} the simulated files, you can do that by
+  separating the simulated files with commas, e.g.,
+  \code{obs_to_sim_assignment = c("obs data 1.xlsx" = "mdz-5mg-qd.xlsx,
+  mdz-5mg-qd-fa08.xlsx", "obs data 2.xlsx" = "mdz-5mg-qd-cancer.xlsx,
+  mdz-5mg-qd-cancer-fa08.xlsx")}. Pay close attention to the position of
+  commas and quotes there! This can get a bit confusing, in our opinions, so
+  you may want to try the other options if you need to link specific observed
+  and simulated files; they can be easier to follow but require more typing.}
+
+  \item{a data.frame with one column for the observed files and one column
+  for the simulated files they each match}{The data.frame must have column
+  names of "ObsFile" and "File" for the observed and simulated files,
+  respectively. Here's an example of acceptable input:
+  \code{obs_to_sim_assignment = data.frame(ObsFile = c("obsdata1.xlsx",
+  "obsdata2.xlsx"), File = c("simfileA.xlsx", "simfileB.xlsx"))} Each row
+  should contain one observed file and one simulated file, so if you want to
+  compare a single observed file to multiple simulated files, you'll need to
+  repeat the observed file, e.g., \code{obs_to_sim_assignment =
+  data.frame(ObsFile = c("obsdata1.xlsx", "obsdata2.xlsx", "obsdata2.xlsx",
+  "obsdata2.xlsx"), File = c("simfileA.xlsx", "simfileB.xlsx",
+  "simfileC.xlsx", "simfileD.xlsx"))}}
+
+  \item{a csv file with one column for the observed files and one column for
+  the simulated files they each match}{The setup of this csv file should be
+  just like that described for supplying a data.frame, so one row for each
+  pair of simulated and observed files you want to compare to each other.
+  Supply this as a character string, like this: \code{obs_to_sim_assignment =
+  "My obs to sim assignments.csv"}}}
+
+  For whichever option you choose, the observed files' paths should be
+  included if they are located somewhere other than your working directory.
+  The observed data files should be for the Excel file that it is
+  \emph{ready} to be converted to an XML file, not the file that contains
+  only the digitized time and concentration data. This function assumes that
+  the dosing intervals for the observed data match those in the simulated
+  data. See "Details" for more info.}
 
 \item{conc_units}{desired concentration units; options are the same as the
 ones in the Excel form for PE data entry: "ng/mL" (default), "mg/L",
