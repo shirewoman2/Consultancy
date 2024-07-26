@@ -148,10 +148,10 @@ convert_conc_units <- function(DF_to_convert,
       
       names(MW) <- unique(DF_to_convert$CompoundID)
       
-      if(any(names(MW)) %in% 
-         c("substrate", "inhibitor 1", "primary metabolite 1", 
-           "primary metabolite 2", "inhibitor 2", "inhibitor 1 metabolite", 
-           "secondary metabolite") == FALSE){
+      if(any(names(MW) %in% 
+             c("substrate", "inhibitor 1", "primary metabolite 1", 
+               "primary metabolite 2", "inhibitor 2", "inhibitor 1 metabolite", 
+               "secondary metabolite") == FALSE)){
          stop("The names you have supplied for which molecular weight is which are not among the acceptable options for compound ID. Please see the help file for the acceptable names and an example.", 
               call. = FALSE)
       }
