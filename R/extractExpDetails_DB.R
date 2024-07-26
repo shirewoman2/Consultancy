@@ -7,7 +7,9 @@
 #'
 #' @param sim_data_file the database file to get information from. Note that a
 #'   matching workspace MUST also be present, as in, the exact same file name
-#'   but ending in ".wksz" instead of ".db".
+#'   but ending in ".wksz" instead of ".db" in order to get all the possible
+#'   information. This is because some information is not present in the
+#'   database file but \emph{is} in the workspace.
 #'
 #' @return a list of information, same as other extractExpDetails_x functions
 #' @export
@@ -112,10 +114,10 @@ extractExpDetails_DB <- function(sim_data_file){
          filter(Detail_nosuffix == k)
       
       suppressMessages(Details_toadd <- 
-         map(.x = Simcyp::CompoundID[ParamConv_subset$CompoundID_Simcyp], 
-             .f = function(x){Simcyp::GetCompoundParameter(
-                Tag = unique(ParamConv_subset$SimcypTag), 
-                Compound = x)}))
+                          map(.x = Simcyp::CompoundID[ParamConv_subset$CompoundID_Simcyp], 
+                              .f = function(x){Simcyp::GetCompoundParameter(
+                                 Tag = unique(ParamConv_subset$SimcypTag), 
+                                 Compound = x)}))
       
       Details_toadd <- Details_toadd[sapply(Details_toadd, length) > 0]
       
@@ -246,6 +248,48 @@ extractExpDetails_DB <- function(sim_data_file){
    
    # t(as.data.frame(Details))
    
+   # Pulling from workspace file -------------------------------------------
+   
+   # Checking that the workspace file is available. This will ignore the
+   # date/time stamp on the Excel results if it's still there. 
+   
+   WkspFile <- c("Simulator" = sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.db$",
+                                   ".wksz", sim_data_file), 
+                 "Discovery" = sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.db$",
+                                   ".dscw", sim_data_file))
+   WkspFile <- WkspFile[which(file.exists(WkspFile))]
+   
+   if(length(WkspFile) > 0){
+      
+      TEMP <- extractExpDetails_XML(
+         sim_workspace_files = WkspFile, 
+         compoundsToExtract = "all",
+         exp_details = "all")
+      
+      TEMP$MainDetails <- TEMP$MainDetails %>% 
+         # This currently removes anything that we already have from the
+         # Excel or database file. May change that later to verify that Excel
+         # or db and workspace match.
+         select(!any_of(c("Substrate", "Inhibitor1", "Inhibitor2", 
+                          "PrimaryMetabolite1", "PrimaryMetabolite2", 
+                          "SecondaryMetabolite", "Inhibitor1Metabolite", 
+                          paste0("DistributionModel",
+                                 c("inhib1met", 
+                                   "_met1", "_met2", "_secmet")))))
+      
+      # Note: Currently, we are not extracting anything from the workspace
+      # that would be its own separate list. When we DO do that, we'll need
+      # to adjust this code to bind the MainDetails and whatever that list
+      # is.
+      Details <- c(Details,
+                   TEMP$MainDetails[
+                      setdiff(names(TEMP$MainDetails)[
+                         names(TEMP$MainDetails) != "Workspace"], 
+                         names(Details))])
+      
+      rm(TEMP)
+      
+   }
    
    # Finishing up --------------------------------------------------------
    
