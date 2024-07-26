@@ -984,8 +984,6 @@ pk_table <- function(PKparameters = NA,
          
          IntToAdd <- CheckDoseInt$interval %>% 
             filter(Sheet %in% PKparameters$Sheet) %>% 
-            mutate(Interval = paste("from", UserIntervalStart, "h to",
-                                    UserIntervalEnd, "h")) %>% 
             select(File, Sheet, Interval)
          
          # There could be multiple user-defined intervals; accounting for that.

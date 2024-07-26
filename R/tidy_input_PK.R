@@ -829,19 +829,44 @@ tidy_input_PK <- function(PKparameters,
       PKparameters <- PKparameters %>% 
          left_join(AllCompounds %>% 
                       select(CompoundID, DosedCompoundID, DosedCompoundSuffix),
-                             by = "CompoundID") %>% 
+                   by = "CompoundID") %>% 
          left_join(existing_exp_details$MainDetails %>% 
                       select(File, matches("DoseInt")), by = "File") %>% 
          mutate(MyDoseInt = case_match(DosedCompoundID, 
-                                     "substrate" ~ DoseInt_sub, 
-                                     "inhibitor 1" ~ DoseInt_inhib, 
-                                     "inhibitor 2" ~ DoseInt_inhib2), 
+                                       "substrate" ~ DoseInt_sub, 
+                                       "inhibitor 1" ~ DoseInt_inhib, 
+                                       "inhibitor 2" ~ DoseInt_inhib2), 
                 Keep = (complete.cases(MyDoseInt) & !str_detect(PKparameter, "_dose1")) |
                    (is.na(MyDoseInt) & !str_detect(PKparameter, "_last"))) %>% 
          filter(Keep == TRUE)
-         
+      
       
    } else {
+      
+      # This is when user has supplied specific PK parameters. Before
+      # proceeding, need to make sure that they have not supplied a sheet name
+      # if it's a regular 1st- or last-dose PK parameter.
+      UserIntervalCheck <- PKparameters %>% 
+         mutate(Problem = str_detect(PKparameter, "_dose1|_last") & 
+                   complete.cases(Sheet)) %>% 
+         filter(Problem == TRUE)
+      
+      if(nrow(UserIntervalCheck) > 0){
+         warning(paste0(
+            wrapn("You have specified which Excel sheets to use for PK parameters that end in '_dose1' or '_last'. If you want normal first- or last-dose PK, please do not list the sheet because, if you do, we'll think you must want a user-defined AUC interval, where the data extaction is just a little different. If you do want PK from a user-defined AUC interval, please list the sheet and then *do not* list '_dose1' or '_last' when you specify the PK parameter."),
+            "\n", 
+            wrapn("For now, we'll assume that PK parameters that include '_dose1' in the name are regular first-dose PK parameters and any PK parameters with '_last' in the name are regular last-dose PK parameter."), 
+            "\n", 
+            wrapn("If you'd like to see an example of how to set up input for the argument 'PKparameters', please run"),
+            "     make_example_PK_input()\nin the console.\n"), 
+            call. = FALSE)
+         
+         PKparameters <- PKparameters %>% 
+            mutate(Sheet = ifelse(str_detect(PKparameter, "_dose1|_last"),
+                                  NA, Sheet), 
+                   UserInterval = complete.cases(Sheet))
+      }
+      
       PKparameters <- PKparameters %>% 
          mutate(UserInterval = complete.cases(Sheet) & 
                    Sheet != "") %>% 
@@ -850,6 +875,7 @@ tidy_input_PK <- function(PKparameters,
                              AppliesOnlyWhenPerpPresent, UserInterval) %>% 
                       unique(), 
                    by = join_by(PKparameter, UserInterval))
+      
    }
    
    # Checking that we're looking for reasonable PK parameters. 

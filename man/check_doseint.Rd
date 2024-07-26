@@ -2,44 +2,76 @@
 % Please edit documentation in R/check_doseint.R
 \name{check_doseint}
 \alias{check_doseint}
-\title{INTERNAL check whether AUC interval ends on a dosing interval}
+\title{Check whether an AUC interval ends on a dosing interval}
 \usage{
 check_doseint(
   sim_data_file,
   existing_exp_details,
-  compoundID,
+  compoundID = "substrate",
   interval = NA,
-  stop_or_warn_missing_file = "stop",
+  stop_or_warn_missing_file = "warn",
   warnings = "silent"
 )
 }
 \arguments{
-\item{sim_data_file}{sim_data_file}
+\item{sim_data_file}{the simulation output Excel file to check}
 
-\item{existing_exp_details}{existing_exp_details}
+\item{existing_exp_details}{the output from running
+  \code{\link{extractExpDetails_mult}} or a data.frame with the following
+  columns: \describe{
 
-\item{compoundID}{compoundID}
+  \item{File}{this should include \code{sim_data_file})}
 
-\item{interval}{optionally include a specific interval that you want to check}
+  \item{SimDuration}{the length of the simulation in hours}
 
-\item{stop_or_warn_missing_file}{stop or just warn if no info available. NB:
-This is NOT stop or warn if the dose interval dosen't match.}
+  \item{StartHr_sub, StartHr_inhib, and StartHr_inhib2}{the
+  first dose time in hours since the start of the simulation for the
+  substrate, inhibitor 1, and inhibitor 2, respectively. It's ok to skip
+  this for any compounds that are not \code{compoundID}.}
 
-\item{warnings}{"silent" (default) or "show" (really, or anything else) to
-see warnings in this function}
+  \item{DoseInt_sub, DoseInt_inhib, and DoseInt_inhib2}{the dosing interval for the
+  substrate, inhibitor 1, and inhibitor 2, respectively. It's ok to skip
+  this for any compounds that are not \code{compoundID}.}
+
+  \item{DoseInt_sub, DoseInt_inhib, and DoseInt_inhib2}{the dosing interval for the
+  substrate, inhibitor 1, and inhibitor 2, respectively. It's ok to skip
+  this for any compounds that are not \code{compoundID}.}}}
+
+\item{compoundID}{the specific compoundID you're interested in. Options are
+"substrate", "primary metabolite 1", "primary metabolite 2", "secondary
+metabolite", "inhibitor 1", "inhibitor 2", or "inhibitor 1 metabolite".}
+
+\item{interval}{optionally include any specific intervals that you want to
+check. This should be a list of the intervals where each item in that list
+is either a text string of the start to end times in h, e.g., "36 to 48 h"
+(this is not at all coincidentally \emph{exactly} the format of the the
+text that is listed at the top of Excel sheets for custom AUC intervals in
+Simulator output Excel files) or a numeric vector of the start and end
+times, e.g., c(36, 48). An example of how to supply multiple intervals to
+check: \code{interval = list(c(24, 48), c(168, 180))} These will be checked
+in addition to the first- and last-dose intervals, which are always
+checked.}
+
+\item{stop_or_warn_missing_file}{stop or just warn (default) if no
+information on the dosing interval is available. NB: This is NOT stop or
+warn if the dose interval doesn't match; it's only asking whether you want
+this to pass through to another function (choose "warn") if the file
+doesn't exist or completely stop.}
+
+\item{warnings}{"silent" (default) or "show" to see warnings in this function}
 }
 \value{
 list of 1) message: "custom dosing" (as in, we can't tell whether the
   interval matched), "good", "mismatch last dose", "mismatch user-defined
   interval", or "can't check - missing file" and 2) data.frame of File,
-  CompoundID, SimDuration, DoseInt_X, StartHr_X, NumDoses_X, LastDoseTime,
-  IntervalRemaining, OneDoseIntRemaining, UserIntervalStart, UserIntervalEnd,
-  UserIntervalStartGood, UserIntervalEndGood. If info is not available, e.g.,
-  custom dosing or missing file, then not all of those columns will be
-  included in the data.frame.
+  CompoundID, SimDuration, DoseInt, StartHr, NumDoses, StartHr_last,
+  IntDuration_last, OneDoseIntRemaining, UserIntervalStart,
+  UserIntervalEnd, UserIntervalStartGood, UserIntervalEndGood. If info is not
+  available, e.g., custom dosing or missing file, then not all of those
+  columns will be included in the data.frame.
 }
 \description{
-INTERNAL check whether AUC interval ends on a dosing interval
+Check whether an AUC interval ends on a dosing interval
 }
 \examples{
 # none yet

@@ -88,23 +88,24 @@ pk_table_subfun <- function(sim_data_file,
    CheckDoseInt <- check_doseint(
       sim_data_file = sim_data_file, 
       existing_exp_details = existing_exp_details,
-      interval = ifelse(all(PKparameters$Sheet != "default"), 
-                        unique(MyPKResults_all$TimeInterval$Interval), 
-                        NA), 
+      interval = list(ifelse(all(PKparameters$Sheet != "default"), 
+                             unique(MyPKResults_all$TimeInterval$Interval), 
+                             NA)), 
       compoundID = unique(PKparameters$CompoundID),
       stop_or_warn_missing_file = "warn")
    
-   if(CheckDoseInt$message == "mismatch last dose"){
-      warning(wrapn(paste0("The time used for integrating the AUC for the last dose was not the same as the dosing interval for the simulation '", 
-                           sim_data_file, "'.")), 
+   if(str_detect(CheckDoseInt$message, "mismatch")){
+      warning(wrapn(paste0("For the simulation '", 
+                           sim_data_file, "', ",
+                           CheckDoseInt$message, "'.")), 
               call. = FALSE)
-   } else if(CheckDoseInt$message == "mismatch user-defined interval"){
-      warning(wrapn(paste0("The time used for integrating the AUC for the custom AUC interval was not the same as the dosing interval for the simulation'", 
-                           sim_data_file, "'.")),
-              call. = FALSE)
-   }
+   } 
    
-   CheckDoseInt$interval$Sheet <- unique(PKparameters$Sheet)
+   CheckDoseInt$interval <- CheckDoseInt$interval %>% 
+      left_join(MyPKResults_all$TimeInterval %>% 
+                   select(Interval, Sheet) %>% unique(), 
+                by = "Interval")
+   
    CheckDoseInt$interval$Tissue <- unique(PKparameters$Tissue)
    
    # Sometimes missing problems with extrapolation to infinity. Checking for
