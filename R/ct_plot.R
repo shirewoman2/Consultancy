@@ -531,27 +531,31 @@ ct_plot <- function(ct_dataframe = NA,
    # Check whether they've specified anything for subsection_ADAM or if data
    # only contain 1 value for subsection_ADAM.
    if(EnzPlot == FALSE){
-      if(any(complete.cases(ct_dataframe$subsection_ADAM)) & 
-         complete.cases(subsection_ADAM)){
-         if(length(unique(ct_dataframe$subsection_ADAM)) == 1 &&
-            unique(ct_dataframe$subsection_ADAM) != subsection_ADAM){
-            warning(wrapn(paste0("You requested the subsection_ADAM tissue ", 
-                           subsection_ADAM, 
-                           ", but what's in your data is ", 
-                           unique(ct_dataframe$subsection_ADAM), 
-                           ", so we'll use that instead.")), 
-                    call. = FALSE)
+      if("subsection_ADAM" %in% names(ct_dataframe)){
+         if(any(complete.cases(ct_dataframe$subsection_ADAM)) & 
+            complete.cases(subsection_ADAM)){
+            if(length(unique(ct_dataframe$subsection_ADAM)) == 1 &&
+               unique(ct_dataframe$subsection_ADAM) != subsection_ADAM){
+               warning(wrapn(paste0("You requested the subsection_ADAM tissue ", 
+                                    subsection_ADAM, 
+                                    ", but what's in your data is ", 
+                                    unique(ct_dataframe$subsection_ADAM), 
+                                    ", so we'll use that instead.")), 
+                       call. = FALSE)
+               subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
+            }
+            
+         } else {
             subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
          }
-         
       } else {
-         subsection_ADAM <- unique(ct_dataframe$subsection_ADAM)
+         ct_dataframe$subsection_ADAM <- NA
       }
       
       if(length(subsection_ADAM) > 1){
          subsection_ADAM <- subsection_ADAM[1]
          warning(wrapn(paste0("You requested more than one value for subsection_ADAM, but we can only plot one with the ct_plot function. We'll set it to the 1st value we find in your data: ", 
-                        subsection_ADAM, ".")), 
+                              subsection_ADAM, ".")), 
                  call. = FALSE)
       }
    }
@@ -652,8 +656,8 @@ ct_plot <- function(ct_dataframe = NA,
       time_units_to_use <- tolower(time_units_to_use[1])
       if(time_units_to_use %in% c("hours", "minutes", "days", "weeks") == FALSE){
          warning(wrapn(paste0("You requested that the graph have time units of `", 
-                        time_units_to_use, 
-                        "`, which is not among the acceptable options. We'll use hours instead.")), 
+                              time_units_to_use, 
+                              "`, which is not among the acceptable options. We'll use hours instead.")), 
                  call. = FALSE)
          time_units_to_use <- "hours"
       }
@@ -665,8 +669,8 @@ ct_plot <- function(ct_dataframe = NA,
                                   "ug/mL", "ng/L", "ng/mL", "µM", "uM", 
                                   "nM") == FALSE){
          warning(wrapn(paste0("You requested that the graph have concentration units of `", 
-                        conc_units_to_use, 
-                        "`, which is not among the acceptable options. We'll use ng/mL instead.")), 
+                              conc_units_to_use, 
+                              "`, which is not among the acceptable options. We'll use ng/mL instead.")), 
                  call. = FALSE)
          conc_units_to_use <- "ng/mL"
       }
@@ -713,13 +717,13 @@ ct_plot <- function(ct_dataframe = NA,
              "median" = "median") %in% ct_dataframe$Trial == FALSE){
       
       warning(wrapn(paste0("You requested the ", 
-                     switch(mean_type, "arithmetic" = "arithmetic means",
-                            "geometric" = "geometric means", 
-                            "median" = "medians"), 
-                     ", but those are not included in your data. Instead, the ",
-                     ifelse(MyMeanType[1] == "mean", 
-                            "arithmetic mean", MyMeanType[1]),
-                     "s will be used.")),
+                           switch(mean_type, "arithmetic" = "arithmetic means",
+                                  "geometric" = "geometric means", 
+                                  "median" = "medians"), 
+                           ", but those are not included in your data. Instead, the ",
+                           ifelse(MyMeanType[1] == "mean", 
+                                  "arithmetic mean", MyMeanType[1]),
+                           "s will be used.")),
               call. = FALSE)
       MyMeanType <- MyMeanType[1] %>% as.character()
       
@@ -966,16 +970,16 @@ ct_plot <- function(ct_dataframe = NA,
    
    if(nrow(obs_dataframe) > 0 && any(check$N > 1) & figure_type %in% c("trial means")){
       warning(wrapn(paste0("You have requested a figure type of '", 
-                     figure_type, 
-                     "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template.")),
+                           figure_type, 
+                           "', but you appear to be plotting individual observed data (N > 1 at each time point). You may want to switch to a figure type of 'percentiles' or 'percentile ribbon' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template.")),
               call. = FALSE)
    }
    
    if(nrow(obs_dataframe) > 0 && all(check$N == 1) & figure_type %in% c("percentiles", "percentile",
                                                                         "percentile ribbon", "ribbon")){
       warning(wrapn(paste0("You have requested a figure type of '", 
-                     figure_type, 
-                     "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template.")),
+                           figure_type, 
+                           "', but you appear to be plotting mean observed data (N = 1 at each time point). You may want to switch to a figure type of 'trial means' or 'means only' to comply with the recommendations of the Simcyp Consultancy Team report template. Please see red text at the beginning of section 4 in the template.")),
               call. = FALSE)
    }
    
@@ -1572,7 +1576,7 @@ ct_plot <- function(ct_dataframe = NA,
          if(Ext %in% c("eps", "ps", "jpeg", "tiff",
                        "png", "bmp", "svg", "jpg", "docx") == FALSE){
             warning(wrapn(paste0("You have requested the graph's file extension be `", 
-                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
+                                 Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
                     call. = FALSE)
          }
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
