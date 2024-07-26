@@ -247,7 +247,8 @@ convert_conc_units <- function(DF_to_convert,
                                     CompoundID = names(MW)),
                          expand_grid(CompoundID = names(MW), 
                                      RevUnits = c("µM", "nM")))) %>% 
-            mutate(Factor = FactorNoMW / MW)
+            mutate(MW = as.numeric(MW), 
+                   Factor = FactorNoMW / MW)
       )
       
       
