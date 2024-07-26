@@ -503,7 +503,7 @@ recalc_PK <- function(ct_dataframe,
                         File, ObsFile, DoseNum)) %>% 
       filter(DoseNum %in% c(1, MaxDoseNum))
    
-   if(add_t0_point){
+   if(add_t0_point & 1 %in% CTsubset$DoseNum){
       T0 <- CTsubset %>% 
          filter(DoseNum == 1) %>% 
          group_by(across(
@@ -1004,9 +1004,9 @@ recalc_PK <- function(ct_dataframe,
                   suppressMessages(
                      LastDoseTime <- LastDoseTime %>% 
                         left_join(DoseIntChecks %>% 
-                                     mutate(MaxTime = case_when(
-                                        IntervalRemaining == 0 ~ SimDuration,
-                                        TRUE ~ LastDoseTime + DoseInt_X)) %>% 
+                                     mutate(MaxTime = case_when(IntEndMatch == TRUE ~ EndHr,
+                                                                IntEndMatch == FALSE & Interval != "dose1" ~ StartHr + DoseInt, 
+                                                                .default = NA)) %>% 
                                      select(File, CompoundID, MaxTime))
                   )
                } else {
@@ -1461,11 +1461,11 @@ recalc_PK <- function(ct_dataframe,
    
    if(exists("DoseIntChecks", inherits = FALSE)){
       
-      if(any(DoseIntChecks$OneDoseIntRemaining == FALSE, na.rm = T)){
-         Problems <- DoseIntChecks$File[DoseIntChecks$OneDoseIntRemaining == FALSE]
-         
-         warning(paste0("For the following files, the dosing interval does not match the AUC interval for the last dose:\n", 
-                        str_c(Problems, collapse = "\n")), 
+      DoseIntWarnings <- unlist(DoseIntWarnings)
+      DoseIntWarnings <- DoseIntWarnings[str_detect(DoseIntWarnings, "mismatch")]
+      
+      if(length(DoseIntWarnings) > 0){
+         warning(str_c(DoseIntWarnings, collapse = "\n"), 
                  call. = FALSE)
       }
    }
