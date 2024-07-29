@@ -184,13 +184,22 @@ sensitivity_plot <- function(SA_file,
    # Reading data
    SAdata.xl <- openxlsx::read.xlsx(SA_file, sheet = DVsheets[dependent_variable])
    
+   # Stopping at 1st NA row in column 1 b/c sometimes people have added
+   # additional data here, and it messes up the code below.
+   Na1 <- which(is.na(as.character(SAdata.xl[, 1])))[1]
+   if(complete.cases(Na1)){
+      SAdata.xl <- SAdata.xl[1:(Na1-1), ]
+      SAdata.xl <- SAdata.xl %>% purrr::discard(~all(is.na(.)))
+   }
+   
+   ObsData <- list()
+   
    if(str_detect(dependent_variable, "plasma")){
       ObsRow <- which(SAdata.xl[, 1] == "Observed Data")
       SimT0Col <- which(names(SAdata.xl) == "RMSE") + 1
       SimT0Col <- ifelse(length(SimT0Col) == 0, 4, SimT0Col)
       
       if(length(ObsRow) > 0){
-         ObsData <- list()
          
          for(i in seq(from = ObsRow + 1, to = nrow(SAdata.xl), by = 2)){
             ObsData[[i]] <- as.data.frame(t(SAdata.xl[i:(i + 1), 2:ncol(SAdata.xl)])) 
@@ -238,10 +247,12 @@ sensitivity_plot <- function(SA_file,
    }
    
    # Rounding for ease of reading legend. Could add an option for what rounding
-   # to use here.
+   # to use here. Also making sure that values are numeric where appropriate.
    SAdata <- SAdata %>% 
       mutate(across(.cols = any_of(c("SensValue", "SensValue2")), 
-                    .fns = function(x) round_opt(x, rounding)))
+                    .fns = function(x) round_opt(x, rounding)), 
+             across(.cols = any_of(c("SensValue", "SensValue2", "DV", "SI", "EI")), 
+                    .fns = as.numeric))
    
    # Graph ----------------------------------------------------------------
    
@@ -467,10 +478,25 @@ sensitivity_plot <- function(SA_file,
    
    if(return_data){
       
-      DF <- bind_rows(SAdata, ObsData) %>% 
-         select(Run, SensValue, SensValue2, Subject, Simulated, Time, Conc)
-      names(DF)[names(DF) == "SensValue"] <- SensParam
-      names(DF)[names(DF) == "SensValue2"] <- SensParam2
+      if(length(ObsData) > 0){
+         DF <- bind_rows(SAdata, ObsData)
+      } else {
+         DF <- SAdata
+      }
+      
+      DF <- DF %>% 
+         select(any_of(c("Run", SensParam, "DV", "SI", "EI",
+                         "SensValue", "SensValue2", "Subject", 
+                         "Simulated", "Time", "Conc")))
+      
+      if(SensParam %in% names(DF) == FALSE){
+         names(DF)[names(DF) == "SensValue"] <- SensParam
+      }
+      
+      if(complete.cases(SensParam2) &&
+         SensParam2 %in% names(DF) == FALSE){
+         names(DF)[names(DF) == "SensValue2"] <- SensParam2
+      }
       
       return(list("graph" = G, 
                   "data" = DF))
