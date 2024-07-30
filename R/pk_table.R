@@ -983,7 +983,7 @@ pk_table <- function(PKparameters = NA,
          }
          
          IntToAdd <- CheckDoseInt$interval %>% 
-            filter(Sheet %in% PKparameters$Sheet) %>% 
+            filter(Sheet %in% PKparameters$Sheet[complete.cases(PKparameters$Sheet)]) %>% 
             select(File, Sheet, Interval)
          
          # There could be multiple user-defined intervals; accounting for that.
