@@ -141,7 +141,7 @@ extractExpDetails <- function(sim_data_file,
    
    # Summary tab only includes info on Substrate & Inhibitor1
    SumDeets <- AllExpDetails %>% 
-      filter(Sheet == "Summary" &
+      filter(DataSource == "Summary" &
                 (is.na(CompoundID) | 
                     CompoundID %in% c("substrate", "inhibitor 1")) &
                 !Detail %in% c("PrimaryMetabolite1", 
@@ -154,11 +154,11 @@ extractExpDetails <- function(sim_data_file,
    # If it's on input sheet but isn't for a specific compound, then it's about
    # the trial design b/c we haven't set this up to pull any information from
    # the "Simulation Toolbox" or "Software Version Detail" sections.
-   InputDeets <- AllExpDetails %>% filter(Sheet == "Input Sheet") %>% 
+   InputDeets <- AllExpDetails %>% filter(DataSource == "Input Sheet") %>% 
       rename(Deet = Detail) %>% arrange(Deet) %>% 
       mutate(CompoundID = ifelse(is.na(CompoundID), "Trial Design", CompoundID))
    
-   PopDeets <- AllExpDetails %>% filter(Sheet == "population") %>% 
+   PopDeets <- AllExpDetails %>% filter(DataSource == "population") %>% 
       rename(Deet = Detail) %>% arrange(Deet)
    
    # Determining info to pull
@@ -280,7 +280,7 @@ extractExpDetails <- function(sim_data_file,
       
       # Need to filter to keep only details that we can possibly find based on
       # what type of simulator was used
-      SumDeets <- SumDeets %>% filter(DiscoveryParameter %in% DiscoveryCol)
+      SumDeets <- SumDeets %>% filter(SimulatorAvailability %in% DiscoveryCol)
       MySumDeets <- MySumDeets[MySumDeets %in% SumDeets$Deet]
       
       # sub function for finding correct cell
@@ -484,7 +484,7 @@ extractExpDetails <- function(sim_data_file,
       # Need to filter to keep only details that we can possibly find based on
       # what type of simulator was used
       InputDeets <- InputDeets %>% 
-         filter(Deet %in% MyInputDeets & DiscoveryParameter %in% DiscoveryCol)
+         filter(Deet %in% MyInputDeets & SimulatorAvailability %in% DiscoveryCol)
       MyInputDeets <- MyInputDeets[MyInputDeets %in% InputDeets$Deet]
       
       # Looking for locations of columns.
@@ -1609,7 +1609,7 @@ extractExpDetails <- function(sim_data_file,
                      
                      # Checking for RAF/REF values b/c they're not always there
                      RAFREF <- as.numeric(
-                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "fuinc"))],
+                        InputTab[c(i:TransRowLast)[which(str_detect(TransRowNames, "ISEF|RAF|REF"))],
                                  ValueCol] %>% pull(1))
                      
                      if(length(RAFREF) > 0){
@@ -1704,7 +1704,7 @@ extractExpDetails <- function(sim_data_file,
    # population details for Simcyp Discovery simulations until we set that up. 
    MyPopDeets <- intersect(MyPopDeets, 
                            (AllExpDetails %>% 
-                               filter(DiscoveryParameter %in% DiscoveryCol) %>% 
+                               filter(SimulatorAvailability %in% DiscoveryCol) %>% 
                                pull(Detail)))
    
    if(length(MyPopDeets) > 0){
@@ -1718,7 +1718,8 @@ extractExpDetails <- function(sim_data_file,
       # If user has requested that the population tab be annotated, which is an
       # option!, then there will be 2 matches to the population sheet name. We
       # want the 1st one.
-      PopSheet <- SheetNames[str_detect(SheetNames, str_sub(Out$Population, 1, 20))][1]
+      PopSheet <- SheetNames[str_detect(tolower(SheetNames),
+                                        str_sub(tolower(Out$Population), 1, 20))][1]
       
       PopTab <- suppressMessages(tryCatch(
          readxl::read_excel(path = sim_data_file, sheet = PopSheet,
@@ -1754,7 +1755,7 @@ extractExpDetails <- function(sim_data_file,
          
          # Setting up regex to search
          ToDetect <- AllExpDetails %>% 
-            filter(Detail == deet & Sheet == "population") %>% pull(Regex_row)
+            filter(Detail == deet & DataSource == "population") %>% pull(Regex_row)
          NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
          
          if(ncol(PopTab) < NameCol){
