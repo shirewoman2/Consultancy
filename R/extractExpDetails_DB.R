@@ -7,7 +7,9 @@
 #'
 #' @param sim_data_file the database file to get information from. Note that a
 #'   matching workspace MUST also be present, as in, the exact same file name
-#'   but ending in ".wksz" instead of ".db".
+#'   but ending in ".wksz" instead of ".db" in order to get all the possible
+#'   information. This is because some information is not present in the
+#'   database file but \emph{is} in the workspace.
 #'
 #' @return a list of information, same as other extractExpDetails_x functions
 #' @export
@@ -80,9 +82,10 @@ extractExpDetails_DB <- function(sim_data_file){
    #               Tag = as.character(unlist(Simcyp::PopulationID)))
    
    ParameterConversion <- AllExpDetails %>% 
-      filter(Sheet == "workspace XML file" &
+      filter(DataSource == "workspace or database" &
                 complete.cases(SimcypParameterType)) %>% 
-      select(Detail, CompoundID, matches("Level"), XMLswitch, SimcypParameterType,
+      select(Detail, CompoundID, matches("Level"), XMLswitch,
+             SimcypParameterType, SimcypTag, SimcypSubcategory, 
              ColsChangeWithCmpd) %>% 
       mutate(Detail_nosuffix = case_when(
          ColsChangeWithCmpd == TRUE ~ sub("_sub|_inhib2|_inhib$|_met1|_met2|_secmet|_inhib1met", 
@@ -102,7 +105,7 @@ extractExpDetails_DB <- function(sim_data_file){
    
    CmpdParam <- unique(
       ParameterConversion$Detail_nosuffix[
-         ParameterConversion$SimcypParameterType == "compound parameter"])
+         ParameterConversion$SimcypParameterType == "compound"])
    CmpdParam <- setdiff(CmpdParam, AllCompounds$DetailNames)
    
    for(k in CmpdParam){
@@ -110,11 +113,15 @@ extractExpDetails_DB <- function(sim_data_file){
       ParamConv_subset <- ParameterConversion %>% 
          filter(Detail_nosuffix == k)
       
-      Details_toadd <- 
-         map(.x = Simcyp::CompoundID[ParamConv_subset$CompoundID_Simcyp], 
-             .f = function(x){Simcyp::GetCompoundParameter(
-                Tag = unique(ParamConv_subset$Level3), 
-                Compound = x)})
+      suppressMessages(Details_toadd <- 
+                          map(.x = Simcyp::CompoundID[ParamConv_subset$CompoundID_Simcyp], 
+                              .f = function(x){Simcyp::GetCompoundParameter(
+                                 Tag = unique(ParamConv_subset$SimcypTag), 
+                                 Compound = x)}))
+      
+      Details_toadd <- Details_toadd[sapply(Details_toadd, length) > 0]
+      
+      if(length(Details_toadd) == 0){next}
       
       # Decoding as necessary. Add to the options for k as needed.
       Details_toadd <- lapply(Details_toadd, as.character)
@@ -170,7 +177,8 @@ extractExpDetails_DB <- function(sim_data_file){
    # Removing info for compounds that are not active
    Details <- Details[
       which(str_detect(names(Details), 
-                       str_c(AllCompounds$Suffix[AllCompounds$DetailNames %in% ActiveCompounds], 
+                       str_c(paste0(AllCompounds$Suffix[AllCompounds$DetailNames %in% ActiveCompounds], 
+                                    "$"), 
                              collapse = "|")))]
    
    
@@ -178,7 +186,11 @@ extractExpDetails_DB <- function(sim_data_file){
    
    GenParam <- unique(
       ParameterConversion$Detail_nosuffix[
-         ParameterConversion$SimcypParameterType == "general parameter"])
+         ParameterConversion$SimcypParameterType == "general"])
+   
+   # Not sure why, but NumTimeSamples is not working, probably b/c I haven't set
+   # up the subcategory correctly.
+   GenParam <- setdiff(GenParam, c("NumTimeSamples"))
    
    # Have to deal w/NumDoses, StartHr specially b/c they're not set up not as a
    # compound parameter but as a general parameter.
@@ -200,10 +212,10 @@ extractExpDetails_DB <- function(sim_data_file){
          filter(Detail_nosuffix == k)
       
       Details_toadd <- Simcyp::GetParameter(
-         Tag = ParamConv_subset$Level2, 
+         Tag = ParamConv_subset$SimcypTag, 
          Category = Simcyp::CategoryID$SimulationData, 
-         SubCategory = ifelse(is.na(ParamConv_subset$Level3),
-                              0, ParamConv_subset$Level3))
+         SubCategory = ifelse(is.na(ParamConv_subset$SimcypTag),
+                              0, ParamConv_subset$SimcypSubcategory))
       
       names(Details_toadd) <- k
       Details <- c(Details, Details_toadd)
@@ -221,6 +233,8 @@ extractExpDetails_DB <- function(sim_data_file){
       
    }
    
+   # Compound names --------------------------------------------------------
+   
    # Getting compound names separately.
    CmpdNames <- 
       map(.x = AllCompounds$CompoundID_num_Simcyp, 
@@ -233,6 +247,51 @@ extractExpDetails_DB <- function(sim_data_file){
                 CmpdNames[intersect(AllCompounds$DetailNames, ActiveCompounds)])
    
    # t(as.data.frame(Details))
+   
+   # Pulling from workspace file -------------------------------------------
+   
+   # Checking that the workspace file is available. This will ignore the
+   # date/time stamp on the Excel results if it's still there. 
+   
+   WkspFile <- c("Simulator" = sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.db$",
+                                   ".wksz", sim_data_file), 
+                 "Discovery" = sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.db$",
+                                   ".dscw", sim_data_file))
+   WkspFile <- WkspFile[which(file.exists(WkspFile))]
+   
+   if(length(WkspFile) > 0){
+      
+      TEMP <- extractExpDetails_XML(
+         sim_workspace_files = WkspFile, 
+         compoundsToExtract = "all",
+         exp_details = "all")
+      
+      TEMP$MainDetails <- TEMP$MainDetails %>% 
+         # This currently removes anything that we already have from the
+         # Excel or database file. May change that later to verify that Excel
+         # or db and workspace match.
+         select(!any_of(c("Substrate", "Inhibitor1", "Inhibitor2", 
+                          "PrimaryMetabolite1", "PrimaryMetabolite2", 
+                          "SecondaryMetabolite", "Inhibitor1Metabolite", 
+                          paste0("DistributionModel",
+                                 c("inhib1met", 
+                                   "_met1", "_met2", "_secmet")))))
+      
+      # Note: Currently, we are not extracting anything from the workspace
+      # that would be its own separate list. When we DO do that, we'll need
+      # to adjust this code to bind the MainDetails and whatever that list
+      # is.
+      Details <- c(Details,
+                   TEMP$MainDetails[
+                      setdiff(names(TEMP$MainDetails)[
+                         names(TEMP$MainDetails) != "Workspace"], 
+                         names(Details))])
+      
+      rm(TEMP)
+      
+   }
+   
+   # Finishing up --------------------------------------------------------
    
    RSQLite::dbDisconnect(conn)
    

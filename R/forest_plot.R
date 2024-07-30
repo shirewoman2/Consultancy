@@ -1734,7 +1734,8 @@ forest_plot <- function(forest_dataframe,
    }
    
    # Checking that the 1st item is color.
-   if(is.matrix(col2rgb(VlineParams["color"])) == FALSE){
+   if(tryCatch(is.matrix(col2rgb(VlineParams["color"])),
+               error = function(x) FALSE) == FALSE){
       warning("The value you set for the line color for vline_at_1 is not a valid color in R. We'll set this to gray instead.", 
               call. = FALSE)
       VlineParams["color"] <- "gray"
@@ -2054,7 +2055,8 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
-   if(use_AUCt_when_AUCinf_NA && nrow(AUCt_swap) > 0){
+   if(use_AUCt_when_AUCinf_NA && nrow(AUCt_swap) > 0 &
+      include_AUCt_for_AUCinf_caption == TRUE){
       CaptionText <- forest_dataframe %>% filter(File %in% AUCt_swap$File) %>% 
          pull(YCol) %>% unique %>% as.character %>% str_comma
       CaptionText <- gsub("\\n", " ", CaptionText)

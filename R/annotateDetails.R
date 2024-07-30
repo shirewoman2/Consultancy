@@ -198,7 +198,8 @@
 #'   \item{SimulatorSection}{the simulator section this detail is from, e.g.,
 #'   "absorption" or "elimination"}
 #'
-#'   \item{Sheet}{the sheet in the Excel output where the data were found}
+#'   \item{DataSource}{the source of the data; this will be a sheet name in an 
+#'   Excel output file or a workspace or database file}
 #'
 #'   \item{Notes}{an explanation of what this detail is}
 #'
@@ -492,11 +493,11 @@ annotateDetails <- function(existing_exp_details,
          filter(!Detail %in% c("Detail", "Value")) %>% 
          group_by(across(any_of(c("File", "Detail", "CompoundID", "SimulatorSection", 
                                   "Notes", "Value")))) %>% 
-         summarize(Sheet = str_comma(sort(Sheet), conjunction = "or")) %>% 
-         mutate(Sheet = ifelse(str_detect(Sheet, "calculated or Summary|Summary or calculated") &
+         summarize(DataSource = str_comma(sort(DataSource), conjunction = "or")) %>% 
+         mutate(DataSource = ifelse(str_detect(DataSource, "calculated or Summary|Summary or calculated") &
                                   Detail == "SimDuration", 
-                               "Summary", Sheet),
-                SimulatorSection = case_when(Sheet == "population" ~ "Population", 
+                               "Summary", DataSource),
+                SimulatorSection = case_when(DataSource == "population" ~ "Population", 
                                              TRUE ~ SimulatorSection)) %>% 
          ungroup())
    
@@ -511,20 +512,20 @@ annotateDetails <- function(existing_exp_details,
    MainDetails <- MainDetails %>% unique() %>% 
       mutate(
          # Elimination details
-         Sheet = ifelse(str_detect(Detail, EliminationRegex), 
-                        "Input Sheet", Sheet), 
+         DataSource = ifelse(str_detect(Detail, EliminationRegex), 
+                        "Input Sheet", DataSource), 
          SimulatorSection = ifelse(str_detect(Detail, EliminationRegex), 
                                    "Elimination", SimulatorSection), 
          
          # Interaction details
-         Sheet = ifelse(str_detect(Detail, InteractionRegex), 
-                        "Input Sheet", Sheet),
+         DataSource = ifelse(str_detect(Detail, InteractionRegex), 
+                        "Input Sheet", DataSource),
          SimulatorSection = ifelse(str_detect(Detail, InteractionRegex), 
                                    "Interaction", SimulatorSection), 
          
          # Transport details   
-         Sheet = ifelse(str_detect(Detail, "^Transport"), 
-                        "Input Sheet", Sheet),
+         DataSource = ifelse(str_detect(Detail, "^Transport"), 
+                        "Input Sheet", DataSource),
          SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
                                    "Transport", SimulatorSection), 
          
@@ -613,7 +614,7 @@ annotateDetails <- function(existing_exp_details,
                                         "inhibitor 1", 
                                         "inhibitor 2", 
                                         "inhibitor 1 metabolite"))) %>% 
-      select(any_of(c("SimulatorSection", "Sheet", "Notes", "CompoundID",
+      select(any_of(c("SimulatorSection", "DataSource", "Notes", "CompoundID",
                       "Compound", "Detail")), everything()) %>% 
       arrange(SimulatorSection, Detail)
    
@@ -840,22 +841,27 @@ annotateDetails <- function(existing_exp_details,
             
             if(any(str_detect(tolower(detail_set), "summary"))){
                DetailSet <- c(DetailSet, 
-                              MainDetails %>% filter(Sheet %in% c("Input Sheet", 
-                                                                  "Input Sheet or Summary", 
-                                                                  "Input Sheet, Summary, or workspace XML file",
-                                                                  "calculated, Summary, or workspace XML file")) %>% pull(Detail))
+                              MainDetails %>% 
+                                 filter(DataSource %in% c("Input Sheet", 
+                                                          "Input Sheet or Summary", 
+                                                          "Input Sheet, Summary, or workspace or database",
+                                                          "calculated, Summary, or workspace or database")) %>% 
+                                 pull(Detail))
             }
             
             if(any(str_detect(tolower(detail_set), "input sheet"))){
                DetailSet <- c(DetailSet, 
-                              MainDetails %>% filter(Sheet %in% c("Input Sheet", 
-                                                                  "Input Sheet or Summary", 
-                                                                  "Input Sheet, Summary, or workspace XML file")) %>% pull(Detail))
+                              MainDetails %>% 
+                                 filter(DataSource %in% c("Input Sheet", 
+                                                          "Input Sheet or Summary", 
+                                                          "Input Sheet, Summary, or workspace or database")) %>%
+                                 pull(Detail))
             }
             
             if(any(str_detect(tolower(detail_set), "population"))){
                DetailSet <- c(DetailSet, 
-                              MainDetails %>% filter(Sheet == "population") %>% pull(Detail))
+                              MainDetails %>% filter(DataSource == "population") %>% 
+                                 pull(Detail))
             }
             
             if(any(str_detect(tolower(detail_set), "lactation"))){
@@ -1005,7 +1011,7 @@ annotateDetails <- function(existing_exp_details,
                                                      AllMyCompounds, NA))
                
                DF <- DF %>% select(-CompoundID) %>% 
-                  select(any_of(c("SimulatorSection", "Sheet", "Notes",
+                  select(any_of(c("SimulatorSection", "DataSource", "Notes",
                                   "Compound", "Detail", "pH", "Conc", 
                                   "Time", "Time_units", "DoseNum", "Dose_units", 
                                   "DoseRoute", "Day", "TimeOfDay", 
@@ -1114,7 +1120,7 @@ annotateDetails <- function(existing_exp_details,
                DF <- DF %>% 
                   select(-any_of("UniqueVal")) %>% 
                   select(any_of(unique(c(
-                     "SimulatorSection", "Sheet", "Notes", "CompoundID", "Compound",
+                     "SimulatorSection", "DataSource", "Notes", "CompoundID", "Compound",
                      GroupingDetails, template_sim))), 
                      everything())
                
@@ -1131,7 +1137,7 @@ annotateDetails <- function(existing_exp_details,
             } else if("UniqueVal" %in% names(DF)){
                DF <- DF %>% 
                   select(any_of(unique(c(
-                     "SimulatorSection", "Sheet", "Notes", "CompoundID", "Compound", 
+                     "SimulatorSection", "DataSource", "Notes", "CompoundID", "Compound", 
                      GroupingDetails, "UniqueVal"))), 
                      everything())
                
@@ -1335,7 +1341,7 @@ annotateDetails <- function(existing_exp_details,
             # Setting column widths. Notes should be 40.
             ColWidths <- guess_col_widths(Out[[item]][["DF"]])
             GoodColWidths <- c("SimulatorSection" = 17, 
-                               "Sheet" = 15,
+                               "DataSource" = 15,
                                "CompoundID" = 15, 
                                "Compound" = 15, 
                                "Notes" = 40, 

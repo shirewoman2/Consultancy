@@ -111,7 +111,7 @@ extractObsConcTime <- function(obs_data_file,
    if(length(obs_data_xl) == 0){
       warning(paste("The file", obs_data_file, "does not appear to be an Excel file of observed data that's ready to be converted to an XML file. We cannot extract any data."), 
               call. = FALSE)
-      return(list())
+      return(data.frame())
    }
    
    # Checking on whether this was animal data
@@ -163,7 +163,7 @@ extractObsConcTime <- function(obs_data_file,
         `Organ Conc` = "solid organ",
         `Organ Conc (Inb)` = "solid organ", 
         `PM1(Sub) PD Response` = "PD response",
-        `Spinal CSF (Sub)` = "CSF", 
+        `Spinal CSF (Sub)` = "spinal CSF", 
         `Sub (Inb) Blood` = "blood", 
         `Sub (Inb) PD Response` = "PD response", 
         `Sub (Inb) Plasma` = "plasma",
@@ -312,63 +312,12 @@ extractObsConcTime <- function(obs_data_file,
       
    } else {
       
-      if(any(str_detect(MainColNames, "Period"), na.rm = TRUE)){
-         if(any(str_detect(MainColNames, "SD/SE"), na.rm = TRUE)){   
-            SimVersion <- "V22"
-            
-            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                 "SD_SE",
-                                 "Compound", "DoseRoute", "Dose_units", "DoseAmount",
-                                 "InfDuration", "InjectionSite",
-                                 "Period", "Age", "Weight_kg",
-                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
-                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                                 "SmokingStatus", "GestationalAge_wk", 
-                                 "PlacentaVol_L", "FetalWt_kg")
-            
-         } else if(any(str_detect(MainColNames, "Placenta"), na.rm = TRUE)){
-            SimVersion <- "V21"
-            names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                 "Compound", "DoseRoute", "Dose_units", "DoseAmount",
-                                 "InfDuration", "Period", "Age", "Weight_kg",
-                                 "Height_cm", "Sex", "SerumCreatinine_umolL",
-                                 "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                                 "SmokingStatus", "GestationalAge_wk", 
-                                 "PlacentaVol_L", "FetalWt_kg")
-            
-         } else {
-            SimVersion <- "V20"
-            if(any(str_detect(MainColNames, "Gestational Age"))){
-               names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                    "Compound", "DoseRoute", "Dose_units", "DoseAmount",
-                                    "InfDuration", "Period", "Age", "Weight_kg",
-                                    "Height_cm", "Sex", "SerumCreatinine_umolL",
-                                    "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                                    "SmokingStatus", "GestationalAge_wk", 
-                                    "FetalWt_kg")
-               
-            } else {
-               
-               SimVersion <- "V19"
-               names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                                    "Compound", "DoseRoute", "Dose_units", "DoseAmount",
-                                    "InfDuration", "Period", "Age", "Weight_kg",
-                                    "Height_cm", "Sex", "SerumCreatinine_umolL",
-                                    "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                                    "SmokingStatus")
-            }
-         }
-      } else {
-         SimVersion <- "preV19"
-         names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting",
-                              "Compound", "DoseRoute", "Dose_units", "DoseAmount",
-                              "InfDuration", "Age", "Weight_kg",
-                              "Height_cm", "Sex", "SerumCreatinine_umolL",
-                              "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                              "SmokingStatus")
-         
-      }
+      SimVersion <- map(.x = ObsColNames, 
+                     .f = \(x) all(MainColNames %in% x$PEColName))
+      SimVersion <- SimVersion[which(SimVersion == TRUE)]
+      SimVersion <- names(SimVersion)[1]
       
+      names(obs_data) <- ObsColNames[[SimVersion]]$ColName
       obs_data$Species <- "human"
    }
    

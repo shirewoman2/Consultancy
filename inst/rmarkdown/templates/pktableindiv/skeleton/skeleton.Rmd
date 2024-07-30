@@ -19,6 +19,11 @@ if("logical" %in% class(existing_exp_details)){
 MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
                                          prettify_compound_names = TRUE)
 
+DosesIncluded <- c("Dose1" = any(str_detect(PKparameters[[i]]$PKparameter, "_dose1")),
+                      "Last" = any(str_detect(PKparameters[[i]]$PKparameter, "_last")), 
+                      "User" = any(complete.cases(PKparameters[[i]]$Sheet)))
+DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
+
 if(FromCalcPKRatios){
    MyAnnotations <- 
       list("TableHeading" = 
@@ -33,11 +38,6 @@ if(FromCalcPKRatios){
                      str_comma(MyFiles), "*"))
    
 } else {
-   
-   DosesIncluded <- c("Dose1" = any(str_detect(PKparameters[[i]]$PKparameter, "_dose1")),
-                      "Last" = any(str_detect(PKparameters[[i]]$PKparameter, "_last")), 
-                      "User" = any(complete.cases(PKparameters[[i]]$Sheet)))
-   DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
    
    MyAnnotations <- make_table_annotations(
       MyPKResults = MyPKResults[[i]] %>% purrr::discard(~all(is.na(.))), 
@@ -63,64 +63,90 @@ if(FromCalcPKRatios){
 ```{r}
 
 # Adding a warning if there was a mismatch between the last dosing interval and
-# the AUC interval if any of the PK included last dose. Note that you can have
-# more than one message per file, which is why there's the str_c part.
-Msg <- str_c(sort(unique(CheckDoseInt$message[which(
-   str_detect(names(CheckDoseInt$message), sub("xlsx.", "xlsx.*", i)))])), 
-   collapse = " ")
+# the AUC interval if any of the PK included last dose. 
 
-if(str_detect(Msg, "mismatch last dose")){
+if(str_detect(DosesIncluded, "Last") & 
+   any(CheckDoseInt_list[[i]]$IntervalRemaining != CheckDoseInt_list[[i]]$DoseInt_X)){
    
-   DoseIntWarning <- list(
+   Problems <- CheckDoseInt_list[[i]] %>% 
+      filter(DoseInt_X != IntervalRemaining)
+   
+   DoseIntWarning_last <- list(
       "***WARNING: The time used for integrating the AUC for the last dose was not the same as the dosing interval.***", 
       
-      paste0("**Dosing interval: ", CheckDoseInt_list[[i]]$DoseInt_X, " h**"),
+      paste0("**Dosing interval: ", 
+             unique(Problems$DoseInt_X), " h**"),
       
-      paste0("**Last dose start time: ", CheckDoseInt_list[[i]]$LastDoseTime, " h**"),
+      paste0("**Last dose start time: ",
+             unique(Problems$LastDoseTime), " h**"),
       
-      paste0("**Simulation end time: ", CheckDoseInt_list[[i]]$SimDuration, " h**"),
+      paste0("**Simulation end time: ",
+             unique(Problems$SimDuration), " h**"),
       
       paste0("**Time used for integrating the last-dose AUC: ", 
-             CheckDoseInt_list[[i]]$IntervalRemaining, " h**"),
+             unique(Problems$IntervalRemaining), " h**"),
       
       "***Please check these results carefully.***")
    
-} else if(str_detect(Msg, "mismatch user-defined interval")){
-   
-   DoseIntWarning <- list(
-      "***WARNING: The time used for integrating the AUC for the user-defined interval was not the same as the dosing interval.***", 
-      
-      paste0("**Dosing interval: ", CheckDoseInt_list[[i]]$DoseInt_X, " h**"),
-      
-      paste0("**User-defined interval start time: ", CheckDoseInt_list[[i]]$UserIntervalStart, " h**"),
-      
-      paste0("**User-defined interval end time: ", CheckDoseInt_list[[i]]$UserIntervalEnd, " h**"),
-      
-      paste0("**Time used for integrating the user-defined AUC: ", 
-             CheckDoseInt_list[[i]]$UserIntervalRemaining, " h**"),
-      
-      "***Please check these results carefully.***")
+   rm(Problems)
    
 } else {
+   DoseIntWarning_last <- list(c(), c(), c(), c(), c(), c())
+}
+
+if(str_detect(DosesIncluded, "User") & 
+   any(CheckDoseInt_list[[i]]$UserIntervalRemaining != CheckDoseInt_list[[i]]$DoseInt_X, na.rm = T)){
    
-   DoseIntWarning <- list(
-      c(), c(), c(), c(), c(), c()
-   )
+  Problems <- CheckDoseInt_list[[i]] %>% 
+      filter(DoseInt_X != UserIntervalRemaining)
+   
+   DoseIntWarning_user <- list(
+      "***WARNING: The time used for integrating the AUC for the user-defined interval was not the same as the dosing interval.***", 
+      
+      paste0("**Dosing interval: ", 
+             unique(Problems$DoseInt_X), " h**"),
+      
+      paste0("**User-defined interval start time: ",
+             unique(Problems$UserIntervalStart), " h**"),
+      
+      paste0("**User-defined interval end time: ", 
+             unique(Problems$UserIntervalEnd), " h**"),
+      
+      paste0("**Time used for integrating the user-defined AUC: ", 
+             unique(Problems$UserIntervalRemaining), " h**"),
+      
+      "***Please check these results carefully.***")
+   
+   rm(Problems)
+   
+} else {
+   DoseIntWarning_user <- list(c(), c(), c(), c(), c(), c())
 }
 
 ```
-`r DoseIntWarning[[1]]` 
+`r DoseIntWarning_last[[1]]` 
 
-`r DoseIntWarning[[2]]` 
+`r DoseIntWarning_last[[2]]` 
 
-`r DoseIntWarning[[3]]` 
+`r DoseIntWarning_last[[3]]` 
 
-`r DoseIntWarning[[4]]` 
+`r DoseIntWarning_last[[4]]` 
 
-`r DoseIntWarning[[5]]` 
+`r DoseIntWarning_last[[5]]` 
 
-`r DoseIntWarning[[6]]` 
+`r DoseIntWarning_last[[6]]` 
 
+`r DoseIntWarning_user[[1]]` 
+
+`r DoseIntWarning_user[[2]]` 
+
+`r DoseIntWarning_user[[3]]` 
+
+`r DoseIntWarning_user[[4]]` 
+
+`r DoseIntWarning_user[[5]]` 
+
+`r DoseIntWarning_user[[6]]` 
 
 
 ```{r}

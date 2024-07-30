@@ -71,35 +71,37 @@ prettify_column_names <- function(PKtable,
    # calc_PK_ratios columns will include "DenominatorSim" and "NumeratorSim".
    # Noting that and saving original column names.
    if(PKtable_class == "data.frame"){
-      ColNames2 <- names(PKtable)
+      ColNamesNoDecorations <- names(PKtable)
    } else {
-      ColNames2 <- PKtable
+      ColNamesNoDecorations <- PKtable
    }
    
    # Noting original names
    TableNames <-
-      data.frame(ColNames1 = ColNames2, 
+      data.frame(OrigColNames = ColNamesNoDecorations, 
                  OrigOrder = switch(PKtable_class, 
                                     "data.frame" = 1:ncol(PKtable), 
                                     "character" = 1:length(PKtable))) %>% 
       mutate(
-         # Adjusting for output that includes NumeratorSim and DenominatorSim
-         ColNames2 = str_replace(ColNames1, " NumeratorSim| DenominatorSim", ""), 
-         ColNames2 = str_replace(ColNames2, "_dose1 Ratio", "_ratio_dose1"), 
-         ColNames2 = str_replace(ColNames2, "_last Ratio", "_ratio_last"), 
+         # Adjusting for output that includes NumeratorSim and DenominatorSim,
+         # ratios, or user-defined intervals
+         ColNamesNoDecorations = str_replace(OrigColNames, " NumeratorSim| DenominatorSim", ""), 
+         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_dose1 Ratio", "_ratio_dose1"), 
+         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_last Ratio", "_ratio_last"), 
+         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "for interval from.*to [0-9]{1,} h ", ""), 
          
          # Dealing with unit differences b/c could have units in table other
          # than the most common ng/mL and h.
-         Conc = str_extract(ColNames2, 
+         Conc = str_extract(ColNamesNoDecorations, 
                             "mg/L|mg/mL|µg/L|ug/L|µg/mL|ug/mL|ng/L|ng/mL|µM|nM"), 
          # haven't yet seen any time units other than h but leaving this open
          # to minutes or days just in case
-         Time = str_extract(ColNames2, 
+         Time = str_extract(ColNamesNoDecorations, 
                             "\\(L/(h|day|min)|\\(h|day|min\\)|\\.h\\)"), 
          Time = gsub("\\(L?|\\)|/|\\.", "", Time), 
          # placeholder for if we need to adjust column names to deal
          # w/nonstandard units
-         ColNames3 = ColNames2)
+         ColNamesStdUnits = ColNamesNoDecorations)
    
    AllPKParameters_mod <- 
       AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
@@ -129,39 +131,49 @@ prettify_column_names <- function(PKtable,
          str_comma(paste0("`", ConcUnits, "`")), 
          ". Just fyi, if you're running a function for making a PK table, and you see this message, we can adjust concentration units for you if you request that with the argument convert_conc_units.")), 
          "\n"))
-      
-      TableNames$ColNames3 <- 
-         sub(str_c(setdiff(ConcUnits, "ng/mL"), collapse = "|"), 
-             "ng/mL", TableNames$ColNames3)
+   }   
+   
+   OtherConcUnits <- setdiff(ConcUnits, "ng/mL")
+   if(length(ConcUnits) > 0 & length(OtherConcUnits) > 0){
+      TableNames$ColNamesStdUnits <- 
+         sub(str_c(OtherConcUnits, collapse = "|"), 
+             "ng/mL", TableNames$ColNamesStdUnits)
    }
    
    # I haven't encountered a table with more than 1 time unit, so this has not
    # been well tested.
    TimeUnits <- sort(unique(TableNames$Time)) 
    if(length(TimeUnits) > 1){
-      TableNames$ColNames3 <- 
+      TableNames$ColNamesStdUnits <- 
          sub(paste0("\\(", setdiff(TimeUnits, "h"), "\\)"),
-             "(h)", TableNames$ColNames3)
+             "(h)", TableNames$ColNamesStdUnits)
       
-      TableNames$ColNames3 <- 
+      TableNames$ColNamesStdUnits <- 
          sub(paste0("\\(L/", setdiff(TimeUnits, "h"), "\\)"),
-             "(L/h)", TableNames$ColNames3)
+             "(L/h)", TableNames$ColNamesStdUnits)
    }
    
    # 1st step: This will leave some values as NA for the column PrettifiedNames.
    TableNames <- TableNames %>% 
-      mutate(IsPretty = ColNames3 %in% c(AllPKParameters$PrettifiedNames, 
-                                                 AllPKParameters_mod$PrettifiedNames), 
-             IsNotPretty = ColNames3 %in% c(AllPKParameters_mod$PKparameter, 
-                                                    AllPKParameters$PKparameter),
+      mutate(IsPretty = ColNamesStdUnits %in% c(AllPKParameters$PrettifiedNames, 
+                                                AllPKParameters_mod$PrettifiedNames), 
+             IsNotPretty = ColNamesStdUnits %in% c(AllPKParameters_mod$PKparameter, 
+                                                   AllPKParameters$PKparameter),
              IsPKParam = IsPretty | IsNotPretty, 
              NeedsPrettifying = IsPKParam & IsNotPretty, 
-             PKparameter = case_when(NeedsPrettifying == TRUE ~ ColNames3, 
-                                     NeedsPrettifying == FALSE & IsPKParam == FALSE ~ ColNames3, 
+             PKparameter = case_when(NeedsPrettifying == TRUE ~ ColNamesStdUnits, 
+                                     NeedsPrettifying == FALSE & IsPKParam == FALSE ~ ColNamesStdUnits, 
                                      NeedsPrettifying == FALSE & IsPKParam ~ NA), 
-             PrettifiedNames = case_when(NeedsPrettifying == FALSE ~ ColNames3, 
-                                         NeedsPrettifying == FALSE & IsPKParam == FALSE ~ ColNames3, 
-                                         TRUE ~ NA))
+             PrettifiedNames = case_when(IsPretty == TRUE ~ ColNamesStdUnits, 
+                                         IsPretty == FALSE & NeedsPrettifying == FALSE ~ ColNamesStdUnits, 
+                                         .default = NA),
+             # Dealing with any differences in units
+             PrettifiedNames = ifelse(complete.cases(Conc), 
+                                      str_replace(PrettifiedNames, "ng/mL", Conc), 
+                                      PrettifiedNames), 
+             PrettifiedNames = ifelse(complete.cases(Time), 
+                                      str_replace(PrettifiedNames, "h", Time),
+                                      PrettifiedNames))
    
    # Some columns may need prettifying and others may need uglifying. Need to
    # figure out what values to fill in for any NA values in either
@@ -175,7 +187,8 @@ prettify_column_names <- function(PKtable,
                 by = "PKparameter") %>% unique()
    
    TableNamesToUglify <- TableNames %>% filter(is.na(PKparameter)) %>% 
-      select(-PKparameter) %>% 
+      select(-PKparameter, -PrettifiedNames) %>% 
+      rename(PrettifiedNames = ColNamesStdUnits) %>% 
       left_join(bind_rows(AllPKParameters, AllPKParameters_mod) %>% 
                    select(PKparameter, PrettifiedNames) %>% 
                    bind_rows(ExtraPKParam), 
@@ -185,24 +198,33 @@ prettify_column_names <- function(PKtable,
       bind_rows(TableNamesToPrettify, TableNamesToUglify) %>% 
       arrange(OrigOrder)
    
-   if(any(str_detect(TableNames$ColNames1, "NumeratorSim|DenominatorSim"))){
+   # Putting numerator and denominator back into col names
+   if(any(str_detect(TableNames$OrigColNames, "NumeratorSim|DenominatorSim"))){
       TableNames <- TableNames %>% 
-         mutate(Suffix = str_extract(ColNames1, "NumeratorSim|DenominatorSim"), 
+         mutate(Suffix = str_extract(OrigColNames, "NumeratorSim|DenominatorSim"), 
                 Suffix = ifelse(is.na(Suffix), "", Suffix), 
-                PrettifiedNames = str_trim(paste(PrettifiedNames, Suffix)))
+                PrettifiedNames = str_trim(paste(PrettifiedNames, Suffix))) %>% 
+         select(-Suffix)
+   }
+   
+   # Putting time interval back into col names
+   if(any(str_detect(TableNames$OrigColNames, "for interval from"))){
+      TableNames <- TableNames %>% 
+         mutate(Suffix = str_extract(OrigColNames, "for interval from.*to [0-9]{1,} h "), 
+                PrettifiedNames = ifelse(complete.cases(Suffix), 
+                                         str_replace(PrettifiedNames, 
+                                                     " \\(", 
+                                                     paste0(" ", Suffix, "(")), 
+                                         PrettifiedNames)) %>% 
+         select(-Suffix)
    }
    
    # Setting semi-finalized column names. 
    TableNames <- TableNames %>% 
       mutate(FinalNames = case_when({pretty_or_ugly_cols} == "pretty" ~ PrettifiedNames, 
-                                    {pretty_or_ugly_cols} == "ugly" ~ PKparameter))
-   
-   # Returning which are PK if that's all user wanted
-   if(return_which_are_PK){
-      return(TableNames %>% 
-                select(ColNames1, IsPKParam, PrettifiedNames, PKparameter) %>%
-                rename(ColName = ColNames1))
-   }
+                                    {pretty_or_ugly_cols} == "ugly" ~ PKparameter), 
+             FinalNames = ifelse(is.na(FinalNames), OrigColNames, FinalNames)) %>% 
+      unique()
    
    # Making sure that we don't have duplicates for OrigOrder b/c that would mean
    # that final column names might be offset. An example of when this can
@@ -213,7 +235,7 @@ prettify_column_names <- function(PKtable,
    # CLt_dose1), then use CLinf_dose1 and MAKE A WARNING. For other duplicates,
    # it's best to just use original column names to be safe.
    if(any(duplicated(TableNames$OrigOrder))){
-      if(any(duplicated(ColNames2)) |
+      if(any(duplicated(ColNamesNoDecorations)) |
          any(str_detect(TableNames$FinalNames[duplicated(TableNames$OrigOrder)], 
                         "CL")) == FALSE){
          warning(paste0("There's something ambiguous about the input table column names that means that we don't know what value(s) to use for the final column names, so we cannot ", 
@@ -223,7 +245,7 @@ prettify_column_names <- function(PKtable,
                         " your columns. Please check your input and tell a member of the R Working Group if you're uncertain what the problem might be.\n"), 
                  call. = FALSE)
          TableNames <- TableNames %>% 
-            mutate(FinalNames = ColNames2) %>% unique()
+            mutate(FinalNames = ColNamesNoDecorations) %>% unique()
       } else {
          # This is when there's a duplicate b/c of CLinf vs. CLt vs. CLtau. Just
          # remove the duplicate CL names.
@@ -265,12 +287,12 @@ prettify_column_names <- function(PKtable,
          mutate(FinalNames = case_when(
             complete.cases(Time) &
                Time != "h" & 
-               str_detect(ColNames3, "\\(h\\)") ~ 
+               str_detect(ColNamesStdUnits, "\\(h\\)") ~ 
                str_replace(FinalNames, "\\(h\\)", paste0("(", Time, ")")), 
             
             complete.cases(Time) & 
                Time != "h" & 
-               str_detect(ColNames3, "\\(L/h\\)") ~ 
+               str_detect(ColNamesStdUnits, "\\(L/h\\)") ~ 
                str_replace(FinalNames, "\\(L/h\\)", paste0("(L/", Time, ")")),
             
             TRUE ~ FinalNames))
@@ -279,13 +301,22 @@ prettify_column_names <- function(PKtable,
    TableNames <- TableNames %>% arrange(OrigOrder)
    
    if(PKtable_class == "data.frame"){
-      PKtable <- PKtable[, TableNames$ColNames1]
+      PKtable <- PKtable[, TableNames$OrigColNames]
       names(PKtable) <- TableNames$FinalNames
    } else {
       # This is when it was a character vector rather than a data.frame. 
       PKtable <- TableNames$FinalNames
    }
    
-   return(PKtable)
+   # Returning which are PK if that's all user wanted
+   if(return_which_are_PK){
+      return(TableNames %>% 
+                select(OrigColNames, IsPKParam, FinalNames, PKparameter) %>%
+                rename(ColName = OrigColNames, 
+                       PrettifiedNames = FinalNames) %>% unique())
+   } else {
+      return(PKtable)
+   }
    
 }
+

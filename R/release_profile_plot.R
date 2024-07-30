@@ -428,7 +428,8 @@ release_profile_plot <- function(existing_exp_details,
          Suffix <- AllCompounds$Suffix[AllCompounds$CompoundID == cmpd]
          
          # Different input data depending on the CR/MR input
-         if(Deets$MainDetails[[paste0("CR_MR_Input", Suffix)]] ==
+         if(complete.cases(Deets$MainDetails[[paste0("CR_MR_Input", Suffix)]]) &&
+            Deets$MainDetails[[paste0("CR_MR_Input", Suffix)]] ==
             "Weibull"){
             
             Release[[ff]][[cmpd]] <- 
@@ -449,49 +450,56 @@ release_profile_plot <- function(existing_exp_details,
                   Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]]
             )
             
-            suppressWarnings(
-               Release[[ff]][[cmpd]]$ReleaseUpper <- 
-                  pweibull(q =  Release[[ff]][[cmpd]]$Time, 
-                           
-                           scale = Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
-                                                             Suffix)]] + 
-                              Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
-                                                        Suffix)]] * 
-                              Deets$MainDetails[[paste0("ReleaseProfile_alpha_CV", 
-                                                        Suffix)]], 
-                           
-                           shape = Deets$MainDetails[[paste0("ReleaseProfile_beta", 
-                                                             Suffix)]] +
-                              Deets$MainDetails[[paste0("ReleaseProfile_beta", 
-                                                        Suffix)]] * 
-                              Deets$MainDetails[[paste0("ReleaseProfile_beta_CV", 
-                                                        Suffix)]]) * 
-                  (Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] +
-                      Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] * 
-                      Deets$MainDetails[[paste0("ReleaseProfile_Fmax_CV", Suffix)]])
-            )
+            # I'm not clear on how to calculate the variation surrounding a
+            # weibull function, and this is giving me errors sometimes. Not
+            # showing anything but mean for Weibull release functions.
+            Release[[ff]][[cmpd]] <- Release[[ff]][[cmpd]] %>% 
+               mutate(ReleaseUpper = Release_mean, 
+                      ReleaseLower = Release_mean)
             
-            suppressWarnings(
-               Release[[ff]][[cmpd]]$ReleaseLower <- 
-                  pweibull(q =  Release[[ff]][[cmpd]]$Time, 
-                           
-                           scale = Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
-                                                             Suffix)]] - 
-                              Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
-                                                        Suffix)]] * 
-                              Deets$MainDetails[[paste0("ReleaseProfile_alpha_CV", 
-                                                        Suffix)]], 
-                           
-                           shape = Deets$MainDetails[[paste0("ReleaseProfile_beta", 
-                                                             Suffix)]] -
-                              Deets$MainDetails[[paste0("ReleaseProfile_beta", 
-                                                        Suffix)]] * 
-                              Deets$MainDetails[[paste0("ReleaseProfile_beta_CV", 
-                                                        Suffix)]]) * 
-                  (Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] -
-                      Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] * 
-                      Deets$MainDetails[[paste0("ReleaseProfile_Fmax_CV", Suffix)]])
-            )
+            # suppressWarnings(
+            #    Release[[ff]][[cmpd]]$ReleaseUpper <- 
+            #       pweibull(q =  Release[[ff]][[cmpd]]$Time, 
+            #                
+            #                scale = Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
+            #                                                  Suffix)]] + 
+            #                   Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
+            #                                             Suffix)]] * 
+            #                   Deets$MainDetails[[paste0("ReleaseProfile_alpha_CV", 
+            #                                             Suffix)]], 
+            #                
+            #                shape = Deets$MainDetails[[paste0("ReleaseProfile_beta", 
+            #                                                  Suffix)]] +
+            #                   Deets$MainDetails[[paste0("ReleaseProfile_beta", 
+            #                                             Suffix)]] * 
+            #                   Deets$MainDetails[[paste0("ReleaseProfile_beta_CV", 
+            #                                             Suffix)]]) * 
+            #       (Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] +
+            #           Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] * 
+            #           Deets$MainDetails[[paste0("ReleaseProfile_Fmax_CV", Suffix)]])
+            # )
+            # 
+            # suppressWarnings(
+            #    Release[[ff]][[cmpd]]$ReleaseLower <- 
+            #       pweibull(q =  Release[[ff]][[cmpd]]$Time, 
+            #                
+            #                scale = Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
+            #                                                  Suffix)]] - 
+            #                   Deets$MainDetails[[paste0("ReleaseProfile_alpha", 
+            #                                             Suffix)]] * 
+            #                   Deets$MainDetails[[paste0("ReleaseProfile_alpha_CV", 
+            #                                             Suffix)]], 
+            #                
+            #                shape = Deets$MainDetails[[paste0("ReleaseProfile_beta", 
+            #                                                  Suffix)]] -
+            #                   Deets$MainDetails[[paste0("ReleaseProfile_beta", 
+            #                                             Suffix)]] * 
+            #                   Deets$MainDetails[[paste0("ReleaseProfile_beta_CV", 
+            #                                             Suffix)]]) * 
+            #       (Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] -
+            #           Deets$MainDetails[[paste0("ReleaseProfile_Fmax", Suffix)]] * 
+            #           Deets$MainDetails[[paste0("ReleaseProfile_Fmax_CV", Suffix)]])
+            # )
             
             Release[[ff]][[cmpd]] <- Release[[ff]][[cmpd]] %>% 
                mutate(Release_mean = Release_mean / 100, 
@@ -509,6 +517,8 @@ release_profile_plot <- function(existing_exp_details,
                       DoseNum = 1)
             
          } else {
+            
+            if(nrow(Deets$ReleaseProfiles %>% filter(CompoundID == cmpd)) == 0){next}
             
             Release[[ff]][[cmpd]] <- Deets$ReleaseProfiles %>% 
                filter(CompoundID == cmpd) %>% 

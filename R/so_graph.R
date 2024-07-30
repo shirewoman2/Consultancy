@@ -374,7 +374,8 @@ so_graph <- function(PKtable,
    
    if(boundary_color_set[1] %in% c("red green", "muted red green", 
                                    "red black") == FALSE && 
-      is.matrix(col2rgb(boundary_color_set)) == FALSE){
+      tryCatch(is.matrix(col2rgb(boundary_color_set)),
+               error = function(x) FALSE) == FALSE){
       warning("The values you used for boundary colors are not all valid colors in R. We'll used the default colors instead.\n", 
               call. = FALSE)
       boundary_color_set <- "red black"
@@ -389,7 +390,8 @@ so_graph <- function(PKtable,
    
    if(boundary_color_set_Guest[1] %in% c("red green", "muted red green", 
                                          "red black") == FALSE && 
-      is.matrix(col2rgb(boundary_color_set_Guest)) == FALSE){
+      tryCatch(is.matrix(col2rgb(boundary_color_set_Guest)),
+               error = function(x) FALSE) == FALSE){
       warning("The values you used for BoundariesGuest boundary colors are not all valid colors in R. We'll used the default colors instead.\n", 
               call. = FALSE)
       boundary_color_set_Guest <- "red black"
@@ -611,12 +613,14 @@ so_graph <- function(PKtable,
    PKAUCUnits <- PKUnits[str_detect(PKUnits, "\\.h")]
    PKCmaxUnits <- setdiff(PKUnits, PKAUCUnits)
    
-   # Making everything use ng/mL units b/c that matches the units in
-   # PKexpressions. Otherwise, the mini graph titles will be incorrect.
+   # Making all mass per volume units use ng/mL units and all molar units be uM
+   # b/c that matches the units in PKexpressions. Otherwise, the mini graph
+   # titles will be incorrect.
    PKAUCUnits <- setdiff(PKAUCUnits, "ng/mL.h")
    PKCmaxUnits <- setdiff(PKCmaxUnits, "ng/mL")
    
-   if(length(c(PKAUCUnits, PKCmaxUnits)) > 0){
+   if(length(c(PKAUCUnits, PKCmaxUnits)) > 0 &&
+      any(c(length(PKAUCUnits), length(PKCmaxUnits)) > 1)){
       AUCcols <- names(PKtable)[str_detect(names(PKtable), 
                                            str_c(PKAUCUnits, collapse = "|"))]
       Cmaxcols <- names(PKtable)[str_detect(names(PKtable), 
@@ -668,17 +672,16 @@ so_graph <- function(PKtable,
    
    # Will need to figure out what PK parameters are and will need deprettified
    # names when reshaping and organizing data here and lower in function. 
-   PKCols <- data.frame(ColName = names(PKtable)) %>% 
-      mutate(Pretty = prettify_column_names(ColName), 
-             Ugly = prettify_column_names(ColName, pretty_or_ugly_cols = "ugly")) %>% 
-      left_join(prettify_column_names(names(PKtable), return_which_are_PK = TRUE), 
-                by = "ColName") %>% 
-      rename(Orig = ColName)
+   PKCols <- prettify_column_names(PKtable, return_which_are_PK = TRUE)
+   
+   # Need to check when concs are molar b/c changes graph title
+   ConcType <- ifelse(any(str_detect(PKCols$PrettifiedNames, "µM")), 
+                      "molar", "mass per volume")
    
    # Find all the parameters that were for a user-defined AUC interval and
    # adjust those.
-   WhichUserInt <- which(str_detect(PKCols$Orig, " for interval from"))
-   UserInt <- PKCols$Orig[WhichUserInt]
+   WhichUserInt <- which(str_detect(PKCols$ColName, " for interval from"))
+   UserInt <- PKCols$ColName[WhichUserInt]
    
    # Can't just change the name of each user int column b/c that column name may
    # already exist. Need to remove and then join w/original PK table, keeping
@@ -706,10 +709,10 @@ so_graph <- function(PKtable,
       
    }
    
-   PKCols <- PKCols %>% filter(!str_detect(Orig, " for interval"))
+   PKCols <- PKCols %>% filter(!str_detect(ColName, " for interval"))
    
    if(any(is.na(PKparameters))){
-      PKparameters <- PKCols$Ugly[PKCols$IsPKParam]
+      PKparameters <- PKCols$PKparameter[PKCols$IsPKParam]
    }
    
    # Arranging and tidying input data. First, de-prettifying column names.
@@ -718,7 +721,7 @@ so_graph <- function(PKtable,
              Statistic = ifelse(str_detect(Statistic, "^Simulated"),
                                 "Simulated", Statistic))
    
-   names(SO) <- PKCols$Ugly
+   names(SO) <- PKCols$PKparameter
    
    include_dose_num <- check_include_dose_num(PK = PKparameters, 
                                               include_dose_num = include_dose_num)
@@ -727,7 +730,7 @@ so_graph <- function(PKtable,
       PKparameters <- sub("Dose 1 |Last dose |_dose1$|_last$", "",
                           PKparameters)
       names(SO) <- sub("_dose1|_last", "", names(SO))
-      PKCols$Ugly <- sub("_dose1|_last", "", PKCols$Ugly)
+      PKCols$PKparameter <- sub("_dose1|_last", "", PKCols$PKparameter)
    }
    
    # Removing additional columns since they mess up pivoting.
@@ -1072,10 +1075,16 @@ so_graph <- function(PKtable,
                scale_color_manual(values = MyPointColors, drop = FALSE) +
                scale_shape_manual(values = MyPointShapes, drop = FALSE))
       
+      
       if(str_detect(i, "_withInhib")){
-         Gtitle <- PKexpressions[[paste0(i, "_2")]]
+         Gtitle <- PKexpressions[[paste0(i, switch(ConcType, 
+                                                   "molar" = "_molar", 
+                                                   "mass per volume" = ""), 
+                                         "_2")]]
       } else {
-         Gtitle <- PKexpressions[[i]]
+         Gtitle <- PKexpressions[[paste0(i, switch(ConcType, 
+                                                   "molar" = "_molar", 
+                                                   "mass per volume" = ""))]]
       }
       
       CheckRange <- ifelse(round_up(max(c(SO[[i]]$Simulated, 

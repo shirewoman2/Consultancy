@@ -226,7 +226,7 @@
 #'   \item{ADAMParameter}{TRUE or FALSE for whether the
 #'   parameter only comes into play when it's an ADAM model}
 #'
-#'   \item{DiscoveryParameter}{Is this detail available for Simcyp Discovery
+#'   \item{SimulatorAvailability}{Is this detail available for Simcyp Discovery
 #'   simulations? Options are "Simulator only", "Discovery only", or "Simulator
 #'   and Discovery". This is used to determine which details to check and which
 #'   regex to use for those details.}
@@ -417,5 +417,10 @@
 #' @format a data.frame
 "PKexamples"
 
+
+#' Column names for observed concentration-time data by Simulator version
+#' 
+#' @format a data.frame
+"ObsColNames"
 
 

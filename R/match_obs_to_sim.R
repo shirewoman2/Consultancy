@@ -213,9 +213,23 @@ match_obs_to_sim <- function(ct_dataframe,
          ObsData_j[[k]] <- calc_dosenumber(ct_dataframe = ObsData_j[[k]], 
                                            existing_exp_details = Deets)
          
-         # Matching units
-         ObsData_j[[k]] <- convert_units(ObsData_j[[k]], 
-                                        DF_with_good_units = ct_dataframe[[k]])
+         # Matching units. Need to do this one compound at a time. 
+         ObsData_j[[k]] <- split(ObsData_j[[k]], f = ObsData_j[[k]]$CompoundID)
+         ct_dataframe[[k]] <- split(ct_dataframe[[k]], f = ct_dataframe[[k]]$CompoundID)
+         
+         for(cmpd in intersect(names(ObsData_j[[k]]), 
+                               names(ct_dataframe[[k]]))){
+            ObsData_j[[k]][[cmpd]] <- 
+               convert_units(DF_to_convert = ObsData_j[[k]][[cmpd]], 
+                             DF_with_good_units = ct_dataframe[[k]][[cmpd]], 
+                             MW = as.numeric(
+                                Deets$MainDetails[
+                                paste0("MW", AllCompounds$Suffix[AllCompounds$CompoundID == cmpd])]))
+            
+         }
+         
+         ObsData_j[[k]] <- bind_rows(ObsData_j[[k]])
+         ct_dataframe[[k]] <- bind_rows(ct_dataframe[[k]])
          
          # Adding inhibitor name as needed
          MyPerpetrator <- determine_myperpetrator(Deets,
