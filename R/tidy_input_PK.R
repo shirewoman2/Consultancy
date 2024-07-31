@@ -141,6 +141,70 @@ tidy_input_PK <- function(PKparameters,
       stop("Tell Laura Shireman that there's a problem with input for PKparameters.")
    }
    
+   # Dealing with possible input from calc_PK_ratios
+   if(any(str_detect(tolower(names(PKparameters)), "numerator")) & 
+      any(str_detect(tolower(names(PKparameters)), "denominator"))){
+      
+      # Tidying column names
+      
+      # File
+      names(PKparameters)[
+         str_detect(tolower(names(PKparameters)), 
+                    "^numerator$|numerator.*file|numerator.*sim")][1] <- "Numerator_File"
+      
+      names(PKparameters)[
+         str_detect(tolower(names(PKparameters)), 
+                    "^denominator$|denominator.*file|denominator.*sim")][1] <- "Denominator_File"
+      
+      # CompoundID
+      names(PKparameters)[
+         str_detect(tolower(names(PKparameters)), 
+                    "numerator.*compoundid|compoundid.*numerator")][1] <- "Numerator_CompoundID"
+      
+      names(PKparameters)[
+         str_detect(tolower(names(PKparameters)), 
+                    "denominator.*compoundid|compoundid.*denominator")][1] <- "Denominator_CompoundID"
+      
+      # Tissue
+      names(PKparameters)[
+         str_detect(tolower(names(PKparameters)), 
+                    "numerator.*tissue|tissue.*numerator")][1] <- "Numerator_Tissue"
+      
+      names(PKparameters)[
+         str_detect(tolower(names(PKparameters)), 
+                    "denominator.*tissue|tissue.*denominator")][1] <- "Denominator_Tissue"
+      
+      # Sheet
+      names(PKparameters)[
+         str_detect(tolower(names(PKparameters)), 
+                    "numerator.*sheet|sheet.*numerator|numerator.*tab|tab.*numerator")][1] <- "Numerator_Sheet"
+      
+      names(PKparameters)[
+         str_detect(tolower(names(PKparameters)), 
+                    "denominator.*sheet|sheet.*denominator|denominator.*tab|tab.*denominator")][1] <- "Denominator_Sheet"
+      
+      # PKparameter
+      names(PKparameters)[
+         str_detect(tolower(names(PKparameters)), 
+                    "numerator.*parameter|parameter.*numerator")][1] <- "Numerator_PKparameter"
+      
+      names(PKparameters)[
+         str_detect(tolower(names(PKparameters)), 
+                    "denominator.*parameter|parameter.*denominator")][1] <- "Denominator_PKparameter"
+      
+      # Noting original file pairs and reshaping data to work w/rest of function
+      PKparameters <- PKparameters %>% 
+         mutate(FilePair = paste(Numerator_File, Denominator_File)) %>% 
+         pivot_longer(cols = -any_of(c("Numerator_PKparameter", 
+                                       "Denominator_PKparameter", 
+                                       "FilePair")), 
+                      names_to = "NorD", 
+                      values_to = "Value") %>% 
+         separate(NorD, into = c("NorD", "Param"), sep = "_") %>% 
+         pivot_wider(names_from = Param, values_from = Value)
+      
+   }
+   
    # Tidying and harmonizing when input was DF ------------------------------
    
    if(InputWasDF){
@@ -202,11 +266,9 @@ tidy_input_PK <- function(PKparameters,
       }
       
       # Checking whether data in long or wide format. 
-      Wide <- any(names(PKparameters) %in% 
-                     c(AllPKParameters$PKparameter, 
-                       tolower(AllPKParameters$PKparameter), 
-                       AllPKParameters$PKparameter_nodosenum, 
-                       tolower(AllPKParameters$PKparameter_nodosenum)))
+      Wide <- prettify_column_names(names(PKparameters),
+                                    return_which_are_PK = TRUE)
+      Wide <- any(Wide$IsPKParam)
       
       if(Wide){
          
@@ -268,8 +330,12 @@ tidy_input_PK <- function(PKparameters,
          PKparameters$PKparameter <- NA
       }
       
+      # Standardizing input for when they want to specify PK parameters for
+      # calc_PK_ratios with "/". Making sure they always have a space.
+      PKparameters$PKparameter <- sub("( )?/( )?", " / ", PKparameters$PKparameter)
+      
       # Noting original value for PKparameters
-      PKparameters_orig <- PKparameters$PKparameter
+      PKparameters_orig <- PKparameters$PKparameter # FIXME - Add a unique here? 
       
       
       ### File -----------------------------------------------------------------
@@ -434,7 +500,7 @@ tidy_input_PK <- function(PKparameters,
          
          # Check for appropriate input for compound ID
          compoundsToExtract <- tolower(compoundsToExtract)
-         if(any(compoundsToExtract == "all")){
+         if(any(compoundsToExtract == "all", na.rm = T)){
             
             Cmpd_all <- 
                existing_exp_details$MainDetails[, c("File", AllCompounds$DetailNames)] %>% 
@@ -519,39 +585,6 @@ tidy_input_PK <- function(PKparameters,
                                   Tissue = tissues))
       )
       
-      ## CompoundID ------------------------------------------------------
-      
-      # Check for appropriate input for compound ID
-      compoundsToExtract <- tolower(compoundsToExtract)
-      if(any(compoundsToExtract == "all")){
-         
-         Cmpd_all <- 
-            existing_exp_details$MainDetails[, c("File", AllCompounds$DetailNames)] %>% 
-            pivot_longer(cols = -File, 
-                         names_to = "DetailNames", 
-                         values_to = "ObsValue") %>% 
-            left_join(AllCompounds %>% select(CompoundID, DetailNames), 
-                      by = "DetailNames")
-         
-         compoundsToExtract <- AllCompounds$CompoundID
-      }
-      
-      if(any(compoundsToExtract %in% AllCompounds$CompoundID == FALSE)){
-         warning(paste0("The compound(s) ", 
-                        str_comma(paste0("`", setdiff(compoundsToExtract, AllCompounds$CompoundID), "`")),
-                        " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                        str_comma(paste0("`", AllCompounds$CompoundID, "`")), "
-                     "), 
-                 call. = FALSE)
-         compoundsToExtract <- intersect(compoundsToExtract, AllCompounds$CompoundID)
-      }
-      
-      suppressMessages(
-         PKparameters <- PKparameters %>% 
-            left_join(expand.grid(File = AllFiles, 
-                                  CompoundID = compoundsToExtract))
-      )
-      
       ## ObsValue and variability -------------------------------------------
       
       # Adding these columns so that format will be the same regardless of input
@@ -562,7 +595,7 @@ tidy_input_PK <- function(PKparameters,
       # character varability s/a "1 to 2"
       PKparameters$ObsVariability <- as.character(NA)
       
-   }
+   } 
    
    # Harmonizing and tidying generally ----------------------------------------
    
@@ -639,7 +672,12 @@ tidy_input_PK <- function(PKparameters,
    }
    
    ## Tissue ---------------------------------------------------------------
-   PKparameters$Tissue <- tolower(PKparameters$Tissue)
+   
+   if("Tissue" %in% names(PKparameters)){
+      PKparameters$Tissue <- tolower(PKparameters$Tissue)
+   } else {
+      PKparameters$Tissue <- NA
+   }
    PKparameters$Tissue[is.na(PKparameters$Tissue)] <- "plasma"
    
    PossTissues <- c("plasma", "unbound plasma", "blood", "unbound blood", 
@@ -654,10 +692,16 @@ tidy_input_PK <- function(PKparameters,
    
    ## CompoundID -------------------------------------------------------------
    
-   PKparameters$CompoundID <- tolower(PKparameters$CompoundID)
+   if("CompoundID" %in% names(PKparameters)){
+      PKparameters$CompoundID <- tolower(PKparameters$CompoundID)
+   } else {
+      PKparameters$CompoundID <- NA
+   }
    PKparameters$CompoundID[is.na(PKparameters$CompoundID)] <- "substrate"
    
-   if(any(compoundsToExtract %in% AllCompounds$CompoundID == FALSE)){
+   if(any(complete.cases(compoundsToExtract)) && 
+      any(compoundsToExtract[complete.cases(compoundsToExtract)] %in% 
+          AllCompounds$CompoundID == FALSE, na.rm = T)){
       warning(paste0(str_wrap(paste0(
          "The compound(s) ", 
          str_comma(paste0("`", setdiff(compoundsToExtract, AllCompounds$CompoundID), "`")),
@@ -741,6 +785,43 @@ tidy_input_PK <- function(PKparameters,
    
    ## Checking CompoundID -----------------------------------------------------
    
+   # Check for appropriate input for compound ID
+   compoundsToExtract <- tolower(compoundsToExtract)
+   if(any(compoundsToExtract == "all", na.rm = T)){
+      
+      Cmpd_all <- 
+         existing_exp_details$MainDetails[, c("File", AllCompounds$DetailNames)] %>% 
+         pivot_longer(cols = -File, 
+                      names_to = "DetailNames", 
+                      values_to = "ObsValue") %>% 
+         left_join(AllCompounds %>% select(CompoundID, DetailNames), 
+                   by = "DetailNames")
+      
+      compoundsToExtract <- AllCompounds$CompoundID
+   }
+   
+   if(any(compoundsToExtract[complete.cases(compoundsToExtract)] %in%
+          AllCompounds$CompoundID == FALSE)){
+      warning(paste0("The compound(s) ", 
+                     str_comma(paste0("`", setdiff(compoundsToExtract, AllCompounds$CompoundID), "`")),
+                     " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
+                     str_comma(paste0("`", AllCompounds$CompoundID, "`")), "
+                     "), 
+              call. = FALSE)
+      compoundsToExtract <- intersect(compoundsToExtract, AllCompounds$CompoundID)
+   }
+   
+   if(InputWasDF){
+      # Getting all possible files
+      AllFiles <- get_file_names(PKparameters$File)
+   }
+   
+   suppressMessages(
+      PKparameters <- PKparameters %>% 
+         left_join(expand.grid(File = AllFiles, 
+                               CompoundID = compoundsToExtract))
+   )
+   
    # Need to check that the compound they requested was included in the
    # simulation. Also check whether simulation was a DDI sim. 
    
@@ -796,7 +877,7 @@ tidy_input_PK <- function(PKparameters,
    
    PKparameters <- PKparameters %>% 
       select(File, Sheet, CompoundID, Tissue, PKparameter, 
-             any_of(c("ObsValue", "ObsVariability")), 
+             any_of(c("ObsValue", "ObsVariability", "FilePair", "NorD")), 
              DDI, MD)
    
    ## Checking PKparameters again -------------------------------------------
@@ -831,7 +912,18 @@ tidy_input_PK <- function(PKparameters,
                       select(CompoundID, DosedCompoundID, DosedCompoundSuffix),
                    by = "CompoundID") %>% 
          left_join(existing_exp_details$MainDetails %>% 
-                      select(File, matches("DoseInt")), by = "File") %>% 
+                      select(File, matches("DoseInt")) %>% 
+                      # We just need to know whether it was multiple doses or a
+                      # single one, so putting a placeholder anywhere it lists
+                      # "custom dosing" b/c that *would be* multiple dosing.
+                      mutate(DoseInt_sub = case_when(DoseInt_sub == "custom dosing" ~ "12", 
+                                                     .default = as.character(DoseInt_sub)), 
+                             DoseInt_inhib = case_when(DoseInt_inhib == "custom dosing" ~ "12", 
+                                                       .default = as.character(DoseInt_inhib)), 
+                             DoseInt_inhib2 = case_when(DoseInt_inhib2 == "custom dosing" ~ "12", 
+                                                        .default = as.character(DoseInt_inhib2)), 
+                             across(.cols = matches("DoseInt"), .fns = as.numeric)),
+                   by = "File") %>% 
          mutate(MyDoseInt = case_match(DosedCompoundID, 
                                        "substrate" ~ DoseInt_sub, 
                                        "inhibitor 1" ~ DoseInt_inhib, 
@@ -913,7 +1005,7 @@ tidy_input_PK <- function(PKparameters,
    PKparameters <- PKparameters %>% 
       filter(Harmonious == TRUE) %>% 
       select(File, Sheet, CompoundID, Tissue, PKparameter,
-             ObsValue, ObsVariability) %>% 
+             any_of(c("ObsValue", "ObsVariability", "FilePair", "NorD"))) %>% 
       rename(Value = ObsValue, 
              Variability = ObsVariability)
    
@@ -950,7 +1042,6 @@ tidy_input_PK <- function(PKparameters,
    
    # Output -------------------------------------------------------------
    
-   # Out
    return(list(PKparameters = PKparameters, 
                existing_exp_details = existing_exp_details))
    

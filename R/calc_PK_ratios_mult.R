@@ -256,14 +256,15 @@
 #' # No examples yet.
 #' 
 calc_PK_ratios_mult <- function(sim_data_file_pairs,  
+                                existing_exp_details = NA,
+                                compoundToExtract = NA,
+                                tissue = NA, 
+                                PKparameters = NA, 
+                                sheet_PKparameters_num = NA,
+                                sheet_PKparameters_denom = NA,
                                 paired = TRUE,
                                 match_subjects_by = "individual and trial", 
                                 distribution_type = "t",
-                                compoundToExtract = "substrate",
-                                tissue = "plasma",
-                                PKparameters = "AUC tab", 
-                                sheet_PKparameters_num = NA,
-                                sheet_PKparameters_denom = NA,
                                 mean_type = "geometric", 
                                 include_num_denom_columns = TRUE, 
                                 conf_int = 0.9, 
@@ -273,7 +274,6 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                 checkDataSource = TRUE, 
                                 include_dose_num = NA,
                                 extract_forest_data = FALSE, 
-                                existing_exp_details = NA,
                                 save_table = NA, 
                                 single_table = TRUE,
                                 page_orientation = "portrait", 
@@ -285,26 +285,28 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   # Check for appropriate input for arguments
-   tissue <- tolower(tissue)
-   if(tissue %in% c("plasma", "blood", "unbound plasma", "unbound blood") == FALSE){
-      warning(wrapn("You have not supplied a permissible value for tissue. Options are `plasma` or `blood`. The PK parameters will be for plasma."), 
-              call. = FALSE)
-      tissue <- "plasma"
+   # Only returning geometric means and CI's if they want unpaired data.
+   # Uncertain how to set things up otherwise.
+   if(paired == FALSE & mean_type != "geometric"){
+      warning(wrapn("You have supplied unpaired data and requested something other than geometric means and confidence intervals. We have only set this function up for unpaired data with geometric means and confidence intervals, so that is what will be returned."), 
+              call = FALSE)
+      mean_type <- "geometric"
    }
    
-   if(extract_forest_data & includeConfInt == FALSE){
-      warning(wrapn("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data."), 
-              call. = FALSE)
-      includeConfInt <- TRUE
+   # FIXME - This shouldn't have to be a thing. 
+   # if(extract_forest_data & includeConfInt == FALSE){
+   #    warning(wrapn("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data."), 
+   #            call. = FALSE)
+   #    includeConfInt <- TRUE
+   # }
+   
+   if(tolower(distribution_type) %in% c("z", "t")){
+      distribution_type <- ifelse(tolower(distribution_type) == "z", 
+                                  "Z", "t")
+   } else {
+      stop(wrapn("You have supplied a value for distribution_type that doesn't work. It must be either `t` (default and what the Simulator uses) or `Z`."), 
+           call. = FALSE)
    }
-   
-   # Harmonizing PK parameter names
-   PKparameters <- harmonize_PK_names(PKparameters)
-   
-   # Standardizing input for when they want to specify PK parameters with "/".
-   # Making sure they always have a space.
-   PKparameters <- sub("( )?/( )?", " / ", PKparameters)
    
    page_orientation <- tolower(page_orientation)[1]
    if(page_orientation %in% c("portrait", "landscape") == FALSE){
@@ -323,27 +325,106 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    
    # Main body of function -------------------------------------------------
    
-   # Loading sim_data_file_pairs as needed
-   if(class(sim_data_file_pairs)[1] == "character"){
-      
-      # Checking file name format and setting as csv
-      sim_data_file_pairs <- ifelse(str_detect(sim_data_file_pairs, "\\."),
-                                    sub("\\..*", ".csv", sim_data_file_pairs), 
-                                    sim_data_file_pairs)
-      
-      sim_data_file_pairs <- read.csv(sim_data_file_pairs)
+   # # Checking experimental details to only pull details that apply
+   # if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
+   #    existing_exp_details <- 
+   #       extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
+   #                                                sim_data_file_denominator), 
+   #                              exp_details = "Summary and Input")
+   #    Deets <- existing_exp_details$MainDetails
+   # } else {
+   #    Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
+   #       filter(File %in% c(sim_data_file_numerator, 
+   #                          sim_data_file_denominator))
+   #    
+   #    if(nrow(Deets) != 2){
+   #       existing_exp_details <-
+   #          extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
+   #                                                   sim_data_file_denominator), 
+   #                                 exp_details = "Summary and Input", 
+   #                                 existing_exp_details = existing_exp_details)
+   #       Deets <- existing_exp_details$MainDetails
+   #    }
+   #    
+   #    if(nrow(Deets) != 2){
+   #       warning(wrapn(paste0("We were attempting to find the simulation details for ", 
+   #                            str_comma(c(sim_data_file_numerator, 
+   #                                        sim_data_file_denominator)), 
+   #                            " and failed to find them, so we cannot return information on these files.")), 
+   #               call. = FALSE)
+   #       return(data.frame())
+   #    }
+   # }
+   
+   
+   ## Tidying PKparameters ------------------------------------------------
+   
+   TEMP <- tidy_input_PK(PKparameters = sim_data_file_pairs, 
+                                 compoundsToExtract = compoundToExtract, 
+                                 tissues = tissue, 
+                                 existing_exp_details = existing_exp_details)
+   
+   existing_exp_details <- TEMP %>% pluck("existing_exp_details")
+   PKparameters <- TEMP %>% 
+      pluck("PKparameters") %>% 
+      mutate(Sheet = case_when(is.na(Sheet) & NorD == "Numerator" ~ {{sheet_PKparameters_num}}, 
+                               is.na(Sheet) & NorD == "Denominator" ~ {{sheet_PKparameters_denom}}, 
+                               .default = Sheet))
+   
+   rm(TEMP)
+   
+   # Noting file pairs
+   sim_data_file_pairs <- PKparameters %>% 
+      select(FilePair, File, NorD) %>% unique() %>% 
+      pivot_wider(names_from = NorD, values_from = File)
+   
+   
+   ## Further error checking now that PKparameters are tidy -------------------
+   
+   # Check for appropriate input for arguments
+   tissue <- tolower(tissue)
+   
+   if(any(complete.cases(PKparameters$Tissue))){
+      if(any(is.na(PKparameters$Tissue))){
+         stop(wrapn("You have supplied some values for the tissue with the argument 'PKparameters', but you've left some blank. We're not sure what you want when there's a mix of complete and missing values here. Please check your inputs and try again."), 
+              call. = FALSE)
+      }
+   } else {
+      PKparameters$Tissue <- ifelse(complete.cases(tissue), tissue, "plasma")
    }
    
-   if(all(c("Numerator", "Denominator") %in% names(sim_data_file_pairs) == FALSE)){
-      stop("You must have a column titled `Numerator` and a column titled `Denominator` in the csv file or data.frame `sim_data_file_pairs`, and you are missing at least one of those. We don't know which files are for the numerators and which are for the denominators and cannot proceed.", 
-           call. = FALSE)
+   if(all(PKparameters$Tissue %in% 
+          c("plasma", "blood", "unbound plasma", "unbound blood", 
+            "peripheral plasma", "peripheral blood")) == FALSE){
+      
+      warning(wrapn("You have not supplied a permissible value for tissue. Options are 'plasma', 'blood', 'unbound plasma', 'unbound blood', 'peripheral plasma', or 'peripheral blood'. The PK parameters will be for plasma whenver you've supplied something else."), 
+              call. = FALSE)
+      
+      PKparameters$Tissue[
+         PKparameters$Tissue %in% 
+            c("plasma", "blood", "unbound plasma", "unbound blood", 
+              "peripheral plasma", "peripheral blood") == FALSE] <- "plasma"
    }
    
-   if(all(c("sheet_PKparameters_denom", "sheet_PKparameters_num") %in%
-          names(sim_data_file_pairs)) == FALSE){
-      sim_data_file_pairs$sheet_PKparameters_num <- sheet_PKparameters_num
-      sim_data_file_pairs$sheet_PKparameters_denom <- sheet_PKparameters_denom
+   if(any(complete.cases(PKparameters$CompoundID))){
+      if(any(is.na(PKparameters$CompoundID))){
+         stop(wrapn("You have supplied some values for the compoundID with the argument 'PKparameters', but you've left some blank. We're not sure what you want when there's a mix of complete and missing values here. Please check your inputs and try again."), 
+              call. = FALSE)
+      }
+   } else {
+      PKparameters$CompoundID <- ifelse(complete.cases(compoundID), compoundID, "substrate")
    }
+   
+   if(all(PKparameters$CompoundID %in% AllCompounds$CompoundID) == FALSE){
+      
+      warning(wrapn("You have not supplied a permissible value for compoundID. Options are 'substrate', 'primary metabolite 1', 'primary metabolite 2', 'secondary metabolite', 'inhibitor 1', 'inhibitor 2', or 'inhibitor 1 metabolite'. The PK parameters will be for the substrate whenver you've supplied something else."), 
+              call. = FALSE)
+      
+      PKparameters$CompoundID[
+         PKparameters$CompoundID %in% AllCompounds$CompoundID == FALSE] <- "substrate"
+   }
+   
+   ## Looping through files ----------------------------------------------------
    
    MyTable <- list()
    QC <- list()
@@ -354,14 +435,14 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
       message("Extracting data for file pair #", i)
       
       TEMP <- calc_PK_ratios(
-         sim_data_file_numerator = sim_data_file_pairs$Numerator[i], 
-         sim_data_file_denominator = sim_data_file_pairs$Denominator[i], 
-         paired = paired, 
-         compoundToExtract = compoundToExtract,
+         # sim_data_file_numerator = sim_data_file_pairs$Numerator[i], 
+         # sim_data_file_denominator = sim_data_file_pairs$Denominator[i], 
+         # compoundToExtract = compoundToExtract,
          PKparameters = PKparameters, 
-         sheet_PKparameters_num = sim_data_file_pairs$sheet_PKparameters_num[i], 
-         sheet_PKparameters_denom = sim_data_file_pairs$sheet_PKparameters_denom[i], 
-         tissue = tissue, 
+         # sheet_PKparameters_num = sim_data_file_pairs$sheet_PKparameters_num[i], 
+         # sheet_PKparameters_denom = sim_data_file_pairs$sheet_PKparameters_denom[i], 
+         # tissue = tissue, 
+         paired = paired, 
          mean_type = mean_type, 
          existing_exp_details = existing_exp_details,
          include_num_denom_columns = include_num_denom_columns, 
