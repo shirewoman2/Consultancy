@@ -145,13 +145,12 @@ qc_sims <- function(existing_exp_details,
    
    
    # NUBMER 3
-   # formatXL(
-   #     Out, FileName, sheet = "Simulation experimental details",
+   # sheet = output_tab_name
    
    # becomes
    
-   # formatXL(
-   #     Out, FileName, sheet = j,
+   # sheet = j
+   
    
    # NUMBER 4 All the places that originally were just "Out" now are "Out[[j]]"
    # because of the loop.
@@ -174,37 +173,96 @@ qc_sims <- function(existing_exp_details,
       if(Ext == "csv"){
          write.csv(Out, FileName, row.names = F)
       } else if(Ext == "xlsx"){
+         
+         # Using openxlsx to format things. NB: Versions <= 2.12.17 used the
+         # xlsx package to save, but openxlsx allows you to insert graphs and
+         # also seems to have a much more intuitive interface for saving
+         # formatting.
+         WB <- openxlsx::createWorkbook()
+         
+         BlueColumn <- openxlsx::createStyle(wrapText = TRUE, 
+                                             fgFill = "#E7F3FF")
+         
+         BlueColumnHeader <- openxlsx::createStyle(textDecoration = "bold",
+                                                   wrapText = TRUE, 
+                                                   halign = "center", 
+                                                   valign = "center", 
+                                                   fgFill = "#E7F3FF")
+         
+         HeaderStyle <- openxlsx::createStyle(textDecoration = "bold",
+                                              wrapText = TRUE, 
+                                              halign = "center", 
+                                              valign = "center")
+         
+         ProbCells <- openxlsx::createStyle(wrapText = TRUE, 
+                                            fgFill = "#FFC7CE", 
+                                            fontColour = "#9B030C")
+         
          for(j in names(Out)){
             
-            if(any(str_detect(names(Out[[j]]), "^TEMPLATE")) == FALSE){
+            openxlsx::addWorksheet(wb = WB, 
+                                   sheetName = j)
+            
+            openxlsx::writeData(wb = WB, 
+                                sheet = j,
+                                x = as.data.frame(Out[[j]]), 
+                                headerStyle = HeaderStyle)
+            
+            openxlsx::setColWidths(wb = WB, 
+                                   sheet = j, 
+                                   cols = 1:ncol(Out[[j]]), 
+                                   widths = c(30, rep(15, ncol(Out[[j]]) - 1)))
+            
+            # Freezing view 
+            UnfrozCol1 <- which(
+               str_detect(names(Out[[j]]), "TEMPLATE|^All files")) + 1
+            UnfrozCol1 <- UnfrozCol1[1]
+            UnfrozCol1 <- ifelse(is.na(UnfrozCol1), 2, UnfrozCol1)
+            
+            openxlsx::freezePane(wb = WB,
+                                 sheet = j,
+                                 firstActiveRow = 2,
+                                 firstActiveCol =  UnfrozCol1)
+            
+            
+            if(any(str_detect(names(Out[[j]]), "^TEMPLATE")) == FALSE |
+               length(AllFiles) == 1){
                # This is when there is no template simulation, but we are
                # including a column noting when a given value was the same for
                # all simulations.
                
-               # FIXME - Set styles.
-               openxlsx::write.xlsx(as.data.frame(Out[[j]]), 
-                                    FileName)
+               openxlsx::addStyle(wb = WB, 
+                                  sheet = j, 
+                                  style = BlueColumn, 
+                                  rows = 2:(nrow(Out[[j]]) + 1), 
+                                  cols = which(str_detect(names(Out[[j]]),
+                                                          "All files have this")))
                
-               # formatXL(
-               #    DF = Out[[j]], 
-               #    file = FileName, 
-               #    sheet = j,
-               #    styles = list(
-               #       list(columns = which(names(Out[[j]]) == "Notes"), 
-               #            textposition = list(wrapping = TRUE)),
-               #       list(rows = 0, font = list(bold = TRUE),
-               #            textposition = list(alignment = "middle",
-               #                                wrapping = TRUE)), 
-               #       list(columns = which(str_detect(names(Out[[j]]), "All files have this value")),
-               #            fill = "#E7F3FF"), 
-               #       list(rows = 0, columns = which(str_detect(names(Out[[j]]), "All files have this value")), 
-               #            font = list(bold = TRUE), 
-               #            textposition = list(alignment = "middle",
-               #                                wrapping = TRUE), 
-               #            fill = "#E7F3FF")))
+               openxlsx::addStyle(wb = WB, 
+                                  sheet = j, 
+                                  style = BlueColumnHeader, 
+                                  rows = 1, 
+                                  cols = which(str_detect(names(Out[[j]]),
+                                                          "All files have this")))
+               
             } else {
                # This is when there IS a template simulation. Formatting to
                # highlight in red all the places where things differ.
+               
+               # making the template sim column blue
+               openxlsx::addStyle(wb = WB, 
+                                  sheet = j, 
+                                  style = BlueColumn, 
+                                  rows = 2:(nrow(Out[[j]]) + 1), 
+                                  cols = which(str_detect(names(Out[[j]]),
+                                                          template_sim)))
+               
+               openxlsx::addStyle(wb = WB, 
+                                  sheet = j, 
+                                  style = BlueColumnHeader, 
+                                  rows = 1, 
+                                  cols = which(str_detect(names(Out[[j]]),
+                                                          template_sim)))
                
                # Checking whether things match
                Diffs <- list()
@@ -214,53 +272,26 @@ qc_sims <- function(existing_exp_details,
                for(i in 1:length(NontempFiles)){
                   Diffs[[i]] <- 
                      list(columns = which(names(Out[[j]]) == NontempFiles[i]),
-                          rows = which(Out[[j]][ , NontempFiles[i]] != Out[[j]][, TSim] |
-                                          (complete.cases(Out[[j]][ , NontempFiles[i]]) &
-                                              is.na(Out[[j]][, TSim])) |
-                                          (is.na(Out[[j]][ , NontempFiles[i]]) & 
-                                              complete.cases(Out[[j]][, TSim]))), 
-                          fill = "#FFC7CE", 
-                          font = list(color = "#9B030C"))
+                          rows = which(
+                             Out[[j]][ , NontempFiles[i]] != Out[[j]][, TSim] |
+                                (complete.cases(Out[[j]][ , NontempFiles[i]]) & is.na(Out[[j]][, TSim])) |
+                                (is.na(Out[[j]][ , NontempFiles[i]]) & complete.cases(Out[[j]][, TSim]))))
+                  
+                  if(length(Diffs[[i]]$rows) > 0){
+                     openxlsx::addStyle(wb = WB, 
+                                        sheet = j, 
+                                        style = ProbCells, 
+                                        rows = Diffs[[i]]$rows + 1, 
+                                        cols = Diffs[[i]]$columns)
+                  }
                }
-               
-               MyStyles[[1]] <- 
-                  # wrapping text in the notes column since it's sometimes long
-                  list(columns = which(names(Out[[j]]) == "Notes"), 
-                       textposition = list(wrapping = TRUE))
-               
-               MyStyles[[2]] <- 
-                  # making header row bold and centered
-                  list(rows = 0, font = list(bold = TRUE),
-                       textposition = list(alignment = "middle",
-                                           wrapping = TRUE))
-               
-               # making the template sim column blue
-               MyStyles[[3]] <- 
-                  list(columns = which(str_detect(names(Out[[j]]), template_sim)),
-                       fill = "#E7F3FF")
-               
-               MyStyles[[4]] <- 
-                  list(columns = which(str_detect(names(Out[[j]]), template_sim)),
-                       rows = 0, font = list(bold = TRUE), 
-                       textposition = list(alignment = "middle",
-                                           wrapping = TRUE), 
-                       fill = "#E7F3FF")
-               
-               MyStyles <- append(MyStyles, Diffs)
-               
-               # formatXL(
-               #    DF = Out[[j]], 
-               #    file = FileName, 
-               #    sheet = j,
-               #    styles = MyStyles)
-               
-               # FIXME - Set styles.
-               openxlsx::write.xlsx(as.data.frame(Out[[j]]), 
-                                    FileName)
-               
-               
             }
          }
+         
+         openxlsx::saveWorkbook(wb = WB, 
+                                file = FileName, 
+                                overwrite = TRUE)
+         
       }
    }
    

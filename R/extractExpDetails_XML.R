@@ -168,7 +168,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             AllExpDetails %>% 
                filter(DataSource == "workspace or database" & 
                          SimulatorAvailability %in% c("Simulator and Discovery", 
-                                                   "Simulator only")) %>% 
+                                                      "Simulator only")) %>% 
                pull(Detail)
          )
       } else if(Deets[[i]]$SimulatorUsed == "Simcyp Discovery"){
@@ -178,7 +178,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             AllExpDetails %>% 
                filter(DataSource == "workspace or database" & 
                          SimulatorAvailability %in% c("Simulator and Discovery", 
-                                                   "Discovery only")) %>% 
+                                                      "Discovery only")) %>% 
                pull(Detail)
          )
       }
@@ -279,9 +279,11 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                   
                   TRUE ~ DeetValue)
                
-               DeetValue <- switch(DeetInfo$Class, 
-                                   "numeric" = as.numeric(DeetValue), 
-                                   "character" = as.character(DeetValue))
+               suppressWarnings(
+                  DeetValue <- switch(DeetInfo$Class, 
+                                      "numeric" = as.numeric(DeetValue), 
+                                      "character" = as.character(DeetValue))
+               )
                
                # Adjusting when things need to be set to NA when they don't
                # apply. Peff is complicated, so it's separate from this.
