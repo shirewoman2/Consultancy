@@ -46,10 +46,8 @@ if(FromCalcPKRatios){
       
    }
    
-   # calc_PK_ratios only has a single tissue option for now, so need to set
-   # tissues to tissue. Same w/compounds. 
-   tissues <- tissue
-   compoundsToExtract <- compoundToExtract
+   tissues <- str_comma(unique(PKparameters$Tissue))
+   compoundsToExtract <- str_comma(unique(PKparameters$CompoundID))
    
 } 
 

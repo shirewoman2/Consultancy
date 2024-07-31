@@ -173,6 +173,10 @@
 #'   dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 #'   ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 #'   the default behavior and get exactly what you want.
+#' @param highlight_gmr_colors optionally specify a set of colors to use for
+#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+#'   "green to red" or a vector of 4 colors of your choosing. If left as NA, no
+#'   highlighting for GMR level will be done.
 #' @param page_orientation set the page orientation for the Word file output to
 #'   "portrait" or "landscape" (default)
 #'
@@ -205,6 +209,7 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
                            checkDataSource = TRUE, 
                            returnExpDetails = FALSE,
                            save_table = NA, 
+                           highlight_gmr_colors = NA, 
                            page_orientation = "landscape", 
                            fontsize = 11){
    
@@ -254,8 +259,17 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    
    # FIXME - This assumes that the input data.frame names are perfect. I'll need
    # to figure out how to check that.
-   Comparisons <- PKparameters %>% 
-      mutate(FilePair = paste(Numerator_File, Denominator_File))
+   if("data.frame" %in% class(PKparameters)){
+      # if("FilePair" %in% names(PKparameters)){
+      #    Comparisons <- PKparameters %>% 
+      #       select(File, NorD, FilePair, PKparameter) %>% unique()
+      # } else {
+      Comparisons <- PKparameters %>% 
+         mutate(FilePair = paste(Numerator_File, Denominator_File))
+      # }
+   } else {
+      Comparisons <- NA
+   }
    
    TEMP <- tidy_input_PK(PKparameters = PKparameters,
                          sim_data_files = unique(c(sim_data_file_numerator,
@@ -267,6 +281,19 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    existing_exp_details <- TEMP %>% pluck("existing_exp_details")
    PKparameters <- TEMP %>% pluck("PKparameters")
    rm(TEMP)
+   
+   if("logical" %in% class(Comparisons)){
+      # This is when they have not provided a data.frame of PKparameters. In
+      # that case, sim_data_file_numerator and sim_data_file_denominator MUST be
+      # complete.cases. I'm not sure I've checked for that, though. 
+      Comparisons <- PKparameters %>% 
+         mutate(NorD = case_when(File %in% sim_data_file_numerator ~ "Numerator_File", 
+                                 File %in% sim_data_file_denominator ~ "Denominator_File")) %>% 
+         pivot_wider(names_from = NorD, values_from = File) %>% 
+         mutate(Numerator_PKparameters = PKparameter, 
+                Denominator_PKparameters = PKparameter) %>%
+         select(-PKparameter)
+   }
    
    PKparameters <- PKparameters %>% 
       filter((File %in% Comparisons$Numerator_File & 
@@ -983,10 +1010,12 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
                                 names(MyPKResults))
    }
    
-   # Noting compound ID and tissue
+   # Noting compound ID, tissue, and Files
    MyPKResults$CompoundID <- compoundToExtract
    MyPKResults$Tissue <- tissue
-   
+   MyPKResults$File <- paste(unique(Comparisons$Numerator_File), 
+                             "/", 
+                             unique(Comparisons$Denominator_File))
    
    # Saving --------------------------------------------------------------
    MyPKResults_out <- MyPKResults
@@ -1050,9 +1079,8 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
          # Storing some objects so they'll work with the markdown file
          PKToPull <- PKparameters
          MeanType <- mean_type
-         sim_data_file <- str_comma(c(basename(sim_data_file_numerator),
-                                      basename(sim_data_file_denominator)))
-         highlight_gmr_colors <- NA
+         sim_data_file <- str_comma(c(basename(unique(Comparisons$Numerator_File)),
+                                      basename(unique(Comparisons$Denominator_File))))
          highlight_so_cutoffs = NA
          highlight_so_colors = "yellow to red"
          prettify_columns <- TRUE
@@ -1063,7 +1091,8 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
          
          CheckDoseInt_1 <- list()
          
-         for(i in c(sim_data_file_numerator, sim_data_file_denominator)){
+         for(i in c(unique(Comparisons$Numerator_File),
+                    unique(Comparisons$Denominator_File))){
             
             suppressWarnings(
                CheckDoseInt_1[[i]] <- check_doseint(sim_data_file = i, 
@@ -1090,8 +1119,9 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
                                                          package="SimcypConsultancy"))
          
          add_header_for_DDI <- FALSE
+         single_table <- TRUE # placeholder
          
-         rmarkdown::render(system.file("rmarkdown/templates/pk-summary-table/skeleton/skeleton.Rmd",
+         rmarkdown::render(system.file("rmarkdown/templates/pktable/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 
                            output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
                            output_dir = OutPath, 

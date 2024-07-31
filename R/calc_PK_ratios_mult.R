@@ -359,70 +359,8 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    
    ## Tidying PKparameters ------------------------------------------------
    
-   TEMP <- tidy_input_PK(PKparameters = sim_data_file_pairs, 
-                                 compoundsToExtract = compoundToExtract, 
-                                 tissues = tissue, 
-                                 existing_exp_details = existing_exp_details)
-   
-   existing_exp_details <- TEMP %>% pluck("existing_exp_details")
-   PKparameters <- TEMP %>% 
-      pluck("PKparameters") %>% 
-      mutate(Sheet = case_when(is.na(Sheet) & NorD == "Numerator" ~ {{sheet_PKparameters_num}}, 
-                               is.na(Sheet) & NorD == "Denominator" ~ {{sheet_PKparameters_denom}}, 
-                               .default = Sheet))
-   
-   rm(TEMP)
-   
-   # Noting file pairs
-   sim_data_file_pairs <- PKparameters %>% 
-      select(FilePair, File, NorD) %>% unique() %>% 
-      pivot_wider(names_from = NorD, values_from = File)
-   
-   
-   ## Further error checking now that PKparameters are tidy -------------------
-   
-   # Check for appropriate input for arguments
-   tissue <- tolower(tissue)
-   
-   if(any(complete.cases(PKparameters$Tissue))){
-      if(any(is.na(PKparameters$Tissue))){
-         stop(wrapn("You have supplied some values for the tissue with the argument 'PKparameters', but you've left some blank. We're not sure what you want when there's a mix of complete and missing values here. Please check your inputs and try again."), 
-              call. = FALSE)
-      }
-   } else {
-      PKparameters$Tissue <- ifelse(complete.cases(tissue), tissue, "plasma")
-   }
-   
-   if(all(PKparameters$Tissue %in% 
-          c("plasma", "blood", "unbound plasma", "unbound blood", 
-            "peripheral plasma", "peripheral blood")) == FALSE){
-      
-      warning(wrapn("You have not supplied a permissible value for tissue. Options are 'plasma', 'blood', 'unbound plasma', 'unbound blood', 'peripheral plasma', or 'peripheral blood'. The PK parameters will be for plasma whenver you've supplied something else."), 
-              call. = FALSE)
-      
-      PKparameters$Tissue[
-         PKparameters$Tissue %in% 
-            c("plasma", "blood", "unbound plasma", "unbound blood", 
-              "peripheral plasma", "peripheral blood") == FALSE] <- "plasma"
-   }
-   
-   if(any(complete.cases(PKparameters$CompoundID))){
-      if(any(is.na(PKparameters$CompoundID))){
-         stop(wrapn("You have supplied some values for the compoundID with the argument 'PKparameters', but you've left some blank. We're not sure what you want when there's a mix of complete and missing values here. Please check your inputs and try again."), 
-              call. = FALSE)
-      }
-   } else {
-      PKparameters$CompoundID <- ifelse(complete.cases(compoundID), compoundID, "substrate")
-   }
-   
-   if(all(PKparameters$CompoundID %in% AllCompounds$CompoundID) == FALSE){
-      
-      warning(wrapn("You have not supplied a permissible value for compoundID. Options are 'substrate', 'primary metabolite 1', 'primary metabolite 2', 'secondary metabolite', 'inhibitor 1', 'inhibitor 2', or 'inhibitor 1 metabolite'. The PK parameters will be for the substrate whenver you've supplied something else."), 
-              call. = FALSE)
-      
-      PKparameters$CompoundID[
-         PKparameters$CompoundID %in% AllCompounds$CompoundID == FALSE] <- "substrate"
-   }
+   # This currently assumes that PK data are in perfect order. Need to figure
+   # out how to check things later.
    
    ## Looping through files ----------------------------------------------------
    
@@ -430,7 +368,27 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    QC <- list()
    ForestInfo <- list()
    
-   for(i in 1:nrow(sim_data_file_pairs)){
+   if("Tissue" %in% names(PKparameters) == FALSE){
+      PKparameters$Tissue <- ifelse(is.na(tissue), 
+                                    "plasma", tissue)
+   }
+   
+   if("CompoundID" %in% names(PKparameters) == FALSE){
+      PKparameters$CompoundID <- ifelse(is.na(compoundToExtract), 
+                                        "substrate", compoundToExtract)
+   }
+   
+   if("FilePair" %in% names(PKparameters) == FALSE){
+      PKparameters$FilePair <- paste(PKparameters$Numerator_File, 
+                                     PKparameters$Denominator_File)
+   }
+   
+   PKparameters <- split(PKparameters, 
+                         f = list(PKparameters$FilePair, 
+                                  PKparameters$Tissue, 
+                                  PKparameters$CompoundID))
+   
+   for(i in names(PKparameters)){
       # Including a progress message
       message("Extracting data for file pair #", i)
       
@@ -438,7 +396,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
          # sim_data_file_numerator = sim_data_file_pairs$Numerator[i], 
          # sim_data_file_denominator = sim_data_file_pairs$Denominator[i], 
          # compoundToExtract = compoundToExtract,
-         PKparameters = PKparameters, 
+         PKparameters = PKparameters[[i]], 
          # sheet_PKparameters_num = sim_data_file_pairs$sheet_PKparameters_num[i], 
          # sheet_PKparameters_denom = sim_data_file_pairs$sheet_PKparameters_denom[i], 
          # tissue = tissue, 
@@ -599,7 +557,7 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
          
          add_header_for_DDI <- FALSE
          
-         rmarkdown::render(system.file("rmarkdown/templates/pksummarymult/skeleton/skeleton.Rmd",
+         rmarkdown::render(system.file("rmarkdown/templates/pktable/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 
                            output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
                            output_dir = OutPath, 
