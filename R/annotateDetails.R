@@ -1262,9 +1262,10 @@ annotateDetails <- function(existing_exp_details,
       }
       
       if(Ext == "xlsx"){
-         # Using openxlsx to format things. NB: Version 2.12.17 used the xlsx
-         # package to save, but openxlsx allows you to insert graphs and also
-         # seems to have a much more intuitive interface for saving formatting.
+         # Using openxlsx to format things. NB: Versions <= 2.12.17 used the
+         # xlsx package to save, but openxlsx allows you to insert graphs and
+         # also seems to have a much more intuitive interface for saving
+         # formatting.
          if(file.exists(FileName)){
             WB <- openxlsx::loadWorkbook(file = FileName)
          } else {
