@@ -14,8 +14,8 @@
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
 #'   "Summary and Input"} or \code{exp_details = "all"}), you can save some processing
 #'   time by supplying that object here, unquoted. If left as NA, this function
-#'   will run \code{extractExpDetails} behind the scenes anyway to figure out some
-#'   information about your experimental set up.
+#'   will run \code{extractExpDetails} behind the scenes anyway to figure out
+#'   some information about your experimental set up.
 #' @param sheet_report probably not in use
 #' @param sim_data_files a character vector of file names. This should no longer
 #'   be NA or "recursive".
@@ -25,7 +25,11 @@
 #' @param sheet_PKparameters the values they supplied for sheet_PKparameters in
 #'   the parent function
 #'
-#' @return a data.frame
+#' @return a list of: 1) "PKparameters" -- a tidy data.frame of PKparameters
+#'   with standardized column names and contents, 2) "existing_exp_details",
+#'   which will only differ from the original in that any missing sim files will
+#'   be added -- none will be removed. 3) "FilePairs" -- if this is from
+#'   calc_PK_ratios, then a tidy data.frame listing which items should be paired
 #'
 #' @examples
 #' # nope 
@@ -165,6 +169,14 @@ tidy_input_PK <- function(PKparameters,
          str_detect(tolower(names(PKparameters)), 
                     "denominator.*compoundid|compoundid.*denominator")][1] <- "Denominator_CompoundID"
       
+      if("Numerator_CompoundID" %in% names(PKparameters) == FALSE){
+         PKparameters$Numerator_CompoundID <- "substrate"
+      }
+      if("Denominator_CompoundID" %in% names(PKparameters) == FALSE){
+         PKparameters$Denominator_CompoundID <- "substrate"
+      }
+      
+      
       # Tissue
       names(PKparameters)[
          str_detect(tolower(names(PKparameters)), 
@@ -173,6 +185,14 @@ tidy_input_PK <- function(PKparameters,
       names(PKparameters)[
          str_detect(tolower(names(PKparameters)), 
                     "denominator.*tissue|tissue.*denominator")][1] <- "Denominator_Tissue"
+      
+      if("Numerator_Tissue" %in% names(PKparameters) == FALSE){
+         PKparameters$Numerator_Tissue <- "plasma"
+      }
+      if("Denominator_Tissue" %in% names(PKparameters) == FALSE){
+         PKparameters$Denominator_Tissue <- "plasma"
+      }
+      
       
       # Sheet
       names(PKparameters)[
@@ -183,26 +203,66 @@ tidy_input_PK <- function(PKparameters,
          str_detect(tolower(names(PKparameters)), 
                     "denominator.*sheet|sheet.*denominator|denominator.*tab|tab.*denominator")][1] <- "Denominator_Sheet"
       
+      if("Numerator_Sheet" %in% names(PKparameters) == FALSE){
+         PKparameters$Numerator_Sheet <- NA
+      }
+      if("Denominator_Sheet" %in% names(PKparameters) == FALSE){
+         PKparameters$Denominator_Sheet <- NA
+      }
+      
       # PKparameter
       names(PKparameters)[
          str_detect(tolower(names(PKparameters)), 
-                    "numerator.*parameter|parameter.*numerator")][1] <- "Numerator_PKparameter"
+                    "num(erator)?.*param(eter)?|param(eter)?.*num(erator)?")][1] <- "Numerator_PKparameter"
       
       names(PKparameters)[
          str_detect(tolower(names(PKparameters)), 
-                    "denominator.*parameter|parameter.*denominator")][1] <- "Denominator_PKparameter"
+                    "denom(inator)?.*param(eter)?|param(eter)?.*denom(inator)?")][1] <- "Denominator_PKparameter"
       
-      # Noting original file pairs and reshaping data to work w/rest of function
+      names(PKparameters)[str_detect(tolower(names(PKparameters)), 
+                                     "^pk.*param(eter)$")][1] <- "PKparameter"
+      
+      if("Numerator_PKparameter" %in% names(PKparameters) == FALSE & 
+         "PKparameter" %in% names(PKparameters)){
+         PKparameters$Numerator_PKparameter <- PKparameters$PKparameter
+      }
+      
+      if("Denominator_PKparameter" %in% names(PKparameters) == FALSE & 
+         "PKparameter" %in% names(PKparameters)){
+         PKparameters$Denominator_PKparameter <- PKparameters$PKparameter
+      }
+      
+      if("Numerator_PKparameter" %in% names(PKparameters) == FALSE){
+         PKparameters$Numerator_PKparameter <- NA
+      }
+      if("Denominator_PKparameter" %in% names(PKparameters) == FALSE){
+         PKparameters$Denominator_PKparameter <- NA
+      }
+      
+      # At this point, it should be safe to remove PKparameter and rely on
+      # Denominator_PKparameter and Numerator_PKparameter only.
+      PKparameters$PKparameter <- NULL 
+      
+      # Noting original file pairs, adding missing required columns, and
+      # reshaping data to work w/rest of function
       PKparameters <- PKparameters %>% 
-         mutate(FilePair = paste(Numerator_File, Denominator_File)) %>% 
-         pivot_longer(cols = -any_of(c("Numerator_PKparameter", 
-                                       "Denominator_PKparameter", 
-                                       "FilePair")), 
-                      names_to = "NorD", 
-                      values_to = "Value") %>% 
-         separate(NorD, into = c("NorD", "Param"), sep = "_") %>% 
-         pivot_wider(names_from = Param, values_from = Value)
+         mutate(FilePair = paste(Numerator_File, "/", Denominator_File))
       
+      FilePairs <- PKparameters
+      
+      PKparameters <- bind_rows(
+         PKparameters %>% 
+            select(FilePair, matches("Numerator")) %>% 
+            rename_with(.fn = function(.) sub("Numerator_", "", .)) %>% 
+            mutate(NorD = "Numerator"), 
+         
+         PKparameters %>% 
+            select(FilePair, matches("Denominator")) %>% 
+            rename_with(.fn = function(.) sub("Denominator_", "", .)) %>% 
+            mutate(NorD = "Denominator"))
+      
+   } else {
+      FilePairs <- NA
    }
    
    # Tidying and harmonizing when input was DF ------------------------------
@@ -373,7 +433,7 @@ tidy_input_PK <- function(PKparameters,
          # possible combinations of files. 
          suppressMessages(
             PKparameters <- PKparameters %>% 
-               left_join(expand.grid(File = get_file_names(sim_data_files), 
+               left_join(expand_grid(File = get_file_names(sim_data_files), 
                                      PKparameter = unique(PKparameters$PKparameter)))
          )
       }
@@ -514,7 +574,7 @@ tidy_input_PK <- function(PKparameters,
          }
          
          PKparameters <- PKparameters %>% 
-            left_join(expand.grid(File = unique(PKparameters$File), 
+            left_join(expand_grid(File = unique(PKparameters$File), 
                                   CompoundID = compoundsToExtract), 
                       by = "File")
       }
@@ -540,7 +600,7 @@ tidy_input_PK <- function(PKparameters,
       
       if("Tissue" %in% names(PKparameters) == FALSE){
          PKparameters <- PKparameters %>% 
-            left_join(expand.grid(File = unique(PKparameters$File), 
+            left_join(expand_grid(File = unique(PKparameters$File), 
                                   Tissue = tissues), 
                       by = "File")
       }
@@ -561,7 +621,7 @@ tidy_input_PK <- function(PKparameters,
       
       # Getting all possible files
       AllFiles <- get_file_names(sim_data_files)
-      PKparameters <- expand.grid(PKparameter = unique(PKparameters$PKparameter), 
+      PKparameters <- expand_grid(PKparameter = unique(PKparameters$PKparameter), 
                                   File = AllFiles)
       
       ## Checking sheets -----------------------------------------------
@@ -581,7 +641,7 @@ tidy_input_PK <- function(PKparameters,
       
       suppressMessages(
          PKparameters <- PKparameters %>% 
-            left_join(expand.grid(File = AllFiles, 
+            left_join(expand_grid(File = AllFiles, 
                                   Tissue = tissues))
       )
       
@@ -818,7 +878,7 @@ tidy_input_PK <- function(PKparameters,
    
    suppressMessages(
       PKparameters <- PKparameters %>% 
-         left_join(expand.grid(File = AllFiles, 
+         left_join(expand_grid(File = AllFiles, 
                                CompoundID = compoundsToExtract))
    )
    
@@ -1043,7 +1103,8 @@ tidy_input_PK <- function(PKparameters,
    # Output -------------------------------------------------------------
    
    return(list(PKparameters = PKparameters, 
-               existing_exp_details = existing_exp_details))
+               existing_exp_details = existing_exp_details, 
+               FilePairs = FilePairs))
    
 }
 

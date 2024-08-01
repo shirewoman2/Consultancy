@@ -438,7 +438,7 @@ ct_plot_mult <- function(ct_dataframe,
       
       if(any(duplicated(DatasetCheck$File))){
          
-         Order <- expand.grid(list("File" = getOrder(ct_dataframe$File), 
+         Order <- expand_grid(list("File" = getOrder(ct_dataframe$File), 
                                    "CompoundID" = getOrder(ct_dataframe$CompoundID), 
                                    "Tissue" = getOrder(ct_dataframe$Tissue), 
                                    "subsection_ADAM" = getOrder(ct_dataframe$subsection_ADAM))) %>% 

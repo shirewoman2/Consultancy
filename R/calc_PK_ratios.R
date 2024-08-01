@@ -249,6 +249,23 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
               call. = FALSE)
    }
    
+   if(complete.cases(highlight_gmr_colors) && 
+      tolower(highlight_gmr_colors[1]) == "lisa"){highlight_gmr_colors = "traffic"}
+   
+   if(any(complete.cases(highlight_gmr_colors)) &&
+      highlight_gmr_colors[1] %in% c("yellow to red", "green to red", "traffic") == FALSE){
+      if(length(highlight_gmr_colors) != 4){
+         warning("We need 4 colors for highlighting geometric mean ratios, one each for negligible, weak, moderate, and strong interactions, and you have provided a different number of colors. We'll use yellow to red values for highlighting these.\n", 
+                 call. = FALSE)
+         highlight_gmr_colors <- "yellow to red"
+      } else if(tryCatch(is.matrix(col2rgb(highlight_gmr_colors)),
+                         error = function(x) FALSE) == FALSE){
+         warning("The values you used for highlighting geometric mean ratios are not all valid colors in R. We'll used the default colors instead.\n", 
+                 call. = FALSE)
+         highlight_gmr_colors <- "yellow to red"
+      } 
+   }
+   
    
    # Main body of function -------------------------------------------------
    
@@ -257,19 +274,7 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    # Noting original PK parameters b/c that matters when the user wants one
    # parameter for num and a different one for denom.
    
-   # FIXME - This assumes that the input data.frame names are perfect. I'll need
-   # to figure out how to check that.
-   if("data.frame" %in% class(PKparameters)){
-      # if("FilePair" %in% names(PKparameters)){
-      #    Comparisons <- PKparameters %>% 
-      #       select(File, NorD, FilePair, PKparameter) %>% unique()
-      # } else {
-      Comparisons <- PKparameters %>% 
-         mutate(FilePair = paste(Numerator_File, Denominator_File))
-      # }
-   } else {
-      Comparisons <- NA
-   }
+   PKparameters_orig_NA <- all(is.na(PKparameters))
    
    TEMP <- tidy_input_PK(PKparameters = PKparameters,
                          sim_data_files = unique(c(sim_data_file_numerator,
@@ -280,6 +285,33 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    
    existing_exp_details <- TEMP %>% pluck("existing_exp_details")
    PKparameters <- TEMP %>% pluck("PKparameters")
+   
+   if("NorD" %in% names(PKparameters) == FALSE){
+      PKparameters <- PKparameters %>% 
+         mutate(NorD = case_when(File == sim_data_file_numerator ~ "Numerator", 
+                                 File == sim_data_file_denominator ~ "Denominator"))
+   }
+   
+   if(PKparameters_orig_NA){
+      Comparisons <- data.frame(
+         Denominator_File = sim_data_file_denominator, 
+         Numerator_File = sim_data_file_numerator, 
+         Numerator_Tissue = ifelse(is.na(tissue), 
+                                   "plasma", tissue), 
+         Numerator_Sheet = NA, 
+         Numerator_CompoundID = ifelse(is.na(compoundToExtract), 
+                                       "substrate", compoundToExtract), 
+         Numerator_PKparameter = NA) %>% 
+         
+         mutate(Denominator_Tissue = Numerator_Tissue, 
+                Denominator_Sheet = Numerator_Sheet, 
+                Denominator_CompoundID = Numerator_CompoundID, 
+                Denominator_PKparameter = Numerator_PKparameter, 
+                FilePair = paste(Numerator_File, "/", Denominator_File))
+   } else {
+      Comparisons <- TEMP %>% pluck("FilePairs")
+   }
+   
    rm(TEMP)
    
    if("logical" %in% class(Comparisons)){
@@ -290,140 +322,54 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
          mutate(NorD = case_when(File %in% sim_data_file_numerator ~ "Numerator_File", 
                                  File %in% sim_data_file_denominator ~ "Denominator_File")) %>% 
          pivot_wider(names_from = NorD, values_from = File) %>% 
-         mutate(Numerator_PKparameters = PKparameter, 
-                Denominator_PKparameters = PKparameter) %>%
+         mutate(Numerator_PKparameter = PKparameter, 
+                Denominator_PKparameter = PKparameter) %>%
          select(-PKparameter)
    }
    
-   PKparameters <- PKparameters %>% 
-      filter((File %in% Comparisons$Numerator_File & 
-                 PKparameter %in% Comparisons$Numerator_PKparameters) |
-                (File %in% Comparisons$Denominator_File & 
-                    PKparameter %in% Comparisons$Denominator_PKparameters))
-   
-   if("NorD" %in% names(PKparameters) == FALSE){
-      PKparameters <- PKparameters %>% 
-         mutate(NorD = case_when(File == {{sim_data_file_numerator}} ~ "Numerator",
-                                 File == {{sim_data_file_denominator}} ~ "Denominator"))
+   if(all(complete.cases(Comparisons$Numerator_PKparameter)) & 
+      all(complete.cases(Comparisons$Denominator_PKparameter))){
       
-   }  
+      PKparameters <- PKparameters %>% 
+         filter((File %in% Comparisons$Numerator_File & 
+                    PKparameter %in% Comparisons$Numerator_PKparameter) |
+                   (File %in% Comparisons$Denominator_File & 
+                       PKparameter %in% Comparisons$Denominator_PKparameter))
+      
+   } else {
+      PKparameters <- PKparameters %>% 
+         filter(File %in% Comparisons$Numerator_File  |
+                   File %in% Comparisons$Denominator_File)
+      
+      # Adding all possible PK parameters to Comparisons b/c we'll need them
+      # later. If user did not supply any PK parameters, then we're matching
+      # like to like across sims, e.g., we're assuming that AUCinf_dose1 in
+      # numerator sim should be compared to AUCinf_dose1 in denominator sim,
+      # etc.
+      
+      PossiblePK <- intersect(PKparameters$PKparameter[PKparameters$NorD == "Numerator"], 
+                              PKparameters$PKparameter[PKparameters$NorD == "Denominator"])
+      
+      if(length(PossiblePK) == 0){
+         stop(wrapn(paste0("You have not supplied any specific PK parameters for the file pair '", 
+                           unique(Comparisons$FilePair), 
+                           "', and the default PK for these two simulations differs because they have different study designs. Please try again with a specific set of PK parameters.")), 
+              call. = FALSE)
+      }
+      
+      Comparisons <- Comparisons %>% 
+         select(-Numerator_PKparameter, -Denominator_PKparameter) %>% 
+         left_join(expand_grid(Denominator_File = unique(Comparisons$Denominator_File), 
+                               Denominator_PKparameter = PossiblePK), 
+                   by = "Denominator_File") %>% 
+         mutate(Numerator_PKparameter = Denominator_PKparameter)
+      
+   }
    
    PKparameters <- PKparameters %>% 
       mutate(Sheet = case_when(is.na(Sheet) & NorD == "Numerator" ~ {{sheet_PKparameters_num}}, 
                                is.na(Sheet) & NorD == "Denominator" ~ {{sheet_PKparameters_denom}}, 
                                .default = Sheet))
-   
-   
-   # ## Further error checking now that PKparameters are tidy -------------------
-   # 
-   # # Check for appropriate input for arguments
-   # tissue <- tolower(tissue)
-   # 
-   # if(any(complete.cases(PKparameters$Tissue))){
-   #    if(any(is.na(PKparameters$Tissue))){
-   #       stop(wrapn("You have supplied some values for the tissue with the argument 'PKparameters', but you've left some blank. We're not sure what you want when there's a mix of complete and missing values here. Please check your inputs and try again."), 
-   #            call. = FALSE)
-   #    }
-   # } else {
-   #    PKparameters$Tissue <- ifelse(complete.cases(tissue), tissue, "plasma")
-   # }
-   # 
-   # if(all(PKparameters$Tissue %in% 
-   #        c("plasma", "blood", "unbound plasma", "unbound blood", 
-   #          "peripheral plasma", "peripheral blood")) == FALSE){
-   #    
-   #    warning(wrapn("You have not supplied a permissible value for tissue. Options are 'plasma', 'blood', 'unbound plasma', 'unbound blood', 'peripheral plasma', or 'peripheral blood'. The PK parameters will be for plasma whenver you've supplied something else."), 
-   #            call. = FALSE)
-   #    
-   #    PKparameters$Tissue[
-   #       PKparameters$Tissue %in% 
-   #          c("plasma", "blood", "unbound plasma", "unbound blood", 
-   #            "peripheral plasma", "peripheral blood") == FALSE] <- "plasma"
-   # }
-   # 
-   # if(any(complete.cases(PKparameters$CompoundID))){
-   #    if(any(is.na(PKparameters$CompoundID))){
-   #       stop(wrapn("You have supplied some values for the compoundID with the argument 'PKparameters', but you've left some blank. We're not sure what you want when there's a mix of complete and missing values here. Please check your inputs and try again."), 
-   #            call. = FALSE)
-   #    }
-   # } else {
-   #    PKparameters$CompoundID <- ifelse(complete.cases(compoundID), compoundID, "substrate")
-   # }
-   # 
-   # if(all(PKparameters$CompoundID %in% AllCompounds$CompoundID) == FALSE){
-   #    
-   #    warning(wrapn("You have not supplied a permissible value for compoundID. Options are 'substrate', 'primary metabolite 1', 'primary metabolite 2', 'secondary metabolite', 'inhibitor 1', 'inhibitor 2', or 'inhibitor 1 metabolite'. The PK parameters will be for the substrate whenver you've supplied something else."), 
-   #            call. = FALSE)
-   #    
-   #    PKparameters$CompoundID[
-   #       PKparameters$CompoundID %in% AllCompounds$CompoundID == FALSE] <- "substrate"
-   # }
-   # 
-   
-   ## Extracting PK ---------------------------------------------------------
-   
-   # # Checking experimental details to only pull details that apply
-   # if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-   #    existing_exp_details <- 
-   #       extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
-   #                                                sim_data_file_denominator), 
-   #                              exp_details = "Summary and Input")
-   #    existing_exp_details <- existing_exp_details$MainDetails
-   # } else {
-   #    existing_exp_details <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
-   #       filter(File %in% c(sim_data_file_numerator, 
-   #                          sim_data_file_denominator))
-   #    
-   #    if(nrow(existing_exp_details) != 2){
-   #       existing_exp_details <-
-   #          extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
-   #                                                   sim_data_file_denominator), 
-   #                                 exp_details = "Summary and Input", 
-   #                                 existing_exp_details = existing_exp_details)
-   #       existing_exp_details <- existing_exp_details$MainDetails
-   #    }
-   #    
-   #    if(nrow(existing_exp_details) != 2){
-   #       warning(wrapn(paste0("We were attempting to find the simulation details for ", 
-   #                            str_comma(c(sim_data_file_numerator, 
-   #                                        sim_data_file_denominator)), 
-   #                            " and failed to find them, so we cannot return information on these files.")), 
-   #               call. = FALSE)
-   #       return(data.frame())
-   #    }
-   # }
-   
-   
-   # # FIXME - check this 
-   # # Harmonizing PK parameter names. If the parameters differ between sims, need
-   # # to do this in multiple steps to get the correct values.
-   # if(any(str_detect(PKparameters$PKparameter, "/"))){
-   #    PKparameters <- str_split(PKparameters, pattern = " / ")
-   #    PKparameters <- lapply(PKparameters, harmonize_PK_names)
-   #    PKparameters <- unlist(lapply(PKparameters, function(x) paste(x[1], x[2], sep = " / ")))
-   # } 
-   # 
-   
-   #    
-   # } else {
-   #    
-   #    Comparisons <- PKparameters %>% 
-   #       mutate(NorD = case_when(File == {{sim_data_file_numerator}} ~ "Numerator",
-   #                               File == {{sim_data_file_denominator}} ~ "Denominator")) %>%
-   #       select(NorD, PKparameter) %>% unique() 
-   #    
-   #    # There should always be the same number of rows for each of these here.
-   #    # This will break if not, but that's probably a good thing.
-   #    Comparisons <- data.frame(Numerator_PKparameters = Comparisons$PKparameter[Comparisons$NorD == "Numerator"], 
-   #                              Denominator_PKparameters = Comparisons$PKparameter[Comparisons$NorD == "Denominator"])
-   #    
-   #    
-   #    %>% 
-   #       pivot_wider(names_from = NorD, values_from = PKparameter)
-   #    
-   #       data.frame(Numerator_PKparameters = PKparameters, 
-   #                              Denominator_PKparameters = PKparameters)
-   # }
    
    # Checking for file name issues
    CheckFileNames <- check_file_name(PKparameters$File)
@@ -435,8 +381,9 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
               call. = FALSE)
    }
    
-   # FIXME this will break of there are multiple compounds or tissues for the
-   # same file. Add a check for that in calc_PK_ratios_mult.
+   
+   ## Extracting PK ---------------------------------------------------------
+   
    suppressWarnings(
       PKnumerator <- extractPK(
          sim_data_file = unique(PKparameters$File[PKparameters$NorD == "Numerator"]),
@@ -499,17 +446,17 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
       mutate(OrigName_ValType = paste(OrigName, ValType))
    
    # # Checking that we can make the correct comparisons
-   # if(all(Comparisons$Numerator_PKparameters == Comparisons$Denominator_PKparameters)){
+   # if(all(Comparisons$Numerator_PKparameter == Comparisons$Denominator_PKparameter)){
    #    
-   #    if(any(Comparisons$Numerator_PKparameters %in% 
+   #    if(any(Comparisons$Numerator_PKparameter %in% 
    #           c("AUC tab", "all", "Absorption tab", "Regional ADAM") == TRUE |
-   #           any(Comparisons$Denominator_PKparameters %in% 
+   #           any(Comparisons$Denominator_PKparameter %in% 
    #               c("AUC tab", "all", "Absorption tab", "Regional ADAM") == TRUE))){
-   #       Comparisons <- data.frame(Numerator_PKparameters = intersect(names(PKnumerator$aggregate), 
+   #       Comparisons <- data.frame(Numerator_PKparameter = intersect(names(PKnumerator$aggregate), 
    #                                                         names(PKdenominator$aggregate))) %>% 
    #          unique() %>% 
-   #          mutate(Denominator_PKparameters = Numerator_PKparameters) %>% 
-   #          filter(Numerator_PKparameters != "Statistic")
+   #          mutate(Denominator_PKparameter = Numerator_PKparameter) %>% 
+   #          filter(Numerator_PKparameter != "Statistic")
    #    }
    #    
    #    # Removing any parameters that are not matched in the other simulation.
@@ -517,30 +464,30 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    #    # b/c aggregated data will NOT include, e.g., AUCinf, if there was any
    #    # trouble extrapolating to infinity.
    #    
-   #    if(any(Comparisons$Numerator_PKparameters %in% names(PKnumerator$aggregate) == FALSE)){
+   #    if(any(Comparisons$Numerator_PKparameter %in% names(PKnumerator$aggregate) == FALSE)){
    #       warning(wrapn(
    #          paste0("The parameters ", 
-   #                 str_comma(paste0("`", setdiff(Comparisons$Numerator_PKparameters,
+   #                 str_comma(paste0("`", setdiff(Comparisons$Numerator_PKparameter,
    #                                               names(PKnumerator$aggregate)), 
    #                                  "`")), 
    #                 " were not available in the numerator simulation and thus will not be included in your output.")),
    #          call. = FALSE)
    #       
    #       Comparisons <- Comparisons %>% 
-   #          filter(Numerator_PKparameters %in% names(PKnumerator$aggregate))
+   #          filter(Numerator_PKparameter %in% names(PKnumerator$aggregate))
    #    }
    #    
-   #    if(any(Comparisons$Denominator_PKparameters %in% names(PKdenominator$aggregate) == FALSE)){
+   #    if(any(Comparisons$Denominator_PKparameter %in% names(PKdenominator$aggregate) == FALSE)){
    #       warning(wrapn(
    #          paste0("The parameters ", 
-   #                 str_comma(paste0("`", setdiff(Comparisons$Denominator_PKparameters,
+   #                 str_comma(paste0("`", setdiff(Comparisons$Denominator_PKparameter,
    #                                               names(PKdenominator$aggregate)), 
    #                                  "`")), 
    #                 " were not available in the denominator simulation and thus will not be included in your output.")),
    #          call. = FALSE)
    #       
    #       Comparisons <- Comparisons %>% 
-   #          filter(Denominator_PKparameters %in% names(PKdenominator$aggregate))
+   #          filter(Denominator_PKparameter %in% names(PKdenominator$aggregate))
    #    }
    #    
    #    if(all(names(PKnumerator$aggregate) %in% names(PKdenominator$aggregate)) == FALSE){
@@ -553,7 +500,7 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    #          call. = FALSE)
    #       
    #       Comparisons <- Comparisons %>% 
-   #          filter(Numerator_PKparameters %in% names(PKdenominator$aggregate))
+   #          filter(Numerator_PKparameter %in% names(PKdenominator$aggregate))
    #    }
    #    
    #    if(all(names(PKdenominator$aggregate) %in% names(PKnumerator$aggregate)) == FALSE){
@@ -566,15 +513,15 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    #          call. = FALSE)
    #       
    #       Comparisons <- Comparisons %>% 
-   #          filter(Denominator_PKparameters %in% names(PKnumerator$aggregate))
+   #          filter(Denominator_PKparameter %in% names(PKnumerator$aggregate))
    #    }
    #    
    # } else {
    #    # This is when user wanted different parameters for numerator and
    #    # denominator files. Making sure that we have a matched set. 
    #    Comparisons <- Comparisons %>% 
-   #       mutate(NumCheck = Numerator_PKparameters %in% names(PKnumerator$aggregate), 
-   #              DenomCheck = Denominator_PKparameters %in% names(PKdenominator$aggregate)) %>% 
+   #       mutate(NumCheck = Numerator_PKparameter %in% names(PKnumerator$aggregate), 
+   #              DenomCheck = Denominator_PKparameter %in% names(PKdenominator$aggregate)) %>% 
    #       filter(NumCheck == TRUE & DenomCheck == TRUE) %>% 
    #       select(-NumCheck, -DenomCheck)
    # }
@@ -588,8 +535,10 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    # *really* the same PK parameters necessarily. We'll deal with that
    # difference later.
    PKdenominator$individual <- 
-      PKdenominator$individual[, c("Individual", "Trial", Comparisons$Denominator_PKparameters)]
-   names(PKdenominator$individual) <- c("Individual", "Trial", Comparisons$Numerator_PKparameters)
+      PKdenominator$individual[, c("Individual", "Trial",
+                                   Comparisons$Denominator_PKparameter)]
+   names(PKdenominator$individual) <- c("Individual", "Trial",
+                                        Comparisons$Numerator_PKparameter)
    
    # I now regret that I made this coding choice ages ago, but if there's only 1
    # PK parameter, then the aggregate output from extractPK is a list. Need to
@@ -605,12 +554,12 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    }
    
    PKdenominator$aggregate <-
-      PKdenominator$aggregate[, c("Statistic", Comparisons$Denominator_PKparameters)]
-   names(PKdenominator$aggregate) <- c("Statistic", Comparisons$Numerator_PKparameters)
+      PKdenominator$aggregate[, c("Statistic", Comparisons$Denominator_PKparameter)]
+   names(PKdenominator$aggregate) <- c("Statistic", Comparisons$Numerator_PKparameter)
    
-   Comparisons$Denominator_PKparametersREVISED <- Comparisons$Numerator_PKparameters
+   Comparisons$Denominator_PKparameterREVISED <- Comparisons$Numerator_PKparameter
    
-   # # RETURN TO THIS. Checking conc units
+   # FIXME - Need to check conc units
    # TEMP <- convert_units(
    #     PKnumerator$aggregate %>% 
    #         rename(Conc = i) %>% 
@@ -688,8 +637,8 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
                       names_to = "ValType", 
                       values_to = "Value") %>% 
          left_join(data.frame(ValType = "DenominatorSim", 
-                              Parameter = Comparisons$Denominator_PKparametersREVISED,
-                              CorrectName = Comparisons$Denominator_PKparameters), 
+                              Parameter = Comparisons$Denominator_PKparameterREVISED,
+                              CorrectName = Comparisons$Denominator_PKparameter), 
                    by = join_by(Parameter, ValType)) %>% 
          mutate(CorrectName = ifelse(is.na(CorrectName), Parameter, CorrectName)) %>% 
          select(-Parameter) %>% rename(Parameter = CorrectName) %>% 
@@ -829,10 +778,10 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
          # don't get any further confused.
          PKdenom_agg <- PKdenominator$aggregate %>%
             pivot_longer(cols = -Statistic, 
-                         names_to = "Numerator_PKparameters", values_to = "Value") %>% 
-            left_join(Comparisons %>% select(Numerator_PKparameters, Denominator_PKparameters), 
-                      by = "Numerator_PKparameters") %>% 
-            rename(PKparameter = Denominator_PKparameters) %>% select(-Numerator_PKparameters) %>% 
+                         names_to = "Numerator_PKparameter", values_to = "Value") %>% 
+            left_join(Comparisons %>% select(Numerator_PKparameter, Denominator_PKparameter), 
+                      by = "Numerator_PKparameter") %>% 
+            rename(PKparameter = Denominator_PKparameter) %>% select(-Numerator_PKparameter) %>% 
             mutate(ValType = "DenominatorSim", 
                    Value = round_opt(Value, rounding))
          
@@ -873,12 +822,12 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    ColNames <- ColNames %>%
       filter((ValType == "DenominatorSim" &
                  Parameter %in% switch(
-                    as.character(all(Comparisons$Numerator_PKparameters == 
-                                        Comparisons$Denominator_PKparameters)), 
-                    "TRUE" = Comparisons$Denominator_PKparametersREVISED, 
-                    "FALSE" = Comparisons$Denominator_PKparameters)) |
+                    as.character(all(Comparisons$Numerator_PKparameter == 
+                                        Comparisons$Denominator_PKparameter)), 
+                    "TRUE" = Comparisons$Denominator_PKparameterREVISED, 
+                    "FALSE" = Comparisons$Denominator_PKparameter)) |
                 (ValType == "NumeratorSim" &
-                    Parameter %in% Comparisons$Numerator_PKparameters))
+                    Parameter %in% Comparisons$Numerator_PKparameter))
    ColOrder <- unique(c(ColNames$OrigName_ValType,
                         paste(unique(ColNames$Parameter[
                            ColNames$ValType == "NumeratorSim"]), "Ratio")))
@@ -1011,11 +960,41 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
    }
    
    # Noting compound ID, tissue, and Files
-   MyPKResults$CompoundID <- compoundToExtract
-   MyPKResults$Tissue <- tissue
-   MyPKResults$File <- paste(unique(Comparisons$Numerator_File), 
-                             "/", 
-                             unique(Comparisons$Denominator_File))
+   if("Numerator_CompoundID" %in% names(Comparisons)){
+      
+      MyPKResults$CompoundID <- Comparisons %>% 
+         select(Numerator_CompoundID, Denominator_CompoundID) %>% 
+         unique() %>% 
+         mutate(across(.cols = everything(), 
+                       .fns = \(x) ifelse(is.na(x), "substrate", x))) %>% 
+         mutate(AllCmpdID = ifelse(Numerator_CompoundID == Denominator_CompoundID, 
+                                   Numerator_CompoundID, 
+                                   paste(Numerator_CompoundID, "/", Denominator_CompoundID))) %>% 
+         pull(AllCmpdID) %>% str_comma()
+      
+   } else {
+      MyPKResults$CompoundID <- Comparisons %>% pull(CompoundID) %>% 
+         unique() %>% str_comma()
+   }
+   
+   if("Numerator_Tissue" %in% names(Comparisons)){
+      
+      MyPKResults$Tissue <- Comparisons %>% 
+         select(Numerator_Tissue, Denominator_Tissue) %>% 
+         unique() %>% 
+         mutate(across(.cols = everything(), 
+                       .fns = \(x) ifelse(is.na(x), "plasma", x))) %>% 
+         mutate(AllCmpdID = ifelse(Numerator_Tissue == Denominator_Tissue, 
+                                   Numerator_Tissue, 
+                                   paste(Numerator_Tissue, "/", Denominator_Tissue))) %>% 
+         pull(AllCmpdID) %>% str_comma()
+      
+   } else {
+      MyPKResults$CompoundID <- Comparisons %>% pull(Tissue) %>% 
+         unique() %>% str_comma()
+   }
+   
+   MyPKResults$File <- Comparisons %>% pull(FilePair) %>% unique()
    
    # Saving --------------------------------------------------------------
    MyPKResults_out <- MyPKResults
@@ -1087,7 +1066,7 @@ calc_PK_ratios <- function(sim_data_file_numerator = NA,
          
          FromCalcPKRatios <- TRUE
          
-         PKpulled <- Comparisons$Denominator_PKparameters
+         PKpulled <- Comparisons$Denominator_PKparameter
          
          CheckDoseInt_1 <- list()
          

@@ -331,7 +331,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
       compoundsToExtract_orig <- compoundsToExtract
    }
    
-   Requested <- expand.grid(Tissue = tissues,
+   Requested <- expand_grid(Tissue = tissues,
                             CompoundID = compoundsToExtract,
                             File = sim_data_files) %>% 
       mutate(ID = paste(File, Tissue, CompoundID))

@@ -162,7 +162,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
    
    # Checking on what combinations of data the user has requested and what
    # data are already present in sim_enz_dataframe.
-   Requested <- expand.grid(Tissue = tissues,
+   Requested <- expand_grid(Tissue = tissues,
                             Enzyme = enzymesToExtract,
                             File = sim_data_files) %>% 
       mutate(ID = paste(File, Tissue, Enzyme))

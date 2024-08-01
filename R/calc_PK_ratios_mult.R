@@ -244,6 +244,10 @@
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
 #'   If you do specify your own bespoke colors, you'll need to make sure that
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
+#' @param highlight_gmr_colors optionally specify a set of colors to use for
+#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+#'   "green to red" or a vector of 4 colors of your choosing. If left as NA, no
+#'   highlighting for GMR level will be done.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #' @param page_orientation set the page orientation for the Word file output to
@@ -255,7 +259,7 @@
 #' @examples
 #' # No examples yet.
 #' 
-calc_PK_ratios_mult <- function(sim_data_file_pairs,  
+calc_PK_ratios_mult <- function(sim_data_file_pairs = NA,  
                                 existing_exp_details = NA,
                                 compoundToExtract = NA,
                                 tissue = NA, 
@@ -275,8 +279,9 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                 include_dose_num = NA,
                                 extract_forest_data = FALSE, 
                                 save_table = NA, 
+                                highlight_gmr_colors = NA, 
                                 single_table = TRUE,
-                                page_orientation = "portrait", 
+                                page_orientation = "landscape", 
                                 fontsize = 11){
    
    # Error catching ----------------------------------------------------------
@@ -292,13 +297,6 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
               call = FALSE)
       mean_type <- "geometric"
    }
-   
-   # FIXME - This shouldn't have to be a thing. 
-   # if(extract_forest_data & includeConfInt == FALSE){
-   #    warning(wrapn("To get forest-plot data, we need the confidence interval, but you have set `includeConfInt = FALSE`. We're going to change that to TRUE so that we can get what we need for forest-plot data."), 
-   #            call. = FALSE)
-   #    includeConfInt <- TRUE
-   # }
    
    if(tolower(distribution_type) %in% c("z", "t")){
       distribution_type <- ifelse(tolower(distribution_type) == "z", 
@@ -322,45 +320,39 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
               call. = FALSE)
    }
    
+   if(complete.cases(highlight_gmr_colors) && 
+      tolower(highlight_gmr_colors[1]) == "lisa"){highlight_gmr_colors = "traffic"}
+   
+   if(any(complete.cases(highlight_gmr_colors)) &&
+      highlight_gmr_colors[1] %in% c("yellow to red", "green to red", "traffic") == FALSE){
+      if(length(highlight_gmr_colors) != 4){
+         warning("We need 4 colors for highlighting geometric mean ratios, one each for negligible, weak, moderate, and strong interactions, and you have provided a different number of colors. We'll use yellow to red values for highlighting these.\n", 
+                 call. = FALSE)
+         highlight_gmr_colors <- "yellow to red"
+      } else if(tryCatch(is.matrix(col2rgb(highlight_gmr_colors)),
+                         error = function(x) FALSE) == FALSE){
+         warning("The values you used for highlighting geometric mean ratios are not all valid colors in R. We'll used the default colors instead.\n", 
+                 call. = FALSE)
+         highlight_gmr_colors <- "yellow to red"
+      } 
+   }
+   
    
    # Main body of function -------------------------------------------------
    
-   # # Checking experimental details to only pull details that apply
-   # if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
-   #    existing_exp_details <- 
-   #       extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
-   #                                                sim_data_file_denominator), 
-   #                              exp_details = "Summary and Input")
-   #    Deets <- existing_exp_details$MainDetails
-   # } else {
-   #    Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
-   #       filter(File %in% c(sim_data_file_numerator, 
-   #                          sim_data_file_denominator))
-   #    
-   #    if(nrow(Deets) != 2){
-   #       existing_exp_details <-
-   #          extractExpDetails_mult(sim_data_file = c(sim_data_file_numerator, 
-   #                                                   sim_data_file_denominator), 
-   #                                 exp_details = "Summary and Input", 
-   #                                 existing_exp_details = existing_exp_details)
-   #       Deets <- existing_exp_details$MainDetails
-   #    }
-   #    
-   #    if(nrow(Deets) != 2){
-   #       warning(wrapn(paste0("We were attempting to find the simulation details for ", 
-   #                            str_comma(c(sim_data_file_numerator, 
-   #                                        sim_data_file_denominator)), 
-   #                            " and failed to find them, so we cannot return information on these files.")), 
-   #               call. = FALSE)
-   #       return(data.frame())
-   #    }
-   # }
-   
-   
    ## Tidying PKparameters ------------------------------------------------
    
-   # This currently assumes that PK data are in perfect order. Need to figure
-   # out how to check things later.
+   # If they are *only* supplying file pairs and no PK, then use that for
+   # PKparameters b/c when it's tidied in the next step, it will work better.
+   if(any(complete.cases(PKparameters)) == FALSE & 
+      any(complete.cases(sim_data_file_pairs))){
+      PKparameters <- sim_data_file_pairs
+   }
+   TEMP <- tidy_input_PK(PKparameters = PKparameters, 
+                         existing_exp_details = existing_exp_details)
+   PKparameters <- TEMP$PKparameters
+   FilePairs <- TEMP$FilePairs
+   existing_exp_details <- TEMP$existing_exp_details
    
    ## Looping through files ----------------------------------------------------
    
@@ -368,38 +360,30 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
    QC <- list()
    ForestInfo <- list()
    
-   if("Tissue" %in% names(PKparameters) == FALSE){
-      PKparameters$Tissue <- ifelse(is.na(tissue), 
-                                    "plasma", tissue)
-   }
+   # It's actually FilePairs that we want to supply to the mult version of
+   # calc_PK_ratios b/c tidy_input_PK will convert that to the necessary
+   # PKparameters and FilePairs is what keeps track of which things match. We'll
+   # need one iteration of calc_PK_ratios for every pair of files, compoundIDs,
+   # tissues, and sheets. Note that this does NOT include every pair of PK
+   # parameters b/c calc_PK_ratios can manage multiple PK parameter but not
+   # multiples of the other columns. At least, not multiples of the other
+   # columns within the same sim.
+   FilePairs <- FilePairs %>% 
+      mutate(across(.cols = everything(), 
+                    .fns = \(x) ifelse(x == "default", NA, x)), 
+             ID = paste(Numerator_File, Denominator_File, 
+                        Numerator_CompoundID, Denominator_CompoundID, 
+                        Numerator_Tissue, Denominator_Tissue, 
+                        Numerator_Sheet, Denominator_Sheet))
    
-   if("CompoundID" %in% names(PKparameters) == FALSE){
-      PKparameters$CompoundID <- ifelse(is.na(compoundToExtract), 
-                                        "substrate", compoundToExtract)
-   }
+   FilePairs <- split(FilePairs, f = FilePairs$ID)
    
-   if("FilePair" %in% names(PKparameters) == FALSE){
-      PKparameters$FilePair <- paste(PKparameters$Numerator_File, 
-                                     PKparameters$Denominator_File)
-   }
-   
-   PKparameters <- split(PKparameters, 
-                         f = list(PKparameters$FilePair, 
-                                  PKparameters$Tissue, 
-                                  PKparameters$CompoundID))
-   
-   for(i in names(PKparameters)){
+   for(i in names(FilePairs)){
       # Including a progress message
-      message("Extracting data for file pair #", i)
+      message("Extracting data for file pair #", which(names(FilePairs) == i))
       
       TEMP <- calc_PK_ratios(
-         # sim_data_file_numerator = sim_data_file_pairs$Numerator[i], 
-         # sim_data_file_denominator = sim_data_file_pairs$Denominator[i], 
-         # compoundToExtract = compoundToExtract,
-         PKparameters = PKparameters[[i]], 
-         # sheet_PKparameters_num = sim_data_file_pairs$sheet_PKparameters_num[i], 
-         # sheet_PKparameters_denom = sim_data_file_pairs$sheet_PKparameters_denom[i], 
-         # tissue = tissue, 
+         PKparameters = FilePairs[[i]], 
          paired = paired, 
          mean_type = mean_type, 
          existing_exp_details = existing_exp_details,
@@ -415,27 +399,23 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
          returnExpDetails = TRUE,
          save_table = NA)
       
-      MyTable[[i]] <- TEMP$Table %>% 
-         mutate(File = paste(sim_data_file_pairs$Numerator[i], "/", 
-                             sim_data_file_pairs$Denominator[i]))
+      MyTable[[i]] <- TEMP$Table
       QC[[i]] <- TEMP$QC
       
-      ForestInfo[[i]] <- data.frame(
-         File = paste(sim_data_file_pairs$Numerator[i], "/", 
-                      sim_data_file_pairs$Denominator[i]), 
-         Dose_sub = TEMP$ExpDetails_denom$Dose_sub, 
-         Dose_inhib = switch(as.character(
-            complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
-            "TRUE" = TEMP$ExpDetails_num$Dose_inhib, 
-            "FALSE" = TEMP$ExpDetails_num$Dose_sub), 
-         Substrate = TEMP$ExpDetails_denom$Substrate, 
-         Inhibitor1 = switch(as.character(
-            complete.cases(TEMP$ExpDetails_num$Inhibitor1)), 
-            "TRUE" = TEMP$ExpDetails_num$Inhibitor1, 
-            "FALSE" = TEMP$ExpDetails_num$Substrate), 
-         File_num = sim_data_file_pairs$Numerator[i], 
-         File_denom = sim_data_file_pairs$Denominator[i]) %>% 
-         left_join(MyTable[[i]], by = join_by(File))
+      suppressWarnings(
+         ForestInfo[[i]] <- data.frame(
+            File = unique(TEMP$Table$File), 
+            Dose_sub = NA, 
+            Dose_inhib = NA, 
+            Dose_inhib2 = NA, 
+            Numerator_CompoundID = unique(FilePairs[[i]]$Numerator_CompoundID), 
+            Denominator_CompoundUD = unique(FilePairs[[i]]$Denominator_CompoundID), 
+            Numerator_File = unique(FilePairs[[i]]$Numerator_File), 
+            Denominator_File = unique(FilePairs[[i]]$Denominator_File), 
+            Numerator_Tissue = unique(FilePairs[[i]]$Numerator_Tissue), 
+            Denominator_Tissue = unique(FilePairs[[i]]$Denominator_Tissue)) %>% 
+            left_join(MyTable[[i]], by = join_by(File))
+      )
       
       rm(TEMP)
    }
@@ -545,7 +525,6 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
          PKToPull <- PKparameters
          MeanType <- mean_type
          FromCalcPKRatios <- TRUE
-         highlight_gmr_colors <- NA
          highlight_so_cutoffs = NA
          highlight_so_colors = "yellow to red"
          prettify_columns <- TRUE
@@ -556,6 +535,13 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
                                                          package="SimcypConsultancy"))
          
          add_header_for_DDI <- FALSE
+         
+         # Hacking CheckDoseInt, which is needed for the .Rmd file. Not checking
+         # this for people here. Too complicated. May add a warning later,
+         # though.
+         CheckDoseInt <- list("message" = "good")
+         # Similarly, hacking "Sheet" column
+         MyPKResults$Sheet <- NA
          
          rmarkdown::render(system.file("rmarkdown/templates/pktable/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 
@@ -589,11 +575,18 @@ calc_PK_ratios_mult <- function(sim_data_file_pairs,
       StatNames[which(str_detect(StatNames, "CI - Upper"))] <- "CI_Upper"
       
       FD <- bind_rows(ForestInfo) %>% 
-         select(File, Statistic, Substrate, Dose_sub, Inhibitor1, Dose_inhib,
+         select(File, Statistic,
+                any_of(c("Substrate", "Dose_sub", "Inhibitor1", "Dose_inhib",
+                         "Numerator_CompoundID", "Denominator_CompoundID", 
+                         "Numerator_File", "Denominator_File", "Numerator_Tissue", 
+                         "Denominator_Tissue")), 
                 matches(" / | Ratio")) %>% 
          filter(str_detect(Statistic, "Ratio|^Simulated$|Lower|Upper")) %>% 
-         pivot_longer(cols = -c("Statistic", "File", "Dose_sub", "Dose_inhib", 
-                                "Substrate", "Inhibitor1"), 
+         pivot_longer(cols = -any_of(c("Statistic", "File", "Dose_sub", "Dose_inhib", 
+                                "Substrate", "Inhibitor1", 
+                                "Numerator_CompoundID", "Denominator_CompoundID", 
+                                "Numerator_File", "Denominator_File", "Numerator_Tissue", 
+                                "Denominator_Tissue")), 
                       names_to = "PKparameter", 
                       values_to = "Value") %>% 
          mutate(Statistic = StatNames[Statistic],

@@ -640,7 +640,7 @@ inductFit <- function(DF,
          suppressMessages(
             indDF <- indDF %>% select(-Model) %>% unique() %>% 
                full_join(
-                  expand.grid(DonorID = unique(indDF$DonorID),
+                  expand_grid(DonorID = unique(indDF$DonorID),
                               Model = c("Emax", "EmaxSlope",
                                         "Slope", "Sig3Param")))
          )
@@ -737,7 +737,7 @@ inductFit <- function(DF,
             
             Curve <- fittedcurve(indfit = IndFit_means_forcurves,
                                  model = model) %>% 
-               left_join(expand.grid(Model = model, 
+               left_join(expand_grid(Model = model, 
                                      DonorID = unique(DF$DonorID)), 
                          by = join_by(Model))
          }
@@ -865,7 +865,7 @@ inductFit <- function(DF,
             
             Curve <- fittedcurve(indfit = IndFit_means_forcurves,
                                  model = model) %>% 
-               left_join(expand.grid(Model = model, 
+               left_join(expand_grid(Model = model, 
                                      DonorID = unique(DF$DonorID)), 
                          by = join_by(Model))
          }
@@ -873,7 +873,7 @@ inductFit <- function(DF,
          suppressMessages(
             DF <- DF %>% select(-Model) %>%
                full_join(
-                  expand.grid(DonorID = unique(DF$DonorID),
+                  expand_grid(DonorID = unique(DF$DonorID),
                               Model = c("Emax", "EmaxSlope",
                                         "Slope", "Sig3Param"))) %>%
                mutate(Model_ch = ModelFacet[Model]) # NB: Capital M here b/c referring to the column and not the argument
@@ -995,7 +995,7 @@ inductFit <- function(DF,
       
       # Setting up facet labels for graphs
       DF <- DF %>% select(-c(Model, Model_ch)) %>% 
-         left_join(expand.grid(DonorID = unique(DF$DonorID), 
+         left_join(expand_grid(DonorID = unique(DF$DonorID), 
                                Model = Out$Fit$Model), 
                    by = "DonorID") %>% 
          mutate(Model_ch = ModelFacet[Model]) # NB: Capital M here b/c referring to the column and not the argument

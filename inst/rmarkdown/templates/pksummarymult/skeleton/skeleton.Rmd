@@ -51,7 +51,7 @@ if(FromCalcPKRatios){
    # tissues to tissue. Same w/compounds. 
    tissues <- tissue
    compoundsToExtract <- compoundToExtract
-   PKpulled <- expand.grid(PKpulled = PKToPull, 
+   PKpulled <- expand_grid(PKpulled = PKToPull, 
                            File = MyPKResults$File, 
                            Tissue = unique(MyPKResults$Tissue), 
                            CompoundID = compoundToExtract)

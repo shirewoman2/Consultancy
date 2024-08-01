@@ -221,7 +221,7 @@ save_table_to_Word <- function(
       PKpulled <- TableNames$PKparameter_unpretty[TableNames$IsPKParam == TRUE]
       
       PKToPull <- PKpulled
-      PKpulled <- expand.grid(PKpulled = PKpulled, 
+      PKpulled <- expand_grid(PKpulled = PKpulled, 
                               File = unique(PKtable$File), 
                               Tissue = unique(PKtable$Tissue), 
                               CompoundID = compoundsToExtract)

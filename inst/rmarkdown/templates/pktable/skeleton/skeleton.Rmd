@@ -144,14 +144,16 @@ if(single_table){
    
    # If they only wanted 1 tissue, don't include a column for that in the table.
    # It'll be listed in the text and takes up room needlessly.
-   if(length(unique(MyPKResults$Tissue)) == 1){
+   if(length(unique(MyPKResults$Tissue)) == 1 &&
+      str_detect(unique(MyPKResults$Tissue), " / ") == FALSE){
       MyPKResults <- MyPKResults %>% 
          select(-any_of("Tissue"))
    }
    
    # Similarly, if they only wanted 1 compoundID, don't include a column for that
    # in the table.
-   if(length(unique(MyPKResults$CompoundID)) == 1){
+   if(length(unique(MyPKResults$CompoundID)) == 1 &&
+      str_detect(unique(MyPKResults$CompoundID), " / ") == FALSE){
       MyPKResults <- MyPKResults %>% 
          select(-any_of("CompoundID"))
    }
