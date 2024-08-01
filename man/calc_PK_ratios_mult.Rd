@@ -5,15 +5,16 @@
 \title{Calculate the ratio of PK parameters between multiple pairs of simulations}
 \usage{
 calc_PK_ratios_mult(
-  sim_data_file_pairs,
+  sim_data_file_pairs = NA,
+  existing_exp_details = NA,
+  compoundToExtract = NA,
+  tissue = NA,
+  PKparameters = NA,
+  sheet_PKparameters_num = NA,
+  sheet_PKparameters_denom = NA,
   paired = TRUE,
   match_subjects_by = "individual and trial",
   distribution_type = "t",
-  compoundToExtract = "substrate",
-  tissue = "plasma",
-  PKparameters = "AUC tab",
-  sheet_PKparameters_num = NA,
-  sheet_PKparameters_denom = NA,
   mean_type = "geometric",
   include_num_denom_columns = TRUE,
   conf_int = 0.9,
@@ -23,10 +24,10 @@ calc_PK_ratios_mult(
   checkDataSource = TRUE,
   include_dose_num = NA,
   extract_forest_data = FALSE,
-  existing_exp_details = NA,
   save_table = NA,
+  highlight_gmr_colors = NA,
   single_table = TRUE,
-  page_orientation = "portrait",
+  page_orientation = "landscape",
   fontsize = 11
 )
 }
@@ -40,43 +41,13 @@ the sheets to use for extracting the numerator or denominator data. (Please
 see the arguments \code{sheet_PKparameters_num} and
 \code{sheet_PKparameters_denom}.)}
 
-\item{paired}{TRUE (default) or FALSE for whether the study design is paired,
-as in, the subjects are \emph{identical} between the two simulations.
-\strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
-CALCULATIONS ARE PERFORMED!} An example of a paired study would be a DDI
-study where each subject has a measurement without the perpetrator of
-interest and then has a second measurement \emph{with} the perpetrator. The
-comparison is for repeated measurements of the \emph{same subject}. An
-example of an unpaired study design would be comparing healthy volunteers
-to subjects with hepatic impairment because those are measurements on
-\emph{different} subjects. For paired study designs, the order of
-operations is to calculate each subject's mean ratio and then to calculate
-the mean of those ratios. For unpaired study designs, the order of
-operations is to calculate the mean for the numerator simulation and then
-divide it by the mean for the denominator simulation. Would this be clearer
-if you could see the mathematical equations? We agree but can't easily
-include equations in the help file. However, if you run this and save the
-output to a Word file, the equations will be included in the output.}
-
-\item{match_subjects_by}{For a paired study design, how would you like to
-match your subjects? Options are "individual and trial" (default), which
-matches by both the simulated individual ID number AND by the trial number,
-or "individual only", which matches only by the individual ID number. This
-will be ignored for unpaired study designs. Why are we even bothering with
-this, you ask? Just to be totally safe, we normally match simulated
-subjects by both the individual subject ID and by the trial number. We
-thought that this would always work and would be the safest option, but we
-discovered that, for some scenarios where you might expect the individuals
-to be \emph{exactly} the same between two simulations, they actually were
-randomly assigned to different trials. Mismatched subjects would lead to
-inaccurate calculations, so we want to avoid that. If you use the default
-setting of "individual and trial" but the trials are NOT the same between
-simulations, you'll get a warning and no results, which we think is vastly
-superior to getting \emph{incorrect} results.}
-
-\item{distribution_type}{use a "t" distribution (default) or a "Z"
-distribution. Note: The Simcyp Simulator calculates geometric confidence
-intervals with a t distribution.}
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} to get all the details from the "Input
+Sheet" (e.g., when you ran extractExpDetails_mult you said
+\code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
+save some processing time by supplying that object here, unquoted. If left
+as NA, this function will run \code{extractExpDetails} behind the scenes to
+figure out some information about your experimental set up.}
 
 \item{compoundToExtract}{For which compound do you want to extract PK data?
 Options are: \itemize{\item{"substrate" (default),} \item{"primary
@@ -139,6 +110,44 @@ should be left as NA.}
 the numerator to be pulled from a specific tab in
 \code{sim_data_file_denominator}, list that tab here. Most of the time,
 this should be left as NA.}
+
+\item{paired}{TRUE (default) or FALSE for whether the study design is paired,
+as in, the subjects are \emph{identical} between the two simulations.
+\strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
+CALCULATIONS ARE PERFORMED!} An example of a paired study would be a DDI
+study where each subject has a measurement without the perpetrator of
+interest and then has a second measurement \emph{with} the perpetrator. The
+comparison is for repeated measurements of the \emph{same subject}. An
+example of an unpaired study design would be comparing healthy volunteers
+to subjects with hepatic impairment because those are measurements on
+\emph{different} subjects. For paired study designs, the order of
+operations is to calculate each subject's mean ratio and then to calculate
+the mean of those ratios. For unpaired study designs, the order of
+operations is to calculate the mean for the numerator simulation and then
+divide it by the mean for the denominator simulation. Would this be clearer
+if you could see the mathematical equations? We agree but can't easily
+include equations in the help file. However, if you run this and save the
+output to a Word file, the equations will be included in the output.}
+
+\item{match_subjects_by}{For a paired study design, how would you like to
+match your subjects? Options are "individual and trial" (default), which
+matches by both the simulated individual ID number AND by the trial number,
+or "individual only", which matches only by the individual ID number. This
+will be ignored for unpaired study designs. Why are we even bothering with
+this, you ask? Just to be totally safe, we normally match simulated
+subjects by both the individual subject ID and by the trial number. We
+thought that this would always work and would be the safest option, but we
+discovered that, for some scenarios where you might expect the individuals
+to be \emph{exactly} the same between two simulations, they actually were
+randomly assigned to different trials. Mismatched subjects would lead to
+inaccurate calculations, so we want to avoid that. If you use the default
+setting of "individual and trial" but the trials are NOT the same between
+simulations, you'll get a warning and no results, which we think is vastly
+superior to getting \emph{incorrect} results.}
+
+\item{distribution_type}{use a "t" distribution (default) or a "Z"
+distribution. Note: The Simcyp Simulator calculates geometric confidence
+intervals with a t distribution.}
 
 \item{mean_type}{What kind of means and confidence intervals do you want
 listed in the output table? Options are "arithmetic" or "geometric"
@@ -204,14 +213,6 @@ was one) in the numerator simulations or the dose of the substrate in the
 numerator simulations if there was not. If there was not an inhibitor, the
 column "Inhibitor 1" will contain the file names for the numerator sims.}
 
-\item{existing_exp_details}{If you have already run
-\code{\link{extractExpDetails_mult}} to get all the details from the "Input
-Sheet" (e.g., when you ran extractExpDetails_mult you said
-\code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
-save some processing time by supplying that object here, unquoted. If left
-as NA, this function will run \code{extractExpDetails} behind the scenes to
-figure out some information about your experimental set up.}
-
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
@@ -225,6 +226,11 @@ leave off the file extension, we'll assume you want it to be ".csv". While
 the main PK table data will be in whatever file format you requested, if
 you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
 its own and will have "- QC" added to the end of the file name.}
+
+\item{highlight_gmr_colors}{optionally specify a set of colors to use for
+highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+"green to red" or a vector of 4 colors of your choosing. If left as NA, no
+highlighting for GMR level will be done.}
 
 \item{single_table}{TRUE (default) or FALSE for whether to save all the PK
 data in a single table or break the data up by tissue, compound ID, and

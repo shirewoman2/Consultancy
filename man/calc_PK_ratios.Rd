@@ -5,17 +5,17 @@
 \title{Calculate the ratio of PK parameters between two simulations}
 \usage{
 calc_PK_ratios(
-  sim_data_file_numerator,
-  sim_data_file_denominator,
+  sim_data_file_numerator = NA,
+  sim_data_file_denominator = NA,
+  existing_exp_details = NA,
+  PKparameters = NA,
+  compoundToExtract = NA,
+  tissue = NA,
+  sheet_PKparameters_num = NA,
+  sheet_PKparameters_denom = NA,
   paired = TRUE,
   match_subjects_by = "individual and trial",
   distribution_type = "t",
-  compoundToExtract = "substrate",
-  tissue = "plasma",
-  PKparameters = "AUC tab",
-  sheet_PKparameters_num = NA,
-  sheet_PKparameters_denom = NA,
-  existing_exp_details = NA,
   mean_type = "geometric",
   include_num_denom_columns = TRUE,
   conf_int = 0.9,
@@ -28,6 +28,7 @@ calc_PK_ratios(
   checkDataSource = TRUE,
   returnExpDetails = FALSE,
   save_table = NA,
+  highlight_gmr_colors = NA,
   page_orientation = "landscape",
   fontsize = 11
 )
@@ -38,6 +39,49 @@ provide the numerator for the calculated ratios.}
 
 \item{sim_data_file_denominator}{a simulator output Excel file that will
 provide the denominator for the calculated ratios}
+
+\item{existing_exp_details}{If you have already run
+\code{\link{extractExpDetails_mult}} to get all the details from the "Input
+Sheet" (e.g., when you ran extractExpDetails_mult you said
+\code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
+save some processing time by supplying that object here, unquoted. If left
+as NA, this function will run \code{extractExpDetails} behind the scenes to
+figure out some information about your experimental set up.}
+
+\item{PKparameters}{PK parameters you want to extract from the simulator
+output file. Please run \code{view(PKparameterDefinitions)} in the console
+to see all the possible PK parameters or try running
+\code{make_example_PK_input()} to make an example csv file with PK
+parameters all laid out correctly. This is a bit fiddly, and we've tried to
+avoid that, but we just plain need the PK parameters to be in a very
+specific format for the code to work. If you want different PK parameters
+for the numerator simulation than the denominator simulation, please
+provide a data.frame here. Please run \code{make_example_PK_input()} and
+see the example for calculating PK ratios between simulations if you
+provide a data.frame here. The format is very specific.}
+
+\item{compoundToExtract}{For which compound do you want to extract PK data?
+Options are: \itemize{\item{"substrate" (default),} \item{"primary
+metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
+metabolite",} \item{"inhibitor 1" -- this can be an inducer, inhibitor,
+activator, or suppressor, but it's labeled as "Inhibitor 1" in the
+simulator,} \item{"inhibitor 2" for the 2nd perpetrator listed in the
+simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
+inhibitor 1}}}
+
+\item{tissue}{For which tissue would you like the PK parameters to be pulled?
+Options are "plasma" (default) or "blood" (possible but not as thoroughly
+tested).}
+
+\item{sheet_PKparameters_num}{(optional) If you want the PK parameters for
+the numerator to be pulled from a specific tab in
+\code{sim_data_file_numerator}, list that tab here. Most of the time, this
+should be left as NA.}
+
+\item{sheet_PKparameters_denom}{(optional) If you want the PK parameters for
+the numerator to be pulled from a specific tab in
+\code{sim_data_file_denominator}, list that tab here. Most of the time,
+this should be left as NA.}
 
 \item{paired}{TRUE (default) or FALSE for whether the study design is paired,
 as in, the subjects are \emph{identical} between the two simulations.
@@ -76,68 +120,6 @@ superior to getting \emph{incorrect} results.}
 \item{distribution_type}{use a "t" distribution (default) or a "Z"
 distribution. Note: The Simcyp Simulator calculates geometric confidence
 intervals with a t distribution.}
-
-\item{compoundToExtract}{For which compound do you want to extract PK data?
-Options are: \itemize{\item{"substrate" (default),} \item{"primary
-metabolite 1",} \item{"primary metabolite 2",} \item{"secondary
-metabolite",} \item{"inhibitor 1" -- this can be an inducer, inhibitor,
-activator, or suppressor, but it's labeled as "Inhibitor 1" in the
-simulator,} \item{"inhibitor 2" for the 2nd perpetrator listed in the
-simulation,} \item{"inhibitor 1 metabolite" for the primary metabolite of
-inhibitor 1}}}
-
-\item{tissue}{For which tissue would you like the PK parameters to be pulled?
-Options are "plasma" (default) or "blood" (possible but not as thoroughly
-tested).}
-
-\item{PKparameters}{PK parameters you want to extract from the simulator
-  output file. Options are: \describe{
-
-  \item{"all"}{all possible parameters}
-
-  \item{"AUC tab"}{only those parameters on the "AUC" tab (default). The
-  "AUC_CI" tab or "AUC_SD" tab will be used if "AUC" tab is not present.}
-
-  \item{"Absorption tab"}{only those parameters on the "Absorption" tab.
-  Please note that we haven't developed this function for output in the
-  "Overall Fa Fg" tab for ADAM-model simulations yet.}
-
-  \item{a vector of any combination of specific, individual parameters, each
-  surrounded by quotes and encapsulated with \code{c(...)}}{An example:
-  \code{c("Cmax_dose1", "AUCtau_last")}. To see the full set of possible
-  parameters to extract, enter \code{view(PKParameterDefinitions)} into the
-  console. Not case sensitive. If you use "_first" instead of "_dose1", that
-  will also work.}
-
-  \item{a vector of individual parameters with one parameter for the
-  numerator and whatever parameter you want from the other file for the
-  denominator, separated by "/"}{The previous options are all for when you
-  want to take the ratio of the \emph{same} parameter for file 1 / file 2.
-  However, if you want to compare one PK parameter from file 1 with a
-  \emph{different} parameter for file 2, you can do that with this option.
-  Here's an example of how to input the parameters so that you can calculate
-  the dose 1 AUCinf with an inhibitor present for file 1 divided by the
-  AUCinf for dose 1 with no inhibitor (baseline) for file 2:
-  \code{PKparameters = c("AUCinf_dose1_withInhib / AUCinf_dose1")} Please
-  note that the quotes are around \emph{both} of the two parameters!}}}
-
-\item{sheet_PKparameters_num}{(optional) If you want the PK parameters for
-the numerator to be pulled from a specific tab in
-\code{sim_data_file_numerator}, list that tab here. Most of the time, this
-should be left as NA.}
-
-\item{sheet_PKparameters_denom}{(optional) If you want the PK parameters for
-the numerator to be pulled from a specific tab in
-\code{sim_data_file_denominator}, list that tab here. Most of the time,
-this should be left as NA.}
-
-\item{existing_exp_details}{If you have already run
-\code{\link{extractExpDetails_mult}} to get all the details from the "Input
-Sheet" (e.g., when you ran extractExpDetails_mult you said
-\code{exp_details = "Input Sheet"} or \code{exp_details = "all"}), you can
-save some processing time by supplying that object here, unquoted. If left
-as NA, this function will run \code{extractExpDetails} behind the scenes to
-figure out some information about your experimental set up.}
 
 \item{mean_type}{What kind of means and confidence intervals do you want
 listed in the output table? Options are "arithmetic" or "geometric"
@@ -235,6 +217,11 @@ leave off the file extension, we'll assume you want it to be ".csv". While
 the main PK table data will be in whatever file format you requested, if
 you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
 its own and will have "- QC" added to the end of the file name.}
+
+\item{highlight_gmr_colors}{optionally specify a set of colors to use for
+highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+"green to red" or a vector of 4 colors of your choosing. If left as NA, no
+highlighting for GMR level will be done.}
 
 \item{page_orientation}{set the page orientation for the Word file output to
 "portrait" or "landscape" (default)}
