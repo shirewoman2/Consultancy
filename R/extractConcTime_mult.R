@@ -390,6 +390,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
       sim_data_files_topull <- setdiff(sim_data_files_topull, MissingSimFiles)
    }
    
+   # Dealing w/changed name for Tissue_subsection
+   if(nrow(ct_dataframe) > 0 & 
+      "subsection_ADAM" %in% names(ct_dataframe) && 
+      "Tissue_subtype" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$Tissue_subtype <- ct_dataframe$subsection_ADAM
+   }
    
    ## Getting exp details as needed --------------------------------------------
    
