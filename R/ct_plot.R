@@ -462,7 +462,7 @@ ct_plot <- function(ct_dataframe = NA,
            call. = FALSE)
    }
    
-   if("character" %in% class(sim_data_file_pairs) == FALSE ||
+   if("character" %in% class(subsection_ADAM) == FALSE ||
       all(subsection_ADAM == "deprecated") == FALSE){
       warning(wrapn("The argument 'subsection_ADAM' is soon to be deprecated. We have now added non-ADAM-model tissues as subtypes of tissues availble, so the old 'subsection_ADAM' name we had used for which subtype of tissue it was no longer works as well. Please use 'Tissue_subtype' instead going forward."), 
               call. = FALSE)
