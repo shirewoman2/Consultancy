@@ -421,6 +421,16 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       MyTable[[i]] <- TEMP$Table
       QC[[i]] <- TEMP$QC
       
+      # Getting the name of the compound for which we have PK. Most of the time,
+      # CmpdNum and CmpdDenom should be the same.
+      CmpdNum <- existing_exp_details$MainDetails %>% 
+         filter(File == unique(FilePairs[[i]]$Numerator_File)) %>% 
+         pull(AllCompounds$DetailNames[AllCompounds$CompoundID == unique(FilePairs[[i]]$Numerator_CompoundID)])
+      
+      CmpdDenom <- existing_exp_details$MainDetails %>% 
+         filter(File == unique(FilePairs[[i]]$Denominator_File)) %>% 
+         pull(AllCompounds$DetailNames[AllCompounds$CompoundID == unique(FilePairs[[i]]$Denominator_CompoundID)])
+      
       suppressWarnings(
          ForestInfo[[i]] <- data.frame(
             File = unique(TEMP$Table$File), 
@@ -428,7 +438,9 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
             Dose_inhib = NA, 
             Dose_inhib2 = NA, 
             Numerator_CompoundID = unique(FilePairs[[i]]$Numerator_CompoundID), 
-            Denominator_CompoundUD = unique(FilePairs[[i]]$Denominator_CompoundID), 
+            Denominator_CompoundID = unique(FilePairs[[i]]$Denominator_CompoundID), 
+            Numerator_Compound = CmpdNum, 
+            Denominator_Compound = CmpdDenom, 
             Numerator_File = unique(FilePairs[[i]]$Numerator_File), 
             Denominator_File = unique(FilePairs[[i]]$Denominator_File), 
             Numerator_Tissue = unique(FilePairs[[i]]$Numerator_Tissue), 
@@ -436,7 +448,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
             left_join(MyTable[[i]], by = join_by(File))
       )
       
-      rm(TEMP)
+      rm(TEMP, CmpdDenom, CmpdNum)
    }
    
    MyPKResults <- bind_rows(MyTable)
@@ -615,15 +627,17 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          select(File, Statistic,
                 any_of(c("Substrate", "Dose_sub", "Inhibitor1", "Dose_inhib",
                          "Numerator_CompoundID", "Denominator_CompoundID", 
-                         "Numerator_File", "Denominator_File", "Numerator_Tissue", 
-                         "Denominator_Tissue")), 
+                         "Numerator_Compound", "Denominator_Compound", 
+                         "Numerator_File", "Denominator_File",
+                         "Numerator_Tissue", "Denominator_Tissue")), 
                 matches(" / | Ratio")) %>% 
          filter(str_detect(Statistic, "Ratio|^Simulated$|Lower|Upper")) %>% 
          pivot_longer(cols = -any_of(c("Statistic", "File", "Dose_sub", "Dose_inhib", 
                                 "Substrate", "Inhibitor1", 
                                 "Numerator_CompoundID", "Denominator_CompoundID", 
-                                "Numerator_File", "Denominator_File", "Numerator_Tissue", 
-                                "Denominator_Tissue")), 
+                                "Numerator_Compound", "Denominator_Compound", 
+                                "Numerator_File", "Denominator_File",
+                                "Numerator_Tissue", "Denominator_Tissue")), 
                       names_to = "PKparameter", 
                       values_to = "Value") %>% 
          mutate(Statistic = StatNames[Statistic],
