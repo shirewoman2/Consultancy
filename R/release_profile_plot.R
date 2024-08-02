@@ -506,7 +506,7 @@ release_profile_plot <- function(existing_exp_details,
                       ReleaseUpper = ReleaseUpper / 100, 
                       ReleaseLower = ReleaseLower / 100, 
                       ReleaseSD = NA, # FIXME - return to this later. This isn't going to have conventional SD, so I want to use ReleaseUpper and ReleaseLower instead. 
-                      subsection_ADAM = NA, 
+                      Tissue_subtype = NA, 
                       Simulated = TRUE, 
                       # placeholders only
                       Inhibitor = "none",
@@ -526,7 +526,7 @@ release_profile_plot <- function(existing_exp_details,
                       ReleaseUpper = Release_mean + Release_mean * Release_CV, 
                       ReleaseLower = Release_mean - Release_mean * Release_CV, 
                       ReleaseSD = Release_mean * Release_CV, 
-                      subsection_ADAM = NA, 
+                      Tissue_subtype = NA, 
                       Simulated = TRUE, 
                       # placeholders only
                       Inhibitor = "none",

@@ -7,7 +7,7 @@
 ct_plot(
   ct_dataframe = NA,
   figure_type = "percentiles",
-  subsection_ADAM = NA,
+  Tissue_subtype = NA,
   mean_type = "arithmetic",
   time_range = NA,
   x_axis_interval = NA,
@@ -51,7 +51,8 @@ ct_plot(
   existing_exp_details = NA,
   save_graph = NA,
   fig_height = NA,
-  fig_width = NA
+  fig_width = NA,
+  subsection_ADAM = "deprecated"
 )
 }
 \arguments{
@@ -99,14 +100,12 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   examining your data. If the color is too much for you but you like the
   rest, try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}}}
 
-\item{subsection_ADAM}{ADAM model only: For ADAM model output, multiple types
-of data are available, so which of those types do you want to show? Options
-are whatever were available for that tissue, which could be "undissolved
-compound", "free compound in lumen", "Heff", "absorption rate", "unreleased
-compound in faeces", "dissolved compound", "luminal CLint", "cumulative
-fraction of compound absorbed", or "cumulative fraction of compound
-dissolved". Default is "free compound in lumen" but is ignored when
-ct_dataframe doesn't contain ADAM data.}
+\item{Tissue_subtype}{Certain types of models have additional subtypes of
+tissues. Currently, the SimcypConsultancy package supports ADAM-model and
+brain-compartment tissue subtypes. In these scenarios, it's not sufficient
+to say "colon" or "brain" because those tissues have multiple subtypes.
+This is where you can specify which you want. Default is "free compound in
+lumen" but is ignored when ct_dataframe doesn't contain ADAM data.}
 
 \item{mean_type}{graph "arithmetic" (default) or "geometric" means or
 "median" for median concentrations. If that option was not included in the
@@ -418,6 +417,12 @@ saved to disk.}
 \item{fig_height}{figure height in inches}
 
 \item{fig_width}{figure width in inches}
+
+\item{subsection_ADAM}{SOON TO BE DEPRECATED. We have now added
+non-ADAM-model tissues to the subtypes of tissues you can extract from
+Simulator output, so the old "subsection_ADAM" name we had used for which
+subtype of tissue it was no longer works as well. Please use
+"Tissue_subtype" instead going forward.}
 }
 \value{
 Output is a ggplot2 graph or two ggplot2 graphs arranged with

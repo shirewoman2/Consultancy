@@ -237,7 +237,7 @@ eCT_pulldata <- function(sim_data_xl,
                                           SimConcUnits$Type == ss],
                                        SimConcUnits),
                    Tissue = tissue,
-                   subsection_ADAM = ifelse(ADAM|AdvBrainModel, ss, NA))
+                   Tissue_subtype = ifelse(ADAM|AdvBrainModel, ss, NA))
       }
    } 
    
@@ -283,7 +283,7 @@ eCT_pulldata <- function(sim_data_xl,
                                           SimConcUnits$Type == ss],
                                        SimConcUnits),
                    Tissue = tissue,
-                   subsection_ADAM = ifelse(ADAM|AdvBrainModel, ss, NA)) %>%
+                   Tissue_subtype = ifelse(ADAM|AdvBrainModel, ss, NA)) %>%
             separate(SubjTrial, into = c("Individual", "Trial"),
                      sep = "_") %>% 
             mutate(Individual = as.character(Individual),

@@ -350,7 +350,7 @@ dissolution_profile_plot <- function(existing_exp_details,
              DissolutionUpper = Dissolution_mean + Dissolution_mean * Dissolution_CV, 
              DissolutionLower = Dissolution_mean - Dissolution_mean * Dissolution_CV, 
              DissolutionSD = Dissolution_mean * Dissolution_CV,
-             subsection_ADAM = NA, 
+             Tissue_subtype = NA, 
              Simulated = TRUE, 
              # placeholders only
              Inhibitor = "none",

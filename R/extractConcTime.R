@@ -56,7 +56,7 @@
 #'   or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 #'   "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 #'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-#'   released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET 
+#'   released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
 #'   SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.
 #' @param compoundToExtract For which compound do you want to extract
 #'   concentration-time data? Options are: \itemize{\item{"substrate"
@@ -124,12 +124,15 @@
 #'
 #'   \item{Conc_units}{units used for concentrations},
 #'
-#'   \item{subsection_ADAM}{type of concentration (only applies to ADAM model
-#'   simulations), e.g., "undissolved compound", "free compound in lumen",
+#'   \item{Tissue_subtype}{the subtype of tissue, which only applies in special
+#'   situations, mainly ADAM-model tissues and brain-compartment tissues.
+#'   Examples of ADAM-model tissues you can get: "undissolved compound", "free compound in lumen",
 #'   "Heff", "absorption rate", "unreleased compound in faeces", "dissolved
 #'   compound", "luminal CLint", "cumulative fraction of compound dissolved",
-#'   "cumulative fraction of compound released", or "cumulative fraction of
-#'   compound absorbed".}
+#'   "cumulative fraction of compound released", "cumulative fraction of
+#'   compound absorbed". Examples of brain-compartment tissues you can get: 
+#'   "cranial CSF", "total brain", "spinal CSF", "Kp,uu,brain". This column was 
+#'   formerly named "subsection_ADAM" but now includes non-ADAM-model tissues.}
 #'
 #'   \item{Dose_num}{the dose number}
 #'
@@ -516,12 +519,12 @@ extractConcTime <- function(sim_data_file,
    
    # ADAM data include multiple types of concentrations. We'll extract each.
    # Also making "Cumulative" for cumulative absorption/dissolution lower case.
-   # Using subsection_ADAM also for AdvBrainModel tissues. May need to changes
-   # subsection_ADAM to "TissueSubtype" or something.
+   # Using Tissue_subtype also for AdvBrainModel tissues. May need to changes
+   # Tissue_subtype to "TissueSubtype" or something.
    if(ADAM|AdvBrainModel){
-      subsection_ADAMs <- sub("Cumulative", "cumulative", SimConcUnits$Type)
+      Tissue_subtypes <- sub("Cumulative", "cumulative", SimConcUnits$Type)
    } else {
-      subsection_ADAMs <- "regular"
+      Tissue_subtypes <- "regular"
    }
    
    SimTimeUnits <- sim_data_xl$...1[which(str_detect(sim_data_xl$...1, "^Time"))][1]
@@ -543,7 +546,7 @@ extractConcTime <- function(sim_data_file,
       
       sim_data[[cmpd]] <- list() 
       
-      for(ss in subsection_ADAMs){
+      for(ss in Tissue_subtypes){
          # tic(msg = paste("Extracting", ss))
          
          # Pull the data needed 
@@ -590,7 +593,7 @@ extractConcTime <- function(sim_data_file,
                                    "per10", "per90", "median") == FALSE) %>%
                group_by(across(any_of(c("Compound", "CompoundID", "Tissue",
                                         "Inhibitor", "Simulated", "Trial", 
-                                        "Time", "Time_orig", "subsection_ADAM",
+                                        "Time", "Time_orig", "Tissue_subtype",
                                         "Time_units", "Conc_units")))) %>%
                summarize(Conc_arith = mean(Conc, na.rm = T),
                          Conc_gm = gm_mean(Conc, na.rm = T),
@@ -620,7 +623,7 @@ extractConcTime <- function(sim_data_file,
                                       "per10", "per90", "median") == FALSE) %>%
                   group_by(across(any_of(c("Compound", "CompoundID", "Tissue",
                                            "Inhibitor", "Simulated", 
-                                           "Time", "Time_orig", "subsection_ADAM",
+                                           "Time", "Time_orig", "Tissue_subtype",
                                            "Time_units", "Conc_units")))) %>%
                   summarize(Conc = gm_mean(Conc, na.rm = T)) %>%
                   ungroup() %>%
@@ -921,9 +924,10 @@ extractConcTime <- function(sim_data_file,
       select(any_of(c("Compound", "CompoundID", "Inhibitor", 
                       "Species", "Tissue", "Individual", "Trial",
                       "Simulated", "Time", "Conc", "SD_SE",
-                      "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
+                      "Time_units", "Conc_units", "Tissue_subtype", "DoseNum",
                       "DoseInt", "Dose_sub", "Dose_inhib", "Dose_inhib2",
-                      "File", "ObsFile")))
+                      "File", "ObsFile"))) %>% 
+      mutate(subsection_ADAM = Tissue_subtype)
    
    # Filtering to return ONLY the compound the user requested. This is what
    # works for input to ct_plot at the moment, too, so things get buggered up

@@ -22,7 +22,7 @@
 #' graph arrangement for \emph{your} scenario, you can specify the order of the
 #' graphs using either the \code{graph_titles} argument or, if you're
 #' comfortable with setting factors in R, by making any of File, CompoundID,
-#' Tissue, and subsection_ADAM factor rather than character data and setting the
+#' Tissue, and Tissue_subtype factor rather than character data and setting the
 #' levels how you wish. If you're unfamiliar with setting factor levels in R and
 #' setting \code{graph_titles} isn't achieving what you want, please ask a
 #' member of the R Working Group for assistance.
@@ -324,14 +324,14 @@ ct_plot_mult <- function(ct_dataframe,
    
    ## Setting up ct_dataframe ----------------------------------------------
    ct_dataframe <- ct_dataframe %>% 
-      mutate(subsection_ADAM = ifelse(is.na(subsection_ADAM),
-                                      "none", subsection_ADAM),
-             GraphLabs = paste(File, CompoundID, Tissue, subsection_ADAM, sep = "."))
+      mutate(Tissue_subtype = ifelse(is.na(Tissue_subtype),
+                                      "none", Tissue_subtype),
+             GraphLabs = paste(File, CompoundID, Tissue, Tissue_subtype, sep = "."))
    
    # Checking for situations where they'll get the same file name for more than
    # one set of data
    DatasetCheck <- ct_dataframe %>% filter(Simulated == TRUE) %>% 
-      select(File, Tissue, CompoundID, subsection_ADAM, GraphLabs) %>% 
+      select(File, Tissue, CompoundID, Tissue_subtype, GraphLabs) %>% 
       unique()
    
    if(any(duplicated(DatasetCheck$File)) == FALSE){
@@ -441,8 +441,8 @@ ct_plot_mult <- function(ct_dataframe,
          Order <- expand_grid(list("File" = getOrder(ct_dataframe$File), 
                                    "CompoundID" = getOrder(ct_dataframe$CompoundID), 
                                    "Tissue" = getOrder(ct_dataframe$Tissue), 
-                                   "subsection_ADAM" = getOrder(ct_dataframe$subsection_ADAM))) %>% 
-            mutate(Order = paste(File, CompoundID, Tissue, subsection_ADAM, sep = ".")) %>% 
+                                   "Tissue_subtype" = getOrder(ct_dataframe$Tissue_subtype))) %>% 
+            mutate(Order = paste(File, CompoundID, Tissue, Tissue_subtype, sep = ".")) %>% 
             pull(Order)
       } else {
          Order <- getOrder(ct_dataframe$File)
@@ -457,7 +457,7 @@ ct_plot_mult <- function(ct_dataframe,
                             f = list(as.character(ct_dataframe$File),
                                      as.character(ct_dataframe$CompoundID), 
                                      as.character(ct_dataframe$Tissue), 
-                                     as.character(ct_dataframe$subsection_ADAM)))
+                                     as.character(ct_dataframe$Tissue_subtype)))
    } else {
       ct_dataframe <- split(ct_dataframe, f = as.character(ct_dataframe$File))
    }
@@ -489,10 +489,10 @@ ct_plot_mult <- function(ct_dataframe,
       }
       
       ct_dataframe[[i]] <- ct_dataframe[[i]] %>% 
-         # need to convert subsection_ADAM back to NA if it was
+         # need to convert Tissue_subtype back to NA if it was
          # changed above in order for this to work with ct_plot
-         mutate(subsection_ADAM = ifelse(subsection_ADAM == "none",
-                                         NA, subsection_ADAM))
+         mutate(Tissue_subtype = ifelse(Tissue_subtype == "none",
+                                         NA, Tissue_subtype))
       # print(i)
       # print(head(ct_dataframe[[i]]))
       

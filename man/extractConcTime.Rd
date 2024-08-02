@@ -40,7 +40,7 @@ plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET 
+released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
 SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
@@ -121,12 +121,15 @@ A data.frame of concentration-time data with the following columns:
 
   \item{Conc_units}{units used for concentrations},
 
-  \item{subsection_ADAM}{type of concentration (only applies to ADAM model
-  simulations), e.g., "undissolved compound", "free compound in lumen",
+  \item{Tissue_subtype}{the subtype of tissue, which only applies in special
+  situations, mainly ADAM-model tissues and brain-compartment tissues.
+  Examples of ADAM-model tissues you can get: "undissolved compound", "free compound in lumen",
   "Heff", "absorption rate", "unreleased compound in faeces", "dissolved
   compound", "luminal CLint", "cumulative fraction of compound dissolved",
-  "cumulative fraction of compound released", or "cumulative fraction of
-  compound absorbed".}
+  "cumulative fraction of compound released", "cumulative fraction of
+  compound absorbed". Examples of brain-compartment tissues you can get: 
+  "cranial CSF", "total brain", "spinal CSF", "Kp,uu,brain". This column was 
+  formerly named "subsection_ADAM" but now includes non-ADAM-model tissues.}
 
   \item{Dose_num}{the dose number}
 

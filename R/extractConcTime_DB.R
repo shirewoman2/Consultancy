@@ -567,7 +567,7 @@ extractConcTime_DB <- function(sim_data_file,
       mutate(Species = "human", # FIXME - placeholder for now
              Individual = ifelse(is.na(Individual), Trial, Individual)) %>% 
       mutate(File = sim_data_file, 
-             subsection_ADAM = NA)
+             Tissue_subtype = NA)
    
    Data <- calc_dosenumber(ct_dataframe = Data, 
                            existing_exp_details = existing_exp_details)
@@ -604,7 +604,7 @@ extractConcTime_DB <- function(sim_data_file,
       select(any_of(c("Compound", "CompoundID", "Inhibitor", 
                       "Species", "Tissue", "Individual", "Trial",
                       "Simulated", "Time", "Conc", "SD_SE",
-                      "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
+                      "Time_units", "Conc_units", "Tissue_subtype", "DoseNum",
                       "DoseInt", "Dose_sub", "Dose_inhib", "Dose_inhib2",
                       "File", "DBFile", "ObsFile")))
    
