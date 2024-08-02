@@ -47,7 +47,7 @@ pk_table(
   for this: 1) supply a file to read or a data.frame (R speak for "a table")
   that lists which simulation files, compounds, tissues, and PK you want or
   2) supply a character vector of which PK parameters you want and then also
-  specify what you need in terms of tissues, which compounds, which
+  specify what you need in terms of which tissues, which compounds, which
   simulation files, and which tab to get the data from with the arguments
   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
   \code{sheet_PKparameters}.
@@ -60,16 +60,19 @@ pk_table(
   specify exactly which simulation file should get which PK parameter from
   which tissue and, when user-specified intervals are involved, from which
   tab in the Excel file those data should be pulled. Whatever you supply, the
-  columns that will be read are "File" (same thing as the argument
-  \code{sim_data_files}), "Sheet" (same thing as the argument
-  \code{sheet_PKparameters}), "Tissue" (same as the argument \code{tissues}),
-  "CompoundID" (same as the argument \code{compoundsToExtract}), "Value" for
-  any observed data (no equivalent argument), and "Variability" for any
-  observed variability (no equivalent argument here, either). If you
+  columns that will be read are: \itemize{\item{"File" (same thing as the argument
+  \code{sim_data_files})} \item{"Sheet" (same thing as the argument
+  \code{sheet_PKparameters})} \item{"Tissue" (same as the argument \code{tissues})}
+  \item{"CompoundID" (same as the argument \code{compoundsToExtract})
+  \item{"ObsValue" for any observed data (no equivalent argument)}
+  \item{"Variability" for any observed variability (no equivalent argument
+  here, either)}} If you
   omit any of those columns, whatever you supply for their respective
   arguments will be used instead. If you supply something for one of them
   in the data.frame or file and \emph{also} something for its argument, the
-  argument will be ignored. Here is how to specify each of the possible
+  argument will be ignored. \cr
+  
+  Here is how to specify each of the possible
   inputs for Option 1:\describe{\item{a csv file}{list the file
   name, including the file extension ".csv" inside quotes, e.g., "PK needed.csv"}
 
@@ -79,7 +82,7 @@ pk_table(
 
   \item{a data.frame}{If you'd like to supply a data.frame with the same
   columns you would have had in the .csv or Excel file, that works just the
-  same.}}}
+  same.}}}}
 
   \item{\strong{Option 2: }specify the PK parameters you want for all your
   simulations}{This is a good option when you want the same information
@@ -111,7 +114,7 @@ pk_table(
 
   Parameters that don't make sense for your scenario -- such as asking for
   \code{AUCinf_dose1_withInhib} when your simulation did not include a
-  perpetrator -- will not be included.}
+  perpetrator -- will be ignored.}
 
 \item{sim_data_files}{the Simcyp Simulator output Excel files to use. Options
 for how to specify these: \itemize{\item{NA to extract PK data

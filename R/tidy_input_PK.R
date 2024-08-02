@@ -118,8 +118,11 @@ tidy_input_PK <- function(PKparameters,
          # "File" column. This is useful to deal with capitalization mismatches
          # and also because, if the user saves the file as certain kinds of csv
          # files, R has trouble importing and will add extra symbols to the 1st
-         # column name.
-         names(PKparameters)[str_detect(tolower(names(PKparameters)), "file")][1] <- 
+         # column name. Note that this does NOT change the name if it's a
+         # calc_PK_ratios set of parameters.
+         names(PKparameters)[
+            which(str_detect(tolower(names(PKparameters)), "file") &
+                     !str_detect(tolower(names(PKparameters)), "num|denom"))][1] <- 
             "File"
          
       } else {
@@ -146,6 +149,11 @@ tidy_input_PK <- function(PKparameters,
    }
    
    # Dealing with possible input from calc_PK_ratios
+   FromCalcPKRatios <- any(str_detect(tolower(names(PKparameters)), "numerator")) | 
+      any(str_detect(tolower(names(PKparameters)), "denominator")) |
+      ("PKparameter" %in% names(PKparameters) && 
+      any(str_detect(PKparameters$PKparameter, "/")))
+   
    if(any(str_detect(tolower(names(PKparameters)), "numerator")) & 
       any(str_detect(tolower(names(PKparameters)), "denominator"))){
       
@@ -258,6 +266,31 @@ tidy_input_PK <- function(PKparameters,
          
          PKparameters %>% 
             select(FilePair, matches("Denominator")) %>% 
+            rename_with(.fn = function(.) sub("Denominator_", "", .)) %>% 
+            mutate(NorD = "Denominator"))
+      
+   } else if(any(str_detect(PKparameters$PKparameter, "/"), na.rm = T)){
+      PKparameters <- PKparameters %>% 
+         separate_wider_delim(cols = PKparameter, delim = " / ", 
+                              names = c("Numerator_PKparameter", "Denominator_PKparameter"))
+      
+      if(all(c("Numerator_File", "Denominator_File") %in% names(PKparameters))){
+         PKparameters <- PKparameters %>% 
+            mutate(FilePair = paste(Numerator_File, "/", Denominator_File))
+      }
+      
+      FilePairs <- PKparameters
+      
+      # Getting into longer format, which is what the rest of the function is
+      # expecting
+      PKparameters <- bind_rows(
+         PKparameters %>% 
+            select(any_of("FilePair"), matches("Numerator")) %>% 
+            rename_with(.fn = function(.) sub("Numerator_", "", .)) %>% 
+            mutate(NorD = "Numerator"), 
+         
+         PKparameters %>% 
+            select(any_of("FilePair"), matches("Denominator")) %>% 
             rename_with(.fn = function(.) sub("Denominator_", "", .)) %>% 
             mutate(NorD = "Denominator"))
       
@@ -612,10 +645,16 @@ tidy_input_PK <- function(PKparameters,
    if(InputWasDF == FALSE){
       
       # At this point, PKparameters is a single column data.frame where the only
-      # column is titled "PKparameter".
+      # column is titled "PKparameter" or it is a data.frame with two columns of
+      # PK parameters for the numerator and denominator sims.
       
       # Noting original value for PKparameters
-      PKparameters_orig <- PKparameters$PKparameter
+      if(any(str_detect(names(PKparameters), "Numerator|Denominator"))){
+         PKparameters_orig <- unique(c(PKparameters$Numerator_PKparameter, 
+                                       PKparameters$Denominator_PKparameter))
+      } else {
+         PKparameters_orig <- PKparameters$PKparameter
+      }
       
       ## File -----------------------------------------------------------------
       
@@ -1051,7 +1090,7 @@ tidy_input_PK <- function(PKparameters,
       mutate(Harmonious = HarmoniousDDI & HarmoniousRegimen)
    
    if(any(PKparameters$Harmonious == FALSE) &
-      all(complete.cases(PKparameters_orig))){
+      all(complete.cases(PKparameters_orig)) & FromCalcPKRatios == FALSE){
       
       Problem <- PKparameters %>% filter(Harmonious == FALSE) %>% 
          select(PKparameter, File, Sheet, CompoundID, Tissue)
