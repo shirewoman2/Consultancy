@@ -459,7 +459,7 @@ recalc_PK <- function(ct_dataframe,
          }
       }
       
-      PossMatches <- expand_grid(PossMatchCols)
+      PossMatches <- expand_grid(as.data.frame(PossMatchCols))
       
       MatchIDs <- list()
       for(i in 1:nrow(PossMatches)){

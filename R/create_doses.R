@@ -245,17 +245,18 @@ create_doses <- function(dose_interval = NA,
            call. = FALSE)
    }
    
-   SubjInfo <- data.frame(Subj_ID = subj_ID, 
-                          Subj_age = subj_age, 
-                          Subj_weight = subj_weight, 
-                          Subj_height = subj_height, 
-                          Subj_sex = subj_sex)
+   # These need to match values in ObsColNames for ColName
+   SubjInfo <- data.frame(Individual = subj_ID, 
+                          Age = subj_age, 
+                          Weight_kg = subj_weight, 
+                          Height_cm = subj_height, 
+                          Sex = subj_sex)
    
-   CmpdInfo <- data.frame(Compound_ID = compoundID, 
-                          Compound_route = compound_dose_route,
-                          Compound_dose_unit = compound_dose_unit,
-                          Compound_dose_amount = compound_dose_amount, 
-                          Compound_inf_duration = compound_inf_duration) 
+   CmpdInfo <- data.frame(CompoundID = compoundID, 
+                          DoseRoute = compound_dose_route,
+                          Dose_units = compound_dose_unit,
+                          DoseAmount = compound_dose_amount, 
+                          InfDuration = compound_inf_duration) 
    if(nrow(CmpdInfo) == length(DoseTimes)){
       CmpdInfo <- CmpdInfo %>% mutate(Time = DoseTimes)
    } else {
@@ -263,13 +264,13 @@ create_doses <- function(dose_interval = NA,
    }
    
    # Dealing with possibly varying start times
-   MyStartTimes <- data.frame(Compound_ID = compoundID,
+   MyStartTimes <- data.frame(CompoundID = compoundID,
                               Compound_start = compound_dosing_start_time) %>% 
       unique()
    
    # Checking that input is reasonable for the compound start times. There
    # should only be one start time for every compound ID.
-   StartTimeCheck <- MyStartTimes %>% group_by(Compound_ID) %>% 
+   StartTimeCheck <- MyStartTimes %>% group_by(CompoundID) %>% 
       summarize(Nrow = n())
    if(any(StartTimeCheck$Nrow != 1)){
       warning(wrapn("You have listed more than one start time for one of the compounds, so we're not sure which one to use. All start times will be 0."),
@@ -295,8 +296,8 @@ create_doses <- function(dose_interval = NA,
                     .fns = function(.) {ifelse(is.na(.), 
                                                as.character(""),
                                                as.character(.))})) %>% 
-      mutate(Compound_dose_unit = paste0("(", Compound_dose_unit, ")"), 
-             Compound_dose_unit = sub("m2", "m²", Compound_dose_unit))
+      mutate(Dose_units = paste0("(", Dose_units, ")"), 
+             Dose_units = sub("m2", "m²", Dose_units))
    
    Out[, setdiff(ColNames, names(Out))] <- ""
    Out <- Out[, ObsColNames[[paste0("V", simulator_version)]]$ColName]

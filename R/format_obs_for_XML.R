@@ -216,6 +216,12 @@ format_obs_for_XML <- function(obs_dataframe,
       obs_dataframe$DVID <- 1
    }
    
+   # If they didn't include subject column, it's probably b/c everything is mean
+   # data.
+   if(rlang::as_label(subject_column) == "<empty>"){
+      obs_dataframe$Subject <- "mean"
+   }
+   
    # MissingCols <- setdiff(
    #    CheckNames[CheckNames != "<empty>" &
    #                  names(CheckNames) %in% c("concentration", "time", "subject")],
@@ -296,7 +302,7 @@ format_obs_for_XML <- function(obs_dataframe,
                 "Height" = "Height (cm)", 
                 "DVID" = "DV ID", 
                 "Conc$" = "DV", 
-                "ConcSD" = "SD SE")
+                "ConcSD" = "SD/SE")
    
    FinalObsDF <- obs_dataframe %>% 
       # filtering to remove NAs here but could return to this to
@@ -332,7 +338,7 @@ format_obs_for_XML <- function(obs_dataframe,
    # last time in the data.
    if(all(is.na(custom_dosing_schedule)) & 
       is.na(num_doses) & is.na(end_time)){
-      end_time <- max(FinalObsDF$Time)
+      end_time <- max(as.numeric(FinalObsDF$Time))
    }
    
    Out <- create_doses(
