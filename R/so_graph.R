@@ -723,16 +723,6 @@ so_graph <- function(PKtable,
    
    names(SO) <- PKCols$PKparameter
    
-   include_dose_num <- check_include_dose_num(PK = PKparameters, 
-                                              include_dose_num = include_dose_num)
-   
-   if(include_dose_num == FALSE){
-      PKparameters <- sub("Dose 1 |Last dose |_dose1$|_last$", "",
-                          PKparameters)
-      names(SO) <- sub("_dose1|_last", "", names(SO))
-      PKCols$PKparameter <- sub("_dose1|_last", "", PKCols$PKparameter)
-   }
-   
    # Removing additional columns since they mess up pivoting.
    SO <- SO %>% 
       select(Statistic, File, any_of(c(PKparameters, 
@@ -750,6 +740,16 @@ so_graph <- function(PKtable,
          pivot_wider(names_from = Statistic, values_from = Value) %>% 
          filter(complete.cases(Observed) & PKparameter %in% {{PKparameters}})
    )
+   
+   include_dose_num <- check_include_dose_num(PK = PKparameters, 
+                                              include_dose_num = include_dose_num)
+   
+   if(include_dose_num == FALSE){
+      PKparameters <- sub("Dose 1 |Last dose |_dose1$|_last$", "",
+                          PKparameters)
+      SO$PKparameter <- sub("_dose1|_last", "", SO$PKparameter)
+      PKCols$PKparameter <- sub("_dose1|_last", "", PKCols$PKparameter)
+   }
    
    if(all_intervals_together){
       
