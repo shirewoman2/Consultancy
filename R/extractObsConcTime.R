@@ -338,8 +338,8 @@ extractObsConcTime <- function(obs_data_file,
              Time_units = TimeUnits,
              Conc_units = ObsConcUnits[as.character(DVID)])
    
-   dose_data <- obs_data %>% filter(complete.cases(Compound)) %>% 
-      mutate(CompoundID = tolower(Compound), 
+   dose_data <- obs_data %>% filter(complete.cases(DoseRoute)) %>% 
+      mutate(CompoundID = tolower(CompoundID), 
              Dose_units = gsub("\\(|\\)", "", Dose_units), 
              Dose = as.numeric(DoseAmount), 
              InfDuration = as.numeric(InfDuration), 
