@@ -410,12 +410,28 @@ extractConcTime_mult <- function(sim_data_files = NA,
       existing_exp_details <- harmonize_details(existing_exp_details)
       
       if(all(sim_data_files %in% c(existing_exp_details$MainDetails$File, 
-                                   existing_exp_details$MainDetails$DBFile)) == FALSE){
+                                   existing_exp_details$MainDetails$DBFile, 
+                                   sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File), 
+                                   sub("\\.db", ".xlsx", existing_exp_details$MainDetails$DBFile))) == FALSE){
          existing_exp_details <- 
             extractExpDetails_mult(sim_data_files = sim_data_files, 
                                    exp_details = "Summary and Input", 
                                    existing_exp_details = existing_exp_details)
          
+      } else {
+         # If there's a file extension mismatch, change it in
+         # existing_exp_details b/c all the information should be the same.
+         WhichXLtoDB <- which(
+            existing_exp_details$MainDetails$File %in% sim_data_files == FALSE & 
+               sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File) %in% sim_data_files)
+         existing_exp_details$MainDetails$File[WhichXLtoDB] <- 
+            sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File[WhichXLtoDB])
+         
+         WhichDBtoXL <- which(
+            existing_exp_details$MainDetails$File %in% sim_data_files == FALSE & 
+               existing_exp_details$MainDetails$File %in% sub("\\.db", ".xlsx", sim_data_files))
+         existing_exp_details$MainDetails$File[WhichDBtoXL] <- 
+            sub("\\.db", ".xlsx", existing_exp_details$MainDetails$File[WhichDBtoXL])
       }
    }
    
