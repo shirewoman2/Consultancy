@@ -3,10 +3,8 @@
 #' This function is specifically for setting options for the y axis in a
 #' concentration-time graph and is NOT meant to be called on its own.
 #'
-#' @param Data the data.frame containing conc-time data; this is the output from
-#'   extractConcTime
 #' @param ADAMorAdvBrain T or F for whether ADAM or advanced brain model used
-#' @param subsection_ADAM which ADAM-model or advanced-brain-model subsection
+#' @param Tissue_subtype which ADAM-model or advanced-brain-model subsection
 #'   the data include
 #' @param EnzPlot T or F for whether this was a plot of enzyme abundance
 #' @param y_axis_limits_lin user input for y axis limits for a linear plot
@@ -21,7 +19,9 @@
 #'
 #' @return values to use for ct_plots
 
-ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot, 
+ct_y_axis <- function(ADAMorAdvBrain, 
+                      Tissue_subtype, 
+                      EnzPlot, 
                       y_axis_limits_lin, 
                       time_range,
                       y_axis_interval = NA,
@@ -33,7 +33,7 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
    if(EnzPlot){
       ObsConcUnits <- "Relative abundance"
    } else {
-      ObsConcUnits <- sort(unique(Data$Conc_units))
+      ObsConcUnits <- sort(unique(Ylim_data$Conc_units))
    }
    
    if(any(ADAMorAdvBrain, na.rm = TRUE)){
@@ -50,28 +50,28 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
       
       if(class(prettify_compound_names) == "logical"){
          CompoundLab <- ifelse(prettify_compound_names == TRUE, 
-                               prettify_compound_name(unique(Data$Compound)), 
-                               unique(Data$Compound))
+                               prettify_compound_name(unique(Ylim_data$Compound)), 
+                               unique(Ylim_data$Compound))
       } else {
          CompoundLab <- str_comma(
             unique(
                prettify_compound_names[
                   prettify_compound_names %in%
-                     unique(Data$Compound[Data$CompoundID == "substrate"])]), 
+                     unique(Ylim_data$Compound[Ylim_data$CompoundID == "substrate"])]), 
             conjunction = "or")
       }
       
-      if(length(unique(subsection_ADAM)) == 1 & 
-         length(unique(Data$Conc_units)) == 1){
+      if(length(unique(Tissue_subtype)) == 1 & 
+         length(unique(Ylim_data$Conc_units)) == 1){
          
          ylab1 <- 
-            switch(subsection_ADAM, 
+            switch(Tissue_subtype, 
                    
                    ## ADAM 
                    "dissolved compound" = 
-                      paste0("Dissolved ", CompoundLab, "\nin ", unique(Data$Tissue)),
+                      paste0("Dissolved ", CompoundLab, "\nin ", unique(Ylim_data$Tissue)),
                    "undissolved compound" = 
-                      paste0("Undissolved ", CompoundLab, "\nin ", unique(Data$Tissue)),
+                      paste0("Undissolved ", CompoundLab, "\nin ", unique(Ylim_data$Tissue)),
                    "enterocyte concentration" = 
                       paste("Enterocyte concentration\nof", CompoundLab),
                    "free compound in lumen" = 
@@ -80,12 +80,12 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
                       paste0("Total ", CompoundLab, " in lumen"),
                    "Heff" = expression("Particle"~H[eff]~(mu*m)), 
                    "absorption rate" = 
-                      paste0("Absorption rate of ", CompoundLab, "\nin ", unique(Data$Tissue)),
+                      paste0("Absorption rate of ", CompoundLab, "\nin ", unique(Ylim_data$Tissue)),
                    "unreleased compound in faeces" = 
                       paste0("Unreleased ", CompoundLab, "\nin faeces"),
                    "luminal CLint" = expression("Luminal"~CL[int]), 
                    "dissolution rate of solid state" = 
-                      paste0("Dissolution rate of ", CompoundLab, "\nin ", unique(Data$Tissue)), 
+                      paste0("Dissolution rate of ", CompoundLab, "\nin ", unique(Ylim_data$Tissue)), 
                    "cumulative fraction of compound absorbed" =
                       paste0("Cumulative fraction of\n", CompoundLab, " absorbed"), 
                    "cumulative fraction of compound dissolved" =
@@ -105,8 +105,8 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
                    "Kp,uu,ISF" = expression(K[p*",uu,interstitial fluid"]) #"Unbound-intrastitial-fluid-to-unbound-plasma\ntissue partition coefficient") 
             )
          
-         ylab2 <- ifelse(is.na(unique(Data$Conc_units)), 
-                         "", paste0("(", unique(Data$Conc_units), ")"))
+         ylab2 <- ifelse(is.na(unique(Ylim_data$Conc_units)), 
+                         "", paste0("(", unique(Ylim_data$Conc_units), ")"))
          
          if("expression" %in% class(ylab1) | is.na(ylab2)){
             ylab <- ylab1
@@ -214,7 +214,7 @@ ct_y_axis <- function(Data, ADAMorAdvBrain, subsection_ADAM, EnzPlot,
    # although I haven't been able to reproduce this error. Trying to catch
    # that nonetheless.
    if(is.infinite(Ylim[2]) | is.na(Ylim[2])){
-      Ylim[2] <- max(Data$Conc, na.rm = T)
+      Ylim[2] <- max(Ylim_data$Conc, na.rm = T)
    }
    
    PossYBreaks <- data.frame(Ymax = c(0.1, 0.2, 0.5, 1, 2, 5, 10, 20, 50,

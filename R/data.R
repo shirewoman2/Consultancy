@@ -411,11 +411,17 @@
 "OntogenyEquations"
 
 
-#' Examples for specifying PK parameters with pksummary_table and
-#' pk_summary_mult functions
+#' Examples for specifying PK parameters with pk_table
 #'
 #' @format a data.frame
 "PKexamples"
+
+
+#' Examples for specifying PK parameters with calc_PK_ratios and
+#' calc_PK_ratios_mult
+#'
+#' @format a data.frame
+"PKexamples_ratios"
 
 
 #' Column names for observed concentration-time data by Simulator version

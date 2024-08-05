@@ -602,7 +602,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # axis and it should have only one concentration type.
    if(EnzPlot == FALSE && length(unique(ct_dataframe$Conc_units)) > 1){
       stop(paste("This function can only deal with one type of concentration unit at a time,\nand the supplied data.frame contains more than one non-convertable concentration unit.\n(Supplying some data in ng/mL and other data in mg/L is fine;\nsupplying some in ng/mL and some in, e.g., 'cumulative fraction dissolved' is not.)\nPlease supply a data.frame with only one type of concentration unit. To see what you've currently got, try this:\n", 
-                 deparse(substitute(ct_dataframe)), "%>% select(Tissue, subsection_ADAM, Conc_units) %>% unique()"),
+                 deparse(substitute(ct_dataframe)), "%>% select(Tissue, Tissue_subtype, Conc_units) %>% unique()"),
            call. = FALSE)
    }
    
@@ -740,9 +740,9 @@ ct_plot_overlay <- function(ct_dataframe,
                                                   "cumulative dissolution")) &
       EnzPlot == FALSE
    
-   AdvBrainModel <- "subsection_ADAM" %in% names(ct_dataframe) && 
+   AdvBrainModel <- "Tissue_subtype" %in% names(ct_dataframe) && 
       any(ct_dataframe$Tissue == "brain") &
-      any(ct_dataframe$subsection_ADAM %in% 
+      any(ct_dataframe$Tissue_subtype %in% 
              c("intracranial", "brain ICF", "brain ISF", "spinal CSF", "cranial CSF", 
                "total brain", "Kp,uu,brain", "Kp,uu,ICF", "Kp,uu,ISF"))
    
@@ -1650,11 +1650,10 @@ ct_plot_overlay <- function(ct_dataframe,
                                 min(Ylim_data$MinConc, na.rm = T))))
    }
    
-   YStuff <- ct_y_axis(Data = Ylim_data, 
-                       ADAMorAdvBrain = any(ADAM, AdvBrainModel),
-                       subsection_ADAM = switch(as.character(EnzPlot), 
+   YStuff <- ct_y_axis(ADAMorAdvBrain = any(ADAM, AdvBrainModel),
+                       Tissue_subtype = switch(as.character(EnzPlot), 
                                                 "TRUE" = NA, 
-                                                "FALSE" = unique(sim_dataframe$subsection_ADAM)), 
+                                                "FALSE" = unique(sim_dataframe$Tissue_subtype)), 
                        prettify_compound_names = prettify_compound_names,
                        EnzPlot = any(c(EnzPlot, DissolutionProfPlot, ReleaseProfPlot)), 
                        time_range = time_range,
@@ -1666,8 +1665,8 @@ ct_plot_overlay <- function(ct_dataframe,
                        y_axis_limits_log = y_axis_limits_log, 
                        y_axis_interval = y_axis_interval)
    
-   if(length(unique(sim_dataframe$subsection_ADAM)) > 1){
-      warning("You have more than one subtype of tissue in the column subsection_ADAM, which is fine but does make it challenging to come up with a universally workable y axis label. We'll supply a generic one, but we recommend setting it yourself with `y_axis_label`.\n", 
+   if(length(unique(sim_dataframe$Tissue_subtype)) > 1){
+      warning("You have more than one subtype of tissue in the column Tissue_subtype, which is fine but does make it challenging to come up with a universally workable y axis label. We'll supply a generic one, but we recommend setting it yourself with `y_axis_label`.\n", 
               call. = FALSE)
    }
    

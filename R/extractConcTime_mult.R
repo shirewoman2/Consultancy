@@ -331,7 +331,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
       compoundsToExtract_orig <- compoundsToExtract
    }
    
-   Requested <- expand.grid(Tissue = tissues,
+   Requested <- expand_grid(Tissue = tissues,
                             CompoundID = compoundsToExtract,
                             File = sim_data_files) %>% 
       mutate(ID = paste(File, Tissue, CompoundID))
@@ -390,6 +390,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
       sim_data_files_topull <- setdiff(sim_data_files_topull, MissingSimFiles)
    }
    
+   # Dealing w/changed name for Tissue_subsection
+   if(nrow(ct_dataframe) > 0 & 
+      "subsection_ADAM" %in% names(ct_dataframe) && 
+      "Tissue_subtype" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$Tissue_subtype <- ct_dataframe$subsection_ADAM
+   }
    
    ## Getting exp details as needed --------------------------------------------
    
@@ -957,11 +963,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
             # Not adjusting ADAM model concs b/c not set up yet.
             CT_adam <- MultData[[ff]][[j]] %>% 
                filter(Tissue %in% ADAMtissue |
-                         subsection_ADAM %in% ADAMsubsection)
+                         Tissue_subtype %in% ADAMsubsection)
             
             CT_nonadam <- MultData[[ff]][[j]] %>% 
                filter(!(Tissue %in% ADAMtissue |
-                           subsection_ADAM %in% ADAMsubsection))
+                           Tissue_subtype %in% ADAMsubsection))
             
             if(nrow(CT_nonadam) > 0){
                CT_nonadam <- CT_nonadam %>% 
@@ -1038,9 +1044,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
       select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated",
                       "Species", "Tissue", "Individual", "Trial",
                       "Simulated", "Time", "Conc", "SD_SE",
-                      "Time_units", "Conc_units", "subsection_ADAM", "DoseNum",
+                      "Time_units", "Conc_units", "Tissue_subtype", "DoseNum",
                       "DoseInt", "Dose_sub", "Dose_inhib", "Dose_inhib2", 
-                      "File", "ObsFile"))) %>% 
+                      "File", "ObsFile", "subsection_ADAM"))) %>% 
       unique()
    
    # toc(log = TRUE)

@@ -690,7 +690,7 @@ pksummary_mult <- function(sim_data_files = NA,
             
             observed_PKDF <- observed_PKDF %>% ungroup() %>% 
                select(-any_of("File")) %>% 
-               left_join(expand.grid(File = sim_data_files, 
+               left_join(expand_grid(File = sim_data_files, 
                                      PKparameter = observed_PKDF$PKparameter), 
                          by = "PKparameter")
          }

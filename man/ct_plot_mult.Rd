@@ -281,7 +281,7 @@ alphabetical. However, since sorting alphabetically might not be the optimal
 graph arrangement for \emph{your} scenario, you can specify the order of the
 graphs using either the \code{graph_titles} argument or, if you're
 comfortable with setting factors in R, by making any of File, CompoundID,
-Tissue, and subsection_ADAM factor rather than character data and setting the
+Tissue, and Tissue_subtype factor rather than character data and setting the
 levels how you wish. If you're unfamiliar with setting factor levels in R and
 setting \code{graph_titles} isn't achieving what you want, please ask a
 member of the R Working Group for assistance.
