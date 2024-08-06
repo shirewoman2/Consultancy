@@ -709,10 +709,11 @@ calc_PK_ratios <- function(PKparameters = NA,
       MyPKResults <- MyPKResults %>% 
          mutate(Ratio = NumeratorSim / DenominatorSim, 
                 ID = paste(Individual, Trial), 
-                MatchProblem = (complete.cases(NumeratorSim) & 
+                MatchProblem = !str_detect(Parameter, "AUCinf") &
+                   ((complete.cases(NumeratorSim) & 
                                    is.na(DenominatorSim)) |
                    (complete.cases(DenominatorSim) & 
-                       is.na(NumeratorSim)))
+                       is.na(NumeratorSim))))
       
       # Making sure that subjects were matched between numerator and
       # denominator

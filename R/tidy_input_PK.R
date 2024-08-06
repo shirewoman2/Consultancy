@@ -769,6 +769,16 @@ tidy_input_PK <- function(PKparameters,
       PKparameters <- PKparameters %>% 
          filter(PKparameter %in% BadParams == FALSE)
    }
+
+   # If they asked for AUCinf, also give them AUCt_dose1 in case of trouble with
+   # extrapolation.
+   if(any(str_detect(PKparameters$PKparameter, "AUCinf"), na.rm = T)){
+      ToAdd <- PKparameters %>% filter(str_detect(PKparameter, "AUCinf")) %>% 
+         mutate(PKparameter = str_replace(PKparameter, "AUCinf", "AUCt"))
+      PKparameters <- bind_rows(PKparameters, ToAdd)
+      rm(ToAdd)
+   }
+   
    
    ## Tissue ---------------------------------------------------------------
    
