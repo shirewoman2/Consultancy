@@ -370,8 +370,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    }
    TEMP <- tidy_input_PK(PKparameters = PKparameters, 
                          existing_exp_details = existing_exp_details)
-   PKparameters <- TEMP$PKparameters
-   FilePairs <- TEMP$FilePairs
+   PKparameters <- TEMP$PKparameters %>% unique()
+   FilePairs <- TEMP$FilePairs %>% unique()
    existing_exp_details <- TEMP$existing_exp_details
    
    ## Looping through files ----------------------------------------------------
