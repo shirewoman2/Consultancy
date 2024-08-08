@@ -63,7 +63,8 @@ ct_plot_overlay(
   existing_exp_details = NA,
   save_graph = NA,
   fig_height = 6,
-  fig_width = 5
+  fig_width = 5,
+  assume_unique = FALSE
 )
 }
 \arguments{
@@ -107,7 +108,7 @@ simulator output, you'll receive a warning message and we'll plot one that
   Tools --> Global Options --> General --> Graphics --> And then set
   "Graphics device: backend" to "AGG". Honestly, this is a better option for
   higher-quality graphics anyway!}
-  
+
   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
   for the mean of each trial of simulated data, and open circles for the
   observed data. If a perpetrator were present, lighter dashed lines indicate
@@ -423,6 +424,10 @@ respectively, to the nearest order of magnitude. If left as NA, the Y axis
 limits for the semi-log plot will be automatically selected. This only
 applies when you have requested a semi-log plot with \code{linear_or_log}.}
 
+\item{y_axis_interval}{set the linear y-axis major tick-mark interval.
+Acceptable input: any number or leave as NA to accept default values, which
+are generally reasonable guesses as to aesthetically pleasing intervals.}
+
 \item{y_axis_label}{optionally supply a character vector or an expression to
 use for the y axis label}
 
@@ -517,6 +522,14 @@ saved to disk.}
 \item{fig_height}{figure height in inches; default is 6}
 
 \item{fig_width}{figure width in inches; default is 5}
+
+\item{assume_unique}{TRUE or FALSE (default) for whether to assume that the
+concentration-time data contain no replicates, which messes things up and
+will likely cause this function to crash. Why would you want to skip this?
+Because it can take a LOOOOOOONG time if you have a lot of points. If
+you're sure your data are unique, set this to TRUE and save a fair amount
+of processing time to make your graph. If you're not sure what we're
+talking about here, it's safest to leave this as FALSE.}
 }
 \value{
 a ggplot2 graphs or a set of arranged ggplot2 graphs

@@ -93,12 +93,12 @@
 #'   Tools --> Global Options --> General --> Graphics --> And then set
 #'   "Graphics device: backend" to "AGG". Honestly, this is a better option for
 #'   higher-quality graphics anyway!}
-#'   
+#'
 #'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
 #'   for the mean of each trial of simulated data, and open circles for the
 #'   observed data. If a perpetrator were present, lighter dashed lines indicate
 #'   the mean of each trial of simulated data in the presence of the perpetrator.}}
-#'   
+#'
 #' @param normalize_by_dose TRUE or FALSE (default) for whether to show
 #'   dose-normalized concentration-time profiles
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
@@ -456,6 +456,16 @@
 #'   saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
+#' @param y_axis_interval set the linear y-axis major tick-mark interval.
+#'   Acceptable input: any number or leave as NA to accept default values, which
+#'   are generally reasonable guesses as to aesthetically pleasing intervals.
+#' @param assume_unique TRUE or FALSE (default) for whether to assume that the
+#'   concentration-time data contain no replicates, which messes things up and
+#'   will likely cause this function to crash. Why would you want to skip this?
+#'   Because it can take a LOOOOOOONG time if you have a lot of points. If
+#'   you're sure your data are unique, set this to TRUE and save a fair amount
+#'   of processing time to make your graph. If you're not sure what we're
+#'   talking about here, it's safest to leave this as FALSE.
 #'
 #' @return a ggplot2 graphs or a set of arranged ggplot2 graphs
 #' @export
@@ -539,7 +549,8 @@ ct_plot_overlay <- function(ct_dataframe,
                             existing_exp_details = NA,
                             save_graph = NA,
                             fig_height = 6,
-                            fig_width = 5){
+                            fig_width = 5, 
+                            assume_unique = FALSE){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -557,11 +568,19 @@ ct_plot_overlay <- function(ct_dataframe,
    # nonstandard evaluation, so look underneath that heading if you can't find
    # an error catch here.
    
+   # tictoc::tic(msg = "error catching: unique and droplevels")
+   
    # Ungrouping anything that came pre-grouped b/c it messes things up.
    ct_dataframe <- ungroup(ct_dataframe)
    
-   # Making sure the data.frame contains unique observations and no unnecessary levels.
-   ct_dataframe <- unique(ct_dataframe) %>% droplevels()
+   if(assume_unique == FALSE){
+      # Making sure the data.frame contains unique observations and no unnecessary levels.
+      ct_dataframe <- unique(ct_dataframe) %>% droplevels()
+   }
+   
+   # tictoc::toc(log = TRUE)
+   
+   # tictoc::tic(msg = "error catching: enz abund?")
    
    # Checking whether this is an enzyme abundance plot
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe)) &
@@ -597,6 +616,9 @@ ct_plot_overlay <- function(ct_dataframe,
                 Simulated = TRUE)
    }
    
+   # tictoc::toc(log = TRUE)
+   
+   # tictoc::tic(msg = "error cathing: checking for multiple ADAM tissues")
    
    # Checking for more than one tissue or ADAM data type b/c there's only one y
    # axis and it should have only one concentration type.
@@ -673,6 +695,9 @@ ct_plot_overlay <- function(ct_dataframe,
    # This doesn't check that they've specified legit colors or linetypes, but
    # I'm hoping that ggplot2 errors will cover that.
    
+   # tictoc::toc(log = TRUE)
+   
+   # tictoc::tic(msg = "error catching: Checking exp details")
    # Getting experimental details if they didn't supply them and want to have a
    # QC graph
    if(qc_graph == TRUE | "logical" %in% class(existing_exp_details) == FALSE){
@@ -704,6 +729,10 @@ ct_plot_overlay <- function(ct_dataframe,
       }
    }
    
+   # tictoc::toc(log = TRUE)
+   
+   # tictoc::tic(msg = "error catching: rest of it")
+   
    if(any(complete.cases(time_units_to_use))){
       time_units_to_use <- tolower(time_units_to_use[1])
       if(time_units_to_use %in% c("hours", "minutes", "days", "weeks") == FALSE){
@@ -728,8 +757,11 @@ ct_plot_overlay <- function(ct_dataframe,
       }
    }
    
+   # tictoc::toc(log = TRUE)
    
    # Main body of function -------------------------------------------------
+   
+   # tictoc::tic(msg = "main body of function")
    
    # Noting whether the tissue was from an ADAM model
    ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
@@ -1652,8 +1684,8 @@ ct_plot_overlay <- function(ct_dataframe,
    
    YStuff <- ct_y_axis(ADAMorAdvBrain = any(ADAM, AdvBrainModel),
                        Tissue_subtype = switch(as.character(EnzPlot), 
-                                                "TRUE" = NA, 
-                                                "FALSE" = unique(sim_dataframe$Tissue_subtype)), 
+                                               "TRUE" = NA, 
+                                               "FALSE" = unique(sim_dataframe$Tissue_subtype)), 
                        prettify_compound_names = prettify_compound_names,
                        EnzPlot = any(c(EnzPlot, DissolutionProfPlot, ReleaseProfPlot)), 
                        time_range = time_range,
@@ -1875,8 +1907,12 @@ ct_plot_overlay <- function(ct_dataframe,
                sep = " ", remove = FALSE)
    } 
    
+   # tictoc::toc(log = TRUE)
    
    # Making the skeleton of the graph ----------------------------------------
+   
+   # tictoc::tic(msg = "making skeleton of graph")
+   
    A <- switch(
       figure_type, 
       
@@ -2034,8 +2070,12 @@ ct_plot_overlay <- function(ct_dataframe,
       }
    }
    
+   # tictoc::toc(log = TRUE)
    
    ## Figure type: means only ---------------------------------------------
+   
+   # tictoc::tic(msg = "setting figure type")
+   
    if(figure_type == "means only"){
       
       A <- A + 
@@ -2162,7 +2202,11 @@ ct_plot_overlay <- function(ct_dataframe,
                      axis.title.x = element_text(face = "plain"))
    }
    
+   # tictoc::toc(log = TRUE)
+   
    ## Faceting -----------------------------------------------------------------
+   
+   # tictoc::tic(msg = "faceting")
    
    # Error catching
    if((complete.cases(facet_ncol) | complete.cases(facet_nrow)) == TRUE & 
@@ -2322,8 +2366,11 @@ ct_plot_overlay <- function(ct_dataframe,
       A <- A + theme(panel.spacing = unit(facet_spacing, "lines"))
    }
    
+   # tictoc::toc(log = TRUE)
    
    ## Colors, linetypes, & legends -------------------------------------------
+   
+   # tictoc::tic(msg = "setting aesthetics")
    
    if(AES %in% c("color", "color-linetype")){
       
@@ -2611,8 +2658,11 @@ ct_plot_overlay <- function(ct_dataframe,
       A <- A + guides(color = "none", fill = "none")
    }
    
+   # tictoc::toc(log = TRUE)
    
    # Making semi-log graph ----------------------------------------------------
+   
+   # tictoc::tic(msg = "semi-log graph")
    
    LowConc <- bind_rows(sim_dataframe, obs_dataframe) %>%
       filter(Trial %in% c("mean", "per5", "per95") &
@@ -2692,8 +2742,11 @@ ct_plot_overlay <- function(ct_dataframe,
                                           face = "bold", size = graph_title_size))
    }
    
+   # tictoc::toc(log = TRUE)
    
    # Saving ----------------------------------------------------------------
+   
+   # tictoc::tic(msg = "saving") 
    
    Out <- switch(linear_or_log, 
                  "linear" = A,
@@ -2799,6 +2852,8 @@ ct_plot_overlay <- function(ct_dataframe,
          }
       }
    }
+   
+   # tictoc::toc(log = TRUE)
    
    return(Out)
    
