@@ -285,13 +285,13 @@
 #'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 #'   become "midazolam". Set each compound to the name you'd prefer to see in
 #'   your legend and Word output if you would like something different. For
-#'   example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
-#'   "substrate" = "superstatin")}. Please note that "inhibitor" includes
+#'   example, \code{prettify_compound_names = c("perpetrator" = "teeswiftavir",
+#'   "substrate" = "superstatin")}. Please note that "perpetrator" includes
 #'   \emph{all} the perpetrators and perpetrator metabolites present, so, if
 #'   you're setting the perpetrator name, you really should use something like
 #'   this if
 #'   you're including perpetrator metabolites: \code{prettify_compound_names =
-#'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+#'   c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed}
@@ -497,20 +497,20 @@ ct_plot <- function(ct_dataframe = NA,
    if("character" %in% class(prettify_compound_names)){
       
       names(prettify_compound_names) <- tolower(names(prettify_compound_names))
-      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "perpetrator")] <- "inhibitor"
-      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "inhib")] <- "inhibitor"
-      if("inhibitor" %in% names(prettify_compound_names) == FALSE & 
+      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "inhibitor")] <- "perpetrator"
+      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "inhib")] <- "perpetrator"
+      if("perpetrator" %in% names(prettify_compound_names) == FALSE & 
          any(ct_dataframe$Inhibitor != "none")){
          prettify_compound_names <-
             c(prettify_compound_names, 
-              "inhibitor" = prettify_compound_name(
+              "perpetrator" = prettify_compound_name(
                  unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])))
       }
       if("substrate" %in% names(prettify_compound_names) == FALSE & 
          any(ct_dataframe$CompoundID == "substrate")){
          prettify_compound_names <-
             c(prettify_compound_names, 
-              "inhibitor" = prettify_compound_name(
+              "perpetrator" = prettify_compound_name(
                  unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])))
       }
    }
@@ -838,7 +838,7 @@ ct_plot <- function(ct_dataframe = NA,
       }
       
       if(class(prettify_compound_names) == "character"){
-         MyPerpetrator <- prettify_compound_names["inhibitor"]
+         MyPerpetrator <- prettify_compound_names["perpetrator"]
       }
       
       Data <- 

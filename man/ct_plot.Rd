@@ -348,13 +348,13 @@ the name of those compounds something more human readable. For example,
 "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
 become "midazolam". Set each compound to the name you'd prefer to see in
 your legend and Word output if you would like something different. For
-example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
-"substrate" = "superstatin")}. Please note that "inhibitor" includes
+example, \code{prettify_compound_names = c("perpetrator" = "teeswiftavir",
+"substrate" = "superstatin")}. Please note that "perpetrator" includes
 \emph{all} the perpetrators and perpetrator metabolites present, so, if
 you're setting the perpetrator name, you really should use something like
 this if
 you're including perpetrator metabolites: \code{prettify_compound_names =
-c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: \describe{
