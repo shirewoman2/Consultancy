@@ -151,10 +151,10 @@ make_text_legos <- function(sim_data_file,
       DoseDay_ordinal <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
       LastDig <- as.numeric(str_sub(DoseDay_ordinal, start = -1, end = -1))
       DoseDay_ordinal <- paste0(DoseDay_ordinal,
-                        case_when(LastDig %in% c(0, 4:9) ~ "^th^",
-                                  LastDig == 1 ~ "^st^",
-                                  LastDig == 2~ "^nd^",
-                                  LastDig == 3 ~ "^rd^"))
+                                case_when(LastDig %in% c(0, 4:9) ~ "^th^",
+                                          LastDig == 1 ~ "^st^",
+                                          LastDig == 2~ "^nd^",
+                                          LastDig == 3 ~ "^rd^"))
       
    } else {
       DosingText_inhib_lower <- NA
@@ -165,7 +165,12 @@ make_text_legos <- function(sim_data_file,
    }
    
    # LastDoseDay_sub <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
-   LastDoseDay_sub <- (Deets$StartHr_sub + Deets$NumDoses_sub * as.numeric(Deets$DoseInt_sub)) %/% 24
+   if(Deets$DoseInt_sub == "custom dosing"){
+      LastDoseDay_sub <- "CUSTOM DOSING -- FILL IN MANUALLY"
+   } else {
+      LastDoseDay_sub <- (as.numeric(Deets$StartHr_sub) + 
+                             as.numeric(Deets$NumDoses_sub) * as.numeric(Deets$DoseInt_sub)) %/% 24
+   }
    
    # Population ---------------------------------------------------------------
    

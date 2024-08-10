@@ -118,9 +118,9 @@ make_ct_caption <- function(ct_dataframe,
          Dose_inhib <- existing_exp_details$MainDetails$Dose_inhib
          Units_dose_inhib <- existing_exp_details$MainDetails$Units_dose_inhib
          DoseFreq_inhib <- TextPieces$DoseFreq_inhib
-         N_subjpertrial <- existing_exp_details$MainDetails$NumSubjTrial
-         N_trials <- existing_exp_details$MainDetails$NumTrials
-         N_indiv <- existing_exp_details$MainDetails$NumSubjTrial * existing_exp_details$MainDetails$NumTrials
+         N_subjpertrial <- as.numeric(existing_exp_details$MainDetails$NumSubjTrial)
+         N_trials <- as.numeric(existing_exp_details$MainDetails$NumTrials)
+         N_indiv <- N_subjpertrial * N_trials
          MyPerpetrator <- TextPieces$MyPerpetrator
          
       }
