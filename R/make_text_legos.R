@@ -165,7 +165,8 @@ make_text_legos <- function(sim_data_file,
    }
    
    # LastDoseDay_sub <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
-   if(Deets$DoseInt_sub == "custom dosing"){
+   if(complete.cases(Deets$DoseInt_sub) && 
+      Deets$DoseInt_sub == "custom dosing"){
       LastDoseDay_sub <- "CUSTOM DOSING -- FILL IN MANUALLY"
    } else {
       LastDoseDay_sub <- (as.numeric(Deets$StartHr_sub) + 
