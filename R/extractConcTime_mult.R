@@ -421,15 +421,23 @@ extractConcTime_mult <- function(sim_data_files = NA,
       } else {
          # If there's a file extension mismatch, change it in
          # existing_exp_details b/c all the information should be the same.
+         
+         # First, check whether file is included in existing_exp_details b/c it
+         # could be present as BOTH xlsx and db files.
+         ExtMismatch <- setdiff(sim_data_files, 
+                                existing_exp_details$MainDetails$File)
+         
+         # Next, only change file extensions for any files that are not already
+         # included in existing_exp_details.
          WhichXLtoDB <- which(
             existing_exp_details$MainDetails$File %in% sim_data_files == FALSE & 
-               sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File) %in% sim_data_files)
+               sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File) %in% ExtMismatch)
          existing_exp_details$MainDetails$File[WhichXLtoDB] <- 
             sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File[WhichXLtoDB])
          
          WhichDBtoXL <- which(
             existing_exp_details$MainDetails$File %in% sim_data_files == FALSE & 
-               existing_exp_details$MainDetails$File %in% sub("\\.db", ".xlsx", sim_data_files))
+               existing_exp_details$MainDetails$File %in% sub("\\.db", ".xlsx", ExtMismatch))
          existing_exp_details$MainDetails$File[WhichDBtoXL] <- 
             sub("\\.db", ".xlsx", existing_exp_details$MainDetails$File[WhichDBtoXL])
       }
