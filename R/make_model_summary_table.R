@@ -44,7 +44,7 @@ make_model_summary_table <- function(existing_exp_details,
              Value = ifelse(complete.cases(as.numeric(Value)), 
                             as.character(round(as.numeric(Value), 5)), Value)) %>% 
       select("Section of model", Parameter, Value) %>% 
-      myflextable(shading_column = "Section of model") %>% 
+      format_table_simple(shading_column = "Section of model") %>% 
       width(j = 1, width = 1.5) %>% 
       width(j = 2, width = 3) %>% 
       width(j = 3, width = 1.5) %>% 
