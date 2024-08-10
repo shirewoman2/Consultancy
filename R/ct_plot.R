@@ -329,6 +329,10 @@
 #'   \code{\link{extractExpDetails_mult}} to be used for creating figure
 #'   headings and captions tailored to the specific simulation when saving to a
 #'   Word file or for use with \code{qc_graph}
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the graph. This works best if you supply something
+#'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+#'   output a list of the graph, the figure heading, and the figure caption.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". The nice thing about saving to Word is that the figure title
@@ -438,6 +442,7 @@ ct_plot <- function(ct_dataframe = NA,
                     graph_title_size = 14, 
                     qc_graph = FALSE,
                     existing_exp_details = NA,
+                    return_caption = FALSE, 
                     save_graph = NA,
                     fig_height = NA,
                     fig_width = NA, 
@@ -1551,6 +1556,25 @@ ct_plot <- function(ct_dataframe = NA,
       )
    }
    
+   # Setting up figure caption --------------------------------------------
+   
+   MyTissue <- unique(ct_dataframe$Tissue)
+   MyCompoundID <- unique(ct_dataframe$CompoundID)
+   
+   FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 
+                              single_or_multiple = "single", 
+                              existing_exp_details = existing_exp_details, 
+                              mean_type = mean_type, 
+                              linear_or_log = linear_or_log, 
+                              tissue = MyTissue, 
+                              compoundID = MyCompoundID, 
+                              figure_type = figure_type, 
+                              prettify_compound_names = prettify_compound_names, 
+                              hline_position = hline_position, 
+                              vline_position = vline_position, 
+                              hline_style = hline_style, 
+                              vline_style = vline_style)
+   
    
    # Saving -----------------------------------------------------------------
    
@@ -1671,6 +1695,12 @@ ct_plot <- function(ct_dataframe = NA,
          }
       }
    }
+   
+   if(return_caption){
+      Out <- list("graph" = Out, 
+                  "figure_heading" = FigText$heading, 
+                  "figure_caption" = FigText$caption)
+   } 
    
    return(Out)
    
