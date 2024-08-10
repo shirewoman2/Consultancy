@@ -1,40 +1,93 @@
-#' Create a table describing your trial design.
-#' 
-#' UNDER CONSTRUCTION. Proof of concept only for now. 
+#' Create a table describing a simulation trial design.
 #'
-#' @param existing_exp_details output from running extractExpDetails_mult
-#' @param sim_data_files optionally specify which simulation files you want to
-#'   inlude.
-#' @param cols_to_include optionally specify which columns you want. Current
-#'   options are "default" for a handful of standard columns or "all trial
-#'   design" to get all possible trial design columns. You can also specify a
-#'   character vector of columns you want from the "MainDetails" item from
-#'   existing_exp_details.
-#' @param ... Arguments that pass through to formatTable_Simcyp. 
+#' @param existing_exp_details output from running
+#'   \code{\link{extractExpDetails_mult}}
+#' @param sims_to_include optionally specify which simulation files you want to
+#'   include.
+#' @param prettify_sim_data_file optionally specify what to use for column names
+#'   instead of, e.g., "abc1a-5mg-sd.xlsx". For example, maybe that particular
+#'   simulation was from Clinical Study 101, 5 mg cohort. Here's how you could
+#'   specify that you'd rather see the clinical study name over the simulation
+#'   file name: \code{prettify_sim_data_file = c("abc1a-5mg-sd.xlsx" =
+#'   "Clinical Study 101, 5 mg single dose", "abc1a-200mg-qd.xlsx" =
+#'   "Clinical Study 102, 200 mg QD")} This can be a named character vector like
+#'   that or it can be a data.frame with a column called "File" and a second
+#'   column called "Annotation". \strong{WARNING}: This will fail if the names
+#'   are not unique!
+#' @param detail_set optionally specify which details you want. Current options
+#'   are "default" for a handful of standard columns or "all trial design" to
+#'   get all possible trial design columns.
+#' @param font font to use. Default is "Arial" and any fonts available on your
+#'   machine in either Word or PowerPoint should be acceptable. If you get Times
+#'   New Roman in your table when you asked for something else, it means that
+#'   that font isn't available or maybe wasn't spelled the way R is expecting
+#'   it. For example, "Calibri" works but "Calibri (Body)" doesn't even though
+#'   the latter is listed in PowerPoint and Word.
+#' @param fontsize the numeric font size for the output table. Default is 11
+#'   point.
+#' @param include_shading TRUE (default) or FALSE for whether to add shading to
+#'   rows to make things easier to read. If this is set to TRUE, then the rows
+#'   will be shaded every other row when there's no DDI or by which compound the
+#'   parameters apply to if there is.
+#' @param bold_cells optionally specify cells in the table to be in bold-face
+#'   text with a numeric vector where the 1st number is the row number and the
+#'   2nd number is the column number (just like regular row and column
+#'   specifications in R). For example, \code{bold_cells = c(1, 2)} will make
+#'   the cell in row 1 and column 2 bold face. Use "0" for the row number if you
+#'   want to use bold face for something in the header row, and use NA in place
+#'   of a row or column number to make everything in that row or column bold
+#'   face. If you want to specify multiple places to use bold face, use a list
+#'   of numeric vectors. By default, the header row and the 1st column will be
+#'   bold. Set \code{bold_cells = NA} to make \emph{nothing} bold. Please see
+#'   the examples at the bottom of the help file.
+#' @param center_1st_column TRUE (default) or FALSE for whether to make the
+#'   alignment of the first column centered
+#' @param highlight_cells optionally specify cells in the table to be
+#'   highlighted with a numeric vector where the 1st number is the row number
+#'   and the 2nd number is the column number (just like regular row and column
+#'   specifications in R). For example, \code{highlight_cells = c(1, 2)} will
+#'   make the cell in row 1 and column 2 highlighted. Use "0" for the row number
+#'   if you want to highlight something in the header row, and use NA in place
+#'   of a row or column number to highlight everything in that row or column. If
+#'   you want to specify multiple places to highlight, use a list of numeric
+#'   vectors. Please see the examples at the bottom of the help file.
+#' @param highlight_color color to use for highlighting; default is yellow.
+#'   Color can be specified using any R-friendly color name or hex code, e.g.,
+#'   "red" or "#D8212D".
+#' @param save_table optionally save the output table by supplying a file name
+#'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
+#'   slashes, dollar signs, or periods in the file name. If you leave off the
+#'   file extension, we'll assume you want it to be ".docx". If there is a
+#'   column titled "File" in your table, we'll add a caption listing which files
+#'   were included.
+#' @param title_document optionally specify a title for the Word document
+#'   output. If you don't save the table, this will be ignored.
+#' @param table_caption optionally add some text for a table caption. If the
+#'   table you supply contains a column titled "File", there will already be a
+#'   caption listing the source files; this would add some additional text
+#'   before that.
+#'
 #'
 #' @return a formatted table and optionally, a saved Word file with that table
 #' @export
 #'
 #' @examples
-#' make_trial_design_table(existing_exp_details = MDZdetails, 
-#'                         shading_column = File, 
+#' make_trial_design_table(existing_exp_details = MDZdetails,
 #'                         save_table = "MDZ trial design info.docx")
-
 #' 
 make_trial_design_table <- function(existing_exp_details, 
-                                    sim_data_files = NA, 
-                                    cols_to_include = "default", 
+                                    sims_to_include = NA, 
+                                    prettify_sim_data_file = NA, 
+                                    detail_set = "default", 
+                                    include_shading = TRUE, 
+                                    font = "Arial", 
                                     fontsize = 11, 
-                                    shading_column, 
-                                    merge_shaded_cells = TRUE,
-                                    merge_columns = NA, 
-                                    sort_column, 
                                     bold_cells = list(c(0, NA), c(NA, 1)),
-                                    center_1st_column = FALSE,
+                                    center_1st_column = TRUE,
                                     highlight_cells = NA, 
                                     highlight_color = "yellow",
                                     save_table = NA, 
-                                    title_document = NA, 
+                                    title_document = "Trial Design", 
                                     table_caption = NA){
    
    # Error catching --------------------------------------------------------
@@ -43,63 +96,154 @@ make_trial_design_table <- function(existing_exp_details,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   # Setting up for NSE --------------------------------------------------------
+   if(length(detail_set) > 1 ||
+      detail_set %in% c("default", "all trial design") == FALSE){
+      stop(wrapn("You have specified something other than 'default' or 'all trial design' for the possible set of details to show in your table, but those are the only possible options for detail_set. Please try again."), 
+           call. = FALSE)
+   }
    
-   shading_column <- rlang::enquo(shading_column)
-   sort_column <- rlang::enquo(sort_column)
+   if(any(c("logical", "character", "data.frame") %in%
+          class(prettify_sim_data_file)) == FALSE){
+      warning(wrapn("You have supplied something other than a character vector or a data.frame for the argument prettify_sim_data_file, so we don't know what to do with your input and we'll have to ignore it."), 
+              call. = FALSE)
+      prettify_sim_data_file <- NA
+   }
+   
+   if("data.frame" %in% class(prettify_sim_data_file)){
+      names(prettify_sim_data_file) <- tolower(names(prettify_sim_data_file))
+      if(all(c("file", "annotation") %in% names(prettify_sim_data_file)) == FALSE){
+         warning(wrapn("You have supplied a data.frame for the argument prettify_sim_data_file, but the column names are not 'File' and 'Annotation', which are the only column names we know how to deal with. We'll have to ignore your input for prettify_sim_data_file."), 
+                 call. = FALSE)
+         prettify_sim_data_file <- NA
+      }
+   }
+   
    
    # Main function ------------------------------------------------------------
    
    existing_exp_details <- harmonize_details(existing_exp_details)
    
-   if(any(complete.cases(sim_data_files))){
+   if(any(complete.cases(sims_to_include))){
       existing_exp_details <- filter_sims(existing_exp_details, 
-                                          sim_data_files, 
+                                          sims_to_include, 
                                           "include")
    }
    
-   if(all(cols_to_include == "default")){
-      Cols <- c("File", "Age_min", "Age_max", "PercFemale", 
-                "Substrate", "Inhibitor1", 
-                "DoseRoute_sub", "Dose_sub", "DoseInt_sub", "StartDayTime_sub", 
-                "DoseRoute_inhib", "Dose_inhib", "DoseInt_inhib", "StartDayTime_inhib", 
-                "SimDuration") 
-      cols_to_include <- NA
+   if(detail_set == "default"){
+      MyDetails <- c("File", "Age_min", "Age_max", "PercFemale", 
+                     "Substrate", "Inhibitor1", "Inhibitor2",
+                     paste0(rep(c("DoseRoute", "Dose", "DoseInt",
+                                  "StartDayTime"), 
+                                each = 3), 
+                            c("_sub", "_inhib", "_inhib2")), 
+                     "SimDuration", "NumSubjTrial", "NumTrials", 
+                     "SimStartDayTime", "SimEndDayTime") 
    } else {
-      Cols <- c()
+      MyDetails <- AllExpDetails$Detail[AllExpDetails$SimulatorSection == "Trial Design"]
+      MyDetails <- setdiff(MyDetails, c("SimulatorVersion"))
    }
    
-   if("all trial design" %in% cols_to_include){
-      Cols <- c(Cols, 
-                AllExpDetails$Detail[AllExpDetails$SimulatorSection == "Trial Design"])
-   }
-   
-   # Getting any additional columns people want
-   Cols <- sort(unique(c(Cols, cols_to_include)))
-   
-   Out <- existing_exp_details$MainDetails %>% 
-      select(any_of(Cols)) %>% 
-      # Need to set the order still. The code below would be for sorting rows but this is columns. 
+   # Dealing w/sim file names
+   if(any(complete.cases(prettify_sim_data_file))){
       
-      # left_join(AllExpDetails %>% select(Detail, SortOrder)) %>% 
-      # arrange(SortOrder) %>% 
-      # select(-SortOrder) %>% 
-      select(File, everything()) %>% 
-      purrr::discard(~all(is.na(.)))
+      if("data.frame" %in% class(prettify_sim_data_file)){
+         prettify_sim_data_file <- unique(prettify_sim_data_file)
+         
+         FileAnnotations <- prettify_sim_data_file$annotation
+         names(FileAnnotations) <- prettify_sim_data_file$file
+      } else {
+         FileAnnotations <- prettify_sim_data_file
+      }
+   } else {
+      # This is just so things will pass through rename_with function. 
+      FileAnnotations <- existing_exp_details$MainDetails$File
+      names(FileAnnotations) <- existing_exp_details$MainDetails$File
+   }
    
-   formatTable_Simcyp(DF = Out, 
-                      fontsize = fontsize, 
-                      shading_column = !!shading_column, 
-                      merge_shaded_cells = merge_shaded_cells,
-                      merge_columns = merge_columns, 
-                      sort_column = !! sort_column, 
-                      bold_cells = bold_cells,
-                      center_1st_column = center_1st_column,
-                      highlight_cells = highlight_cells, 
-                      highlight_color = highlight_color,
-                      save_table = save_table, 
-                      title_document = title_document, 
-                      table_caption = table_caption)
+   Inhib1Present <- any(complete.cases(existing_exp_details$MainDetails$Inhibitor1))
+   Inhib2Present <- any(complete.cases(existing_exp_details$MainDetails$Inhibitor2))
+   
+   suppressWarnings(
+      Out <- annotateDetails(existing_exp_details = existing_exp_details, 
+                             detail_set = MyDetails, 
+                             show_compound_col = "concatenate") %>% 
+         left_join(AllExpDetails %>% select(Detail, SortOrder), 
+                   by = "Detail") %>% unique() %>% 
+         mutate(SortOrder = ifelse(Notes == "Compound name", 
+                                   # hacking this to make compound name come 1st
+                                   1, SortOrder), 
+                Notes = case_when(CompoundID == "substrate" & 
+                                     Notes == "Compound name" ~ "Substrate name", 
+                                  CompoundID == "inhibitor 1" & 
+                                     Inhib2Present == FALSE & 
+                                     Notes == "Compound name" ~ "Inhibitor name", 
+                                  CompoundID == "inhibitor 1" & 
+                                     Inhib2Present == TRUE & 
+                                     Notes == "Compound name" ~ "Inhibitor 1 name", 
+                                  CompoundID == "inhibitor 2" & 
+                                     Notes == "Compound name" ~ "Inhibitor 2 name", 
+                                  .default = Notes), 
+                CompoundID = ifelse(is.na(CompoundID), 
+                                    "none", as.character(CompoundID)), 
+                CompoundID = factor(CompoundID,
+                                    levels = c("none", AllCompounds$CompoundID))) %>% 
+         arrange(CompoundID, SortOrder) %>%
+         select(-SortOrder) %>% unique() %>% 
+         rename(Parameter = Notes) %>% 
+         mutate(across(.cols = matches("\\.xlsx|\\.db"), 
+                       .fns = \(Value) ifelse(complete.cases(as.numeric(Value)), 
+                                              as.character(round(as.numeric(Value), 5)), Value))) %>% 
+         select(-SimulatorSection, -DataSource, -Compound, -Detail,
+                -matches("All files have")) %>% 
+         rename_with(~ str_replace_all(., FileAnnotations)) %>% 
+         select(Parameter, everything())
+   )
+   
+   if(include_shading){
+      if(Inhib1Present){
+         formatTable_Simcyp(DF = Out, 
+                            fontsize = fontsize, 
+                            shading_column = CompoundID, 
+                            bold_cells = bold_cells,
+                            center_1st_column = center_1st_column,
+                            highlight_cells = highlight_cells, 
+                            highlight_color = highlight_color,
+                            save_table = save_table, 
+                            font = font, 
+                            title_document = title_document, 
+                            table_caption = table_caption) %>% 
+            flextable::delete_columns(j = which(names(Out) == "CompoundID"))
+         
+      } else {
+         # This is when they want shading and sim only includes substrate
+         formatTable_Simcyp(DF = Out, 
+                            fontsize = fontsize, 
+                            shading_column = Parameter, 
+                            bold_cells = bold_cells,
+                            center_1st_column = center_1st_column,
+                            highlight_cells = highlight_cells, 
+                            highlight_color = highlight_color,
+                            save_table = save_table, 
+                            font = font, 
+                            title_document = title_document, 
+                            table_caption = table_caption) %>% 
+            flextable::delete_columns(j = which(names(Out) == "CompoundID"))
+         
+      }
+   } else {
+      # This is when they don't want shading 
+      formatTable_Simcyp(DF = Out, 
+                         fontsize = fontsize, 
+                         bold_cells = bold_cells,
+                         center_1st_column = center_1st_column,
+                         highlight_cells = highlight_cells, 
+                         highlight_color = highlight_color,
+                         save_table = save_table, 
+                         font = font, 
+                         title_document = title_document, 
+                         table_caption = table_caption) %>% 
+         flextable::delete_columns(j = which(names(Out) == "CompoundID"))
+   }
    
 }
 

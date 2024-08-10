@@ -2,49 +2,114 @@
 % Please edit documentation in R/make_trial_design_table.R
 \name{make_trial_design_table}
 \alias{make_trial_design_table}
-\title{Create a table describing your trial design.}
+\title{Create a table describing a simulation trial design.}
 \usage{
 make_trial_design_table(
   existing_exp_details,
-  sim_data_files = NA,
-  cols_to_include = "default",
+  sims_to_include = NA,
+  prettify_sim_data_file = NA,
+  detail_set = "default",
+  include_shading = TRUE,
+  font = "Arial",
   fontsize = 11,
-  shading_column,
-  merge_shaded_cells = TRUE,
-  merge_columns = NA,
-  sort_column,
   bold_cells = list(c(0, NA), c(NA, 1)),
-  center_1st_column = FALSE,
+  center_1st_column = TRUE,
   highlight_cells = NA,
   highlight_color = "yellow",
   save_table = NA,
-  title_document = NA,
+  title_document = "Trial Design",
   table_caption = NA
 )
 }
 \arguments{
-\item{existing_exp_details}{output from running extractExpDetails_mult}
+\item{existing_exp_details}{output from running
+\code{\link{extractExpDetails_mult}}}
 
-\item{sim_data_files}{optionally specify which simulation files you want to
-inlude.}
+\item{sims_to_include}{optionally specify which simulation files you want to
+include.}
 
-\item{cols_to_include}{optionally specify which columns you want. Current
-options are "default" for a handful of standard columns or "all trial
-design" to get all possible trial design columns. You can also specify a
-character vector of columns you want from the "MainDetails" item from
-existing_exp_details.}
+\item{prettify_sim_data_file}{optionally specify what to use for column names
+instead of, e.g., "abc1a-5mg-sd.xlsx". For example, maybe that particular
+simulation was from Clinical Study 101, 5 mg cohort. Here's how you could
+specify that you'd rather see the clinical study name over the simulation
+file name: \code{prettify_sim_data_file = c("abc1a-5mg-sd.xlsx" =
+"Clinical Study 101, 5 mg single dose", "abc1a-200mg-qd.xlsx" =
+"Clinical Study 102, 200 mg QD")} This can be a named character vector like
+that or it can be a data.frame with a column called "File" and a second
+column called "Annotation". \strong{WARNING}: This will fail if the names
+are not unique!}
 
-\item{...}{Arguments that pass through to formatTable_Simcyp.}
+\item{detail_set}{optionally specify which details you want. Current options
+are "default" for a handful of standard columns or "all trial design" to
+get all possible trial design columns.}
+
+\item{include_shading}{TRUE (default) or FALSE for whether to add shading to
+rows to make things easier to read. If this is set to TRUE, then the rows
+will be shaded every other row when there's no DDI or by which compound the
+parameters apply to if there is.}
+
+\item{font}{font to use. Default is "Arial" and any fonts available on your
+machine in either Word or PowerPoint should be acceptable. If you get Times
+New Roman in your table when you asked for something else, it means that
+that font isn't available or maybe wasn't spelled the way R is expecting
+it. For example, "Calibri" works but "Calibri (Body)" doesn't even though
+the latter is listed in PowerPoint and Word.}
+
+\item{fontsize}{the numeric font size for the output table. Default is 11
+point.}
+
+\item{bold_cells}{optionally specify cells in the table to be in bold-face
+text with a numeric vector where the 1st number is the row number and the
+2nd number is the column number (just like regular row and column
+specifications in R). For example, \code{bold_cells = c(1, 2)} will make
+the cell in row 1 and column 2 bold face. Use "0" for the row number if you
+want to use bold face for something in the header row, and use NA in place
+of a row or column number to make everything in that row or column bold
+face. If you want to specify multiple places to use bold face, use a list
+of numeric vectors. By default, the header row and the 1st column will be
+bold. Set \code{bold_cells = NA} to make \emph{nothing} bold. Please see
+the examples at the bottom of the help file.}
+
+\item{center_1st_column}{TRUE (default) or FALSE for whether to make the
+alignment of the first column centered}
+
+\item{highlight_cells}{optionally specify cells in the table to be
+highlighted with a numeric vector where the 1st number is the row number
+and the 2nd number is the column number (just like regular row and column
+specifications in R). For example, \code{highlight_cells = c(1, 2)} will
+make the cell in row 1 and column 2 highlighted. Use "0" for the row number
+if you want to highlight something in the header row, and use NA in place
+of a row or column number to highlight everything in that row or column. If
+you want to specify multiple places to highlight, use a list of numeric
+vectors. Please see the examples at the bottom of the help file.}
+
+\item{highlight_color}{color to use for highlighting; default is yellow.
+Color can be specified using any R-friendly color name or hex code, e.g.,
+"red" or "#D8212D".}
+
+\item{save_table}{optionally save the output table by supplying a file name
+in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
+slashes, dollar signs, or periods in the file name. If you leave off the
+file extension, we'll assume you want it to be ".docx". If there is a
+column titled "File" in your table, we'll add a caption listing which files
+were included.}
+
+\item{title_document}{optionally specify a title for the Word document
+output. If you don't save the table, this will be ignored.}
+
+\item{table_caption}{optionally add some text for a table caption. If the
+table you supply contains a column titled "File", there will already be a
+caption listing the source files; this would add some additional text
+before that.}
 }
 \value{
 a formatted table and optionally, a saved Word file with that table
 }
 \description{
-UNDER CONSTRUCTION. Proof of concept only for now.
+Create a table describing a simulation trial design.
 }
 \examples{
-make_trial_design_table(existing_exp_details = MDZdetails, 
-                        shading_column = File, 
+make_trial_design_table(existing_exp_details = MDZdetails,
                         save_table = "MDZ trial design info.docx")
 
 }
