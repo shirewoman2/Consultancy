@@ -435,6 +435,18 @@ ct_plot_obs <- function(ct_dataframe,
    
    # Main body of function -------------------------------------------------
    
+   # Setting things up for nonstandard evaluation
+   facet1_column <- rlang::enquo(facet1_column)
+   facet2_column <- rlang::enquo(facet2_column)
+   colorBy_column <- rlang::enquo(colorBy_column)
+   linetype_column <- rlang::enquo(linetype_column)
+   
+   NSEcols <- c(as_label(facet1_column), 
+                as_label(facet2_column), 
+                as_label(colorBy_column), 
+                as_label(linetype_column))
+   NSEcols <- NSEcols[NSEcols != "<empty>"]
+   
    ct_dataframe <- ct_dataframe %>% filter(Simulated == FALSE)
    
    if(any(complete.cases(nominal_times))){
@@ -459,7 +471,7 @@ ct_plot_obs <- function(ct_dataframe,
                         "Dose_sub", "Dose_inhib", "Dose_inhib2", 
                         "InfDuration_sub", "InfDuration_inhib", 
                         "InfDuration_inhib2", "Dose_units", "DoseNum", 
-                        "ObsFile", "Period", "Species")
+                        "ObsFile", "Period", "Species", NSEcols)
       
       suppressMessages(
          CTagg <- ct_dataframe %>% 
@@ -478,14 +490,9 @@ ct_plot_obs <- function(ct_dataframe,
       
    }
    
-   facet1_column <- rlang::enquo(facet1_column)
-   facet2_column <- rlang::enquo(facet2_column)
-   colorBy_column <- rlang::enquo(colorBy_column)
-   linetype_column <- rlang::enquo(linetype_column)
-   
    # Including hacks to make this work
    ct_plot_overlay(ct_dataframe %>% 
-                      mutate(subsection_ADAM = NA, 
+                      mutate(Tissue_subtype = NA, 
                              Compound = "UNKNOWN COMPOUND", 
                              File = ObsFile, 
                              Simulated = ifelse(
