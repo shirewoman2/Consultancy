@@ -152,7 +152,7 @@ tidy_input_PK <- function(PKparameters,
    FromCalcPKRatios <- any(str_detect(tolower(names(PKparameters)), "numerator")) | 
       any(str_detect(tolower(names(PKparameters)), "denominator")) |
       ("PKparameter" %in% names(PKparameters) && 
-      any(str_detect(PKparameters$PKparameter, "/")))
+          any(str_detect(PKparameters$PKparameter, "/")))
    
    if(any(str_detect(tolower(names(PKparameters)), "numerator")) & 
       any(str_detect(tolower(names(PKparameters)), "denominator"))){
@@ -769,13 +769,21 @@ tidy_input_PK <- function(PKparameters,
       PKparameters <- PKparameters %>% 
          filter(PKparameter %in% BadParams == FALSE)
    }
-
+   
    # If they asked for AUCinf, also give them AUCt_dose1 in case of trouble with
    # extrapolation.
    if(any(str_detect(PKparameters$PKparameter, "AUCinf"), na.rm = T)){
+      
+      # Get all possible AUCinf parameters and their matching AUCt parameter
       ToAdd <- PKparameters %>% filter(str_detect(PKparameter, "AUCinf")) %>% 
-         mutate(PKparameter = str_replace(PKparameter, "AUCinf", "AUCt"))
-      PKparameters <- bind_rows(PKparameters, ToAdd)
+         mutate(PKparameter = str_replace(PKparameter, "AUCinf", "AUCt"), 
+                # Have to remove obs values or everything gets replicated
+                ObsValue = NA, ObsVariability = NA) %>% 
+         filter(PKparameter %in% PKparameters$PKparameter == FALSE)
+      
+      if(nrow(ToAdd) > 0){
+         PKparameters <- bind_rows(PKparameters, ToAdd)
+      }
       rm(ToAdd)
    }
    
