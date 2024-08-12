@@ -25,7 +25,7 @@
 #' @param return_all_objects T or F (default) for whether to return a ton of
 #'   objects for use downstream
 #'
-#' @return a list with a) TableHeading text and b) TableCaption text
+#' @return a list with a) table_heading text and b) table_caption text
 #' @export
 #'
 #' @examples
@@ -127,10 +127,10 @@ make_table_annotations <- function(MyPKResults, # only PK table
    if("logical" %in% class(Deets) | 
       ("data.frame" %in% class(Deets) && nrow(Deets) == 0) |
       any(c(MyTissueLen, MyCompoundIDLen, MyFileLen) > 1)){
-      return(list(TableHeading = paste0("Simulated ",
+      return(list(table_heading = paste0("Simulated ",
                                         ifelse(Observedincluded, "and observed ", ""),
                                         tissue, " PK data"),
-                  TableCaption = Caption))
+                  table_caption = Caption))
       
    }
    
@@ -353,8 +353,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
    # Return -----------------------------------------------------------
    
    if(return_all_objects){
-      return(list("TableHeading" = Heading, 
-                  "TableCaption" = Caption, 
+      return(list("table_heading" = Heading, 
+                  "table_caption" = Caption, 
                   "MyCompoundID" = MyCompoundID,
                   "MyCompound" = MyCompound,
                   "MyDosedCompound" = MyDosedCompound, 
@@ -367,8 +367,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
                   "MyPerpetrator" = MyPerpetrator, # note that this is only 1 perpetrator
                   "DoseDay_sub" = DoseDay_sub))
    } else {
-      return(list("TableHeading" = Heading, 
-                  "TableCaption" = Caption))
+      return(list("table_heading" = Heading, 
+                  "table_caption" = Caption))
    }
    
 }

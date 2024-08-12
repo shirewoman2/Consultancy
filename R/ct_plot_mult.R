@@ -205,6 +205,10 @@
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
 #'   B, C, etc.) for each of the small graphs.
 #' @param ... arguments that pass through to \code{\link{ct_plot}}
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the graph. This works best if you supply something
+#'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+#'   output a list of the graph, the figure heading, and the figure caption.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
@@ -323,9 +327,15 @@ ct_plot_mult <- function(ct_dataframe,
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
    
    ## Setting up ct_dataframe ----------------------------------------------
+   
+   if("Tissue_subtype" %in% names(ct_dataframe) == FALSE & 
+      "subsection_ADAM" %in% names(ct_dataframe)){
+      ct_dataframe$Tissue_subtype <- ct_dataframe$subsection_ADAM
+   }
+   
    ct_dataframe <- ct_dataframe %>% 
       mutate(Tissue_subtype = ifelse(is.na(Tissue_subtype),
-                                      "none", Tissue_subtype),
+                                     "none", Tissue_subtype),
              GraphLabs = paste(File, CompoundID, Tissue, Tissue_subtype, sep = "."))
    
    # Checking for situations where they'll get the same file name for more than
@@ -492,7 +502,7 @@ ct_plot_mult <- function(ct_dataframe,
          # need to convert Tissue_subtype back to NA if it was
          # changed above in order for this to work with ct_plot
          mutate(Tissue_subtype = ifelse(Tissue_subtype == "none",
-                                         NA, Tissue_subtype))
+                                        NA, Tissue_subtype))
       # print(i)
       # print(head(ct_dataframe[[i]]))
       
@@ -536,6 +546,54 @@ ct_plot_mult <- function(ct_dataframe,
    } else {
       labels <- NULL
    }
+   
+   # Setting up figure caption --------------------------------------------
+   
+   # Things work best from here down if ct_dataframe is, in fact, a data.frame
+   # again rather than a list split by file name. 
+   ct_dataframe <- bind_rows(ct_dataframe)
+   
+   MyTissue <- unique(ct_dataframe$Tissue)
+   MyTissueSubtype <- ifelse("Tissue_subtype" %in% names(ct_dataframe), 
+                             unique(ct_dataframe$Tissue_subtype), 
+                             "none")
+   MyCompoundID <- unique(as.character(ct_dataframe$CompoundID))
+   
+   NumProfiles <- ifelse(length(MyTissue) == 1 & length(MyCompoundID) == 1 &
+                            length(MyTissueSubtype) == 1, 
+                         "single", "multiple")
+   
+   # Checking whether this is an enzyme-abundance plot, a
+   # release-profile plot or a dissolution-profile plot
+   EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
+   ReleaseProfPlot <- all(c("Release_mean", "Release_CV") %in% names(ct_dataframe)) &
+      "Conc" %in% names(ct_dataframe) == FALSE
+   DissolutionProfPlot <- all(c("Dissolution_mean", "Dissolution_CV") %in% 
+                                 names(ct_dataframe)) &
+      "Conc" %in% names(ct_dataframe) == FALSE
+   
+   PlotType <- case_when(EnzPlot == TRUE ~ "enzyme-abundance", 
+                         ReleaseProfPlot == TRUE ~ "release-profile",
+                         DissolutionProfPlot == TRUE ~ "dissolution-profile", 
+                         TRUE ~ "concentration-time")
+   
+   FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 
+                              single_or_multiple_profiles = NumProfiles, 
+                              plot_type = PlotType, 
+                              existing_exp_details = existing_exp_details, 
+                              mean_type = mean_type, 
+                              linear_or_log = linear_or_log, 
+                              tissue = MyTissue, 
+                              compoundID = MyCompoundID, 
+                              figure_type = figure_type, 
+                              prettify_compound_names = prettify_compound_names, 
+                              hline_position = hline_position, 
+                              vline_position = vline_position, 
+                              hline_style = hline_style, 
+                              vline_style = vline_style)
+   
+   
+   # Saving ------------------------------------------------------------------
    
    if(graph_arrangement == "separate files"){
       
@@ -588,9 +646,9 @@ ct_plot_mult <- function(ct_dataframe,
          # all the graphs.
          if(nrow * ncol < length(AllGraphs)){
             warning(wrapn(paste0("You requested ", nrow, " row(s) and ", 
-                           ncol, " column(s) of graphs, which allows space for up to ", 
-                           nrow * ncol, " graphs. However, you have ", 
-                           length(AllGraphs), " graphs. We're going to guess at more reasonable numbers of rows and columns for you.")),
+                                 ncol, " column(s) of graphs, which allows space for up to ", 
+                                 nrow * ncol, " graphs. However, you have ", 
+                                 length(AllGraphs), " graphs. We're going to guess at more reasonable numbers of rows and columns for you.")),
                     call. = FALSE)
             nrow <- NULL
             ncol <- NULL
@@ -617,15 +675,17 @@ ct_plot_mult <- function(ct_dataframe,
                               align = "hv"))
       }
       
+      Out <- list("graph" = Out)
+      
       if(qc_graph){
          
          MyPlots <- c(AllGraphs, 
                       lapply(QCGraphs, FUN = function(x) flextable::gen_grob(x)))
          
          suppressWarnings(
-            Out_QC <- ggpubr::ggarrange(plotlist = MyPlots,
-                                        labels = rep(labels, 2),
-                                        font.label = list(size = graph_title_size))
+            Out[["QCgraph"]] <- ggpubr::ggarrange(plotlist = MyPlots,
+                                                  labels = rep(labels, 2),
+                                                  font.label = list(size = graph_title_size))
          )
          
          # Having trouble getting the arrangement to match main graphs            
@@ -647,7 +707,7 @@ ct_plot_mult <- function(ct_dataframe,
             if(Ext %in% c("eps", "ps", "jpeg", "tiff",
                           "png", "bmp", "svg", "jpg", "docx") == FALSE){
                warning(wrapn(paste0("You have requested the graph's file extension be `", 
-                              Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
+                                    Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
                        call. = FALSE)
             }
             Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
@@ -668,15 +728,6 @@ ct_plot_mult <- function(ct_dataframe,
             }
             
             FileName <- basename(FileName)
-            
-            # Checking whether this is an enzyme-abundance plot, a
-            # release-profile plot or a dissolution-profile plot
-            EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
-            ReleaseProfPlot <- all(c("Release_mean", "Release_CV") %in% names(ct_dataframe)) &
-               "Conc" %in% names(ct_dataframe) == FALSE
-            DissolutionProfPlot <- all(c("Dissolution_mean", "Dissolution_CV") %in% 
-                                          names(ct_dataframe)) &
-               "Conc" %in% names(ct_dataframe) == FALSE
             
             rmarkdown::render(system.file("rmarkdown/templates/multctplot/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
@@ -701,12 +752,12 @@ ct_plot_mult <- function(ct_dataframe,
          }
       }
       
-      if(qc_graph){
-         return(list("graph" = Out, 
-                     "QC graph" = Out_QC))
-      } else {
-         return(Out)
+      if(length(Out) == 1){
+         Out <- Out[[1]]
       }
+      
+      return(Out)
+      
    }
 }
 

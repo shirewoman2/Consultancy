@@ -6,7 +6,8 @@
 \usage{
 make_ct_caption(
   ct_dataframe,
-  single_or_multiple = "single",
+  single_or_multiple_profiles = "single",
+  plot_type = "concentration-time",
   existing_exp_details = NA,
   mean_type = "arithmetic",
   linear_or_log = "linear",
@@ -23,10 +24,13 @@ make_ct_caption(
 \arguments{
 \item{ct_dataframe}{ct_dataframe}
 
-\item{single_or_multiple}{whether this is for a ct_plot graph (only 1
-compound, tissue, file, etc.) or a graph with multiple profiles (multipel
+\item{single_or_multiple_profiles}{whether this is for a ct_plot graph (only
+1 compound, tissue, file, etc.) or a graph with multiple profiles (multiple
 compounds, tissues, files, etc.). Options are "single" (default) or
 "multiple".}
+
+\item{plot_type}{options are "concentration-time", "enzyme-abundance", "dissolution-profile", "release-profile". May
+change these to be prettier.}
 
 \item{existing_exp_details}{OR supply: a data.frame with the following
 columns: File, Population, Substrate, Inhibitor1, Inhibitor1Metabolite,

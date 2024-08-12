@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```{r CalcPKRatiosEqns, echo = FALSE, results = "asis"}
 
+# Name of subfolder: pk-summary-table
+
 if(FromCalcPKRatios){
    
    if(paired){
@@ -75,7 +77,7 @@ if(CheckDoseInt$message == "mismatch last dose"){
 
 ```
 
-`r Annotations[["TableHeading"]]`
+***Table XXX.*** *`r Annotations[["table_heading"]]`*
 
 `r DoseIntWarning[[1]]` 
 
@@ -111,7 +113,7 @@ formatTable_Simcyp(MyPKResults,
 
 ```
 
-`r Annotations[["TableCaption"]]`
+*`r Annotations[["table_caption"]]`*
 
 
 ```{r}

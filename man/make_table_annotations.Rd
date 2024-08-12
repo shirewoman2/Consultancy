@@ -47,7 +47,7 @@ most-generic text for the annotations.}
 objects for use downstream}
 }
 \value{
-a list with a) TableHeading text and b) TableCaption text
+a list with a) table_heading text and b) table_caption text
 }
 \description{
 \code{make_table_annotations} is meant to make a table heading and caption

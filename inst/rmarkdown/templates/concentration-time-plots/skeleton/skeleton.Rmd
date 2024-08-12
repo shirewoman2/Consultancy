@@ -12,8 +12,6 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```
 
-`r ifelse(is.na(FigText$WarningText), "", FigText$WarningText)`
-
 `r paste0("***Figure XXX***. *", FigText$heading, "*")`
 
 ```{r ctplot, fig.width = fig_width, fig.height = fig_height}

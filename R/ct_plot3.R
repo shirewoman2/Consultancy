@@ -12,7 +12,9 @@
 #'   \code{\link{extractConcTime_mult}}
 #' @param overlay TRUE or FALSE for whether to make overlaid graphs, i.e.,
 #'   whether to use \code{\link{ct_plot_overlay}} (TRUE) or use
-#'   \code{\link{ct_plot}} (FALSE) to generate the graphs
+#'   \code{\link{ct_plot}} (FALSE) to generate the graphs. If you have more than
+#'   one kind of tissue or more than one simulation file or more than one
+#'   compound, we'll set this to TRUE automatically.
 #' @param figure_type type of figure to plot. Options are:
 #'
 #'   \describe{
@@ -116,6 +118,25 @@
 #'   that object to the argument \code{existing_exp_details}.
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
+#' @param prettify_compound_names TRUE (default), FALSE or a character vector:
+#'   This is asking whether to make compound names prettier in legend entries
+#'   and in any Word output files. This was designed for simulations where the
+#'   substrate and any metabolites, perpetrators, or perpetrator metabolites are
+#'   among the standard options for the simulator, and leaving
+#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+#'   FALSE will leave the compound names as is. For an approach with more
+#'   control over what the compound names will look like in legends and Word
+#'   output, set each compound to the exact name you  want with a named
+#'   character vector. For example, \code{prettify_compound_names =
+#'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+#'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+#'   legend.
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the graph. This works best if you supply something
+#'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+#'   output a list of the graph, the figure heading, and the figure caption.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -204,6 +225,8 @@ ct_plot3 <- function(ct_dataframe,
                      graph_labels = TRUE, 
                      qc_graph = FALSE,
                      existing_exp_details = NA,
+                     prettify_compound_names = TRUE,
+                     return_caption = FALSE, 
                      save_graph = NA,
                      fig_height = 6,
                      fig_width = 5,
@@ -268,6 +291,18 @@ ct_plot3 <- function(ct_dataframe,
    } else {
       labels <- NULL
    }
+   
+   MyTissue <- unique(ct_dataframe$Tissue)
+   MyTissueSubtype <- ifelse("Tissue_subtype" %in% names(ct_dataframe), 
+                             unique(ct_dataframe$Tissue_subtype), 
+                             "none")
+   MyCompoundID <- unique(as.character(ct_dataframe$CompoundID))
+   
+   NumProfiles <- ifelse(length(MyTissue) == 1 & length(MyCompoundID) == 1 &
+                            length(MyTissueSubtype) == 1,
+                         "single", "multiple")
+   
+   overlay <- ifelse(NumProfiles == "multiple", TRUE, overlay)
    
    if(overlay){
       
@@ -396,6 +431,28 @@ ct_plot3 <- function(ct_dataframe,
       }
    }
    
+   # Setting up figure caption --------------------------------------------
+   
+   FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 
+                              single_or_multiple_profiles = NumProfiles, 
+                              plot_type = "concentration-time", 
+                              existing_exp_details = existing_exp_details, 
+                              mean_type = mean_type, 
+                              linear_or_log = linear_or_log, 
+                              tissue = MyTissue, 
+                              compoundID = MyCompoundID, 
+                              figure_type = figure_type, 
+                              prettify_compound_names = prettify_compound_names, 
+                              hline_position = hline_position, 
+                              vline_position = vline_position, 
+                              hline_style = hline_style, 
+                              vline_style = vline_style)
+   
+   
+   # Saving ------------------------------------------------------------------
+   
+   Out <- list("graph" = Out)
+   
    if(qc_graph){
       
       QCTable <- formatTable_Simcyp(
@@ -408,11 +465,9 @@ ct_plot3 <- function(ct_dataframe,
       
       # Out would have been just the graph or just the two arranged graphs at
       # this point, so need to convert it to a list here.
-      Out <- list("Graph" = Out, 
-                  "QCGraph" = ggpubr::ggarrange(
-                     plotlist = list(Out, flextable::gen_grob(QCTable)),
-                     font.label = list(size = graph_title_size))
-      )
+      Out[["QCgraph"]] <- ggpubr::ggarrange(
+         plotlist = list(Out, flextable::gen_grob(QCTable)),
+         font.label = list(size = graph_title_size))
    }
    
    if(complete.cases(save_graph)){
@@ -433,7 +488,7 @@ ct_plot3 <- function(ct_dataframe,
       if(qc_graph & Ext != "docx"){
          ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
                 height = fig_height, width = fig_width * 2, dpi = 600, 
-                ggpubr::ggarrange(plotlist = list(Out$QCGraph), 
+                ggpubr::ggarrange(plotlist = list(Out$QCgraph), 
                                   nrow = 1))
       }
       
@@ -470,6 +525,15 @@ ct_plot3 <- function(ct_dataframe,
                               "FALSE" = Out))
          
       }
+   }
+   
+   if(return_caption){
+      Out[["figure_heading"]] <- FigText$heading
+      Out[["figure_caption"]] <- FigText$caption
+   } 
+   
+   if(length(Out) == 1){
+      Out <- Out[[1]]
    }
    
    return(Out)

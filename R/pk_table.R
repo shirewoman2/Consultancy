@@ -50,7 +50,7 @@
 #'   arguments will be used instead. If you supply something for one of them
 #'   in the data.frame or file and \emph{also} something for its argument, the
 #'   argument will be ignored. \cr
-#'   
+#'
 #'   Here is how to specify each of the possible
 #'   inputs for Option 1:\describe{\item{a csv file}{list the file
 #'   name, including the file extension ".csv" inside quotes, e.g., "PK needed.csv"}
@@ -146,6 +146,12 @@
 #'   time by supplying that object here, unquoted. If left as NA, this function
 #'   will run \code{extractExpDetails} behind the scenes anyway to figure out
 #'   some information about your experimental set up.
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the table. If set to TRUE, you'll get as output a
+#'   list of the table, the table heading, and the table caption. When you've
+#'   requested multiple individual tables, e.g., when \code{single_table =
+#'   FALSE}, this will not return anything at this point. We may add that later, 
+#'   but at present, this is not set up to return multiple table captions.
 #' @param mean_type What kind of means and CVs do you want listed in the output
 #'   table? Options are "arithmetic" or "geometric" (default).
 #' @param use_median_for_tmax TRUE (default) or FALSE for whether to use median
@@ -342,6 +348,7 @@ pk_table <- function(PKparameters = NA,
                      page_orientation = "portrait", 
                      fontsize = 11, 
                      return_PK_pulled = FALSE, 
+                     return_caption = FALSE, 
                      ...){
    
    # Error catching ----------------------------------------------------------
@@ -1108,6 +1115,42 @@ pk_table <- function(PKparameters = NA,
       
    }
    
+   # Setting up table caption ------------------------------------------------
+   
+   if(single_table){
+      
+      MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
+                                               prettify_compound_names = TRUE)
+      
+      DosesIncluded <- c("Dose1" = any(str_detect(PKparameters$PKparameter, "_dose1")),
+                         "Last" = any(str_detect(PKparameters$PKparameter, "_last")), 
+                         "User" = any(complete.cases(PKparameters$Sheet)))
+      DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
+      
+      Annotations <- make_table_annotations(
+         MyPKResults = MyPKResults %>% purrr::discard(~all(is.na(.))), 
+         MyFile = unique(MyPKResults$File), 
+         MyCompoundID = unique(MyPKResults$CompoundID), 
+         prettify_compound_names = prettify_compound_names,
+         Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
+                        "TRUE" = data.frame(), 
+                        "FALSE" = Deets), 
+         MeanType = MeanType, 
+         DosesIncluded = case_match(DosesIncluded, 
+                                    "Dose1 User" ~ "Dose1 Last", 
+                                    "Last User" ~ "Last", 
+                                    .default = DosesIncluded), 
+         tissue = unique(MyPKResults$Tissue))
+      
+   } else {
+      
+      return_caption <- FALSE
+      
+      Annotations <- list("table_heading" = "", 
+                          "table_caption" = "")
+   }
+   
+   
    # Saving --------------------------------------------------------------
    
    # May need to change the working directory temporarily, so
@@ -1192,6 +1235,9 @@ pk_table <- function(PKparameters = NA,
          write.csv(bind_rows(MyPKResults, WarningDF),
                    paste0(OutPath, "/", save_table), row.names = F)
       }
+      
+      setwd(CurrDir)
+      
    }
    
    Out <- list("Table" = MyPKResults)
@@ -1218,11 +1264,14 @@ pk_table <- function(PKparameters = NA,
       Out[["PKpulled"]] <- PKpulled
    }
    
-   if(length(Out) == 1){
-      Out <- Out[["Table"]]
-   }
+   if(return_caption){
+      Out[["table_heading"]] <- Annotations$table_heading
+      Out[["table_caption"]] <- Annotations$table_caption
+   } 
    
-   setwd(CurrDir)
+   if(length(Out) == 1){
+      Out <- Out[[1]]
+   }
    
    return(Out)
    

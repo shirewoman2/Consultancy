@@ -22,6 +22,8 @@ ct_plot3(
   graph_labels = TRUE,
   qc_graph = FALSE,
   existing_exp_details = NA,
+  prettify_compound_names = TRUE,
+  return_caption = FALSE,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5,
@@ -35,7 +37,9 @@ either the function \code{\link{extractConcTime}} or the function
 
 \item{overlay}{TRUE or FALSE for whether to make overlaid graphs, i.e.,
 whether to use \code{\link{ct_plot_overlay}} (TRUE) or use
-\code{\link{ct_plot}} (FALSE) to generate the graphs}
+\code{\link{ct_plot}} (FALSE) to generate the graphs. If you have more than
+one kind of tissue or more than one simulation file or more than one
+compound, we'll set this to TRUE automatically.}
 
 \item{figure_type}{type of figure to plot. Options are:
 
@@ -155,6 +159,27 @@ that object to the argument \code{existing_exp_details}.}
 
 \item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}}
+
+\item{prettify_compound_names}{TRUE (default), FALSE or a character vector:
+This is asking whether to make compound names prettier in legend entries
+and in any Word output files. This was designed for simulations where the
+substrate and any metabolites, perpetrators, or perpetrator metabolites are
+among the standard options for the simulator, and leaving
+\code{prettify_compound_names = TRUE} will make the name of those compounds
+something more human readable. For example, "SV-Rifampicin-MD" will become
+"rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+FALSE will leave the compound names as is. For an approach with more
+control over what the compound names will look like in legends and Word
+output, set each compound to the exact name you  want with a named
+character vector. For example, \code{prettify_compound_names =
+c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+"Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+legend.}
+
+\item{return_caption}{TRUE or FALSE (default) for whether to return any
+caption text to use with the graph. This works best if you supply something
+for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+output a list of the graph, the figure heading, and the figure caption.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time

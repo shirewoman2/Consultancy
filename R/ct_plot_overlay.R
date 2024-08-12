@@ -425,16 +425,21 @@
 #'   you don't want one at all.
 #' @param border TRUE (default) or FALSE for whether to include a border around
 #'   each graph.
-#' @param prettify_compound_names set this to a) TRUE (default) or FALSE for
-#'   whether to make the compound names in the legend prettier or b) supply a
-#'   named character vector to set it to the exact name you'd prefer to see in
-#'   your legend. For example, \code{prettify_compound_names =
+#' @param prettify_compound_names TRUE (default), FALSE or a character vector:
+#'   This is asking whether to make compound names prettier in legend entries
+#'   and in any Word output files. This was designed for simulations where the
+#'   substrate and any metabolites, perpetrators, or perpetrator metabolites are
+#'   among the standard options for the simulator, and leaving
+#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+#'   FALSE will leave the compound names as is. For an approach with more
+#'   control over what the compound names will look like in legends and Word
+#'   output, set each compound to the exact name you  want with a named
+#'   character vector. For example, \code{prettify_compound_names =
 #'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
 #'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
-#'   legend, and \code{prettify_compound_names = TRUE} will make some reasonable
-#'   guesses about what a prettier compound name should be. An example of
-#'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
-#'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
+#'   legend.
 #' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of
 #'   the graph where the left panel shows the original graph and the right panel
 #'   shows information about the simulation trial design. This works MUCH faster
@@ -443,6 +448,10 @@
 #'   that object to the argument \code{existing_exp_details}.
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the graph. This works best if you supply something
+#'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+#'   output a list of the graph, the figure heading, and the figure caption.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   The nice thing about saving to Word is that the figure title and caption
@@ -459,13 +468,15 @@
 #' @param y_axis_interval set the linear y-axis major tick-mark interval.
 #'   Acceptable input: any number or leave as NA to accept default values, which
 #'   are generally reasonable guesses as to aesthetically pleasing intervals.
-#' @param assume_unique TRUE or FALSE (default) for whether to assume that the
+#' @param assume_unique TRUE (default) or FALSE for whether to assume that the
 #'   concentration-time data contain no replicates, which messes things up and
 #'   will likely cause this function to crash. Why would you want to skip this?
 #'   Because it can take a LOOOOOOONG time if you have a lot of points. If
 #'   you're sure your data are unique, set this to TRUE and save a fair amount
 #'   of processing time to make your graph. If you're not sure what we're
-#'   talking about here, it's safest to leave this as FALSE.
+#'   talking about here or if you get error messages that aren't terribly clear
+#'   (which generally means that R wrote them and not your friendly
+#'   SimcypConsultancy package authors), try setting this to FALSE.
 #'
 #' @return a ggplot2 graphs or a set of arranged ggplot2 graphs
 #' @export
@@ -547,10 +558,11 @@ ct_plot_overlay <- function(ct_dataframe,
                             prettify_compound_names = TRUE,
                             qc_graph = FALSE,
                             existing_exp_details = NA,
+                            return_caption = FALSE, 
                             save_graph = NA,
                             fig_height = 6,
                             fig_width = 5, 
-                            assume_unique = FALSE){
+                            assume_unique = TRUE){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -664,7 +676,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # Checking whether user tried to include obs data directly from simulator
    # output for a simulation that included anything other than substrate in
    # plasma.
-   if(any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
+   if(EnzPlot == FALSE && any(unique(ct_dataframe$CompoundID) == "UNKNOWN")){
       return(
          ggplot(data.frame(Problem = 1, DataFail = 1), 
                 aes(y = Problem, x = DataFail)) +
@@ -773,10 +785,10 @@ ct_plot_overlay <- function(ct_dataframe,
       EnzPlot == FALSE
    
    AdvBrainModel <- "Tissue_subtype" %in% names(ct_dataframe) && 
-      any(ct_dataframe$Tissue == "brain") &
-      any(ct_dataframe$Tissue_subtype %in% 
-             c("intracranial", "brain ICF", "brain ISF", "spinal CSF", "cranial CSF", 
-               "total brain", "Kp,uu,brain", "Kp,uu,ICF", "Kp,uu,ISF"))
+      (any(ct_dataframe$Tissue == "brain") &
+          any(ct_dataframe$Tissue_subtype %in% 
+                 c("intracranial", "brain ICF", "brain ISF", "spinal CSF", "cranial CSF", 
+                   "total brain", "Kp,uu,brain", "Kp,uu,ICF", "Kp,uu,ISF")))
    
    # Noting user's original preferences for a few things
    obs_line_trans_user <- obs_line_trans
@@ -1697,7 +1709,8 @@ ct_plot_overlay <- function(ct_dataframe,
                        y_axis_limits_log = y_axis_limits_log, 
                        y_axis_interval = y_axis_interval)
    
-   if(length(unique(sim_dataframe$Tissue_subtype)) > 1){
+   if("Tissue_subtype" %in% names(sim_dataframe) && 
+      length(unique(sim_dataframe$Tissue_subtype)) > 1){
       warning("You have more than one subtype of tissue in the column Tissue_subtype, which is fine but does make it challenging to come up with a universally workable y axis label. We'll supply a generic one, but we recommend setting it yourself with `y_axis_label`.\n", 
               call. = FALSE)
    }
@@ -2744,17 +2757,54 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # tictoc::toc(log = TRUE)
    
+   # Setting up figure caption --------------------------------------------
+   
+   MyTissue <- unique(ct_dataframe$Tissue)
+   MyTissueSubtype <- ifelse("Tissue_subtype" %in% names(ct_dataframe), 
+                             unique(ct_dataframe$Tissue_subtype), 
+                             "none")
+   if(EnzPlot){
+      MyCompoundID <- unique(as.character(ct_dataframe$Enzyme))
+   } else {
+      MyCompoundID <- unique(as.character(ct_dataframe$CompoundID))
+   }
+   
+   NumProfiles <- ifelse(length(MyTissue) == 1 & length(MyCompoundID) == 1 &
+                            length(MyTissueSubtype) == 1, 
+                         "single", "multiple")
+   
+   PlotType <- case_when(EnzPlot == TRUE ~ "enzyme-abundance", 
+                         ReleaseProfPlot == TRUE ~ "release-profile",
+                         DissolutionProfPlot == TRUE ~ "dissolution-profile", 
+                         TRUE ~ "concentration-time")
+   
+   FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 
+                              single_or_multiple_profiles = NumProfiles, 
+                              plot_type = PlotType, 
+                              existing_exp_details = existing_exp_details, 
+                              mean_type = mean_type, 
+                              linear_or_log = linear_or_log, 
+                              tissue = MyTissue, 
+                              compoundID = MyCompoundID, 
+                              figure_type = figure_type, 
+                              prettify_compound_names = prettify_compound_names, 
+                              hline_position = hline_position, 
+                              vline_position = vline_position, 
+                              hline_style = hline_style, 
+                              vline_style = vline_style)
+   
+   
    # Saving ----------------------------------------------------------------
    
    # tictoc::tic(msg = "saving") 
    
-   Out <- switch(linear_or_log, 
-                 "linear" = A,
-                 "semi-log" = B,
-                 "log" = B,
-                 "both" = AB, 
-                 "both vertical" = AB,
-                 "both horizontal" = ABhoriz)
+   Out <- list("graph" = switch(linear_or_log, 
+                                "linear" = A,
+                                "semi-log" = B,
+                                "log" = B,
+                                "both" = AB, 
+                                "both vertical" = AB,
+                                "both horizontal" = ABhoriz))
    
    if(qc_graph){
       
@@ -2768,14 +2818,11 @@ ct_plot_overlay <- function(ct_dataframe,
       
       # Out would have been just the graph or just the two arranged graphs at
       # this point, so need to convert it to a list here.
-      Out <- list("Graph" = Out, 
-                  "QCGraph" = ggpubr::ggarrange(
-                     plotlist = list(Out, flextable::gen_grob(QCTable)),
-                     nrow = 1,
-                     font.label = list(size = graph_title_size))
-      )
-   }
-   
+      Out[["QCgraph"]] <- ggpubr::ggarrange(
+         plotlist = list(Out, flextable::gen_grob(QCTable)),
+         nrow = 1,
+         font.label = list(size = graph_title_size))
+   } 
    
    if(complete.cases(save_graph)){
       FileName <- save_graph
@@ -2801,7 +2848,7 @@ ct_plot_overlay <- function(ct_dataframe,
       if(qc_graph & Ext != "docx"){
          ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
                 height = fig_height, width = fig_width * 2, dpi = 600, 
-                plot = ggpubr::ggarrange(plotlist = list(Out$QCGraph), 
+                plot = ggpubr::ggarrange(plotlist = list(Out$QCgraph), 
                                          nrow = 1))
       }
       
@@ -2854,6 +2901,15 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    # tictoc::toc(log = TRUE)
+   
+   if(return_caption){
+      Out[["figure_heading"]] <- FigText$heading
+      Out[["figure_caption"]] <- FigText$caption
+   } 
+   
+   if(length(Out) == 1){
+      Out <- Out[[1]]
+   }
    
    return(Out)
    

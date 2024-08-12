@@ -39,6 +39,7 @@ pk_table(
   page_orientation = "portrait",
   fontsize = 11,
   return_PK_pulled = FALSE,
+  return_caption = FALSE,
   ...
 )
 }
@@ -71,7 +72,7 @@ pk_table(
   arguments will be used instead. If you supply something for one of them
   in the data.frame or file and \emph{also} something for its argument, the
   argument will be ignored. \cr
-  
+
   Here is how to specify each of the possible
   inputs for Option 1:\describe{\item{a csv file}{list the file
   name, including the file extension ".csv" inside quotes, e.g., "PK needed.csv"}
@@ -351,6 +352,13 @@ file into multiple tables. This only applies to the Word output.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
+
+\item{return_caption}{TRUE or FALSE (default) for whether to return any
+caption text to use with the table. If set to TRUE, you'll get as output a
+list of the table, the table heading, and the table caption. When you've
+requested multiple individual tables, e.g., when \code{single_table =
+FALSE}, this will not return anything at this point. We may add that later, 
+but at present, this is not set up to return multiple table captions.}
 
 \item{...}{}
 }

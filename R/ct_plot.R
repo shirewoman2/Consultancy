@@ -276,21 +276,24 @@
 #'   the label in the legend for the line style and the shape. If left as the
 #'   default NA when a legend is included and a perpetrator is present, the
 #'   label in the legend will be "Inhibitor".
-#' @param prettify_compound_names TRUE (default) or FALSE for whether to make
-#'   compound names prettier in legend entries and in any Word output files.
-#'   This was designed for simulations where the substrate and any metabolites,
-#'   perpetrators, or perpetrator metabolites are among the standard options for
-#'   the simulator, and leaving \code{prettify_compound_names = TRUE} will make
-#'   the name of those compounds something more human readable. For example,
-#'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
-#'   become "midazolam". Set each compound to the name you'd prefer to see in
-#'   your legend and Word output if you would like something different. For
-#'   example, \code{prettify_compound_names = c("perpetrator" = "teeswiftavir",
+#' @param prettify_compound_names TRUE (default), FALSE or a character vector:
+#'   This is asking whether to make compound names prettier in legend entries
+#'   and in any Word output files. This was designed for simulations where the
+#'   substrate and any metabolites, perpetrators, or perpetrator metabolites are
+#'   among the standard options for the simulator, and leaving
+#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+#'   FALSE will leave the compound names as is. For an approach with more
+#'   control over what the compound names will look like in legends and Word
+#'   output, set each compound to the exact name you  want with a named
+#'   character vector where the names are "substrate" and, as applicable,
+#'   "perpetrator" and the values are the names you want, e.g., 
+#'   \code{prettify_compound_names = c("perpetrator" = "teeswiftavir",
 #'   "substrate" = "superstatin")}. Please note that "perpetrator" includes
 #'   \emph{all} the perpetrators and perpetrator metabolites present, so, if
 #'   you're setting the perpetrator name, you really should use something like
-#'   this if
-#'   you're including perpetrator metabolites: \code{prettify_compound_names =
+#'   this if you're including perpetrator metabolites: \code{prettify_compound_names =
 #'   c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
@@ -511,8 +514,9 @@ ct_plot <- function(ct_dataframe = NA,
               "perpetrator" = prettify_compound_name(
                  unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])))
       }
-      if("substrate" %in% names(prettify_compound_names) == FALSE & 
-         any(ct_dataframe$CompoundID == "substrate")){
+      if(EnzPlot == FALSE &&
+         ("substrate" %in% names(prettify_compound_names) == FALSE & 
+          any(ct_dataframe$CompoundID == "substrate"))){
          prettify_compound_names <-
             c(prettify_compound_names, 
               "perpetrator" = prettify_compound_name(
@@ -1531,14 +1535,14 @@ ct_plot <- function(ct_dataframe = NA,
                                           face = "bold", size = graph_title_size))
    }
    
-   Out <- switch(linear_or_log, 
-                 "linear" = A,
-                 "semi-log" = B,
-                 "log" = B,
-                 "both" = AB, 
-                 "both vertical" = AB,
-                 "both horizontal" = ABhoriz, 
-                 "horizontal and vertical" = AB)
+   Out <- list("graph" = switch(linear_or_log, 
+                                "linear" = A,
+                                "semi-log" = B,
+                                "log" = B,
+                                "both" = AB, 
+                                "both vertical" = AB,
+                                "both horizontal" = ABhoriz, 
+                                "horizontal and vertical" = AB))
    
    if(qc_graph){
       
@@ -1549,20 +1553,18 @@ ct_plot <- function(ct_dataframe = NA,
       
       # Out would have been just the graph or just the two arranged graphs at
       # this point, so need to convert it to a list here.
-      Out <- list("Graph" = Out, 
-                  "QCGraph" = ggpubr::ggarrange(
-                     plotlist = list(Out, flextable::gen_grob(QCTable)),
-                     font.label = list(size = graph_title_size))
-      )
+      Out[["QCgraph"]] <- ggpubr::ggarrange(
+         plotlist = list(Out, flextable::gen_grob(QCTable)),
+         font.label = list(size = graph_title_size))
    }
    
    # Setting up figure caption --------------------------------------------
    
-   MyTissue <- unique(ct_dataframe$Tissue)
-   MyCompoundID <- unique(ct_dataframe$CompoundID)
+   MyTissue <- unique(Data$Tissue)
+   MyCompoundID <- unique(as.character(Data$CompoundID))
    
-   FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 
-                              single_or_multiple = "single", 
+   FigText <- make_ct_caption(ct_dataframe = Data, 
+                              single_or_multiple_profiles = "single", 
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log, 
@@ -1626,7 +1628,7 @@ ct_plot <- function(ct_dataframe = NA,
       if(qc_graph & Ext != "docx"){
          ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
                 height = fig_height, width = fig_width * 2, dpi = 600, 
-                plot = ggpubr::ggarrange(plotlist = list(Out$QCGraph), 
+                plot = ggpubr::ggarrange(plotlist = list(Out$QCgraph), 
                                          nrow = 1))
       }
       
@@ -1697,9 +1699,8 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    if(return_caption){
-      Out <- list("graph" = Out, 
-                  "figure_heading" = FigText$heading, 
-                  "figure_caption" = FigText$caption)
+      Out[["figure_heading"]] <- FigText$heading
+      Out[["figure_caption"]]  <-  FigText$caption
    } 
    
    return(Out)

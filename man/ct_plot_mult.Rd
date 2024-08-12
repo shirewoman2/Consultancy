@@ -253,6 +253,11 @@ percentiles.png". This is only used when \code{graph_arrangement =
 \item{fig_width}{figure width in inches; default is 8}
 
 \item{...}{arguments that pass through to \code{\link{ct_plot}}}
+
+\item{return_caption}{TRUE or FALSE (default) for whether to return any
+caption text to use with the graph. This works best if you supply something
+for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+output a list of the graph, the figure heading, and the figure caption.}
 }
 \value{
 a set of arranged ggplot2 graphs and/or saved files of those graphs
