@@ -30,25 +30,27 @@ make_model_summary_table <- function(existing_exp_details,
                                           "include")
    }
    
-   annotateDetails(existing_exp_details = existing_exp_details, 
-                   compoundID = compoundID, 
-                   detail_set = "Simcyp inputs") %>% 
-      rename("Section of model" = SimulatorSection, 
-             Value = "All files have this value for this compound ID and compound") %>% 
-      filter(complete.cases(Value) & 
-                !Detail %in% c("SimulatorVersion", AllCompounds$DetailNames)) %>% 
-      left_join(AllExpDetails %>% select(Detail, ReportTableText) %>% unique(), 
-                by = "Detail") %>% 
-      mutate(Parameter = ifelse(is.na(ReportTableText), 
-                                Detail, ReportTableText), 
-             Value = ifelse(complete.cases(as.numeric(Value)), 
-                            as.character(round(as.numeric(Value), 5)), Value)) %>% 
-      select("Section of model", Parameter, Value) %>% 
-      format_table_simple(shading_column = "Section of model") %>% 
-      width(j = 1, width = 1.5) %>% 
-      width(j = 2, width = 3) %>% 
-      width(j = 3, width = 1.5) %>% 
-      merge_v(j = 1) 
+   suppressWarnings(
+      annotateDetails(existing_exp_details = existing_exp_details, 
+                      compoundID = compoundID, 
+                      detail_set = "Simcyp inputs") %>% 
+         rename("Section of model" = SimulatorSection, 
+                Value = "All files have this value for this compound ID and compound") %>% 
+         filter(complete.cases(Value) & 
+                   !Detail %in% c("SimulatorVersion", AllCompounds$DetailNames)) %>% 
+         left_join(AllExpDetails %>% select(Detail, ReportTableText) %>% unique(), 
+                   by = "Detail") %>% 
+         mutate(Parameter = ifelse(is.na(ReportTableText), 
+                                   Detail, ReportTableText), 
+                Value = ifelse(complete.cases(as.numeric(Value)), 
+                               as.character(round(as.numeric(Value), 5)), Value)) %>% 
+         select("Section of model", Parameter, Value) %>% 
+         format_table_simple(shading_column = "Section of model") %>% 
+         width(j = 1, width = 1.5) %>% 
+         width(j = 2, width = 3) %>% 
+         width(j = 3, width = 1.5) %>% 
+         merge_v(j = 1) 
+   )
 }
 
 
