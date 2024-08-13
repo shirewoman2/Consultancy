@@ -60,13 +60,8 @@
 #'   file extension, we'll assume you want it to be ".docx". If there is a
 #'   column titled "File" in your table, we'll add a caption listing which files
 #'   were included.
-#' @param title_document optionally specify a title for the Word document
-#'   output. If you don't save the table, this will be ignored.
-#' @param table_caption optionally add some text for a table caption. If the
-#'   table you supply contains a column titled "File", there will already be a
-#'   caption listing the source files; this would add some additional text
-#'   before that.
-#'
+#' @param page_orientation set the page orientation for the Word file output to
+#'   "portrait" (default) or "landscape"
 #'
 #' @return a formatted table and optionally, a saved Word file with that table
 #' @export
@@ -82,7 +77,8 @@ make_trial_design_table <- function(existing_exp_details,
                                     include_shading = TRUE, 
                                     font = "Palatino Linotype", 
                                     fontsize = 11, 
-                                    save_table = NA){
+                                    save_table = NA,
+                                    page_orientation = "portrait"){
    
    # Error catching --------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -158,9 +154,9 @@ make_trial_design_table <- function(existing_exp_details,
    Inhib2Present <- any(complete.cases(existing_exp_details$MainDetails$Inhibitor2))
    
    suppressWarnings(
-      Out <- annotateDetails(existing_exp_details = existing_exp_details, 
-                             detail_set = MyDetails, 
-                             show_compound_col = "concatenate") %>% 
+      DF <- annotateDetails(existing_exp_details = existing_exp_details, 
+                            detail_set = MyDetails, 
+                            show_compound_col = "concatenate") %>% 
          left_join(AllExpDetails %>% select(Detail, SortOrder), 
                    by = "Detail") %>% unique() %>% 
          mutate(SortOrder = ifelse(Notes == "Compound name", 
@@ -203,37 +199,42 @@ make_trial_design_table <- function(existing_exp_details,
    
    if(include_shading){
       if(Inhib1Present){
-         format_table_simple(DF = Out, 
-                             fontsize = fontsize, 
-                             shading_column = CompoundID, 
-                             save_table = save_table, 
-                             font = font, 
-                             title_document = title_document, 
-                             table_caption = table_caption) %>% 
+         FT <- 
+            format_table_simple(DF = DF, 
+                                fontsize = fontsize, 
+                                font = font, 
+                                shading_column = CompoundID) %>% 
             flextable::delete_columns(j = which(names(Out) == "CompoundID"))
          
       } else {
          # This is when they want shading and sim only includes substrate
-         format_table_simple(DF = Out, 
-                             fontsize = fontsize, 
-                             shading_column = Parameter, 
-                             save_table = save_table, 
-                             font = font, 
-                             title_document = title_document, 
-                             table_caption = table_caption) %>% 
+         FT <- 
+            format_table_simple(DF = DF, 
+                                fontsize = fontsize, 
+                                shading_column = Parameter, 
+                                font = font) %>% 
             flextable::delete_columns(j = which(names(Out) == "CompoundID"))
-         
       }
    } else {
       # This is when they don't want shading 
-      format_table_simple(DF = Out, 
-                          fontsize = fontsize, 
-                          save_table = save_table, 
-                          font = font, 
-                          title_document = title_document, 
-                          table_caption = table_caption) %>% 
+      FT <- 
+         format_table_simple(DF = DF, 
+                             fontsize = fontsize, 
+                             font = font) %>% 
          flextable::delete_columns(j = which(names(Out) == "CompoundID"))
    }
+   
+   # Saving --------------------------------------------------------------
+   if(complete.cases(save_table)){
+      
+      formatTable_Simcyp(DF = FT, 
+                         save_table = save_table, 
+                         page_orientation = page_orientation, 
+                         title_document = title_document, 
+                         table_caption = table_caption)
+   }
+   
+   return(FT)
    
 }
 

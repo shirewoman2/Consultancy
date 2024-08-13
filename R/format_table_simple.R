@@ -132,45 +132,11 @@ format_table_simple <- function(DF,
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
       
-      # Format the file name appropriately, including making the extension be
-      # docx, even if they specified something else.
-      save_table <- ifelse(str_detect(save_table, "\\..*$"), 
-                           sub("\\..*", ".docx", save_table), 
-                           paste0(save_table, ".docx"))
-      
-      # Now that the file should have an appropriate extension, check what
-      # the path and basename should be.
-      OutPath <- dirname(save_table)
-      save_table <- basename(save_table)
-      
-      # May need to change the working directory temporarily, so
-      # determining what it is now
-      CurrDir <- getwd()
-      
-      OutPath <- dirname(save_table)
-      if(OutPath == "."){
-         OutPath <- getwd()
-      }
-      
-      FileName <- basename(save_table)
-      
-      TemplatePath <- switch(page_orientation, 
-                             "landscape" = system.file("Word/landscape_report_template.dotx",
-                                                       package="SimcypConsultancy"), 
-                             "portrait" = system.file("Word/report_template.dotx",
-                                                      package="SimcypConsultancy"))
-      
-      rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
-                                    package="SimcypConsultancy"), 
-                        output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
-                        output_dir = OutPath, 
-                        output_file = FileName, 
-                        quiet = TRUE,
-                        params = list(template_path = TemplatePath))
-      # Note: The "system.file" part of the call means "go to where the
-      # package is installed, search for the file listed, and return its
-      # full path.
-      
+      formatTable_Simcyp(DF = FT, 
+                         save_table = save_table, 
+                         page_orientation = page_orientation, 
+                         title_document = title_document, 
+                         table_caption = table_caption)
    }
    
    return(FT)

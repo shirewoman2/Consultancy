@@ -12,7 +12,8 @@ make_trial_design_table(
   include_shading = TRUE,
   font = "Palatino Linotype",
   fontsize = 11,
-  save_table = NA
+  save_table = NA,
+  page_orientation = "portrait"
 )
 }
 \arguments{
@@ -59,6 +60,9 @@ file extension, we'll assume you want it to be ".docx". If there is a
 column titled "File" in your table, we'll add a caption listing which files
 were included.}
 
+\item{page_orientation}{set the page orientation for the Word file output to
+"portrait" (default) or "landscape"}
+
 \item{bold_cells}{optionally specify cells in the table to be in bold-face
 text with a numeric vector where the 1st number is the row number and the
 2nd number is the column number (just like regular row and column
@@ -87,14 +91,6 @@ vectors. Please see the examples at the bottom of the help file.}
 \item{highlight_color}{color to use for highlighting; default is yellow.
 Color can be specified using any R-friendly color name or hex code, e.g.,
 "red" or "#D8212D".}
-
-\item{title_document}{optionally specify a title for the Word document
-output. If you don't save the table, this will be ignored.}
-
-\item{table_caption}{optionally add some text for a table caption. If the
-table you supply contains a column titled "File", there will already be a
-caption listing the source files; this would add some additional text
-before that.}
 }
 \value{
 a formatted table and optionally, a saved Word file with that table
