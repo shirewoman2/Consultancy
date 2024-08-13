@@ -545,7 +545,8 @@ extractConcTime_DB <- function(sim_data_file,
    # Adding any obs data -----------------------------------------------------
    
    if(nrow(ObsAssign) > 0){
-      ObsCT <- extractObsConcTime(obs_data_file = ObsAssign$ObsFile[ObsAssign$File == sim_data_file])
+      ObsCT <- extractObsConcTime(obs_data_file = ObsAssign$ObsFile[ObsAssign$File == sim_data_file]) %>% 
+         filter(CompoundID == compoundToExtract)
    }
    
    # Putting everything together ----------------------------------------

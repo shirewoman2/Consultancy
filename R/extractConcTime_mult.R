@@ -308,7 +308,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    # recursive.
    if(length(sim_data_files) == 1 &&
       (is.na(sim_data_files) | sim_data_files == "recursive")){
-      sim_data_files <- list.files(pattern = "xlsx$",
+      sim_data_files <- list.files(pattern = "\\.xlsx$|db$",
                                    recursive = (complete.cases(sim_data_files) &&
                                                    sim_data_files == "recursive"))
       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
