@@ -2776,7 +2776,8 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    NumProfiles <- ifelse(length(MyTissue) == 1 & length(MyCompoundID) == 1 &
-                            length(MyTissueSubtype) == 1, 
+                            length(MyTissueSubtype) == 1 & 
+                            length(unique(ct_dataframe$File)) == 1, 
                          "single", "multiple")
    
    PlotType <- case_when(EnzPlot == TRUE ~ "enzyme-abundance", 

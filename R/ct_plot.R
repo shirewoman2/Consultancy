@@ -1571,12 +1571,18 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Setting up figure caption --------------------------------------------
    
+   PlotType <- case_when(EnzPlot == TRUE ~ "enzyme-abundance", 
+                         # ReleaseProfPlot == TRUE ~ "release-profile",
+                         # DissolutionProfPlot == TRUE ~ "dissolution-profile", 
+                         TRUE ~ "concentration-time")
+   
    FigText <- make_ct_caption(ct_dataframe = Data, 
                               single_or_multiple_profiles = "single", 
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log, 
                               figure_type = figure_type,
+                              plot_type = PlotType, 
                               name_clinical_study = name_clinical_study, 
                               prettify_compound_names = prettify_compound_names, 
                               hline_position = hline_position, 

@@ -58,10 +58,6 @@ cohort".}
 \item{vline_position}{vline_position}
 
 \item{vline_style}{vline_style}
-
-\item{tissue}{default is plasma}
-
-\item{compoundID}{default is substrate}
 }
 \value{
 a string of text for making a caption
