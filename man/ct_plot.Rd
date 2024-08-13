@@ -50,6 +50,7 @@ ct_plot(
   qc_graph = FALSE,
   existing_exp_details = NA,
   return_caption = FALSE,
+  name_clinical_study = NA,
   save_graph = NA,
   fig_height = NA,
   fig_width = NA,
@@ -352,7 +353,7 @@ FALSE will leave the compound names as is. For an approach with more
 control over what the compound names will look like in legends and Word
 output, set each compound to the exact name you  want with a named
 character vector where the names are "substrate" and, as applicable,
-"perpetrator" and the values are the names you want, e.g., 
+"perpetrator" and the values are the names you want, e.g.,
 \code{prettify_compound_names = c("perpetrator" = "teeswiftavir",
 "substrate" = "superstatin")}. Please note that "perpetrator" includes
 \emph{all} the perpetrators and perpetrator metabolites present, so, if
@@ -412,6 +413,12 @@ caption text to use with the graph. This works best if you supply something
 for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
 output a list of the graph, the figure heading, and the figure caption.}
 
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "Clinical Study 101, fed
+cohort".}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
 graph.docx". The nice thing about saving to Word is that the figure title
@@ -432,6 +439,12 @@ non-ADAM-model tissues to the subtypes of tissues you can extract from
 Simulator output, so the old "subsection_ADAM" name we had used for which
 subtype of tissue it was no longer works as well. Please use
 "Tissue_subtype" instead going forward.}
+
+\item{study_design_matches_obs}{optionally specify whether the study design
+for the simulated data matched that of any observed data. This only affects
+the caption of the graph. If set to TRUE, this assumes that the number of
+subjects in the clinical study matches the number of subjects per trial in
+the simulated data.}
 }
 \value{
 Output is a ggplot2 graph or two ggplot2 graphs arranged with

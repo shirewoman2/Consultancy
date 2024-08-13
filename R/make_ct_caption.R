@@ -22,6 +22,16 @@
 #' @param hline_style hline_style
 #' @param vline_position vline_position
 #' @param vline_style vline_style
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "Clinical Study 101, fed
+#'   cohort".
+#' @param study_design_matches_obs optionally specify whether the study design
+#'   for the simulated data matched that of any observed data. This only affects
+#'   the caption of the graph. If set to TRUE, this assumes that the number of
+#'   subjects in the clinical study matches the number of subjects per trial in
+#'   the simulated data. 
 #'
 #' @return a string of text for making a caption
 #'
@@ -37,6 +47,7 @@ make_ct_caption <- function(ct_dataframe,
                             compoundID = "substrate",
                             figure_type = "percentiles", 
                             prettify_compound_names = TRUE, 
+                            name_clinical_study = NA, 
                             hline_position = NA, 
                             hline_style = "red dotted", 
                             vline_position = NA, 
@@ -209,7 +220,10 @@ make_ct_caption <- function(ct_dataframe,
                                         " individuals; "), 
                                  paste0(" n = ", N_subjpertrial, 
                                         " individuals; ")),
-                          "Clinical Study **XXX**) "),
+                          ifelse(complete.cases(name_clinical_study), 
+                                 name_clinical_study, 
+                                 "Clinical Study **XXX**"),
+                          ") "),
                    "simulated "), 
             tissue, " concentration-time profiles of ", 
             MyCompound, ".") 
@@ -309,9 +323,15 @@ make_ct_caption <- function(ct_dataframe,
       CapText1 <-
          switch(paste(ifelse(InhibPresent, "InhibPresent", "NoInhibPresent"), 
                       plot_type), 
-                "NoInhibPresent concentration-time" = ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                                                             "simulated and observed data (circles; mean of n =* ***XXX*** *individuals; ***Clinical Study ***XXX*** *)", 
-                                                             "simulated data"), 
+                
+                "NoInhibPresent concentration-time" = ifelse(
+                   nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                   paste0("simulated and observed data (circles; mean of n =* ***XXX*** *individuals; ",
+                          ifelse(complete.cases(name_clinical_study), 
+                                 paste0("Clinical Study ", 
+                                        name_clinical_study, ")"), 
+                                 "Clinical Study* ***XXX**** *)")), 
+                   "simulated data"), 
                 
                 "NoInhibPresent enzyme-abundance" = "simulated data", 
                 
@@ -321,7 +341,11 @@ make_ct_caption <- function(ct_dataframe,
                 
                 "InhibPresent concentration-time" = paste0(
                    ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                          "simulated and observed (circles; mean of n =* ***XXX*** *individuals; Clinical Study ***XXX*** *)", 
+                          paste0("simulated and observed (circles; mean of n =* ***XXX*** *individuals; ", 
+                                 ifelse(complete.cases(name_clinical_study), 
+                                        paste0("Clinical Study ", 
+                                               name_clinical_study, ")"), 
+                                        "Clinical Study* ***XXX**** *)")), 
                           ""), 
                    " plasma concentration-time profiles of ",
                    str_comma(prettify_compound_name(
@@ -347,55 +371,59 @@ make_ct_caption <- function(ct_dataframe,
                 
                 "InhibPresent enzyme-abundance" = paste0(
                    ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                          "simulated and observed (circles; mean of n =* ***XXX*** *individuals; Clinical Study* ***XXX****)", 
-                          ""), 
-                   "simulated enzyme-abundance profiles of ",
-                   str_comma(unique(ct_dataframe$Enzyme), conjunction = "or"), 
-                   " in the absence of ", 
-                   str_comma(prettify_compound_name(
-                      unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
-                      conjunction = "or"), 
-                   " (solid line) and on the* ***XXX^th^*** *day of* ***XXX*** *days of dosing of ", 
-                   str_comma(prettify_compound_name(
-                      unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
-                      conjunction = "or"),
-                   " (dashed line)")
-         )
-      
-      CapText2 <- switch(figure_type, 
-                         "trial means" = paste("The lighter lines represent the", 
-                                               mean_type, 
-                                               "mean values of simulated individual trials and the darker lines portray the",
-                                               mean_type, 
-                                               "mean data of the simulated population (n =* ***XXX****)"), 
-                         "percentiles" = paste("The lighter lines represent the 5^th^ and 95^th^ percentiles and the darker lines the",
-                                               mean_type, 
-                                               "mean data for the simulated population (n =* ***XXX****)"), 
-                         "percentile ribbon" = ifelse(plot_type %in% c("release-profile", 
-                                                                       "dissolution-profile"), 
-                                                      "The line(s) represent(s) the arithmetic mean, and the shaded regions represent the mean plus or minus the standard deviation", 
-                                                      paste("The shaded regions represent the 5^th^ to the 95^th^ percentiles and the darker lines the",
-                                                            mean_type, 
-                                                            "mean data for the simulated population (n =* ***XXX****)")), 
-                         "means only" = ifelse(plot_type %in% c("release-profile", 
-                                                                "dissolution-profile"), 
-                                               "The lines represent the arithmetic mean", 
-                                               paste("The lines represent the",
-                                                     mean_type, 
-                                                     "mean data for the simulated population (n =* ***XXX****)")), 
-                         "Freddy" = paste("The lighter lines represent",
-                                          mean_type, 
-                                          "mean values of simulated individual trials and the darker lines portray the",
-                                          mean_type, 
-                                          "mean data of the simulated population (n =* ***XXX****). The dashed lines represent the 5^th^ and 95^th^ percentiles"))
-      
-      Caption <- paste0("Depicted are ", CapText1, ". ", 
-                        CapText2, ". Source simulated data: ",
-                        str_comma(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE])))
-      
-      return(list("heading" = Heading, 
-                  "caption" = Caption))
-      
+                          paste0("simulated and observed (circles; mean of n =* ***XXX*** *individuals; ",
+                                 ifelse(complete.cases(name_clinical_study), 
+                                        paste0("Clinical Study ", 
+                                               name_clinical_study, ")"), 
+                                        "Clinical Study* ***XXX**** *)"), 
+                                 ""), 
+                          "simulated enzyme-abundance profiles of ",
+                          str_comma(unique(ct_dataframe$Enzyme), conjunction = "or"), 
+                          " in the absence of ", 
+                          str_comma(prettify_compound_name(
+                             unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
+                             conjunction = "or"), 
+                          " (solid line) and on the* ***XXX^th^*** *day of* ***XXX*** *days of dosing of ", 
+                          str_comma(prettify_compound_name(
+                             unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
+                             conjunction = "or"),
+                          " (dashed line)"))
+                )
+                
+                CapText2 <- switch(figure_type, 
+                                   "trial means" = paste("The lighter lines represent the", 
+                                                         mean_type, 
+                                                         "mean values of simulated individual trials and the darker lines portray the",
+                                                         mean_type, 
+                                                         "mean data of the simulated population (n =* ***XXX****)"), 
+                                   "percentiles" = paste("The lighter lines represent the 5^th^ and 95^th^ percentiles and the darker lines the",
+                                                         mean_type, 
+                                                         "mean data for the simulated population (n =* ***XXX****)"), 
+                                   "percentile ribbon" = ifelse(plot_type %in% c("release-profile", 
+                                                                                 "dissolution-profile"), 
+                                                                "The line(s) represent(s) the arithmetic mean, and the shaded regions represent the mean plus or minus the standard deviation", 
+                                                                paste("The shaded regions represent the 5^th^ to the 95^th^ percentiles and the darker lines the",
+                                                                      mean_type, 
+                                                                      "mean data for the simulated population (n =* ***XXX****)")), 
+                                   "means only" = ifelse(plot_type %in% c("release-profile", 
+                                                                          "dissolution-profile"), 
+                                                         "The lines represent the arithmetic mean", 
+                                                         paste("The lines represent the",
+                                                               mean_type, 
+                                                               "mean data for the simulated population (n =* ***XXX****)")), 
+                                   "Freddy" = paste("The lighter lines represent",
+                                                    mean_type, 
+                                                    "mean values of simulated individual trials and the darker lines portray the",
+                                                    mean_type, 
+                                                    "mean data of the simulated population (n =* ***XXX****). The dashed lines represent the 5^th^ and 95^th^ percentiles"))
+                
+                Caption <- paste0("Depicted are ", CapText1, ". ", 
+                                  CapText2, ". Source simulated data: ",
+                                  str_comma(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE])))
+                
+                return(list("heading" = Heading, 
+                            "caption" = Caption))
+                
+                }
    }
-}
 

@@ -4,7 +4,13 @@
 \alias{format_table_simple}
 \title{Format a table to look nice in a Word file or pdf - UNDER CONSTRUCTION}
 \usage{
-format_table_simple(DF, shading_column, merge_shaded_cells = TRUE)
+format_table_simple(
+  DF,
+  shading_column,
+  merge_shaded_cells = TRUE,
+  font = "Palatino Linotype",
+  fontsize = 11
+)
 }
 \arguments{
 \item{DF}{a data.frame or a flextable}
@@ -24,6 +30,17 @@ help file.}
 cells that have the same shade. This only applies when one of the columns
 in the input data.frame is used for deciding when to alternate shading,
 that is, \code{shading_column} has a value.}
+
+\item{font}{font to use. Default is "Palatino Linotype" and any fonts
+available on your machine in either Word or PowerPoint should be
+acceptable. If you get Times New Roman in your table when you asked for
+something else, it means that that font isn't available or maybe wasn't
+spelled the way R is expecting it. For example, "Calibri" works but
+"Calibri (Body)" doesn't even though the latter is listed in PowerPoint and
+Word.}
+
+\item{fontsize}{the numeric font size for the output table. Default is 11
+point.}
 }
 \value{
 a formatted table
@@ -33,6 +50,6 @@ a formatted table
 pdfs. It includes minimal error catching at this point.
 }
 \examples{
-# None yet 
+# None yet
 
 }

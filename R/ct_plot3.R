@@ -133,6 +133,11 @@
 #'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
 #'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
 #'   legend.
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "Clinical Study 101, fed
+#'   cohort".
 #' @param return_caption TRUE or FALSE (default) for whether to return any
 #'   caption text to use with the graph. This works best if you supply something
 #'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
@@ -226,6 +231,7 @@ ct_plot3 <- function(ct_dataframe,
                      qc_graph = FALSE,
                      existing_exp_details = NA,
                      prettify_compound_names = TRUE,
+                     name_clinical_study = NA, 
                      return_caption = FALSE, 
                      save_graph = NA,
                      fig_height = 6,
@@ -443,6 +449,7 @@ ct_plot3 <- function(ct_dataframe,
                               compoundID = MyCompoundID, 
                               figure_type = figure_type, 
                               prettify_compound_names = prettify_compound_names, 
+                              name_clinical_study = name_clinical_study, 
                               hline_position = hline_position, 
                               vline_position = vline_position, 
                               hline_style = hline_style, 

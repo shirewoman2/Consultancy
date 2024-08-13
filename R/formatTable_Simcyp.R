@@ -869,7 +869,7 @@ formatTable_Simcyp <- function(DF,
       # Set the font size
       flextable::fontsize(part = "all", size = fontsize) %>% 
       
-      # SEt the font
+      # Set the font
       flextable::font(part = "all", 
                       fontname = font) %>% 
       

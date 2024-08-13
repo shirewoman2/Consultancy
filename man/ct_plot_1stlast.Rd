@@ -54,6 +54,7 @@ ct_plot_1stlast(
   graph_title_size = 14,
   legend_position = NA,
   prettify_compound_names = TRUE,
+  name_clinical_study = NA,
   existing_exp_details = NA,
   return_caption = FALSE,
   save_graph = NA,
@@ -430,6 +431,12 @@ legend, and \code{prettify_compound_names = TRUE} will make some reasonable
 guesses about what a prettier compound name should be. An example of
 setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".}
+
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "Clinical Study 101, fed
+cohort".}
 
 \item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}} to be used for creating figure

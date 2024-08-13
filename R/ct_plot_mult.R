@@ -205,6 +205,11 @@
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
 #'   B, C, etc.) for each of the small graphs.
 #' @param ... arguments that pass through to \code{\link{ct_plot}}
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "Clinical Study 101, fed
+#'   cohort".
 #' @param return_caption TRUE or FALSE (default) for whether to return any
 #'   caption text to use with the graph. This works best if you supply something
 #'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
@@ -276,6 +281,7 @@ ct_plot_mult <- function(ct_dataframe,
                          graph_titles = "none",
                          graph_title_size = 14,
                          graph_labels = TRUE,
+                         name_clinical_study = NA, 
                          save_graph = NA,
                          file_suffix = NA,
                          fig_height = 8,
@@ -587,6 +593,7 @@ ct_plot_mult <- function(ct_dataframe,
                               compoundID = MyCompoundID, 
                               figure_type = figure_type, 
                               prettify_compound_names = prettify_compound_names, 
+                              name_clinical_study = name_clinical_study, 
                               hline_position = hline_position, 
                               vline_position = vline_position, 
                               hline_style = hline_style, 

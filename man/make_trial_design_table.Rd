@@ -10,12 +10,8 @@ make_trial_design_table(
   prettify_sim_data_file = NA,
   detail_set = "default",
   include_shading = TRUE,
-  font = "Arial",
+  font = "Palatino Linotype",
   fontsize = 11,
-  bold_cells = list(c(0, NA), c(NA, 1)),
-  center_1st_column = TRUE,
-  highlight_cells = NA,
-  highlight_color = "yellow",
   save_table = NA,
   title_document = "Trial Design",
   table_caption = NA
@@ -58,6 +54,21 @@ the latter is listed in PowerPoint and Word.}
 \item{fontsize}{the numeric font size for the output table. Default is 11
 point.}
 
+\item{save_table}{optionally save the output table by supplying a file name
+in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
+slashes, dollar signs, or periods in the file name. If you leave off the
+file extension, we'll assume you want it to be ".docx". If there is a
+column titled "File" in your table, we'll add a caption listing which files
+were included.}
+
+\item{title_document}{optionally specify a title for the Word document
+output. If you don't save the table, this will be ignored.}
+
+\item{table_caption}{optionally add some text for a table caption. If the
+table you supply contains a column titled "File", there will already be a
+caption listing the source files; this would add some additional text
+before that.}
+
 \item{bold_cells}{optionally specify cells in the table to be in bold-face
 text with a numeric vector where the 1st number is the row number and the
 2nd number is the column number (just like regular row and column
@@ -86,21 +97,6 @@ vectors. Please see the examples at the bottom of the help file.}
 \item{highlight_color}{color to use for highlighting; default is yellow.
 Color can be specified using any R-friendly color name or hex code, e.g.,
 "red" or "#D8212D".}
-
-\item{save_table}{optionally save the output table by supplying a file name
-in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
-slashes, dollar signs, or periods in the file name. If you leave off the
-file extension, we'll assume you want it to be ".docx". If there is a
-column titled "File" in your table, we'll add a caption listing which files
-were included.}
-
-\item{title_document}{optionally specify a title for the Word document
-output. If you don't save the table, this will be ignored.}
-
-\item{table_caption}{optionally add some text for a table caption. If the
-table you supply contains a column titled "File", there will already be a
-caption listing the source files; this would add some additional text
-before that.}
 }
 \value{
 a formatted table and optionally, a saved Word file with that table

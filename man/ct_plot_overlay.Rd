@@ -61,6 +61,7 @@ ct_plot_overlay(
   prettify_compound_names = TRUE,
   qc_graph = FALSE,
   existing_exp_details = NA,
+  name_clinical_study = NA,
   return_caption = FALSE,
   save_graph = NA,
   fig_height = 6,
@@ -512,6 +513,12 @@ that object to the argument \code{existing_exp_details}.}
 
 \item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}}
+
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "Clinical Study 101, fed
+cohort".}
 
 \item{return_caption}{TRUE or FALSE (default) for whether to return any
 caption text to use with the graph. This works best if you supply something

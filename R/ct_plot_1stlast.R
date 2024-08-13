@@ -314,6 +314,11 @@
 #'   guesses about what a prettier compound name should be. An example of
 #'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 #'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "Clinical Study 101, fed
+#'   cohort".
 #' @param return_caption TRUE or FALSE (default) for whether to return any
 #'   caption text to use with the graph. This works best if you supply something
 #'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
@@ -402,6 +407,7 @@ ct_plot_1stlast <- function(ct_dataframe,
                             graph_title_size = 14, 
                             legend_position = NA,
                             prettify_compound_names = TRUE,
+                            name_clinical_study = NA, 
                             existing_exp_details = NA, 
                             return_caption = FALSE, 
                             save_graph = NA,
@@ -569,6 +575,7 @@ ct_plot_1stlast <- function(ct_dataframe,
                               compoundID = MyCompoundID, 
                               figure_type = figure_type, 
                               prettify_compound_names = prettify_compound_names, 
+                              name_clinical_study = name_clinical_study, 
                               hline_position = hline_position, 
                               vline_position = vline_position, 
                               hline_style = hline_style, 

@@ -26,6 +26,7 @@ ct_plot_mult(
   graph_titles = "none",
   graph_title_size = 14,
   graph_labels = TRUE,
+  name_clinical_study = NA,
   save_graph = NA,
   file_suffix = NA,
   fig_height = 8,
@@ -228,6 +229,12 @@ default is 14. This also determines the font size of the graph labels.}
 
 \item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
 B, C, etc.) for each of the small graphs.}
+
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "Clinical Study 101, fed
+cohort".}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".

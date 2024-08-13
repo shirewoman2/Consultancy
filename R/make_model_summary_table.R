@@ -46,10 +46,10 @@ make_model_summary_table <- function(existing_exp_details,
                                as.character(round(as.numeric(Value), 5)), Value)) %>% 
          select("Section of model", Parameter, Value) %>% 
          format_table_simple(shading_column = "Section of model") %>% 
-         width(j = 1, width = 1.5) %>% 
-         width(j = 2, width = 3) %>% 
-         width(j = 3, width = 1.5) %>% 
-         merge_v(j = 1) 
+         flextable::width(j = 1, width = 1.5) %>% 
+         flextable::width(j = 2, width = 3) %>% 
+         flextable::width(j = 3, width = 1.5) %>% 
+         flextable::merge_v(j = 1) 
    )
 }
 

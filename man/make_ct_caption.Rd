@@ -15,6 +15,7 @@ make_ct_caption(
   compoundID = "substrate",
   figure_type = "percentiles",
   prettify_compound_names = TRUE,
+  name_clinical_study = NA,
   hline_position = NA,
   hline_style = "red dotted",
   vline_position = NA,
@@ -50,6 +51,12 @@ vertical", "log", "semi-log", "horizontal and vertical"}
 
 \item{prettify_compound_names}{default is TRUE}
 
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "Clinical Study 101, fed
+cohort".}
+
 \item{hline_position}{hline_position}
 
 \item{hline_style}{hline_style}
@@ -57,6 +64,12 @@ vertical", "log", "semi-log", "horizontal and vertical"}
 \item{vline_position}{vline_position}
 
 \item{vline_style}{vline_style}
+
+\item{study_design_matches_obs}{optionally specify whether the study design
+for the simulated data matched that of any observed data. This only affects
+the caption of the graph. If set to TRUE, this assumes that the number of
+subjects in the clinical study matches the number of subjects per trial in
+the simulated data.}
 }
 \value{
 a string of text for making a caption

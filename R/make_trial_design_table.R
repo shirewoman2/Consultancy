@@ -80,12 +80,8 @@ make_trial_design_table <- function(existing_exp_details,
                                     prettify_sim_data_file = NA, 
                                     detail_set = "default", 
                                     include_shading = TRUE, 
-                                    font = "Arial", 
+                                    font = "Palatino Linotype", 
                                     fontsize = 11, 
-                                    bold_cells = list(c(0, NA), c(NA, 1)),
-                                    center_1st_column = TRUE,
-                                    highlight_cells = NA, 
-                                    highlight_color = "yellow",
                                     save_table = NA, 
                                     title_document = "Trial Design", 
                                     table_caption = NA){
@@ -201,47 +197,35 @@ make_trial_design_table <- function(existing_exp_details,
    
    if(include_shading){
       if(Inhib1Present){
-         formatTable_Simcyp(DF = Out, 
-                            fontsize = fontsize, 
-                            shading_column = CompoundID, 
-                            bold_cells = bold_cells,
-                            center_1st_column = center_1st_column,
-                            highlight_cells = highlight_cells, 
-                            highlight_color = highlight_color,
-                            save_table = save_table, 
-                            font = font, 
-                            title_document = title_document, 
-                            table_caption = table_caption) %>% 
+         format_table_simple(DF = Out, 
+                             fontsize = fontsize, 
+                             shading_column = CompoundID, 
+                             save_table = save_table, 
+                             font = font, 
+                             title_document = title_document, 
+                             table_caption = table_caption) %>% 
             flextable::delete_columns(j = which(names(Out) == "CompoundID"))
          
       } else {
          # This is when they want shading and sim only includes substrate
-         formatTable_Simcyp(DF = Out, 
-                            fontsize = fontsize, 
-                            shading_column = Parameter, 
-                            bold_cells = bold_cells,
-                            center_1st_column = center_1st_column,
-                            highlight_cells = highlight_cells, 
-                            highlight_color = highlight_color,
-                            save_table = save_table, 
-                            font = font, 
-                            title_document = title_document, 
-                            table_caption = table_caption) %>% 
+         format_table_simple(DF = Out, 
+                             fontsize = fontsize, 
+                             shading_column = Parameter, 
+                             save_table = save_table, 
+                             font = font, 
+                             title_document = title_document, 
+                             table_caption = table_caption) %>% 
             flextable::delete_columns(j = which(names(Out) == "CompoundID"))
          
       }
    } else {
       # This is when they don't want shading 
-      formatTable_Simcyp(DF = Out, 
-                         fontsize = fontsize, 
-                         bold_cells = bold_cells,
-                         center_1st_column = center_1st_column,
-                         highlight_cells = highlight_cells, 
-                         highlight_color = highlight_color,
-                         save_table = save_table, 
-                         font = font, 
-                         title_document = title_document, 
-                         table_caption = table_caption) %>% 
+      format_table_simple(DF = Out, 
+                          fontsize = fontsize, 
+                          save_table = save_table, 
+                          font = font, 
+                          title_document = title_document, 
+                          table_caption = table_caption) %>% 
          flextable::delete_columns(j = which(names(Out) == "CompoundID"))
    }
    

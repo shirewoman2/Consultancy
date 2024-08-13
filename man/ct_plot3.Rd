@@ -23,6 +23,7 @@ ct_plot3(
   qc_graph = FALSE,
   existing_exp_details = NA,
   prettify_compound_names = TRUE,
+  name_clinical_study = NA,
   return_caption = FALSE,
   save_graph = NA,
   fig_height = 6,
@@ -175,6 +176,12 @@ character vector. For example, \code{prettify_compound_names =
 c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
 "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
 legend.}
+
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "Clinical Study 101, fed
+cohort".}
 
 \item{return_caption}{TRUE or FALSE (default) for whether to return any
 caption text to use with the graph. This works best if you supply something
