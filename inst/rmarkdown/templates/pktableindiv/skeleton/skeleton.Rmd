@@ -54,7 +54,8 @@ if(FromCalcPKRatios){
                                  "Dose1 User" ~ "Dose1 Last", 
                                  "Last User" ~ "Last", 
                                  .default = DosesIncluded), 
-      tissue = unique(MyPKResults[[i]]$Tissue))
+      tissue = unique(MyPKResults[[i]]$Tissue), 
+      name_clinical_study = name_clinical_study)
    
    IndivAnnotations[["table_heading"]] <- 
       paste0("***Table XXX.*** *", 

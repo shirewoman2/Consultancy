@@ -157,44 +157,45 @@ check_doseint <- function(sim_data_file,
                                         dimnames = list(NULL, MissingCols))))
    }
    
-   IntCheck <- Deets %>% 
-      mutate(across(.cols = matches("DoseInt|NumDoses|StartHr"), 
-                    .fns = as.numeric),
-             DoseInt = case_match(compoundID, 
-                                  "substrate" ~ DoseInt_sub,
-                                  "primary metabolite 1" ~ DoseInt_sub,
-                                  "primary metabolite 2" ~ DoseInt_sub, 
-                                  "secondary metabolite" ~ DoseInt_sub,
-                                  "inhibitor 1" ~ DoseInt_inhib,
-                                  "inhibitor 1 metabolite" ~ DoseInt_inhib, 
-                                  "inhibitor 2" ~ DoseInt_inhib2), 
-             NumDoses = case_match(compoundID, 
-                                   "substrate" ~ NumDoses_sub,
-                                   "primary metabolite 1" ~ NumDoses_sub,
-                                   "primary metabolite 2" ~ NumDoses_sub, 
-                                   "secondary metabolite" ~ NumDoses_sub,
-                                   "inhibitor 1" ~ NumDoses_inhib,
-                                   "inhibitor 1 metabolite" ~ NumDoses_inhib, 
-                                   "inhibitor 2" ~ NumDoses_inhib2), 
-             StartHr = case_match(compoundID, 
-                                  "substrate" ~ StartHr_sub,
-                                  "primary metabolite 1" ~ StartHr_sub,
-                                  "primary metabolite 2" ~ StartHr_sub, 
-                                  "secondary metabolite" ~ StartHr_sub,
-                                  "inhibitor 1" ~ StartHr_inhib,
-                                  "inhibitor 1 metabolite" ~ StartHr_inhib,
-                                  "inhibitor 2" ~ StartHr_inhib2)) %>% 
-      select(File, SimDuration, DoseInt, StartHr, NumDoses) %>% 
-      mutate(
-         # For calculating StartHr_last, note that it must be NumDoses - 1 b/c
-         # the 1st dose doesn't start at DoseInt * 1 but at DoseInt * (1 -
-         # 1) = 0.
-         StartHr_last = StartHr + DoseInt * (NumDoses - 1), 
-         EndHr_last = SimDuration, 
-         IntDuration_last = SimDuration - StartHr_last, 
-         
-         CompoundID = compoundID) %>% 
-      select(File, SimDuration, CompoundID, everything())
+   suppressWarnings(
+      IntCheck <- Deets %>% 
+         mutate(across(.cols = matches("DoseInt|NumDoses|StartHr"), 
+                       .fns = as.numeric),
+                DoseInt = case_match(compoundID, 
+                                     "substrate" ~ DoseInt_sub,
+                                     "primary metabolite 1" ~ DoseInt_sub,
+                                     "primary metabolite 2" ~ DoseInt_sub, 
+                                     "secondary metabolite" ~ DoseInt_sub,
+                                     "inhibitor 1" ~ DoseInt_inhib,
+                                     "inhibitor 1 metabolite" ~ DoseInt_inhib, 
+                                     "inhibitor 2" ~ DoseInt_inhib2), 
+                NumDoses = case_match(compoundID, 
+                                      "substrate" ~ NumDoses_sub,
+                                      "primary metabolite 1" ~ NumDoses_sub,
+                                      "primary metabolite 2" ~ NumDoses_sub, 
+                                      "secondary metabolite" ~ NumDoses_sub,
+                                      "inhibitor 1" ~ NumDoses_inhib,
+                                      "inhibitor 1 metabolite" ~ NumDoses_inhib, 
+                                      "inhibitor 2" ~ NumDoses_inhib2), 
+                StartHr = case_match(compoundID, 
+                                     "substrate" ~ StartHr_sub,
+                                     "primary metabolite 1" ~ StartHr_sub,
+                                     "primary metabolite 2" ~ StartHr_sub, 
+                                     "secondary metabolite" ~ StartHr_sub,
+                                     "inhibitor 1" ~ StartHr_inhib,
+                                     "inhibitor 1 metabolite" ~ StartHr_inhib,
+                                     "inhibitor 2" ~ StartHr_inhib2)) %>% 
+         select(File, SimDuration, DoseInt, StartHr, NumDoses) %>% 
+         mutate(
+            # For calculating StartHr_last, note that it must be NumDoses - 1 b/c
+            # the 1st dose doesn't start at DoseInt * 1 but at DoseInt * (1 -
+            # 1) = 0.
+            StartHr_last = StartHr + DoseInt * (NumDoses - 1), 
+            EndHr_last = SimDuration, 
+            IntDuration_last = SimDuration - StartHr_last, 
+            CompoundID = compoundID) %>% 
+         select(File, SimDuration, CompoundID, everything())
+   )
    
    # Noting DoseInt, StartHr, and NumDoses for use later.
    DoseInt <- IntCheck$DoseInt

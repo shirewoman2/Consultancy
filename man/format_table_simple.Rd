@@ -9,7 +9,11 @@ format_table_simple(
   shading_column,
   merge_shaded_cells = TRUE,
   font = "Palatino Linotype",
-  fontsize = 11
+  fontsize = 11,
+  save_table = NA,
+  page_orientation = "portrait",
+  title_document = NA,
+  table_caption = NA
 )
 }
 \arguments{
@@ -41,6 +45,24 @@ Word.}
 
 \item{fontsize}{the numeric font size for the output table. Default is 11
 point.}
+
+\item{save_table}{optionally save the output table by supplying a file name
+in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
+slashes, dollar signs, or periods in the file name. If you leave off the
+file extension, we'll assume you want it to be ".docx". If there is a
+column titled "File" in your table, we'll add a caption listing which files
+were included.}
+
+\item{page_orientation}{set the page orientation for the Word file output to
+"portrait" (default) or "landscape"}
+
+\item{title_document}{optionally specify a title for the Word document
+output. If you don't save the table, this will be ignored.}
+
+\item{table_caption}{optionally add some text for a table caption. If the
+table you supply contains a column titled "File", there will already be a
+caption listing the source files; this would add some additional text
+before that.}
 }
 \value{
 a formatted table

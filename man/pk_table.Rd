@@ -29,6 +29,7 @@ pk_table(
   rounding = NA,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
+  name_clinical_study = NA,
   extract_forest_data = FALSE,
   checkDataSource = FALSE,
   save_table = NA,
@@ -270,6 +271,12 @@ forest plots, which requires numbers that are \emph{not} rounded.}}}
 human-readable column names. TRUE makes pretty column names such as "AUCinf
 (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
+
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "clinical study 101, fed
+cohort".}
 
 \item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
 the same time. This only applies when the compound to extract is the

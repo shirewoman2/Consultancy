@@ -22,6 +22,11 @@
 #'   include_dose_num = TRUE in original PK table call but less so when
 #'   include_dose_num = FALSE. Set to "no dose num included" to use the
 #'   most-generic text for the annotations.
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "clinical study 101, fed
+#'   cohort".
 #' @param return_all_objects T or F (default) for whether to return a ton of
 #'   objects for use downstream
 #'
@@ -40,6 +45,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                    MeanType,
                                    tissue = NA, 
                                    DosesIncluded = NA, 
+                                   name_clinical_study = NA, 
                                    return_all_objects = FALSE){
    
    
@@ -112,7 +118,10 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    CapText2 <- paste0(sub("; $", ". ", CapText2a), 
                       ifelse(Observedincluded, 
-                             "S/O: simulated/observed. Source observed data: **Clinical Study XXX**; ",
+                             paste0("S/O: simulated/observed. Source observed data: ", 
+                                    ifelse(complete.cases(name_clinical_study), 
+                                           paste0("clinical study ", name_clinical_study), 
+                                           "**Clinical Study XXX**"), "; "),
                              ""))
    
    Caption <- paste0("Simulated values listed are ", 

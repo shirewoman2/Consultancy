@@ -11,8 +11,6 @@ make_ct_caption(
   existing_exp_details = NA,
   mean_type = "arithmetic",
   linear_or_log = "linear",
-  tissue = "plasma",
-  compoundID = "substrate",
   figure_type = "percentiles",
   prettify_compound_names = TRUE,
   name_clinical_study = NA,
@@ -43,10 +41,6 @@ them bold to note that they should be changed.}
 \item{linear_or_log}{"linear" (default), "both", "both horizontal", "both
 vertical", "log", "semi-log", "horizontal and vertical"}
 
-\item{tissue}{default is plasma}
-
-\item{compoundID}{default is substrate}
-
 \item{figure_type}{default is percentiles}
 
 \item{prettify_compound_names}{default is TRUE}
@@ -54,7 +48,7 @@ vertical", "log", "semi-log", "horizontal and vertical"}
 \item{name_clinical_study}{optionally specify the name of the clinical study
 for any observed data. This only affects the caption of the graph. For
 example, specifying \code{name_clinical_study = "101, fed cohort"} will
-result in a figure caption that reads in part "Clinical Study 101, fed
+result in a figure caption that reads in part "clinical study 101, fed
 cohort".}
 
 \item{hline_position}{hline_position}
@@ -65,11 +59,9 @@ cohort".}
 
 \item{vline_style}{vline_style}
 
-\item{study_design_matches_obs}{optionally specify whether the study design
-for the simulated data matched that of any observed data. This only affects
-the caption of the graph. If set to TRUE, this assumes that the number of
-subjects in the clinical study matches the number of subjects per trial in
-the simulated data.}
+\item{tissue}{default is plasma}
+
+\item{compoundID}{default is substrate}
 }
 \value{
 a string of text for making a caption

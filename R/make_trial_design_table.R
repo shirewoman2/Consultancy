@@ -82,9 +82,7 @@ make_trial_design_table <- function(existing_exp_details,
                                     include_shading = TRUE, 
                                     font = "Palatino Linotype", 
                                     fontsize = 11, 
-                                    save_table = NA, 
-                                    title_document = "Trial Design", 
-                                    table_caption = NA){
+                                    save_table = NA){
    
    # Error catching --------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -194,6 +192,14 @@ make_trial_design_table <- function(existing_exp_details,
          rename_with(~ str_replace_all(., FileAnnotations)) %>% 
          select(Parameter, everything())
    )
+   
+   title_document  <- paste("Trial design for", 
+                            ifelse(length(existing_exp_details$MainDetails$File) == 1, 
+                                   paste("the simulation", 
+                                         existing_exp_details$MainDetails$File), 
+                                   paste("the simulations", 
+                                         str_comma(existing_exp_details$MainDetails$File))))
+   table_caption <- NA
    
    if(include_shading){
       if(Inhib1Present){

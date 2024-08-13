@@ -1571,16 +1571,11 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Setting up figure caption --------------------------------------------
    
-   MyTissue <- unique(Data$Tissue)
-   MyCompoundID <- unique(as.character(Data$CompoundID))
-   
    FigText <- make_ct_caption(ct_dataframe = Data, 
                               single_or_multiple_profiles = "single", 
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log, 
-                              tissue = MyTissue, 
-                              compoundID = MyCompoundID, 
                               figure_type = figure_type,
                               name_clinical_study = name_clinical_study, 
                               prettify_compound_names = prettify_compound_names, 

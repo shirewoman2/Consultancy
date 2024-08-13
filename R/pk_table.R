@@ -299,6 +299,11 @@
 #'   leave off the file extension, we'll assume you want it to be ".csv". All PK
 #'   info will be included in a single Word or csv file, and, if
 #'   \code{checkDataSource = TRUE}, that will be saved in a single csv file.
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "clinical study 101, fed
+#'   cohort".
 #' @param single_table TRUE (default) or FALSE for whether to save all the PK
 #'   data in a single table or break the data up by tissue, compound ID, and
 #'   file into multiple tables. This only applies to the Word output.
@@ -338,6 +343,7 @@ pk_table <- function(PKparameters = NA,
                      rounding = NA,
                      prettify_columns = TRUE, 
                      prettify_compound_names = TRUE, 
+                     name_clinical_study = NA, 
                      extract_forest_data = FALSE, 
                      checkDataSource = FALSE, 
                      save_table = NA, 
@@ -1140,7 +1146,8 @@ pk_table <- function(PKparameters = NA,
                                     "Dose1 User" ~ "Dose1 Last", 
                                     "Last User" ~ "Last", 
                                     .default = DosesIncluded), 
-         tissue = unique(MyPKResults$Tissue))
+         tissue = unique(MyPKResults$Tissue), 
+         name_clinical_study = name_clinical_study)
       
    } else {
       
