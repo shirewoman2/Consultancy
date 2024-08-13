@@ -26,8 +26,8 @@
 #' # None yet 
 #' 
 format_table_simple <- function(DF, 
-                        shading_column, 
-                        merge_shaded_cells = TRUE){
+                                shading_column, 
+                                merge_shaded_cells = TRUE){
    
    # flextable function w/the specs I want. Note: I had a lot of trouble when I
    # tried to use a modified version of formatTable_Simcyp here. I kept getting
@@ -82,12 +82,12 @@ format_table_simple <- function(DF,
    }
    
    FT <- FT %>% 
-      font(part = "all",
-           # fontname = "fourier") %>% # doesn't work. I think the font has to be something available in Word b/c I think the folder loation is not the same as for latex.
-           fontname = "Palatino Linotype") %>%
-      bold(part = "header") %>% 
-      width(width = (7 / ncol(DF))) %>%
-      fix_border_issues()
+      flextable::font(part = "all",
+                      # fontname = "fourier") %>% # doesn't work. I think the font has to be something available in Word b/c I think the folder loation is not the same as for latex.
+                      fontname = "Palatino Linotype") %>%
+      flextable::bold(part = "header") %>% 
+      flextable::width(width = (7 / ncol(DF))) %>%
+      flextable::fix_border_issues()
    
    return(FT)
 }
