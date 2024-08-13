@@ -192,6 +192,21 @@ match_obs_to_sim <- function(ct_dataframe,
       
       for(k in names(ObsAssign[[j]])){
          # k = File
+         
+         # Checking for whether there was a custom-dosing regimen b/c that
+         # messes up EVERYTHING. If there was, Dose_x needs to be NA. 
+         CustomDosingCheck <- existing_exp_details$MainDetails %>% 
+            filter(File == k) %>% 
+            select(any_of(c("Dose_sub", "Dose_inhib", "Dose_inhib2"))) %>% 
+            pivot_longer(cols = everything(), 
+                         names_to = "CompoundID", values_to = "Value") %>% 
+            filter(Value == "custom dosing")
+         
+         # Setting observed data dose to NA if it's custom dosing.
+         for(cmpd in CustomDosingCheck$CompoundID){
+            obs_dataframe[[j]][, cmpd] <- NA
+         }
+         
          ObsData_j[[k]] <- obs_dataframe[[j]] %>% 
             select(-Compound) %>% 
             mutate(File = k) %>% 
