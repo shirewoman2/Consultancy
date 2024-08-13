@@ -450,25 +450,22 @@ make_ct_caption <- function(ct_dataframe,
                    " ", Tissue, " concentration-time profiles of ",
                    MyCompound, " following ", DosingText_inhib_lower), 
                 
-                # FIXME - how is this going to be set up when it's an enzyme plot? 
+                # NB: I *think* that enzyme-abundance plots will only have the
+                # DDI role be victim when there's no perpetrator present in the
+                # simulation and so you'd only be interested in autoinduction or
+                # autosuppression. This text should work for that.
                 "InhibPresent victim enzyme-abundance" = paste0(
                    "simulated enzyme-abundance profiles of ",
                    str_comma(unique(ct_dataframe$Enzyme), conjunction = "or"), 
-                   " following ", DosingText_sub_lower, 
-                   " (solid line) and on the ", DoseDay_ordinal, 
-                   " day of ", NumDaysInhib, " days of dosing ",
-                   MyPerpetrator, " (dashed line)"),  
+                   " following ", DosingText_sub_lower),  
                 
+                # This is text for a regular enzyme-abundance plot +/- a
+                # perpetrator.
                 "InhibPresent perpetrator enzyme-abundance" = paste0(
                    "simulated enzyme-abundance profiles of ",
                    str_comma(unique(ct_dataframe$Enzyme), conjunction = "or"), 
-                   " in the absence of ", MyPerpetrator, 
-                   # " (solid line) and on the* ***XXX^th^*** *day of* ***XXX*** *days of dosing of ", 
-                   # str_comma(prettify_compound_name(
-                   #    unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])), 
-                   #           conjunction = "or"),
-                   #        " (dashed line)"))
-                   DosingText_inhib_lower)
+                   " in the absence or presence of ", MyPerpetrator, 
+                   " following ", DosingText_inhib_lower)
          )
       
       CapText2 <- switch(
