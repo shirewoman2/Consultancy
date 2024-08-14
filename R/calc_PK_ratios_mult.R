@@ -373,6 +373,10 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    PKparameters <- TEMP$PKparameters %>% unique()
    FilePairs <- TEMP$FilePairs %>% unique()
    existing_exp_details <- TEMP$existing_exp_details
+   existing_exp_details <- filter_sims(existing_exp_details, 
+                                       c(FilePairs$Denominator_File, 
+                                         FilePairs$Numerator_File), 
+                                       "include")
    
    ## Looping through files ----------------------------------------------------
    
@@ -492,12 +496,57 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       relocate(CompoundID, Tissue, File, .after = last_col())
    
    
+   # Setting up table caption ------------------------------------------------
+   
+   if(single_table){
+      
+      MyPerpetrator <- determine_myperpetrator(Deets = existing_exp_details, 
+                                               prettify_compound_names = TRUE)
+      
+      DosesIncluded <- c("Dose1" = any(str_detect(PKparameters$PKparameter, "_dose1")),
+                         "Last" = any(str_detect(PKparameters$PKparameter, "_last")), 
+                         "User" = any(complete.cases(PKparameters$Sheet)))
+      DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
+      
+      Annotations <- make_table_annotations(
+         MyPKResults = MyPKResults %>% purrr::discard(~all(is.na(.))), 
+         # existing_exp_details has already been filtered to only contain the
+         # sims we need. Using that for specifying which files were included
+         # since they have the " / " in the middle, which is different from all
+         # the other possible file names people might encounter. 
+         MyFile = unique(basename(existing_exp_details$MainDetails$File)), 
+         MyCompoundID = unique(MyPKResults$CompoundID), 
+         prettify_compound_names = prettify_compound_names,
+         Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
+                        "TRUE" = data.frame(), 
+                        "FALSE" = existing_exp_details), 
+         MeanType = mean_type, 
+         DosesIncluded = case_match(DosesIncluded, 
+                                    "Dose1 User" ~ "Dose1 Last", 
+                                    "Last User" ~ "Last", 
+                                    .default = DosesIncluded), 
+         tissue = unique(MyPKResults$Tissue), 
+         name_clinical_study = name_clinical_study)
+      
+   } else {
+      
+      return_caption <- FALSE
+      
+      Annotations <- list("table_heading" = "", 
+                          "table_caption" = "")
+   }
+   
+   
    # Saving --------------------------------------------------------------
    
    Out <- list(Table = MyPKResults)
    
    
    if(complete.cases(save_table)){
+      
+      # May need to change the working directory temporarily, so determining
+      # what it is now
+      CurrDir <- getwd()
       
       # Rounding as necessary
       if(complete.cases(rounding) && rounding == "Word only"){
@@ -538,17 +587,10 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          save_table <- basename(save_table)
       }
       
+      setwd(OutPath)
+      
       if(str_detect(save_table, "docx")){ 
          # This is when they want a Word file as output
-         
-         # May need to change the working directory temporarily, so
-         # determining what it is now
-         CurrDir <- getwd()
-         
-         OutPath <- dirname(save_table)
-         if(OutPath == "."){
-            OutPath <- getwd()
-         }
          
          FileName <- basename(save_table)
          
@@ -593,6 +635,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                                    paste("Simulated", MeanType, "mean"), Statistic))
          write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
       }
+      
+      setwd(CurrDir)
    }
    
    if(extract_forest_data){
@@ -633,11 +677,11 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                 matches(" / | Ratio")) %>% 
          filter(str_detect(Statistic, "Ratio|^Simulated$|Lower|Upper")) %>% 
          pivot_longer(cols = -any_of(c("Statistic", "File", "Dose_sub", "Dose_inhib", 
-                                "Substrate", "Inhibitor1", 
-                                "Numerator_CompoundID", "Denominator_CompoundID", 
-                                "Numerator_Compound", "Denominator_Compound", 
-                                "Numerator_File", "Denominator_File",
-                                "Numerator_Tissue", "Denominator_Tissue")), 
+                                       "Substrate", "Inhibitor1", 
+                                       "Numerator_CompoundID", "Denominator_CompoundID", 
+                                       "Numerator_Compound", "Denominator_Compound", 
+                                       "Numerator_File", "Denominator_File",
+                                       "Numerator_Tissue", "Denominator_Tissue")), 
                       names_to = "PKparameter", 
                       values_to = "Value") %>% 
          mutate(Statistic = StatNames[Statistic],

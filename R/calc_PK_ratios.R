@@ -711,9 +711,9 @@ calc_PK_ratios <- function(PKparameters = NA,
                 ID = paste(Individual, Trial), 
                 MatchProblem = !str_detect(Parameter, "AUCinf") &
                    ((complete.cases(NumeratorSim) & 
-                                   is.na(DenominatorSim)) |
-                   (complete.cases(DenominatorSim) & 
-                       is.na(NumeratorSim))))
+                        is.na(DenominatorSim)) |
+                       (complete.cases(DenominatorSim) & 
+                           is.na(NumeratorSim))))
       
       # Making sure that subjects were matched between numerator and
       # denominator
@@ -811,24 +811,23 @@ calc_PK_ratios <- function(PKparameters = NA,
          # Z distribution. This is generally fine but is not what the Simulator
          # uses.
          if(distribution_type == "Z"){
-            CI_lower_delta <- LogGeomeanRatio - qnorm(1-(1-conf_int)/2)*SD_delta
-            CI_upper_delta <- LogGeomeanRatio + qnorm(1-(1-conf_int)/2)*SD_delta
+            suppressWarnings(
+               CI_lower_delta <- LogGeomeanRatio - qnorm(1-(1-conf_int)/2)*SD_delta)
+            
+            suppressWarnings(
+               CI_upper_delta <- LogGeomeanRatio + qnorm(1-(1-conf_int)/2)*SD_delta)
+            
          } else if(distribution_type == "t"){
             # t distribution, which is what the Simulator uses
-            CI_lower_delta <- LogGeomeanRatio -
-               qt(p = 1-(1-conf_int)/2, 
-                  df = (min(c(length(x_num) - 1, length(x_denom) - 1)))) * SD_delta
-            CI_upper_delta <- LogGeomeanRatio + 
-               qt(p = 1-(1-conf_int)/2, 
-                  df = (min(c(length(x_num) - 1, length(x_denom) - 1)))) * SD_delta
-            # df to use from
-            # https://stats.libretexts.org/Courses/Las_Positas_College/Math_40%3A_Statistics_and_Probability/09%3A_Inferences_with_Two_Samples/9.03%3A_Inferences_for_Two_Population_Means_-_Unknown_Standard_Deviations
-            # which seems to align with what I'm reading elsewhere as well and with
-            # how the t distribution is calculated in the Excel template file
-            # people were using for calculating ratios before we made this
-            # function, although another option is to take (n1 - 1) + (n2 - 1). The
-            # difference in resultant values between the two approaches is very
-            # small, at least when n was 100 for both.
+            suppressWarnings(
+               CI_lower_delta <- LogGeomeanRatio -
+                  qt(p = 1-(1-conf_int)/2, 
+                     df = (min(c(length(x_num) - 1, length(x_denom) - 1)))) * SD_delta)
+            
+            suppressWarnings(
+               CI_upper_delta <- LogGeomeanRatio + 
+                  qt(p = 1-(1-conf_int)/2, 
+                     df = (min(c(length(x_num) - 1, length(x_denom) - 1)))) * SD_delta)
          }
          
          Out <- c("GeomeanRatio" = exp(LogGeomeanRatio), 
@@ -1147,17 +1146,14 @@ calc_PK_ratios <- function(PKparameters = NA,
          save_table <- basename(save_table)
       }
       
+      # May need to change the working directory temporarily, so
+      # determining what it is now
+      CurrDir <- getwd()
+      
+      setwd(OutPath)
+      
       if(str_detect(save_table, "docx")){ 
          # This is when they want a Word file as output
-         
-         # May need to change the working directory temporarily, so
-         # determining what it is now
-         CurrDir <- getwd()
-         
-         OutPath <- dirname(save_table)
-         if(OutPath == "."){
-            OutPath <- getwd()
-         }
          
          FileName <- basename(save_table)
          
@@ -1226,6 +1222,8 @@ calc_PK_ratios <- function(PKparameters = NA,
                                    paste("Simulated", MeanType, "mean"), Statistic))
          write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
       }
+      
+      setwd(CurrDir)
    }
    
    Out <- list("Table" = MyPKResults_out)

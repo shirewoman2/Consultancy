@@ -1194,7 +1194,6 @@ pk_table <- function(PKparameters = NA,
          }
       }
       
-      
       # Now that the file should have an appropriate extension, check what
       # the path and basename should be.
       OutPath <- dirname(save_table)
