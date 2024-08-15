@@ -1716,6 +1716,10 @@ ct_plot <- function(ct_dataframe = NA,
       Out[["figure_caption"]]  <-  FigText$caption
    } 
    
+   if(length(Out) == 1){
+      Out <- Out[[1]]
+   }
+   
    return(Out)
    
 }

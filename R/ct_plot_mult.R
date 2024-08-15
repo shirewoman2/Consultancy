@@ -205,6 +205,21 @@
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
 #'   B, C, etc.) for each of the small graphs.
 #' @param ... arguments that pass through to \code{\link{ct_plot}}
+#' @param prettify_compound_names TRUE (default), FALSE or a character vector:
+#'   This is asking whether to make compound names prettier in legend entries
+#'   and in any Word output files. This was designed for simulations where the
+#'   substrate and any metabolites, perpetrators, or perpetrator metabolites are
+#'   among the standard options for the simulator, and leaving
+#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+#'   FALSE will leave the compound names as is. For an approach with more
+#'   control over what the compound names will look like in legends and Word
+#'   output, set each compound to the exact name you  want with a named
+#'   character vector. For example, \code{prettify_compound_names =
+#'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+#'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+#'   legend.
 #' @param name_clinical_study optionally specify the name of the clinical study
 #'   for any observed data. This only affects the caption of the graph. For
 #'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
@@ -281,6 +296,7 @@ ct_plot_mult <- function(ct_dataframe,
                          graph_titles = "none",
                          graph_title_size = 14,
                          graph_labels = TRUE,
+                         prettify_compound_names = TRUE,
                          name_clinical_study = NA, 
                          save_graph = NA,
                          file_suffix = NA,

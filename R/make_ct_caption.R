@@ -59,7 +59,7 @@ make_ct_caption <- function(ct_dataframe,
                              InhibPresent == FALSE ~ "victim", 
                           
                           .default = str_c(sort(unique(AllCompounds$DDIrole[
-                             AllCompounds$CompoundID == CompoundID])), collapse = "-"))
+                             AllCompounds$CompoundID %in% CompoundID])), collapse = "-"))
    
    # This defaults to "none" if nothing was supplied for
    # existing_exp_details, so, if that's the case, hacking this afterwards to
