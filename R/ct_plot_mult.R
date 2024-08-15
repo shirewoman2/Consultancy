@@ -182,6 +182,33 @@
 #'   label in the legend for the line style and the shape. If left as the
 #'   default NA when a legend is included and a perpetrator is present, the label
 #'   in the legend will be "Inhibitor".
+#' @param hline_position numerical position(s) of any horizontal lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{hline_position = 10} to
+#'   have a horizontal line at 10 ng/mL (or whatever your concentration units
+#'   are) or \code{hline_position = c(10, 100, 1000)} to have horizontal lines
+#'   at each of those y values. Examples of where this might be useful would be
+#'   to indicate a toxicity threshold, a target Cmin, or the lower limit of
+#'   quantification for the assay used to generate the concentration-time data.
+#' @param hline_style the line color and type to use for any horizontal lines
+#'   that you add to the graph with \code{hline_position}. Default is "red
+#'   dotted", but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
+#' @param vline_position numerical position(s) of any vertical lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{vline_position = 12} to
+#'   have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+#'   168, by = 24)} to have horizontal lines every 24 hours for one week.
+#'   Examples of where this might be useful would be indicating dosing times or
+#'   the time at which some other drug was started or stopped.
+#' @param vline_style the line color and type to use for any vertical lines that
+#'   you add to the graph with \code{vline_position}. Default is "red dotted",
+#'   but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
 #' @param graph_titles optionally specify titles to be used in the graphs and
 #'   specify the order in which the files are graphed or use "none" (default) to
 #'   have no titles on your graphs. Input should be a named character vector of
@@ -291,6 +318,10 @@ ct_plot_mult <- function(ct_dataframe,
                          y_axis_limits_lin = NA, 
                          y_axis_limits_log = NA, 
                          y_axis_label = NA,
+                         hline_position = NA, 
+                         hline_style = "red dotted", 
+                         vline_position = NA, 
+                         vline_style = "red dotted",
                          legend_position = "none",
                          legend_label = NA, 
                          graph_titles = "none",
@@ -303,7 +334,7 @@ ct_plot_mult <- function(ct_dataframe,
                          fig_height = 8,
                          fig_width = 8,
                          ...){
-   
+  
    # error catching -------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
