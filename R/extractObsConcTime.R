@@ -313,7 +313,7 @@ extractObsConcTime <- function(obs_data_file,
    } else {
       
       SimVersion <- map(.x = ObsColNames, 
-                     .f = \(x) all(MainColNames %in% x$PEColName))
+                        .f = \(x) all(MainColNames %in% x$PEColName))
       SimVersion <- SimVersion[which(SimVersion == TRUE)]
       SimVersion <- names(SimVersion)[1]
       
@@ -340,29 +340,30 @@ extractObsConcTime <- function(obs_data_file,
    
    dose_data <- obs_data %>% filter(complete.cases(DoseRoute)) %>% 
       mutate(CompoundID = tolower(CompoundID), 
-             Dose_units = gsub("\\(|\\)", "", Dose_units), 
-             Dose = as.numeric(DoseAmount), 
-             InfDuration = as.numeric(InfDuration), 
-             Dose_sub = case_when(complete.cases(Dose) & 
-                                     CompoundID == "substrate" ~ Dose), 
-             Dose_inhib = case_when(complete.cases(Dose) & 
-                                       CompoundID == "inhibitor 1" ~ Dose), 
-             Dose_inhib2 = case_when(complete.cases(Dose) & 
-                                        CompoundID == "inhibitor 2" ~ Dose), 
-             InfDuration_sub = case_when(complete.cases(InfDuration) & 
-                                            CompoundID == "substrate" ~ InfDuration),
-             InfDuration_inhib = case_when(complete.cases(InfDuration) & 
-                                              CompoundID == "inhibitor 1" ~ InfDuration),
-             InfDuration_inhib2 = case_when(complete.cases(InfDuration) & 
-                                               CompoundID == "inhibitor 2" ~ InfDuration)) %>% 
-      select(any_of(c("Individual", "Species", "Age",
-                      "Weight_kg", "Height_cm",
-                      "Sex", "SerumCreatinine_umolL", "HSA_gL", 
-                      "Haematocrit", "PhenotypeCYP2D6", "SmokingStatus", 
-                      "GestationalAge_wk", "PlacentaVol_L", "FetalWt_kg", 
-                      "ObsFile", "CompoundID", "Time", "Time_units",
-                      "Dose_sub", "Dose_inhib", "Dose_inhib2", "Dose_units",
-                      "InfDuration_sub", "InfDuration_inhib", "InfDuration_inhib2"))) 
+             Dose_units = gsub("\\(|\\)", "", Dose_units)) %>% 
+      select(any_of(c("Individual", "ObsFile", "CompoundID", "Time", 
+                      ObsColNames[[SimVersion]]$ColName[
+                         ObsColNames[[SimVersion]]$DosingInfo == TRUE]))) %>% 
+      mutate(across(.cols = everything(), .fns = as.character)) %>% 
+      pivot_longer(cols = -c(Individual, ObsFile, CompoundID, Time), 
+                   names_to = "Parameter", 
+                   values_to = "Value") %>% 
+      mutate(ParameterCmpd = case_when(
+         CompoundID %in% AllCompounds$CompoundID[
+            AllCompounds$DosedCompoundID == "substrate"] ~ paste0(Parameter, "_sub"), 
+         CompoundID %in% AllCompounds$CompoundID[
+            AllCompounds$DosedCompoundID == "inhibitor 1"] ~ paste0(Parameter, "_inhib"), 
+         CompoundID %in% AllCompounds$CompoundID[
+            AllCompounds$DosedCompoundID == "inhibitor 2"] ~ paste0(Parameter, "_inhib2"))) %>% 
+      select(-Parameter) %>% 
+      pivot_wider(names_from = ParameterCmpd, 
+                  values_from = Value) %>% 
+      mutate(across(.cols = any_of(c(paste0(rep(c("DoseAmount", "InfDuration", 
+                                                  "DoseVol", "DoseConc"), 
+                                                each = 3), 
+                                            c("_sub", "_inhib", "_inhib2")), 
+                                     "Time")), 
+                    .fns = as.numeric))
    
    if(nrow(dose_data) > 0){
       
@@ -370,15 +371,15 @@ extractObsConcTime <- function(obs_data_file,
          # Removing dosing rows b/c that's not conc time data. 
          filter(is.na(DoseAmount)) %>% 
          mutate(Simulated = FALSE) %>% 
-         # Removing dose units column b/c it will be NA for all obs data. Need to
-         # get that from dose_data.
-         select(-Dose_units)
+         # Removing data that should ONLY be in dose_data so that they don't
+         # mess up joining later
+         select(-any_of(ObsColNames[[SimVersion]]$ColName[
+            ObsColNames[[SimVersion]]$DosingInfo == TRUE]))
       
       DoseInts <- dose_data %>%
-         select(Individual, CompoundID, Time, 
-                Dose_sub, Dose_inhib, Dose_inhib2,
-                InfDuration_sub, InfDuration_inhib, InfDuration_inhib2,
-                Dose_units) %>% 
+         select(any_of(c("Individual", "CompoundID", "Time", 
+                         ObsColNames[[SimVersion]]$ColName[
+                            ObsColNames[[SimVersion]]$DosingInfo == TRUE]))) %>% 
          rename(DoseTime = Time)
       
       # Adding dose info to conc-time data.frame one CompoundID at a time.
@@ -428,18 +429,10 @@ extractObsConcTime <- function(obs_data_file,
                                      "Haematocrit", "GestationalAge_wk", 
                                      "PlacentaVol_L", "FetalWt_kg")), 
                     .fns = as.numeric)) %>% 
-      select(any_of(c("CompoundID", "Inhibitor", "Tissue", 
-                      "Individual", "Trial",
-                      "Simulated", "Time", "Conc", "SD_SE",
-                      "Time_units",  "Conc_units", 
-                      "Dose_sub", "Dose_inhib", "Dose_inhib2",
-                      "InfDuration_sub", "InfDuration_inhib", "InfDuration_inhib2",
-                      "Dose_units", "DoseNum",
-                      "ObsFile", "Period", "Species", "Age", "Weight_kg",
-                      "Height_cm", "Sex", "SerumCreatinine_umolL",
-                      "HSA_gL", "Haematocrit", "PhenotypeCYP2D6",
-                      "SmokingStatus", "GestationalAge_wk", 
-                      "PlacentaVol_L", "FetalWt_kg")))
+      select(any_of(c(ObsColNames[[SimVersion]]$ColName[
+         ObsColNames[[SimVersion]]$DosingInfo == FALSE], "Species", 
+         "Inhibitor", "Simulated"< "Trial", "Tissue", "ObsFile", 
+         "Time_units", "Conc_units"))) 
    
    if(add_t0){
       ToAdd <- obs_data %>% 

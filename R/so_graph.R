@@ -1046,14 +1046,16 @@ so_graph <- function(PKtable,
             "FALSE FALSE" = G[[i]] + 
                geom_point(data = SO[[i]],
                           aes(x = Observed, y = Simulated), 
-                          size = ifelse(is.na(point_size), 2, point_size)), 
+                          size = ifelse(is.na(point_size), 2, point_size), 
+                          show.legend = TRUE), 
             
             # User has specified a column for point color
             "TRUE FALSE" = G[[i]] +
                geom_point(data = SO[[i]],
                           aes(x = Observed, y = Simulated, 
                               color = point_color_column),
-                          size = ifelse(is.na(point_size), 2, point_size)) + 
+                          size = ifelse(is.na(point_size), 2, point_size), 
+                          show.legend = TRUE) + 
                scale_color_manual(values = MyPointColors, drop = FALSE), 
             
             # User has specified a column for point shape
@@ -1062,7 +1064,8 @@ so_graph <- function(PKtable,
                geom_point(data = SO[[i]],
                           aes(x = Observed, y = Simulated, 
                               shape = point_shape_column),
-                          size = ifelse(is.na(point_size), 2, point_size)) +
+                          size = ifelse(is.na(point_size), 2, point_size), 
+                          show.legend = TRUE) +
                scale_shape_manual(values = MyPointShapes, drop = FALSE),
             
             # User has specified both color and point shape columns
@@ -1071,7 +1074,8 @@ so_graph <- function(PKtable,
                geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
                                               color = point_color_column, 
                                               shape = point_shape_column),
-                          size = ifelse(is.na(point_size), 2, point_size)) +
+                          size = ifelse(is.na(point_size), 2, point_size), 
+                          show.legend = TRUE) +
                scale_color_manual(values = MyPointColors, drop = FALSE) +
                scale_shape_manual(values = MyPointShapes, drop = FALSE))
       

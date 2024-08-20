@@ -490,6 +490,11 @@ ct_plot_obs <- function(ct_dataframe,
       
    }
    
+   # DoseNum column might not be present. Setting to NA in that case.
+   if("DoseNum" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$DoseNum <- NA
+   }
+   
    # Including hacks to make this work
    ct_plot_overlay(ct_dataframe %>% 
                       mutate(Tissue_subtype = NA, 
