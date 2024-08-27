@@ -150,7 +150,7 @@
 #'   caption text to use with the table. If set to TRUE, you'll get as output a
 #'   list of the table, the table heading, and the table caption. When you've
 #'   requested multiple individual tables, e.g., when \code{single_table =
-#'   FALSE}, this will not return anything at this point. We may add that later, 
+#'   FALSE}, this will not return anything at this point. We may add that later,
 #'   but at present, this is not set up to return multiple table captions.
 #' @param mean_type What kind of means and CVs do you want listed in the output
 #'   table? Options are "arithmetic" or "geometric" (default).
@@ -233,6 +233,23 @@
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 #'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#' @param prettify_compound_names TRUE (default) or FALSE on whether to make
+#'   compound names prettier in the prettified column titles and in any Word
+#'   output files. This was designed for simulations where the substrate and any
+#'   metabolites, perpetrators, or perpetrator metabolites are among the
+#'   standard options for the simulator, and leaving \code{prettify_compound_names =
+#'   TRUE} will make the name of those compounds something more human readable.
+#'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
+#'   "Sim-Midazolam" will become "midazolam". Set each compound to the name
+#'   you'd prefer to see in your column titles if you would like something
+#'   different. For example, \code{prettify_compound_names = c("perpetrator" =
+#'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
+#'   includes \emph{all} the perpetrators and perpetrator metabolites present,
+#'   so, if you're setting the perpetrator name, you really should use something
+#'   like this
+#'   if you're including perpetrator metabolites: \code{prettify_compound_names =
+#'   c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+#'   "superstatin")}.
 #' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
 #'   the same time. This only applies when the compound to extract is the
 #'   substrate or a substrate metabolite. If set to TRUE, this will return a
@@ -311,7 +328,10 @@
 #'   "portrait" (default) or "landscape"
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
-#' @param ...
+#' @param ... used under-the-hood to check for mis-specified arguments
+#' @param return_PK_pulled TRUE or FALSE (default) for whether to return as a
+#'   list item what PK parameters were pulled. This is used internally for
+#'   writing table headings later.
 #'
 #' @return a data.frame
 #' @export
@@ -953,19 +973,22 @@ pk_table <- function(PKparameters = NA,
    # Any time AUCinf_dose1 was requested, only retain any AUCt_X that were
    # specfically requested or when AUCinf could not be returned.
    if("AUCinf_dose1" %in% PKpulled$PKpulled & 
-      "AUCt_dose1" %in% PKrequested$PKrequested == FALSE){
+      "AUCt_dose1" %in% PKparam_tidied$PKparameters$PKparameter[
+         PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_dose1"))
       PKpulled <- PKpulled %>% filter(!PKpulled %in% "AUCt_dose1")
    }
    
    if("AUCinf_dose1_withInhib" %in% PKpulled$PKpulled & 
-      "AUCt_dose1_withInhib" %in% PKrequested$PKrequested == FALSE){
+      "AUCt_dose1_withInhib" %in% PKparam_tidied$PKparameters$PKparameter[
+         PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_dose1_withInhib"))
       PKpulled <- PKpulled %>% filter(!PKpulled %in% "AUCt_dose1_withInhib")
    }
    
    if("AUCinf_ratio_dose1" %in% PKpulled$PKpulled & 
-      "AUCt_ratio_dose1" %in% PKrequested$PKrequested == FALSE){
+      "AUCt_ratio_dose1" %in% PKparam_tidied$PKparameters$PKparameter[
+         PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_ratio_dose1"))
       PKpulled <- PKpulled %>% filter(!PKpulled %in% "AUCt_ratio_dose1")
    }

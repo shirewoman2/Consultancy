@@ -104,6 +104,33 @@
 #'   "First dose"
 #' @param graph_title_LR graph title for the lower right graph; defaults to
 #'   "Last dose"
+#' @param hline_position numerical position(s) of any horizontal lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{hline_position = 10} to
+#'   have a horizontal line at 10 ng/mL (or whatever your concentration units
+#'   are) or \code{hline_position = c(10, 100, 1000)} to have horizontal lines
+#'   at each of those y values. Examples of where this might be useful would be
+#'   to indicate a toxicity threshold, a target Cmin, or the lower limit of
+#'   quantification for the assay used to generate the concentration-time data.
+#' @param hline_style the line color and type to use for any horizontal lines
+#'   that you add to the graph with \code{hline_position}. Default is "red
+#'   dotted", but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
+#' @param vline_position numerical position(s) of any vertical lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{vline_position = 12} to
+#'   have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+#'   168, by = 24)} to have horizontal lines every 24 hours for one week.
+#'   Examples of where this might be useful would be indicating dosing times or
+#'   the time at which some other drug was started or stopped.
+#' @param vline_style the line color and type to use for any vertical lines that
+#'   you add to the graph with \code{vline_position}. Default is "red dotted",
+#'   but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all. If you include the legend but then some graphs do have a legend and
@@ -228,6 +255,10 @@ ct_plot3 <- function(ct_dataframe,
                      x_axis_interval_LR = NA,
                      legend_position = "none",
                      graph_labels = TRUE, 
+                     hline_position = NA, 
+                     hline_style = "red dotted", 
+                     vline_position = NA, 
+                     vline_style = "red dotted",
                      qc_graph = FALSE,
                      existing_exp_details = NA,
                      prettify_compound_names = TRUE,
@@ -271,7 +302,7 @@ ct_plot3 <- function(ct_dataframe,
             error = function(x) "missing file")
       } else {
          Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
-            filter(unique(ct_dataframe$File) %in% File)
+            filter(File %in% unique(ct_dataframe$File))
          
          if(nrow(Deets == 0)){
             Deets <- tryCatch(
@@ -321,6 +352,7 @@ ct_plot3 <- function(ct_dataframe,
                            graph_title = graph_title_U,
                            qc_graph = FALSE,
                            graph_labels = FALSE, 
+                           legend_position = legend_position, 
                            ..., 
                            save_graph = NA)
       
@@ -335,6 +367,7 @@ ct_plot3 <- function(ct_dataframe,
                               graph_title = graph_title_LL,
                               qc_graph = FALSE,
                               graph_labels = FALSE, 
+                              legend_position = "none", 
                               ..., 
                               save_graph = NA)))
       
@@ -348,6 +381,7 @@ ct_plot3 <- function(ct_dataframe,
                               x_axis_interval = x_axis_interval_LR,
                               qc_graph = FALSE,
                               graph_labels = FALSE, 
+                              legend_position = "none", 
                               ..., 
                               save_graph = NA)))
       

@@ -499,9 +499,12 @@ something more human readable. For example, "SV-Rifampicin-MD" will become
 FALSE will leave the compound names as is. For an approach with more
 control over what the compound names will look like in legends and Word
 output, set each compound to the exact name you  want with a named
-character vector. For example, \code{prettify_compound_names =
+character vector. This will be looking for all the compound names in the 
+columns "Compound" and "Inhibitor" in whatever you supply for ct_dataframe. 
+For example, \code{prettify_compound_names =
 c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
-"Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+"Drug ABC", "Itraconazole_Fasted Soln and OH-Itraconazole" = "itraconazole")} 
+will make those compounds "ketoconazole", "Drug ABC", and "itraconazole" in a
 legend.}
 
 \item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of

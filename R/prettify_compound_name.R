@@ -39,6 +39,7 @@ prettify_compound_name <- function(CompoundName, case = "lower"){
     CompoundName <- sub("s-", "S-", CompoundName)
     CompoundName <- sub("r-", "R-", CompoundName)
     CompoundName <- sub("_fasted soln|_fed capsule", "", CompoundName)
+    CompoundName <- sub("OH-itraconazole", "hydroxyitraconazole", CompoundName)
     
     return(CompoundName)
 }

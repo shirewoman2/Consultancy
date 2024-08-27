@@ -30,7 +30,9 @@ ct_plot_1stlast(
   line_transparency = NA,
   legend_label_linetype = NA,
   facet1_column,
+  facet1_title = NA,
   facet2_column,
+  facet2_title = NA,
   facet_ncol = NA,
   facet_nrow = NA,
   floating_facet_scale = FALSE,
@@ -297,12 +299,20 @@ Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
 \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
 designate the rows of the output graphs.}
 
+\item{facet1_title}{optionally specify a title to describe facet 1. This is
+ignored if \code{floating_facet_scale} is TRUE or if you have specified
+\code{facet_ncol} or \code{facet_nrow}.}
+
 \item{facet2_column}{optionally break up the graph into small multiples; this
 specifies the second of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet2_column =
 CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
 specified \code{facet_ncol} or  \code{facet_nrow}, then
 \code{facet2_column} will designate the columns of the output graphs.}
+
+\item{facet2_title}{optionally specify a title to describe facet 2. This is
+ignored if \code{floating_facet_scale} is TRUE or if you have specified
+\code{facet_ncol} or \code{facet_nrow}.}
 
 \item{facet_ncol}{optionally specify the number of columns of facetted graphs
 you would like to have. This only applies when you have specified a column

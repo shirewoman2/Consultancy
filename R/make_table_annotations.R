@@ -48,6 +48,28 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                    name_clinical_study = NA, 
                                    return_all_objects = FALSE){
    
+   # Error catching -------------------------------------------------------
+   
+   if(class(prettify_compound_names) != "logical"){
+      
+      if(is.null(names(prettify_compound_names))){
+         warning(wrapn("It looks like you're trying to supply a character vector for the argument 'prettify_compound_names', but we need that character vector to be named, which it is not. We'll set 'prettify_compound_names' to FALSE for now, but please check the help file on this."), 
+                 call. = FALSE)
+         prettify_compound_names <- FALSE
+      } else {
+         # Making sure that the names are compound IDs
+         names(prettify_compound_names)[
+            which(tolower(names(prettify_compound_names)) == "perpetrator")] <- "inhibitor 1"
+         
+         if(any(names(prettify_compound_names) %in% 
+                AllCompounds$CompoundID == FALSE)){
+            warning(wrapn("It looks like you're trying to supply a named character vector for the argument 'prettify_compound_names', but we need the names to be compound IDs such as 'substrate' or 'inhibitor 1'. We'll set 'prettify_compound_names' to FALSE for now, but please check the help file on this."), 
+                    call. = FALSE)
+            prettify_compound_names <- FALSE
+         }
+      }
+   }
+   
    
    # Main info ------------------------------------------------------------
    
@@ -137,8 +159,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
       ("data.frame" %in% class(Deets) && nrow(Deets) == 0) |
       any(c(MyTissueLen, MyCompoundIDLen, MyFileLen) > 1)){
       return(list(table_heading = paste0("Simulated ",
-                                        ifelse(Observedincluded, "and observed ", ""),
-                                        tissue, " PK data"),
+                                         ifelse(Observedincluded, "and observed ", ""),
+                                         tissue, " PK data"),
                   table_caption = Caption))
       
    }
@@ -199,7 +221,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
       MyDosedCompound <- prettify_compound_name(MyDosedCompound)
    } else if(class(prettify_compound_names) == "character"){
       MyCompound <- prettify_compound_names[MyCompoundID]
-      MyDosedCompound <- prettify_compound_name(MyDosedCompound)
+      MyDosedCompound <- prettify_compound_names[
+         AllCompounds$DosedCompoundID[AllCompounds$CompoundID == MyCompoundID]]
    } else {
       MyCompound <- switch(MyCompoundID, 
                            "substrate" = Deets$Substrate,

@@ -771,7 +771,12 @@ tidy_input_PK <- function(PKparameters,
    }
    
    # If they asked for AUCinf, also give them AUCt_dose1 in case of trouble with
-   # extrapolation.
+   # extrapolation. Need to note when they originally requested only
+   # AUCinf_dose1 b/c removing AUCt_dose1 if there were no issues with
+   # extrpolating.
+   
+   PKparameters$OriginallyRequested <- TRUE
+   
    if(any(str_detect(PKparameters$PKparameter, "AUCinf"), na.rm = T)){
       
       # Get all possible AUCinf parameters and their matching AUCt parameter
@@ -779,7 +784,8 @@ tidy_input_PK <- function(PKparameters,
          mutate(PKparameter = str_replace(PKparameter, "AUCinf", "AUCt"), 
                 # Have to remove obs values or everything gets replicated
                 ObsValue = NA, ObsVariability = NA) %>% 
-         filter(PKparameter %in% PKparameters$PKparameter == FALSE)
+         filter(PKparameter %in% PKparameters$PKparameter == FALSE) %>% 
+         mutate(OriginallyRequested = FALSE)
       
       if(nrow(ToAdd) > 0){
          PKparameters <- bind_rows(PKparameters, ToAdd)
@@ -993,7 +999,7 @@ tidy_input_PK <- function(PKparameters,
    }
    
    PKparameters <- PKparameters %>% 
-      select(File, Sheet, CompoundID, Tissue, PKparameter, 
+      select(File, Sheet, CompoundID, Tissue, PKparameter, OriginallyRequested, 
              any_of(c("ObsValue", "ObsVariability", "FilePair", "NorD")), 
              DDI, MD)
    
@@ -1121,7 +1127,7 @@ tidy_input_PK <- function(PKparameters,
    
    PKparameters <- PKparameters %>% 
       filter(Harmonious == TRUE) %>% 
-      select(File, Sheet, CompoundID, Tissue, PKparameter,
+      select(File, Sheet, CompoundID, Tissue, PKparameter, OriginallyRequested, 
              any_of(c("ObsValue", "ObsVariability", "FilePair", "NorD"))) %>% 
       rename(Value = ObsValue, 
              Variability = ObsVariability)

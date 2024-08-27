@@ -436,9 +436,12 @@
 #'   FALSE will leave the compound names as is. For an approach with more
 #'   control over what the compound names will look like in legends and Word
 #'   output, set each compound to the exact name you  want with a named
-#'   character vector. For example, \code{prettify_compound_names =
+#'   character vector. This will be looking for all the compound names in the 
+#'   columns "Compound" and "Inhibitor" in whatever you supply for ct_dataframe. 
+#'   For example, \code{prettify_compound_names =
 #'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
-#'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+#'   "Drug ABC", "Itraconazole_Fasted Soln and OH-Itraconazole" = "itraconazole")} 
+#'   will make those compounds "ketoconazole", "Drug ABC", and "itraconazole" in a
 #'   legend.
 #' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of
 #'   the graph where the left panel shows the original graph and the right panel
@@ -2785,6 +2788,51 @@ ct_plot_overlay <- function(ct_dataframe,
                          DissolutionProfPlot == TRUE ~ "dissolution-profile", 
                          TRUE ~ "concentration-time")
    
+   if("logical" %in% class(prettify_compound_names)){
+      PrettyCmpds <- prettify_compound_names
+   } else {
+      # NB: ct_plot_overlay is unusual in terms of its use of
+      # prettify_compound_names in that, if the user wants to specify a
+      # character vector of pretty names, that vector needs to have all possible
+      # values in the columns Compound and Inhibitor be the names of the vector.
+      # For most other functions, when the user supplies a named character
+      # vector for prettify_compound_names, the names are compound ID = pretty
+      # name, e.g., "substrate" = "midazolam". We thus need to hack the values
+      # for prettify_compound_names here.
+      
+      # FIXME: This will need further testing. 
+      
+      PrettyCmpds1 <- ct_dataframe %>% 
+         # Will add perpetrator info in next step, but, to avoid duplicate
+         # vector names, this needs to be only substrate-related compounds.
+         filter(Inhibitor == "none") %>% 
+         select(Compound, CompoundID) %>% unique() 
+      
+      # NB: The Inhibitor column has already been prettified at this point. 
+      PrettyCmpds2 <- ct_dataframe %>% filter(Inhibitor != "none") %>% 
+         pull(Inhibitor) %>% unique() %>% as.character() %>% str_comma()
+      
+      if(length(PrettyCmpds2) > 0){
+         PrettyCmpds <- c(as.character(PrettyCmpds1$Compound), PrettyCmpds2)
+         names(PrettyCmpds) <- c(as.character(PrettyCmpds1$CompoundID), 
+                                 # Note that the name of the perpetrator has
+                                 # been hacked here and this actually could be
+                                 # any permutation of inhibitor 1, inhibitor 2,
+                                 # or metabolites.
+                                 "inhibitor 1")
+         
+         # Also need to hack Inhibitor1 in existing_exp_details. 
+         existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+            mutate(Inhibitor1 = PrettyCmpds["inhibitor 1"], 
+                   Inhibitor2 = NA, 
+                   Inhibitor1Metabolite = NA)
+         
+      } else {
+         PrettyCmpds <- as.character(PrettyCmpds1$Compound)
+         names(PrettyCmpds) <- as.character(PrettyCmpds1$CompoundID)
+      }
+   }
+   
    FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 
                               single_or_multiple_profiles = NumProfiles, 
                               plot_type = PlotType, 
@@ -2792,7 +2840,10 @@ ct_plot_overlay <- function(ct_dataframe,
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log, 
                               figure_type = figure_type, 
-                              prettify_compound_names = prettify_compound_names, 
+                              # !!! Important! This must be PrettyCmpds and not
+                              # just the user-supplied value of
+                              # prettify_compound_names!
+                              prettify_compound_names = PrettyCmpds, 
                               name_clinical_study = name_clinical_study, 
                               hline_position = hline_position, 
                               vline_position = vline_position, 

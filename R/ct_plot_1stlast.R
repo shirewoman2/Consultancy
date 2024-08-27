@@ -219,6 +219,12 @@
 #'   CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
 #'   specified \code{facet_ncol} or  \code{facet_nrow}, then
 #'   \code{facet2_column} will designate the columns of the output graphs.
+#' @param facet1_title optionally specify a title to describe facet 1. This is
+#'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
+#'   \code{facet_ncol} or \code{facet_nrow}.
+#' @param facet2_title optionally specify a title to describe facet 2. This is
+#'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
+#'   \code{facet_ncol} or \code{facet_nrow}.
 #' @param facet_ncol optionally specify the number of columns of facetted graphs
 #'   you would like to have. This only applies when you have specified a column
 #'   for \code{facet1_column} and/or \code{facet2_column}.
@@ -383,7 +389,9 @@ ct_plot_1stlast <- function(ct_dataframe,
                             line_transparency = NA,
                             legend_label_linetype = NA,
                             facet1_column,
+                            facet1_title = NA,
                             facet2_column, 
+                            facet2_title = NA, 
                             facet_ncol = NA, 
                             facet_nrow = NA,
                             floating_facet_scale = FALSE,
@@ -474,7 +482,9 @@ ct_plot_1stlast <- function(ct_dataframe,
                       colorBy_column = !!colorBy_column,
                       linetype_column = !!linetype_column,
                       facet1_column = !!facet1_column,
+                      facet1_title = facet1_title, 
                       facet2_column = !!facet2_column,
+                      facet2_title = facet2_title, 
                       obs_to_sim_assignment = obs_to_sim_assignment,
                       mean_type = mean_type,
                       figure_type = figure_type, 
@@ -615,7 +625,7 @@ ct_plot_1stlast <- function(ct_dataframe,
          if(Ext %in% c("eps", "ps", "jpeg", "tiff",
                        "png", "bmp", "svg", "jpg", "docx") == FALSE){
             warning(wrapn(paste0("You have requested the graph's file extension be `", 
-                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
+                                 Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
                     call. = FALSE)
          }
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",

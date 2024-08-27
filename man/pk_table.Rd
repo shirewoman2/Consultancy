@@ -272,6 +272,24 @@ human-readable column names. TRUE makes pretty column names such as "AUCinf
 (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 
+\item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
+compound names prettier in the prettified column titles and in any Word
+output files. This was designed for simulations where the substrate and any
+metabolites, perpetrators, or perpetrator metabolites are among the
+standard options for the simulator, and leaving \code{prettify_compound_names =
+TRUE} will make the name of those compounds something more human readable.
+For example, "SV-Rifampicin-MD" will become "rifampicin", and
+"Sim-Midazolam" will become "midazolam". Set each compound to the name
+you'd prefer to see in your column titles if you would like something
+different. For example, \code{prettify_compound_names = c("perpetrator" =
+"teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
+includes \emph{all} the perpetrators and perpetrator metabolites present,
+so, if you're setting the perpetrator name, you really should use something
+like this
+if you're including perpetrator metabolites: \code{prettify_compound_names =
+c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+"superstatin")}.}
+
 \item{name_clinical_study}{optionally specify the name of the clinical study
 for any observed data. This only affects the caption of the graph. For
 example, specifying \code{name_clinical_study = "101, fed cohort"} will
@@ -360,14 +378,18 @@ file into multiple tables. This only applies to the Word output.}
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
 
+\item{return_PK_pulled}{TRUE or FALSE (default) for whether to return as a
+list item what PK parameters were pulled. This is used internally for
+writing table headings later.}
+
 \item{return_caption}{TRUE or FALSE (default) for whether to return any
 caption text to use with the table. If set to TRUE, you'll get as output a
 list of the table, the table heading, and the table caption. When you've
 requested multiple individual tables, e.g., when \code{single_table =
-FALSE}, this will not return anything at this point. We may add that later, 
+FALSE}, this will not return anything at this point. We may add that later,
 but at present, this is not set up to return multiple table captions.}
 
-\item{...}{}
+\item{...}{used under-the-hood to check for mis-specified arguments}
 }
 \value{
 a data.frame
