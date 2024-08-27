@@ -1102,7 +1102,37 @@ calc_PK_ratios <- function(PKparameters = NA,
    MyPKResults$File <- Comparisons %>% pull(FilePair) %>% unique()
    
    # Saving --------------------------------------------------------------
+   
    MyPKResults_out <- MyPKResults
+   
+   MyPerpetrator <- determine_myperpetrator(Deets = existing_exp_details, 
+                                            prettify_compound_names = TRUE)
+   
+   DosesIncluded <- c("Dose1" = any(str_detect(PKparameters$PKparameter, "_dose1")),
+                      "Last" = any(str_detect(PKparameters$PKparameter, "_last")), 
+                      "User" = any(complete.cases(PKparameters$Sheet)))
+   DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
+   
+   Annotations <- make_table_annotations(
+      MyPKResults = MyPKResults %>% purrr::discard(~all(is.na(.))), 
+      # existing_exp_details has already been filtered to only contain the
+      # sims we need. Using that for specifying which files were included
+      # since they have the " / " in the middle, which is different from all
+      # the other possible file names people might encounter. 
+      MyFile = c(sim_data_file_numerator, sim_data_file_denominator), 
+      MyCompoundID = unique(MyPKResults$CompoundID), 
+      prettify_compound_names = prettify_compound_names,
+      Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
+                     "TRUE" = data.frame(), 
+                     "FALSE" = existing_exp_details), 
+      MeanType = mean_type, 
+      DosesIncluded = case_match(DosesIncluded, 
+                                 "Dose1 User" ~ "Dose1 Last", 
+                                 "Last User" ~ "Last", 
+                                 .default = DosesIncluded), 
+      tissue = unique(MyPKResults$Tissue), 
+      name_clinical_study = name_clinical_study)
+   
    
    if(complete.cases(save_table)){
       
