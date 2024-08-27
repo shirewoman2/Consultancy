@@ -180,12 +180,16 @@ were included.}
 "portrait" (default) or "landscape"}
 
 \item{title_document}{optionally specify a title for the Word document
-output. If you don't save the table, this will be ignored.}
+output. If you don't save the table, this will be ignored. This sometimes
+struggles if you include special characters, e.g., "-" is fine but ":" is
+not and the file won't save.}
 
 \item{table_caption}{optionally add some text for a table caption. If the
 table you supply contains a column titled "File", there will already be a
 caption listing the source files; this would add some additional text
-before that.}
+before that. This doesn't allow you to include carriage returns in this
+caption because your friendly R coders haven't figured out how to make that
+work yet.}
 }
 \value{
 a formatted table
