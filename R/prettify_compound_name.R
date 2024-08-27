@@ -41,6 +41,9 @@ prettify_compound_name <- function(CompoundName, case = "lower"){
     CompoundName <- sub("_fasted soln|_fed capsule", "", CompoundName)
     CompoundName <- sub("OH-itraconazole", "hydroxyitraconazole", CompoundName)
     
+    # Misspelled compound files
+    CompoundName <- sub("levenorgestrel", "levonorgestrel", CompoundName)
+    
     return(CompoundName)
 }
 
