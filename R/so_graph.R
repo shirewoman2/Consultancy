@@ -926,6 +926,12 @@ so_graph <- function(PKtable,
          round_up(max(c(SO[[i]]$Observed, SO[[i]]$Simulated), na.rm = T)))
       
       if(str_detect(i, "ratio")){
+         
+         # If it was a Guest plot, then set the limit to be < 1 and the upper to
+         # be > 1. Otherwise, that lowest/highest point is way in the corner.
+         if(Limits[1] == 1){Limits[1] <- 2/3}
+         if(Limits[2] == 1){Limits[2] <- 3}
+         
          G[[i]] <- ggplot()  +
             geom_line(data = BoundariesGuest[["1"]][["Upper"]],
                       aes(x = Observed, y = Simulated),
