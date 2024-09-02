@@ -1459,19 +1459,34 @@ ct_plot <- function(ct_dataframe = NA,
               call. = FALSE)
    }
    
-   B <- suppressWarnings(suppressMessages(
-      A + coord_cartesian(xlim = time_range_relative, 
-                          ylim = Ylim_log)))
+   suppressWarnings(suppressMessages(
+      B <- A + coord_cartesian(xlim = time_range_relative, 
+                               ylim = Ylim_log)))
    
    if(EnzPlot){
-      B <- suppressWarnings(suppressMessages(
-         B + scale_y_log10(labels = scales::percent,
-                           expand = expansion(mult = pad_y_num))))
+      
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            B <- B + scale_y_log10(labels = scales::percent,
+                                   expand = expansion(mult = pad_y_num))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+      ))
+      
    } else {
-      B <- suppressWarnings(suppressMessages(
-         B + scale_y_log10(breaks = YLogBreaks,
-                           labels = YLogLabels,
-                           expand = expansion(mult = pad_y_num))))
+      
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            B <- B + scale_y_log10(breaks = YLogBreaks,
+                                   labels = YLogLabels,
+                                   expand = expansion(mult = pad_y_num))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+      ))
    }
    
    if(graph_labels){
@@ -1483,19 +1498,29 @@ ct_plot <- function(ct_dataframe = NA,
    # both plots together, aligned vertically
    if(compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                "inhibitor 1 metabolite")){
-      AB <- suppressWarnings(
-         ggpubr::ggarrange(A, B, ncol = 1, 
-                           labels = labels, 
-                           font.label = list(size = graph_title_size),
-                           align = "v")
-      )
       
-      ABhoriz <- suppressWarnings(
-         ggpubr::ggarrange(A, B, ncol = 2, 
-                           labels = labels, 
-                           font.label = list(size = graph_title_size),
-                           align = "hv")
-      )
+      withCallingHandlers({
+         AB <- suppressWarnings(
+            ggpubr::ggarrange(A, B, ncol = 1, 
+                              labels = labels, 
+                              font.label = list(size = graph_title_size),
+                              align = "v")
+         )
+         if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+            invokeRestart("muffleWarning")
+      })
+      
+      withCallingHandlers({
+         ABhoriz <- suppressWarnings(
+            ggpubr::ggarrange(A, B, ncol = 2, 
+                              labels = labels, 
+                              font.label = list(size = graph_title_size),
+                              align = "hv")
+         )
+         
+         if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+            invokeRestart("muffleWarning")
+      })
       
    } else {
       # If the user didn't want the legend or if the graph is of Inhibitor1,
@@ -1503,31 +1528,53 @@ ct_plot <- function(ct_dataframe = NA,
       if(legend_position == "none" | 
          compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                   "inhibitor 1 metabolite")){
-         AB <- suppressWarnings(
-            ggpubr::ggarrange(A, B, ncol = 1, 
-                              labels = labels, 
-                              font.label = list(size = graph_title_size),
-                              legend = "none", align = "hv"))
+         withCallingHandlers({
+            AB <- suppressWarnings(
+               ggpubr::ggarrange(A, B, ncol = 1, 
+                                 labels = labels, 
+                                 font.label = list(size = graph_title_size),
+                                 legend = "none", align = "hv"))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
          
-         ABhoriz <- suppressWarnings(
-            ggpubr::ggarrange(A, B, ncol = 2,  
-                              labels = labels, 
-                              font.label = list(size = graph_title_size),
-                              legend = "none", align = "hv"))
+         withCallingHandlers({
+            ABhoriz <- suppressWarnings(
+               ggpubr::ggarrange(A, B, ncol = 2,  
+                                 labels = labels, 
+                                 font.label = list(size = graph_title_size),
+                                 legend = "none", align = "hv"))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+         
       } else {
-         AB <- suppressWarnings(
-            ggpubr::ggarrange(A, B, ncol = 1,  
-                              labels = labels, 
-                              font.label = list(size = graph_title_size),
-                              common.legend = TRUE, legend = legend_position,
-                              align = "hv"))
+         withCallingHandlers({
+            AB <- suppressWarnings(
+               ggpubr::ggarrange(A, B, ncol = 1,  
+                                 labels = labels, 
+                                 font.label = list(size = graph_title_size),
+                                 common.legend = TRUE, legend = legend_position,
+                                 align = "hv"))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
          
-         ABhoriz <- suppressWarnings(
-            ggpubr::ggarrange(A, B, ncol = 2,  
-                              labels = labels, 
-                              font.label = list(size = graph_title_size),
-                              common.legend = TRUE, legend = legend_position,
-                              align = "hv"))
+         withCallingHandlers({
+            ABhoriz <- suppressWarnings(
+               ggpubr::ggarrange(A, B, ncol = 2,  
+                                 labels = labels, 
+                                 font.label = list(size = graph_title_size),
+                                 common.legend = TRUE, legend = legend_position,
+                                 align = "hv"))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+         
       }
    }
    
