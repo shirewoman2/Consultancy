@@ -18,6 +18,8 @@ checkSS(
   diff_cutoff = 0.05,
   mean_type = "arithmetic",
   x_axis_interval = NA,
+  graph_title = NA,
+  graph_title_size = 14,
   save_graph = NA,
   fig_height = 4,
   fig_width = 8
@@ -89,6 +91,12 @@ summary data; defaults to the arithmetic mean}
 Acceptable input: any number or leave as NA to accept default values, which
 are generally reasonable guesses as to aesthetically pleasing and
 PK-relevant intervals.}
+
+\item{graph_title}{optionally specify a title that will be centered across
+your graph or set of graphs}
+
+\item{graph_title_size}{the font size for the graph title if it's included;
+default is 14. This also determines the font size of the graph labels.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png". If you do not designate a
