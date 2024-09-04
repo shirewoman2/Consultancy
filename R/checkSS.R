@@ -170,30 +170,36 @@ call. = FALSE)
    # for now, just making everything be ng/mL for convenience.
    ct_dataframe <- convert_units(ct_dataframe, conc_units = "ng/mL")
    
-   suppressMessages(
-      SScheck <- ct_dataframe %>% 
-         filter(Trial == MyMeanType & DoseNum > 0) %>%  
-         group_by(CompoundID, DoseNum, Inhibitor) %>% 
-         # switch doesn't seem to work with summarize. Calculating each value.
-         summarize(t0 = min(Time),
-                   tlast = max(Time),
-                   tmin = Time[which.min(Conc)],
-                   tmax = Time[which.max(Conc)], 
-                   Cmin = min(Conc), 
-                   Cmax = max(Conc), 
-                   C0 = Conc[which.min(Time)], 
-                   Clast = Conc[which.max(Time)]) %>% 
-         ungroup() %>% 
-         mutate(Conc = switch(conc_point, 
-                              "Cmin" = Cmin,
-                              "Cmax" = Cmax, 
-                              "C0" = C0, 
-                              "Clast" = Clast),
-                Time = switch(conc_point, 
-                              "Cmin" = tmin, 
-                              "Cmax" = tmax,
-                              "C0" = t0, 
-                              "Clast" = tlast)) %>% 
+   # suppressMessages(
+   SScheck <- ct_dataframe %>% 
+      filter(Trial == MyMeanType & DoseNum > 0) %>%  
+      group_by(CompoundID, DoseNum, Inhibitor) %>% 
+      # switch doesn't seem to work with summarize. Calculating each value.
+      summarize(t0 = min(Time),
+                tlast = max(Time),
+                tmin = Time[which.min(Conc)],
+                tmax = Time[which.max(Conc)], 
+                Cmin = min(Conc), 
+                Cmax = max(Conc), 
+                C0 = Conc[which.min(Time)], 
+                Clast = Conc[which.max(Time)]) %>% 
+      ungroup() %>% 
+      mutate(Conc = switch(conc_point, 
+                           "Cmin" = Cmin,
+                           "Cmax" = Cmax, 
+                           "C0" = C0, 
+                           "Clast" = Clast),
+             Time = switch(conc_point, 
+                           "Cmin" = tmin, 
+                           "Cmax" = tmax,
+                           "C0" = t0, 
+                           "Clast" = tlast))
+   
+   SScheck <- split(SScheck, f = list(SScheck$CompoundID, 
+                                      SScheck$Inhibitor))
+   
+   for(i in 1:length(SScheck)){
+      SScheck[[i]] <- SScheck[[i]] %>% 
          mutate(PercDiff = c(NA, diff(Conc, lag = 1))/Conc, 
                 DiffCriterion = abs(PercDiff) < diff_cutoff,
                 DiffCriterion = ifelse(is.na(DiffCriterion), FALSE, DiffCriterion), 
@@ -203,7 +209,11 @@ call. = FALSE)
                 DiffCriterion_lab = factor(DiffCriterion_lab, 
                                            levels = c(paste0("\u2265", diff_cutoff*100, "%"),
                                                       paste0("<", diff_cutoff*100, "%"))))
-   )
+   }
+   
+   SScheck <- bind_rows(SScheck) %>% 
+      mutate(Perp = case_when(Inhibitor != "none" ~ "DDI", 
+                              CompoundID == "substrate" & Inhibitor == "none" ~ "baseline"))
    
    # Noting whether perpetrator present and what it is
    MyPerpetrator <- unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])
@@ -219,7 +229,8 @@ call. = FALSE)
    LineAES_inhibitor2 <- str_split(mark_dosing_inhibitor2, pattern = " ")[[1]]
    
    G <- ggplot(SScheck %>% filter(CompoundID == accum_compoundID),
-               aes(x = Time, y = Conc, color = DiffCriterion_lab))
+               aes(x = Time, y = Conc, color = DiffCriterion_lab, 
+                   shape = Perp))
    
    if(mark_dosing_substrate != "none"){
       G <- G + 
@@ -246,7 +257,8 @@ call. = FALSE)
       geom_point(size = 2) + 
       labs(color = paste(str_to_title(accum_compoundID),
                          "difference\nfrom previous point"), 
-           linetype = paste(str_to_title(overlay_compoundID), "concentration")) +
+           linetype = paste(str_to_title(overlay_compoundID), "concentration"), 
+           shape = NULL) +
       xlab("Time (h)") +
       scale_x_time(x_axis_interval = x_axis_interval, 
                    time_range = c(0, 
@@ -255,6 +267,11 @@ call. = FALSE)
                                                                     overlay_compoundID)]))) +
       scale_color_brewer(palette = "Set1") +
       theme_consultancy()
+   
+   if(length(unique(SScheck$Perp[
+      SScheck$CompoundID == accum_compoundID])) == 1){
+      G <- G + guides(shape = "none")
+   }
    
    if(overlay_compoundID != "none"){
       
