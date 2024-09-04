@@ -358,6 +358,13 @@ calc_PK_ratios <- function(PKparameters = NA,
    existing_exp_details <- TEMP %>% pluck("existing_exp_details")
    PKparameters <- TEMP %>% pluck("PKparameters")
    
+   if(is.na(sim_data_file_denominator) | is.na(sim_data_file_numerator)){
+      sim_data_file_denominator <- 
+         unique(TEMP$PKparameters$File[TEMP$PKparameters$NorD == "Denominator"])
+      sim_data_file_numerator <- 
+         unique(TEMP$PKparameters$File[TEMP$PKparameters$NorD == "Numerator"])
+   }
+   
    if("NorD" %in% names(PKparameters) == FALSE){
       PKparameters <- PKparameters %>% 
          mutate(NorD = case_when(File == sim_data_file_numerator ~ "Numerator", 
@@ -1131,7 +1138,7 @@ calc_PK_ratios <- function(PKparameters = NA,
                                  "Last User" ~ "Last", 
                                  .default = DosesIncluded), 
       tissue = unique(MyPKResults$Tissue), 
-      name_clinical_study = name_clinical_study)
+      name_clinical_study = NA)
    
    
    if(complete.cases(save_table)){
