@@ -123,9 +123,14 @@ Computer Science at Yale University).
 
 Lenv_fm <- data.frame(DME = c("CYP3A4", "other CYPs", "aldehyde oxidase"),
                       fm = c(0.79, 0.20, 0.01))
-fm_treemap(fm_dataframe = Lenv_fm)
-fm_treemap(fm_dataframe = Lenv_fm, color_set = "blue-green")
-fm_treemap(fm_dataframe = Lenv_fm, color_set = "set 1",
-    label_fm_cutoff = 0.01)
+fm_treemap(fm_dataframe = Lenv_fm,
+           pathway_column = DME, 
+           fm_column = fm)
+
+fm_treemap(fm_dataframe = Lenv_fm,
+           pathway_column = DME, 
+           fm_column = fm, 
+           color_set = "blue-green", 
+           label_fm_cutoff = 0.01)
 
 }
