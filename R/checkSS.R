@@ -68,6 +68,10 @@
 #'   Acceptable input: any number or leave as NA to accept default values, which
 #'   are generally reasonable guesses as to aesthetically pleasing and
 #'   PK-relevant intervals.
+#' @param graph_title optionally specify a title that will be centered across
+#'   your graph or set of graphs
+#' @param graph_title_size the font size for the graph title if it's included;
+#'   default is 14. This also determines the font size of the graph labels.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png". If you do not designate a
 #'   file extension, it will be saved as a png file, but if you specify a
@@ -105,6 +109,8 @@ checkSS <- function(ct_dataframe,
                     diff_cutoff = 0.05,
                     mean_type = "arithmetic", 
                     x_axis_interval = NA,
+                    graph_title = NA,
+                    graph_title_size = 14, 
                     save_graph = NA,
                     fig_height = 4,
                     fig_width = 8){
@@ -144,14 +150,14 @@ call. = FALSE)
              "median" = "median") %in% ct_dataframe$Trial == FALSE){
       
       warning(wrapn(paste0("You requested the ", 
-                     switch(mean_type, "arithmetic" = "arithmetic means",
-                            "geometric" = "geometric means", 
-                            "median" = "medians"), 
-                     ", but those are not included in your data. Instead, the ",
-                     ifelse(MyMeanType[1] == "mean", 
-                            "arithmetic mean", MyMeanType[1]),
-                     "s will be used.")), 
-					 call. = FALSE)
+                           switch(mean_type, "arithmetic" = "arithmetic means",
+                                  "geometric" = "geometric means", 
+                                  "median" = "medians"), 
+                           ", but those are not included in your data. Instead, the ",
+                           ifelse(MyMeanType[1] == "mean", 
+                                  "arithmetic mean", MyMeanType[1]),
+                           "s will be used.")), 
+              call. = FALSE)
       MyMeanType <- MyMeanType[1] %>% as.character()
       
    } else {
@@ -164,30 +170,36 @@ call. = FALSE)
    # for now, just making everything be ng/mL for convenience.
    ct_dataframe <- convert_units(ct_dataframe, conc_units = "ng/mL")
    
-   suppressMessages(
-      SScheck <- ct_dataframe %>% 
-         filter(Trial == MyMeanType & DoseNum > 0) %>%  
-         group_by(CompoundID, DoseNum, Inhibitor) %>% 
-         # switch doesn't seem to work with summarize. Calculating each value.
-         summarize(t0 = min(Time),
-                   tlast = max(Time),
-                   tmin = Time[which.min(Conc)],
-                   tmax = Time[which.max(Conc)], 
-                   Cmin = min(Conc), 
-                   Cmax = max(Conc), 
-                   C0 = Conc[which.min(Time)], 
-                   Clast = Conc[which.max(Time)]) %>% 
-         ungroup() %>% 
-         mutate(Conc = switch(conc_point, 
-                              "Cmin" = Cmin,
-                              "Cmax" = Cmax, 
-                              "C0" = C0, 
-                              "Clast" = Clast),
-                Time = switch(conc_point, 
-                              "Cmin" = tmin, 
-                              "Cmax" = tmax,
-                              "C0" = t0, 
-                              "Clast" = tlast)) %>% 
+   # suppressMessages(
+   SScheck <- ct_dataframe %>% 
+      filter(Trial == MyMeanType & DoseNum > 0) %>%  
+      group_by(CompoundID, DoseNum, Inhibitor) %>% 
+      # switch doesn't seem to work with summarize. Calculating each value.
+      summarize(t0 = min(Time),
+                tlast = max(Time),
+                tmin = Time[which.min(Conc)],
+                tmax = Time[which.max(Conc)], 
+                Cmin = min(Conc), 
+                Cmax = max(Conc), 
+                C0 = Conc[which.min(Time)], 
+                Clast = Conc[which.max(Time)]) %>% 
+      ungroup() %>% 
+      mutate(Conc = switch(conc_point, 
+                           "Cmin" = Cmin,
+                           "Cmax" = Cmax, 
+                           "C0" = C0, 
+                           "Clast" = Clast),
+             Time = switch(conc_point, 
+                           "Cmin" = tmin, 
+                           "Cmax" = tmax,
+                           "C0" = t0, 
+                           "Clast" = tlast))
+   
+   SScheck <- split(SScheck, f = list(SScheck$CompoundID, 
+                                      SScheck$Inhibitor))
+   
+   for(i in 1:length(SScheck)){
+      SScheck[[i]] <- SScheck[[i]] %>% 
          mutate(PercDiff = c(NA, diff(Conc, lag = 1))/Conc, 
                 DiffCriterion = abs(PercDiff) < diff_cutoff,
                 DiffCriterion = ifelse(is.na(DiffCriterion), FALSE, DiffCriterion), 
@@ -197,7 +209,11 @@ call. = FALSE)
                 DiffCriterion_lab = factor(DiffCriterion_lab, 
                                            levels = c(paste0("\u2265", diff_cutoff*100, "%"),
                                                       paste0("<", diff_cutoff*100, "%"))))
-   )
+   }
+   
+   SScheck <- bind_rows(SScheck) %>% 
+      mutate(Perp = case_when(Inhibitor != "none" ~ "DDI", 
+                              CompoundID == "substrate" & Inhibitor == "none" ~ "baseline"))
    
    # Noting whether perpetrator present and what it is
    MyPerpetrator <- unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])
@@ -213,7 +229,8 @@ call. = FALSE)
    LineAES_inhibitor2 <- str_split(mark_dosing_inhibitor2, pattern = " ")[[1]]
    
    G <- ggplot(SScheck %>% filter(CompoundID == accum_compoundID),
-               aes(x = Time, y = Conc, color = DiffCriterion_lab))
+               aes(x = Time, y = Conc, color = DiffCriterion_lab, 
+                   shape = Perp))
    
    if(mark_dosing_substrate != "none"){
       G <- G + 
@@ -240,7 +257,8 @@ call. = FALSE)
       geom_point(size = 2) + 
       labs(color = paste(str_to_title(accum_compoundID),
                          "difference\nfrom previous point"), 
-           linetype = paste(str_to_title(overlay_compoundID), "concentration")) +
+           linetype = paste(str_to_title(overlay_compoundID), "concentration"), 
+           shape = NULL) +
       xlab("Time (h)") +
       scale_x_time(x_axis_interval = x_axis_interval, 
                    time_range = c(0, 
@@ -249,6 +267,11 @@ call. = FALSE)
                                                                     overlay_compoundID)]))) +
       scale_color_brewer(palette = "Set1") +
       theme_consultancy()
+   
+   if(length(unique(SScheck$Perp[
+      SScheck$CompoundID == accum_compoundID])) == 1){
+      G <- G + guides(shape = "none")
+   }
    
    if(overlay_compoundID != "none"){
       
@@ -350,6 +373,14 @@ call. = FALSE)
              linetype = guide_legend(order = 3)) +
       theme(axis.title = element_text(face = "plain"))
    
+   if(complete.cases(graph_title) & 
+      "data.frame" %in% class(sim_enz_dataframe) == FALSE){
+      G <- G + ggtitle(graph_title) +
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+               plot.title.position = "panel")
+   }
+   
+   
    if("data.frame" %in% class(sim_enz_dataframe)){
       sim_enz_dataframe <- sim_enz_dataframe %>% filter(File == unique(ct_dataframe$File))
       
@@ -393,7 +424,14 @@ call. = FALSE)
       
       G <- ggpubr::ggarrange(EnzPlot, G, ncol = 1, align = "hv")
       
+      if(complete.cases(graph_title)){
+         G <- ggpubr::annotate_figure(G, 
+                                      top = ggpubr::text_grob(graph_title, 
+                                                              size = graph_title_size))
+      }
+      
    }
+   
    
    # Saving ------------------------------------------------------------------
    

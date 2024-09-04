@@ -86,10 +86,15 @@
 #'
 #' Lenv_fm <- data.frame(DME = c("CYP3A4", "other CYPs", "aldehyde oxidase"),
 #'                       fm = c(0.79, 0.20, 0.01))
-#' fm_treemap(fm_dataframe = Lenv_fm)
-#' fm_treemap(fm_dataframe = Lenv_fm, color_set = "blue-green")
-#' fm_treemap(fm_dataframe = Lenv_fm, color_set = "set 1",
-#'     label_fm_cutoff = 0.01)
+#' fm_treemap(fm_dataframe = Lenv_fm,
+#'            pathway_column = DME, 
+#'            fm_column = fm)
+#' 
+#' fm_treemap(fm_dataframe = Lenv_fm,
+#'            pathway_column = DME, 
+#'            fm_column = fm, 
+#'            color_set = "blue-green", 
+#'            label_fm_cutoff = 0.01)
 #' 
 fm_treemap <- function(fm_dataframe,
                        pathway_column, 
@@ -157,6 +162,17 @@ fm_treemap <- function(fm_dataframe,
       DDI_option <- "baseline only"
    }
    
+   # If Parameter column not present, assume that it should be fm.
+   if("Parameter" %in% names(fm_dataframe) == FALSE){
+      fm_dataframe$Parameter <- "fm"
+   }
+   
+   # If Tissue column not present, assume that it should be plasma.
+   if("Tissue" %in% names(fm_dataframe) == FALSE){
+      fm_dataframe$Tissue <- "plasma"
+   }
+   
+   
    # Main function ----------------------------------------------------------
    
    # Adding labels 
@@ -164,11 +180,15 @@ fm_treemap <- function(fm_dataframe,
       rename(DME = !!pathway_column,
              fm = !!fm_column)
    
-   if(DDI_option == "baseline only"){
-      fm_dataframe <- fm_dataframe %>% filter(PerpPresent == FALSE)
-   } else if(DDI_option == "DDI only"){
-      fm_dataframe <- fm_dataframe %>% filter(PerpPresent == TRUE)
-   }
+   if("PerpPresent" %in% names(fm_dataframe)){
+      if(DDI_option == "baseline only"){
+         fm_dataframe <- fm_dataframe %>% filter(PerpPresent == FALSE)
+      } else if(DDI_option == "DDI only"){
+         fm_dataframe <- fm_dataframe %>% filter(PerpPresent == TRUE)
+      }
+   } else (
+      fm_dataframe$PerpPresent <- FALSE
+   )
    
    # Making a prettier label for any faceting by DDI
    fm_dataframe <- fm_dataframe %>% 
