@@ -830,34 +830,88 @@ forest_plot <- function(forest_dataframe,
    # forest_dataframe where the names of the columns included BOTH the PK
    # parameter AND the stat, separated by two underscores. This allows for
    # either the wide or the long format for forest_dataframe to work.
-   if(any(str_detect(names(forest_dataframe), "(AUC|Cmax).*?__"))){
-      # This is when they supplied a wide format of the data.
-      forest_dataframe <- forest_dataframe %>% 
-         pivot_longer(cols = matches("^AUC.*ratio|Cmax.*ratio"), 
-                      names_to = "PKParam", values_to = "Value") %>% 
-         separate(PKParam, into = c("PKparameter", "Statistic"), sep = "__") %>% 
-         mutate(Statistic = case_match(Statistic, 
-                                       "GMR" ~ "GeoMean", 
-                                       "CI90_lo"~ "CI_Lower",
-                                       "CI90_hi" ~ "CI_Upper", 
-                                       .default = Statistic)) %>% 
-         pivot_wider(names_from = "Statistic", values_from = "Value")
-      
-      # Also reshaping observed data
-      if(ObsIncluded){
+   
+   # Checking for that or for input from pk_table that's just not rounded, which
+   # should also work.
+   Wide <- prettify_column_names(forest_dataframe, return_which_are_PK = T)
+   Wide <- any(Wide$IsPKParam) | 
+      any(str_detect(names(forest_dataframe), "(AUC|Cmax).*?__"))
+   
+   if(Wide){
+      # This is when they supplied a wide format of the data straight from
+      # pk_table output
+      if("Statistic" %in% names(forest_dataframe)){
          
-         # Check whether obs data in long format already and reshape as needed
-         if("PKparameter" %in% names(observed_PK) == FALSE){ 
-            observed_PK <- observed_PK %>% 
-               pivot_longer(cols = matches("^AUC.*ratio|Cmax.*ratio"), 
-                            names_to = "PKParam", values_to = "Value") %>% 
-               separate(PKParam, into = c("PKparameter", "Statistic"), sep = "__") %>% 
-               mutate(Statistic = case_match(Statistic, 
-                                             "GMR" ~ "GeoMean", 
-                                             "CI90_lo"~ "CI_Lower",
-                                             "CI90_hi" ~ "CI_Upper", 
-                                             .default = Statistic)) %>% 
-               pivot_wider(names_from = "Statistic", values_from = "Value")
+         forest_dataframe <- forest_dataframe %>% 
+            pivot_longer(cols = matches("^AUC.*ratio|Cmax.*ratio"), 
+                         names_to = "PKparameter", values_to = "Value") %>% 
+            mutate(Statistic = case_when(
+               Statistic == "Simulated geometric mean" ~ "GeoMean", 
+               Statistic == "Simulated" & mean_type == "geometric" ~ "Geomean", 
+               Statistic == "CV%"  & mean_type == "geometric" ~ "GCV", 
+               Statistic == "Simulated" & mean_type == "arithmetic" ~ "Mean", 
+               Statistic == "CV%"  & mean_type == "arithmetic" ~ "CV", 
+               Statistic == "90% CI - Lower" ~ "CI_Lower",
+               Statistic == "90% CI - Upper" ~ "CI_Upper", 
+               Statistic == "90% CI" ~ "CI90", 
+               
+               Statistic == "Standard deviation" ~ "SD",
+               Statistic == "5th Percentile" ~ "per5", 
+               Statistic == "95th Percentile" ~ "per95", 
+               Statistic == "Minimum" ~ "min", 
+               Statistic == "Maximum" ~ "max", 
+               Statistic == "Median" ~ "median", 
+               
+               Statistic == "Observed" & mean_type == "geometric" ~ "geomean_obs", # FIXME will need to deal w/format of this later
+               Statistic == "Observed" & mean_type == "arithmetic" ~ "mean_obs",
+               # "CV_obs" = "Observed CV%",
+               # "GCV_obs" = "Observed CV%",
+               # "CIL_obs" = "observed CI - Lower",
+               # "CIU_obs" = "observed CI - Upper",
+               # "CIconcat_obs" = "Observed CI",
+               
+               # Statistic == "Rangeconcat" = "Range",
+               # 
+               # "S_O" = "S/O",
+               # "S_O_TM_MinMean" = "S/O range for trial means",
+               # "MinMean" = "Range of trial means")
+               .default = Statistic)) %>% 
+            pivot_wider(names_from = "Statistic", values_from = "Value")
+         
+         if("CI90" %in% names(forest_dataframe)){
+            # FIXME - Haven't yet dealt w/scenario where they have concatenated
+            # variability. Will need to separate that.
+         }
+         
+      } else {
+         
+         forest_dataframe <- forest_dataframe %>% 
+            pivot_longer(cols = matches("^AUC.*ratio|Cmax.*ratio"), 
+                         names_to = "PKParam", values_to = "Value") %>% 
+            separate(PKParam, into = c("PKparameter", "Statistic"), sep = "__") %>% 
+            mutate(Statistic = case_match(Statistic, 
+                                          "GMR" ~ "GeoMean", 
+                                          "CI90_lo"~ "CI_Lower",
+                                          "CI90_hi" ~ "CI_Upper", 
+                                          .default = Statistic)) %>% 
+            pivot_wider(names_from = "Statistic", values_from = "Value")
+         
+         # Also reshaping observed data
+         if(ObsIncluded){
+            
+            # Check whether obs data in long format already and reshape as needed
+            if("PKparameter" %in% names(observed_PK) == FALSE){ 
+               observed_PK <- observed_PK %>% 
+                  pivot_longer(cols = matches("^AUC.*ratio|Cmax.*ratio"), 
+                               names_to = "PKParam", values_to = "Value") %>% 
+                  separate(PKParam, into = c("PKparameter", "Statistic"), sep = "__") %>% 
+                  mutate(Statistic = case_match(Statistic, 
+                                                "GMR" ~ "GeoMean", 
+                                                "CI90_lo"~ "CI_Lower",
+                                                "CI90_hi" ~ "CI_Upper", 
+                                                .default = Statistic)) %>% 
+                  pivot_wider(names_from = "Statistic", values_from = "Value")
+            }
          }
       }
    }
@@ -1230,7 +1284,7 @@ forest_plot <- function(forest_dataframe,
                  call. = FALSE)
          y_order <- "strongest inhibitor to strongest inducer"
       } else if(length(y_order) > 1){
-         YOrderExtra <- setdiff(y_order, unique(forest_dataframe$YCol))
+         YOrderExtra <- setdiff(y_order, unique(forest_dataframe$YCol)) # FIXME - need to deal w/this error
          if(length(YOrderExtra) > 0){
             warning(paste0("The y axis values `", str_comma(YOrderExtra), 
                            "` are included for the y order but are not present in your data. They will be ignored."), 
