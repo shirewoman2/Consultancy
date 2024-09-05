@@ -785,6 +785,7 @@ so_graph <- function(PKtable,
          "sub steady state for last" %in% tolower(title_adjustments)){
          
          PKparameters <- sub("_last", "_ss", PKparameters)
+         PKwithBlanks <- sub("_last", "_ss", PKwithBlanks)
          SO$PKparameter <- sub("_last", "_ss", SO$PKparameter)
       }
    }
