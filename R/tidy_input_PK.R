@@ -817,6 +817,8 @@ tidy_input_PK <- function(PKparameters,
    
    if("CompoundID" %in% names(PKparameters)){
       PKparameters$CompoundID <- tolower(PKparameters$CompoundID)
+   } else if(any(complete.cases(compoundsToExtract))){
+      PKparameters$CompoundID <- compoundsToExtract # FIXME - check whether there is will work with with more than one compound ID
    } else {
       PKparameters$CompoundID <- NA
    }
