@@ -3,8 +3,7 @@
 \docType{data}
 \name{PKexamples}
 \alias{PKexamples}
-\title{Examples for specifying PK parameters with pksummary_table and
-pk_summary_mult functions}
+\title{Examples for specifying PK parameters with pk_table}
 \format{
 a data.frame
 }
@@ -12,7 +11,6 @@ a data.frame
 PKexamples
 }
 \description{
-Examples for specifying PK parameters with pksummary_table and
-pk_summary_mult functions
+Examples for specifying PK parameters with pk_table
 }
 \keyword{datasets}

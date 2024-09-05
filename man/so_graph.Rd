@@ -264,17 +264,16 @@ facet titles. If left as NA, a reasonable guess will be used.}
   substitutions people might want. Instead of the using AUCinf, graph titles will
   use AUC0 to inf}}}
 
-\item{all_intervals_together}{NOT YET SET UP. TRUE or FALSE (default) for
-whether to combine all of a single type of PK parameter into a single
-graph. For example, setting this to TRUE would put all the Cmax PK --
-regardless of whether it was for the 1st dose, the last dose, or a custom
-interval -- into a single graph. The default, FALSE, means that anything
-that was its own column in the PK summary table would also be its own graph
-here. If you do set this to TRUE, the color and shape of the points will be
-mapped to which interval it is, which means that you can't \emph{also}
-specify something for the arguments \code{point_color_column} or
-\code{point_shape_column}. If you do, those will be ignored. Try this out
-if you're uncertain what we mean.}
+\item{all_intervals_together}{TRUE or FALSE (default) for whether to combine
+all of a single type of PK parameter into a single graph. For example,
+setting this to TRUE would put all the Cmax PK -- regardless of whether it
+was for the 1st dose, the last dose, or a custom interval -- into a single
+graph. The default, FALSE, means that anything that was its own column in
+the PK summary table would also be its own graph here. \emph{NOTE:} If you
+do set this to TRUE, the shape of the points will be mapped to which
+interval it is, which means that you can't \emph{also} specify something
+for the argument \code{point_shape_column}. If you do, it will be
+ignored. Try this out if you're uncertain what we mean.}
 
 \item{all_AUCs_together}{TRUE or FALSE (default) for whether to combine,
 e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
