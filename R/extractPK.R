@@ -413,7 +413,7 @@ extractPK <- function(sim_data_file,
                                   "primary metabolite 2" = "\\(Sub Met2\\)",
                                   "secondary metabolite" = "\\(Sub SM\\)", 
                                   "inhibitor 1" = "\\(Inh 1\\)",
-                                  "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
+                                  "inhibitor 1 metabolite" = "\\(Inh( )?1 M(et)?\\)", 
                                   "inhibitor 2" = "\\(Inh 2\\)"), 
                            switch(tissue, 
                                   "plasma" = "\\(CP", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
