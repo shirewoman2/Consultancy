@@ -432,7 +432,7 @@ extractObsConcTime <- function(obs_data_file,
                     .fns = as.numeric)) %>% 
       select(any_of(c(ObsColNames[[SimVersion]]$ColName[
          ObsColNames[[SimVersion]]$DosingInfo == FALSE], "Species", 
-         "Inhibitor", "Simulated"< "Trial", "Tissue", "ObsFile", 
+         "Inhibitor", "Simulated", "Trial", "Tissue", "ObsFile", 
          "Time_units", "Conc_units"))) 
    
    if(add_t0){
