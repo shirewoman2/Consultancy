@@ -276,22 +276,25 @@
 #'   the label in the legend for the line style and the shape. If left as the
 #'   default NA when a legend is included and a perpetrator is present, the
 #'   label in the legend will be "Inhibitor".
-#' @param prettify_compound_names TRUE (default) or FALSE for whether to make
-#'   compound names prettier in legend entries and in any Word output files.
-#'   This was designed for simulations where the substrate and any metabolites,
-#'   perpetrators, or perpetrator metabolites are among the standard options for
-#'   the simulator, and leaving \code{prettify_compound_names = TRUE} will make
-#'   the name of those compounds something more human readable. For example,
-#'   "SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
-#'   become "midazolam". Set each compound to the name you'd prefer to see in
-#'   your legend and Word output if you would like something different. For
-#'   example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
-#'   "substrate" = "superstatin")}. Please note that "inhibitor" includes
+#' @param prettify_compound_names TRUE (default), FALSE or a character vector:
+#'   This is asking whether to make compound names prettier in legend entries
+#'   and in any Word output files. This was designed for simulations where the
+#'   substrate and any metabolites, perpetrators, or perpetrator metabolites are
+#'   among the standard options for the simulator, and leaving
+#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+#'   FALSE will leave the compound names as is. For an approach with more
+#'   control over what the compound names will look like in legends and Word
+#'   output, set each compound to the exact name you  want with a named
+#'   character vector where the names are "substrate" and, as applicable,
+#'   "perpetrator" and the values are the names you want, e.g.,
+#'   \code{prettify_compound_names = c("perpetrator" = "teeswiftavir",
+#'   "substrate" = "superstatin")}. Please note that "perpetrator" includes
 #'   \emph{all} the perpetrators and perpetrator metabolites present, so, if
 #'   you're setting the perpetrator name, you really should use something like
-#'   this if
-#'   you're including perpetrator metabolites: \code{prettify_compound_names =
-#'   c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+#'   this if you're including perpetrator metabolites: \code{prettify_compound_names =
+#'   c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 #'   "superstatin")}.
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed}
@@ -329,6 +332,10 @@
 #'   \code{\link{extractExpDetails_mult}} to be used for creating figure
 #'   headings and captions tailored to the specific simulation when saving to a
 #'   Word file or for use with \code{qc_graph}
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the graph. This works best if you supply something
+#'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+#'   output a list of the graph, the figure heading, and the figure caption.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". The nice thing about saving to Word is that the figure title
@@ -355,6 +362,16 @@
 #'   Simulator output, so the old "subsection_ADAM" name we had used for which
 #'   subtype of tissue it was no longer works as well. Please use
 #'   "Tissue_subtype" instead going forward.
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "Clinical Study 101, fed
+#'   cohort".
+#' @param study_design_matches_obs optionally specify whether the study design
+#'   for the simulated data matched that of any observed data. This only affects
+#'   the caption of the graph. If set to TRUE, this assumes that the number of
+#'   subjects in the clinical study matches the number of subjects per trial in
+#'   the simulated data. 
 #'
 #' @return Output is a ggplot2 graph or two ggplot2 graphs arranged with
 #'   ggpubr::ggarrange()
@@ -438,6 +455,8 @@ ct_plot <- function(ct_dataframe = NA,
                     graph_title_size = 14, 
                     qc_graph = FALSE,
                     existing_exp_details = NA,
+                    return_caption = FALSE, 
+                    name_clinical_study = NA, 
                     save_graph = NA,
                     fig_height = NA,
                     fig_width = NA, 
@@ -497,20 +516,21 @@ ct_plot <- function(ct_dataframe = NA,
    if("character" %in% class(prettify_compound_names)){
       
       names(prettify_compound_names) <- tolower(names(prettify_compound_names))
-      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "perpetrator")] <- "inhibitor"
-      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "inhib")] <- "inhibitor"
-      if("inhibitor" %in% names(prettify_compound_names) == FALSE & 
+      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "inhibitor")] <- "perpetrator"
+      names(prettify_compound_names)[str_detect(names(prettify_compound_names), "inhib")] <- "perpetrator"
+      if("perpetrator" %in% names(prettify_compound_names) == FALSE & 
          any(ct_dataframe$Inhibitor != "none")){
          prettify_compound_names <-
             c(prettify_compound_names, 
-              "inhibitor" = prettify_compound_name(
+              "perpetrator" = prettify_compound_name(
                  unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])))
       }
-      if("substrate" %in% names(prettify_compound_names) == FALSE & 
-         any(ct_dataframe$CompoundID == "substrate")){
+      if(EnzPlot == FALSE &&
+         ("substrate" %in% names(prettify_compound_names) == FALSE & 
+          any(ct_dataframe$CompoundID == "substrate"))){
          prettify_compound_names <-
             c(prettify_compound_names, 
-              "inhibitor" = prettify_compound_name(
+              "perpetrator" = prettify_compound_name(
                  unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])))
       }
    }
@@ -838,7 +858,7 @@ ct_plot <- function(ct_dataframe = NA,
       }
       
       if(class(prettify_compound_names) == "character"){
-         MyPerpetrator <- prettify_compound_names["inhibitor"]
+         MyPerpetrator <- prettify_compound_names["perpetrator"]
       }
       
       Data <- 
@@ -1439,19 +1459,34 @@ ct_plot <- function(ct_dataframe = NA,
               call. = FALSE)
    }
    
-   B <- suppressWarnings(suppressMessages(
-      A + coord_cartesian(xlim = time_range_relative, 
-                          ylim = Ylim_log)))
+   suppressWarnings(suppressMessages(
+      B <- A + coord_cartesian(xlim = time_range_relative, 
+                               ylim = Ylim_log)))
    
    if(EnzPlot){
-      B <- suppressWarnings(suppressMessages(
-         B + scale_y_log10(labels = scales::percent,
-                           expand = expansion(mult = pad_y_num))))
+      
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            B <- B + scale_y_log10(labels = scales::percent,
+                                   expand = expansion(mult = pad_y_num))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+      ))
+      
    } else {
-      B <- suppressWarnings(suppressMessages(
-         B + scale_y_log10(breaks = YLogBreaks,
-                           labels = YLogLabels,
-                           expand = expansion(mult = pad_y_num))))
+      
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            B <- B + scale_y_log10(breaks = YLogBreaks,
+                                   labels = YLogLabels,
+                                   expand = expansion(mult = pad_y_num))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+      ))
    }
    
    if(graph_labels){
@@ -1463,19 +1498,30 @@ ct_plot <- function(ct_dataframe = NA,
    # both plots together, aligned vertically
    if(compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                "inhibitor 1 metabolite")){
-      AB <- suppressWarnings(
-         ggpubr::ggarrange(A, B, ncol = 1, 
-                           labels = labels, 
-                           font.label = list(size = graph_title_size),
-                           align = "v")
-      )
       
-      ABhoriz <- suppressWarnings(
-         ggpubr::ggarrange(A, B, ncol = 2, 
-                           labels = labels, 
-                           font.label = list(size = graph_title_size),
-                           align = "hv")
-      )
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            AB <- ggpubr::ggarrange(A, B, ncol = 1, 
+                                    labels = labels, 
+                                    font.label = list(size = graph_title_size),
+                                    align = "v")
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+      ))
+      
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            ABhoriz <- ggpubr::ggarrange(A, B, ncol = 2, 
+                                         labels = labels, 
+                                         font.label = list(size = graph_title_size),
+                                         align = "hv")
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+      ))
       
    } else {
       # If the user didn't want the legend or if the graph is of Inhibitor1,
@@ -1483,31 +1529,57 @@ ct_plot <- function(ct_dataframe = NA,
       if(legend_position == "none" | 
          compoundToExtract %in% c("inhibitor 1", "inhibitor 2", 
                                   "inhibitor 1 metabolite")){
-         AB <- suppressWarnings(
-            ggpubr::ggarrange(A, B, ncol = 1, 
-                              labels = labels, 
-                              font.label = list(size = graph_title_size),
-                              legend = "none", align = "hv"))
+         suppressWarnings(suppressMessages(
+            withCallingHandlers({
+               AB <- ggpubr::ggarrange(A, B, ncol = 1, 
+                                       labels = labels, 
+                                       font.label = list(size = graph_title_size),
+                                       legend = "none", align = "hv")
+            }, warning = function(w){
+               if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+                  invokeRestart("muffleWarning")
+            })
+         ))
          
-         ABhoriz <- suppressWarnings(
-            ggpubr::ggarrange(A, B, ncol = 2,  
-                              labels = labels, 
-                              font.label = list(size = graph_title_size),
-                              legend = "none", align = "hv"))
+         suppressWarnings(suppressMessages(
+            withCallingHandlers({
+               ABhoriz <- ggpubr::ggarrange(A, B, ncol = 2,  
+                                            labels = labels, 
+                                            font.label = list(size = graph_title_size),
+                                            legend = "none", align = "hv")
+            }, warning = function(w){
+               if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+                  invokeRestart("muffleWarning")
+            })
+         ))
+         
       } else {
-         AB <- suppressWarnings(
-            ggpubr::ggarrange(A, B, ncol = 1,  
-                              labels = labels, 
-                              font.label = list(size = graph_title_size),
-                              common.legend = TRUE, legend = legend_position,
-                              align = "hv"))
+         suppressWarnings(suppressMessages(
+            withCallingHandlers({
+               AB <- ggpubr::ggarrange(A, B, ncol = 1,  
+                                       labels = labels, 
+                                       font.label = list(size = graph_title_size),
+                                       common.legend = TRUE, legend = legend_position,
+                                       align = "hv")
+            }, warning = function(w){
+               if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+                  invokeRestart("muffleWarning")
+            })
+         ))
          
-         ABhoriz <- suppressWarnings(
-            ggpubr::ggarrange(A, B, ncol = 2,  
-                              labels = labels, 
-                              font.label = list(size = graph_title_size),
-                              common.legend = TRUE, legend = legend_position,
-                              align = "hv"))
+         suppressWarnings(suppressMessages(
+            withCallingHandlers({
+               ABhoriz <- ggpubr::ggarrange(A, B, ncol = 2,  
+                                            labels = labels, 
+                                            font.label = list(size = graph_title_size),
+                                            common.legend = TRUE, legend = legend_position,
+                                            align = "hv")
+            }, warning = function(w){
+               if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+                  invokeRestart("muffleWarning")
+            })
+         ))
+         
       }
    }
    
@@ -1526,14 +1598,14 @@ ct_plot <- function(ct_dataframe = NA,
                                           face = "bold", size = graph_title_size))
    }
    
-   Out <- switch(linear_or_log, 
-                 "linear" = A,
-                 "semi-log" = B,
-                 "log" = B,
-                 "both" = AB, 
-                 "both vertical" = AB,
-                 "both horizontal" = ABhoriz, 
-                 "horizontal and vertical" = AB)
+   Out <- list("graph" = switch(linear_or_log, 
+                                "linear" = A,
+                                "semi-log" = B,
+                                "log" = B,
+                                "both" = AB, 
+                                "both vertical" = AB,
+                                "both horizontal" = ABhoriz, 
+                                "horizontal and vertical" = AB))
    
    if(qc_graph){
       
@@ -1544,12 +1616,31 @@ ct_plot <- function(ct_dataframe = NA,
       
       # Out would have been just the graph or just the two arranged graphs at
       # this point, so need to convert it to a list here.
-      Out <- list("Graph" = Out, 
-                  "QCGraph" = ggpubr::ggarrange(
-                     plotlist = list(Out, flextable::gen_grob(QCTable)),
-                     font.label = list(size = graph_title_size))
-      )
+      Out[["QCgraph"]] <- ggpubr::ggarrange(
+         plotlist = list(Out, flextable::gen_grob(QCTable)),
+         font.label = list(size = graph_title_size))
    }
+   
+   # Setting up figure caption --------------------------------------------
+   
+   PlotType <- case_when(EnzPlot == TRUE ~ "enzyme-abundance", 
+                         # ReleaseProfPlot == TRUE ~ "release-profile",
+                         # DissolutionProfPlot == TRUE ~ "dissolution-profile", 
+                         TRUE ~ "concentration-time")
+   
+   FigText <- make_ct_caption(ct_dataframe = Data, 
+                              single_or_multiple_profiles = "single", 
+                              existing_exp_details = existing_exp_details, 
+                              mean_type = mean_type, 
+                              linear_or_log = linear_or_log, 
+                              figure_type = figure_type,
+                              plot_type = PlotType, 
+                              name_clinical_study = name_clinical_study, 
+                              prettify_compound_names = prettify_compound_names, 
+                              hline_position = hline_position, 
+                              vline_position = vline_position, 
+                              hline_style = hline_style, 
+                              vline_style = vline_style)
    
    
    # Saving -----------------------------------------------------------------
@@ -1602,7 +1693,7 @@ ct_plot <- function(ct_dataframe = NA,
       if(qc_graph & Ext != "docx"){
          ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
                 height = fig_height, width = fig_width * 2, dpi = 600, 
-                plot = ggpubr::ggarrange(plotlist = list(Out$QCGraph), 
+                plot = ggpubr::ggarrange(plotlist = list(Out$QCgraph), 
                                          nrow = 1))
       }
       
@@ -1670,6 +1761,15 @@ ct_plot <- function(ct_dataframe = NA,
                    plot = ABhoriz, height = fig_height, width = fig_width, dpi = 600)
          }
       }
+   }
+   
+   if(return_caption){
+      Out[["figure_heading"]] <- FigText$heading
+      Out[["figure_caption"]]  <-  FigText$caption
+   } 
+   
+   if(length(Out) == 1){
+      Out <- Out[[1]]
    }
    
    return(Out)

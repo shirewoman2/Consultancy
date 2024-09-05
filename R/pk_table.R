@@ -26,7 +26,7 @@
 #'   for this: 1) supply a file to read or a data.frame (R speak for "a table")
 #'   that lists which simulation files, compounds, tissues, and PK you want or
 #'   2) supply a character vector of which PK parameters you want and then also
-#'   specify what you need in terms of tissues, which compounds, which
+#'   specify what you need in terms of which tissues, which compounds, which
 #'   simulation files, and which tab to get the data from with the arguments
 #'   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
 #'   \code{sheet_PKparameters}.
@@ -39,16 +39,19 @@
 #'   specify exactly which simulation file should get which PK parameter from
 #'   which tissue and, when user-specified intervals are involved, from which
 #'   tab in the Excel file those data should be pulled. Whatever you supply, the
-#'   columns that will be read are "File" (same thing as the argument
-#'   \code{sim_data_files}), "Sheet" (same thing as the argument
-#'   \code{sheet_PKparameters}), "Tissue" (same as the argument \code{tissues}),
-#'   "CompoundID" (same as the argument \code{compoundsToExtract}), "Value" for
-#'   any observed data (no equivalent argument), and "Variability" for any
-#'   observed variability (no equivalent argument here, either). If you
+#'   columns that will be read are: \itemize{\item{"File" (same thing as the argument
+#'   \code{sim_data_files})} \item{"Sheet" (same thing as the argument
+#'   \code{sheet_PKparameters})} \item{"Tissue" (same as the argument \code{tissues})}
+#'   \item{"CompoundID" (same as the argument \code{compoundsToExtract})
+#'   \item{"ObsValue" for any observed data (no equivalent argument)}
+#'   \item{"Variability" for any observed variability (no equivalent argument
+#'   here, either)}} If you
 #'   omit any of those columns, whatever you supply for their respective
 #'   arguments will be used instead. If you supply something for one of them
 #'   in the data.frame or file and \emph{also} something for its argument, the
-#'   argument will be ignored. Here is how to specify each of the possible
+#'   argument will be ignored. \cr
+#'
+#'   Here is how to specify each of the possible
 #'   inputs for Option 1:\describe{\item{a csv file}{list the file
 #'   name, including the file extension ".csv" inside quotes, e.g., "PK needed.csv"}
 #'
@@ -58,7 +61,7 @@
 #'
 #'   \item{a data.frame}{If you'd like to supply a data.frame with the same
 #'   columns you would have had in the .csv or Excel file, that works just the
-#'   same.}}}
+#'   same.}}}}
 #'
 #'   \item{\strong{Option 2: }specify the PK parameters you want for all your
 #'   simulations}{This is a good option when you want the same information
@@ -90,7 +93,7 @@
 #'
 #'   Parameters that don't make sense for your scenario -- such as asking for
 #'   \code{AUCinf_dose1_withInhib} when your simulation did not include a
-#'   perpetrator -- will not be included.
+#'   perpetrator -- will be ignored.
 #'
 #' @param sim_data_files the Simcyp Simulator output Excel files to use. Options
 #'   for how to specify these: \itemize{\item{NA to extract PK data
@@ -143,6 +146,12 @@
 #'   time by supplying that object here, unquoted. If left as NA, this function
 #'   will run \code{extractExpDetails} behind the scenes anyway to figure out
 #'   some information about your experimental set up.
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the table. If set to TRUE, you'll get as output a
+#'   list of the table, the table heading, and the table caption. When you've
+#'   requested multiple individual tables, e.g., when \code{single_table =
+#'   FALSE}, this will not return anything at this point. We may add that later,
+#'   but at present, this is not set up to return multiple table captions.
 #' @param mean_type What kind of means and CVs do you want listed in the output
 #'   table? Options are "arithmetic" or "geometric" (default).
 #' @param use_median_for_tmax TRUE (default) or FALSE for whether to use median
@@ -224,6 +233,23 @@
 #'   human-readable column names. TRUE makes pretty column names such as "AUCinf
 #'   (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 #'   \code{\link{extractPK}}, e.g., "AUCinf_dose1".
+#' @param prettify_compound_names TRUE (default) or FALSE on whether to make
+#'   compound names prettier in the prettified column titles and in any Word
+#'   output files. This was designed for simulations where the substrate and any
+#'   metabolites, perpetrators, or perpetrator metabolites are among the
+#'   standard options for the simulator, and leaving \code{prettify_compound_names =
+#'   TRUE} will make the name of those compounds something more human readable.
+#'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
+#'   "Sim-Midazolam" will become "midazolam". Set each compound to the name
+#'   you'd prefer to see in your column titles if you would like something
+#'   different. For example, \code{prettify_compound_names = c("perpetrator" =
+#'   "teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
+#'   includes \emph{all} the perpetrators and perpetrator metabolites present,
+#'   so, if you're setting the perpetrator name, you really should use something
+#'   like this
+#'   if you're including perpetrator metabolites: \code{prettify_compound_names =
+#'   c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+#'   "superstatin")}.
 #' @param extract_forest_data TRUE or FALSE (default) to get forest-plot data at
 #'   the same time. This only applies when the compound to extract is the
 #'   substrate or a substrate metabolite. If set to TRUE, this will return a
@@ -290,6 +316,11 @@
 #'   leave off the file extension, we'll assume you want it to be ".csv". All PK
 #'   info will be included in a single Word or csv file, and, if
 #'   \code{checkDataSource = TRUE}, that will be saved in a single csv file.
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "clinical study 101, fed
+#'   cohort".
 #' @param single_table TRUE (default) or FALSE for whether to save all the PK
 #'   data in a single table or break the data up by tissue, compound ID, and
 #'   file into multiple tables. This only applies to the Word output.
@@ -297,7 +328,10 @@
 #'   "portrait" (default) or "landscape"
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
-#' @param ...
+#' @param ... used under-the-hood to check for mis-specified arguments
+#' @param return_PK_pulled TRUE or FALSE (default) for whether to return as a
+#'   list item what PK parameters were pulled. This is used internally for
+#'   writing table headings later.
 #'
 #' @return a data.frame
 #' @export
@@ -329,16 +363,18 @@ pk_table <- function(PKparameters = NA,
                      rounding = NA,
                      prettify_columns = TRUE, 
                      prettify_compound_names = TRUE, 
+                     name_clinical_study = NA, 
                      extract_forest_data = FALSE, 
                      checkDataSource = FALSE, 
+                     save_table = NA, 
                      highlight_gmr_colors = NA, 
                      highlight_so_cutoffs = NA, 
                      highlight_so_colors = "yellow to red", 
-                     save_table = NA, 
                      single_table = FALSE,
                      page_orientation = "portrait", 
                      fontsize = 11, 
                      return_PK_pulled = FALSE, 
+                     return_caption = FALSE, 
                      ...){
    
    # Error catching ----------------------------------------------------------
@@ -937,19 +973,22 @@ pk_table <- function(PKparameters = NA,
    # Any time AUCinf_dose1 was requested, only retain any AUCt_X that were
    # specfically requested or when AUCinf could not be returned.
    if("AUCinf_dose1" %in% PKpulled$PKpulled & 
-      "AUCt_dose1" %in% PKrequested$PKrequested == FALSE){
+      "AUCt_dose1" %in% PKparam_tidied$PKparameters$PKparameter[
+         PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_dose1"))
       PKpulled <- PKpulled %>% filter(!PKpulled %in% "AUCt_dose1")
    }
    
    if("AUCinf_dose1_withInhib" %in% PKpulled$PKpulled & 
-      "AUCt_dose1_withInhib" %in% PKrequested$PKrequested == FALSE){
+      "AUCt_dose1_withInhib" %in% PKparam_tidied$PKparameters$PKparameter[
+         PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_dose1_withInhib"))
       PKpulled <- PKpulled %>% filter(!PKpulled %in% "AUCt_dose1_withInhib")
    }
    
    if("AUCinf_ratio_dose1" %in% PKpulled$PKpulled & 
-      "AUCt_ratio_dose1" %in% PKrequested$PKrequested == FALSE){
+      "AUCt_ratio_dose1" %in% PKparam_tidied$PKparameters$PKparameter[
+         PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_ratio_dose1"))
       PKpulled <- PKpulled %>% filter(!PKpulled %in% "AUCt_ratio_dose1")
    }
@@ -1001,7 +1040,7 @@ pk_table <- function(PKparameters = NA,
                         values_from = Value)
          
          ColNames <- ColNames %>% 
-            left_join(expand.grid(Interval = unique(IntToAdd$Interval), 
+            left_join(expand_grid(Interval = unique(IntToAdd$Interval), 
                                   ColName = ColNames$ColName) %>% 
                          mutate(ColName_int = paste(ColName, Interval)) %>% 
                          filter(ColName_int %in% names(MyPKResults)), 
@@ -1105,6 +1144,43 @@ pk_table <- function(PKparameters = NA,
       
    }
    
+   # Setting up table caption ------------------------------------------------
+   
+   if(single_table){
+      
+      MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
+                                               prettify_compound_names = TRUE)
+      
+      DosesIncluded <- c("Dose1" = any(str_detect(PKparameters$PKparameter, "_dose1")),
+                         "Last" = any(str_detect(PKparameters$PKparameter, "_last")), 
+                         "User" = any(complete.cases(PKparameters$Sheet)))
+      DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
+      
+      Annotations <- make_table_annotations(
+         MyPKResults = MyPKResults %>% purrr::discard(~all(is.na(.))), 
+         MyFile = unique(MyPKResults$File), 
+         MyCompoundID = unique(MyPKResults$CompoundID), 
+         prettify_compound_names = prettify_compound_names,
+         Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
+                        "TRUE" = data.frame(), 
+                        "FALSE" = Deets), 
+         MeanType = MeanType, 
+         DosesIncluded = case_match(DosesIncluded, 
+                                    "Dose1 User" ~ "Dose1 Last", 
+                                    "Last User" ~ "Last", 
+                                    .default = DosesIncluded), 
+         tissue = unique(MyPKResults$Tissue), 
+         name_clinical_study = name_clinical_study)
+      
+   } else {
+      
+      return_caption <- FALSE
+      
+      Annotations <- list("table_heading" = "", 
+                          "table_caption" = "")
+   }
+   
+   
    # Saving --------------------------------------------------------------
    
    # May need to change the working directory temporarily, so
@@ -1140,7 +1216,6 @@ pk_table <- function(PKparameters = NA,
             save_table <- paste0(save_table, ".csv")
          }
       }
-      
       
       # Now that the file should have an appropriate extension, check what
       # the path and basename should be.
@@ -1189,6 +1264,9 @@ pk_table <- function(PKparameters = NA,
          write.csv(bind_rows(MyPKResults, WarningDF),
                    paste0(OutPath, "/", save_table), row.names = F)
       }
+      
+      setwd(CurrDir)
+      
    }
    
    Out <- list("Table" = MyPKResults)
@@ -1215,11 +1293,14 @@ pk_table <- function(PKparameters = NA,
       Out[["PKpulled"]] <- PKpulled
    }
    
-   if(length(Out) == 1){
-      Out <- Out[["Table"]]
-   }
+   if(return_caption){
+      Out[["table_heading"]] <- Annotations$table_heading
+      Out[["table_caption"]] <- Annotations$table_caption
+   } 
    
-   setwd(CurrDir)
+   if(length(Out) == 1){
+      Out <- Out[[1]]
+   }
    
    return(Out)
    

@@ -192,15 +192,33 @@ match_obs_to_sim <- function(ct_dataframe,
       
       for(k in names(ObsAssign[[j]])){
          # k = File
+         
+         # Checking for whether there was a custom-dosing regimen b/c that
+         # messes up EVERYTHING. If there was, Dose_x needs to be NA. 
+         CustomDosingCheck <- existing_exp_details$MainDetails %>% 
+            filter(File == k) %>% 
+            select(any_of(c("Dose_sub", "Dose_inhib", "Dose_inhib2"))) %>% 
+            pivot_longer(cols = everything(), 
+                         names_to = "CompoundID", values_to = "Value") %>% 
+            filter(Value == "custom dosing")
+         
+         # Setting observed data dose to NA if it's custom dosing.
+         for(cmpd in CustomDosingCheck$CompoundID){
+            obs_dataframe[[j]][, cmpd] <- NA
+         }
+         
+         # NB: This does not include matching by dose, which may change over the
+         # course of the study or simulation. This is assuming that the observed
+         # file in question definitely should match the simulated data in
+         # question, so that should NOT be a problem. 
          ObsData_j[[k]] <- obs_dataframe[[j]] %>% 
             select(-Compound) %>% 
             mutate(File = k) %>% 
             left_join(ct_dataframe[[k]] %>% 
-                         select(any_of(c("File", "CompoundID", "Compound",
-                                         "Dose_sub"))) %>% 
+                         select(any_of(c("File", "CompoundID", "Compound"))) %>% 
                          unique(), 
                       relationship = "many-to-many", 
-                      by = c("CompoundID", "File", "Dose_sub"))
+                      by = c("CompoundID", "File"))
          
          # Observed files often only include the 1st dose, even if it was
          # a multiple-dose simulation, so we can't trust the obs file to

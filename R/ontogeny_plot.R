@@ -200,7 +200,7 @@ ontogeny_plot <- function(enzyme = NA,
    }
    
    Ontogenies <- Ontogenies %>% 
-      left_join(expand.grid(Age = seq(0, 25, length.out = 1000), 
+      left_join(expand_grid(Age = seq(0, 25, length.out = 1000), 
                             EnzymeDescription = OntogenyEquations$EnzymeDescription),
                 by = "EnzymeDescription") %>% 
       mutate(AgeGroup = case_when(Age <= Age_cap1 ~ 1, 

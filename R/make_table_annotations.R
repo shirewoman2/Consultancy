@@ -22,10 +22,15 @@
 #'   include_dose_num = TRUE in original PK table call but less so when
 #'   include_dose_num = FALSE. Set to "no dose num included" to use the
 #'   most-generic text for the annotations.
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "clinical study 101, fed
+#'   cohort".
 #' @param return_all_objects T or F (default) for whether to return a ton of
 #'   objects for use downstream
 #'
-#' @return a list with a) TableHeading text and b) TableCaption text
+#' @return a list with a) table_heading text and b) table_caption text
 #' @export
 #'
 #' @examples
@@ -40,7 +45,30 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                    MeanType,
                                    tissue = NA, 
                                    DosesIncluded = NA, 
+                                   name_clinical_study = NA, 
                                    return_all_objects = FALSE){
+   
+   # Error catching -------------------------------------------------------
+   
+   if(class(prettify_compound_names) != "logical"){
+      
+      if(is.null(names(prettify_compound_names))){
+         warning(wrapn("It looks like you're trying to supply a character vector for the argument 'prettify_compound_names', but we need that character vector to be named, which it is not. We'll set 'prettify_compound_names' to FALSE for now, but please check the help file on this."), 
+                 call. = FALSE)
+         prettify_compound_names <- FALSE
+      } else {
+         # Making sure that the names are compound IDs
+         names(prettify_compound_names)[
+            which(tolower(names(prettify_compound_names)) == "perpetrator")] <- "inhibitor 1"
+         
+         if(any(names(prettify_compound_names) %in% 
+                AllCompounds$CompoundID == FALSE)){
+            warning(wrapn("It looks like you're trying to supply a named character vector for the argument 'prettify_compound_names', but we need the names to be compound IDs such as 'substrate' or 'inhibitor 1'. We'll set 'prettify_compound_names' to FALSE for now, but please check the help file on this."), 
+                    call. = FALSE)
+            prettify_compound_names <- FALSE
+         }
+      }
+   }
    
    
    # Main info ------------------------------------------------------------
@@ -112,7 +140,10 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    CapText2 <- paste0(sub("; $", ". ", CapText2a), 
                       ifelse(Observedincluded, 
-                             "S/O: simulated/observed. Source observed data: **Clinical Study XXX**; ",
+                             paste0("S/O: simulated/observed. Source observed data: ", 
+                                    ifelse(complete.cases(name_clinical_study), 
+                                           paste0("clinical study ", name_clinical_study), 
+                                           "**Clinical Study XXX**"), "; "),
                              ""))
    
    Caption <- paste0("Simulated values listed are ", 
@@ -127,10 +158,10 @@ make_table_annotations <- function(MyPKResults, # only PK table
    if("logical" %in% class(Deets) | 
       ("data.frame" %in% class(Deets) && nrow(Deets) == 0) |
       any(c(MyTissueLen, MyCompoundIDLen, MyFileLen) > 1)){
-      return(list(TableHeading = paste0("Simulated ",
-                                        ifelse(Observedincluded, "and observed ", ""),
-                                        tissue, " PK data"),
-                  TableCaption = Caption))
+      return(list(table_heading = paste0("Simulated ",
+                                         ifelse(Observedincluded, "and observed ", ""),
+                                         tissue, " PK data"),
+                  table_caption = Caption))
       
    }
    
@@ -190,7 +221,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
       MyDosedCompound <- prettify_compound_name(MyDosedCompound)
    } else if(class(prettify_compound_names) == "character"){
       MyCompound <- prettify_compound_names[MyCompoundID]
-      MyDosedCompound <- prettify_compound_name(MyDosedCompound)
+      MyDosedCompound <- prettify_compound_names[
+         AllCompounds$DosedCompoundID[AllCompounds$CompoundID == MyCompoundID]]
    } else {
       MyCompound <- switch(MyCompoundID, 
                            "substrate" = Deets$Substrate,
@@ -353,8 +385,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
    # Return -----------------------------------------------------------
    
    if(return_all_objects){
-      return(list("TableHeading" = Heading, 
-                  "TableCaption" = Caption, 
+      return(list("table_heading" = Heading, 
+                  "table_caption" = Caption, 
                   "MyCompoundID" = MyCompoundID,
                   "MyCompound" = MyCompound,
                   "MyDosedCompound" = MyDosedCompound, 
@@ -367,8 +399,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
                   "MyPerpetrator" = MyPerpetrator, # note that this is only 1 perpetrator
                   "DoseDay_sub" = DoseDay_sub))
    } else {
-      return(list("TableHeading" = Heading, 
-                  "TableCaption" = Caption))
+      return(list("table_heading" = Heading, 
+                  "table_caption" = Caption))
    }
    
 }

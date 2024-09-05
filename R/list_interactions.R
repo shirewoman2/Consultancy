@@ -17,6 +17,9 @@
 #'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}}
 #' @param include_auto_DDI TRUE or FALSE (default) for whether to list
 #'   auto-induction or auto-inhibition.
+#' @param include_victim_fms TRUE or FALSE (default) for whether to
+#'   additionally read in any information on the substrate fm values for each
+#'   pathway included in the interactions
 #'
 #' @return a list: "affected_pathways" (a character vector of the metabolic
 #'   pathways affected) and "interactions" (a data.frame of all the affected
@@ -28,6 +31,7 @@
 #' 
 list_interactions <- function(sim_data_file, 
                               existing_exp_details, 
+                              include_victim_fms = FALSE, 
                               include_auto_DDI = FALSE){
    
    # Error catching ----------------------------------------------------------
@@ -35,6 +39,12 @@ list_interactions <- function(sim_data_file,
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   if(include_victim_fms & file.exists(sim_data_file) == FALSE){
+      warning("You requested fm info for the victim drug, which we have to read from sim_data_file. That simulation file is not present, so we cannot return these data to you.", 
+              call. = FALSE)
+      include_victim_fms <- FALSE
    }
    
    # Main body of function ---------------------------------------------------
@@ -83,8 +93,27 @@ list_interactions <- function(sim_data_file,
       select(Pathway, CompoundID, Compound, SimulatorSection, Detail, Value, Notes) %>% 
       arrange(Pathway)
    
-   return(list("affected_pathways" = affected_pathways, 
-               "interactions" = interactions))
+   if(include_victim_fms){
+      Fms <- extractFmFe(sim_data_file = sim_data_file, 
+                         existing_exp_details = existing_exp_details, 
+                         returnOnlyMaxMin = TRUE, 
+                         returnAggregateOrIndiv = "aggregate") %>% 
+         filter(Parameter == "fm") %>% 
+         select(Enzyme, Tissue, PerpPresent, Max) %>% 
+         mutate(PerpPresent = ifelse(PerpPresent, "fm with DDI", "fm at baseline")) %>% 
+         pivot_wider(names_from = PerpPresent, 
+                     values_from = Max)
+      
+      return(list("affected_pathways" = affected_pathways, 
+                  "interactions" = interactions, 
+                  "fms" = Fms))
+      
+   } else {
+      
+      return(list("affected_pathways" = affected_pathways, 
+                  "interactions" = interactions))
+      
+   }
    
 }
 

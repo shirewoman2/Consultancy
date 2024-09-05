@@ -29,16 +29,18 @@ pk_table(
   rounding = NA,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
+  name_clinical_study = NA,
   extract_forest_data = FALSE,
   checkDataSource = FALSE,
+  save_table = NA,
   highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
-  save_table = NA,
   single_table = FALSE,
   page_orientation = "portrait",
   fontsize = 11,
   return_PK_pulled = FALSE,
+  return_caption = FALSE,
   ...
 )
 }
@@ -47,7 +49,7 @@ pk_table(
   for this: 1) supply a file to read or a data.frame (R speak for "a table")
   that lists which simulation files, compounds, tissues, and PK you want or
   2) supply a character vector of which PK parameters you want and then also
-  specify what you need in terms of tissues, which compounds, which
+  specify what you need in terms of which tissues, which compounds, which
   simulation files, and which tab to get the data from with the arguments
   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
   \code{sheet_PKparameters}.
@@ -60,16 +62,19 @@ pk_table(
   specify exactly which simulation file should get which PK parameter from
   which tissue and, when user-specified intervals are involved, from which
   tab in the Excel file those data should be pulled. Whatever you supply, the
-  columns that will be read are "File" (same thing as the argument
-  \code{sim_data_files}), "Sheet" (same thing as the argument
-  \code{sheet_PKparameters}), "Tissue" (same as the argument \code{tissues}),
-  "CompoundID" (same as the argument \code{compoundsToExtract}), "Value" for
-  any observed data (no equivalent argument), and "Variability" for any
-  observed variability (no equivalent argument here, either). If you
+  columns that will be read are: \itemize{\item{"File" (same thing as the argument
+  \code{sim_data_files})} \item{"Sheet" (same thing as the argument
+  \code{sheet_PKparameters})} \item{"Tissue" (same as the argument \code{tissues})}
+  \item{"CompoundID" (same as the argument \code{compoundsToExtract})
+  \item{"ObsValue" for any observed data (no equivalent argument)}
+  \item{"Variability" for any observed variability (no equivalent argument
+  here, either)}} If you
   omit any of those columns, whatever you supply for their respective
   arguments will be used instead. If you supply something for one of them
   in the data.frame or file and \emph{also} something for its argument, the
-  argument will be ignored. Here is how to specify each of the possible
+  argument will be ignored. \cr
+
+  Here is how to specify each of the possible
   inputs for Option 1:\describe{\item{a csv file}{list the file
   name, including the file extension ".csv" inside quotes, e.g., "PK needed.csv"}
 
@@ -79,7 +84,7 @@ pk_table(
 
   \item{a data.frame}{If you'd like to supply a data.frame with the same
   columns you would have had in the .csv or Excel file, that works just the
-  same.}}}
+  same.}}}}
 
   \item{\strong{Option 2: }specify the PK parameters you want for all your
   simulations}{This is a good option when you want the same information
@@ -111,7 +116,7 @@ pk_table(
 
   Parameters that don't make sense for your scenario -- such as asking for
   \code{AUCinf_dose1_withInhib} when your simulation did not include a
-  perpetrator -- will not be included.}
+  perpetrator -- will be ignored.}
 
 \item{sim_data_files}{the Simcyp Simulator output Excel files to use. Options
 for how to specify these: \itemize{\item{NA to extract PK data
@@ -267,6 +272,30 @@ human-readable column names. TRUE makes pretty column names such as "AUCinf
 (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
 \code{\link{extractPK}}, e.g., "AUCinf_dose1".}
 
+\item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
+compound names prettier in the prettified column titles and in any Word
+output files. This was designed for simulations where the substrate and any
+metabolites, perpetrators, or perpetrator metabolites are among the
+standard options for the simulator, and leaving \code{prettify_compound_names =
+TRUE} will make the name of those compounds something more human readable.
+For example, "SV-Rifampicin-MD" will become "rifampicin", and
+"Sim-Midazolam" will become "midazolam". Set each compound to the name
+you'd prefer to see in your column titles if you would like something
+different. For example, \code{prettify_compound_names = c("perpetrator" =
+"teeswiftavir", "substrate" = "superstatin")}. Please note that "perpetrator"
+includes \emph{all} the perpetrators and perpetrator metabolites present,
+so, if you're setting the perpetrator name, you really should use something
+like this
+if you're including perpetrator metabolites: \code{prettify_compound_names =
+c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+"superstatin")}.}
+
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "clinical study 101, fed
+cohort".}
+
 \item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
 the same time. This only applies when the compound to extract is the
 substrate or a substrate metabolite. If set to TRUE, this will return a
@@ -281,6 +310,19 @@ for the simulation, but all PK are for the victim compound listed.}
 \item{checkDataSource}{TRUE or FALSE (default) for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
+
+\item{save_table}{optionally save the output table and, if requested, the QC
+info, by supplying a file name in quotes here, e.g., "My nicely formatted
+table.docx" or "My table.csv", depending on whether you'd prefer to have
+the table saved as a Word or csv file.  Do not include any slashes, dollar
+signs, or periods in the file name. (You can also save the table to a Word
+file later with the function \code{\link{formatTable_Simcyp}}.) If you
+supply only the file extension, e.g., \code{save_table = "docx"}, the name
+of the file will be "PK summary table" with that extension. If you supply
+something other than just "docx" or just "csv" for the file name but you
+leave off the file extension, we'll assume you want it to be ".csv". All PK
+info will be included in a single Word or csv file, and, if
+\code{checkDataSource = TRUE}, that will be saved in a single csv file.}
 
 \item{highlight_gmr_colors}{optionally specify a set of colors to use for
 highlighting geometric mean ratios for DDIs. Options are "yellow to red",
@@ -326,19 +368,6 @@ c("green", "red")}. This only applies when you save the table as a Word file.}
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
 
-\item{save_table}{optionally save the output table and, if requested, the QC
-info, by supplying a file name in quotes here, e.g., "My nicely formatted
-table.docx" or "My table.csv", depending on whether you'd prefer to have
-the table saved as a Word or csv file.  Do not include any slashes, dollar
-signs, or periods in the file name. (You can also save the table to a Word
-file later with the function \code{\link{formatTable_Simcyp}}.) If you
-supply only the file extension, e.g., \code{save_table = "docx"}, the name
-of the file will be "PK summary table" with that extension. If you supply
-something other than just "docx" or just "csv" for the file name but you
-leave off the file extension, we'll assume you want it to be ".csv". All PK
-info will be included in a single Word or csv file, and, if
-\code{checkDataSource = TRUE}, that will be saved in a single csv file.}
-
 \item{single_table}{TRUE (default) or FALSE for whether to save all the PK
 data in a single table or break the data up by tissue, compound ID, and
 file into multiple tables. This only applies to the Word output.}
@@ -349,7 +378,18 @@ file into multiple tables. This only applies to the Word output.}
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
 
-\item{...}{}
+\item{return_PK_pulled}{TRUE or FALSE (default) for whether to return as a
+list item what PK parameters were pulled. This is used internally for
+writing table headings later.}
+
+\item{return_caption}{TRUE or FALSE (default) for whether to return any
+caption text to use with the table. If set to TRUE, you'll get as output a
+list of the table, the table heading, and the table caption. When you've
+requested multiple individual tables, e.g., when \code{single_table =
+FALSE}, this will not return anything at this point. We may add that later,
+but at present, this is not set up to return multiple table captions.}
+
+\item{...}{used under-the-hood to check for mis-specified arguments}
 }
 \value{
 a data.frame

@@ -29,12 +29,12 @@
 #'   Tools --> Global Options --> General --> Graphics --> And then set
 #'   "Graphics device: backend" to "AGG". Honestly, this is a better option for
 #'   higher-quality graphics anyway!}
-#'   
+#'
 #'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
 #'   for the mean of each trial of simulated data, and open circles for the
 #'   observed data. If a perpetrator were present, lighter dashed lines indicate
 #'   the mean of each trial of simulated data in the presence of the perpetrator.}}
-#'   
+#'
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed}
 #'
@@ -274,16 +274,34 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
-#' @param prettify_compound_names set this to a) TRUE (default) or FALSE for
-#'   whether to make the compound names in the legend prettier or b) supply a
-#'   named character vector to set it to the exact name you'd prefer to see in
-#'   your legend. For example, \code{prettify_compound_names =
+#' @param prettify_compound_names TRUE (default), FALSE or a character vector:
+#'   This is asking whether to make compound names prettier in legend entries
+#'   and in any Word output files. This was designed for simulations where the
+#'   substrate and any metabolites, perpetrators, or perpetrator metabolites are
+#'   among the standard options for the simulator, and leaving
+#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+#'   FALSE will leave the compound names as is. For an approach with more
+#'   control over what the compound names will look like in legends and Word
+#'   output, set each compound to the exact name you  want with a named
+#'   character vector. For example, \code{prettify_compound_names =
 #'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
-#'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
-#'   legend, and \code{prettify_compound_names = TRUE} will make some reasonable
-#'   guesses about what a prettier compound name should be. An example of
-#'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
-#'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
+#'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC"
+#'   in a legend or in a figure caption.
+#' @param assume_unique TRUE (default) or FALSE for whether to assume that the
+#'   concentration-time data contain no replicates, which messes things up and
+#'   will likely cause this function to crash. Why would you want to skip this?
+#'   Because it can take a LOOOOOOONG time if you have a lot of points. If
+#'   you're sure your data are unique, set this to TRUE and save a fair amount
+#'   of processing time to make your graph. If you're not sure what we're
+#'   talking about here or if you get error messages that aren't terribly clear
+#'   (which generally means that R wrote them and not your friendly
+#'   SimcypConsultancy package authors), try setting this to FALSE.
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the graph. This works best if you supply something
+#'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+#'   output a list of the graph, the figure heading, and the figure caption.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   The nice thing about saving to Word is that the figure title and caption
@@ -346,9 +364,12 @@ enz_plot_overlay <- function(sim_enz_dataframe,
                              graph_title_size = 14, 
                              prettify_compound_names = TRUE,
                              legend_position = NA,
+                             existing_exp_details = NA,
+                             return_caption = FALSE, 
                              save_graph = NA,
                              fig_height = 6,
-                             fig_width = 5){
+                             fig_width = 5, 
+                             assume_unique = TRUE){
    
    facet1_column <- rlang::enquo(facet1_column)
    facet2_column <- rlang::enquo(facet2_column)
@@ -401,6 +422,8 @@ enz_plot_overlay <- function(sim_enz_dataframe,
                           graph_title_size = graph_title_size, 
                           legend_position = legend_position,
                           prettify_compound_names = prettify_compound_names,
+                          existing_exp_details = existing_exp_details, 
+                          return_caption = return_caption, 
                           save_graph = save_graph,
                           fig_height = fig_height,
                           fig_width = fig_width)

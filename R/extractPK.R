@@ -343,11 +343,11 @@ extractPK <- function(sim_data_file,
                            "Int AUC 1st(_CI|_SD)?", 
                            switch(compoundToExtract,
                                   "substrate" = "\\(Sub\\)", 
-                                  "primary metabolite 1" = "\\(Sub Met\\)",
-                                  "primary metabolite 2" = "\\(Sub Met2\\)",
+                                  "primary metabolite 1" = "\\(Sub Met\\)|\\(Sub Pri Met1\\)",
+                                  "primary metabolite 2" = "\\(Sub Met2\\)|\\(Sub Pri Met2\\)",
                                   "secondary metabolite" = "\\(Sub SM\\)", 
                                   "inhibitor 1" = "\\(Inh 1\\)",
-                                  "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
+                                  "inhibitor 1 metabolite" = "\\(Inh( )?1 M(et)?\\)", 
                                   "inhibitor 2" = "\\(Inh 2\\)"), 
                            switch(tissue, 
                                   "plasma" = "\\(CP", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
@@ -1112,6 +1112,15 @@ extractPK <- function(sim_data_file,
          
          names(Out_AUC0$Out_ind)[which(names(Out_AUC0$Out_ind) == "AUCXtab")] <- 
             "AUC0tab"
+         
+         for(param in c("AUCinf_dose1", "AUCinf_dose1_withInhib", "AUCinf_ratio_dose1")){
+            if(param %in% names(Out_AUC0[["Out_ind"]]) && 
+               any(is.na(Out_AUC0[["Out_ind"]][[param]]))){
+               Out_AUC0[["Out_agg"]][[param]] <- 
+                  map(.x = Out_AUC0[["Out_agg"]][[param]], 
+                      .f = \(x) NA) %>% unlist()
+            }
+         }
          
          DataCheck <- DataCheck %>% bind_rows(Out_AUC0$DataCheck)
          Out_agg <- c(Out_agg, Out_AUC0$Out_agg)

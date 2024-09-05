@@ -219,6 +219,12 @@
 #'   CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
 #'   specified \code{facet_ncol} or  \code{facet_nrow}, then
 #'   \code{facet2_column} will designate the columns of the output graphs.
+#' @param facet1_title optionally specify a title to describe facet 1. This is
+#'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
+#'   \code{facet_ncol} or \code{facet_nrow}.
+#' @param facet2_title optionally specify a title to describe facet 2. This is
+#'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
+#'   \code{facet_ncol} or \code{facet_nrow}.
 #' @param facet_ncol optionally specify the number of columns of facetted graphs
 #'   you would like to have. This only applies when you have specified a column
 #'   for \code{facet1_column} and/or \code{facet2_column}.
@@ -314,6 +320,15 @@
 #'   guesses about what a prettier compound name should be. An example of
 #'   setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 #'   "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "Clinical Study 101, fed
+#'   cohort".
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the graph. This works best if you supply something
+#'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+#'   output a list of the graph, the figure heading, and the figure caption.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   The nice thing about saving to Word is that the figure title and caption
@@ -340,7 +355,7 @@
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}} to be used for creating figure
 #'   headings and captions tailored to the specific simulation when saving to a
-#'   Word file or for use with \code{qc_graph}
+#'   Word file
 #'
 #' @return a ggplot2 graphs or a set of arranged ggplot2 graphs
 #' @export
@@ -374,7 +389,9 @@ ct_plot_1stlast <- function(ct_dataframe,
                             line_transparency = NA,
                             legend_label_linetype = NA,
                             facet1_column,
+                            facet1_title = NA,
                             facet2_column, 
+                            facet2_title = NA, 
                             facet_ncol = NA, 
                             facet_nrow = NA,
                             floating_facet_scale = FALSE,
@@ -398,6 +415,9 @@ ct_plot_1stlast <- function(ct_dataframe,
                             graph_title_size = 14, 
                             legend_position = NA,
                             prettify_compound_names = TRUE,
+                            name_clinical_study = NA, 
+                            existing_exp_details = NA, 
+                            return_caption = FALSE, 
                             save_graph = NA,
                             fig_height = NA,
                             fig_width = NA){
@@ -462,7 +482,9 @@ ct_plot_1stlast <- function(ct_dataframe,
                       colorBy_column = !!colorBy_column,
                       linetype_column = !!linetype_column,
                       facet1_column = !!facet1_column,
+                      facet1_title = facet1_title, 
                       facet2_column = !!facet2_column,
+                      facet2_title = facet2_title, 
                       obs_to_sim_assignment = obs_to_sim_assignment,
                       mean_type = mean_type,
                       figure_type = figure_type, 
@@ -539,6 +561,37 @@ ct_plot_1stlast <- function(ct_dataframe,
       Out <- A + B + plot_layout(nrow = 2) + plot_layout(guides = "collect")
    }
    
+   Out <- list("graph" = Out)
+   
+   # Setting up figure caption --------------------------------------------
+   
+   MyTissue <- unique(ct_dataframe$Tissue)
+   MyTissueSubtype <- ifelse("Tissue_subtype" %in% names(ct_dataframe), 
+                             unique(ct_dataframe$Tissue_subtype), 
+                             "none")
+   MyCompoundID <- unique(as.character(ct_dataframe$CompoundID))
+   
+   NumProfiles <- ifelse(length(MyTissue) == 1 & length(MyCompoundID) == 1 &
+                            length(MyTissueSubtype) == 1, 
+                         "single", "multiple")
+   
+   FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 
+                              single_or_multiple_profiles = NumProfiles, 
+                              plot_type = "concentration-time", 
+                              existing_exp_details = existing_exp_details, 
+                              mean_type = mean_type, 
+                              linear_or_log = linear_or_log, 
+                              figure_type = figure_type, 
+                              prettify_compound_names = prettify_compound_names, 
+                              name_clinical_study = name_clinical_study, 
+                              hline_position = hline_position, 
+                              vline_position = vline_position, 
+                              hline_style = hline_style, 
+                              vline_style = vline_style)
+   
+   
+   # Saving ------------------------------------------------------------------
+   
    if(complete.cases(save_graph)){
       
       # Checking for NA for fig_height and width
@@ -572,7 +625,7 @@ ct_plot_1stlast <- function(ct_dataframe,
          if(Ext %in% c("eps", "ps", "jpeg", "tiff",
                        "png", "bmp", "svg", "jpg", "docx") == FALSE){
             warning(wrapn(paste0("You have requested the graph's file extension be `", 
-                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
+                                 Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
                     call. = FALSE)
          }
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
@@ -599,13 +652,13 @@ ct_plot_1stlast <- function(ct_dataframe,
          }
          
          FileName <- basename(FileName)
+         qc_graph <- FALSE
          
-         if(length(unique(ct_dataframe$File)) == 1){
+         if(NumProfiles == "single"){
             
             Data <- ct_dataframe
             MyPerpetrator <- unique(Data$Inhibitor) %>% as.character()
             MyPerpetrator <- MyPerpetrator[!MyPerpetrator == "none"]
-            qc_graph <- FALSE
             
             rmarkdown::render(system.file("rmarkdown/templates/concentration-time-plots/skeleton/skeleton.Rmd",
                                           package="SimcypConsultancy"), 
@@ -624,11 +677,21 @@ ct_plot_1stlast <- function(ct_dataframe,
          
       } else {
          ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                plot = Out)
+                plot = Out[["graph"]])
       }
    }
    
+   if(return_caption){
+      Out[["figure_heading"]] <- FigText$heading
+      Out[["figure_caption"]] <- FigText$caption
+   } 
+   
+   if(length(Out) == 1){
+      Out <- Out[[1]]
+   }
+   
    return(Out)
+   
 }
 
 

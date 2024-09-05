@@ -42,7 +42,15 @@
 #'   corresponding Excel files in the \emph{same} location, we can use that
 #'   information to figure out which observed Excel file should go with which
 #'   simulation. Note that this \strong{does} require you to supply something
-#'   for the argument \code{existing_exp_details} to work.}
+#'   for the argument \code{existing_exp_details} to work. This has been set up 
+#'   to look for that location even if the user who ran the simulation is 
+#'   different from the user extracting the data, e.g., if the original path was
+#'   something like "C:/Users/FridaKahlo/Rose project simulations" and the 
+#'   current username (the result from running Sys.info()["user"]) is 
+#'   "DiegoRivera", this will look in the folder 
+#'   "C:/Users/DiegoRivera/Rose project simulations" for your XML files. This is 
+#'   assuming that the file path starts with "C:/Users/CurrentUserName/..." and
+#'   will fail to change the username if that is not the case.}
 #'
 #'   \item{a character vector of the observed data files, each in
 #'   quotes and encapsulated with \code{c(...)}}{If all the observed data can be
@@ -129,7 +137,7 @@
 #'   or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
 #'   "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 #'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-#'   released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET 
+#'   released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
 #'   SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive. Acceptable
 #'   input is all tissues desired as a character vector, e.g., \code{tissues =
 #'   c("plasma", "blood", "liver")} or, if you want all possible tissues and
@@ -308,7 +316,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    # recursive.
    if(length(sim_data_files) == 1 &&
       (is.na(sim_data_files) | sim_data_files == "recursive")){
-      sim_data_files <- list.files(pattern = "xlsx$",
+      sim_data_files <- list.files(pattern = "\\.xlsx$|db$",
                                    recursive = (complete.cases(sim_data_files) &&
                                                    sim_data_files == "recursive"))
       sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
@@ -410,12 +418,36 @@ extractConcTime_mult <- function(sim_data_files = NA,
       existing_exp_details <- harmonize_details(existing_exp_details)
       
       if(all(sim_data_files %in% c(existing_exp_details$MainDetails$File, 
-                                   existing_exp_details$MainDetails$DBFile)) == FALSE){
+                                   existing_exp_details$MainDetails$DBFile, 
+                                   sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File), 
+                                   sub("\\.db", ".xlsx", existing_exp_details$MainDetails$DBFile))) == FALSE){
          existing_exp_details <- 
             extractExpDetails_mult(sim_data_files = sim_data_files, 
                                    exp_details = "Summary and Input", 
                                    existing_exp_details = existing_exp_details)
          
+      } else {
+         # If there's a file extension mismatch, change it in
+         # existing_exp_details b/c all the information should be the same.
+         
+         # First, check whether file is included in existing_exp_details b/c it
+         # could be present as BOTH xlsx and db files.
+         ExtMismatch <- setdiff(sim_data_files, 
+                                existing_exp_details$MainDetails$File)
+         
+         # Next, only change file extensions for any files that are not already
+         # included in existing_exp_details.
+         WhichXLtoDB <- which(
+            existing_exp_details$MainDetails$File %in% sim_data_files == FALSE & 
+               sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File) %in% ExtMismatch)
+         existing_exp_details$MainDetails$File[WhichXLtoDB] <- 
+            sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File[WhichXLtoDB])
+         
+         WhichDBtoXL <- which(
+            existing_exp_details$MainDetails$File %in% sim_data_files == FALSE & 
+               existing_exp_details$MainDetails$File %in% sub("\\.db", ".xlsx", ExtMismatch))
+         existing_exp_details$MainDetails$File[WhichDBtoXL] <- 
+            sub("\\.db", ".xlsx", existing_exp_details$MainDetails$File[WhichDBtoXL])
       }
    }
    
@@ -480,8 +512,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
             # Make this work for whoever the current user is, even if the XML
             # obs file path was for someone else.
             existing_exp_details$MainDetails$ObsOverlayFile <- 
-               sub("Users\\\\.*\\\\Certara", 
-                   paste0("Users\\\\", Sys.info()["user"], "\\\\Certara"), 
+               sub("Users\\\\.*\\?", 
+                   paste0("Users\\\\", Sys.info()["user"], "\\\\"), 
                    existing_exp_details$MainDetails$ObsOverlayFile)
             
             ObsAssign <- existing_exp_details$MainDetails %>% 

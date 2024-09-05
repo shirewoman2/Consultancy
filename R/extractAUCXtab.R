@@ -105,12 +105,12 @@ extractAUCXtab <- function(PKparameters,
       # i. 
       if(i == "DoseAdministered"){
          ColNum <- which(str_detect(as.vector(t(AUCX_xl[2, ])),
-                                    ToDetect$SearchText))
+                                    ToDetect$SearchText))[1]
       } else {
          ColNum <- which(str_detect(as.vector(t(AUCX_xl[2, ])),
                                     ToDetect$SearchText) &
                             !str_detect(as.vector(t(AUCX_xl[2, ])), 
-                                        "/kg"))
+                                        "/kg"))[1]
       }
       
       if(length(ColNum) == 0 || is.na(ColNum)){

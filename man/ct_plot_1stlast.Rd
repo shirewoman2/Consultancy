@@ -30,7 +30,9 @@ ct_plot_1stlast(
   line_transparency = NA,
   legend_label_linetype = NA,
   facet1_column,
+  facet1_title = NA,
   facet2_column,
+  facet2_title = NA,
   facet_ncol = NA,
   facet_nrow = NA,
   floating_facet_scale = FALSE,
@@ -54,6 +56,9 @@ ct_plot_1stlast(
   graph_title_size = 14,
   legend_position = NA,
   prettify_compound_names = TRUE,
+  name_clinical_study = NA,
+  existing_exp_details = NA,
+  return_caption = FALSE,
   save_graph = NA,
   fig_height = NA,
   fig_width = NA
@@ -294,12 +299,20 @@ Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
 \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
 designate the rows of the output graphs.}
 
+\item{facet1_title}{optionally specify a title to describe facet 1. This is
+ignored if \code{floating_facet_scale} is TRUE or if you have specified
+\code{facet_ncol} or \code{facet_nrow}.}
+
 \item{facet2_column}{optionally break up the graph into small multiples; this
 specifies the second of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet2_column =
 CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
 specified \code{facet_ncol} or  \code{facet_nrow}, then
 \code{facet2_column} will designate the columns of the output graphs.}
+
+\item{facet2_title}{optionally specify a title to describe facet 2. This is
+ignored if \code{floating_facet_scale} is TRUE or if you have specified
+\code{facet_ncol} or \code{facet_nrow}.}
 
 \item{facet_ncol}{optionally specify the number of columns of facetted graphs
 you would like to have. This only applies when you have specified a column
@@ -429,6 +442,22 @@ guesses about what a prettier compound name should be. An example of
 setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".}
 
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "Clinical Study 101, fed
+cohort".}
+
+\item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
+\code{\link{extractExpDetails_mult}} to be used for creating figure
+headings and captions tailored to the specific simulation when saving to a
+Word file}
+
+\item{return_caption}{TRUE or FALSE (default) for whether to return any
+caption text to use with the graph. This works best if you supply something
+for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+output a list of the graph, the figure heading, and the figure caption.}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 The nice thing about saving to Word is that the figure title and caption
@@ -444,11 +473,6 @@ saved to disk.}
 \item{fig_height}{figure height in inches}
 
 \item{fig_width}{figure width in inches}
-
-\item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
-\code{\link{extractExpDetails_mult}} to be used for creating figure
-headings and captions tailored to the specific simulation when saving to a
-Word file or for use with \code{qc_graph}}
 }
 \value{
 a ggplot2 graphs or a set of arranged ggplot2 graphs

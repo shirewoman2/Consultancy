@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```{r FigtextPKSummary}
 
+# Name of subfolder: pksummarymult
+
 Observedincluded <- any(str_detect(MyPKResults$Statistic, "S/O"))
 MeanType <- ifelse(is.na(mean_type), "geometric", mean_type)
 
@@ -83,21 +85,21 @@ if(single_table){
          str_comma(basename(unique(MyPKResults$File))))
    
    Annotations <- list(
-      "TableHeading" = paste0("*Table XXX. Simulated ", 
+      "table_heading" = paste0("***Table XXX.*** *Simulated ", 
                               ifelse(Observedincluded, "and observed ", ""), 
                               MeanType, " mean ", str_comma(tissues),
                               " PK parameters.*"),
-      "TableCaption" = paste0("*Simulated values listed are ",
+      "table_caption" = paste0("*Simulated values listed are ",
                               CapText1, ". ", CapText2, 
                               " Source simulated data: ", AllFiles, "*"))
 } else {
-   Annotations <- list("TableHeading" = "", 
-                       "TableCaption" = "")
+   Annotations <- list("table_heading" = "", 
+                       "table_caption" = "")
 }
 
 ```
 
-`r Annotations[["TableHeading"]]`
+`r Annotations[["table_heading"]]`
 
 ```{r makeTablePKSummaryOutput}
 
@@ -211,7 +213,7 @@ if(single_table == FALSE){
 
 ```
 
-`r Annotations[["TableCaption"]]`
+`r Annotations[["table_caption"]]`
 
 ```{r}
 

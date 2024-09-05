@@ -130,11 +130,15 @@
 #'   column titled "File" in your table, we'll add a caption listing which files
 #'   were included.
 #' @param title_document optionally specify a title for the Word document
-#'   output. If you don't save the table, this will be ignored.
+#'   output. If you don't save the table, this will be ignored. This sometimes
+#'   struggles if you include special characters, e.g., "-" is fine but ":" is
+#'   not and the file won't save.
 #' @param table_caption optionally add some text for a table caption. If the
 #'   table you supply contains a column titled "File", there will already be a
 #'   caption listing the source files; this would add some additional text
-#'   before that.
+#'   before that. This doesn't allow you to include carriage returns in this
+#'   caption because your friendly R coders haven't figured out how to make that
+#'   work yet.
 #' @param add_header_for_DDI TRUE (default) or FALSE for whether to add an extra
 #'   header row to the top of your table denoting when the PK are for baseline,
 #'   with a perpetrator, or are the geometric mean ratios.
@@ -869,7 +873,7 @@ formatTable_Simcyp <- function(DF,
       # Set the font size
       flextable::fontsize(part = "all", size = fontsize) %>% 
       
-      # SEt the font
+      # Set the font
       flextable::font(part = "all", 
                       fontname = font) %>% 
       

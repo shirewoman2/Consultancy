@@ -20,8 +20,15 @@ ct_plot3(
   x_axis_interval_LR = NA,
   legend_position = "none",
   graph_labels = TRUE,
+  hline_position = NA,
+  hline_style = "red dotted",
+  vline_position = NA,
+  vline_style = "red dotted",
   qc_graph = FALSE,
   existing_exp_details = NA,
+  prettify_compound_names = TRUE,
+  name_clinical_study = NA,
+  return_caption = FALSE,
   save_graph = NA,
   fig_height = 6,
   fig_width = 5,
@@ -35,7 +42,9 @@ either the function \code{\link{extractConcTime}} or the function
 
 \item{overlay}{TRUE or FALSE for whether to make overlaid graphs, i.e.,
 whether to use \code{\link{ct_plot_overlay}} (TRUE) or use
-\code{\link{ct_plot}} (FALSE) to generate the graphs}
+\code{\link{ct_plot}} (FALSE) to generate the graphs. If you have more than
+one kind of tissue or more than one simulation file or more than one
+compound, we'll set this to TRUE automatically.}
 
 \item{figure_type}{type of figure to plot. Options are:
 
@@ -146,6 +155,37 @@ bit off.}
 \item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
 B, C) for each of the small graphs.}
 
+\item{hline_position}{numerical position(s) of any horizontal lines to add to
+the graph. The default is NA to have no lines, and good syntax if you
+\emph{do} want lines would be, for example, \code{hline_position = 10} to
+have a horizontal line at 10 ng/mL (or whatever your concentration units
+are) or \code{hline_position = c(10, 100, 1000)} to have horizontal lines
+at each of those y values. Examples of where this might be useful would be
+to indicate a toxicity threshold, a target Cmin, or the lower limit of
+quantification for the assay used to generate the concentration-time data.}
+
+\item{hline_style}{the line color and type to use for any horizontal lines
+that you add to the graph with \code{hline_position}. Default is "red
+dotted", but any combination of 1) a color in R and 2) a named linetype is
+acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+into the console.}
+
+\item{vline_position}{numerical position(s) of any vertical lines to add to
+the graph. The default is NA to have no lines, and good syntax if you
+\emph{do} want lines would be, for example, \code{vline_position = 12} to
+have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+168, by = 24)} to have horizontal lines every 24 hours for one week.
+Examples of where this might be useful would be indicating dosing times or
+the time at which some other drug was started or stopped.}
+
+\item{vline_style}{the line color and type to use for any vertical lines that
+you add to the graph with \code{vline_position}. Default is "red dotted",
+but any combination of 1) a color in R and 2) a named linetype is
+acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+into the console.}
+
 \item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
 the graph where the left panel shows the original graph and the right panel
 shows information about the simulation trial design. This works MUCH faster
@@ -155,6 +195,33 @@ that object to the argument \code{existing_exp_details}.}
 
 \item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}}
+
+\item{prettify_compound_names}{TRUE (default), FALSE or a character vector:
+This is asking whether to make compound names prettier in legend entries
+and in any Word output files. This was designed for simulations where the
+substrate and any metabolites, perpetrators, or perpetrator metabolites are
+among the standard options for the simulator, and leaving
+\code{prettify_compound_names = TRUE} will make the name of those compounds
+something more human readable. For example, "SV-Rifampicin-MD" will become
+"rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+FALSE will leave the compound names as is. For an approach with more
+control over what the compound names will look like in legends and Word
+output, set each compound to the exact name you  want with a named
+character vector. For example, \code{prettify_compound_names =
+c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+"Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+legend.}
+
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "Clinical Study 101, fed
+cohort".}
+
+\item{return_caption}{TRUE or FALSE (default) for whether to return any
+caption text to use with the graph. This works best if you supply something
+for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+output a list of the graph, the figure heading, and the figure caption.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time

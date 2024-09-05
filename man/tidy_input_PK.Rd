@@ -26,8 +26,8 @@ be NA or "recursive".}
 Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
 "Summary and Input"} or \code{exp_details = "all"}), you can save some processing
 time by supplying that object here, unquoted. If left as NA, this function
-will run \code{extractExpDetails} behind the scenes anyway to figure out some
-information about your experimental set up.}
+will run \code{extractExpDetails} behind the scenes anyway to figure out
+some information about your experimental set up.}
 
 \item{compoundsToExtract}{the values they supplied for compoundsToExtract in
 the parent function.}
@@ -42,7 +42,11 @@ the parent function}
 \item{sheet_report}{probably not in use}
 }
 \value{
-a data.frame
+a list of: 1) "PKparameters" -- a tidy data.frame of PKparameters
+  with standardized column names and contents, 2) "existing_exp_details",
+  which will only differ from the original in that any missing sim files will
+  be added -- none will be removed. 3) "FilePairs" -- if this is from
+  calc_PK_ratios, then a tidy data.frame listing which items should be paired
 }
 \description{
 INTERNAL PACKAGE USE ONLY. Reads (as needed), harmonizes and tidies observed

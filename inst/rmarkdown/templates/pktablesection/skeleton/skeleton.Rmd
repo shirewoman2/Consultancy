@@ -2,6 +2,8 @@
 
 ```{r}
 
+# Name of subfolder: pktablesection
+
 if(FromCalcPKRatios){
    MyFiles <- str_split_1(unique(MyPKResults[[i]]$File), " / ")
 } else {
@@ -20,14 +22,14 @@ MyPerpetrator <- determine_myperpetrator(Deets = Deets,
                                          prettify_compound_names = TRUE)
 
 if(FromCalcPKRatios){
-   MyAnnotations <- 
-      list("TableHeading" = 
+   IndivAnnotations <- 
+      list("table_heading" = 
               paste0(
                  "***Table XXX.*** *Simulated ", MeanType, " mean ", 
                  unique(MyPKResults[[i]]$Tissue),  " PK parameters for the file pair ", 
                  str_comma(MyFiles), "*"), 
            
-           "TableCaption" = 
+           "table_caption" = 
               paste0("*Simulated values listed are the ", MeanType, 
                      " means. CV: coefficient of variation; CI: confidence interval. Source simulated data: ", 
                      str_comma(MyFiles), "*"))
@@ -38,7 +40,7 @@ if(FromCalcPKRatios){
                       "Last" = any(str_detect(PKpulled[[i]]$PKpulled, "_last|^Last dose")))
    DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
    
-   MyAnnotations <- make_table_annotations(
+   IndivAnnotations <- make_table_annotations(
       MyPKResults = MyPKResults[[i]] %>% purrr::discard(~all(is.na(.))), 
       MyFile = unique(MyPKResults[[i]]$File), 
       MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
@@ -53,11 +55,18 @@ if(FromCalcPKRatios){
                                  .default = DosesIncluded), 
       tissue = unique(MyPKResults[[i]]$Tissue))
    
+   IndivAnnotations[["table_heading"]] <- 
+      paste0("***Table XXX.*** *", 
+             IndivAnnotations[["table_heading"]], "*")
+   
+   IndivAnnotations[["table_caption"]] <- 
+      paste0("*", IndivAnnotations[["table_caption"]], "*")
+   
 }
 
 ```
 
-`r MyAnnotations[["TableHeading"]]`
+`r IndivAnnotations[["table_heading"]]`
 
 ```{r}
 
@@ -86,4 +95,4 @@ formatTable_Simcyp(TempTable,
 
 ```
 
-`r MyAnnotations[["TableCaption"]]`
+`r IndivAnnotations[["table_caption"]]`

@@ -6,14 +6,14 @@
 \usage{
 make_ct_caption(
   ct_dataframe,
-  single_or_multiple = "single",
+  single_or_multiple_profiles = "single",
+  plot_type = "concentration-time",
   existing_exp_details = NA,
   mean_type = "arithmetic",
   linear_or_log = "linear",
-  tissue = "plasma",
-  compoundID = "substrate",
   figure_type = "percentiles",
   prettify_compound_names = TRUE,
+  name_clinical_study = NA,
   hline_position = NA,
   hline_style = "red dotted",
   vline_position = NA,
@@ -23,10 +23,13 @@ make_ct_caption(
 \arguments{
 \item{ct_dataframe}{ct_dataframe}
 
-\item{single_or_multiple}{whether this is for a ct_plot graph (only 1
-compound, tissue, file, etc.) or a graph with multiple profiles (multipel
+\item{single_or_multiple_profiles}{whether this is for a ct_plot graph (only
+1 compound, tissue, file, etc.) or a graph with multiple profiles (multiple
 compounds, tissues, files, etc.). Options are "single" (default) or
 "multiple".}
+
+\item{plot_type}{options are "concentration-time", "enzyme-abundance", "dissolution-profile", "release-profile". May
+change these to be prettier.}
 
 \item{existing_exp_details}{OR supply: a data.frame with the following
 columns: File, Population, Substrate, Inhibitor1, Inhibitor1Metabolite,
@@ -38,13 +41,15 @@ them bold to note that they should be changed.}
 \item{linear_or_log}{"linear" (default), "both", "both horizontal", "both
 vertical", "log", "semi-log", "horizontal and vertical"}
 
-\item{tissue}{default is plasma}
-
-\item{compoundID}{default is substrate}
-
 \item{figure_type}{default is percentiles}
 
 \item{prettify_compound_names}{default is TRUE}
+
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "clinical study 101, fed
+cohort".}
 
 \item{hline_position}{hline_position}
 

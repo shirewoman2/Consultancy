@@ -975,7 +975,7 @@ extractExpDetails <- function(sim_data_file,
                              "^Biliary (CLint|Clearance)") |
                   str_detect(InputTab[ , NameCol] %>%
                                 pull(),
-                             "^Additional HLM CLint|^Additional Systemic Clearance") |
+                             "^Additional HLM CLint|^Additional Systemic Clearance|^Additional HKM CLint") |
                   str_detect(InputTab[ , ValueCol] %>%
                                 pull(),
                              "In Vivo Clear") |
@@ -1241,6 +1241,14 @@ extractExpDetails <- function(sim_data_file,
                   if(str_detect(as.character(InputTab[i, NameCol]), "^Additional HLM CLint")){
                      suppressWarnings(
                         Out[[paste0("CLint_AddHLM", Suffix)]] <-
+                           as.numeric(InputTab[i, NameCol + 1])
+                     )
+                  }
+                  
+                  # Other HKM CL
+                  if(str_detect(as.character(InputTab[i, NameCol]), "^Additional HKM CLint")){
+                     suppressWarnings(
+                        Out[[paste0("CLint_AddHKM", Suffix)]] <-
                            as.numeric(InputTab[i, NameCol + 1])
                      )
                   }

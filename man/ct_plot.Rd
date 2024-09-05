@@ -49,6 +49,8 @@ ct_plot(
   graph_title_size = 14,
   qc_graph = FALSE,
   existing_exp_details = NA,
+  return_caption = FALSE,
+  name_clinical_study = NA,
   save_graph = NA,
   fig_height = NA,
   fig_width = NA,
@@ -339,22 +341,25 @@ the label in the legend for the line style and the shape. If left as the
 default NA when a legend is included and a perpetrator is present, the
 label in the legend will be "Inhibitor".}
 
-\item{prettify_compound_names}{TRUE (default) or FALSE for whether to make
-compound names prettier in legend entries and in any Word output files.
-This was designed for simulations where the substrate and any metabolites,
-perpetrators, or perpetrator metabolites are among the standard options for
-the simulator, and leaving \code{prettify_compound_names = TRUE} will make
-the name of those compounds something more human readable. For example,
-"SV-Rifampicin-MD" will become "rifampicin", and "Sim-Midazolam" will
-become "midazolam". Set each compound to the name you'd prefer to see in
-your legend and Word output if you would like something different. For
-example, \code{prettify_compound_names = c("inhibitor" = "teeswiftavir",
-"substrate" = "superstatin")}. Please note that "inhibitor" includes
+\item{prettify_compound_names}{TRUE (default), FALSE or a character vector:
+This is asking whether to make compound names prettier in legend entries
+and in any Word output files. This was designed for simulations where the
+substrate and any metabolites, perpetrators, or perpetrator metabolites are
+among the standard options for the simulator, and leaving
+\code{prettify_compound_names = TRUE} will make the name of those compounds
+something more human readable. For example, "SV-Rifampicin-MD" will become
+"rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+FALSE will leave the compound names as is. For an approach with more
+control over what the compound names will look like in legends and Word
+output, set each compound to the exact name you  want with a named
+character vector where the names are "substrate" and, as applicable,
+"perpetrator" and the values are the names you want, e.g.,
+\code{prettify_compound_names = c("perpetrator" = "teeswiftavir",
+"substrate" = "superstatin")}. Please note that "perpetrator" includes
 \emph{all} the perpetrators and perpetrator metabolites present, so, if
 you're setting the perpetrator name, you really should use something like
-this if
-you're including perpetrator metabolites: \code{prettify_compound_names =
-c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
+this if you're including perpetrator metabolites: \code{prettify_compound_names =
+c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: \describe{
@@ -403,6 +408,17 @@ that object to the argument \code{existing_exp_details}.}
 headings and captions tailored to the specific simulation when saving to a
 Word file or for use with \code{qc_graph}}
 
+\item{return_caption}{TRUE or FALSE (default) for whether to return any
+caption text to use with the graph. This works best if you supply something
+for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+output a list of the graph, the figure heading, and the figure caption.}
+
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "Clinical Study 101, fed
+cohort".}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
 graph.docx". The nice thing about saving to Word is that the figure title
@@ -423,6 +439,12 @@ non-ADAM-model tissues to the subtypes of tissues you can extract from
 Simulator output, so the old "subsection_ADAM" name we had used for which
 subtype of tissue it was no longer works as well. Please use
 "Tissue_subtype" instead going forward.}
+
+\item{study_design_matches_obs}{optionally specify whether the study design
+for the simulated data matched that of any observed data. This only affects
+the caption of the graph. If set to TRUE, this assumes that the number of
+subjects in the clinical study matches the number of subjects per trial in
+the simulated data.}
 }
 \value{
 Output is a ggplot2 graph or two ggplot2 graphs arranged with

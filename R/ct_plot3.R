@@ -12,7 +12,9 @@
 #'   \code{\link{extractConcTime_mult}}
 #' @param overlay TRUE or FALSE for whether to make overlaid graphs, i.e.,
 #'   whether to use \code{\link{ct_plot_overlay}} (TRUE) or use
-#'   \code{\link{ct_plot}} (FALSE) to generate the graphs
+#'   \code{\link{ct_plot}} (FALSE) to generate the graphs. If you have more than
+#'   one kind of tissue or more than one simulation file or more than one
+#'   compound, we'll set this to TRUE automatically.
 #' @param figure_type type of figure to plot. Options are:
 #'
 #'   \describe{
@@ -102,6 +104,33 @@
 #'   "First dose"
 #' @param graph_title_LR graph title for the lower right graph; defaults to
 #'   "Last dose"
+#' @param hline_position numerical position(s) of any horizontal lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{hline_position = 10} to
+#'   have a horizontal line at 10 ng/mL (or whatever your concentration units
+#'   are) or \code{hline_position = c(10, 100, 1000)} to have horizontal lines
+#'   at each of those y values. Examples of where this might be useful would be
+#'   to indicate a toxicity threshold, a target Cmin, or the lower limit of
+#'   quantification for the assay used to generate the concentration-time data.
+#' @param hline_style the line color and type to use for any horizontal lines
+#'   that you add to the graph with \code{hline_position}. Default is "red
+#'   dotted", but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
+#' @param vline_position numerical position(s) of any vertical lines to add to
+#'   the graph. The default is NA to have no lines, and good syntax if you
+#'   \emph{do} want lines would be, for example, \code{vline_position = 12} to
+#'   have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+#'   168, by = 24)} to have horizontal lines every 24 hours for one week.
+#'   Examples of where this might be useful would be indicating dosing times or
+#'   the time at which some other drug was started or stopped.
+#' @param vline_style the line color and type to use for any vertical lines that
+#'   you add to the graph with \code{vline_position}. Default is "red dotted",
+#'   but any combination of 1) a color in R and 2) a named linetype is
+#'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+#'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+#'   into the console.
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all. If you include the legend but then some graphs do have a legend and
@@ -116,6 +145,30 @@
 #'   that object to the argument \code{existing_exp_details}.
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
+#' @param prettify_compound_names TRUE (default), FALSE or a character vector:
+#'   This is asking whether to make compound names prettier in legend entries
+#'   and in any Word output files. This was designed for simulations where the
+#'   substrate and any metabolites, perpetrators, or perpetrator metabolites are
+#'   among the standard options for the simulator, and leaving
+#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+#'   FALSE will leave the compound names as is. For an approach with more
+#'   control over what the compound names will look like in legends and Word
+#'   output, set each compound to the exact name you  want with a named
+#'   character vector. For example, \code{prettify_compound_names =
+#'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+#'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+#'   legend.
+#' @param name_clinical_study optionally specify the name of the clinical study
+#'   for any observed data. This only affects the caption of the graph. For
+#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
+#'   result in a figure caption that reads in part "Clinical Study 101, fed
+#'   cohort".
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the graph. This works best if you supply something
+#'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+#'   output a list of the graph, the figure heading, and the figure caption.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". If you leave off ".png" or ".docx" from the file name, it will
@@ -202,8 +255,15 @@ ct_plot3 <- function(ct_dataframe,
                      x_axis_interval_LR = NA,
                      legend_position = "none",
                      graph_labels = TRUE, 
+                     hline_position = NA, 
+                     hline_style = "red dotted", 
+                     vline_position = NA, 
+                     vline_style = "red dotted",
                      qc_graph = FALSE,
                      existing_exp_details = NA,
+                     prettify_compound_names = TRUE,
+                     name_clinical_study = NA, 
+                     return_caption = FALSE, 
                      save_graph = NA,
                      fig_height = 6,
                      fig_width = 5,
@@ -242,7 +302,7 @@ ct_plot3 <- function(ct_dataframe,
             error = function(x) "missing file")
       } else {
          Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
-            filter(unique(ct_dataframe$File) %in% File)
+            filter(File %in% unique(ct_dataframe$File))
          
          if(nrow(Deets == 0)){
             Deets <- tryCatch(
@@ -269,6 +329,18 @@ ct_plot3 <- function(ct_dataframe,
       labels <- NULL
    }
    
+   MyTissue <- unique(ct_dataframe$Tissue)
+   MyTissueSubtype <- ifelse("Tissue_subtype" %in% names(ct_dataframe), 
+                             unique(ct_dataframe$Tissue_subtype), 
+                             "none")
+   MyCompoundID <- unique(as.character(ct_dataframe$CompoundID))
+   
+   NumProfiles <- ifelse(length(MyTissue) == 1 & length(MyCompoundID) == 1 &
+                            length(MyTissueSubtype) == 1,
+                         "single", "multiple")
+   
+   overlay <- ifelse(NumProfiles == "multiple", TRUE, overlay)
+   
    if(overlay){
       
       A <- ct_plot_overlay(ct_dataframe = ct_dataframe,
@@ -280,6 +352,7 @@ ct_plot3 <- function(ct_dataframe,
                            graph_title = graph_title_U,
                            qc_graph = FALSE,
                            graph_labels = FALSE, 
+                           legend_position = legend_position, 
                            ..., 
                            save_graph = NA)
       
@@ -294,6 +367,7 @@ ct_plot3 <- function(ct_dataframe,
                               graph_title = graph_title_LL,
                               qc_graph = FALSE,
                               graph_labels = FALSE, 
+                              legend_position = "none", 
                               ..., 
                               save_graph = NA)))
       
@@ -307,6 +381,7 @@ ct_plot3 <- function(ct_dataframe,
                               x_axis_interval = x_axis_interval_LR,
                               qc_graph = FALSE,
                               graph_labels = FALSE, 
+                              legend_position = "none", 
                               ..., 
                               save_graph = NA)))
       
@@ -396,6 +471,27 @@ ct_plot3 <- function(ct_dataframe,
       }
    }
    
+   # Setting up figure caption --------------------------------------------
+   
+   FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 
+                              single_or_multiple_profiles = NumProfiles, 
+                              plot_type = "concentration-time", 
+                              existing_exp_details = existing_exp_details, 
+                              mean_type = mean_type, 
+                              linear_or_log = linear_or_log, 
+                              figure_type = figure_type, 
+                              prettify_compound_names = prettify_compound_names, 
+                              name_clinical_study = name_clinical_study, 
+                              hline_position = hline_position, 
+                              vline_position = vline_position, 
+                              hline_style = hline_style, 
+                              vline_style = vline_style)
+   
+   
+   # Saving ------------------------------------------------------------------
+   
+   Out <- list("graph" = Out)
+   
    if(qc_graph){
       
       QCTable <- formatTable_Simcyp(
@@ -408,11 +504,9 @@ ct_plot3 <- function(ct_dataframe,
       
       # Out would have been just the graph or just the two arranged graphs at
       # this point, so need to convert it to a list here.
-      Out <- list("Graph" = Out, 
-                  "QCGraph" = ggpubr::ggarrange(
-                     plotlist = list(Out, flextable::gen_grob(QCTable)),
-                     font.label = list(size = graph_title_size))
-      )
+      Out[["QCgraph"]] <- ggpubr::ggarrange(
+         plotlist = list(Out, flextable::gen_grob(QCTable)),
+         font.label = list(size = graph_title_size))
    }
    
    if(complete.cases(save_graph)){
@@ -433,7 +527,7 @@ ct_plot3 <- function(ct_dataframe,
       if(qc_graph & Ext != "docx"){
          ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
                 height = fig_height, width = fig_width * 2, dpi = 600, 
-                ggpubr::ggarrange(plotlist = list(Out$QCGraph), 
+                ggpubr::ggarrange(plotlist = list(Out$QCgraph), 
                                   nrow = 1))
       }
       
@@ -470,6 +564,15 @@ ct_plot3 <- function(ct_dataframe,
                               "FALSE" = Out))
          
       }
+   }
+   
+   if(return_caption){
+      Out[["figure_heading"]] <- FigText$heading
+      Out[["figure_caption"]] <- FigText$caption
+   } 
+   
+   if(length(Out) == 1){
+      Out <- Out[[1]]
    }
    
    return(Out)

@@ -14,6 +14,7 @@ make_table_annotations(
   MeanType,
   tissue = NA,
   DosesIncluded = NA,
+  name_clinical_study = NA,
   return_all_objects = FALSE
 )
 }
@@ -43,11 +44,17 @@ include_dose_num = TRUE in original PK table call but less so when
 include_dose_num = FALSE. Set to "no dose num included" to use the
 most-generic text for the annotations.}
 
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "clinical study 101, fed
+cohort".}
+
 \item{return_all_objects}{T or F (default) for whether to return a ton of
 objects for use downstream}
 }
 \value{
-a list with a) TableHeading text and b) TableCaption text
+a list with a) table_heading text and b) table_caption text
 }
 \description{
 \code{make_table_annotations} is meant to make a table heading and caption

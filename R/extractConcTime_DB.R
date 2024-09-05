@@ -477,7 +477,7 @@ extractConcTime_DB <- function(sim_data_file,
    CT_indiv <- 
       bind_rows(CT1) %>% 
       bind_rows(
-         map(.x = 2:(Deets$NumTrials * Deets$NumSubjTrial), 
+         map(.x = 2:(as.numeric(Deets$NumTrials) * as.numeric(Deets$NumSubjTrial)), 
              .f = function(x){get_ConcTime_subfun(
                 individual = x, 
                 compoundToExtract = compoundToExtract, 
@@ -485,7 +485,7 @@ extractConcTime_DB <- function(sim_data_file,
    
    if(is.null(Deets$Inhibitor1) == FALSE){
       
-      CT_indiv_DDI <- map(.x = 1:(Deets$NumTrials * Deets$NumSubjTrial), 
+      CT_indiv_DDI <- map(.x = 1:(as.numeric(Deets$NumTrials) * as.numeric(Deets$NumSubjTrial)), 
                           .f = function(x){get_ConcTime_subfun(
                              individual = x, 
                              compoundToExtract = compoundToExtract, 
@@ -545,7 +545,8 @@ extractConcTime_DB <- function(sim_data_file,
    # Adding any obs data -----------------------------------------------------
    
    if(nrow(ObsAssign) > 0){
-      ObsCT <- extractObsConcTime(obs_data_file = ObsAssign$ObsFile[ObsAssign$File == sim_data_file])
+      ObsCT <- extractObsConcTime(obs_data_file = ObsAssign$ObsFile[ObsAssign$File == sim_data_file]) %>% 
+         filter(CompoundID == compoundToExtract)
    }
    
    # Putting everything together ----------------------------------------
@@ -573,7 +574,9 @@ extractConcTime_DB <- function(sim_data_file,
                            existing_exp_details = existing_exp_details)
    
    # Now that sim data are basically set up, can add obs data
-   if(exists("ObsCT", inherits = FALSE)){
+   if(exists("ObsCT", inherits = FALSE) & 
+      nrow(ObsCT %>% filter(CompoundID == compoundToExtract & 
+                            Tissue == tissue)) > 0){
       
       Data <- match_obs_to_sim(ct_dataframe = Data, 
                                obs_dataframe = ObsCT, 
@@ -581,8 +584,18 @@ extractConcTime_DB <- function(sim_data_file,
    }
    
    # Adjusting concentration units as needed
-   Data <- Data %>% convert_conc_units(conc_units = conc_units, 
-                                       MW = Deets %>% select(matches("MW")))
+   Data <- split(Data, f = list(Data$Compound, 
+                                Data$CompoundID, 
+                                Data$Conc_units))
+   
+   for(cmpd in names(Data)){
+      Data[[cmpd]] <- Data[[cmpd]] %>% 
+         convert_conc_units(conc_units = conc_units, 
+                            MW = Deets %>% select(matches("MW")))
+   }
+   
+   Data <- bind_rows(Data)
+   
    
    # Finalizing
    Data <- Data %>%

@@ -21,11 +21,17 @@ ct_plot_mult(
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
   y_axis_label = NA,
+  hline_position = NA,
+  hline_style = "red dotted",
+  vline_position = NA,
+  vline_style = "red dotted",
   legend_position = "none",
   legend_label = NA,
   graph_titles = "none",
   graph_title_size = 14,
   graph_labels = TRUE,
+  prettify_compound_names = TRUE,
+  name_clinical_study = NA,
   save_graph = NA,
   file_suffix = NA,
   fig_height = 8,
@@ -191,6 +197,37 @@ limits for the semi-log plot will be automatically selected.}
 \item{y_axis_label}{optionally supply a character vector or an expression to
 use for the y axis label}
 
+\item{hline_position}{numerical position(s) of any horizontal lines to add to
+the graph. The default is NA to have no lines, and good syntax if you
+\emph{do} want lines would be, for example, \code{hline_position = 10} to
+have a horizontal line at 10 ng/mL (or whatever your concentration units
+are) or \code{hline_position = c(10, 100, 1000)} to have horizontal lines
+at each of those y values. Examples of where this might be useful would be
+to indicate a toxicity threshold, a target Cmin, or the lower limit of
+quantification for the assay used to generate the concentration-time data.}
+
+\item{hline_style}{the line color and type to use for any horizontal lines
+that you add to the graph with \code{hline_position}. Default is "red
+dotted", but any combination of 1) a color in R and 2) a named linetype is
+acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+into the console.}
+
+\item{vline_position}{numerical position(s) of any vertical lines to add to
+the graph. The default is NA to have no lines, and good syntax if you
+\emph{do} want lines would be, for example, \code{vline_position = 12} to
+have a vertical line at 12 h or \code{vline_position = seq(from = 0, to =
+168, by = 24)} to have horizontal lines every 24 hours for one week.
+Examples of where this might be useful would be indicating dosing times or
+the time at which some other drug was started or stopped.}
+
+\item{vline_style}{the line color and type to use for any vertical lines that
+you add to the graph with \code{vline_position}. Default is "red dotted",
+but any combination of 1) a color in R and 2) a named linetype is
+acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
+To see all the possible linetypes, type \code{ggpubr::show_line_types()}
+into the console.}
+
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all. If you include the legend but then some graphs do have a legend and
@@ -229,6 +266,28 @@ default is 14. This also determines the font size of the graph labels.}
 \item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
 B, C, etc.) for each of the small graphs.}
 
+\item{prettify_compound_names}{TRUE (default), FALSE or a character vector:
+This is asking whether to make compound names prettier in legend entries
+and in any Word output files. This was designed for simulations where the
+substrate and any metabolites, perpetrators, or perpetrator metabolites are
+among the standard options for the simulator, and leaving
+\code{prettify_compound_names = TRUE} will make the name of those compounds
+something more human readable. For example, "SV-Rifampicin-MD" will become
+"rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+FALSE will leave the compound names as is. For an approach with more
+control over what the compound names will look like in legends and Word
+output, set each compound to the exact name you  want with a named
+character vector. For example, \code{prettify_compound_names =
+c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
+"Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
+legend.}
+
+\item{name_clinical_study}{optionally specify the name of the clinical study
+for any observed data. This only affects the caption of the graph. For
+example, specifying \code{name_clinical_study = "101, fed cohort"} will
+result in a figure caption that reads in part "Clinical Study 101, fed
+cohort".}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 If you leave off ".png" or ".docx", it will be saved as a png file, but if
@@ -253,6 +312,11 @@ percentiles.png". This is only used when \code{graph_arrangement =
 \item{fig_width}{figure width in inches; default is 8}
 
 \item{...}{arguments that pass through to \code{\link{ct_plot}}}
+
+\item{return_caption}{TRUE or FALSE (default) for whether to return any
+caption text to use with the graph. This works best if you supply something
+for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
+output a list of the graph, the figure heading, and the figure caption.}
 }
 \value{
 a set of arranged ggplot2 graphs and/or saved files of those graphs
