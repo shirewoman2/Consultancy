@@ -768,6 +768,15 @@ so_graph <- function(PKtable,
       
    }
    
+   if(all_AUCs_together){
+      SO$PKparameter <- sub("AUCinf|AUCtau", "AUC", SO$PKparameter)
+      SO$PKparameter <- sub("AUCt_", "AUC_", SO$PKparameter)
+      
+      PKparameters <- sub("AUCinf|AUCtau", "AUC", PKparameters)
+      PKparameters <- sub("AUCt_", "AUC_", PKparameters)
+      PKparameters <- unique(PKparameters)
+   }
+   
    # It's possible to have both CLt_dose1 and CLinf_dose1 and they're labeled
    # the same way in PKexpressions. Adjusting for that scenario.
    if(all(c("CLinf_dose1", "CLt_dose1") %in% PKparameters)){
@@ -1220,7 +1229,7 @@ so_graph <- function(PKtable,
          if(all_intervals_together){
             GoodOrder <- sub("AUCinf|AUCtau", "AUC", GoodOrder)
             GoodOrder <- sub("AUCt_", "AUC_", GoodOrder)
-            GoodOrder <- sub("_dose1|_last", "", GoodOrder)
+            GoodOrder  <- gsub("_last|_dose1|inf|tau", "", GoodOrder)
             GoodOrder <- unique(GoodOrder)
          }
          
