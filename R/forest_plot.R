@@ -304,6 +304,8 @@
 #'   "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any
 #'   slashes, dollar signs, or periods in the file name. Leaving this as NA
 #'   means the file will not be saved to disk.
+#' @param angle_x_axis_text At what angle should the x axis text be printed?
+#'   Default is 0 degrees for regular, horizontal text.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param prettify_compound_names SOON TO BE DEPRECATED. This is the same thing
@@ -552,6 +554,7 @@ forest_plot <- function(forest_dataframe,
                         point_shape = c(24, 21),
                         point_color_column, 
                         point_color_set = "default",
+                        angle_x_axis_text = 0, 
                         graph_title = NA,
                         graph_title_size = 14,
                         table_title = NA,
@@ -2015,6 +2018,10 @@ forest_plot <- function(forest_dataframe,
                                      # already borders.
                                      "FALSE" = element_line(color = "black", 
                                                             linewidth = 0.25)), 
+         axis.text.x = element_text(angle = angle_x_axis_text, 
+                                    hjust = ifelse(angle_x_axis_text > 15 |
+                                                      angle_x_axis_text < -15,
+                                                   1, 0.5)), 
          axis.line.y.left = switch(as.character(show_borders), 
                                    "TRUE" = element_blank(),
                                    # Don't need to add a line when there are
