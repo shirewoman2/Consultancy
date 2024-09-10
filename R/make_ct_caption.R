@@ -326,6 +326,9 @@ make_ct_caption <- function(ct_dataframe,
                    " mean data of the simulated population (n = ", N_indiv, "). The dashed lines represent the 5^th^ and 95^th^ percentiles."))
       
       if(any(complete.cases(hline_position))){
+         
+         HLineAES <- str_split(hline_style, pattern = " ")[[1]]
+         
          CapText2 <- paste0(CapText2, "* ",
                             paste("*The", HLineAES[1], HLineAES[2], "horizontal",
                                   ifelse(length(hline_position) > 1, 
@@ -334,6 +337,9 @@ make_ct_caption <- function(ct_dataframe,
       }
       
       if(any(complete.cases(vline_position))){
+         
+         VLineAES <- str_split(vline_style, pattern = " ")[[1]]
+         
          CapText2 <- paste0(CapText2, ifelse(any(complete.cases(hline_position)), 
                                              " ", "* "),
                             paste("*The", VLineAES[1], VLineAES[2], "vertical",
