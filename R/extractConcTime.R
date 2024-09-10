@@ -285,7 +285,8 @@ extractConcTime <- function(sim_data_file,
       Deets <- existing_exp_details[["MainDetails"]]
    } 
    
-   if(is.null(Deets$PopRepSim) == FALSE && Deets$PopRepSim == "Yes" &
+   if(Deets$Species == "human" & 
+      is.null(Deets$PopRepSim) == FALSE && Deets$PopRepSim == "Yes" &
       "aggregate" %in% returnAggregateOrIndiv){
       
       if(all(returnAggregateOrIndiv == "aggregate")){
@@ -300,6 +301,10 @@ extractConcTime <- function(sim_data_file,
                         "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
                  call. = FALSE)
       }
+   }
+   
+   if(Deets$Species != "human"){
+      returnAggregateOrIndiv <- c("aggregate", "individual")
    }
    # toc(log = T)
    

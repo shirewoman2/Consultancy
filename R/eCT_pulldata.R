@@ -248,6 +248,14 @@ eCT_pulldata <- function(sim_data_xl,
       RowsToUse <- Include[which(Include > which(str_detect(
          sim_data_xl$...1, "^(Individual )?Statistics")))]
       
+      if(Deets$Species != "human" & length(RowsToUse) == 0){
+         # Sometimes, animal sims will list "Population Statistics" even though
+         # there's only 1 individual.
+         RowsToUse <- Include[which(Include > which(str_detect(
+            sim_data_xl$...1, "Population Statistics")))]
+         
+      }
+      
       suppressWarnings(
          Out[["indiv"]] <- sim_data_xl[c(TimeRow, RowsToUse), ] %>%
             t() %>%
