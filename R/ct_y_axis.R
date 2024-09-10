@@ -229,11 +229,24 @@ ct_y_axis <- function(ADAMorAdvBrain,
    YBreaksToUse <- PossYBreaks %>% filter(Ymax >= (Ylim[2] - Ylim[1])) %>%
       slice(which.min(Ymax)) %>% pull(YBreaksToUse)
    
-   YInterval    <- switch(paste(is.na(y_axis_interval), EnzPlot), 
-                          "TRUE FALSE" = YBreaksToUse, 
-                          "FALSE FALSE" = y_axis_interval, 
-                          "TRUE TRUE" = YBreaksToUse,
-                          "FALSE TRUE" = 2*y_axis_interval)
+   # If we've maxed out on the regular breaks, probably need to use something
+   # that isn't already all set up and nice.
+   if(YBreaksToUse == 2e+05){
+      YInterval    <- switch(paste(is.na(y_axis_interval), EnzPlot), 
+                             "TRUE FALSE" = Ylim[2] / 5, 
+                             "FALSE FALSE" = y_axis_interval, 
+                             "TRUE TRUE" = Ylim[2] / 5,
+                             "FALSE TRUE" = 2*y_axis_interval)
+      
+   } else {
+      YInterval    <- switch(paste(is.na(y_axis_interval), EnzPlot), 
+                             "TRUE FALSE" = YBreaksToUse, 
+                             "FALSE FALSE" = y_axis_interval, 
+                             "TRUE TRUE" = YBreaksToUse,
+                             "FALSE TRUE" = 2*y_axis_interval)
+      
+   }
+   
    YmaxRnd      <- ifelse(is.na(y_axis_limits_lin[2]), 
                           round_up_unit(Ylim[2], YInterval),
                           y_axis_limits_lin[2])
@@ -323,7 +336,7 @@ ct_y_axis <- function(ADAMorAdvBrain,
    
    Breaks <- make_log_breaks(data_range = Ylim_log, 
                              axis_limits_log = y_axis_limits_log) # just submit y range desired
-                             
+   
    
    YLogBreaks <- Breaks$breaks
    YLogLabels <- Breaks$labels
