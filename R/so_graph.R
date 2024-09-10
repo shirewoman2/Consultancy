@@ -28,17 +28,16 @@
 #'   list for \code{PKparameters} wherever you want that to happen, e.g.,
 #'   \code{PKparameters = c("Cmax_dose1", "BLANK", "AUCinf_dose1", "BLANK",
 #'   "tmax_dose1")}
-#' @param all_intervals_together NOT YET SET UP. TRUE or FALSE (default) for
-#'   whether to combine all of a single type of PK parameter into a single
-#'   graph. For example, setting this to TRUE would put all the Cmax PK --
-#'   regardless of whether it was for the 1st dose, the last dose, or a custom
-#'   interval -- into a single graph. The default, FALSE, means that anything
-#'   that was its own column in the PK summary table would also be its own graph
-#'   here. If you do set this to TRUE, the color and shape of the points will be
-#'   mapped to which interval it is, which means that you can't \emph{also}
-#'   specify something for the arguments \code{point_color_column} or
-#'   \code{point_shape_column}. If you do, those will be ignored. Try this out
-#'   if you're uncertain what we mean.
+#' @param all_intervals_together TRUE or FALSE (default) for whether to combine
+#'   all of a single type of PK parameter into a single graph. For example,
+#'   setting this to TRUE would put all the Cmax PK -- regardless of whether it
+#'   was for the 1st dose, the last dose, or a custom interval -- into a single
+#'   graph. The default, FALSE, means that anything that was its own column in
+#'   the PK summary table would also be its own graph here. \emph{NOTE:} If you
+#'   do set this to TRUE, the shape of the points will be mapped to which
+#'   interval it is, which means that you can't \emph{also} specify something
+#'   for the argument \code{point_shape_column}. If you do, it will be
+#'   ignored. Try this out if you're uncertain what we mean.
 #' @param all_AUCs_together TRUE or FALSE (default) for whether to combine,
 #'   e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
 #'   with this because if you have points for both AUCinf and AUCt for a
@@ -753,24 +752,29 @@ so_graph <- function(PKtable,
    
    if(all_intervals_together){
       
-      # FIXME - Just started working on this. This is NOT set up yet. 
-      
       # For this option, data must be in long format w/ a column for interval.
-      TEMP <- SO %>% 
+      SO <- SO %>% 
          mutate(Interval = case_when(str_detect(PKparameter, "dose1") ~ "first dose", 
                                      str_detect(PKparameter, "last") ~ "last dose", 
                                      PKparameter %in% PKCols$Ugly[
                                         str_detect(PKCols$Orig, "for interval from")] ~ "user-defined interval", 
                                      TRUE ~ "applies to all intervals"), 
-                PKparameter_rev = sub("_last|_dose1", "", PKparameter), 
-                point_color_column = Interval, 
+                PKparameter_orig = PKparameter, 
+                PKparameter = gsub("_last|_dose1|inf|tau", "", PKparameter), 
+                PKparameter = gsub("AUCt", "AUC", PKparameter), 
                 point_shape_column = Interval)
+      
+      legend_label_point_shape <- "Interval"
+      
    }
    
    if(all_AUCs_together){
-      SO <- SO %>% 
-         mutate(PKparameter = sub("AUCinf|AUCt$|AUCtau", "AUC", PKparameter), 
-                PKparameter = sub("AUCt_", "AUC_", PKparameter))
+      SO$PKparameter <- sub("AUCinf|AUCtau", "AUC", SO$PKparameter)
+      SO$PKparameter <- sub("AUCt_", "AUC_", SO$PKparameter)
+      
+      PKparameters <- sub("AUCinf|AUCtau", "AUC", PKparameters)
+      PKparameters <- sub("AUCt_", "AUC_", PKparameters)
+      PKparameters <- unique(PKparameters)
    }
    
    # It's possible to have both CLt_dose1 and CLinf_dose1 and they're labeled
@@ -790,6 +794,7 @@ so_graph <- function(PKtable,
          "sub steady state for last" %in% tolower(title_adjustments)){
          
          PKparameters <- sub("_last", "_ss", PKparameters)
+         PKwithBlanks <- sub("_last", "_ss", PKwithBlanks)
          SO$PKparameter <- sub("_last", "_ss", SO$PKparameter)
       }
    }
@@ -887,6 +892,10 @@ so_graph <- function(PKtable,
    if(as_label(point_shape_column) != "<empty>"){
       SO <- SO %>% mutate(point_shape_column = {{point_shape_column}}) %>% 
          droplevels()
+   } 
+   
+   if(as_label(point_shape_column) != "<empty>" | 
+      all_intervals_together){
       
       if(class(SO$point_shape_column) != "factor"){
          Levels <- sort(unique(SO$point_shape_column))
@@ -926,6 +935,12 @@ so_graph <- function(PKtable,
          round_up(max(c(SO[[i]]$Observed, SO[[i]]$Simulated), na.rm = T)))
       
       if(str_detect(i, "ratio")){
+         
+         # If it was a Guest plot, then set the limit to be < 1 and the upper to
+         # be > 1. Otherwise, that lowest/highest point is way in the corner.
+         if(Limits[1] == 1){Limits[1] <- 2/3}
+         if(Limits[2] == 1){Limits[2] <- 3}
+         
          G[[i]] <- ggplot()  +
             geom_line(data = BoundariesGuest[["1"]][["Upper"]],
                       aes(x = Observed, y = Simulated),
@@ -1040,20 +1055,23 @@ so_graph <- function(PKtable,
       G[[i]] <- 
          switch(paste(
             as_label(point_color_column) != "<empty>",
-            as_label(point_shape_column) != "<empty>"),
+            (as_label(point_shape_column) != "<empty>") |
+               all_intervals_together),
             
             # User has NOT specified anything for point shape or color
             "FALSE FALSE" = G[[i]] + 
                geom_point(data = SO[[i]],
                           aes(x = Observed, y = Simulated), 
-                          size = ifelse(is.na(point_size), 2, point_size)), 
+                          size = ifelse(is.na(point_size), 2, point_size), 
+                          show.legend = TRUE), 
             
             # User has specified a column for point color
             "TRUE FALSE" = G[[i]] +
                geom_point(data = SO[[i]],
                           aes(x = Observed, y = Simulated, 
                               color = point_color_column),
-                          size = ifelse(is.na(point_size), 2, point_size)) + 
+                          size = ifelse(is.na(point_size), 2, point_size), 
+                          show.legend = TRUE) + 
                scale_color_manual(values = MyPointColors, drop = FALSE), 
             
             # User has specified a column for point shape
@@ -1062,7 +1080,8 @@ so_graph <- function(PKtable,
                geom_point(data = SO[[i]],
                           aes(x = Observed, y = Simulated, 
                               shape = point_shape_column),
-                          size = ifelse(is.na(point_size), 2, point_size)) +
+                          size = ifelse(is.na(point_size), 2, point_size), 
+                          show.legend = TRUE) +
                scale_shape_manual(values = MyPointShapes, drop = FALSE),
             
             # User has specified both color and point shape columns
@@ -1071,7 +1090,8 @@ so_graph <- function(PKtable,
                geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
                                               color = point_color_column, 
                                               shape = point_shape_column),
-                          size = ifelse(is.na(point_size), 2, point_size)) +
+                          size = ifelse(is.na(point_size), 2, point_size), 
+                          show.legend = TRUE) +
                scale_color_manual(values = MyPointColors, drop = FALSE) +
                scale_shape_manual(values = MyPointShapes, drop = FALSE))
       
@@ -1118,8 +1138,23 @@ so_graph <- function(PKtable,
                axis.title.y = element_text(margin = margin(0, 2.75, 0, 0)),
                axis.title.y.right = element_text(margin = margin(0, 0, 0, 2.75)))
       
-      if(legend_position == "bottom"){
-         G[[i]] <- G[[i]] + theme(legend.box = "vertical")
+      if(legend_position %in% c("bottom", "top")){
+         G[[i]] <- G[[i]] + theme(legend.box = "vertical", 
+                                  legend.spacing.y = unit(0, units = "lines"), 
+                                  legend.key.spacing.y = unit(-0.15, units = "lines"))
+         
+         if("point_shape_column" %in% names(SO[[i]]) &&
+            length(unique(SO[[i]]$point_shape_column)) > 3){
+            G[[i]] <- G[[i]] + guides(shape = guide_legend(ncol = 2))
+         }
+         
+         if("point_color_column" %in% names(SO[[i]]) &&
+            length(unique(SO[[i]]$point_color_column)) > 3){
+            G[[i]] <- G[[i]] + guides(color = guide_legend(ncol = 2))
+         }
+         
+      } else {
+         G[[i]] <- G[[i]] + theme(legend.spacing.y = unit(0.5, units = "lines"))
       }
       
       # Adding legend label for color and shape as appropriate
@@ -1136,7 +1171,8 @@ so_graph <- function(PKtable,
          }
       }
       
-      if(as_label(point_shape_column) != "<empty>"){
+      if(as_label(point_shape_column) != "<empty>" | 
+         all_intervals_together){
          if(complete.cases(legend_label_point_shape)){
             if(legend_label_point_shape == "none"){    
                G[[i]] <- G[[i]] + labs(shape = NULL)
@@ -1152,10 +1188,6 @@ so_graph <- function(PKtable,
    
    if(length(G) == 1){
       G <- G[[1]] + theme(legend.position = legend_position)
-      
-      if(legend_position == "bottom"){
-         G <- G + theme(legend.box = "vertical")
-      }
       
    } else {
       
@@ -1191,6 +1223,13 @@ so_graph <- function(PKtable,
          if(all_AUCs_together){
             GoodOrder <- sub("AUCinf|AUCtau", "AUC", GoodOrder)
             GoodOrder <- sub("AUCt_", "AUC_", GoodOrder)
+            GoodOrder <- unique(GoodOrder)
+         }
+         
+         if(all_intervals_together){
+            GoodOrder <- sub("AUCinf|AUCtau", "AUC", GoodOrder)
+            GoodOrder <- sub("AUCt_", "AUC_", GoodOrder)
+            GoodOrder  <- gsub("_last|_dose1|inf|tau", "", GoodOrder)
             GoodOrder <- unique(GoodOrder)
          }
          
