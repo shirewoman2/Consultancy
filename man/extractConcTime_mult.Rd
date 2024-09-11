@@ -132,7 +132,8 @@ Other options are "blood" or any tissues included in "Sheet Options",
 blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
-"jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
+"jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only 
+applies to rodents), "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
 released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
 SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive. Acceptable

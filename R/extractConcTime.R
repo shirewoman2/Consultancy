@@ -54,7 +54,8 @@
 #'   blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 #'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 #'   or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
-#'   "jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
+#'   "jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only 
+#'   applies to rodents), "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 #'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
 #'   released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
 #'   SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.
@@ -130,8 +131,8 @@
 #'   "Heff", "absorption rate", "unreleased compound in faeces", "dissolved
 #'   compound", "luminal CLint", "cumulative fraction of compound dissolved",
 #'   "cumulative fraction of compound released", "cumulative fraction of
-#'   compound absorbed". Examples of brain-compartment tissues you can get: 
-#'   "cranial CSF", "total brain", "spinal CSF", "Kp,uu,brain". This column was 
+#'   compound absorbed". Examples of brain-compartment tissues you can get:
+#'   "cranial CSF", "total brain", "spinal CSF", "Kp,uu,brain". This column was
 #'   formerly named "subsection_ADAM" but now includes non-ADAM-model tissues.}
 #'
 #'   \item{Dose_num}{the dose number}
@@ -225,7 +226,8 @@ extractConcTime <- function(sim_data_file,
                  "duodenum", "faeces", "feto-placenta", 
                  "gi tissue", "gut tissue", "heart", 
                  "ileum i", "ileum ii", "ileum iii", "ileum iv",
-                 "jejunum i", "jejunum ii", "kidney", "liver", "lung",
+                 "jejunum i", "jejunum ii", "jejunum iii", "jejunum iv", 
+                 "kidney", "liver", "lung",
                  "milk", "muscle", "pancreas", 
                  "peripheral blood", "peripheral plasma", "peripheral unbound blood", 
                  "peripheral unbound plasma", "pd response",
@@ -255,8 +257,12 @@ extractConcTime <- function(sim_data_file,
    }
    
    # Noting whether the tissue was from an ADAM model
-   ADAM <- tissue %in% c("stomach", "duodenum", "jejunum i", "jejunum ii", "ileum i",
-                         "ileum ii", "ileum iii", "ileum iv", "colon", "faeces", 
+   ADAM <- tissue %in% c("stomach", "duodenum",
+                         "jejunum i", "jejunum ii",
+                         # NB: rodents have additional jejunums: III and IV
+                         "jejunum iii", "jejunum iv", 
+                         "ileum i", "ileum ii", "ileum iii", "ileum iv",
+                         "colon", "faeces", 
                          "cumulative absorption", "cumulative dissolution", 
                          "cumulative fraction released", "gut tissue")
    
@@ -336,15 +342,23 @@ extractConcTime <- function(sim_data_file,
               call. = FALSE)
       
       tissue <- intersect(tissue, c("plasma", "blood"))
-      
-      if(length(tissue) == 0){
-         warning(paste0("None of the tissues requested could be found in the file ", 
-                        sim_data_file, ".\n"), 
-                 call. = FALSE)
-         
-         return(data.frame())
-      }
    }
+   
+   if(Deets$Species %in% c("rat", "mouse")){
+      tissue <- intersect(tissue, tolower(AllTissues$Tissue))
+   } else {
+      tissue <- intersect(tissue, 
+                          tolower(AllTissues$Tissue[AllTissues$Species == "all"]))
+   }
+   
+   if(length(tissue) == 0){
+      warning(paste0("None of the tissues requested could be found in the file ", 
+                     sim_data_file, ".\n"), 
+              call. = FALSE)
+      
+      return(data.frame())
+   }
+   
    # toc(log = T)
    
    ## Checking a few things based on Deets -------------------------------------
@@ -918,11 +932,16 @@ extractConcTime <- function(sim_data_file,
                  c("obs", "obs+inhibitor", "mean", "median",
                    "geomean", "per5", "per95", "per10", "per90")))),
          Tissue = tissue,
-         Tissue = recode(Tissue, "jejunum i" = "jejunum I",
-                         "jejunum ii" = "jejunum II",
-                         "ileum i" = "ileum I", "ileum ii" = "ileum II",
-                         "ileum iii" = "ileum III",
-                         "ileum iv" = "ileum IV"),
+         Tissue = case_match(Tissue, 
+                         "jejunum i" ~ "jejunum I",
+                         "jejunum ii" ~ "jejunum II",
+                         "jejunum iii" ~ "jejunum III",
+                         "jejunum iv" ~ "jejunum IV",
+                         "ileum i" ~ "ileum I", 
+                         "ileum ii" ~ "ileum II",
+                         "ileum iii" ~ "ileum III",
+                         "ileum iv" ~ "ileum IV", 
+                         .default = Tissue),
          File = sim_data_file) %>%
       arrange(across(any_of(c("Compound", "Inhibitor", "Simulated",
                               "Individual", "Trial", "Time")))) %>%
