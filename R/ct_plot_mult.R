@@ -793,14 +793,14 @@ ct_plot_mult <- function(ct_dataframe,
          } else {
             # This is when they want any kind of graphical file format.
             ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                   plot = Out)
+                   plot = Out$graph)
             
          }
          
          if(qc_graph){
             ggsave(sub(paste0("\\.", Ext), " - QC.png", FileName), 
                    height = fig_height * 2, width = fig_width, dpi = 600, 
-                   plot = Out_QC)
+                   plot = Out$QCgraph)
          }
       }
       
