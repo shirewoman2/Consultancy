@@ -106,7 +106,7 @@ if(fitByDonor){
    suppressWarnings(
       Fit_sum <- Fit_ind %>% group_by(Model) %>% 
          summarize(across(.cols = any_of(c("Emax", "EC50", "Gamma", "slope", 
-                                           "IndMax", "IndC50")),
+                                           "Indmax", "IndC50")),
                           .fns = mean, na.rm = T)) %>% 
          mutate(DonorID = "mean")
    )
@@ -140,10 +140,14 @@ AllFits <- AllFits %>%
           across(.cols = any_of(PvalCols), 
                  .fns = ~ as.character(signif(.x, 1))))
 
+MakeBold <- which(AllFits$DonorID == "mean")
+MakeBold <- as.list(MakeBold) %>% map(.f = \(x) c(x, NA))
+MakeBold[[length(MakeBold) + 1]] <- c(0, NA)
+
 if(model == "all"){
    AllFits <- AllFits %>% 
       formatTable_Simcyp(shading_column = Model, 
-                         bold_cells = list(c(0, NA)), 
+                         bold_cells = MakeBold, 
                          center_1st_column = TRUE) 
 } else {
    AllFits <- AllFits %>% 

@@ -293,7 +293,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
    # etc.
    
    # If user supplied an unquoted object, this checks whether that object
-   # exists. However, if they supplied NA or NULL, this throws an error. 
+   # exists. However, if they supplied NA or NULL, this throws an error. Also,
+   # "exists" does not work with operators, so, if the user supplied an item in
+   # a list, e.g., they split ct_dataframe by whether it was a development or
+   # verification sim or something, supplying, e.g., CT[[i]] will result in
+   # FALSE here.
    Recode_ct_dataframe <- suppressWarnings(
       try(exists(deparse(substitute(ct_dataframe))) == FALSE, silent = TRUE))
    
