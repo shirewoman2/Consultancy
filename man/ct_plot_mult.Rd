@@ -235,11 +235,11 @@ some graphs do not (e.g., some have perpetrators and some do not so there's
 nothing to put in a legend), the alignment between sets of graphs will be a
 bit off.}
 
-\item{legend_label}{optionally indicate on the legend whether the perpetrator is
-an inhibitor, inducer, activator, or suppressor. Input will be used as the
-label in the legend for the line style and the shape. If left as the
-default NA when a legend is included and a perpetrator is present, the label
-in the legend will be "Inhibitor".}
+\item{legend_label}{optionally indicate on the legend whether the perpetrator
+is an inhibitor, inducer, activator, or suppressor. Input will be used as
+the label in the legend for the line style and the shape. If left as the
+default NA when a legend is included and a perpetrator is present, the
+label in the legend will be "Inhibitor".}
 
 \item{graph_titles}{optionally specify titles to be used in the graphs and
 specify the order in which the files are graphed or use "none" (default) to
@@ -293,7 +293,8 @@ in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 If you leave off ".png" or ".docx", it will be saved as a png file, but if
 you specify a different graphical file extension, it will be saved as that
 file format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
-"jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs, or periods in the file name. Leaving this as NA means the file
+"jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar
+signs, or periods in the file name. Leaving this as NA means the file
 will not be automatically saved to disk, except when \code{graph_arrangment
 = "separate files"}, when anything you specify here will be ignored and it
 will be saved by file name anyway.}
@@ -322,33 +323,36 @@ output a list of the graph, the figure heading, and the figure caption.}
 a set of arranged ggplot2 graphs and/or saved files of those graphs
 }
 \description{
-This function was designed for making nicely arranged concentration-time
-graphs from several Simcyp Simulator output files all together \emph{or} for
-making multiple files -- one for each Simulator file -- all at once. Behind
-the scenes, it uses the function \code{\link{ct_plot}} to make these graphs,
-so it will automatically break up your supplied concentration-time data into
-datasets by a) file, b) compound ID, c) tissue, and d) subsection of any
-ADAM-model data. If you have more than one dataset per file, the graph titles
-won't necessarily be clear, so please pay attention to what data you're
-including. If you get unexpected or unclear output, try using
-\code{\link{ct_plot_overlay}} to graph your data; it might work better for
-what you want to show. For detailed instructions and examples, please see the
-SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
-Files/SimcypConsultancy function examples and instructions/Concentration-time
-plots 2 - multiple plots at once/Concentration-time-plot-examples-2.docx".
-(Sorry, we are unable to include a link to it here.)
-}
-\details{
-\strong{A note on the order of the graphs:} This function arranges graphs
-first by file, then by compound ID, and then by tissue, and all sorting is
-alphabetical. However, since sorting alphabetically might not be the optimal
-graph arrangement for \emph{your} scenario, you can specify the order of the
-graphs using either the \code{graph_titles} argument or, if you're
-comfortable with setting factors in R, by making any of File, CompoundID,
-Tissue, and Tissue_subtype factor rather than character data and setting the
-levels how you wish. If you're unfamiliar with setting factor levels in R and
-setting \code{graph_titles} isn't achieving what you want, please ask a
-member of the R Working Group for assistance.
+This function was designed for making nicely arranged
+  concentration-time graphs from several Simcyp Simulator output files all
+  together \emph{or} for making multiple files -- one for each Simulator file
+-- all at once. Behind the scenes, it uses the function \code{\link{ct_plot}}
+  to make these graphs, so it will automatically break up your supplied
+  concentration-time data into datasets by a) file, b) compound ID, c)
+  tissue, and d) tissue subtype for any ADAM- or brain-model data.
+
+  If you have more than one dataset per file, the graph titles won't
+  necessarily be clear, so please pay attention to what data you're
+  including. If you get unexpected or unclear output, try using
+  \code{\link{ct_plot_overlay}} to graph your data; it might work better for
+  what you want to show. For detailed instructions and examples, please see
+  the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+  Files/SimcypConsultancy function examples and
+  instructions/Concentration-time plots 2 - multiple plots at
+  once/Concentration-time-plot-examples-2.docx". (Sorry, we are unable to
+  include a link to it here.)
+
+  \strong{A note on the order of the graphs:} This function arranges graphs
+  first by file, then by compound ID, then by tissue, and then by tissue
+  subtype, and all sorting is alphabetical. However, since sorting
+  alphabetically might not be the optimal graph arrangement for \emph{your}
+  scenario, you can specify the order of the graphs using either the
+  \code{graph_titles} argument or, if you're comfortable with setting factors
+  in R, by making any of File, CompoundID, Tissue, and Tissue_subtype factor
+  rather than character data and setting the levels how you wish. If you're
+  unfamiliar with setting factor levels in R and setting \code{graph_titles}
+  isn't achieving what you want, please ask a member of the R Working Group
+  for assistance.
 }
 \examples{
 
