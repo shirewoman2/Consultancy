@@ -357,7 +357,7 @@ make_ct_caption <- function(ct_dataframe,
       
       Caption <- paste0(CapText1, " ", CapText2, 
                         "Source simulated data: ", 
-                        basename(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE])), 
+                        str_comma(basename(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))), 
                         ".")
       
       return(list("heading" = Heading, 
