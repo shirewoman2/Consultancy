@@ -817,11 +817,17 @@ tidy_input_PK <- function(PKparameters,
    
    if("CompoundID" %in% names(PKparameters)){
       PKparameters$CompoundID <- tolower(PKparameters$CompoundID)
+      
    } else if(any(complete.cases(compoundsToExtract))){
-      PKparameters$CompoundID <- compoundsToExtract # FIXME - check whether there is will work with with more than one compound ID
+      PKparameters <- PKparameters %>% 
+         left_join(expand_grid(File = unique(PKparameters$File), 
+                               CompoundID = compoundsToExtract), 
+                   by = "File")
+      
    } else {
       PKparameters$CompoundID <- NA
    }
+   
    PKparameters$CompoundID[is.na(PKparameters$CompoundID)] <- "substrate"
    
    if(any(complete.cases(compoundsToExtract)) && 
