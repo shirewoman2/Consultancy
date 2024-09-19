@@ -81,8 +81,9 @@ extractObsConcTime <- function(obs_data_file,
    # Checking that the file exists.
    if(file.exists(obs_data_file) == FALSE){
       # Using warning instead of stop so that this will pass through to mult function. 
-      warning(paste0("The file `", obs_data_file, 
-                     "` is not present, so it will be skipped.\n"))
+      warning(wrapn(paste0("The file `", obs_data_file, 
+                     "` is not present, so it will be skipped.")), 
+              call. = FALSE)
       return(data.frame())
    }
    

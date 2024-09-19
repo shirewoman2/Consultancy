@@ -211,10 +211,10 @@ eCT_readxl <- function(sim_data_file,
    }
    
    if(length(Sheet) == 0 | is.na(Sheet) | Sheet %in% SheetNames == FALSE){
-      warning(paste0("You requested data for ", str_comma(compoundToExtract),
+      warning(wrapn(paste0("You requested data for ", str_comma(compoundToExtract),
                      " in ", tissue,
                      " from the file `",
-                     sim_data_file, "``, but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped.\n"),
+                     sim_data_file, "``, but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped.")),
               call. = FALSE)
       return(data.frame())
    }

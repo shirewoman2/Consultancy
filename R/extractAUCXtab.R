@@ -53,8 +53,8 @@ extractAUCXtab <- function(PKparameters,
       # Using "warning" instead of "stop" here b/c I want this to be
       # able to pass through to other functions and just skip any
       # files that aren't simulator output.
-      warning(paste0("It appears that you don't have any aggregate data in your simulator output file ",
-                     sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped."),
+      warning(wrapn(paste0("It appears that you don't have any aggregate data in your simulator output file ",
+                     sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.")),
               call. = FALSE)
       return(list())
    } 

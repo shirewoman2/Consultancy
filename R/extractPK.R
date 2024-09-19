@@ -630,9 +630,9 @@ extractPK <- function(sim_data_file,
    
    # Filtering out irrelevant PK ----------------------------------------------
    if(Deets$PopRepSim == "Yes"){
-      warning(paste0("The simulator file supplied, `", 
+      warning(wrapn(paste0("The simulator file supplied, `", 
                      sim_data_file, 
-                     "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped."),
+                     "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped.")),
               call. = FALSE)
       return(list())
    }
