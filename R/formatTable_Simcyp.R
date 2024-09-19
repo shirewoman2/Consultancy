@@ -275,6 +275,10 @@ formatTable_Simcyp <- function(DF,
       
       FT <- DF
       
+      # May need to change the working directory temporarily, so
+      # determining what it is now
+      CurrDir <- getwd()
+      
       # Format the file name appropriately, including making the extension be
       # docx, even if they specified something else.
       save_table <- ifelse(str_detect(save_table, "\\..*$"), 
@@ -284,28 +288,25 @@ formatTable_Simcyp <- function(DF,
       # Now that the file should have an appropriate extension, check what
       # the path and basename should be.
       OutPath <- dirname(save_table)
-      save_table <- basename(save_table)
       
-      # May need to change the working directory temporarily, so
-      # determining what it is now
-      CurrDir <- getwd()
-      
-      OutPath <- dirname(save_table)
       if(OutPath == "."){
          OutPath <- getwd()
       }
       
-      FileName <- basename(save_table)
+      save_table <- basename(save_table)
+      setwd(OutPath)
       
       rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
                                     package="SimcypConsultancy"), 
                         output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
                         output_dir = OutPath, 
-                        output_file = FileName, 
+                        output_file = save_table, 
                         quiet = TRUE)
       # Note: The "system.file" part of the call means "go to where the
       # package is installed, search for the file listed, and return its
       # full path.
+      
+      setwd(CurrDir)
       
       return(FT)
       
@@ -420,7 +421,9 @@ formatTable_Simcyp <- function(DF,
    
    # Figuring out which columns contain PK data
    PKRegex <- c(AllPKParameters$PrettifiedNames, 
-                AllPKParameters$PrettifiedNames_nodosenum)
+                AllPKParameters$PrettifiedNames_nodosenum, 
+                # Also sometimes just need AUC instead of AUCt, AUCinf, etc.
+                "AUC")
    PKRegex <- unique(str_trim(sub("\\(.*\\)", "", PKRegex)))
    PKRegex <- str_c(PKRegex, collapse = "|")
    PKCols <- which(sapply(names(DF), 
@@ -931,6 +934,10 @@ formatTable_Simcyp <- function(DF,
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
       
+      # May need to change the working directory temporarily, so
+      # determining what it is now
+      CurrDir <- getwd()
+      
       # Format the file name appropriately, including making the extension be
       # docx, even if they specified something else.
       save_table <- ifelse(str_detect(save_table, "\\..*$"), 
@@ -940,30 +947,25 @@ formatTable_Simcyp <- function(DF,
       # Now that the file should have an appropriate extension, check what
       # the path and basename should be.
       OutPath <- dirname(save_table)
-      save_table <- basename(save_table)
       
-      # May need to change the working directory temporarily, so
-      # determining what it is now
-      CurrDir <- getwd()
-      
-      OutPath <- dirname(save_table)
       if(OutPath == "."){
          OutPath <- getwd()
       }
       
-      FileName <- basename(save_table)
+      save_table <- basename(save_table)
+      setwd(OutPath)
       
       rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
                                     package="SimcypConsultancy"), 
                         output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
                         output_dir = OutPath, 
-                        output_file = FileName, 
-                        quiet = TRUE,
-                        params = list(template_path = TemplatePath))
+                        output_file = save_table, 
+                        quiet = TRUE)
       # Note: The "system.file" part of the call means "go to where the
       # package is installed, search for the file listed, and return its
       # full path.
       
+      setwd(CurrDir)
    }
    
    return(FT)
