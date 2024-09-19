@@ -1037,7 +1037,8 @@ tidy_input_PK <- function(PKparameters,
             left_join(MainPKParams)
       )
       
-      # If it's a multiple-dose sim, only show the last-dose PK. 
+      # If it's a multiple-dose sim, only show the last-dose PK. Note that this
+      # only applies when they have NOT requested specific PK parameters.
       PKparameters <- PKparameters %>% 
          left_join(AllCompounds %>% 
                       select(CompoundID, DosedCompoundID, DosedCompoundSuffix),
@@ -1059,7 +1060,8 @@ tidy_input_PK <- function(PKparameters,
                                        "substrate" ~ DoseInt_sub, 
                                        "inhibitor 1" ~ DoseInt_inhib, 
                                        "inhibitor 2" ~ DoseInt_inhib2), 
-                Keep = (complete.cases(MyDoseInt) & !str_detect(PKparameter, "_dose1")) |
+                Keep = (complete.cases(MyDoseInt) &
+                           !str_detect(PKparameter, "_dose1")) |
                    (is.na(MyDoseInt) & !str_detect(PKparameter, "_last"))) %>% 
          filter(Keep == TRUE)
       
@@ -1103,9 +1105,13 @@ tidy_input_PK <- function(PKparameters,
    
    # Checking that we're looking for reasonable PK parameters. 
    PKparameters <- PKparameters %>% 
-      mutate(HarmoniousDDI = AppliesOnlyWhenPerpPresent == FALSE |
+      mutate(HarmoniousDDI =  AppliesOnlyWhenPerpPresent == FALSE | 
                 (AppliesOnlyWhenPerpPresent == TRUE & 
-                    DDI == TRUE), 
+                    DDI == TRUE),
+             HarmoniousDDI = ifelse(CompoundID %in% AllCompounds$CompoundID[
+                AllCompounds$DDIrole == "perpetrator"] &
+                   str_detect(PKparameter, "_withInhib|_ratio"), 
+                FALSE, HarmoniousDDI), 
              HarmoniousRegimen = AppliesToSingleDose == TRUE |
                 (AppliesToSingleDose == FALSE & 
                     MD == TRUE))

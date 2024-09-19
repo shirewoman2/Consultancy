@@ -228,7 +228,7 @@ pk_table_subfun <- function(sim_data_file,
    if(length(Missing) > 0){
       warning(wrapn(paste0("The following parameters were requested for the simulation '", 
                            sim_data_file, 
-                           "' but not found in your simulator output file:",
+                           "' but not found in your simulator output file: ",
                            str_comma(Missing))),
               call. = FALSE)
    }
@@ -527,7 +527,7 @@ pk_table_subfun <- function(sim_data_file,
       if(unique(PKparameters$CompoundID) %in% c("substrate", "primary metabolite 1", 
                                                 "primary metabolite 2", 
                                                 "secondary metabolite") == FALSE){
-         warning("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped.", 
+         warning(wrapn("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped."), 
                  call. = FALSE)
          FD <- list()
          
