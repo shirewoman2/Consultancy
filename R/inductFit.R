@@ -525,8 +525,19 @@ inductFit <- function(DF,
                                 indfit[["Sig3Param"]]$estimate[indfit[["Sig3Param"]]$term == "Gamma"])))
       }
       
-      MyCurves <- bind_rows(MyCurves)  %>%
-         mutate(Model_ch = ModelFacet[Model], # NB: Capital M here b/c referring to the column and not the argument
+      MyCurves <- bind_rows(MyCurves) 
+      
+      if("Model" %in% names(MyCurves) == FALSE){
+         MyCurves <- MyCurves %>% 
+            # NB: Capital M here b/c referring to the column Model and not the
+            # argument
+            mutate(Model = model)
+      }
+      
+      MyCurves <- MyCurves %>% 
+         # NB: Capital M here b/c referring to the column Model and not the
+         # argument
+         mutate(Model_ch = ModelFacet[Model], 
                 Omit = FALSE)
       
       return(MyCurves)
@@ -713,8 +724,8 @@ inductFit <- function(DF,
          )
          
          IndFit <- IndFit %>%
-            select(-statistic) %>% 
-            pivot_longer(cols = -c(AIC, DonorID, term),
+            select(-any_of("statistic")) %>% 
+            pivot_longer(cols = -c(any_of(c("AIC", "DonorID", "term"))),
                          names_to = "Param",
                          values_to = "Value") %>% 
             mutate(Param = case_when(Param == "std.error" ~ paste0(term, "_SE"), 
@@ -728,7 +739,7 @@ inductFit <- function(DF,
                    any_of(paste0(rep(c("Emax", "EC50", "Gamma", "slope", "Indmax", "IndC50"), 
                                      each = 3), 
                                  c("", "_SE", "_pvalue"))), 
-                   AIC)
+                   any_of("AIC"))
          
          if(graph_mean_of_fits){
             
@@ -778,17 +789,18 @@ inductFit <- function(DF,
             scale_shape_manual(values = c(19, 1)) +
             guides(shape = "none")
          
-         if(graph_mean_of_fits){
-            G <- G +
-               geom_line(data = Curve %>%
-                            filter(complete.cases(FoldInduction)), 
-                         color = "black")
-         } else {
-            G <- G +
-               geom_line(data = Curve %>%
-                            filter(complete.cases(FoldInduction)))
+         if(nrow(Curve) > 0){
+            if(graph_mean_of_fits){
+               G <- G +
+                  geom_line(data = Curve %>%
+                               filter(complete.cases(FoldInduction)), 
+                            color = "black")
+            } else {
+               G <- G +
+                  geom_line(data = Curve %>%
+                               filter(complete.cases(FoldInduction)))
+            }
          }
-         
          
       } else {
          # Fitting all models, by donor, here
@@ -1024,9 +1036,13 @@ inductFit <- function(DF,
                           shape = Omit)) +
          scale_shape_manual(values = c(19, 1)) +
          guides(shape = "none") +
-         geom_point() +
-         geom_line(data = Out$Curve %>%
-                      filter(complete.cases(FoldInduction)))
+         geom_point()
+      
+      if(nrow(Out$Curve) > 0){
+         G <- G +
+            geom_line(data = Out$Curve %>%
+                         filter(complete.cases(FoldInduction)))
+      }
       
       GoodXLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$x.range
       GoodYLim <- ggplot_build(G + geom_point() + scale_x_log10())$layout$panel_params[[1]]$y.range
@@ -1271,7 +1287,6 @@ inductFit <- function(DF,
       
       # NB: NO ROUNDING before here! Rmd file optionally calculates mean of
       # fits, so it can't be character data yet!
-      
       rmarkdown::render(system.file("rmarkdown/templates/inductfit/skeleton/skeleton.Rmd",
                                     package="SimcypConsultancy"),
                         output_format = rmarkdown::word_document(reference_docx = TemplatePath), 

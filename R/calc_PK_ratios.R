@@ -640,11 +640,17 @@ calc_PK_ratios <- function(PKparameters = NA,
    # in PKdenominator to match the names in PKnumerator even though they're not
    # *really* the same PK parameters necessarily. We'll deal with that
    # difference later.
+   
+   # Need to filter to get only PK parameters that are actually present. If
+   # there were issues with AUCinf extrapolation, then it won't be.
+   GoodColNames <- Comparisons %>% 
+      filter(Denominator_PKparameter %in% names(PKdenominator$individual)) %>% 
+      select(Denominator_PKparameter, Numerator_PKparameter)
    PKdenominator$individual <- 
       PKdenominator$individual[, c("Individual", "Trial",
-                                   Comparisons$Denominator_PKparameter)]
+                                   GoodColNames$Denominator_PKparameter)]
    names(PKdenominator$individual) <- c("Individual", "Trial",
-                                        Comparisons$Numerator_PKparameter)
+                                        GoodColNames$Numerator_PKparameter)
    
    # I now regret that I made this coding choice ages ago, but if there's only 1
    # PK parameter, then the aggregate output from extractPK is a list. Need to
@@ -660,8 +666,8 @@ calc_PK_ratios <- function(PKparameters = NA,
    }
    
    PKdenominator$aggregate <-
-      PKdenominator$aggregate[, c("Statistic", Comparisons$Denominator_PKparameter)]
-   names(PKdenominator$aggregate) <- c("Statistic", Comparisons$Numerator_PKparameter)
+      PKdenominator$aggregate[, c("Statistic", GoodColNames$Denominator_PKparameter)]
+   names(PKdenominator$aggregate) <- c("Statistic", GoodColNames$Numerator_PKparameter)
    
    Comparisons$Denominator_PKparameterREVISED <- Comparisons$Numerator_PKparameter
    

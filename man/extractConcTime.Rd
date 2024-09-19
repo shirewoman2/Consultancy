@@ -38,7 +38,8 @@ Other options are "blood" or any tissues included in "Sheet Options",
 blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
-"jejunum II", "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
+"jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only 
+applies to rodents), "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
 released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
 SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.}
@@ -127,8 +128,8 @@ A data.frame of concentration-time data with the following columns:
   "Heff", "absorption rate", "unreleased compound in faeces", "dissolved
   compound", "luminal CLint", "cumulative fraction of compound dissolved",
   "cumulative fraction of compound released", "cumulative fraction of
-  compound absorbed". Examples of brain-compartment tissues you can get: 
-  "cranial CSF", "total brain", "spinal CSF", "Kp,uu,brain". This column was 
+  compound absorbed". Examples of brain-compartment tissues you can get:
+  "cranial CSF", "total brain", "spinal CSF", "Kp,uu,brain". This column was
   formerly named "subsection_ADAM" but now includes non-ADAM-model tissues.}
 
   \item{Dose_num}{the dose number}

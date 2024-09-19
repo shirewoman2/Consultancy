@@ -204,7 +204,7 @@ make_trial_design_table <- function(existing_exp_details,
                                 fontsize = fontsize, 
                                 font = font, 
                                 shading_column = CompoundID) %>% 
-            flextable::delete_columns(j = which(names(Out) == "CompoundID"))
+            flextable::delete_columns(j = which(names(DF) == "CompoundID"))
          
       } else {
          # This is when they want shading and sim only includes substrate
@@ -213,7 +213,7 @@ make_trial_design_table <- function(existing_exp_details,
                                 fontsize = fontsize, 
                                 shading_column = Parameter, 
                                 font = font) %>% 
-            flextable::delete_columns(j = which(names(Out) == "CompoundID"))
+            flextable::delete_columns(j = which(names(DF) == "CompoundID"))
       }
    } else {
       # This is when they don't want shading 
@@ -221,7 +221,7 @@ make_trial_design_table <- function(existing_exp_details,
          format_table_simple(DF = DF, 
                              fontsize = fontsize, 
                              font = font) %>% 
-         flextable::delete_columns(j = which(names(Out) == "CompoundID"))
+         flextable::delete_columns(j = which(names(DF) == "CompoundID"))
    }
    
    # Saving --------------------------------------------------------------

@@ -101,11 +101,23 @@ pk_table_subfun <- function(sim_data_file,
               call. = FALSE)
    } 
    
-   CheckDoseInt$interval <- CheckDoseInt$interval %>% 
-      left_join(MyPKResults_all$TimeInterval %>% 
-                   select(Interval, Sheet) %>% unique(), 
-                by = "Interval")
-   
+   if(CheckDoseInt$message == "custom dosing"){
+      # This is just a pass-through when it's a custom dosing interval. It's OK
+      # that there could be more than one interval.
+      CheckDoseInt$interval$Interval <- 
+         MyPKResults_all$TimeInterval$Interval %>% unique() %>%
+         str_comma(conjunction = "or")
+      
+      CheckDoseInt$interval$Sheet <- 
+         MyPKResults_all$TimeInterval$Sheet %>% unique() %>% 
+         str_comma(conjunction = "or")
+      
+   } else {
+      CheckDoseInt$interval <- CheckDoseInt$interval %>% 
+         left_join(MyPKResults_all$TimeInterval %>% 
+                      select(Interval, Sheet) %>% unique(), 
+                   by = "Interval")
+   }
    CheckDoseInt$interval$Tissue <- unique(PKparameters$Tissue)
    
    # Sometimes missing problems with extrapolation to infinity. Checking for
