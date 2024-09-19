@@ -102,11 +102,15 @@ pk_table_subfun <- function(sim_data_file,
    } 
    
    if(CheckDoseInt$message == "custom dosing"){
+      # This is just a pass-through when it's a custom dosing interval. It's OK
+      # that there could be more than one interval.
       CheckDoseInt$interval$Interval <- 
-         MyPKResults_all$TimeInterval$Interval %>% unique()
+         MyPKResults_all$TimeInterval$Interval %>% unique() %>%
+         str_comma(conjunction = "or")
       
       CheckDoseInt$interval$Sheet <- 
-         MyPKResults_all$TimeInterval$Sheet %>% unique()
+         MyPKResults_all$TimeInterval$Sheet %>% unique() %>% 
+         str_comma(conjunction = "or")
       
    } else {
       CheckDoseInt$interval <- CheckDoseInt$interval %>% 
