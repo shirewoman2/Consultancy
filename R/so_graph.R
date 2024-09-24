@@ -708,7 +708,8 @@ so_graph <- function(PKtable,
       
    }
    
-   PKCols <- PKCols %>% filter(!str_detect(ColName, " for interval"))
+   # Redetermining which are PK now that interval column names have been changed
+   PKCols <- prettify_column_names(PKtable, return_which_are_PK = TRUE)
    
    if(any(is.na(PKparameters))){
       PKparameters <- PKCols$PKparameter[PKCols$IsPKParam]
