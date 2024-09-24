@@ -25,12 +25,15 @@ sensitivity_plot(
 \arguments{
 \item{SA_file}{sensitivity analysis Excel file}
 
-\item{dependent_variable}{dependent variable to plot. Options are: "CL",
-"Dose over AUC", "AUC over Dose", "Vss", "Fg", "Fh", "fa", "CLpo", "Cmax",
-"AUC", "tmax", or "plasma concentration" (just "plasma" will also work).
-Other than "plasma concentration", that parameter \emph{must} be one of the
-ones you requested when you ran the sensitivity analysis. Not case
-sensitive.}
+\item{dependent_variable}{dependent variable to plot. Options are: "AUC",
+"AUC over dose", "AUC over dose with interaction", "AUC ratio", "CL",
+"CLpo", "CLpo with interaction", "Cmax", "Cmax with interaction", "Cmax
+ratio", "dose over AUC", "dose over AUC with interaction", "fa", "Fg", "Fg
+with interaction", "Fh", "Fh with interaction", "Vss", "tmax", "tmax with
+interaction", or "plasma concentration" (just "plasma" will also work).
+Other than "plasma concentration", which is always included in sensitivity
+analysis output, that parameter \emph{must} be one of the ones you
+requested when you ran the sensitivity analysis. Not case sensitive.}
 
 \item{ind_var_label}{optionally specify what text use for labeling the
 independent variable (the x axis). If left as NA, R will find the value
@@ -39,8 +42,8 @@ something not terribly pretty like "Fugut Value (Sub) (No Units)", and
 attempt to prettify it. If we haven't set things up to prettify that value,
 which is likely as we haven't used this function with very many
 sensitivity-analysis scenarios yet, the value will be unchanged. (If you
-have an independent variable you'd like to add to our list, email Laura
-Shireman!)}
+have an independent variable you'd like to add to our list, please email
+Laura Shireman.)}
 
 \item{target_DV}{optionally specify a target value for the dependent
 variable, which will add a horizontal red dotted line to the graph where
@@ -65,7 +68,8 @@ plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to a round number. If left as the default NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
 
-\item{time_range}{time range to show relative to the start of the simulation.
+\item{time_range}{time range to show relative to the start of the simulation
+  for any concentration-time plots.
   Options: \describe{
 
   \item{NA}{(default) entire time range of data}
@@ -77,7 +81,7 @@ limits for the semi-log plot will be automatically selected.}
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{"significant X" where "X" is a number
 (default: "significant 3")}{Output will be rounded to X significant figures.
-"signif X" also works fine.} \item{"none"}{No rounding will be performed.} 
+"signif X" also works fine.} \item{"none"}{No rounding will be performed.}
 \item{"round X" where "X" is a number}{Output will be
 rounded to X digits}}}
 
@@ -103,26 +107,23 @@ to make the graph}
 a ggplot2 graph
 }
 \description{
-\code{sensitivity_plot} will read a sensitivity-analysis Excel file and
-create a graph of the dependent variable of your choice as long as it was
-included in your results. If you ran a sensitivity analysis with more than 1
-independent variable -- e.g., you wanted to see how adjusting both the kp
-scalar and the fa affected Cmax -- the best way we have come up with so far
-to show you how both of those variables affect your dependent variable is to
-break up the graphs into small multiples or facets (like on a gemstone).
-(Side note: We considered a 3D graph, but they're honestly hard to do well in
-a programmatic fashion like this.) This is set up for graphs of plasma
-concentration-time profiles but not yet set up for other dependent variables.
-UNDER CONSTRUCTION.
-}
-\details{
-\strong{Coding notes:} Doesn't detect units yet. Would need to check that
-sheet names are consistent b/c I bet they're not. Would like to add options
-for axis breaks and limits as well as color schemes. Will need to add more
-options for labeling the sensitivity parameter in the graphs. Does not do 3D
-graphs and I have no plans to add option for 3D graphs b/c A) they're just
-not easy to interpret and B) there aren't great R packages out there for 3D
-graphs.
+\code{sensitivity_plot} will read a sensitivity-analysis Excel
+  file and create a graph of the dependent variable of your choice as long as
+  it was included in your results. If you ran a sensitivity analysis with
+  more than 1 independent variable -- e.g., you wanted to see how adjusting
+  both the kp scalar and the fa affected Cmax -- the best way we have come up
+  with so far to show you how both of those variables affect your dependent
+  variable is to break up the graphs into small multiples or facets (like on
+  a gemstone). (Side note: We considered a 3D graph, but they're honestly
+  hard to do well in a programmatic fashion like this.)
+
+  \strong{Coding notes:} This function does not detect units, so please check
+  your graph labels. We plan to add options for axis breaks as well as color
+  schemes. We are in the process of adding more options for labeling the
+  sensitivity parameter in the graphs. This funciton does not do 3D graphs
+  and we have no plans to add option for 3D graphs because A) they're just
+  not easy to interpret and B) there aren't great R packages out there for 3D
+  graphs.
 }
 \examples{
 
