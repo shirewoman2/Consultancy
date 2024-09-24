@@ -285,7 +285,7 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
       filter(Value != "no change") %>% 
       mutate(CompoundID = str_extract(Detail, "_sub|_inhib$")) %>%
       # Setting tag names
-      left_join(AllExpDetails %>% filter(Sheet == "workspace or database") %>% 
+      left_join(AllExpDetails %>% filter(DataSource == "workspace or database") %>% 
                    select(Detail, Level1, Level2, Level3, Level4, Level5, XMLswitch), 
                 by = "Detail") %>% 
       mutate(Level2 = case_when(CompoundID == "_sub" & Level2 == "CompoundIDNum" ~ "1", 
