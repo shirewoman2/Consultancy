@@ -90,6 +90,11 @@ prettify_column_names <- function(PKtable,
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_last Ratio", "_ratio_last"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "for interval from.*to [0-9]{1,} h ", ""), 
          
+         # Also changing any instances of "steady-state" that the user may have
+         # added to "last dose" just for the purposes of determining which are
+         # PK parameters
+         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "[Ss]teady[- ]state", "Last dose"), 
+         
          # Dealing with unit differences b/c could have units in table other
          # than the most common ng/mL and h.
          Conc = str_extract(ColNamesNoDecorations, 
@@ -205,6 +210,16 @@ prettify_column_names <- function(PKtable,
                 Suffix = ifelse(is.na(Suffix), "", Suffix), 
                 PrettifiedNames = str_trim(paste(PrettifiedNames, Suffix))) %>% 
          select(-Suffix)
+   }
+   
+   # Putting "steady state" back into col names
+   if(any(str_detect(TableNames$OrigColNames, "[Ss]teady[- ]state"))){
+      TableNames <- TableNames %>% 
+         mutate(PrettifiedNames = case_when(
+         str_detect(OrigColNames, "[Ss]teady[- ]state") ~
+            str_replace(PrettifiedNames, "Last dose", 
+                        str_extract(OrigColNames, "[Ss]teady[- ]state")), 
+         .default = PrettifiedNames))
    }
    
    # Putting time interval back into col names
