@@ -761,16 +761,6 @@ tidy_input_PK <- function(PKparameters,
       }
    }
    
-   # Remove any files that are not present
-   MissingFiles <- setdiff(PKparameters$File, list.files())
-   
-   if(length(MissingFiles) > 0){
-      warning(paste0(wrapn("The following file(s) is/are not present and thus will not be extracted:"), 
-                     str_c(paste0("    ", MissingFiles), collapse = "\n"), "\n"), 
-              call. = FALSE)
-      PKparameters <- PKparameters %>% filter(File %in% list.files())
-   }
-   
    
    ## PKparameter -----------------------------------------------------------
    

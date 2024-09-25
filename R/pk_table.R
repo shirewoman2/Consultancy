@@ -426,7 +426,9 @@ pk_table <- function(PKparameters = NA,
                                    existing_exp_details = existing_exp_details)
    
    existing_exp_details <- PKparam_tidied$existing_exp_details
-   PKparameters <- PKparam_tidied$PKparameters
+   PKparameters <- PKparam_tidied$PKparameters %>% 
+      mutate(FileExists = file.exists(File)) %>% 
+      filter(FileExists == TRUE) %>% select(-FileExists)
    
    ## Misc arg error catching -------------------------------------------------
    
