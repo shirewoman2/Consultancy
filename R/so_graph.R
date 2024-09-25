@@ -1140,9 +1140,17 @@ so_graph <- function(PKtable,
                axis.title.y.right = element_text(margin = margin(0, 0, 0, 2.75)))
       
       if(legend_position %in% c("bottom", "top")){
-         G[[i]] <- G[[i]] + theme(legend.box = "vertical", 
-                                  legend.spacing.y = unit(0, units = "lines"), 
-                                  legend.key.spacing.y = unit(-0.15, units = "lines"))
+         if(packageVersion("ggplot2") > "3.5.0"){
+            G[[i]] <- G[[i]] + 
+               theme(legend.box = "vertical", 
+                     legend.spacing.y = unit(0, units = "lines"), 
+                     # legend.key.spacing.y only in ggplot2 3.5.0+
+                     legend.key.spacing.y = unit(-0.15, units = "lines"))
+         } else {
+            G[[i]] <- G[[i]] + 
+               theme(legend.box = "vertical", 
+                     legend.spacing.y = unit(0, units = "lines"))
+         }
          
          if("point_shape_column" %in% names(SO[[i]]) &&
             length(unique(SO[[i]]$point_shape_column)) > 3){
