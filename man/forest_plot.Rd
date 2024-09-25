@@ -28,6 +28,7 @@ forest_plot(
   point_shape = c(24, 21),
   point_color_column,
   point_color_set = "default",
+  angle_x_axis_text = 0,
   graph_title = NA,
   graph_title_size = 14,
   table_title = NA,
@@ -335,6 +336,9 @@ SimOrObs}}
   like help creating a specific gradation of colors, please talk to a member
   of the R Working Group about how to do that using
   \link{colorRampPalette}.}}}
+
+\item{angle_x_axis_text}{At what angle should the x axis text be printed?
+Default is 0 degrees for regular, horizontal text.}
 
 \item{graph_title}{optionally specify a title that will be centered across
 the graph}

@@ -148,6 +148,13 @@ tidy_input_PK <- function(PKparameters,
       stop("Tell Laura Shireman that there's a problem with input for PKparameters.")
    }
    
+   # Dealing with situation in which user supplied a data.frame that they
+   # probably read themselves and includes "" instead of NA
+   PKparameters <- PKparameters %>% 
+      mutate(across(.cols = everything(), 
+                    .fns = \(x) case_when(x == "" ~ NA, 
+                                          .default = x)))
+   
    # Dealing with possible input from calc_PK_ratios
    FromCalcPKRatios <- any(str_detect(tolower(names(PKparameters)), "numerator")) | 
       any(str_detect(tolower(names(PKparameters)), "denominator")) |

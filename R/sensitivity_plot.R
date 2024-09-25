@@ -1,32 +1,33 @@
 #' Make graphs of sensitivity analysis results
 #'
-#' \code{sensitivity_plot} will read a sensitivity-analysis Excel file and
-#' create a graph of the dependent variable of your choice as long as it was
-#' included in your results. If you ran a sensitivity analysis with more than 1
-#' independent variable -- e.g., you wanted to see how adjusting both the kp
-#' scalar and the fa affected Cmax -- the best way we have come up with so far
-#' to show you how both of those variables affect your dependent variable is to
-#' break up the graphs into small multiples or facets (like on a gemstone).
-#' (Side note: We considered a 3D graph, but they're honestly hard to do well in
-#' a programmatic fashion like this.) This is set up for graphs of plasma
-#' concentration-time profiles but not yet set up for other dependent variables.
-#' UNDER CONSTRUCTION.
+#' @description \code{sensitivity_plot} will read a sensitivity-analysis Excel
+#'   file and create a graph of the dependent variable of your choice as long as
+#'   it was included in your results. If you ran a sensitivity analysis with
+#'   more than 1 independent variable -- e.g., you wanted to see how adjusting
+#'   both the kp scalar and the fa affected Cmax -- the best way we have come up
+#'   with so far to show you how both of those variables affect your dependent
+#'   variable is to break up the graphs into small multiples or facets (like on
+#'   a gemstone). (Side note: We considered a 3D graph, but they're honestly
+#'   hard to do well in a programmatic fashion like this.)
 #'
-#' \strong{Coding notes:} Doesn't detect units yet. Would need to check that
-#' sheet names are consistent b/c I bet they're not. Would like to add options
-#' for axis breaks and limits as well as color schemes. Will need to add more
-#' options for labeling the sensitivity parameter in the graphs. Does not do 3D
-#' graphs and I have no plans to add option for 3D graphs b/c A) they're just
-#' not easy to interpret and B) there aren't great R packages out there for 3D
-#' graphs.
+#'   \strong{Coding notes:} This function does not detect units, so please check
+#'   your graph labels. We plan to add options for axis breaks as well as color
+#'   schemes. We are in the process of adding more options for labeling the
+#'   sensitivity parameter in the graphs. This funciton does not do 3D graphs
+#'   and we have no plans to add option for 3D graphs because A) they're just
+#'   not easy to interpret and B) there aren't great R packages out there for 3D
+#'   graphs.
 #'
 #' @param SA_file sensitivity analysis Excel file
-#' @param dependent_variable dependent variable to plot. Options are: "CL",
-#'   "Dose over AUC", "AUC over Dose", "Vss", "Fg", "Fh", "fa", "CLpo", "Cmax",
-#'   "AUC", "tmax", or "plasma concentration" (just "plasma" will also work).
-#'   Other than "plasma concentration", that parameter \emph{must} be one of the
-#'   ones you requested when you ran the sensitivity analysis. Not case
-#'   sensitive.
+#' @param dependent_variable dependent variable to plot. Options are: "AUC",
+#'   "AUC over dose", "AUC over dose with interaction", "AUC ratio", "CL",
+#'   "CLpo", "CLpo with interaction", "Cmax", "Cmax with interaction", "Cmax
+#'   ratio", "dose over AUC", "dose over AUC with interaction", "fa", "Fg", "Fg
+#'   with interaction", "Fh", "Fh with interaction", "Vss", "tmax", "tmax with
+#'   interaction", or "plasma concentration" (just "plasma" will also work).
+#'   Other than "plasma concentration", which is always included in sensitivity
+#'   analysis output, that parameter \emph{must} be one of the ones you
+#'   requested when you ran the sensitivity analysis. Not case sensitive.
 #' @param ind_var_label optionally specify what text use for labeling the
 #'   independent variable (the x axis). If left as NA, R will find the value
 #'   listed next to "Run Number" on the "ASA Summary" tab, which may be
@@ -34,12 +35,12 @@
 #'   attempt to prettify it. If we haven't set things up to prettify that value,
 #'   which is likely as we haven't used this function with very many
 #'   sensitivity-analysis scenarios yet, the value will be unchanged. (If you
-#'   have an independent variable you'd like to add to our list, email Laura
-#'   Shireman!)
+#'   have an independent variable you'd like to add to our list, please email
+#'   Laura Shireman.)
 #' @param rounding option for what rounding to perform, if any. Options are:
 #'   \describe{\item{"significant X" where "X" is a number
 #'   (default: "significant 3")}{Output will be rounded to X significant figures.
-#'   "signif X" also works fine.} \item{"none"}{No rounding will be performed.} 
+#'   "signif X" also works fine.} \item{"none"}{No rounding will be performed.}
 #'   \item{"round X" where "X" is a number}{Output will be
 #'   rounded to X digits}}
 #' @param target_DV optionally specify a target value for the dependent
@@ -60,7 +61,8 @@
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to a round number. If left as the default NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
-#' @param time_range time range to show relative to the start of the simulation.
+#' @param time_range time range to show relative to the start of the simulation
+#'   for any concentration-time plots.
 #'   Options: \describe{
 #'
 #'   \item{NA}{(default) entire time range of data}
@@ -147,22 +149,46 @@ sensitivity_plot <- function(SA_file,
    
    dependent_variable <- tolower(dependent_variable)
    
-   DVsheets = c("cl" = AllSheets[str_detect(AllSheets, "CL .L per h. .PKPD")],
-                "dose over auc" = AllSheets[str_detect(AllSheets, "Dose over AUC")],
-                "auc over dose" = AllSheets[str_detect(AllSheets, "AUC over Dose")],
-                "vss" = AllSheets[str_detect(AllSheets, "Vss")],
-                "fg" = AllSheets[str_detect(AllSheets, "Fg .PKPD")],
-                "fh" = AllSheets[str_detect(AllSheets, "Fh .PKPD")],
-                "fa" = AllSheets[str_detect(AllSheets, "fa .PKPD|fa..ADAM")],
-                "clpo" = AllSheets[str_detect(AllSheets, "CLpo.*PKPD")],
-                "cmax" = AllSheets[str_detect(AllSheets, "^Cmax")],
-                "auc" = AllSheets[str_detect(AllSheets, "^AUC.*\\(") & !str_detect(AllSheets, "over")],
-                "tmax" = AllSheets[str_detect(AllSheets, "Tmax")],
-                # "Multiple EI Plot",
-                "plasma concentration" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
-                "plasma" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
-                "plasma conc" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
-                "plasma concentrations" = AllSheets[str_detect(AllSheets, "Plasma Concentration")])
+   DVsheets <- switch(
+      dependent_variable, 
+      
+      "auc" = AllSheets[str_detect(AllSheets, "^AUC.*\\(") & 
+                           !str_detect(AllSheets, "over|Ratio|with interaction")],
+      "auc over dose" = AllSheets[str_detect(AllSheets, "AUC over Dose") & 
+                                     !str_detect(AllSheets, "with int")],
+      "auc over dose with interaction" = AllSheets[str_detect(AllSheets, "AUC over Dose \\(with")],
+      "auc ratio" = AllSheets[str_detect(AllSheets, "AUC Ratio")], 
+      "cl" = AllSheets[str_detect(AllSheets, "CL .L per h. .PKPD")],
+      "clpo" = AllSheets[str_detect(AllSheets, "CLpo.*PKPD") & 
+                            !str_detect(AllSheets, "with int")],
+      "clpo with interaction" = AllSheets[str_detect(AllSheets, "CLpo \\(with interaction")], 
+      "cmax" = AllSheets[str_detect(AllSheets, "^Cmax") & 
+                            !str_detect(AllSheets, "over|Ratio|with interaction")],
+      "cmax with interaction" = AllSheets[str_detect(AllSheets, "Cmax \\(with int")], 
+      "cmax ratio" = AllSheets[str_detect(AllSheets, "Cmax Ratio")], 
+      "dose over auc" = AllSheets[str_detect(AllSheets, "Dose over AUC") & 
+                                     !str_detect(AllSheets, "with int")] ,
+      "dose over auc with interaction" = AllSheets[str_detect(AllSheets, "Dose over AUC \\(with inter")],
+      "fa" = AllSheets[str_detect(AllSheets, "fa .PKPD|fa..ADAM") & 
+                          !str_detect(AllSheets, "with int")],
+      "fg" = AllSheets[str_detect(AllSheets, "Fg .PKPD") & 
+                          !str_detect(AllSheets, "with int")],
+      "fg with interaction" = AllSheets[str_detect(AllSheets, "Fg .PKPD.*with inter") & 
+                                           !str_detect(AllSheets, "with int")],
+      "fh" = AllSheets[str_detect(AllSheets, "Fh .PKPD") & 
+                          !str_detect(AllSheets, "with int")],
+      "fh with interaction" = AllSheets[str_detect(AllSheets, "Fh .PKPD.*with inter") & 
+                                           !str_detect(AllSheets, "with int")],
+      "vss" = AllSheets[str_detect(AllSheets, "Vss")],
+      "tmax" = AllSheets[str_detect(AllSheets, "Tmax") & 
+                            !str_detect(AllSheets, "with int")],
+      "tmax with interaction" = AllSheets[str_detect(AllSheets, "Tmax.*with inter")],
+      
+      "plasma concentration" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
+      "plasma" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
+      "plasma conc" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
+      "plasma concentrations" = AllSheets[str_detect(AllSheets, "Plasma Concentration")]
+   )
    
    Summary <- openxlsx::read.xlsx(SA_file, sheet = "ASA Summary", 
                                   colNames = FALSE)
@@ -182,7 +208,7 @@ sensitivity_plot <- function(SA_file,
    RunInfo <- RunInfo %>% mutate_all(.funs = as.numeric)
    
    # Reading data
-   SAdata.xl <- openxlsx::read.xlsx(SA_file, sheet = DVsheets[dependent_variable])
+   SAdata.xl <- openxlsx::read.xlsx(SA_file, sheet = DVsheets[1])
    
    # Stopping at 1st NA row in column 1 b/c sometimes people have added
    # additional data here, and it messes up the code below.
@@ -235,15 +261,19 @@ sensitivity_plot <- function(SA_file,
       
    } else {
       
-      # Checking for a 2nd independent parameter
-      if(complete.cases(Summary$X3[which(Summary$X1 == "Run Number")])){
-         warning("It looks like this sensitivity analysis contains more than one independent variable. Unfortunately, this function has only been set up to graph a single independent variable unless you're graphing plasma, so only the first one will be graphed.\n",
-                 call. = FALSE)
-      }
+      # # Checking for a 2nd independent parameter
+      # if(complete.cases(Summary$X3[which(Summary$X1 == "Run Number")])){
+      #    
+      #    # warning("It looks like this sensitivity analysis contains more than one independent variable. Unfortunately, this function has only been set up to graph a single independent variable unless you're graphing plasma, so only the first one will be graphed.\n",
+      #    #         call. = FALSE)
+      # }
       
       SAdata <- SAdata.xl
-      names(SAdata)[1:2] <- c("SensValue", "DV") 
-      
+      if(complete.cases(SensParam2)){
+         names(SAdata)[1:3] <- c("SensValue", "SensValue2", "DV")
+      } else {
+         names(SAdata)[1:2] <- c("SensValue", "DV") 
+      }
    }
    
    # Rounding for ease of reading legend. Could add an option for what rounding
@@ -258,37 +288,59 @@ sensitivity_plot <- function(SA_file,
    
    PrettyDV <- list("auc" = expression(AUC~"(ng/mL.h)"), 
                     "auc over dose" = expression("AUC over Dose (h/L)"),
+                    "auc over dose with interaction" = expression("AUC over Dose with Interaction (h/L)"),
+                    "auc ratio" = PKexpressions[["AUC_ratio"]], 
                     "cl" = expression(CL~"L/h"), 
                     "clpo" = expression(CL[PO]~"(L/h)"), 
+                    "clpo with interaction" = expression(CL[PO]~"with interaction (L/h)"), 
                     "cmax" = expression(C[max]~"(ng/mL)"), 
+                    "cmax with interaction" = expression(C[max]~"with interaction (ng/mL)"), 
+                    "cmax ratio" = PKexpressions[["Cmax_ratio"]], 
                     "dose over auc" = expression(Dose~over~AUC~"(L/h)"),
+                    "dose over auc with interaction" = expression(Dose~over~AUC~"with interaction (L/h)"),
                     "fa" = expression(f[a]),
                     "fg" = expression(F[g]),
+                    "fg with interaction" = expression(F[g]~with~interaction),
                     "fh" = expression(F[h]),
+                    "fh with interaction" = expression(F[h]~with~interaction),
                     "tmax" = expression(t[max]~"(h)"),
+                    "tmax" = expression(t[max]~"with interaction (h)"),
                     "vss" = expression(V[ss]~"(L/kg)"))
    
    PrettySensParam <- list("Dose .Sub" = "Dose (mg)",
-                           "Intestinal ABCB1 .P-gp. CLint,T" = "Intestinal P-gp CLint,T (µL/min)",
+                           "EC50" = expression(EC[50]), 
+                           "Emax" = expression(E[max]),
                            "fa" = expression(f[a]),
                            "Fugut" = expression(f[u[gut]]), 
+                           "Ind Max" = expression(Ind[max]), 
+                           "IndC50" = expression(IndC[50]), 
+                           "Ind Slope" = expression(induction~slope~"("*mu*M^-1*")"), 
+                           "Intestinal ABCB1 .P-gp. CLint,T" = "Intestinal P-gp CLint,T (µL/min)",
                            "ka" = expression(k[a]), 
+                           "Kinetic Routes.*CLint" = expression(CL[int]), 
                            "^Kp Scalar" = expression(k[p]~scalar),
                            "Lag Time" = expression("lag time (h)"),
+                           "Peff" = expression(P[eff,human]), 
+                           "slope" = expression(slope), 
                            "Tissue.plasma partition.*Additional Organ" = expression(k[p]~"scalar for additional organ"),
-                           "Vss" = expression(V[ss]~"(L/kg)"), 
-                           "Peff" = expression(P[eff,human]))
+                           "Vss" = expression(V[ss]~"(L/kg)"))
    
    PrettySensParam_char <- list("Dose .Sub" = "Dose (mg)",
-                                "Intestinal ABCB1 .P-gp. CLint,T" = "Intestinal P-gp CLint,T (µL/min)",
+                                "EC50" = "EC50", 
+                                "Emax" = "Emax", 
                                 "fa" = "fa",
                                 "Fugut" = "fu,gut", 
-                                "ka" = "ka", 
+                                "Ind Max" = "Indmax",
+                                "IndC50" = "IndC50", 
+                                "Ind Slope" = "induction slope", 
+                                "Intestinal ABCB1 .P-gp. CLint,T" = "Intestinal P-gp CLint,T (µL/min)",
+                                "ka" = "ka",
+                                "Kinetic Routes.*CLint" = "CLint", 
                                 "^Kp Scalar" = "kp scalar",
                                 "Lag Time" = "lag time (h)",
+                                "Peff" = "Peff",
                                 "Tissue.plasma partition.*Additional Organ" = "kp scalar for additional organ",
-                                "Vss" = "Vss (L/kg)",
-                                "Peff" = "Peff")
+                                "Vss" = "Vss (L/kg)")
    
    if(class(ind_var_label) == "logical" && is.na(ind_var_label)){
       if(any(sapply(names(PrettySensParam), function(.) str_detect(SensParam, .)))){
@@ -380,10 +432,40 @@ sensitivity_plot <- function(SA_file,
       
    } else {
       
-      G <- ggplot(SAdata, aes(x = SensValue, y = DV)) +
-         geom_point() + geom_line() + 
-         ylab(PrettyDV[[dependent_variable]]) +
-         xlab(ind_var_label)
+      # This is when it's something other than plasma profiles that we're
+      # plotting
+      
+      if(color_by_which_indvar == "1st"){
+         if(complete.cases(SensParam2)){
+            G <- ggplot(SAdata, aes(x = SensValue2, y = DV, 
+                                    color = as.factor(SensValue), 
+                                    group = SensValue)) +
+               scale_color_manual(values = blues(ncolors = length(unique(SAdata$SensValue)))) +
+               geom_point() + geom_line() +
+               xlab(ind_var_label2) 
+         } else {
+            G <- ggplot(SAdata, aes(x = SensValue, y = DV)) +
+               geom_point() + geom_line() +
+               xlab(ind_var_label)
+         }
+      } else {
+         # This is when they're coloring by the 2nd ind var, which only happens
+         # when there are 2 of them.
+         G <- ggplot(SAdata, aes(x = SensValue, y = DV, 
+                                 color = as.factor(SensValue2), 
+                                 group = SensValue2)) +
+            scale_color_manual(values = blues(ncolors = length(unique(SAdata$SensValue2)))) +
+            geom_point() + geom_line() +
+            xlab(ind_var_label)
+      }
+      
+      G <- G +
+         ylab(PrettyDV[[dependent_variable]])
+      
+      G <- G +
+         labs(color = switch(color_by_which_indvar, 
+                             "1st" = ind_var_label, 
+                             "2nd" = ind_var_label2))
       
       if(all(complete.cases(y_axis_limits_lin))){
          G <- G + scale_y_continuous(limits = y_axis_limits_lin)
@@ -411,21 +493,28 @@ sensitivity_plot <- function(SA_file,
                   label = paste0("target = ", prettyNum(target_DV, big.mark = ",")))
    }
    
-   if(str_detect(dependent_variable, "plasma|conc")){
-      LogBreaks <- make_log_breaks(
-         data_range = switch(as.character(all(complete.cases(y_axis_limits_log))), 
-                             "TRUE" = y_axis_limits_log, 
-                             "FALSE" = range(SAdata$Conc, na.rm = T)))
-      
-      Glog <- G + scale_y_log10(breaks = LogBreaks$breaks, 
-                                labels = LogBreaks$labels)
-      
-      if(linear_or_log %in% c("both", "both vertical")){
-         G <- ggpubr::ggarrange(G, Glog, nrow = 2, align = "hv", common.legend = TRUE)
-      } else if(linear_or_log %in% c("both horizontal")){
-         G <- ggpubr::ggarrange(G, Glog, nrow = 1, align = "hv", common.legend = TRUE)
-      }
+   # if(str_detect(dependent_variable, "plasma|conc")){
+   # FIXME - haven't set this up to deal w/2 DVs yet
+   LogBreaks <- make_log_breaks(
+      data_range = switch(
+         as.character(all(complete.cases(y_axis_limits_log))), 
+         "TRUE" = y_axis_limits_log, 
+         "FALSE" = switch(
+            as.character(str_detect(dependent_variable, "plasma|conc")), 
+            "TRUE" = range(SAdata$Conc, na.rm = T), 
+            "FALSE" = range(SAdata$DV, na.rm = T))))
+   
+   Glog <- G + scale_y_log10(breaks = LogBreaks$breaks, 
+                             labels = LogBreaks$labels)
+   
+   if(linear_or_log %in% c("both", "both vertical")){
+      G <- ggpubr::ggarrange(G, Glog, nrow = 2, align = "hv", common.legend = TRUE)
+   } else if(linear_or_log %in% c("both horizontal")){
+      G <- ggpubr::ggarrange(G, Glog, nrow = 1, align = "hv", common.legend = TRUE)
+   } else if(linear_or_log %in% c("semi-log", "log")){
+      G <- Glog
    }
+   # }
    
    if(complete.cases(save_graph)){
       FileName <- save_graph

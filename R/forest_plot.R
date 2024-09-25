@@ -2032,7 +2032,7 @@ forest_plot <- function(forest_dataframe,
          legend.position = legend_position, ### KEEP THIS
          legend.box = "vertical", 
          legend.margin = margin(0, 0, 0, 0), 
-         strip.text = element_text(face = "bold"),
+         strip.text = element_text(face = "bold", hjust = 0.5),
          strip.text.y.left = element_text(angle = 0),
          strip.placement = "outside",
          panel.border = switch(as.character(show_borders), 
