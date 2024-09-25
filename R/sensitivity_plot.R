@@ -434,13 +434,21 @@ sensitivity_plot <- function(SA_file,
       # plotting
       
       if(color_by_which_indvar == "1st"){
-         G <- ggplot(SAdata, aes(x = SensValue2, y = DV, 
-                                 color = as.factor(SensValue), 
-                                 group = SensValue)) +
-            scale_color_manual(values = blues(ncolors = length(unique(SAdata$SensValue)))) +
-            geom_point() + geom_line() +
-            xlab(ind_var_label2)
+         if(complete.cases(SensParam2)){
+            G <- ggplot(SAdata, aes(x = SensValue2, y = DV, 
+                                    color = as.factor(SensValue), 
+                                    group = SensValue)) +
+               scale_color_manual(values = blues(ncolors = length(unique(SAdata$SensValue)))) +
+               geom_point() + geom_line() +
+               xlab(ind_var_label2) 
+         } else {
+            G <- ggplot(SAdata, aes(x = SensValue, y = DV)) +
+               geom_point() + geom_line() +
+               xlab(ind_var_label)
+         }
       } else {
+         # This is when they're coloring by the 2nd ind var, which only happens
+         # when there are 2 of them.
          G <- ggplot(SAdata, aes(x = SensValue, y = DV, 
                                  color = as.factor(SensValue2), 
                                  group = SensValue2)) +
@@ -456,7 +464,7 @@ sensitivity_plot <- function(SA_file,
          labs(color = switch(color_by_which_indvar, 
                              "1st" = ind_var_label, 
                              "2nd" = ind_var_label2))
-         
+      
       if(all(complete.cases(y_axis_limits_lin))){
          G <- G + scale_y_continuous(limits = y_axis_limits_lin)
       }
