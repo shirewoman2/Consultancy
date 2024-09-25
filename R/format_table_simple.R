@@ -124,7 +124,7 @@ format_table_simple <- function(DF,
       # Set the font
       flextable::font(part = "all",
                       # fontname = "fourier") %>% # doesn't work. I think the font has to be something available in Word b/c I think the folder loation is not the same as for latex.
-                      fontname = "Palatino Linotype") %>%
+                      fontname = font) %>%
       flextable::bold(part = "header") %>% 
       flextable::width(width = (7 / ncol(DF))) %>%
       flextable::fix_border_issues()
