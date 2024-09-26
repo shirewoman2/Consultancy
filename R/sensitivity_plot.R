@@ -53,7 +53,9 @@
 #'   or "2", "2nd", or "second" to adjust colors based on the second. If you
 #'   only have one independent variable, this will be ignored.
 #' @param linear_or_log make the y axis "linear" (default) or "log" for plasma
-#'   concentration-time plots (this is ignored for all other plots)
+#'   concentration-time plots. If you're graphing some other dependent variable,
+#'   another option is "both log", which will log transform both the x and y
+#'   axes.
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 #'   limits for the linear plot will be automatically selected.
@@ -61,8 +63,18 @@
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to a round number. If left as the default NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
+#' @param x_axis_limits_lin optionally set the X axis limits for the linear
+#'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the X axis
+#'   limits for the linear plot will be automatically selected. This does not
+#'   apply when the dependent variable requested is plasma concentrations.
+#' @param x_axis_limits_log optionally set the X axis limits for the log plot,
+#'   e.g., \code{c(10, 1000)}. Values will be rounded down and up, respectively,
+#'   to a round number. If left as the default NA, the X axis limits for the
+#'   semi-log plot will be automatically selected. This does not apply when the
+#'   dependent variable requested is plasma concentrations.
 #' @param time_range time range to show relative to the start of the simulation
-#'   for any concentration-time plots.
+#'   for any concentration-time plots. This does not apply when the plot is of
+#'   some other dependent variable than plasma.
 #'   Options: \describe{
 #'
 #'   \item{NA}{(default) entire time range of data}
@@ -104,6 +116,8 @@ sensitivity_plot <- function(SA_file,
                              linear_or_log = "linear",
                              y_axis_limits_lin = NA,
                              y_axis_limits_log = NA,
+                             x_axis_limits_lin = NA,
+                             x_axis_limits_log = NA,
                              time_range = NA,
                              rounding = "significant 3", 
                              graph_title = NA,
@@ -124,7 +138,7 @@ sensitivity_plot <- function(SA_file,
                      SA_file, paste0(SA_file, ".xlsx"))
    
    if(missing(dependent_variable)){
-      stop("You have not provided a dependent variable, so we don't know what to graph. Please check the help file for a list of acceptable values for the argument 'dependent_variable'.", 
+      stop(wrapn("You have not provided a dependent variable, so we don't know what to graph. Please check the help file for a list of acceptable values for the argument 'dependent_variable'."), 
            call. = FALSE)
    }
    
@@ -133,15 +147,30 @@ sensitivity_plot <- function(SA_file,
       tolower(color_by_which_indvar) %in% c("2", "2nd", "second") ~ "2nd")
    
    if(color_by_which_indvar %in% c("1st", "2nd") == FALSE){
-      warning("You have specified something for the argument `color_by_which_indvar` other than 1st or 2nd, which are the only possible options. We'll use the default value of 1st.\n", 
+      warning(wrapn("You have specified something for the argument `color_by_which_indvar` other than 1st or 2nd, which are the only possible options. We'll use the default value of 1st."), 
               call. = FALSE)
       color_by_which_indvar <- "1st"
    }
    
    if(str_detect(rounding, "signif|none|round") == FALSE){
-      warning("You have not entered one of the permissible options for rounding. The only options for rounding are `significant X` (default is to round by 3 sig figs), `round X`, or `none`, so we'll use the default rounding scheme.\n", 
+      warning(wrapn("You have not entered one of the permissible options for rounding. The only options for rounding are `significant X` (default is to round by 3 sig figs), `round X`, or `none`, so we'll use the default rounding scheme."), 
               call. = FALSE)
       rounding <- "significant 3"
+   }
+   
+   linear_or_log <- tolower(linear_or_log)
+   
+   if(linear_or_log == "both log" & str_detect(dependent_variable, "plasma")){
+      warning(wrapn("You requested 'both log' for the argument 'linear_or_log', but you also requested a plasma concentration-time plot, and 'both log' is not an option there. We'll return both linear and semi-log concentration-time plots."), 
+              call. = FALSE)
+      linear_or_log <- "both vertical"
+   }
+   
+   if(linear_or_log %in% c("both", "both vertical", "both horizontal", "linear", 
+                           "semi-log", "log", "both log") == FALSE){
+      warning(wrapn("You have specified something for the argument 'linear_or_log' that is not among the possible options. We'll make a linear graph."), 
+              call. = FALSE)
+      linear_or_log <- "linear"
    }
    
    # Get data ------------------------------------------------------------
@@ -308,16 +337,16 @@ sensitivity_plot <- function(SA_file,
                     "vss" = expression(V[ss]~"(L/kg)"))
    
    PrettySensParam <- list("Dose .Sub" = "Dose (mg)",
-                           "EC50" = expression(EC[50]), 
+                           "EC50" = expression(EC[50]~"("*mu*M*")"), 
                            "Emax" = expression(E[max]),
                            "fa" = expression(f[a]),
                            "Fugut" = expression(f[u[gut]]), 
                            "Ind Max" = expression(Ind[max]), 
-                           "IndC50" = expression(IndC[50]), 
+                           "IndC50" = expression(IndC[50]~"("*mu*M*")"), 
                            "Ind Slope" = expression(induction~slope~"("*mu*M^-1*")"), 
                            "Intestinal ABCB1 .P-gp. CLint,T" = "Intestinal P-gp CLint,T (µL/min)",
                            "ka" = expression(k[a]), 
-                           "Kinetic Routes.*CLint" = expression(CL[int]), 
+                           "Kinetic Routes.*CLint" = expression(CL[int]~"("*mu*"L/min/pmol)"), 
                            "^Kp Scalar" = expression(k[p]~scalar),
                            "Lag Time" = expression("lag time (h)"),
                            "Peff" = expression(P[eff,human]), 
@@ -467,8 +496,16 @@ sensitivity_plot <- function(SA_file,
                              "1st" = ind_var_label, 
                              "2nd" = ind_var_label2))
       
-      if(all(complete.cases(y_axis_limits_lin))){
-         G <- G + scale_y_continuous(limits = y_axis_limits_lin)
+      if(all(complete.cases(y_axis_limits_lin)) & 
+         all(complete.cases(x_axis_limits_lin))){
+         G <- G + coord_cartesian(ylim = y_axis_limits_lin, 
+                                  xlim = x_axis_limits_lin)
+      } else if(all(complete.cases(y_axis_limits_lin)) &
+                all(is.na(x_axis_limits_lin))){
+         G <- G + coord_cartesian(ylim = y_axis_limits_lin)
+      } else if(all(complete.cases(x_axis_limits_lin)) &
+                all(is.na(y_axis_limits_lin))){
+         G <- G + coord_cartesian(xlim = x_axis_limits_lin)
       }
    }
    
@@ -493,8 +530,6 @@ sensitivity_plot <- function(SA_file,
                   label = paste0("target = ", prettyNum(target_DV, big.mark = ",")))
    }
    
-   # if(str_detect(dependent_variable, "plasma|conc")){
-   # FIXME - haven't set this up to deal w/2 DVs yet
    LogBreaks <- make_log_breaks(
       data_range = switch(
          as.character(all(complete.cases(y_axis_limits_log))), 
@@ -513,8 +548,21 @@ sensitivity_plot <- function(SA_file,
       G <- ggpubr::ggarrange(G, Glog, nrow = 1, align = "hv", common.legend = TRUE)
    } else if(linear_or_log %in% c("semi-log", "log")){
       G <- Glog
+   } else if(linear_or_log %in% c("both log")){
+      
+      LogBreaks <- make_log_breaks(
+         data_range = switch(
+            as.character(all(complete.cases(x_axis_limits_log))), 
+            "TRUE" = x_axis_limits_log, 
+            "FALSE" = switch(as.character(complete.cases(SensParam2)), 
+                             "TRUE" = switch(color_by_which_indvar, 
+                                             "1st" = range(SAdata$SensValue2), 
+                                             "2nd" = range(SAdata$SensValue)), 
+                             "FALSE" = range(SAdata$SensValue))))
+      
+      G <- Glog + scale_x_log10(breaks = LogBreaks$breaks, 
+                                labels = LogBreaks$labels)
    }
-   # }
    
    if(complete.cases(save_graph)){
       FileName <- save_graph
