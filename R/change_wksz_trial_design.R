@@ -268,6 +268,17 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
       )
    }
    
+   # subfun for V23+ data extraction ------------------------------------------
+   
+   # For some reason, you have to unzip the workspaces 1st if they're V23 or
+   # later. Not sure what changed.
+   unzip1st_fun <- function(workspace){
+      R.utils::gunzip(workspace, destname = "TEMP.wks", remove = FALSE)
+      workspace_xml <- XML::xmlTreeParse("TEMP.wks", useInternal = TRUE)
+      file.remove("TEMP.wks")
+      return(workspace_xml)
+   }
+   
    # Main body of function ---------------------------------------------------
    
    # If they didn't include the file suffix, add that. Replace any "xlsx" file
@@ -346,8 +357,12 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
               call. = FALSE)
       }
       
-      workspace_xml <- XML::xmlTreeParse(unique(Changes[[i]]$sim_workspace_files),
-                                         useInternal = TRUE)
+      workspace_xml <- tryCatch(
+         XML::xmlTreeParse(unique(Changes[[i]]$sim_workspace_files),
+                           useInternal = TRUE), 
+         
+         error = unzip1st_fun(unique(Changes[[i]]$sim_workspace_files)))
+      
       RootNode <- XML::xmlRoot(workspace_xml)
       
       # Setting the number of doses as needed. 

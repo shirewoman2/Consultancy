@@ -132,6 +132,17 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       compoundsToExtract <- intersect(compoundsToExtract, AllCompounds$CompoundID)
    }
    
+   # subfun for V23+ data extraction ------------------------------------------
+   
+   # For some reason, you have to unzip the workspaces 1st if they're V23 or
+   # later. Not sure what changed.
+   unzip1st_fun <- function(workspace){
+      R.utils::gunzip(workspace, destname = "TEMP.wks", remove = FALSE)
+      workspace_xml <- XML::xmlTreeParse("TEMP.wks", useInternal = TRUE)
+      file.remove("TEMP.wks")
+      return(workspace_xml)
+   }
+   
    # Main body of function ---------------------------------------------------
    
    XMLDeets <- AllExpDetails %>% filter(DataSource == "workspace or database")
@@ -183,7 +194,9 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          )
       }
       
-      workspace_xml <- XML::xmlTreeParse(i, useInternal = TRUE)
+      workspace_xml <- tryCatch(XML::xmlTreeParse(i, useInternal = TRUE), 
+                                error = unzip1st_fun(i))
+      
       RootNode <- XML::xmlRoot(workspace_xml)
       
       if(any(exp_details %in% CompoundDetails)){
