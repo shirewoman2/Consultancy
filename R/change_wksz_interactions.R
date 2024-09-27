@@ -252,10 +252,14 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
    }
    
    if("new_sim_workspace_files" %in% names(Changes) == FALSE){
-      Changes <- Changes %>% 
-         left_join(data.frame(sim_workspace_files = sim_workspace_files, 
-                              new_sim_workspace_files = new_sim_workspace_files), 
-                   by = "sim_workspace_files")
+      if(any(complete.cases(new_sim_workspace_files))){
+         Changes <- Changes %>% 
+            left_join(data.frame(sim_workspace_files = sim_workspace_files, 
+                                 new_sim_workspace_files = new_sim_workspace_files), 
+                      by = "sim_workspace_files")
+      } else {
+         Changes$new_sim_workspace_files <- Changes$sim_workspace_files
+      }
    }
    
    if("tissues" %in% names(Changes) == FALSE){
@@ -285,6 +289,17 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
    # have a data.frame called Changes that includes all interactions AND the
    # original and revised file names.
    
+   
+   # subfun for V23+ data extraction ------------------------------------------
+   
+   # For some reason, you have to unzip the workspaces 1st if they're V23 or
+   # later. Not sure what changed.
+   unzip1st_fun <- function(workspace){
+      R.utils::gunzip(workspace, destname = "TEMP.wks", remove = FALSE)
+      workspace_xml <- XML::xmlTreeParse("TEMP.wks", useInternal = TRUE)
+      file.remove("TEMP.wks")
+      return(workspace_xml)
+   }
    
    # Main body of function ---------------------------------------------------
    
@@ -404,8 +419,12 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
               call. = FALSE)
       }
       
-      workspace_xml <- XML::xmlTreeParse(unique(Changes[[i]]$sim_workspace_files),
-                                         useInternal = TRUE)
+      workspace_xml <- tryCatch(
+         XML::xmlTreeParse(unique(Changes[[i]]$sim_workspace_files),
+                           useInternal = TRUE), 
+         
+         error = unzip1st_fun(unique(Changes[[i]]$sim_workspace_files)))
+      
       RootNode <- XML::xmlRoot(workspace_xml)
       
       # NB: I originally set this up to do a check here for whether they had
