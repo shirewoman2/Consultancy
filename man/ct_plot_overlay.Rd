@@ -315,9 +315,8 @@ this to "none".}
 \item{facet1_column}{optionally break up the graph into small multiples; this
 specifies the first of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet1_column =
-Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
-\code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
-designate the rows of the output graphs.}
+Tissue}. If you have graphs where the rows are broken up by one variable 
+and the columns by another, then this will specify the rows of the graphs.}
 
 \item{facet1_title}{optionally specify a title to describe facet 1. This is
 ignored if \code{floating_facet_scale} is TRUE or if you have specified
@@ -326,9 +325,8 @@ ignored if \code{floating_facet_scale} is TRUE or if you have specified
 \item{facet2_column}{optionally break up the graph into small multiples; this
 specifies the second of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet2_column =
-CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
-specified \code{facet_ncol} or  \code{facet_nrow}, then
-\code{facet2_column} will designate the columns of the output graphs.}
+CompoundID}. If you have graphs where the rows are broken up by one variable 
+and the columns by another, then this will specify the columns of the graphs.}
 
 \item{facet2_title}{optionally specify a title to describe facet 2. This is
 ignored if \code{floating_facet_scale} is TRUE or if you have specified
@@ -342,15 +340,18 @@ for \code{facet1_column} and/or \code{facet2_column}.}
 you would like to have. This only applies when you have specified a column
 for \code{facet1_column} and/or \code{facet2_column}.}
 
-\item{floating_facet_scale}{TRUE or FALSE (default) for whether to allow the
-axes for each facet of a multi-facetted graph to scale freely to best fit
-whatever data are present. Default is FALSE, which means that all data will
-be on the same scale for easy comparison. However, this could mean that
-some graphs have lines that are hard to see, so you can set this to TRUE to
-allow the axes to shrink or expand according to what data are present for
-that facet. Floating axes comes with a trade-off for the looks of the
-graphs, though: Setting this to TRUE does mean that your x axis won't
-automatically have pretty breaks that are sensible for times in hours.}
+\item{floating_facet_scale}{TRUE, FALSE (default), "x", "y", or "xy" for whether to
+allow the axes for each facet of a multi-facetted graph to scale freely to
+best fit whatever data are present. Default is FALSE, which means that all
+data will be on the same scale for easy comparison. However, this could
+mean that some graphs have lines that are hard to see, so you can set this
+to TRUE to allow the axes to shrink or expand according to what data are
+present for that facet. If this is set to "x", "y", or "xy", then the scale will
+only float along that axis. Play around with this to see what we mean.
+Floating axes comes with a trade-off for the looks of the graphs, though:
+Setting this to TRUE does mean that your x axis won't automatically have
+pretty breaks that are sensible for times in hours and that you can't 
+specify intervals or limits for either the x or the y axis.}
 
 \item{facet_spacing}{Optionally set the spacing between facets. If left as
 NA, a best-guess as to a reasonable amount of space will be used. Units are
@@ -499,13 +500,13 @@ something more human readable. For example, "SV-Rifampicin-MD" will become
 FALSE will leave the compound names as is. For an approach with more
 control over what the compound names will look like in legends and Word
 output, set each compound to the exact name you  want with a named
-character vector. This will be looking for all the compound names in the 
-columns "Compound" and "Inhibitor" in whatever you supply for ct_dataframe. 
+character vector. This will be looking for all the compound names in the
+columns "Compound" and "Inhibitor" in whatever you supply for ct_dataframe.
 For example, \code{prettify_compound_names =
 c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
-"Drug ABC", "Itraconazole_Fasted Soln and OH-Itraconazole" = "itraconazole")} 
-will make those compounds "ketoconazole", "Drug ABC", and "itraconazole" in a
-legend.}
+"Drug ABC", "Itraconazole_Fasted Soln and OH-Itraconazole" = "itraconazole")}
+will make those compounds "ketoconazole", "Drug ABC", and "itraconazole" in
+a legend.}
 
 \item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
 the graph where the left panel shows the original graph and the right panel

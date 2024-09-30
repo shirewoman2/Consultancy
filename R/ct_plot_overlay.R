@@ -278,9 +278,8 @@
 #' @param facet1_column optionally break up the graph into small multiples; this
 #'   specifies the first of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet1_column =
-#'   Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
-#'   \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
-#'   designate the rows of the output graphs.
+#'   Tissue}. If you have graphs where the rows are broken up by one variable 
+#'   and the columns by another, then this will specify the rows of the graphs.
 #' @param facet1_title optionally specify a title to describe facet 1. This is
 #'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
 #'   \code{facet_ncol} or \code{facet_nrow}.
@@ -290,24 +289,26 @@
 #' @param facet2_column optionally break up the graph into small multiples; this
 #'   specifies the second of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet2_column =
-#'   CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
-#'   specified \code{facet_ncol} or  \code{facet_nrow}, then
-#'   \code{facet2_column} will designate the columns of the output graphs.
+#'   CompoundID}. If you have graphs where the rows are broken up by one variable 
+#'   and the columns by another, then this will specify the columns of the graphs.
 #' @param facet_ncol optionally specify the number of columns of facetted graphs
 #'   you would like to have. This only applies when you have specified a column
 #'   for \code{facet1_column} and/or \code{facet2_column}.
 #' @param facet_nrow optionally specify the number of rows of facetted graphs
 #'   you would like to have. This only applies when you have specified a column
 #'   for \code{facet1_column} and/or \code{facet2_column}.
-#' @param floating_facet_scale TRUE or FALSE (default) for whether to allow the
-#'   axes for each facet of a multi-facetted graph to scale freely to best fit
-#'   whatever data are present. Default is FALSE, which means that all data will
-#'   be on the same scale for easy comparison. However, this could mean that
-#'   some graphs have lines that are hard to see, so you can set this to TRUE to
-#'   allow the axes to shrink or expand according to what data are present for
-#'   that facet. Floating axes comes with a trade-off for the looks of the
-#'   graphs, though: Setting this to TRUE does mean that your x axis won't
-#'   automatically have pretty breaks that are sensible for times in hours.
+#' @param floating_facet_scale TRUE, FALSE (default), "x", "y", or "xy" for whether to
+#'   allow the axes for each facet of a multi-facetted graph to scale freely to
+#'   best fit whatever data are present. Default is FALSE, which means that all
+#'   data will be on the same scale for easy comparison. However, this could
+#'   mean that some graphs have lines that are hard to see, so you can set this
+#'   to TRUE to allow the axes to shrink or expand according to what data are
+#'   present for that facet. If this is set to "x", "y", or "xy", then the scale will
+#'   only float along that axis. Play around with this to see what we mean.
+#'   Floating axes comes with a trade-off for the looks of the graphs, though:
+#'   Setting this to TRUE does mean that your x axis won't automatically have
+#'   pretty breaks that are sensible for times in hours and that you can't 
+#'   specify intervals or limits for either the x or the y axis.
 #' @param facet_spacing Optionally set the spacing between facets. If left as
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
 #'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
@@ -436,13 +437,13 @@
 #'   FALSE will leave the compound names as is. For an approach with more
 #'   control over what the compound names will look like in legends and Word
 #'   output, set each compound to the exact name you  want with a named
-#'   character vector. This will be looking for all the compound names in the 
-#'   columns "Compound" and "Inhibitor" in whatever you supply for ct_dataframe. 
+#'   character vector. This will be looking for all the compound names in the
+#'   columns "Compound" and "Inhibitor" in whatever you supply for ct_dataframe.
 #'   For example, \code{prettify_compound_names =
 #'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
-#'   "Drug ABC", "Itraconazole_Fasted Soln and OH-Itraconazole" = "itraconazole")} 
-#'   will make those compounds "ketoconazole", "Drug ABC", and "itraconazole" in a
-#'   legend.
+#'   "Drug ABC", "Itraconazole_Fasted Soln and OH-Itraconazole" = "itraconazole")}
+#'   will make those compounds "ketoconazole", "Drug ABC", and "itraconazole" in
+#'   a legend.
 #' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of
 #'   the graph where the left panel shows the original graph and the right panel
 #'   shows information about the simulation trial design. This works MUCH faster
@@ -777,6 +778,19 @@ ct_plot_overlay <- function(ct_dataframe,
          conc_units_to_use <- "ng/mL"
       }
    }
+   
+   if("logical" %in% class(floating_facet_scale)){
+      floating_facet_scale <- ifelse(is.na(floating_facet_scale), 
+                                     FALSE, floating_facet_scale)
+   } else if("character" %in% class(floating_facet_scale) &&
+             tolower(floating_facet_scale) %in% c("x", "y", "xy")){
+      floating_facet_scale <- tolower(floating_facet_scale)
+   } else {
+      warning(wrapn("You have entered something other than one of the permissible values for the argument 'floating_facet_scale', so we will set it to the default of FALSE."), 
+              call. = FALSE)
+      floating_facet_scale <- FALSE
+   }
+   
    
    # tictoc::toc(log = TRUE)
    
@@ -2239,69 +2253,38 @@ ct_plot_overlay <- function(ct_dataframe,
       facet_nrow <- NA
    }
    
-   if(floating_facet_scale){
-      
-      strip.position <- ifelse(complete.cases(facet_ncol) && 
-                                  facet_ncol == 1 & is.na(facet_nrow), 
-                               "right", "top")
-      
-      A <- A + 
-         facet_wrap(vars(!!facet1_column, !!facet2_column), 
-                    scales = "free", 
-                    ncol = switch(as.character(is.na(facet_ncol)),
-                                  "TRUE" = NULL, 
-                                  "FALSE" = facet_ncol),
-                    nrow = switch(as.character(is.na(facet_nrow)),
-                                  "TRUE" = NULL, 
-                                  "FALSE" = facet_nrow), 
-                    strip.position = strip.position)
-      
-      if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
-         A <- A +
-            scale_y_continuous(expand = expansion(mult = pad_y_num),
-                               labels = scales::percent)
-      } else {
-         A <- A +
-            scale_y_continuous(expand = expansion(mult = pad_y_num))
-      }
-      
-      A <- A + scale_x_time(time_units = TimeUnits, 
-                            x_axis_interval = x_axis_interval, 
-                            pad_x_axis = pad_x_axis)
-      
-   } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
-      
-      suppressWarnings(
-         A <- A +
-            coord_cartesian(xlim = time_range_relative, 
-                            ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                            0, y_axis_limits_lin[1]),
-                                     YmaxRnd)) +
-            scale_x_time(time_units = TimeUnits, 
-                         x_axis_interval = x_axis_interval, 
-                         pad_x_axis = pad_x_axis) +
-            facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
-                                    AESCols["facet2"] == "<empty>"), 
-                              "TRUE FALSE" = vars(!!facet2_column),
-                              "FALSE TRUE" = vars(!!facet1_column),
-                              "FALSE FALSE" = vars(!!facet1_column, !!facet2_column)),
-                       ncol = switch(as.character(is.na(facet_ncol)), "TRUE" = NULL, "FALSE" = facet_ncol), 
-                       nrow = switch(as.character(is.na(facet_nrow)), "TRUE" = NULL, "FALSE" = facet_nrow))
-      )
-      
-      if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
-         A <- suppressWarnings(suppressMessages(
-            A + scale_y_continuous(labels = scales::percent,
-                                   expand = expansion(mult = pad_y_num)) 
-         ))
-      } else {
-         A <- suppressWarnings(suppressMessages(
-            A + scale_y_continuous(breaks = YBreaks, labels = YLabels,
-                                   expand = expansion(mult = pad_y_num)) 
-         ))
-      }
-      
-   } else {
+   # Options here (and some of this is just notes to myself to keep things clear
+   # in my head):
+   FacetOptions <-
+      expand_grid(facet_ncol_or_facet_nrow = c("specified", "not specified"), 
+                  # facet1_column = c("specified", "not specified"), 
+                  # facet2_column = c("specified", "not specified"), 
+                  floating_facet_scale = c(as.character(c(TRUE, FALSE)), 
+                                           "x", "y", "xy")) %>% 
+      mutate(WrapOrGrid = case_when(facet_ncol_or_facet_nrow == "specified" ~ "facet_wrap", 
+                                    facet_ncol_or_facet_nrow == "not specified" & 
+                                       floating_facet_scale == "TRUE" ~ "facet_wrap", 
+                                    facet_ncol_or_facet_nrow == "not specified" & 
+                                       floating_facet_scale != "TRUE" ~ "facet_grid"), 
+             Scales = case_match(floating_facet_scale, 
+                                 "FALSE" ~ "fixed", 
+                                 "TRUE" ~ "free", 
+                                 "x" ~ "free_x", 
+                                 "y" ~ "free_y", 
+                                 "xy" ~ "free"), 
+             ID = paste(facet_ncol_or_facet_nrow, 
+                        floating_facet_scale)) %>% 
+      # The above are the options. Now, figuring out which applies to current
+      # scenario.
+      mutate(facet_ncol_or_facet_nrow_used =
+                ifelse(any(complete.cases(c({{facet_ncol}}, {{facet_nrow}}))),
+                       "specified", "not specified"),
+             floating_facet_scale_used = {{floating_facet_scale}}) %>%
+      filter(facet_ncol_or_facet_nrow == facet_ncol_or_facet_nrow_used & 
+                floating_facet_scale == floating_facet_scale_used)
+   
+   if(FacetOptions$WrapOrGrid == "facet_grid"){
+      # This is when we want facet_grid. 
       
       # Setting up theme for facet titles
       FacetTitleTheme_XY <- ggh4x::strip_nested(
@@ -2335,53 +2318,102 @@ ct_plot_overlay <- function(ct_dataframe,
                                         size = calc_element("strip.text.x", theme_consultancy())$size), 
          by_layer_y = TRUE)
       
+      A <- A + 
+         switch(
+            FacetOpts, 
+            "ggplot2 facets" = facet_grid(rows = vars(!!facet1_column), 
+                                          cols = vars(!!facet2_column), 
+                                          scales = FacetOptions$Scales), 
+            
+            "FC1PlusTitle FC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ FC2, 
+                                                     strip = FacetTitleTheme_Y, 
+                                                     scales = FacetOptions$Scales), 
+            
+            "FC1PlusTitle NoFC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ ., 
+                                                       strip = FacetTitleTheme_Y, 
+                                                       scales = FacetOptions$Scales), 
+            
+            "FC1 FC2PlusTitle" = ggh4x::facet_nested(FC1 ~ Facet2Title + FC2, 
+                                                     strip = FacetTitleTheme_X, 
+                                                     scales = FacetOptions$Scales), 
+            
+            "FC1PlusTitle FC2PlusTitle" = ggh4x::facet_nested(Facet1Title + FC1 ~ Facet2Title + FC2, 
+                                                              strip = FacetTitleTheme_XY, 
+                                                              scales = FacetOptions$Scales), 
+            
+            "NoFC1 FC2PlusTitle" = ggh4x::facet_nested(. ~ Facet2Title + FC2, 
+                                                       strip = FacetTitleTheme_X, 
+                                                       scales = FacetOptions$Scales))
       
-      A <- A + coord_cartesian(xlim = time_range_relative, 
-                               ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                               0, y_axis_limits_lin[1]),
-                                        YmaxRnd)) +
+   } else {
+      # This is when we want facet_wrap
+      strip.position <- ifelse(complete.cases(facet_ncol) && 
+                                  facet_ncol == 1 & is.na(facet_nrow), 
+                               "right", "top")
+      
+      A <- A + 
+         facet_wrap(vars(!!facet1_column, !!facet2_column), 
+                    scales = FacetOptions$Scales, 
+                    ncol = switch(as.character(is.na(facet_ncol)),
+                                  "TRUE" = NULL, 
+                                  "FALSE" = facet_ncol),
+                    nrow = switch(as.character(is.na(facet_nrow)),
+                                  "TRUE" = NULL, 
+                                  "FALSE" = facet_nrow), 
+                    strip.position = strip.position)
+      
+   } 
+   
+   # Setting axis limits and breaks
+   if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
+      A <- suppressWarnings(suppressMessages(
+         A + scale_y_continuous(labels = scales::label_percent(big.mark = ","),
+                                breaks = switch(FacetOptions$Scales, 
+                                                "free" = waiver(), 
+                                                "fixed" = YBreaks, 
+                                                "free_x" = YBreaks, 
+                                                "free_y" = waiver()), 
+                                expand = expansion(mult = pad_y_num))
+      ))
+   } else {
+      A <- suppressWarnings(suppressMessages(
+         A + scale_y_continuous(breaks = switch(FacetOptions$Scales, 
+                                                "free" = waiver(), 
+                                                "fixed" = YBreaks, 
+                                                "free_x" = YBreaks, 
+                                                "free_y" = waiver()), 
+                                labels = switch(FacetOptions$Scales, 
+                                                "free" = waiver(), 
+                                                "fixed" = YLabels, 
+                                                "free_x" = YLabels, 
+                                                "free_y" = waiver()), 
+                                expand = expansion(mult = pad_y_num))
+      ))
+   }
+   
+   if(FacetOptions$Scales == "free_y"){
+      A <- A + coord_cartesian(xlim = time_range_relative) +
          scale_x_time(time_units = TimeUnits, 
                       time_range = time_range_relative,
                       x_axis_interval = x_axis_interval, 
-                      pad_x_axis = pad_x_axis) +
-         switch(FacetOpts, 
-                "ggplot2 facets" = facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)), 
-                "FC1PlusTitle FC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ FC2, 
-                                                         strip = FacetTitleTheme_Y), 
-                "FC1PlusTitle NoFC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ ., 
-                                                           strip = FacetTitleTheme_Y), 
-                "FC1 FC2PlusTitle" = ggh4x::facet_nested(FC1 ~ Facet2Title + FC2, 
-                                                         strip = FacetTitleTheme_X), 
-                "FC1PlusTitle FC2PlusTitle" = ggh4x::facet_nested(Facet1Title + FC1 ~ Facet2Title + FC2, 
-                                                                  strip = FacetTitleTheme_XY), 
-                "NoFC1 FC2PlusTitle" = ggh4x::facet_nested(. ~ Facet2Title + FC2, 
-                                                           strip = FacetTitleTheme_X))
+                      pad_x_axis = pad_x_axis)
       
-      # A <- A +
-      #    coord_cartesian(xlim = time_range_relative, 
-      #                    ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-      #                                    0, y_axis_limits_lin[1]),
-      #                             YmaxRnd)) +
-      #    scale_x_time(time_units = TimeUnits, 
-      #                 time_range = time_range_relative,
-      #                 x_axis_interval = x_axis_interval, 
-      #                 pad_x_axis = pad_x_axis) +
-      #    facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
-      
-      if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
-         A <- suppressWarnings(suppressMessages(
-            A + scale_y_continuous(labels = scales::label_percent(big.mark = ","),
-                                   breaks = YBreaks,
-                                   expand = expansion(mult = pad_y_num))
-         ))
-      } else {
-         A <- suppressWarnings(suppressMessages(
-            A + scale_y_continuous(breaks = YBreaks,
-                                   labels = YLabels,
-                                   expand = expansion(mult = pad_y_num))
-         ))
-      }
+   } else if(FacetOptions$Scales == "free_x"){
+      A <- A + coord_cartesian(ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                               0, y_axis_limits_lin[1]),
+                                        YmaxRnd))
+   } else if(FacetOptions$Scales == "fixed"){
+      A <- A + coord_cartesian(ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                               0, y_axis_limits_lin[1]),
+                                        YmaxRnd), 
+                               xlim = time_range_relative) +
+         scale_x_time(time_units = TimeUnits, 
+                      time_range = time_range_relative,
+                      x_axis_interval = x_axis_interval, 
+                      pad_x_axis = pad_x_axis)
    }
+   # NB: If FacetOptions$Scales == "free", then we can't set any axis limits
+   # or intervals b/c they will vary as needed for all facets.
    
    # Adding spacing between facets if requested 
    if(complete.cases(facet_spacing)){
@@ -2705,8 +2737,12 @@ ct_plot_overlay <- function(ct_dataframe,
             switch(as.character(floating_facet_scale), 
                    "TRUE" = coord_cartesian(ylim = Ylim_log), 
                    "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                             xlim = time_range_relative))
+                                             xlim = time_range_relative), 
+                   "x" = coord_cartesian(ylim = Ylim_log), 
+                   "y" = coord_cartesian(ylim = Ylim_log, 
+                                         xlim = time_range_relative))
       ))
+      
    } else {
       B <- suppressMessages(suppressWarnings(
          A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
@@ -2714,7 +2750,10 @@ ct_plot_overlay <- function(ct_dataframe,
             switch(as.character(floating_facet_scale), 
                    "TRUE" = coord_cartesian(ylim = Ylim_log), 
                    "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                             xlim = time_range_relative))
+                                             xlim = time_range_relative), 
+                   "x" = coord_cartesian(ylim = Ylim_log), 
+                   "y" = coord_cartesian(ylim = Ylim_log, 
+                                         xlim = time_range_relative))
       ))
    }
    

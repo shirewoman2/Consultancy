@@ -13,6 +13,8 @@ sensitivity_plot(
   linear_or_log = "linear",
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  x_axis_limits_lin = NA,
+  x_axis_limits_log = NA,
   time_range = NA,
   rounding = "significant 3",
   graph_title = NA,
@@ -57,7 +59,9 @@ or "2", "2nd", or "second" to adjust colors based on the second. If you
 only have one independent variable, this will be ignored.}
 
 \item{linear_or_log}{make the y axis "linear" (default) or "log" for plasma
-concentration-time plots (this is ignored for all other plots)}
+concentration-time plots. If you're graphing some other dependent variable,
+another option is "both log", which will log transform both the x and y
+axes.}
 
 \item{y_axis_limits_lin}{optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
@@ -68,8 +72,20 @@ plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to a round number. If left as the default NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
 
+\item{x_axis_limits_lin}{optionally set the X axis limits for the linear
+plot, e.g., \code{c(10, 1000)}. If left as the default NA, the X axis
+limits for the linear plot will be automatically selected. This does not
+apply when the dependent variable requested is plasma concentrations.}
+
+\item{x_axis_limits_log}{optionally set the X axis limits for the log plot,
+e.g., \code{c(10, 1000)}. Values will be rounded down and up, respectively,
+to a round number. If left as the default NA, the X axis limits for the
+semi-log plot will be automatically selected. This does not apply when the
+dependent variable requested is plasma concentrations.}
+
 \item{time_range}{time range to show relative to the start of the simulation
-  for any concentration-time plots.
+  for any concentration-time plots. This does not apply when the plot is of
+  some other dependent variable than plasma.
   Options: \describe{
 
   \item{NA}{(default) entire time range of data}
