@@ -916,14 +916,14 @@ extractExpDetails <- function(sim_data_file,
       if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
          exists("InputTab", inherits = FALSE) &&
          any(str_detect(unlist(c(InputTab[, ColLocations + 1])), 
-                        "Solubility-pH profile"),
+                        "Solubility-pH profile|User defined pH-Solubility"),
              na.rm = TRUE)){
          
          pHSol <- list()
          
          for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
             StartRow <- which(str_detect(t(InputTab[, ColLocations[i] + 1]), 
-                                         "Solubility-pH profile"))[1] + 1
+                                         "Solubility-pH profile|User defined pH-Solubility"))[1] + 1
             EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), 
                                        "Entry [0-9]{1,} Solubility"))
             EndRow <- EndRow[which.max(EndRow)]
