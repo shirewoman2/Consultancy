@@ -60,8 +60,9 @@ only have one independent variable, this will be ignored.}
 
 \item{linear_or_log}{make the y axis "linear" (default) or "log" for plasma
 concentration-time plots. If you're graphing some other dependent variable,
-another option is "both log", which will log transform both the x and y
-axes.}
+you can also opt for "log x" to log-transform the x axis, "log y" to
+log-transform the y axis (same as a traditional semi-log plot), or "both
+log", which will log transform both the x and y axes.}
 
 \item{y_axis_limits_lin}{optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis

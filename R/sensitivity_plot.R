@@ -54,8 +54,9 @@
 #'   only have one independent variable, this will be ignored.
 #' @param linear_or_log make the y axis "linear" (default) or "log" for plasma
 #'   concentration-time plots. If you're graphing some other dependent variable,
-#'   another option is "both log", which will log transform both the x and y
-#'   axes.
+#'   you can also opt for "log x" to log-transform the x axis, "log y" to
+#'   log-transform the y axis (same as a traditional semi-log plot), or "both
+#'   log", which will log transform both the x and y axes.
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 #'   limits for the linear plot will be automatically selected.
@@ -160,14 +161,17 @@ sensitivity_plot <- function(SA_file,
    
    linear_or_log <- tolower(linear_or_log)
    
-   if(linear_or_log == "both log" & str_detect(dependent_variable, "plasma")){
-      warning(wrapn("You requested 'both log' for the argument 'linear_or_log', but you also requested a plasma concentration-time plot, and 'both log' is not an option there. We'll return both linear and semi-log concentration-time plots."), 
+   if(linear_or_log %in% c("both log", "log x") &
+      str_detect(dependent_variable, "plasma")){
+      warning(wrapn(paste0("You requested '", linear_or_log, 
+                           "' for the argument 'linear_or_log', but you also requested a plasma concentration-time plot, and that's not an option there. We'll return both linear and semi-log concentration-time plots.")), 
               call. = FALSE)
       linear_or_log <- "both vertical"
    }
    
    if(linear_or_log %in% c("both", "both vertical", "both horizontal", "linear", 
-                           "semi-log", "log", "both log") == FALSE){
+                           "semi-log", "log", "both log", "log x", 
+                           "log y") == FALSE){
       warning(wrapn("You have specified something for the argument 'linear_or_log' that is not among the possible options. We'll make a linear graph."), 
               call. = FALSE)
       linear_or_log <- "linear"
@@ -546,7 +550,7 @@ sensitivity_plot <- function(SA_file,
       G <- ggpubr::ggarrange(G, Glog, nrow = 2, align = "hv", common.legend = TRUE)
    } else if(linear_or_log %in% c("both horizontal")){
       G <- ggpubr::ggarrange(G, Glog, nrow = 1, align = "hv", common.legend = TRUE)
-   } else if(linear_or_log %in% c("semi-log", "log")){
+   } else if(linear_or_log %in% c("semi-log", "log", "log y")){
       G <- Glog
    } else if(linear_or_log %in% c("both log")){
       
@@ -562,6 +566,9 @@ sensitivity_plot <- function(SA_file,
       
       G <- Glog + scale_x_log10(breaks = LogBreaks$breaks, 
                                 labels = LogBreaks$labels)
+   } else if(linear_or_log %in% c("log x")){
+      G <- G + scale_x_log10(breaks = LogBreaks$breaks, 
+                             labels = LogBreaks$labels)
    }
    
    if(complete.cases(save_graph)){
