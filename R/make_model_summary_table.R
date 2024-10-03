@@ -13,7 +13,16 @@
 #' @param compoundID For which compound do you want to summarize the model
 #'   parameters? Options are "substrate", "primary metabolite 1", "primary
 #'   metabolite 2", "secondary metabolite", "inhibitor 1", "inhibitor 2", or
-#'   "inhibitor 1 metabolite". 
+#'   "inhibitor 1 metabolite".
+#' @param compound optionally supply a specific compound name or part of a
+#'   specific compound name to get all possible compounds that match that and
+#'   \emph{only} compounds that match that. Regular expressions are acceptable
+#'   here, e.g., \code{compound = "midaz|keto"} to find any compound with either
+#'   "midaz" or "keto" in the name. Not case sensitive. If you request only
+#'   information on a specific compound, we will assume what what you care about
+#'   is the set of parameters used for that compound and not whether that
+#'   compound was the substrate or the inhibitor, so we'll ignore anything you
+#'   supply for compoundID.
 #' @param font font to use. Default is "Arial" and any fonts available on your
 #'   machine in either Word or PowerPoint should be acceptable. If you get Times
 #'   New Roman in your table when you asked for something else, it means that
@@ -30,19 +39,130 @@
 #'   were included.
 #' @param page_orientation set the page orientation for the Word file output to
 #'   "portrait" (default) or "landscape"
+#' @param references a data.frame or csv file listing the source of all the
+#'   parameters used in the model. The columns must include:
+#'   \describe{\item{"Parameter" or "Detail" (either is fine)}{the specific
+#'   parameter of interest with the coded name for that parameter. How can you
+#'   find out the coded name? Run something like this:
+#'   \code{annotateDetails(existing_exp_details = Details, compoundID = "substrate", detail_set = "Simcyp inputs")}
+#'   and the column "Detail" will
+#'   list all of the coded names for the parameters that will be included in
+#'   this table. They must match exactly or the reference will be omitted.}
+#'   \item{Reference}{the reference for that parameter}}
+#' @param parameters_to_omit optionally specify any parameters to omit from the
+#'   table. For example, maybe you don't want to include that the biliary
+#'   clearance was set to 0 because that's just not important. To omit that,
+#'   you'll need the exact, coded name of that parameter, and you can list any
+#'   parameters to omit as a character vector. How does one obtain the exact,
+#'   coded name of a parameter? So glad you asked. Please run something like
+#'   this: \code{annotateDetails(existing_exp_details = Details, compoundID =
+#'   "substrate", detail_set = "Simcyp inputs")} and the column "Detail" will
+#'   list all of the coded names for the parameters that will be included in
+#'   this table by default. In our example, you would specify
+#'   \code{parameters_to_omit = "CLint_biliary_sub"}
+#' @param parameters_to_add optionally add any parameters that weren't included
+#'   by default. Acceptable input is a data.frame with the following columns:
+#'   \describe{\item{SimulatorSection}{the section of the simulator, e.g.,
+#'   "Phys Chem and Blood Binding", "Absorption", "Distribution", "Elimination",
+#'   "Interaction", "Transport", "Trial Design", or "Population". These must match those options exactly.}
+#'   \item{Detail (also ok to call this column "Parameter")}{the parameter name}
+#'   \item{Value}{the value of this parameter}
+#'   \item{Reference}{the reference for the parameter (optional)}}
 #'
 #' @return a formatted table
 #' @export
 #'
 #' @examples
 #' # none yet
+
 make_model_summary_table <- function(existing_exp_details,
                                      sims_to_include = "all", 
-                                     compoundID = "substrate", 
+                                     compoundID = NA, 
+                                     compound = NA, 
+                                     references = NA, 
+                                     parameters_to_omit = NA, 
+                                     parameters_to_add = NA, 
                                      font = "Palatino Linotype", 
                                      fontsize = 11, 
                                      save_table = NA,
                                      page_orientation = "portrait"){
+   
+   # Error catching --------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   compoundID <- tolower(compoundID)
+   
+   if(all(is.na(compound)) & all(is.na(compoundID))){
+      warning(wrapn("You have not specified anything for either compoundID or compound, so we'll set the compoundID to substrate."),
+              call. = FALSE)
+      compoundID <- "substrate"
+   } else if(any(complete.cases(compoundID)) & 
+             any(complete.cases(compound))){
+      warning(wrapn("You have specificed something for both compoundID (the position in the Simulator, e.g., 'substrate') and for compound (the compound name), and we won't use both. We will only consider what you supplied for 'compound'."), 
+              call. = FALSE)
+      compoundID <- NA
+   }
+   
+   if("character" %in% class(references) && str_detect(references, "\\.csv$")){
+      references <- read.csv(references, na.strings = c("", "NA"))
+      # references should now be a data.frame.
+   } 
+   
+   if("logical" %in% class(references) == FALSE){
+      if("data.frame" %in% class(references) == FALSE){
+         warning(wrapn("You have supplied something for the argument 'references' other than a data.frame or a .csv file, which are the only options. We will leave off any references from the table."), 
+                 call. = FALSE)
+         references <- NA
+      } else {
+         # harmonizing column names
+         names(references) <- tolower(names(references))
+         names(references)[which(str_detect(names(references), "parameter"))] <- "Detail"
+         names(references)[which(str_detect(names(references), "detail"))] <- "Detail"
+         names(references)[which(str_detect(names(references), "reference|source"))] <- "Reference"
+         
+         if(all(c("Detail", "Reference") %in% names(references)) == FALSE){
+            warning(wrapn("The data you supplied for the argument 'references' doesn't have the columns we need: 'Parameter' and 'Reference' (not case sensitive). We can't match the references you provided with the parameters from the simulation(s) and will have to omit them from the table."), 
+                    call. = FALSE)
+            references <- NA
+         }
+      }
+   }
+   
+   if("logical" %in% class(parameters_to_omit) == FALSE){
+      if("character" %in% class(parameters_to_omit) == FALSE){
+         warning(wrapn("You must supply either NA or a character vector for the argument 'parameters_to_omit'. We will ignore the parameters supplied otherwise."), 
+                 call. = FALSE)
+         parameters_to_omit <- NA
+      }
+   }
+   
+   if("logical" %in% class(parameters_to_add) == FALSE){
+      if("data.frame" %in% class(parameters_to_add) == FALSE){
+         warning(wrapn("You have supplied something for the argument 'parameters_to_add' other than a data.frame, which is the only option. We will not be able to add any parameters to the table."), 
+                 call. = FALSE)
+         parameters_to_add <- NA
+      } else {
+         # harmonizing column names
+         names(parameters_to_add) <- tolower(names(parameters_to_add))
+         names(parameters_to_add)[which(str_detect(names(parameters_to_add), "parameter"))] <- "Detail"
+         names(parameters_to_add)[which(str_detect(names(parameters_to_add), "detail"))] <- "Detail"
+         names(parameters_to_add)[which(str_detect(names(parameters_to_add), "value"))] <- "Value"
+         names(parameters_to_add)[which(str_detect(names(parameters_to_add), "reference|source"))] <- "Reference"
+         names(parameters_to_add)[which(str_detect(names(parameters_to_add), "simulatorsection|section of model"))] <- "SimulatorSection"
+         
+         if(all(c("Detail", "Value") %in% names(parameters_to_add)) == FALSE){
+            warning(wrapn("The data you supplied for the argument 'parameters_to_add' doesn't have the columns we need: 'Parameter' and 'Value' (not case sensitive), so we can't add them to the table."), 
+                    call. = FALSE)
+            parameters_to_add <- NA
+         }
+      }
+   }
+   
+   
+   # Main function ------------------------------------------------------------
    
    if(any(sims_to_include != "all")){
       existing_exp_details <- filter_sims(existing_exp_details, 
@@ -50,22 +170,95 @@ make_model_summary_table <- function(existing_exp_details,
                                           "include")
    }
    
-   suppressWarnings(
-      FT <- 
-         annotateDetails(existing_exp_details = existing_exp_details, 
+   FT <- annotateDetails(existing_exp_details = existing_exp_details, 
                          compoundID = compoundID, 
+                         compound = compound,
                          detail_set = "Simcyp inputs") %>% 
-         rename("Section of model" = SimulatorSection, 
-                Value = "All files have this value for this compound ID and compound") %>% 
+      mutate(Detail = sub(str_c(AllCompounds$Suffix, collapse = "|"), "", 
+                          Detail))
+   
+   if(any(complete.cases(parameters_to_omit))){
+      FT <- FT %>% 
+         filter(!Detail %in% c(parameters_to_omit, 
+                               sub(str_c(AllCompounds$Suffix, 
+                                         collapse = "|"), "", 
+                                   parameters_to_omit)))
+   }
+   
+   if("data.frame" %in% class(references)){
+      if("character" %in% class(compound)){
+         # When compound was supplied, need to remove suffix from detail
+         references <- references %>% 
+            mutate(Detail = sub(str_c(AllCompounds$Suffix, 
+                                      collapse = "|"), "", 
+                                Detail))
+      }
+      
+      FT <- FT %>% 
+         left_join(references %>% select(Detail, Reference), 
+                   by = "Detail")
+   }
+   
+   # Dealing with possible differences in column name
+   names(FT)[which(str_detect(names(FT), "All files have"))] <- "Value"
+   
+   if("data.frame" %in% class(parameters_to_add)){
+      FT <- FT %>% 
+         bind_rows(parameters_to_add %>% 
+                      mutate(across(.cols = everything(), 
+                                    .fns = as.character))) %>% 
+         # Need to re-order things we add rows
+         left_join(AllExpDetails %>% 
+                      select(Detail, SimulatorSection, SortOrder) %>% 
+                      mutate(Detail = sub(str_c(AllCompounds$Suffix, 
+                                                collapse = "|"), "", 
+                                          Detail)) %>% 
+                      unique(), 
+                   by = c("Detail", "SimulatorSection")) %>% 
+         mutate(SimulatorSection = factor(SimulatorSection, 
+                                          levels = c("Phys Chem and Blood Binding", 
+                                                     "Absorption", 
+                                                     "Distribution", 
+                                                     "Elimination", 
+                                                     "Transport", 
+                                                     "Interaction", 
+                                                     "Trial Design", 
+                                                     "Population", 
+                                                     "Other"))) %>% 
+         arrange(SimulatorSection, SortOrder, Detail) %>% 
+         mutate(SimulatorSection = as.character(SimulatorSection)) %>% 
+         select(-SortOrder)
+   }
+   
+   # 
+   # if("character" %in% class(compound)){
+   #    FT <- FT %>% 
+   #       left_join(AllExpDetails %>% select(Detail, ReportTableText) %>% unique() %>% 
+   #                    mutate(Detail = sub(str_c(AllCompounds$Suffix, 
+   #                                              collapse = "|"), "", 
+   #                                        Detail)), 
+   #                 by = "Detail")
+   # } else {
+   #    FT <- FT %>% 
+   #       left_join(AllExpDetails %>% select(Detail, ReportTableText) %>% unique(), 
+   #                 by = "Detail")
+   # }
+   
+   suppressWarnings(
+      FT <- FT %>% 
+         rename("Section of model" = SimulatorSection) %>% 
          filter(complete.cases(Value) & 
                    !Detail %in% c("SimulatorVersion", AllCompounds$DetailNames)) %>% 
-         left_join(AllExpDetails %>% select(Detail, ReportTableText) %>% unique(), 
-                   by = "Detail") %>% 
+         left_join(AllExpDetails %>% select(Detail, ReportTableText) %>% 
+                      mutate(Detail = sub(str_c(AllCompounds$Suffix, 
+                                                collapse = "|"), "", 
+                                          Detail)) %>% unique(), 
+                   by = "Detail")  %>% 
          mutate(Parameter = ifelse(is.na(ReportTableText), 
                                    Detail, ReportTableText), 
                 Value = ifelse(complete.cases(as.numeric(Value)), 
                                as.character(round(as.numeric(Value), 5)), Value)) %>% 
-         select("Section of model", Parameter, Value) %>% 
+         select("Section of model", Parameter, Value, any_of("Reference")) %>% 
          format_table_simple(shading_column = "Section of model") %>% 
          flextable::width(j = 1, width = 2) %>% 
          flextable::width(j = 2, width = 3) %>% 
