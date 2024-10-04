@@ -1,8 +1,35 @@
-#' Summarize a model pretty simply - UNDER CONSTRUCTION
+#' Summarize a PBPK model using parameters pulled from simulations - UNDER
+#' CONSTRUCTION
 #'
-#' \code{make_model_summary_table} is meant for use with writing compound
-#' summary pdfs. It includes minimal error catching at this point. NB: This
-#' rounds numeric values to the 5th digit.
+#' @description \code{make_model_summary_table} is meant for use with writing
+#'   compound summary pdfs. For making the table, it will pull model information
+#'   from simulations and arrange and format the information neatly.
+#'   Additionally, if you supply the references for each parameter, it will
+#'   include a column listing that.
+#'
+#'   This function requires you to first run
+#'   \code{\link{extractExpDetails_mult}} to get information about your
+#'   simulations in a format this function can use. To see what will be included
+#'   in this table and to see the coded names for each of the parameters that
+#'   will be included in the table, please run something like:
+#'
+#'   \code{Details <- extractExpDetails_mult()
+#'
+#'   TableCheck <- annotateDetails(existing_exp_details = Details, compoundID =
+#'   "substrate", detail_set = "Simcyp inputs")}
+#'
+#'   and the object Details is what you will provide as input for
+#'   \code{make_model_summary_table} and the object TableCheck will show you
+#'   what information will be included and how to refer to each parameter or
+#'   detail. The values listed for each parameter will come from the column
+#'   titled something like "All files have this value for this compound".
+#'
+#'   Notes: \itemize{\item{This rounds numeric values to the 5th digit.}
+#'   \item{There are some parameters that are included in the standard
+#'   set of outputs from \code{\link{extractExpDetails_mult}} that we will
+#'   ignore: the Simulator version, Ki values set to 1e+06 (the default value in the Simulator for,
+#'   really, no inhibition), Indmax values of 1 (also the default value in the
+#'   Simulator for no interaction), etc.}}
 #'
 #' @param existing_exp_details the output from running
 #'   \code{\link{extractExpDetails_mult}}
@@ -23,22 +50,6 @@
 #'   is the set of parameters used for that compound and not whether that
 #'   compound was the substrate or the inhibitor, so we'll ignore anything you
 #'   supply for compoundID.
-#' @param font font to use. Default is "Arial" and any fonts available on your
-#'   machine in either Word or PowerPoint should be acceptable. If you get Times
-#'   New Roman in your table when you asked for something else, it means that
-#'   that font isn't available or maybe wasn't spelled the way R is expecting
-#'   it. For example, "Calibri" works but "Calibri (Body)" doesn't even though
-#'   the latter is listed in PowerPoint and Word.
-#' @param fontsize the numeric font size for the output table. Default is 11
-#'   point.
-#' @param save_table optionally save the output table by supplying a file name
-#'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
-#'   slashes, dollar signs, or periods in the file name. If you leave off the
-#'   file extension, we'll assume you want it to be ".docx". If there is a
-#'   column titled "File" in your table, we'll add a caption listing which files
-#'   were included.
-#' @param page_orientation set the page orientation for the Word file output to
-#'   "portrait" (default) or "landscape"
 #' @param references a data.frame or csv file listing the source of all the
 #'   parameters used in the model. The columns must include:
 #'   \describe{\item{"Parameter" or "Detail" (either is fine)}{the specific
@@ -48,7 +59,7 @@
 #'   and the column "Detail" will
 #'   list all of the coded names for the parameters that will be included in
 #'   this table. They must match exactly or the reference will be omitted.}
-#'   \item{Reference}{the reference for that parameter}}
+#'   \item{"Reference"}{the reference for that parameter}}
 #' @param parameters_to_omit optionally specify any parameters to omit from the
 #'   table. For example, maybe you don't want to include that the biliary
 #'   clearance was set to 0 because that's just not important. To omit that,
@@ -68,6 +79,25 @@
 #'   \item{Detail (also ok to call this column "Parameter")}{the parameter name}
 #'   \item{Value}{the value of this parameter}
 #'   \item{Reference}{the reference for the parameter (optional)}}
+#' @param font font to use. Default is "Arial" and any fonts available on your
+#'   machine in either Word or PowerPoint should be acceptable. If you get Times
+#'   New Roman in your table when you asked for something else, it means that
+#'   that font isn't available or maybe wasn't spelled the way R is expecting
+#'   it. For example, "Calibri" works but "Calibri (Body)" doesn't even though
+#'   the latter is listed in PowerPoint and Word.
+#' @param fontsize the numeric font size for the output table. Default is 11
+#'   point.
+#' @param column_widths optionally specify what the widths of the columns should
+#'   be with a numeric vector of the widths in inches, e.g., 
+#'   \code{column_widths = c()}
+#' @param save_table optionally save the output table by supplying a file name
+#'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
+#'   slashes, dollar signs, or periods in the file name. If you leave off the
+#'   file extension, we'll assume you want it to be ".docx". If there is a
+#'   column titled "File" in your table, we'll add a caption listing which files
+#'   were included.
+#' @param page_orientation set the page orientation for the Word file output to
+#'   "portrait" (default) or "landscape"
 #'
 #' @return a formatted table
 #' @export
@@ -84,6 +114,7 @@ make_model_summary_table <- function(existing_exp_details,
                                      parameters_to_add = NA, 
                                      font = "Palatino Linotype", 
                                      fontsize = 11, 
+                                     column_widths = NA, 
                                      save_table = NA,
                                      page_orientation = "portrait"){
    
@@ -161,6 +192,23 @@ make_model_summary_table <- function(existing_exp_details,
       }
    }
    
+   if("logical" %in% class(column_widths) == FALSE){
+      if("numeric" %in% class(column_widths) == FALSE){
+         warning(wrapn("You have supplied something other than numeric data for the column widths, so we don't know what you want and will ignore this."), 
+                 call. = FALSE)
+         column_widths <- NA
+      } else {
+         # Making sure we have more than enough values
+         column_widths <- rep(column_widths, 4)
+      }
+   } 
+   
+   if("logical" %in% class(references)){
+      column_widths <- c(1, 2, 1.5, 1.5)
+   } else {
+      column_widths <- c(2, 3, 1.5)
+   }
+   
    
    # Main function ------------------------------------------------------------
    
@@ -201,6 +249,28 @@ make_model_summary_table <- function(existing_exp_details,
    
    # Dealing with possible differences in column name
    names(FT)[which(str_detect(names(FT), "All files have"))] <- "Value"
+   
+   # If they only supply 1 sim, then there won't be a column titled "All files
+   # have ...", so accounting for that.
+   if("Value" %in% names(FT) == FALSE){
+      names(FT)[which(str_detect(names(FT), "\\.xlsx"))[1]] <- "Value"
+   }
+   
+   # Removing parameters that really make no sense to include, e.g., b/c they
+   # are default values that don't matter s/a interactions that would have no
+   # effect.
+   FT <- FT %>% 
+      mutate(Omit = case_when(str_detect(Detail, "^Ki") & 
+                                 !str_detect(Detail, "fu_") &
+                                 Value == "1e+06" ~ TRUE, 
+                              
+                              str_detect(Detail, "Ind_gamma") & 
+                                 Value == 1 ~ TRUE, 
+                              
+                              str_detect(Detail, "rUGTSystem") ~ TRUE,
+                              
+                              .default = FALSE)) %>% 
+      filter(!Omit == TRUE) %>% select(-Omit)
    
    if("data.frame" %in% class(parameters_to_add)){
       FT <- FT %>% 
@@ -259,12 +329,24 @@ make_model_summary_table <- function(existing_exp_details,
                 Value = ifelse(complete.cases(as.numeric(Value)), 
                                as.character(round(as.numeric(Value), 5)), Value)) %>% 
          select("Section of model", Parameter, Value, any_of("Reference")) %>% 
-         format_table_simple(shading_column = "Section of model") %>% 
-         flextable::width(j = 1, width = 2) %>% 
-         flextable::width(j = 2, width = 3) %>% 
-         flextable::width(j = 3, width = 1.5) %>% 
-         flextable::merge_v(j = 1) 
+         format_table_simple(shading_column = "Section of model")
    )
+   
+   if("data.frame" %in% class(references)){
+      FT <- FT %>% 
+         flextable::width(j = 1, width = column_widths[1]) %>% 
+         flextable::width(j = 2, width = column_widths[2]) %>% 
+         flextable::width(j = 3, width = column_widths[3]) %>% 
+         flextable::width(j = 4, width = column_widths[4]) %>% 
+         flextable::merge_v(j = 1) %>% 
+         flextable::merge_v(j = 4) # merge any replicated references
+   } else {
+      FT <- FT %>% 
+         flextable::width(j = 1, width = column_widths[1]) %>% 
+         flextable::width(j = 2, width = column_widths[2]) %>% 
+         flextable::width(j = 3, width = column_widths[3]) %>% 
+         flextable::merge_v(j = 1) 
+   }
    
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
@@ -278,7 +360,6 @@ make_model_summary_table <- function(existing_exp_details,
                          title_document = title_document, 
                          table_caption = table_caption)
    }
-   
    
    return(FT)
    
