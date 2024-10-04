@@ -81,7 +81,13 @@ format_scripts <- function(DF,
                 Parameter = case_when(str_detect(Parameter, "Ki fu,mic") ~ 
                                          paste0(str_replace(Parameter, "Ki ", ""), 
                                                 " (Ki)"), 
+                                      
+                                      str_detect(Parameter, "CLint") & 
+                                         str_detect(Parameter, "rUGTScalar") ~ 
+                                         str_replace(Parameter, "CLint UGT", "UGT"), 
+                                      
                                       .default = Parameter), 
+                Parameter = str_replace(Parameter, "rUGTScalar", "scalar for"), # This line must come after the one checking for both CLint and rUGTScalar!
                 Parameter = case_match(Parameter, 
                                        "CLint AddHLM" ~ "CLint,additional HLM", 
                                        "CLint biliary" ~ "CLint,biliary", 
