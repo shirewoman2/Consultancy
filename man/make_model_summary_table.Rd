@@ -15,6 +15,7 @@ make_model_summary_table(
   parameters_to_add = NA,
   font = "Palatino Linotype",
   fontsize = 11,
+  column_widths = NA,
   save_table = NA,
   page_orientation = "portrait"
 )
@@ -85,6 +86,10 @@ the latter is listed in PowerPoint and Word.}
 \item{fontsize}{the numeric font size for the output table. Default is 11
 point.}
 
+\item{column_widths}{optionally specify what the widths of the columns should
+be with a numeric vector of the widths in inches, e.g., 
+\code{column_widths = c()}}
+
 \item{save_table}{optionally save the output table by supplying a file name
 in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
 slashes, dollar signs, or periods in the file name. If you leave off the
@@ -120,12 +125,12 @@ a formatted table
   \code{make_model_summary_table} and the object TableCheck will show you
   what information will be included and how to refer to each parameter or
   detail. The values listed for each parameter will come from the column
-  titled something like "All files have this value for this compound". 
+  titled something like "All files have this value for this compound".
 
   Notes: \itemize{\item{This rounds numeric values to the 5th digit.}
   \item{There are some parameters that are included in the standard
   set of outputs from \code{\link{extractExpDetails_mult}} that we will
-  ignore: Ki values set to 1e+06 (the default value in the Simulator for,
+  ignore: the Simulator version, Ki values set to 1e+06 (the default value in the Simulator for,
   really, no inhibition), Indmax values of 1 (also the default value in the
   Simulator for no interaction), etc.}}
 }
