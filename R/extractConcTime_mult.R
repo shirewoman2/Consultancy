@@ -524,8 +524,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             ObsAssign <- existing_exp_details$MainDetails %>% 
                select(File, ObsOverlayFile) %>% 
                rename(ObsFile = ObsOverlayFile) %>% 
-               mutate(ObsFile = sub("\\.xml$", ".xlsx", ObsFile), 
-                      ObsFile = gsub("\\\\", "/", ObsFile), 
+               mutate(ObsFile = gsub("\\\\", "/", ObsFile), 
                       ObsFile = sub("Users/.*/Certara", 
                                     paste0("Users/", Sys.info()["user"], 
                                            "/Certara"), ObsFile))

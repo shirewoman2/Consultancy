@@ -900,8 +900,13 @@ extractConcTime <- function(sim_data_file,
       arrange(across(.cols = any_of(c("Trial", "Individual", "Time"))))
    
    if(exists("obs_data", inherits = FALSE)){
-      Data[["obs"]] <- obs_data %>%
-         mutate(Species = tolower(sub("Sim-", "", Species)))
+      if("Species" %in% names(obs_data)){
+         Data[["obs"]] <- obs_data %>%
+            mutate(Species = tolower(sub("Sim-", "", Species)))
+      } else {
+         Data[["obs"]] <- obs_data %>% 
+            mutate(Species = Deets$Species)
+      }
    }
    
    Data <- bind_rows(Data) %>%
@@ -933,15 +938,15 @@ extractConcTime <- function(sim_data_file,
                    "geomean", "per5", "per95", "per10", "per90")))),
          Tissue = tissue,
          Tissue = case_match(Tissue, 
-                         "jejunum i" ~ "jejunum I",
-                         "jejunum ii" ~ "jejunum II",
-                         "jejunum iii" ~ "jejunum III",
-                         "jejunum iv" ~ "jejunum IV",
-                         "ileum i" ~ "ileum I", 
-                         "ileum ii" ~ "ileum II",
-                         "ileum iii" ~ "ileum III",
-                         "ileum iv" ~ "ileum IV", 
-                         .default = Tissue),
+                             "jejunum i" ~ "jejunum I",
+                             "jejunum ii" ~ "jejunum II",
+                             "jejunum iii" ~ "jejunum III",
+                             "jejunum iv" ~ "jejunum IV",
+                             "ileum i" ~ "ileum I", 
+                             "ileum ii" ~ "ileum II",
+                             "ileum iii" ~ "ileum III",
+                             "ileum iv" ~ "ileum IV", 
+                             .default = Tissue),
          File = sim_data_file) %>%
       arrange(across(any_of(c("Compound", "Inhibitor", "Simulated",
                               "Individual", "Trial", "Time")))) %>%

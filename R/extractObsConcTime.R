@@ -72,19 +72,28 @@ extractObsConcTime <- function(obs_data_file,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   # If they didn't include ".xlsx" at the end, add that. At the same time, if
-   # they ended the files with XML, let's try just substituting xlsx for that.
-   # We'll check whether that file exists in a moment.
-   obs_data_file <- paste0(sub("\\.xml$|\\.xlsx$", "", obs_data_file), 
-                           ".xlsx")
+   # If they didn't include ".xlsx" at the end, add that. 
+   obs_data_file <- case_when(
+      str_detect(obs_data_file, "\\.xml$|\\.xlsx$") == FALSE ~ 
+         paste0(obs_data_file, ".xlsx"), 
+      .default = obs_data_file)
    
    # Checking that the file exists.
    if(file.exists(obs_data_file) == FALSE){
-      # Using warning instead of stop so that this will pass through to mult function. 
-      warning(wrapn(paste0("The file `", obs_data_file, 
-                     "` is not present, so it will be skipped.")), 
-              call. = FALSE)
-      return(data.frame())
+      # Try the opposite file extension if the one they supplied doesn't exist.
+      if(str_detect(obs_data_file, "\\.xml$")){
+         obs_data_file <- sub("xml", "xlsx", obs_data_file)
+      } else {
+         obs_data_file <- sub("xlsx", "xml", obs_data_file)
+      }
+      
+      if(file.exists(obs_data_file) == FALSE){
+         # Using warning instead of stop so that this will pass through to mult function. 
+         warning(wrapn(paste0("The file `", obs_data_file, 
+                              "` is not present, so it will be skipped.")), 
+                 call. = FALSE)
+         return(data.frame())
+      }
    }
    
    # Checking for file name issues
@@ -98,290 +107,32 @@ extractObsConcTime <- function(obs_data_file,
    }
    
    # Main body of function -------------------------------------------------
-   obs_data_xl <- suppressMessages(
-      tryCatch(readxl::read_excel(path = obs_data_file, 
-                                  sheet = "PK PD Profiles",
-                                  col_names = FALSE),
-               error = function(.){
-                  warning(paste0("The file `", obs_data_file, 
-                                 "` does not appear to be an Excel file of observed data that's ready to be converted to an XML file. We cannot extract any data."), 
-                          call. = FALSE)
-                  return(list())
-               }))
    
-   if(length(obs_data_xl) == 0){
-      warning(paste("The file", obs_data_file, "does not appear to be an Excel file of observed data that's ready to be converted to an XML file. We cannot extract any data."), 
-              call. = FALSE)
-      return(data.frame())
-   }
-   
-   # Checking on whether this was animal data
-   Animal <- str_detect(obs_data_xl[1, 1], "Animal")
-   
-   # Getting the meta data on this file
-   MetaRowNum <- which(obs_data_xl$...1 == "For all subjects") + 1
-   MetaRow <- as.character(obs_data_xl[MetaRowNum, ])
-   MetaRow <- MetaRow[1:(which(is.na(MetaRow) | MetaRow == "NA")[1]-1)]
-   
-   TimeUnits <- tolower(as.character(
-      obs_data_xl[MetaRowNum+1, which(MetaRow == "Time Units")]))
-   
-   CompoundCode <- c("1" = as.character(obs_data_xl[MetaRowNum+1, which(MetaRow == "DV")]),
-                     "2" = as.character(obs_data_xl[MetaRowNum+2, which(MetaRow == "DV")]),
-                     "3" = as.character(obs_data_xl[MetaRowNum+3, which(MetaRow == "DV")]))
-   
-   Smoke <- c("0" = as.character(obs_data_xl[MetaRowNum+1, 7]),
-              "1" = as.character(obs_data_xl[MetaRowNum+2, 7]),
-              "2" = as.character(obs_data_xl[MetaRowNum+3, 7]),
-              "3" = as.character(obs_data_xl[MetaRowNum+4, 7]))
-   
-   # Converting to appropriate ObsConcUnits as necessary
-   ObsConcUnits <- c("1" = as.character(obs_data_xl[MetaRowNum+1, which(MetaRow == "DV Unit")]),
-                     "2" = as.character(obs_data_xl[MetaRowNum+2, which(MetaRow == "DV Unit")]),
-                     "3" = as.character(obs_data_xl[MetaRowNum+3, which(MetaRow == "DV Unit")]))
-   
-   # Noting tissue
-   Tissue <- 
-      c(`ADC Plasma Free` = "plasma",
-        `ADC Plasma Total` = "plasma", 
-        `Adipose (Sub)` = "adipose", 
-        `Conjugated Antibody Plasma Free` = "plasma", 
-        `Conjugated Antibody Plasma Total` = "plasma",
-        `Conjugated Drug Plasma Free` = "plasma", 
-        `Conjugated Drug Plasma Total` = "plasma",
-        `Conjugated Protein Plasma Free` = "plasma", 
-        `Conjugated Protein Plasma Total` = "plasma",
-        `Inh 1 Blood` = "blood", 
-        `Inh 1 PD Response` = "PD response",
-        `Inh 1 Plasma` = "plasma", 
-        `Inh 1 Urine` = "urine",
-        `Inh 2 Blood` = "blood",
-        `Inh 2 Plasma` = "plasma", 
-        `Inh1 Met Blood` = "blood",
-        `Inh1 Met Plasma` = "plasma",
-        `Met (Sub) Urine` = "urine", 
-        `Met(Inh 1) Urine` = "urine",
-        `Organ Conc` = "solid organ",
-        `Organ Conc (Inb)` = "solid organ", 
-        `PM1(Sub) PD Response` = "PD response",
-        `Spinal CSF (Sub)` = "spinal CSF", 
-        `Sub (Inb) Blood` = "blood", 
-        `Sub (Inb) PD Response` = "PD response", 
-        `Sub (Inb) Plasma` = "plasma",
-        `Sub (Inb) Urine` = "urine",
-        `Sub Blood` = "blood", 
-        `Sub PD Response` = "PD response",
-        `Sub Placenta Whole Tissue Conc` = "placenta", 
-        `Sub Plasma` = "plasma",
-        `Sub Plasma Total Drug` = "plasma", 
-        `Sub PM1 Blood` = "blood",
-        `Sub PM1 Milk Conc` = "milk",
-        `Sub PM1 Plasma` = "plasma", 
-        `Sub PM2 Blood` = "blood",
-        `Sub PM2 Plasma` = "plasma", `Sub SM blood` = "blood", 
-        `Sub SM plasma` = "plasma",
-        `Sub Unbound Plasma` = "plasma", 
-        `Sub Urine` = "urine",
-        `Total Protein Conjugate Plasma Free` = "plasma", 
-        `Tumour Volume` = "tumour volume",
-        `Tumour Volume (Inb)` = "tumour volume"
-      )
-   
-   ObsCompoundIDs <- 
-      c(`ADC Plasma Free` = NA, # "free antibody-drug conjugate",
-        `ADC Plasma Total` = NA, # "total antibody-drug conjugate", 
-        `Adipose (Sub)` = "substrate",
-        `Conjugated Antibody Plasma Free` = NA, # "free conjugated antibody", 
-        `Conjugated Antibody Plasma Total` = NA, # "total conjugated antibody", 
-        `Conjugated Drug Plasma Free` = NA, # "free conjugated substrate", 
-        `Conjugated Drug Plasma Total` = NA, # "total conjugated substrate",
-        `Conjugated Protein Plasma Free` = NA, # "free conjugated protein", 
-        `Conjugated Protein Plasma Total` = "conjugated protein", # Good as of 11/4/22
-        `Inh 1 Blood` = "inhibitor 1", 
-        `Inh 1 PD Response` = "inhibitor 1", 
-        `Inh 1 Plasma` = "inhibitor 1", 
-        `Inh 1 Urine` = "inhibitor 1", 
-        `Inh 2 Blood` = "inhibitor 2", 
-        `Inh 2 Plasma` = "inhibitor 2", 
-        `Inh1 Met Blood` = "inhibitor 1 metabolite", 
-        `Inh1 Met Plasma` = "inhibitor 1 metabolite", 
-        `Met (Sub) Urine` = "substrate", 
-        `Met(Inh 1) Urine` = "inhibitor 1 metabolite", 
-        `Organ Conc` = "substrate", 
-        `Organ Conc (Inb)` = "substrate", 
-        `PM1(Sub) PD Response` = "primary metabolite 1", 
-        `Spinal CSF (Sub)` = "substrate", 
-        `Sub (Inb) Blood` = "substrate", 
-        `Sub (Inb) PD Response` = "substrate", 
-        `Sub (Inb) Plasma` = "substrate", 
-        `Sub (Inb) Urine` = "substrate", 
-        `Sub Blood` = "substrate", 
-        `Sub PD Response` = "substrate", 
-        `Sub Placenta Whole Tissue Conc` = "substrate", 
-        `Sub Plasma` = "substrate", 
-        `Sub Plasma Total Drug` = "substrate",
-        `Sub Plasma Total Drug` = "total substrate", 
-        `Sub PM1 Blood` = "primary metabolite 1", 
-        `Sub PM1 Milk Conc` = "primary metabolite 1", 
-        `Sub PM1 Plasma` = "primary metabolite 1", # This will become "released payload" if simulation involved an ADC
-        `Sub PM2 Blood` = "primary metabolite 2", 
-        `Sub PM2 Plasma` = "primary metabolite 2",
-        `Sub SM blood` = "secondary metabolite", 
-        `Sub SM plasma` = "secondary metabolite",
-        `Sub Unbound Plasma` = "substrate", 
-        `Sub Urine` = "substrate", 
-        `Total Protein Conjugate Plasma Free` = "total protein", # Good as of 11/4/22
-        `Tumour Volume` = "tumour volume",
-        `Tumour Volume (Inb)` = "tumour volume"
-      )
-   
-   ObsPerpetrators <- 
-      c(`ADC Plasma Free` = "none",
-        `ADC Plasma Total` = "none",
-        `Adipose (Sub)` = "none", 
-        `Conjugated Antibody Plasma Free` = "none",
-        `Conjugated Antibody Plasma Total` = "none", 
-        `Conjugated Drug Plasma Free` = "none",
-        `Conjugated Drug Plasma Total` = "none",
-        `Conjugated Protein Plasma Free` = "none", 
-        `Conjugated Protein Plasma Total` = "none",
-        `Inh 1 Blood` = "inhibitor", 
-        `Inh 1 PD Response` = "inhibitor", 
-        `Inh 1 Plasma` = "inhibitor",
-        `Inh 1 Urine` = "inhibitor",
-        `Inh 2 Blood` = "inhibitor", 
-        `Inh 2 Plasma` = "inhibitor",
-        `Inh1 Met Blood` = "inhibitor", 
-        `Inh1 Met Plasma` = "inhibitor",
-        `Met (Sub) Urine` = "none", 
-        `Met(Inh 1) Urine` = "inhibitor",
-        `Organ Conc` = "none",
-        `Organ Conc (Inb)` = "inhibitor", 
-        `PM1(Sub) PD Response` = "none",
-        `Spinal CSF (Sub)` = "none", 
-        `Sub (Inb) Blood` = "inhibitor",
-        `Sub (Inb) PD Response` = "inhibitor", 
-        `Sub (Inb) Plasma` = "inhibitor",
-        `Sub (Inb) Urine` = "none", 
-        `Sub Blood` = "none",
-        `Sub PD Response` = "none",
-        `Sub Placenta Whole Tissue Conc` = "none", 
-        `Sub Plasma` = "none",
-        `Sub Plasma Total Drug` = "none",
-        `Sub Plasma Total Drug` = "none", 
-        `Sub PM1 Blood` = "none",
-        `Sub PM1 Milk Conc` = "none",
-        `Sub PM1 Plasma` = "none", 
-        `Sub PM2 Blood` = "none",
-        `Sub PM2 Plasma` = "none",
-        `Sub SM blood` = "none", 
-        `Sub SM plasma` = "none",
-        `Sub Unbound Plasma` = "none",
-        `Sub Urine` = "none", 
-        `Total Protein Conjugate Plasma Free` = "none",
-        `Tumour Volume` = "none", 
-        `Tumour Volume (Inb)` = "inhibitor")
-   
-   ## Saving code for making ObsDVoptions here for convenience. Leave this
-   ## commented when running function.
-   
-   # ObsDVoptions <- data.frame(ID = names(Tissue),
-   #                            Tissue = Tissue) %>%
-   #     left_join(data.frame(ID = names(ObsCompoundIDs),
-   #                          CompoundID = ObsCompoundIDs)) %>%
-   #     left_join(data.frame(ID = names(ObsPerpetrators),
-   #                          Perpetrator = ObsPerpetrators))
-   # 
-   # save(ObsDVoptions, file = "data/ObsDVoptions.RData")
-   
-   HeaderRowNum <- which(obs_data_xl$...1 == "Subject ID")
-   MainColNames <- as.character(t(obs_data_xl[HeaderRowNum, ]))
-   LastCol <- which(is.na(MainColNames) | MainColNames == "NA")[1]-1
-   MainColNames <- MainColNames[1:(ifelse(is.na(LastCol), ncol(obs_data_xl), LastCol))]
-   
-   obs_data <- obs_data_xl[(HeaderRowNum+1):nrow(obs_data_xl),
-                           1:length(MainColNames)]
-   
-   # Figuring version of simulator b/c col names differ based on that
-   if(Animal){
-      SimVersion <- "animal"
-      names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting", 
-                           "DoseAmount", "InfDuration", "Weight_kg")
-      obs_data$SmokingStatus <- NA
-      obs_data$Species <- tolower(as.character(
-         obs_data_xl[MetaRowNum+1, which(MetaRow == "Species")]))
-      
+   # Call on either xlsx or xml version of sub fun here. 
+   if(str_detect(obs_data_file, "\\.xlsx$")){
+      obs_data_untidy <- extractObsConcTime_xlsx(obs_data_file)
    } else {
-      
-      SimVersion <- map(.x = ObsColNames, 
-                        .f = \(x) all(MainColNames %in% x$PEColName))
-      SimVersion <- SimVersion[which(SimVersion == TRUE)]
-      SimVersion <- names(SimVersion)[1]
-      
-      names(obs_data) <- ObsColNames[[SimVersion]]$ColName
-      obs_data$Species <- "human"
+      obs_data_untidy <- extractObsConcTime_XML(obs_data_file)
    }
    
-   # If there's nothing filled in for DVID, you can still get that to work with
-   # the simulator but it will break here. Fill in 1 for any NA values.
-   obs_data$DVID[which(is.na(obs_data$DVID) & is.na(obs_data$CompoundID))] <- 1
+   obs_data <- obs_data_untidy$obs_data
+   dose_data <- obs_data_untidy$dose_data
    
-   obs_data <- obs_data %>%
-      mutate(across(.cols = any_of(c("Time", "Conc", "SD_SE")), .fns = as.numeric)) %>%
-      mutate(CompoundID_obsfile = CompoundCode[as.character(DVID)],
-             CompoundID_temp = ObsCompoundIDs[CompoundID_obsfile],
-             CompoundID = case_when(is.na(CompoundID) ~ CompoundID_temp, 
-                                    complete.cases(CompoundID) ~ tolower(CompoundID)), 
-             Inhibitor = ObsPerpetrators[CompoundID_obsfile],
-             Simulated = FALSE,
-             Trial = "obs",
-             Tissue = Tissue[CompoundID_obsfile],
-             ObsFile = obs_data_file,
-             SmokingStatus = Smoke[SmokingStatus],
-             Time_units = TimeUnits,
-             Conc_units = ObsConcUnits[as.character(DVID)])
+   DoseCols <- ObsColNames %>% bind_rows() %>% 
+      select(PEColName, ColName, DosingInfo) %>% 
+      filter(DosingInfo == TRUE) %>% 
+      pull(ColName) %>% unique()
    
-   dose_data <- obs_data %>% filter(complete.cases(DoseRoute)) %>% 
-      mutate(Dose_units = gsub("\\(|\\)", "", Dose_units)) %>% 
-      select(any_of(c("Individual", "ObsFile", "CompoundID", "Time", 
-                      ObsColNames[[SimVersion]]$ColName[
-                         ObsColNames[[SimVersion]]$DosingInfo == TRUE]))) %>% 
-      mutate(across(.cols = everything(), .fns = as.character)) %>% 
-      pivot_longer(cols = -c(Individual, ObsFile, CompoundID, DoseAmount, Time), 
-                   names_to = "Parameter", 
-                   values_to = "Value") %>% 
-      mutate(ParameterCmpd = case_when(
-         CompoundID %in% AllCompounds$CompoundID[
-            AllCompounds$DosedCompoundID == "substrate"] ~ paste0(Parameter, "_sub"), 
-         CompoundID %in% AllCompounds$CompoundID[
-            AllCompounds$DosedCompoundID == "inhibitor 1"] ~ paste0(Parameter, "_inhib"), 
-         CompoundID %in% AllCompounds$CompoundID[
-            AllCompounds$DosedCompoundID == "inhibitor 2"] ~ paste0(Parameter, "_inhib2"))) %>% 
-      select(-Parameter) %>% 
-      pivot_wider(names_from = ParameterCmpd, 
-                  values_from = Value) %>% 
-      mutate(across(.cols = any_of(c(paste0(rep(c("DoseAmount", "InfDuration", 
-                                                  "DoseVol", "DoseConc"), 
-                                                each = 3), 
-                                            c("_sub", "_inhib", "_inhib2")), 
-                                     "Time")), 
-                    .fns = as.numeric))
+   NonDoseCols <- ObsColNames %>% bind_rows() %>% 
+      select(PEColName, ColName, DosingInfo) %>% 
+      filter(DosingInfo == FALSE) %>% 
+      pull(ColName) %>% unique()
    
+   # Using dosing info to set DoseNum in conc time data
    if(nrow(dose_data) > 0){
       
-      obs_data <- obs_data %>%
-         # Removing dosing rows b/c that's not conc time data. 
-         filter(is.na(DoseAmount)) %>% 
-         mutate(Simulated = FALSE) %>% 
-         # Removing data that should ONLY be in dose_data so that they don't
-         # mess up joining later
-         select(-any_of(ObsColNames[[SimVersion]]$ColName[
-            ObsColNames[[SimVersion]]$DosingInfo == TRUE]))
-      
       DoseInts <- dose_data %>%
-         select(any_of(c("Individual", "CompoundID", "Time", 
-                         ObsColNames[[SimVersion]]$ColName[
-                            ObsColNames[[SimVersion]]$DosingInfo == TRUE]))) %>% 
+         select(any_of(c("Individual", "CompoundID", "Time", DoseCols))) %>% 
          rename(DoseTime = Time)
       
       # Adding dose info to conc-time data.frame one CompoundID at a time.
@@ -425,14 +176,19 @@ extractObsConcTime <- function(obs_data_file,
       }
    }
    
-   obs_data <- bind_rows(obs_data) %>% 
+   obs_data <- bind_rows(obs_data)
+   
+   
+   
+   # Tidying and formatting --------------------------------------------------
+   
+   obs_data <- obs_data %>% 
       mutate(across(.cols = any_of(c("Age", "Weight_kg", "Height_cm",
                                      "SerumCreatinine_umolL", "HSA_gL", 
                                      "Haematocrit", "GestationalAge_wk", 
                                      "PlacentaVol_L", "FetalWt_kg")), 
                     .fns = as.numeric)) %>% 
-      select(any_of(c(ObsColNames[[SimVersion]]$ColName[
-         ObsColNames[[SimVersion]]$DosingInfo == FALSE], "Species", 
+      select(any_of(c(NonDoseCols, "Species", 
          "Inhibitor", "Simulated", "Trial", "Tissue", "ObsFile", 
          "Time_units", "Conc_units"))) 
    
