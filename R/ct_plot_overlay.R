@@ -1702,54 +1702,6 @@ ct_plot_overlay <- function(ct_dataframe,
    obs_dataframe <- obs_dataframe_temp
    rm(obs_dataframe_temp)
    
-   # Setting up the y axis using the subfunction ct_y_axis
-   Ylim_data <- bind_rows(sim_dataframe, obs_dataframe) %>%
-      mutate(Time_orig = Time)
-   
-   if("SD_SE" %in% names(Ylim_data)){
-      Ylim_data <- Ylim_data %>% 
-         mutate(MaxConc = Conc + ifelse(complete.cases(SD_SE), SD_SE, 0), 
-                MinConc = Conc - ifelse(complete.cases(SD_SE), SD_SE, 0))
-      
-      Ylim_data <- bind_rows(Ylim_data, 
-                             data.frame(Conc = c(
-                                max(Ylim_data$MaxConc, na.rm = T), 
-                                min(Ylim_data$MinConc, na.rm = T))))
-   }
-   
-   YStuff <- ct_y_axis(ADAMorAdvBrain = any(ADAM, AdvBrainModel),
-                       Tissue_subtype = switch(as.character(EnzPlot), 
-                                               "TRUE" = NA, 
-                                               "FALSE" = unique(sim_dataframe$Tissue_subtype)), 
-                       prettify_compound_names = prettify_compound_names,
-                       EnzPlot = any(c(EnzPlot, DissolutionProfPlot, ReleaseProfPlot)), 
-                       time_range = time_range,
-                       time_range_relative = time_range_relative,
-                       Ylim_data = Ylim_data, 
-                       pad_y_axis = pad_y_axis,
-                       normalize_by_dose = normalize_by_dose, 
-                       y_axis_limits_lin = y_axis_limits_lin, 
-                       y_axis_limits_log = y_axis_limits_log, 
-                       y_axis_interval = y_axis_interval)
-   
-   if("Tissue_subtype" %in% names(sim_dataframe) && 
-      length(unique(sim_dataframe$Tissue_subtype)) > 1){
-      warning("You have more than one subtype of tissue in the column Tissue_subtype, which is fine but does make it challenging to come up with a universally workable y axis label. We'll supply a generic one, but we recommend setting it yourself with `y_axis_label`.\n", 
-              call. = FALSE)
-   }
-   
-   ObsConcUnits <- YStuff$ObsConcUnits
-   ylab <- YStuff$ylab
-   YLabels <- YStuff$YLabels
-   YLogLabels <- YStuff$YLogLabels
-   YBreaks <- YStuff$YBreaks
-   YLogBreaks <- YStuff$YLogBreaks
-   Ylim_log <- YStuff$Ylim_log
-   YmaxRnd <- YStuff$YmaxRnd
-   pad_y_num <- YStuff$pad_y_num
-   pad_y_axis <- YStuff$pad_y_axis
-   
-   
    
    # Setting figure types and general aesthetics ------------------------------
    
@@ -1942,6 +1894,95 @@ ct_plot_overlay <- function(ct_dataframe,
                                      "colorBy_column", "FC1", "FC2")), 
                sep = " ", remove = FALSE)
    } 
+   
+   # Setting up the y axis using the subfunction ct_y_axis
+   Ylim_data <- bind_rows(
+      switch(figure_type, 
+             "percentiles" = sim_dataframe %>% 
+                filter(Trial %in% c(switch(mean_type, 
+                                           "arithmetic" = "mean", 
+                                           "geometric" = "geomean", 
+                                           "median" = "median"),
+                                    "per5", "per95")), 
+             
+             "trial means" = bind_rows(
+                sim_data_trial, 
+                sim_dataframe %>% 
+                   filter(Trial %in% c(switch(mean_type, 
+                                              "arithmetic" = "mean", 
+                                              "geometric" = "geomean", 
+                                              "median" = "median")))), 
+             
+             "percentile ribbon" = sim_dataframe %>% 
+                filter(Trial %in% c(switch(mean_type, 
+                                           "arithmetic" = "mean", 
+                                           "geometric" = "geomean", 
+                                           "median" = "median"),
+                                    "per5", "per95")), 
+             
+             "means only" = sim_data_frame %>% 
+                filter(Trial %in% c(switch(mean_type, 
+                                           "arithmetic" = "mean", 
+                                           "geometric" = "geomean", 
+                                           "median" = "median"))), 
+             
+             "Freddy" = bind_rows(
+                sim_data_trial, 
+                sim_data_frame %>% 
+                   filter(Trial %in% c(switch(mean_type, 
+                                              "arithmetic" = "mean", 
+                                              "geometric" = "geomean", 
+                                              "median" = "median"),
+                                       "per5", "per95")))
+             
+      ), 
+      
+      obs_dataframe) %>%
+      mutate(Time_orig = Time)
+   
+   if("SD_SE" %in% names(Ylim_data)){
+      Ylim_data <- Ylim_data %>% 
+         mutate(MaxConc = Conc + ifelse(complete.cases(SD_SE), SD_SE, 0), 
+                MinConc = Conc - ifelse(complete.cases(SD_SE), SD_SE, 0))
+      
+      Ylim_data <- bind_rows(Ylim_data, 
+                             data.frame(Conc = c(
+                                max(Ylim_data$MaxConc, na.rm = T), 
+                                min(Ylim_data$MinConc, na.rm = T))))
+   }
+   
+   YStuff <- ct_y_axis(ADAMorAdvBrain = any(ADAM, AdvBrainModel),
+                       Tissue_subtype = switch(as.character(EnzPlot), 
+                                               "TRUE" = NA, 
+                                               "FALSE" = unique(sim_dataframe$Tissue_subtype)), 
+                       prettify_compound_names = prettify_compound_names,
+                       EnzPlot = any(c(EnzPlot, DissolutionProfPlot, ReleaseProfPlot)), 
+                       time_range = time_range,
+                       time_range_relative = time_range_relative,
+                       Ylim_data = Ylim_data, 
+                       pad_y_axis = pad_y_axis,
+                       normalize_by_dose = normalize_by_dose, 
+                       y_axis_limits_lin = y_axis_limits_lin, 
+                       y_axis_limits_log = y_axis_limits_log, 
+                       y_axis_interval = y_axis_interval)
+   
+   if("Tissue_subtype" %in% names(sim_dataframe) && 
+      length(unique(sim_dataframe$Tissue_subtype)) > 1){
+      warning("You have more than one subtype of tissue in the column Tissue_subtype, which is fine but does make it challenging to come up with a universally workable y axis label. We'll supply a generic one, but we recommend setting it yourself with `y_axis_label`.\n", 
+              call. = FALSE)
+   }
+   
+   ObsConcUnits <- YStuff$ObsConcUnits
+   ylab <- YStuff$ylab
+   YLabels <- YStuff$YLabels
+   YLogLabels <- YStuff$YLogLabels
+   YBreaks <- YStuff$YBreaks
+   YLogBreaks <- YStuff$YLogBreaks
+   Ylim_log <- YStuff$Ylim_log
+   YmaxRnd <- YStuff$YmaxRnd
+   pad_y_num <- YStuff$pad_y_num
+   pad_y_axis <- YStuff$pad_y_axis
+   
    
    # tictoc::toc(log = TRUE)
    
@@ -2875,7 +2916,10 @@ ct_plot_overlay <- function(ct_dataframe,
    FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 
                               single_or_multiple_profiles = NumProfiles, 
                               plot_type = PlotType, 
-                              existing_exp_details = existing_exp_details, 
+                              existing_exp_details = 
+                                 filter_sims(existing_exp_details, 
+                                             which_sims = unique(ct_dataframe$File), 
+                                             include_or_omit = "include"), 
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log, 
                               figure_type = figure_type, 
