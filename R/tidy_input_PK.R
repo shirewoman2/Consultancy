@@ -132,8 +132,13 @@ tidy_input_PK <- function(PKparameters,
          InputWasDF <- FALSE
       }
    } else if("data.frame" %in% class(PKparameters)){
-      # This is when they have supplied a data.frame
-      InputWasDF <- TRUE
+      if(nrow(PKparameters) > 0){
+         InputWasDF <- FALSE
+         PKparameters <- data.frame(PKparameter = NA)
+      } else {
+         # This is when they have supplied a data.frame
+         InputWasDF <- TRUE
+      }
       
    } else {
       # This is when PKparameters is NA. 
@@ -150,10 +155,12 @@ tidy_input_PK <- function(PKparameters,
    
    # Dealing with situation in which user supplied a data.frame that they
    # probably read themselves and includes "" instead of NA
-   PKparameters <- PKparameters %>% 
-      mutate(across(.cols = everything(), 
-                    .fns = \(x) case_when(x == "" ~ NA, 
-                                          .default = x)))
+   if(nrow(PKparameters) > 0){
+      PKparameters <- PKparameters %>% 
+         mutate(across(.cols = everything(), 
+                       .fns = \(x) case_when(x == "" ~ NA, 
+                                             .default = x)))
+   }
    
    # Dealing with possible input from calc_PK_ratios
    FromCalcPKRatios <- any(str_detect(tolower(names(PKparameters)), "numerator")) | 
