@@ -9,9 +9,11 @@ make_trial_design_table(
   sims_to_include = NA,
   prettify_sim_data_file = NA,
   detail_set = "default",
+  prettify_compound_names = TRUE,
   include_shading = TRUE,
   font = "Palatino Linotype",
   fontsize = 11,
+  column_widths = NA,
   save_table = NA,
   page_orientation = "portrait"
 )
@@ -38,6 +40,18 @@ are not unique!}
 are "default" for a handful of standard columns or "all trial design" to
 get all possible trial design columns.}
 
+\item{prettify_compound_names}{TRUE (default) or FALSE on whether to make
+compound names prettier in the prettified column titles and in any Word
+output files. This was designed for simulations where the substrate and any
+metabolites, perpetrators, or perpetrator metabolites are among the
+standard options for the simulator, and leaving \code{prettify_compound_names =
+TRUE} will make the name of those compounds something more human readable.
+For example, "SV-Rifampicin-MD" will become "rifampicin", and
+"Sim-Midazolam" will become "midazolam". Alternatively, set each compound
+to the name you'd prefer to see in your table if you would like something
+different. For example, \code{prettify_compound_names = c("Ketoconazole-400 mg QD" =
+"ketoconazole PO", "StatinX with updated ka" = "superstatin")}.}
+
 \item{include_shading}{TRUE (default) or FALSE for whether to add shading to
 rows to make things easier to read. If this is set to TRUE, then the rows
 will be shaded every other row when there's no DDI or by which compound the
@@ -52,6 +66,10 @@ the latter is listed in PowerPoint and Word.}
 
 \item{fontsize}{the numeric font size for the output table. Default is 11
 point.}
+
+\item{column_widths}{optionally specify what the widths of the columns should
+be with a numeric vector of the widths in inches, e.g., \code{column_widths
+= c()}}
 
 \item{save_table}{optionally save the output table by supplying a file name
 in quotes here, e.g., "My nicely formatted table.docx".  Do not include any

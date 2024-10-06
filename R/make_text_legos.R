@@ -145,7 +145,9 @@ make_text_legos <- function(sim_data_file,
       
       NumDaysInhib <- suppressWarnings(
          Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
-      NumDaysInhib <- ifelse(is.na(NumDaysInhib), "**CUSTOM DOSING - FILL IN MANUALLY**",
+      NumDaysInhib <- ifelse(is.na(NumDaysInhib) & 
+                                DoseFreq_inhib != "single dose",
+                             "**CUSTOM DOSING - FILL IN MANUALLY**",
                              NumDaysInhib)
       
       DoseDay_ordinal <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]

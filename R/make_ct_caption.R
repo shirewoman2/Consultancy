@@ -61,22 +61,6 @@ make_ct_caption <- function(ct_dataframe,
                           .default = str_c(sort(unique(AllCompounds$DDIrole[
                              AllCompounds$CompoundID %in% CompoundID])), collapse = "-"))
    
-   # This defaults to "none" if nothing was supplied for
-   # existing_exp_details, so, if that's the case, hacking this afterwards to
-   # check for whatever inhibitor was present in the data.
-   MyPerpetrator <- determine_myperpetrator(existing_exp_details, 
-                                            prettify_compound_names = prettify_compound_names)
-   
-   if("Inhibitor" %in% names(ct_dataframe) &&
-      MyPerpetrator == "none" & any(ct_dataframe$Inhibitor != "none")){
-      
-      AllPerpsInCT <- unique(as.character(ct_dataframe$Inhibitor[
-         ct_dataframe$Inhibitor != "none"]))
-      MyPerpetrator <- ifelse(length(AllPerpsInCT) > 1, 
-                              str_comma(sort(AllPerpsInCT), conjunction = "or"), 
-                              AllPerpsInCT)
-   }
-   
    if(plot_type == "enzyme-abundance"){
       MyCompound <- str_comma(sort(unique(ct_dataframe$Enzyme)))
    } else {
@@ -111,6 +95,21 @@ make_ct_caption <- function(ct_dataframe,
          existing_exp_details <- NA
       } 
       
+      # determine_myperpetrator defaults to "none" if nothing was supplied for
+      # existing_exp_details, so that's why this is "none" automatically.
+      # Checking for whatever inhibitor was present in the data.
+      if("Inhibitor" %in% names(ct_dataframe) &&
+         any(ct_dataframe$Inhibitor != "none")){
+         
+         AllPerpsInCT <- unique(as.character(ct_dataframe$Inhibitor[
+            ct_dataframe$Inhibitor != "none"]))
+         MyPerpetrator <- ifelse(length(AllPerpsInCT) > 1, 
+                                 str_comma(sort(AllPerpsInCT), conjunction = "or"), 
+                                 AllPerpsInCT)
+      } else {
+         MyPerpetrator <- "none"
+      }
+      
       DetailsAvailable <- FALSE
       
       Pop <- "**healthy subjects / patients with [complaint]**"
@@ -136,6 +135,9 @@ make_ct_caption <- function(ct_dataframe,
                                           "include")
       
       DetailsAvailable <- TRUE
+      
+      MyPerpetrator <- determine_myperpetrator(existing_exp_details, 
+                                               prettify_compound_names = prettify_compound_names)
       
       TextPieces <- unique(ct_dataframe$File) %>% 
          set_names() %>% 
@@ -260,13 +262,21 @@ make_ct_caption <- function(ct_dataframe,
                    "perpetrator" = paste0(DosingText_inhib_lower, "."),
                    
                    "victim" = paste0(DosingText_sub_lower, 
-                                     " in the absence of ", MyPerpetrator, 
-                                     " (solid line) and on the ", 
-                                     DoseDay_ordinal, " day of ",
-                                     NumDaysInhib, " days of dosing of ",
-                                     MyPerpetrator, " ", Dose_inhib, " ",
-                                     Units_dose_inhib, " ",
-                                     DoseFreq_inhib, " (dashed line).")))
+                                     " at baseline (solid line) and ", 
+                                     ifelse(DoseFreq_inhib == "single dose", 
+                                            # single dose of perp 
+                                            paste0("following ", 
+                                                   DosingText_inhib_lower, 
+                                                   " (dashed line)."), 
+                                            
+                                            # multiple doses of perp
+                                            paste0("on the ", 
+                                                   DoseDay_ordinal, " day of ",
+                                                   NumDaysInhib, " days of dosing of ",
+                                                   MyPerpetrator, " ", Dose_inhib, " ",
+                                                   Units_dose_inhib, " ",
+                                                   DoseFreq_inhib, " (dashed line).")))
+            ))
          
       } else {
          

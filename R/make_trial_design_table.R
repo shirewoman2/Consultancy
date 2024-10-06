@@ -17,6 +17,17 @@
 #' @param detail_set optionally specify which details you want. Current options
 #'   are "default" for a handful of standard columns or "all trial design" to
 #'   get all possible trial design columns.
+#' @param prettify_compound_names TRUE (default) or FALSE on whether to make
+#'   compound names prettier in the prettified column titles and in any Word
+#'   output files. This was designed for simulations where the substrate and any
+#'   metabolites, perpetrators, or perpetrator metabolites are among the
+#'   standard options for the simulator, and leaving \code{prettify_compound_names =
+#'   TRUE} will make the name of those compounds something more human readable.
+#'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
+#'   "Sim-Midazolam" will become "midazolam". Alternatively, set each compound
+#'   to the name you'd prefer to see in your table if you would like something
+#'   different. For example, \code{prettify_compound_names = c("Ketoconazole-400 mg QD" =
+#'   "ketoconazole PO", "StatinX with updated ka" = "superstatin")}.
 #' @param font font to use. Default is "Arial" and any fonts available on your
 #'   machine in either Word or PowerPoint should be acceptable. If you get Times
 #'   New Roman in your table when you asked for something else, it means that
@@ -25,6 +36,9 @@
 #'   the latter is listed in PowerPoint and Word.
 #' @param fontsize the numeric font size for the output table. Default is 11
 #'   point.
+#' @param column_widths optionally specify what the widths of the columns should
+#'   be with a numeric vector of the widths in inches, e.g., \code{column_widths
+#'   = c()}
 #' @param include_shading TRUE (default) or FALSE for whether to add shading to
 #'   rows to make things easier to read. If this is set to TRUE, then the rows
 #'   will be shaded every other row when there's no DDI or by which compound the
@@ -74,9 +88,11 @@ make_trial_design_table <- function(existing_exp_details,
                                     sims_to_include = NA, 
                                     prettify_sim_data_file = NA, 
                                     detail_set = "default", 
+                                    prettify_compound_names = TRUE, 
                                     include_shading = TRUE, 
                                     font = "Palatino Linotype", 
                                     fontsize = 11, 
+                                    column_widths = NA, 
                                     save_table = NA,
                                     page_orientation = "portrait"){
    
@@ -108,6 +124,13 @@ make_trial_design_table <- function(existing_exp_details,
       }
    }
    
+   if(class(prettify_compound_names) == "character" &&
+      is.null(names(prettify_compound_names))){
+      warning(wrapn("You have supplied values for `prettify_compound_names` but not assigned them with compound names, so we're not sure what values to replace."), 
+              call. = FALSE)
+      prettify_compound_names <- FALSE
+   }
+   
    
    # Main function ------------------------------------------------------------
    
@@ -117,6 +140,26 @@ make_trial_design_table <- function(existing_exp_details,
       existing_exp_details <- filter_sims(existing_exp_details, 
                                           sims_to_include, 
                                           "include")
+   }
+   
+   # Prettifying as requested
+   if("logical" %in% class(prettify_compound_names)){
+      if(prettify_compound_names){
+         existing_exp_details$MainDetails <- 
+            existing_exp_details$MainDetails %>% 
+            mutate(across(.cols = any_of(AllCompounds$DetailNames), 
+                          .fns = prettify_compound_name))
+      }
+   } else {
+      # this is when they have supplied a character vector for what to use for
+      # each compound name
+      for(d in AllCompounds$DetailNames){
+         for(cmpd in names(prettify_compound_names)){
+            existing_exp_details$MainDetails[, d][
+               which(existing_exp_details$MainDetails[, d] == cmpd)] <- 
+               prettify_compound_names[cmpd]
+         }
+      }
    }
    
    if(detail_set == "default"){
@@ -166,7 +209,7 @@ make_trial_design_table <- function(existing_exp_details,
                                      Notes == "Compound name" ~ "Substrate name", 
                                   CompoundID == "inhibitor 1" & 
                                      Inhib2Present == FALSE & 
-                                     Notes == "Compound name" ~ "Inhibitor name", 
+                                     Notes == "Compound name" ~ "Perpetrator name", 
                                   CompoundID == "inhibitor 1" & 
                                      Inhib2Present == TRUE & 
                                      Notes == "Compound name" ~ "Inhibitor 1 name", 
@@ -189,6 +232,19 @@ make_trial_design_table <- function(existing_exp_details,
          select(Parameter, everything())
    )
    
+   # Error catching column_widths now that we have DF
+   if("logical" %in% class(column_widths) == FALSE){
+      if("numeric" %in% class(column_widths) == FALSE){
+         warning(wrapn("You have supplied something other than numeric data for the column widths, so we don't know what you want and will ignore this."), 
+                 call. = FALSE)
+         column_widths <- NA
+      } else {
+         # Making sure we have more than enough values
+         column_widths <- rep(column_widths, ncol(DF))
+      }
+   } 
+   
+   # Document title
    title_document  <- paste("Trial design for", 
                             ifelse(length(existing_exp_details$MainDetails$File) == 1, 
                                    paste("the simulation", 
@@ -223,6 +279,14 @@ make_trial_design_table <- function(existing_exp_details,
                              font = font) %>% 
          flextable::delete_columns(j = which(names(DF) == "CompoundID"))
    }
+   
+   # Setting columnn widths. Note that there is one fewer column now b/c
+   # CompoundID is not included.
+   for(col in 1:(ncol(DF)-1)){
+      FT <- FT %>% 
+         flextable::width(j = col, width = column_widths[col])
+   }
+   
    
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
