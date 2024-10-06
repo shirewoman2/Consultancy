@@ -3,16 +3,18 @@
 #' UNDER CONSTRUCTION.
 #'
 #' @param demog_dataframe the output from running \code{\link{extractDemog}}.
+#' @param sims_to_include optionally specify which simulations to include. These
+#'   must be included in \code{demog_dataframe} in the column "File".
 #' @param graph_title title to use on the plots
 #' @param demog_parameters demographic parameters to include. We're starting
 #'   with a limited set: \itemize{\item{Individual parameters, which will be
-#'   displayed as either a kernel density plot or a boxplot depending on your 
+#'   displayed as either a kernel density plot or a boxplot depending on your
 #'   choice for \code{variability_display}: \itemize{
-#'   
+#'
 #'   \item{"Age" (age in years)}
 #'
 #'   \item{"AGP_gL" (alpha-1-acid glycoprotein in g/L; "AGP" is fine)}
-#'   
+#'
 #'   \item{"BMI_kgm2" ("BMI" is fine)}
 #'
 #'   \item{"BrainWt_g" (brain weight; "Brain" is fine)}
@@ -39,14 +41,14 @@
 #'
 #'   \item{"Weight_kg" (weight in kg; "Weight" is fine)}
 #'
-#'   \item{"RenalFunction" (renal function as calculated by the GFR in 
-#'   mL/min/m squared body surface area divided by the reference GFR for that 
-#'   sex: 120 for female subjects and 130 for male subjects as of V23 of the 
+#'   \item{"RenalFunction" (renal function as calculated by the GFR in
+#'   mL/min/m squared body surface area divided by the reference GFR for that
+#'   sex: 120 for female subjects and 130 for male subjects as of V23 of the
 #'   Simcyp Simulator)}}}
 #'
 #'   \itemize{Comparisons of two parameters, which will create a scatter
 #'   plot: \itemize{
-#'   
+#'
 #'   \item{"Weight vs Height"}
 #'
 #'   \item{"Height vs Age"}
@@ -57,7 +59,7 @@
 #'
 #'   If you want only a subset
 #'   of those, list them in a character vector, e.g., \code{demog_parameters = c("Age",
-#'   "Height_cm", "Weight_kg")}. Plots will be in the order you list. 
+#'   "Height_cm", "Weight_kg")}. Plots will be in the order you list.
 #' @param variability_display How should the variability be shown? Options are
 #'   "kernel density" (default, a type of smoothed histogram) or "boxplot". Any
 #'   demographic parameters requested in the form of "X vs Y", e.g., "weight vs
@@ -71,6 +73,9 @@
 #'   reasonable guess will be used.
 #' @param facet_by_sex TRUE or FALSE (default) for whether to break up the
 #'   graphs into facets based on the sex of the subjects
+#' @param facet_column_additional optionally specify an additional column to
+#'   facet the graphs by horizontally. If \code{facet_by_sex} is set to TRUE,
+#'   the graphs will be broken up vertically by sex.
 #' @param border_facets TRUE (default) or FALSE for whether to include a border
 #'   around the facets if the graphs are broken up by the sex of the subjects
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
@@ -79,6 +84,19 @@
 #'   used for determining which color lines and/or points will be. This should
 #'   be unquoted, e.g., \code{colorBy_column = File}. If left blank, we will
 #'   color by the simulation file name.
+#' @param color_labels optionally specify a character vector for how you'd like
+#'   the labels for whatever you choose for \code{colorBy_column} to show up in
+#'   the legend. For example, use \code{color_labels = c("file 1.xlsx" =
+#'   "healthy subjects", "file 2.xlsx" = "renally impaired subjects")} to
+#'   indicate which simulations represent what. The order in the legend will
+#'   match the order designated here.
+#' @param legend_label_color optionally indicate on the legend something
+#'   explanatory about what the colors represent. For example, if
+#'   \code{colorBy_column = File} and \code{legend_label_color = "Population"},
+#'   that will make the label above the file names in the legend more
+#'   explanatory than just "File". The default is to use whatever the column
+#'   name is for \code{colorBy_column}. If you don't want a label for this
+#'   legend item, set this to "none".
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -138,6 +156,7 @@
 #' @examples
 #' # none yet
 demog_plot_sim <- function(demog_dataframe, 
+                           sims_to_include = "all", 
                            demog_parameters = NA, 
                            variability_display = "kernel density", 
                            colorBy_column, 
@@ -149,6 +168,7 @@ demog_plot_sim <- function(demog_dataframe,
                            ncol = NULL, 
                            nrow = NULL, 
                            facet_by_sex = TRUE, 
+                           facet_column_additional, 
                            border_facets = TRUE, 
                            graph_labels = TRUE){
    
@@ -167,9 +187,19 @@ demog_plot_sim <- function(demog_dataframe,
    }
    
    
+   # Keeping only requested sims ----------------------------------------------
+   
+   if(all(sims_to_include == "all") == FALSE){
+      demog_dataframe <- filter_sims(demog_dataframe, 
+                                     which_sims = sims_to_include, 
+                                     include_or_omit = "include")
+   }
+   
+   
    # Setting things up for nonstandard evaluation ----------------------------
    
    colorBy_column <- rlang::enquo(colorBy_column)
+   facet_column_additional <- rlang::enquo(facet_column_additional)
    
    if(as_label(colorBy_column) == "<empty>"){
       if("File" %in% names(demog_dataframe) == FALSE){
@@ -287,6 +317,15 @@ demog_plot_sim <- function(demog_dataframe,
          }
       }
    }
+   
+   # Faceting
+   if(as_label(facet_column_additional) != "<empty>"){
+      demog_dataframe <- demog_dataframe %>% 
+         mutate(FC = !!facet_column_additional)
+   }
+   
+   
+   # Possible demographic parameters -----------------------------------------
    
    PossDemogParams <- data.frame(Parameter = c("Age", 
                                                "AGP_gL",
@@ -490,7 +529,7 @@ demog_plot_sim <- function(demog_dataframe,
       
       suppressWarnings(
          G <- ggplot(demog_dataframe, aes(x = MyVar, fill = colorBy_column)) +
-            geom_density(alpha = 0.5, show.legend = FALSE) +
+            geom_density(alpha = 0.5) +
             ylab("Distribution") +
             xlab(DemogLabs[Var])
       )
@@ -504,8 +543,7 @@ demog_plot_sim <- function(demog_dataframe,
       G <- G +
          scale_fill_manual(values = MyColors) +
          theme_consultancy(border = border_facets) + 
-         theme(legend.position = "none", 
-               strip.placement = "outside")
+         theme(strip.placement = "outside")
       
       return(G)
    }
@@ -531,8 +569,7 @@ demog_plot_sim <- function(demog_dataframe,
       G <- G +
          scale_fill_manual(values = MyColors) +
          theme_consultancy(border = border_facets) + 
-         theme(legend.position = "none", 
-               strip.placement = "outside")
+         theme(strip.placement = "outside")
       
       return(G)
    }
@@ -546,13 +583,12 @@ demog_plot_sim <- function(demog_dataframe,
             ggplot(demog_dataframe, 
                    aes(x = age, y = colorBy_column, fill = colorBy_column)) +
             facet_grid(sex ~ ., switch = "y") +
-            geom_violin(alpha = 0.7, show.legend = FALSE) +
+            geom_violin(alpha = 0.7) +
             scale_fill_manual(values = MyColors) +
             ylab("Sex") +
             xlab("Age (years)") +
             theme_consultancy(border = border_facets) + 
-            theme(legend.position = "none", 
-                  strip.placement = "outside")
+            theme(strip.placement = "outside")
          
          if(complete.cases(legend_label_color)){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
@@ -566,7 +602,7 @@ demog_plot_sim <- function(demog_dataframe,
       } else if(yy == "sex"){
          
          PercFemale <- demog_dataframe %>% 
-            group_by(colorBy_column) %>% 
+            group_by(across(.cols = any_of(c("colorBy_column", "fc")))) %>% 
             summarize(NumF = length(which(sex == "F")), 
                       NumTot = n()) %>% 
             ungroup() %>% 
@@ -583,8 +619,7 @@ demog_plot_sim <- function(demog_dataframe,
             xlab(NULL) +
             labs(fill = NULL) +
             theme_consultancy(border = border_facets) + 
-            theme(legend.position = "none", 
-                  strip.placement = "outside")
+            theme(strip.placement = "outside")
          
          if(complete.cases(legend_label_color)){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
@@ -637,10 +672,31 @@ demog_plot_sim <- function(demog_dataframe,
       }
       
       if(facet_by_sex & yy != "sex"){
-         MyGraphs[[yy]] <- MyGraphs[[yy]] + 
-            facet_grid(sex ~ ., switch = "y") +
-            theme(strip.placement = "outside")
+         if(as_label(facet_column_additional) != "<empty>"){
+            MyGraphs[[yy]] <- MyGraphs[[yy]] + 
+               facet_grid(sex ~ fc, switch = "y") +
+               theme(strip.placement = "outside")
+            
+         } else {
+            MyGraphs[[yy]] <- MyGraphs[[yy]] + 
+               facet_grid(sex ~ ., switch = "y") +
+               theme(strip.placement = "outside")
+            
+         }
+      } else {
+         if(as_label(facet_column_additional) != "<empty>"){
+            MyGraphs[[yy]] <- MyGraphs[[yy]] + 
+               facet_grid(. ~ fc, switch = "y") +
+               theme(strip.placement = "outside")
+         }  
       }
+      
+      # Only include the legend for the 1st graph
+      if(yy != Graphs[1]){
+         MyGraphs[[yy]] <- MyGraphs[[yy]] +
+            theme(legend.position = "none")
+      }
+      
    }
    
    patchwork::wrap_plots(MyGraphs) +

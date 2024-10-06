@@ -6,6 +6,7 @@
 \usage{
 demog_plot_sim(
   demog_dataframe,
+  sims_to_include = "all",
   demog_parameters = NA,
   variability_display = "kernel density",
   colorBy_column,
@@ -17,6 +18,7 @@ demog_plot_sim(
   ncol = NULL,
   nrow = NULL,
   facet_by_sex = TRUE,
+  facet_column_additional,
   border_facets = TRUE,
   graph_labels = TRUE
 )
@@ -24,15 +26,18 @@ demog_plot_sim(
 \arguments{
 \item{demog_dataframe}{the output from running \code{\link{extractDemog}}.}
 
+\item{sims_to_include}{optionally specify which simulations to include. These
+must be included in \code{demog_dataframe} in the column "File".}
+
 \item{demog_parameters}{demographic parameters to include. We're starting
   with a limited set: \itemize{\item{Individual parameters, which will be
-  displayed as either a kernel density plot or a boxplot depending on your 
+  displayed as either a kernel density plot or a boxplot depending on your
   choice for \code{variability_display}: \itemize{
-  
+
   \item{"Age" (age in years)}
 
   \item{"AGP_gL" (alpha-1-acid glycoprotein in g/L; "AGP" is fine)}
-  
+
   \item{"BMI_kgm2" ("BMI" is fine)}
 
   \item{"BrainWt_g" (brain weight; "Brain" is fine)}
@@ -59,14 +64,14 @@ demog_plot_sim(
 
   \item{"Weight_kg" (weight in kg; "Weight" is fine)}
 
-  \item{"RenalFunction" (renal function as calculated by the GFR in 
-  mL/min/m squared body surface area divided by the reference GFR for that 
-  sex: 120 for female subjects and 130 for male subjects as of V23 of the 
+  \item{"RenalFunction" (renal function as calculated by the GFR in
+  mL/min/m squared body surface area divided by the reference GFR for that
+  sex: 120 for female subjects and 130 for male subjects as of V23 of the
   Simcyp Simulator)}}}
 
   \itemize{Comparisons of two parameters, which will create a scatter
   plot: \itemize{
-  
+
   \item{"Weight vs Height"}
 
   \item{"Height vs Age"}
@@ -88,6 +93,21 @@ height", will always be shown as scatter plots.}
 used for determining which color lines and/or points will be. This should
 be unquoted, e.g., \code{colorBy_column = File}. If left blank, we will
 color by the simulation file name.}
+
+\item{color_labels}{optionally specify a character vector for how you'd like
+the labels for whatever you choose for \code{colorBy_column} to show up in
+the legend. For example, use \code{color_labels = c("file 1.xlsx" =
+"healthy subjects", "file 2.xlsx" = "renally impaired subjects")} to
+indicate which simulations represent what. The order in the legend will
+match the order designated here.}
+
+\item{legend_label_color}{optionally indicate on the legend something
+explanatory about what the colors represent. For example, if
+\code{colorBy_column = File} and \code{legend_label_color = "Population"},
+that will make the label above the file names in the legend more
+explanatory than just "File". The default is to use whatever the column
+name is for \code{colorBy_column}. If you don't want a label for this
+legend item, set this to "none".}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
@@ -154,6 +174,10 @@ reasonable guess will be used.}
 
 \item{facet_by_sex}{TRUE or FALSE (default) for whether to break up the
 graphs into facets based on the sex of the subjects}
+
+\item{facet_column_additional}{optionally specify an additional column to
+facet the graphs by horizontally. If \code{facet_by_sex} is set to TRUE,
+the graphs will be broken up vertically by sex.}
 
 \item{border_facets}{TRUE (default) or FALSE for whether to include a border
 around the facets if the graphs are broken up by the sex of the subjects}
