@@ -495,8 +495,8 @@ annotateDetails <- function(existing_exp_details,
                                   "Notes", "Value")))) %>% 
          summarize(DataSource = str_comma(sort(DataSource), conjunction = "or")) %>% 
          mutate(DataSource = ifelse(str_detect(DataSource, "calculated or Summary|Summary or calculated") &
-                                  Detail == "SimDuration", 
-                               "Summary", DataSource),
+                                       Detail == "SimDuration", 
+                                    "Summary", DataSource),
                 SimulatorSection = case_when(DataSource == "population" ~ "Population", 
                                              TRUE ~ SimulatorSection)) %>% 
          ungroup())
@@ -513,19 +513,19 @@ annotateDetails <- function(existing_exp_details,
       mutate(
          # Elimination details
          DataSource = ifelse(str_detect(Detail, EliminationRegex), 
-                        "Input Sheet", DataSource), 
+                             "Input Sheet", DataSource), 
          SimulatorSection = ifelse(str_detect(Detail, EliminationRegex), 
                                    "Elimination", SimulatorSection), 
          
          # Interaction details
          DataSource = ifelse(str_detect(Detail, InteractionRegex), 
-                        "Input Sheet", DataSource),
+                             "Input Sheet", DataSource),
          SimulatorSection = ifelse(str_detect(Detail, InteractionRegex), 
                                    "Interaction", SimulatorSection), 
          
          # Transport details   
          DataSource = ifelse(str_detect(Detail, "^Transport"), 
-                        "Input Sheet", DataSource),
+                             "Input Sheet", DataSource),
          SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
                                    "Transport", SimulatorSection), 
          
@@ -636,6 +636,14 @@ annotateDetails <- function(existing_exp_details,
          DF <- existing_exp_details[[item]]
          
          if(is.null(DF) || nrow(DF) == 0){return(data.frame())}
+         
+         # If user requested information from a specific Simulator section, then
+         # only return custom dosing info if that section was "trial design".
+         if(complete.cases(simulator_section) &&
+            str_detect(simulator_section, "trial design") == FALSE & 
+            item == "CustomDosing"){
+            return(data.frame())
+         }
          
          suppressMessages(
             DF <- left_join(DF, CompoundNames)
@@ -786,7 +794,16 @@ annotateDetails <- function(existing_exp_details,
                     call. = FALSE)
          }
          
-         DF <- DF %>% filter(SimulatorSection %in% MySections)
+         # The name of the population should show up BOTH for when people want
+         # to see the trial design AND when they want population parameters.
+         # Hacking things a bit to deal with that.
+         if(str_detect(simulator_section, "population")){
+            DF <- DF %>% filter(SimulatorSection %in% MySections |
+                                   Detail == "Population")
+         } else {
+            DF <- DF %>% filter(SimulatorSection %in% MySections)
+            
+         }
          
          if(nrow(DF) == 0){
             return(data.frame())
