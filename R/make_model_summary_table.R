@@ -274,6 +274,8 @@ make_model_summary_table <- function(existing_exp_details,
    
    if("data.frame" %in% class(parameters_to_add)){
       FT <- FT %>% 
+         mutate(across(.cols = everything(), 
+                       .fns = as.character)) %>% 
          bind_rows(parameters_to_add %>% 
                       mutate(across(.cols = everything(), 
                                     .fns = as.character))) %>% 
@@ -314,11 +316,29 @@ make_model_summary_table <- function(existing_exp_details,
    #                 by = "Detail")
    # }
    
+   FT <- FT %>% 
+      rename("Section of model" = SimulatorSection) %>% 
+      filter(complete.cases(Value) & 
+                !Detail %in% c("SimulatorVersion", AllCompounds$DetailNames))
+   
+   if(nrow(FT) == 0){
+      warning(paste0(wrapn("There are no rows in the model summary table. This generally happens when you have different compounds in your simulations, and there are no parameters with the same value for all. To see what data this function is attempting to use for your table, please try running:"), 
+                     "\n     annotateDetails(existing_exp_details = ", 
+                     deparse(substitute(existing_exp_details)), 
+                     ",\n                     sims_to_include = ", 
+                     paste0("\"", sims_to_include, "\""), 
+                     ",\n                     compoundID = ", 
+                     ifelse(is.na(compoundID), compoundID, paste0("\"", compoundID, "\"")), 
+                     ",\n                     compound = ", 
+                     ifelse(is.na(compound), compound, paste0("\"", compound, "\"")), ")",
+                     "\n\n", 
+                     wrapn("Model summary tables will *only* include values present in the column titled something like 'All files have...', so if that column contains only NA's, you'll get a table with 0 rows here. We recommend checking which simulations are included and maybe limiting that with the argument 'sims_to_include`.")), 
+              call. = FALSE)
+      
+   }
+   
    suppressWarnings(
       FT <- FT %>% 
-         rename("Section of model" = SimulatorSection) %>% 
-         filter(complete.cases(Value) & 
-                   !Detail %in% c("SimulatorVersion", AllCompounds$DetailNames)) %>% 
          left_join(AllExpDetails %>% select(Detail, ReportTableText) %>% 
                       mutate(Detail = sub(str_c(AllCompounds$Suffix, 
                                                 collapse = "|"), "", 

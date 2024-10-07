@@ -62,7 +62,8 @@ format_scripts <- function(DF,
       }
       
       DF <- DF %>%
-         mutate(Parameter = {{parameter_column}})
+         mutate(Parameter = {{parameter_column}}) %>% 
+         select(- !!parameter_column)
       
       if(remove_compound_suffix){
          DF <- DF %>%
