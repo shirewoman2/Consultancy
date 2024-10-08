@@ -78,7 +78,10 @@ tidyPop <- function(input_pop,
              BackExtras = str_sub(Step1, end+1, nchar(Step1)), 
              Population = as.character(PopNiceNames[SimulatorName]), 
              Population = ifelse(is.na(Population), Step1, Population),
-             Population = paste0(FrontExtras, Population, BackExtras),
+             Population = paste0(ifelse(is.na(FrontExtras), 
+                                        "", FrontExtras), 
+                                 Population, 
+                                 ifelse(is.na(BackExtras), "", BackExtras)),
              PopulationSimple = ifelse(str_detect(tolower(Population), "patients|subjects"),
                                        str_trim(
                                           str_extract(
