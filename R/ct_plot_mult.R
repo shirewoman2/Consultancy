@@ -256,10 +256,8 @@
 #'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
 #'   result in a figure caption that reads in part "Clinical Study 101, fed
 #'   cohort".
-#' @param return_caption TRUE or FALSE (default) for whether to return any
-#'   caption text to use with the graph. This works best if you supply something
-#'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
-#'   output a list of the graph, the figure heading, and the figure caption.
+#' @param report_progress TRUE or FALSE (default) for whether show a progress
+#'   message on creating and saving graphs
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
@@ -334,6 +332,7 @@ ct_plot_mult <- function(ct_dataframe,
                          graph_labels = TRUE,
                          prettify_compound_names = TRUE,
                          name_clinical_study = NA, 
+                         report_progress = FALSE, 
                          save_graph = NA,
                          file_suffix = NA,
                          fig_height = 8,
@@ -392,18 +391,29 @@ ct_plot_mult <- function(ct_dataframe,
    }
    
    ct_dataframe <- ct_dataframe %>% 
-      mutate(Tissue_subtype = ifelse(is.na(Tissue_subtype),
-                                     "none", Tissue_subtype),
-             GraphLabs = paste(File, CompoundID, Tissue, Tissue_subtype, sep = "."))
+      mutate(Tissue_subtype = data.table::fifelse(is.na(Tissue_subtype), 
+                                                  "none", 
+                                                  as.character(Tissue_subtype)), 
+             # Could add the below commented-out code to deal w/possibility that
+             # user has included my separation marker in their file names, but
+             # it takes longer. Thinking about whether it's worth it. On a large
+             # dataset, it adds ~5 sec. 
+             # File_orig = File, 
+             # File = gsub("__", "-", File), 
+             GraphLabs = paste(File, CompoundID, Tissue, Tissue_subtype, sep = "__"))
    
    # Checking for situations where they'll get the same file name for more than
-   # one set of data
-   DatasetCheck <- ct_dataframe %>% filter(Simulated == TRUE) %>% 
-      select(File, Tissue, CompoundID, Tissue_subtype, GraphLabs) %>% 
-      unique()
+   # one set of data. This is also going to be used for making graph titles if
+   # they have specified some but not all.
+   DatasetCheck <- unique(ct_dataframe$GraphLabs[ct_dataframe$Simulated == TRUE])
+   DatasetCheck <- data.frame(GraphLabs = DatasetCheck) %>% 
+      separate(col = GraphLabs, 
+               into = c("File", "CompoundID", "Tissue", "Tissue_subtype"), 
+               sep = "__", 
+               remove = FALSE)
    
    if(any(duplicated(DatasetCheck$File)) == FALSE){
-      ct_dataframe <- ct_dataframe %>% 
+      ct_dataframe <- ct_dataframe %>%
          mutate(GraphLabs = File)
       DatasetCheck$GraphLabs <- DatasetCheck$File
    }
@@ -564,6 +574,8 @@ ct_plot_mult <- function(ct_dataframe,
       # print(i)
       # print(head(ct_dataframe[[i]]))
       
+      if(report_progress){message(paste0("Creating graph ID ", i))}
+      
       AllGraphs[[i]] <- 
          ct_plot(ct_dataframe = ct_dataframe[[i]], 
                  figure_type = figure_type,
@@ -669,6 +681,8 @@ ct_plot_mult <- function(ct_dataframe,
                                       paste0(" subsection ADAM ", Split_i[5])),
                                FileName)
          } 
+         
+         if(report_progress){message(paste0("Saving graph ID ", i))}
          
          ggsave(FileName, 
                 height = fig_height, width = fig_width, dpi = 600, 

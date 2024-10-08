@@ -32,6 +32,7 @@ ct_plot_mult(
   graph_labels = TRUE,
   prettify_compound_names = TRUE,
   name_clinical_study = NA,
+  report_progress = FALSE,
   save_graph = NA,
   file_suffix = NA,
   fig_height = 8,
@@ -288,6 +289,9 @@ example, specifying \code{name_clinical_study = "101, fed cohort"} will
 result in a figure caption that reads in part "Clinical Study 101, fed
 cohort".}
 
+\item{report_progress}{TRUE or FALSE (default) for whether show a progress
+message on creating and saving graphs}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 If you leave off ".png" or ".docx", it will be saved as a png file, but if
@@ -313,11 +317,6 @@ percentiles.png". This is only used when \code{graph_arrangement =
 \item{fig_width}{figure width in inches; default is 8}
 
 \item{...}{arguments that pass through to \code{\link{ct_plot}}}
-
-\item{return_caption}{TRUE or FALSE (default) for whether to return any
-caption text to use with the graph. This works best if you supply something
-for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
-output a list of the graph, the figure heading, and the figure caption.}
 }
 \value{
 a set of arranged ggplot2 graphs and/or saved files of those graphs
