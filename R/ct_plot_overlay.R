@@ -2913,13 +2913,17 @@ ct_plot_overlay <- function(ct_dataframe,
       }
    }
    
+   if("logical" %in% class(existing_exp_details) == FALSE){
+      existing_exp_details <- harmonize_details(existing_exp_details)
+      existing_exp_details <- filter_sims(existing_exp_details,
+                                          which_sims = unique(ct_dataframe$File),
+                                          include_or_omit = "include")
+   }
+   
    FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 
                               single_or_multiple_profiles = NumProfiles, 
                               plot_type = PlotType, 
-                              existing_exp_details = 
-                                 filter_sims(existing_exp_details, 
-                                             which_sims = unique(ct_dataframe$File), 
-                                             include_or_omit = "include"), 
+                              existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log, 
                               figure_type = figure_type, 
