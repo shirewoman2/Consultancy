@@ -1920,7 +1920,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                            "median" = "median"),
                                     "per5", "per95")), 
              
-             "means only" = sim_data_frame %>% 
+             "means only" = sim_dataframe %>% 
                 filter(Trial %in% c(switch(mean_type, 
                                            "arithmetic" = "mean", 
                                            "geometric" = "geomean", 
@@ -1928,7 +1928,7 @@ ct_plot_overlay <- function(ct_dataframe,
              
              "Freddy" = bind_rows(
                 sim_data_trial, 
-                sim_data_frame %>% 
+                sim_dataframe %>% 
                    filter(Trial %in% c(switch(mean_type, 
                                               "arithmetic" = "mean", 
                                               "geometric" = "geomean", 
