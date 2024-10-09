@@ -89,7 +89,7 @@
 #'   point.
 #' @param column_widths optionally specify what the widths of the columns should
 #'   be with a numeric vector of the widths in inches, e.g., 
-#'   \code{column_widths = c()}
+#'   \code{column_widths = c(1, 2, 1, 1)}
 #' @param save_table optionally save the output table by supplying a file name
 #'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
 #'   slashes, dollar signs, or periods in the file name. If you leave off the
@@ -203,10 +203,12 @@ make_model_summary_table <- function(existing_exp_details,
       }
    } 
    
-   if("logical" %in% class(references)){
-      column_widths <- c(1, 2, 1.5, 1.5)
-   } else {
-      column_widths <- c(2, 3, 1.5)
+   if(all(is.na(column_widths))){
+      if("logical" %in% class(references) == FALSE){
+         column_widths <- c(1, 2, 1.5, 1.5)
+      } else {
+         column_widths <- c(2, 3, 1.5)
+      }
    }
    
    

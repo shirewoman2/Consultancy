@@ -631,8 +631,8 @@ extractPK <- function(sim_data_file,
    # Filtering out irrelevant PK ----------------------------------------------
    if(Deets$PopRepSim == "Yes"){
       warning(wrapn(paste0("The simulator file supplied, `", 
-                     sim_data_file, 
-                     "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped.")),
+                           sim_data_file, 
+                           "`, is for a population-representative simulation and thus doesn't have any aggregate data. This function only really works with aggregate data, so this file will be skipped.")),
               call. = FALSE)
       return(list())
    }
@@ -914,9 +914,9 @@ extractPK <- function(sim_data_file,
          
          if(length(ColNum) == 0 | is.na(ColNum)){
             if(any(PKparameters_orig %in% c("all", "AUC tab")) == FALSE){
-               warning(paste0("The column with information for ", i,
-                              " on the tab 'AUC' cannot be found in the file ", 
-                              sim_data_file, "."), 
+               warning(wrapn(paste0("The column with information for ", i,
+                                    " on the tab 'AUC' cannot be found in the file '", 
+                                    sim_data_file, "'.")), 
                        call. = FALSE)
             }
             suppressWarnings(suppressMessages(rm(ToDetect, ColsStart_subcol, EndCol, PossCol, ColNum)))
@@ -1002,9 +1002,9 @@ extractPK <- function(sim_data_file,
             
             if(length(ColNum) == 0 | is.na(ColNum)){
                if(any(PKparameters_orig %in% c("all", "AUC tab") == FALSE)){
-                  warning(paste0("The column with information for ", i,
-                                 " on the tab 'AUC' cannot be found in the file ", 
-                                 sim_data_file, "."), 
+                  warning(wrapn(paste0("The column with information for ", i,
+                                       " on the tab 'AUC' cannot be found in the file '", 
+                                       sim_data_file, "'.")), 
                           call. = FALSE)
                }
                suppressWarnings(suppressMessages(rm(ToDetect, ColsStart_subcol, EndCol, PossCol, ColNum)))
@@ -1259,9 +1259,9 @@ extractPK <- function(sim_data_file,
                
                if(length(ColNum) == 0 | is.na(ColNum)){
                   if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
-                     warning(paste0("The column with information for ", i,
-                                    " on the tab `Overall Fa Fg` cannot be found in the file ", 
-                                    sim_data_file, "."), 
+                     warning(wrapn(paste0("The column with information for ", i,
+                                          " on the tab `Overall Fa Fg` cannot be found in the file '", 
+                                          sim_data_file, "'.")), 
                              call. = FALSE)
                   }
                   suppressMessages(rm(ToDetect, ColNum))
@@ -1349,9 +1349,9 @@ extractPK <- function(sim_data_file,
                   
                   if(length(ColNum) == 0 | is.na(ColNum)){
                      if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
-                        warning(paste0("The column with information for ", i,
-                                       " on the tab 'Absorption' cannot be found in the file ", 
-                                       sim_data_file, "."), 
+                        warning(wrapn(paste0("The column with information for ", i,
+                                             " on the tab 'Absorption' cannot be found in the file '", 
+                                             sim_data_file, "'.")), 
                                 call. = FALSE)
                      }
                      suppressMessages(rm(ToDetect, ColNum))
@@ -1422,9 +1422,9 @@ extractPK <- function(sim_data_file,
                      ToDetect$SearchText))]
                   
                   if(length(ColNum) == 0){
-                     warning(paste0("The column with information for ", i,
-                                    " on the tab 'Absorption' cannot be found in the file ", 
-                                    sim_data_file, "."), 
+                     warning(wrapn(paste0("The column with information for ", i,
+                                          " on the tab 'Absorption' cannot be found in the file '", 
+                                          sim_data_file, "'.")), 
                              call. = FALSE)
                      suppressWarnings(rm(ColNum, SearchText))
                      next
@@ -1498,9 +1498,9 @@ extractPK <- function(sim_data_file,
             
             if(length(ColNum) == 0 | is.na(ColNum)){
                if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
-                  warning(paste0("The column with information for ", i,
-                                 " on the tab 'Drug-Population Parameters' cannot be found in the file ", 
-                                 sim_data_file, "."), 
+                  warning(wrapn(paste0("The column with information for ", i,
+                                       " on the tab 'Drug-Population Parameters' cannot be found in the file '", 
+                                       sim_data_file, "'.")), 
                           call. = FALSE)
                }
                suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
@@ -1644,9 +1644,9 @@ extractPK <- function(sim_data_file,
             
             if(length(ColNum) == 0 | is.na(ColNum)){
                if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
-                  warning(paste0("The column with information for ", i,
-                                 " on the tab 'Clearance Trials SS' cannot be found in the file ", 
-                                 sim_data_file, "."), 
+                  warning(wrapn(paste0("The column with information for ", i,
+                                       " on the tab 'Clearance Trials SS' cannot be found in the file '", 
+                                       sim_data_file, "'.")), 
                           call. = FALSE)
                }
                suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
@@ -1708,9 +1708,9 @@ extractPK <- function(sim_data_file,
             
             if(length(ColNum) == 0 | is.na(ColNum)){
                if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
-                  warning(paste0("The column with information for ", i,
-                                 " on the tab 'Clearance Trials SS' cannot be found in the file ", 
-                                 sim_data_file, "."), 
+                  warning(wrapn(paste0("The column with information for ", i,
+                                       " on the tab 'Clearance Trials SS' cannot be found in the file '", 
+                                       sim_data_file, "'.")), 
                           call. = FALSE)
                }
                suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
@@ -1810,9 +1810,9 @@ extractPK <- function(sim_data_file,
             
             if(length(ColNum) == 0 | is.na(ColNum)){
                if(any(PKparameters_orig %in% c("all", "Regional ADAM")) == FALSE){
-                  warning(paste0("The column with information for ", i,
-                                 " on the tab `Regional ADAM Fractions (Sub)` cannot be found in the file ", 
-                                 sim_data_file, "."), 
+                  warning(wrapn(paste0("The column with information for ", i,
+                                       " on the tab `Regional ADAM Fractions (Sub)` cannot be found in the file '", 
+                                       sim_data_file, "'.")), 
                           call. = FALSE)
                }
                suppressMessages(rm(ToDetect, ColNum))

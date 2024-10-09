@@ -777,8 +777,8 @@ tidy_input_PK <- function(PKparameters,
    
    if(length(BadParams) > 0 &&
       any(complete.cases(BadParams))){
-      warning(paste0("The following PK parameters are not among the possible options and will be ignored:\n", 
-                     str_c(BadParams, collapse = "\n")), 
+      warning(paste0(wrapn("The following PK parameters are not among the possible options and will be ignored:"), 
+                     str_c(BadParams, collapse = "\n"), "\n"), 
               call. = FALSE)
       PKparameters <- PKparameters %>% 
          filter(PKparameter %in% BadParams == FALSE)
@@ -1173,7 +1173,7 @@ tidy_input_PK <- function(PKparameters,
                 AllPKParameters$PKparameter_nodosenum & is.na(Sheet))
    
    if(any(PKparameters$DoseNumProblem)){
-      warning("You have not specified which interval you want for the following PK:\n", 
+      warning(wrapn("You have not specified which interval you want for the following PK:"), 
               call. = FALSE)
       
       Problem <- PKparameters %>% filter(DoseNumProblem == TRUE) %>% 

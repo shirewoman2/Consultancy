@@ -88,7 +88,7 @@ point.}
 
 \item{column_widths}{optionally specify what the widths of the columns should
 be with a numeric vector of the widths in inches, e.g., 
-\code{column_widths = c()}}
+\code{column_widths = c(1, 2, 1, 1)}}
 
 \item{save_table}{optionally save the output table by supplying a file name
 in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
