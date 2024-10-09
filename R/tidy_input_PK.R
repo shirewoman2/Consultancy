@@ -132,7 +132,7 @@ tidy_input_PK <- function(PKparameters,
          InputWasDF <- FALSE
       }
    } else if("data.frame" %in% class(PKparameters)){
-      if(nrow(PKparameters) > 0){
+      if(nrow(PKparameters) == 0){
          InputWasDF <- FALSE
          PKparameters <- data.frame(PKparameter = NA)
       } else {
