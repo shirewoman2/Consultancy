@@ -1,7 +1,7 @@
 #' Summarize a PBPK model using parameters pulled from simulations - UNDER
 #' CONSTRUCTION
 #'
-#' @description \code{make_model_summary_table} is meant for use with writing
+#' @description \code{make_Simcyp_inputs_table} is meant for use with writing
 #'   compound summary pdfs. For making the table, it will pull model information
 #'   from simulations and arrange and format the information neatly.
 #'   Additionally, if you supply the references for each parameter, it will
@@ -19,7 +19,7 @@
 #'   "substrate", detail_set = "Simcyp inputs")}
 #'
 #'   and the object Details is what you will provide as input for
-#'   \code{make_model_summary_table} and the object TableCheck will show you
+#'   \code{make_Simcyp_inputs_table} and the object TableCheck will show you
 #'   what information will be included and how to refer to each parameter or
 #'   detail. The values listed for each parameter will come from the column
 #'   titled something like "All files have this value for this compound".
@@ -105,7 +105,7 @@
 #' @examples
 #' # none yet
 
-make_model_summary_table <- function(existing_exp_details,
+make_Simcyp_inputs_table <- function(existing_exp_details,
                                      sims_to_include = "all", 
                                      compoundID = NA, 
                                      compound = NA, 
