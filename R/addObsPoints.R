@@ -65,14 +65,11 @@ addObsPoints <- function(obs_dataframe,
       
    }
    
-   # Adjusting shapes for when user has left obs_color as NA, figure type is not
-   # "Freddy" or "compound summary", and shape is a mixed shape b/c they
-   # probably just want outlines in that situation.
-   if(all(is.na(obs_color_user)) &
-      figure_type %in% c("freddy", "compound summary") == FALSE & 
-      all(is.na(obs_shape_user)) &
-      MixShape){
-      
+   # Adjusting shapes for when user has left obs_color as NA, figure type is
+   # not "Freddy", and shape is a mixed shape b/c they probably just want
+   # outlines in that situation.
+   if(is.na(obs_color_user) & figure_type != "freddy" & 
+      all(is.na(obs_shape_user)) & MixShape){
       MixToOutline <- 0:14
       names(MixToOutline) <- as.character(MixToOutline)
       MixToOutline <- c(MixToOutline, 
@@ -96,25 +93,13 @@ addObsPoints <- function(obs_dataframe,
    
    if(connect_obs_points){
       A <- A +
-         geom_line(data = obs_dataframe,
-                   alpha = obs_line_trans,
-                   show.legend = FALSE, 
+         geom_line(data = obs_dataframe, alpha = obs_line_trans,
                    linewidth = ifelse(is.na(line_width), 0.5, line_width * 0.5))
    }
    
    if(MixShape){
       
-      if(figure_type == "compound summary"){
-         A <-  A +
-            # making obs point outlines
-            geom_point(data = obs_dataframe,
-                       aes(color = Study, shape = Study), 
-                       alpha = obs_line_trans,
-                       fill = NA, 
-                       size = obs_size,
-                       show.legend = LegCheck)
-         
-      } else if(str_detect(AES, "linetype")){
+      if(str_detect(AES, "linetype")){
          A <- A +
             # making obs point outlines
             switch(as.character(MapObsData),
@@ -196,16 +181,7 @@ addObsPoints <- function(obs_dataframe,
          obs_line_trans <- obs_fill_trans
       }
       
-      if(figure_type == "compound summary"){
-         A <- A +
-            # making obs point outlines
-            geom_point(data = obs_dataframe,
-                       aes(color = Study, shape = Study), 
-                       alpha = obs_line_trans,
-                       size = obs_size,
-                       show.legend = LegCheck)
-         
-      } else if(str_detect(AES, "linetype")){
+      if(str_detect(AES, "linetype")){
          A <- A +
             # making obs point outlines
             switch(as.character(MapObsData),
@@ -253,17 +229,7 @@ addObsPoints <- function(obs_dataframe,
          obs_fill_trans <- obs_line_trans
       }
       
-      if(figure_type == "compound summary"){
-         A <- A +
-            # making obs point outlines
-            geom_point(data = obs_dataframe,
-                       aes(color = Study, shape = Study, 
-                           fill = Study), 
-                       alpha = obs_fill_trans,
-                       size = obs_size,
-                       show.legend = LegCheck)
-         
-      } else if(str_detect(AES, "linetype")){
+      if(str_detect(AES, "linetype")){
          A <- A +
             # making obs point fill
             switch(as.character(MapObsData),
@@ -276,8 +242,8 @@ addObsPoints <- function(obs_dataframe,
                                          color = obs_color,
                                          size = obs_size,
                                          fill = obs_color,
-                                         show.legend = LegCheck)) 
-         
+                                         show.legend = LegCheck)) +
+            scale_shape_manual(values = obs_shape) 
       } else {
          A <- A +
             # making obs point fill

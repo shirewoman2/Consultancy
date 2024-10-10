@@ -1665,7 +1665,7 @@ ct_plot_overlay <- function(ct_dataframe,
                        time_range = time_range, 
                        t0 = "simulation start",
                        pad_x_axis = pad_x_axis,
-                       MyCompoundID = AnchorCompound, 
+                       compoundToExtract = AnchorCompound, 
                        EnzPlot = EnzPlot)
    
    xlab <- XStuff$xlab
@@ -1781,7 +1781,7 @@ ct_plot_overlay <- function(ct_dataframe,
    AesthetStuff <- set_aesthet(line_type = linetypes, 
                                figure_type = figure_type,
                                MyPerpetrator = MyPerpetrator, 
-                               MyCompoundID = switch(as.character(EnzPlot),
+                               compoundToExtract = switch(as.character(EnzPlot),
                                                           "TRUE" = "substrate", 
                                                           "FALSE" = unique(sim_dataframe$CompoundID)),
                                obs_shape = obs_shape, obs_color = obs_color,
