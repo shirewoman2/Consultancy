@@ -63,7 +63,7 @@ make_example_PK_input <- function(){
       Q1 <- readline("   ")
       message("\n")
       
-      if(Q1 %in% as.numeric(1:length(Opts_ratios)) == FALSE){
+      if(Q1 %in% as.numeric(1:length(Opts_main)) == FALSE){
          message(paste0("Please try again. You must enter a number from 1 to ", 
                         length(Opts_main), ".\n"))
          message(str_wrap("What kind of PK data do you want to include in the PK table you're making? There are examples with or without observed data for comparing to simulated. Options are:"))
@@ -71,7 +71,7 @@ make_example_PK_input <- function(){
          Q1 <- readline("   ")
          message("\n")
          
-         if(Q1 %in% as.numeric(1:length(Opts_ratios)) == FALSE){
+         if(Q1 %in% as.numeric(1:length(Opts_main)) == FALSE){
             stop("Sorry, we don't know what you want. Please start over.", 
                  call. = FALSE)
          }
@@ -82,7 +82,7 @@ make_example_PK_input <- function(){
                                length(Opts_main), " or `n` for no)  "))
          message("\n")
          
-         if((Q2 %in% as.numeric(1:length(Opts_ratios)) == FALSE) &
+         if((Q2 %in% as.numeric(1:length(Opts_main)) == FALSE) &
             (str_sub(tolower(Q2), 1, 2) != "n")){
             message(paste0("Please try again. You must enter a number from 1 to ",
                            length(Opts_main), " or `n`.\n"))
@@ -92,7 +92,7 @@ make_example_PK_input <- function(){
             Q2 <- readline("   ")
             message("\n")
             
-            if((Q2 %in% as.numeric(1:length(Opts_ratios)) == FALSE) &
+            if((Q2 %in% as.numeric(1:length(Opts_main)) == FALSE) &
                (str_sub(tolower(Q2), 1, 2) != "n")){
                stop("Sorry, we don't know what you want. Please start over.", 
                     call. = FALSE)
