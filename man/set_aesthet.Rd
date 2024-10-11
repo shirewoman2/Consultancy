@@ -8,7 +8,7 @@ set_aesthet(
   line_type,
   figure_type,
   MyPerpetrator,
-  compoundToExtract,
+  MyCompoundID,
   obs_shape,
   line_color,
   obs_color,
@@ -23,7 +23,7 @@ set_aesthet(
 
 \item{MyPerpetrator}{concatenated string of all perpetrators involved}
 
-\item{compoundToExtract}{compound user wants}
+\item{MyCompoundID}{compound user wants}
 
 \item{obs_shape}{user-specified observed data shape}
 

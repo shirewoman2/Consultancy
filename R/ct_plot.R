@@ -372,11 +372,14 @@
 #'   Simulator output, so the old "subsection_ADAM" name we had used for which
 #'   subtype of tissue it was no longer works as well. Please use
 #'   "Tissue_subtype" instead going forward.
-#' @param name_clinical_study optionally specify the name of the clinical study
-#'   for any observed data. This only affects the caption of the graph. For
-#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
-#'   result in a figure caption that reads in part "Clinical Study 101, fed
-#'   cohort".
+#' @param name_clinical_study optionally specify the name(s) of the clinical
+#'   study or studies for any observed data. This only affects the caption of
+#'   the graph. For example, specifying \code{name_clinical_study = "101, fed
+#'   cohort"} will result in a figure caption that reads in part "clinical study
+#'   101, fed cohort". If you have more than one study, that's fine; we'll take
+#'   care of stringing them together appropriately. Just list them as a
+#'   character vector, e.g., \code{name_clinical_study = c("101",
+#'   "102", "103")} will become "clinical studies 101, 102, and 103."
 #' @param study_design_matches_obs optionally specify whether the study design
 #'   for the simulated data matched that of any observed data. This only affects
 #'   the caption of the graph. If set to TRUE, this assumes that the number of

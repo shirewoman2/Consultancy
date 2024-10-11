@@ -8,8 +8,10 @@ format_table_simple(
   DF,
   shading_column,
   merge_shaded_cells = TRUE,
+  merge_columns = NA,
   font = "Palatino Linotype",
   fontsize = 11,
+  alignment = "left",
   save_table = NA,
   page_orientation = "portrait",
   title_document = NA,
@@ -35,6 +37,18 @@ cells that have the same shade. This only applies when one of the columns
 in the input data.frame is used for deciding when to alternate shading,
 that is, \code{shading_column} has a value.}
 
+\item{merge_columns}{a vector of quoted column names or of numeric column
+positions that should be merged vertically whenever the values are the
+same. For example, \code{merge_columns = c("File", "Tissue")} will cause
+the cells in the columns "File" and "Tissue" to merge vertically whenever
+the same value shows up in consecutive rows. Similarly, \code{merge_columns
+= c(1, 3, 5)} will merge vertically the 1st, 3rd, and 5th columns whenever
+the values are the same. Note: This is different from most other functions
+in the SimcypConsultancy package, which require unquoted column names.
+Honestly, we just don't know how code things for you to supply a variable
+number of unquoted column names for a single argument; we've just hit a
+coding knowledge limitation here!}
+
 \item{font}{font to use. Default is "Palatino Linotype" and any fonts
 available on your machine in either Word or PowerPoint should be
 acceptable. If you get Times New Roman in your table when you asked for
@@ -45,6 +59,9 @@ Word.}
 
 \item{fontsize}{the numeric font size for the output table. Default is 11
 point.}
+
+\item{alignment}{alignment of text throughout table. Options are "left"
+(default), "right", "center", or "justify".}
 
 \item{save_table}{optionally save the output table by supplying a file name
 in quotes here, e.g., "My nicely formatted table.docx".  Do not include any

@@ -38,6 +38,8 @@
 #'   Word.
 #' @param fontsize the numeric font size for the output table. Default is 11
 #'   point.
+#' @param alignment alignment of text throughout table. Options are "left"
+#'   (default), "right", "center", or "justify".
 #' @param save_table optionally save the output table by supplying a file name
 #'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
 #'   slashes, dollar signs, or periods in the file name. If you leave off the
@@ -65,14 +67,41 @@ format_table_simple <- function(DF,
                                 merge_columns = NA, 
                                 font = "Palatino Linotype", 
                                 fontsize = 11, 
+                                alignment = "left", 
                                 save_table = NA,
                                 page_orientation = "portrait", 
                                 title_document = NA, 
                                 table_caption = NA){
    
+   # Error catching --------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   page_orientation <- tolower(page_orientation)[1]
+   if(page_orientation %in% c("portrait", "landscape") == FALSE){
+      warning("You requested something other than `portrait` or `landscape` for the page orientation in the Word output, and those are the only options. We'll use the default of `portrait`.\n", 
+              call. = FALSE)
+      page_orientation <- "portrait"
+   }
+   
+   alignment <- tolower(alignment)[1]
+   alignment <- ifelse(str_detect(alignment, "just"), "justify", alignment)
+   if(is.na(alignment) | 
+      alignment %in% c("left", "right", "center", "justify") == FALSE){
+      warning(wrapn("You have specified something for the text alignment that is not among the available options. We'll use the default text alignment of 'left'."), 
+              call. = FALSE)
+      alignment <- "left"
+   }
+   
    # flextable function w/the specs I want. Note: I had a lot of trouble when I
    # tried to use a modified version of formatTable_Simcyp here. I kept getting
-   # latex errors about extra carriage returns. Could not figure out the problem!
+   # latex errors about extra carriage returns. Could not figure out the
+   # problem! This may have been solely b/c I was trying to knit to pdf, and
+   # LaTeX just isn't that compatible with flextable. Maybe that's the whole
+   # issue and I could revert to having one of these functions just be a shell
+   # for some specific defaults for the other?
    
    # Catching instances where the font name isn't *exactly* the same as what's
    # in Word or PowerPoint. Will have to slowly gather examples of this.
@@ -170,7 +199,11 @@ format_table_simple <- function(DF,
                       fontname = font) %>%
       flextable::bold(part = "header") %>% 
       flextable::width(width = (7 / ncol(DF))) %>%
-      flextable::fix_border_issues()
+      flextable::fix_border_issues() %>% 
+      
+      # Set the text alignment
+      flextable::align(part = "all", align = alignment)
+   
    
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){

@@ -100,7 +100,17 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   \emph{sharp}, makes it easy to see the defining characteristics of the
   data, and I recommend checking it out, even just for your own purposes of
   examining your data. If the color is too much for you but you like the
-  rest, try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}}}
+  rest, try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}
+
+  \item{"compound summary"}{matches the concentration-time plots in Simcyp
+  compound summary files. These are similar to "Freddy" types of graphs in
+  that they show the mean as a dark line, the trial means as lighter lines,
+  dashed lines for the 5th and 95th percentiles, but then they additionally
+  color observed points by a column titled "Study" that you will need to add
+  to your data. (And yes, it \emph{must} be titled "Study" exactly.) 
+  Everything else in these graphs will be gray or black, but
+  you can specify the color of the observed points with the argument
+  "obs_color" and the shape of the points with the argument "obs_shape".}}}
 
 \item{Tissue_subtype}{Certain types of models have additional subtypes of
 tissues. Currently, the SimcypConsultancy package supports ADAM-model and
@@ -413,11 +423,14 @@ caption text to use with the graph. This works best if you supply something
 for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
 output a list of the graph, the figure heading, and the figure caption.}
 
-\item{name_clinical_study}{optionally specify the name of the clinical study
-for any observed data. This only affects the caption of the graph. For
-example, specifying \code{name_clinical_study = "101, fed cohort"} will
-result in a figure caption that reads in part "Clinical Study 101, fed
-cohort".}
+\item{name_clinical_study}{optionally specify the name(s) of the clinical
+study or studies for any observed data. This only affects the caption of
+the graph. For example, specifying \code{name_clinical_study = "101, fed
+cohort"} will result in a figure caption that reads in part "clinical study
+101, fed cohort". If you have more than one study, that's fine; we'll take
+care of stringing them together appropriately. Just list them as a
+character vector, e.g., \code{name_clinical_study = c("101",
+"102", "103")} will become "clinical studies 101, 102, and 103."}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -451,31 +464,30 @@ Output is a ggplot2 graph or two ggplot2 graphs arranged with
   ggpubr::ggarrange()
 }
 \description{
-Using observed and simulated concentration-time data generated from the
-function \code{\link{extractConcTime}}, make publication-quality graphs that
-match the consultancy template formatting instructions. We've tried to
-include a fair number of options here for flexibility, but many of the
-function arguments are optional; most of the time, you'll get decent-looking
-graphs while only setting a minimal number of arguments. If you want to plot
-enzyme abundance data, please see \code{\link{enz_plot}}. Please also see
-"Details" at the bottom of this help file for some general notes and advice
-on how to use this function most effectively to get the graph you want. For
-detailed instructions and examples, please see the SharePoint file "Simcyp
-PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
-examples and instructions/Concentration-time plots 1 - one sim at a
-time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
-include a link to it here.)
-}
-\details{
+Using observed and simulated concentration-time data generated
+  from the function \code{\link{extractConcTime}}, make publication-quality
+  graphs that match the consultancy template formatting instructions. We've
+  tried to include a fair number of options here for flexibility, but many of
+  the function arguments are optional; most of the time, you'll get
+  decent-looking graphs while only setting a minimal number of arguments. If
+  you want to plot enzyme abundance data, please see \code{\link{enz_plot}}.
+  Please also see "Details" at the bottom of this help file for some general
+  notes and advice on how to use this function most effectively to get the
+  graph you want. For detailed instructions and examples, please see the
+  SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+  Files/SimcypConsultancy function examples and
+  instructions/Concentration-time plots 1 - one sim at a
+  time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+  include a link to it here.)
+
 \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 inhibitors, or inhibitor metabolites are available in all tissues. If it's
-not present in your Excel output, we can't graph it here.}\item{When observed
+not present in your output, we can't graph it here.}\item{When observed
 data are included in a simulator output file, because the simulator output
 does not explicitly say whether those observed data were in the presence of
 a perpetrator, this function cannot tell the difference and will thus assume
 all observed data included in the simulator output were for the substrate in
-the \emph{absence} of any perpetrator. It will further assume that the compound
-the observed data is for is the same as \code{compoundToExtract}. If you want
+the \emph{absence} of any perpetrator. If you want
 to specify which compound the observed data were for and/or whether any
 perpetrators were present, please supply an observed data file to the argument
 \code{obs_data_file}.} \item{If you attempt to use data generated by
