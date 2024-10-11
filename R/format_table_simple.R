@@ -18,6 +18,17 @@
 #'   cells that have the same shade. This only applies when one of the columns
 #'   in the input data.frame is used for deciding when to alternate shading,
 #'   that is, \code{shading_column} has a value.
+#' @param merge_columns a vector of quoted column names or of numeric column
+#'   positions that should be merged vertically whenever the values are the
+#'   same. For example, \code{merge_columns = c("File", "Tissue")} will cause
+#'   the cells in the columns "File" and "Tissue" to merge vertically whenever
+#'   the same value shows up in consecutive rows. Similarly, \code{merge_columns
+#'   = c(1, 3, 5)} will merge vertically the 1st, 3rd, and 5th columns whenever
+#'   the values are the same. Note: This is different from most other functions
+#'   in the SimcypConsultancy package, which require unquoted column names.
+#'   Honestly, we just don't know how code things for you to supply a variable
+#'   number of unquoted column names for a single argument; we've just hit a
+#'   coding knowledge limitation here!
 #' @param font font to use. Default is "Palatino Linotype" and any fonts
 #'   available on your machine in either Word or PowerPoint should be
 #'   acceptable. If you get Times New Roman in your table when you asked for
@@ -51,6 +62,7 @@
 format_table_simple <- function(DF, 
                                 shading_column, 
                                 merge_shaded_cells = TRUE, 
+                                merge_columns = NA, 
                                 font = "Palatino Linotype", 
                                 fontsize = 11, 
                                 save_table = NA,
@@ -115,6 +127,37 @@ format_table_simple <- function(DF,
          }
       }
       
+   }
+   
+   if(class(merge_columns) %in% "numeric"){
+      if(all(merge_columns %in% 1:ncol(DF)) == FALSE){
+         warning(paste0("You requested that we vertically merge more columns that are present in your data. Specifically, there is/are no column(s) ", 
+                        str_comma(setdiff(merge_columns, 1:ncol(DF)), conjunction = "or"), 
+                        ". These will be ignored.\n"), 
+                 call. = FALSE)
+         merge_columns <- merge_columns[merge_columns %in% 1:ncol(DF)]   
+      }
+      
+      merge_columns <- names(DF)[merge_columns]
+   }
+   
+   if(class(merge_columns) %in% "character"){
+      BadCols <- setdiff(merge_columns, names(DF))
+      if(length(BadCols) > 0){
+         warning(paste0("You requested that we vertically merge some columns that are not present in your data. Specifically, the column(s) ", 
+                        str_comma(paste0("`", BadCols, "`")), 
+                        " is/are not present. These will be ignored. If you believe that's an error, please carefully check that what you specified for `merge_columns` perfectly matches the spelling of each column name.\n"), 
+                 call. = FALSE)
+         
+         merge_columns <- merge_columns[merge_columns %in% names(DF)]
+      }
+   }
+   
+   if(any(complete.cases(merge_columns))){
+      for(mc in merge_columns){
+         FT <- FT %>% 
+            flextable::merge_v(j = mc)
+      }
    }
    
    FT <- FT %>% 
