@@ -333,6 +333,12 @@ make_ct_caption <- function(ct_dataframe,
                    mean_type, 
                    " mean values of simulated individual trials and the darker lines portray the ",
                    mean_type, 
+                   " mean data of the simulated population (n = ", N_indiv, "). The dashed lines represent the 5^th^ and 95^th^ percentiles."), 
+         "compound summary" = 
+            paste0("The lighter lines represent the ", 
+                   mean_type, 
+                   " mean values of simulated individual trials and the darker lines portray the ",
+                   mean_type, 
                    " mean data of the simulated population (n = ", N_indiv, "). The dashed lines represent the 5^th^ and 95^th^ percentiles."))
       
       if(any(complete.cases(hline_position))){
