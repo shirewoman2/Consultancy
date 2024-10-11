@@ -1510,14 +1510,17 @@ ct_plot <- function(ct_dataframe = NA,
    
    A <- A +
       labs(x = xlab, y = ylab,
-           linetype = ifelse(complete.cases(legend_label),
-                             legend_label, "Inhibitor"),
-           shape = ifelse(complete.cases(legend_label),
-                          legend_label, "Inhibitor"),
-           color = ifelse(complete.cases(legend_label), 
-                          legend_label, "Inhibitor"),
-           fill = ifelse(complete.cases(legend_label), 
-                         legend_label, "Inhibitor")) +
+           linetype = case_when(complete.cases(legend_label) ~ legend_label,
+                                .default = "Inhibitor"),
+           shape = case_when(complete.cases(legend_label) ~ legend_label,
+                             figure_type == "compound summary" ~ "Study",
+                             .default = "Inhibitor"),
+           color = case_when(complete.cases(legend_label) ~ legend_label,
+                             figure_type == "compound summary" ~ "Study",
+                             .default = "Inhibitor"),
+           fill = case_when(complete.cases(legend_label) ~ legend_label,
+                            figure_type == "compound summary" ~ "Study",
+                            .default = "Inhibitor")) +
       theme_consultancy()
    
    
