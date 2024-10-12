@@ -12,6 +12,7 @@ formatTable_Simcyp(
   sort_column,
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
+  column_widths = NA,
   add_header_for_DDI = TRUE,
   perpetrator_name = "perpetrator",
   prettify_columns = FALSE,
@@ -22,6 +23,7 @@ formatTable_Simcyp(
   highlight_color = "yellow",
   font = "Arial",
   fontsize = 11,
+  borders = TRUE,
   save_table = NA,
   page_orientation = "portrait",
   title_document = NA,
@@ -82,6 +84,10 @@ the examples at the bottom of the help file.}
 
 \item{center_1st_column}{TRUE or FALSE (default) for whether to make the
 alignment of the first column centered}
+
+\item{column_widths}{optionally specify what the widths of the columns should
+be with a numeric vector of the widths in inches, e.g., \code{column_widths
+= c(1.5, 2, 0.5, 3)}}
 
 \item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
 header row to the top of your table denoting when the PK are for baseline,
@@ -168,6 +174,9 @@ the latter is listed in PowerPoint and Word.}
 
 \item{fontsize}{the numeric font size for the output table. Default is 11
 point.}
+
+\item{borders}{TRUE (default) or FALSE for whether to include borders around
+cells}
 
 \item{save_table}{optionally save the output table by supplying a file name
 in quotes here, e.g., "My nicely formatted table.docx".  Do not include any

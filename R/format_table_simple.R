@@ -1,9 +1,10 @@
-#' Format a table to look nice in a Word file or pdf - UNDER CONSTRUCTION
+#' Format a table rather simply to look nice in a Word file
 #'
 #' \code{format_table_simple} is meant to for use with writing compound summary
-#' pdfs. It includes minimal error catching at this point.
+#' files. It is a wrapper function for formatTable_Simcyp and includes fewer
+#' options for formatting, providing a somewhat simpler output style of table.
 #'
-#' @param DF a data.frame or a flextable
+#' @param DF a data.frame 
 #' @param shading_column If you would like to alternate the shading of the rows
 #'   in the output table, supply here the unquoted name of the column to check
 #'   for when to change the shading; every time that column's value changes, the
@@ -38,6 +39,9 @@
 #'   Word.
 #' @param fontsize the numeric font size for the output table. Default is 11
 #'   point.
+#' @param column_widths optionally specify what the widths of the columns should
+#'   be with a numeric vector of the widths in inches, e.g., \code{column_widths
+#'   = c(1.5, 2, 0.5, 3)}
 #' @param alignment alignment of text throughout table. Options are "left"
 #'   (default), "right", "center", or "justify".
 #' @param save_table optionally save the output table by supplying a file name
@@ -67,6 +71,7 @@ format_table_simple <- function(DF,
                                 merge_columns = NA, 
                                 font = "Palatino Linotype", 
                                 fontsize = 11, 
+                                column_widths = NA, 
                                 alignment = "left", 
                                 save_table = NA,
                                 page_orientation = "portrait", 
@@ -79,13 +84,6 @@ format_table_simple <- function(DF,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   page_orientation <- tolower(page_orientation)[1]
-   if(page_orientation %in% c("portrait", "landscape") == FALSE){
-      warning("You requested something other than `portrait` or `landscape` for the page orientation in the Word output, and those are the only options. We'll use the default of `portrait`.\n", 
-              call. = FALSE)
-      page_orientation <- "portrait"
-   }
-   
    alignment <- tolower(alignment)[1]
    alignment <- ifelse(str_detect(alignment, "just"), "justify", alignment)
    if(is.na(alignment) | 
@@ -95,120 +93,37 @@ format_table_simple <- function(DF,
       alignment <- "left"
    }
    
-   # flextable function w/the specs I want. Note: I had a lot of trouble when I
-   # tried to use a modified version of formatTable_Simcyp here. I kept getting
-   # latex errors about extra carriage returns. Could not figure out the
-   # problem! This may have been solely b/c I was trying to knit to pdf, and
-   # LaTeX just isn't that compatible with flextable. Maybe that's the whole
-   # issue and I could revert to having one of these functions just be a shell
-   # for some specific defaults for the other?
-   
-   # Catching instances where the font name isn't *exactly* the same as what's
-   # in Word or PowerPoint. Will have to slowly gather examples of this.
-   font <- case_when(
-      # "Calibri (Body)" dosen't work; just "Calibri" does.
-      str_detect(font, "Calibri") ~ "Calibri", 
-      .default = font)
-   
+   if("flextable" %in% class(DF)){
+      warning(wrapn("Just a note: You have provided a flextable object to 'format_table_simple'. When 'format_table_simple' received a flextable as input, it does not apply any formatting to that table and instead just passes it through to possibly save the flextable but nothing else. Just wanted to clarify that, if you want the simple style of 'format_table_simple', you'll need to supply a data.frame or tibble instead."), 
+              call. = FALSE)
+   }
    
    # Setting things up for nonstandard evaluation ----------------------------
    shading_column <- rlang::enquo(shading_column)
    
+   
    # Main body of function ---------------------------------------------------
-   if("Parameter" %in% names(DF)){
-      FT <- format_scripts(DF, parameter_column = Parameter)
-   } else {
-      FT <- format_scripts(DF)
-   }
    
-   # Setting up shading ----------------------------------------------------
+   # Make the flextable 1st, then apply text alignment, then save. Doing this
+   # this way b/c format_table_simple applies alignment across all of the table
+   # whereas formatTable_Simcyp applies it very specifically. This is easier.
+   FT <- formatTable_Simcyp(DF, 
+                            shading_column = !!shading_column, 
+                            merge_shaded_cells = merge_shaded_cells,
+                            merge_columns = merge_columns, 
+                            bold_cells = list(c(0, NA)), 
+                            add_header_for_DDI = FALSE, 
+                            prettify_columns = FALSE, 
+                            borders = FALSE, 
+                            font = font, 
+                            fontsize = fontsize, 
+                            column_widths = column_widths, 
+                            save_table = NA) %>% 
+      flextable::align(part = "all", 
+                       align = alignment)
    
-   if(as_label(shading_column) != "<empty>"){
-      
-      ShadeCol <- DF %>% pull(!!shading_column)
-      
-      ShadeChange <- which(ShadeCol[1:(length(ShadeCol) - 1)] != 
-                              ShadeCol[2:nrow(DF)]) + 1
-      if(length(ShadeChange) == 0){
-         DF$Shade <- FALSE
-      } else {
-         ShadeRows <- ShadeChange[seq(1, length(ShadeChange), by = 2)]
-         if(length(ShadeChange) > 1){
-            NoShadeRows <- ShadeChange[seq(2, length(ShadeChange), by = 2)]
-         } else {
-            NoShadeRows <- 1
-         }
-         DF$Shade <- as.logical(NA)
-         DF$Shade[ShadeRows] <- TRUE
-         DF$Shade[NoShadeRows] <- FALSE
-         DF <- DF %>% fill(Shade, .direction = "down") %>% 
-            mutate(Shade = ifelse(is.na(Shade), FALSE, Shade))
-         
-         ShadeRows <- which(DF$Shade)
-         FT <- FT %>% 
-            flextable::bg(i = ShadeRows, bg = "#F2F2F2") %>% 
-            flextable::bg(i = NoShadeRows, bg = "white") %>% 
-            flextable::bg(part = "header", bg = "white")
-         
-         if(merge_shaded_cells){
-            FT <- FT %>% 
-               flextable::merge_v(j = which(names(DF) == as_label(shading_column)))
-         }
-      }
-      
-   }
-   
-   if(class(merge_columns) %in% "numeric"){
-      if(all(merge_columns %in% 1:ncol(DF)) == FALSE){
-         warning(paste0("You requested that we vertically merge more columns that are present in your data. Specifically, there is/are no column(s) ", 
-                        str_comma(setdiff(merge_columns, 1:ncol(DF)), conjunction = "or"), 
-                        ". These will be ignored.\n"), 
-                 call. = FALSE)
-         merge_columns <- merge_columns[merge_columns %in% 1:ncol(DF)]   
-      }
-      
-      merge_columns <- names(DF)[merge_columns]
-   }
-   
-   if(class(merge_columns) %in% "character"){
-      BadCols <- setdiff(merge_columns, names(DF))
-      if(length(BadCols) > 0){
-         warning(paste0("You requested that we vertically merge some columns that are not present in your data. Specifically, the column(s) ", 
-                        str_comma(paste0("`", BadCols, "`")), 
-                        " is/are not present. These will be ignored. If you believe that's an error, please carefully check that what you specified for `merge_columns` perfectly matches the spelling of each column name.\n"), 
-                 call. = FALSE)
-         
-         merge_columns <- merge_columns[merge_columns %in% names(DF)]
-      }
-   }
-   
-   if(any(complete.cases(merge_columns))){
-      for(mc in merge_columns){
-         FT <- FT %>% 
-            flextable::merge_v(j = mc)
-      }
-   }
-   
-   FT <- FT %>% 
-      # Set the font size
-      flextable::fontsize(part = "all", size = fontsize) %>% 
-      
-      # Set the font
-      flextable::font(part = "all",
-                      # fontname = "fourier") %>% # doesn't work. I think the font has to be something available in Word b/c I think the folder loation is not the same as for latex.
-                      fontname = font) %>%
-      flextable::bold(part = "header") %>% 
-      flextable::width(width = (7 / ncol(DF))) %>%
-      flextable::fix_border_issues() %>% 
-      
-      # Set the text alignment
-      flextable::align(part = "all", align = alignment)
-   
-   
-   # Saving --------------------------------------------------------------
-   if(complete.cases(save_table)){
-      
-      formatTable_Simcyp(DF = FT, 
+   if(any(complete.cases(save_table))){
+      formatTable_Simcyp(FT, 
                          save_table = save_table, 
                          page_orientation = page_orientation, 
                          title_document = title_document, 
@@ -217,3 +132,4 @@ format_table_simple <- function(DF,
    
    return(FT)
 }
+

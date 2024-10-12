@@ -2,7 +2,7 @@
 % Please edit documentation in R/format_table_simple.R
 \name{format_table_simple}
 \alias{format_table_simple}
-\title{Format a table to look nice in a Word file or pdf - UNDER CONSTRUCTION}
+\title{Format a table rather simply to look nice in a Word file}
 \usage{
 format_table_simple(
   DF,
@@ -11,6 +11,7 @@ format_table_simple(
   merge_columns = NA,
   font = "Palatino Linotype",
   fontsize = 11,
+  column_widths = NA,
   alignment = "left",
   save_table = NA,
   page_orientation = "portrait",
@@ -19,7 +20,7 @@ format_table_simple(
 )
 }
 \arguments{
-\item{DF}{a data.frame or a flextable}
+\item{DF}{a data.frame}
 
 \item{shading_column}{If you would like to alternate the shading of the rows
 in the output table, supply here the unquoted name of the column to check
@@ -60,6 +61,10 @@ Word.}
 \item{fontsize}{the numeric font size for the output table. Default is 11
 point.}
 
+\item{column_widths}{optionally specify what the widths of the columns should
+be with a numeric vector of the widths in inches, e.g., \code{column_widths
+= c(1.5, 2, 0.5, 3)}}
+
 \item{alignment}{alignment of text throughout table. Options are "left"
 (default), "right", "center", or "justify".}
 
@@ -86,7 +91,8 @@ a formatted table
 }
 \description{
 \code{format_table_simple} is meant to for use with writing compound summary
-pdfs. It includes minimal error catching at this point.
+files. It is a wrapper function for formatTable_Simcyp and includes fewer
+options for formatting, providing a somewhat simpler output style of table.
 }
 \examples{
 # None yet

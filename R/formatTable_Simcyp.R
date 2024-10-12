@@ -123,6 +123,11 @@
 #'   the latter is listed in PowerPoint and Word.
 #' @param fontsize the numeric font size for the output table. Default is 11
 #'   point.
+#' @param borders TRUE (default) or FALSE for whether to include borders around
+#'   cells
+#' @param column_widths optionally specify what the widths of the columns should
+#'   be with a numeric vector of the widths in inches, e.g., \code{column_widths
+#'   = c(1.5, 2, 0.5, 3)}
 #' @param save_table optionally save the output table by supplying a file name
 #'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
 #'   slashes, dollar signs, or periods in the file name. If you leave off the
@@ -226,6 +231,7 @@ formatTable_Simcyp <- function(DF,
                                sort_column, 
                                bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
+                               column_widths = NA, 
                                add_header_for_DDI = TRUE, 
                                perpetrator_name = "perpetrator", 
                                prettify_columns = FALSE, 
@@ -236,6 +242,7 @@ formatTable_Simcyp <- function(DF,
                                highlight_color = "yellow",
                                font = "Arial", 
                                fontsize = 11, 
+                               borders = TRUE, 
                                save_table = NA, 
                                page_orientation = "portrait", 
                                title_document = NA, 
@@ -322,6 +329,19 @@ formatTable_Simcyp <- function(DF,
       stop("Please check your input. The data.frame you supplied doesn't have any rows.", 
            call. = FALSE)
    }
+   
+   # Error catching column_widths now that we have DF
+   if("logical" %in% class(column_widths) == FALSE){
+      if("numeric" %in% class(column_widths) == FALSE){
+         warning(wrapn("You have supplied something other than numeric data for the column widths, so we don't know what you want and will ignore this."), 
+                 call. = FALSE)
+         column_widths <- NA
+      } else {
+         # Making sure we have more than enough values
+         column_widths <- rep(column_widths, ncol(DF))
+      }
+   } 
+   
    
    if(any(complete.cases(highlight_cells))){
       if(class(highlight_cells) == "numeric"){
@@ -445,7 +465,12 @@ formatTable_Simcyp <- function(DF,
       add_header_for_DDI
    OrigNames <- names(DF)
    
-   FT <- flextable::flextable(DF)
+   if("Parameter" %in% names(DF)){
+      FT <- format_scripts(DF, parameter_column = Parameter)
+   } else {
+      FT <- format_scripts(DF)
+   }
+   
    
    ## Adding DDI header row --------------------------------------------------
    
@@ -878,21 +903,29 @@ formatTable_Simcyp <- function(DF,
       
       # Set the font
       flextable::font(part = "all", 
-                      fontname = font) %>% 
-      
-      # setting up which borderlines to show
-      flextable::border_remove() %>% 
-      flextable::border_inner_v(part = "all", 
-                                border = officer::fp_border(width = 0.5)) %>% 
-      flextable::border_inner_h(part = "header", 
-                                border = officer::fp_border(width = 0.5)) %>% 
-      flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
-      flextable::hline_bottom(part = "body", 
-                              border = officer::fp_border(width = 0.5)) %>% 
-      flextable::fix_border_issues() %>% 
-      
+                      fontname = font)
+   
+   if(borders){
+      FT <- FT %>% 
+         
+         # setting up which borderlines to show
+         flextable::border_remove() %>% 
+         flextable::border_inner_v(part = "all", 
+                                   border = officer::fp_border(width = 0.5)) %>% 
+         flextable::border_inner_h(part = "header", 
+                                   border = officer::fp_border(width = 0.5)) %>% 
+         flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
+         flextable::hline_bottom(part = "body", 
+                                 border = officer::fp_border(width = 0.5)) %>% 
+         flextable::fix_border_issues()
+   } 
+   
+   # FIXME - Is it ok to include this if user sets col widths?
+   # if(all(is.na(column_widths))){
       # making the width autofitted to contents
-      flextable::set_table_properties(width = 1, layout = "autofit")
+      FT <- FT %>% 
+         flextable::set_table_properties(width = 1, layout = "autofit")
+   # }
    
    # Dealing with subscripts
    ColNames <- sub("AUCt( |$)", "AUC~t~ ", NewNames)
@@ -928,6 +961,14 @@ formatTable_Simcyp <- function(DF,
                                   ColNames[cols, 1],
                                   flextable::as_sub(ColNames[cols, 2]), 
                                   ColNames[cols, 3]))
+      }
+   }
+   
+   # Setting columnn widths 
+   if("logical" %in% class(column_widths) == FALSE){
+      for(col in 1:ncol(DF)){
+         FT <- FT %>% 
+            flextable::width(j = col, width = column_widths[col])
       }
    }
    

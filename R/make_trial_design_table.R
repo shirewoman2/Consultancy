@@ -38,7 +38,7 @@
 #'   point.
 #' @param column_widths optionally specify what the widths of the columns should
 #'   be with a numeric vector of the widths in inches, e.g., \code{column_widths
-#'   = c()}
+#'   = c(1.5, 2, 0.5, 3)}
 #' @param include_shading TRUE (default) or FALSE for whether to add shading to
 #'   rows to make things easier to read. If this is set to TRUE, then the rows
 #'   will be shaded every other row when there's no DDI or by which compound the
@@ -282,9 +282,11 @@ make_trial_design_table <- function(existing_exp_details,
    
    # Setting columnn widths. Note that there is one fewer column now b/c
    # CompoundID is not included.
-   for(col in 1:(ncol(DF)-1)){
-      FT <- FT %>% 
-         flextable::width(j = col, width = column_widths[col])
+   if("logical" %in% class(column_widths) == FALSE){
+      for(col in 1:(ncol(DF)-1)){
+         FT <- FT %>% 
+            flextable::width(j = col, width = column_widths[col])
+      }
    }
    
    

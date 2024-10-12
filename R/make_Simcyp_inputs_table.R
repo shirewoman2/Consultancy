@@ -351,7 +351,9 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                 Value = ifelse(complete.cases(as.numeric(Value)), 
                                as.character(round(as.numeric(Value), 5)), Value)) %>% 
          select("Section of model", Parameter, Value, any_of("Reference")) %>% 
-         format_table_simple(shading_column = "Section of model")
+         format_table_simple(shading_column = "Section of model", 
+                             font = font, 
+                             fontsize = fontsize)
    )
    
    if("data.frame" %in% class(references)){
