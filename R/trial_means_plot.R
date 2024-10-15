@@ -350,9 +350,12 @@ trial_means_plot <- function(sim_data_file,
                    Legos$DosingText_inhib_lower), 
                 ifelse(str_detect(PKparameter, "withInhib|ratio"), 
                        paste0(" following ", Legos$DosingText_inhib_lower), ""), 
-                ". Observed data from clinical study ", 
-                ifelse(is.na(name_clinical_study), 
-                       "***XXX***", name_clinical_study), ".")
+                ifelse("logical" %in% class(observed_PK), 
+                       ". ", 
+                       paste0(". Observed data from clinical study ", 
+                              ifelse(is.na(name_clinical_study), 
+                                     "***XXX***", name_clinical_study), ". ")), 
+                "Source simulated data: ", sim_data_file, ".")
       
       Heading <- paste0("Simulated ", 
                         ifelse("logical" %in% class(observed_PK), 
