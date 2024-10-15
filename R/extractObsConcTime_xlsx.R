@@ -110,7 +110,8 @@ extractObsConcTime_xlsx <- function(obs_data_file){
    
    obs_data <- obs_data %>%
       select(-CompoundID) %>% 
-      mutate(across(.cols = any_of(c("Time", "Conc", "SD_SE")), .fns = as.numeric), 
+      mutate(across(.cols = any_of(c("Time", "Conc", "SD_SE", "Weighting")),
+                    .fns = as.numeric), 
              DVID_num = DVID, 
              DVID = CompoundCode[as.character(DVID)]) %>% 
       left_join(ObsDVoptions, by = "DVID") %>% 

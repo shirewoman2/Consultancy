@@ -85,27 +85,36 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
       obs_data_files <- obs_data_files[!str_detect(obs_data_files, "^~")]
    }
    
-   # If they didn't include ".xlsx" at the end, add that. At the same time, if
-   # they ended the files with XML, let's try just substituting xlsx for that.
-   # We'll check whether that file exists in a moment.
-   obs_data_files <- paste0(sub("\\.xml$|\\.xlsx$", "", obs_data_files), 
-                            ".xlsx")
-   
-   # Making sure that all the files exist before attempting to pull data
-   if(any(file.exists(obs_data_files) == FALSE)){
-      MissingSimFiles <- obs_data_files[
-         which(file.exists(obs_data_files) == FALSE)]
-      warning(paste0("The file(s) ", 
-                     str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present, so we cannot extract any concentration-time data."), 
-              call. = FALSE)
-      obs_data_files <- setdiff(obs_data_files, MissingSimFiles)
-   }
-   
    # The Consultancy Team's support group includes Excel files we can ignore.
    # Removing those from consideration.
    obs_data_files <- obs_data_files[!str_detect(obs_data_files, 
                                                 "support-docs")]
+   
+   # If they didn't include ".xlsx" at the end, add that. 
+   obs_data_files <- case_when(
+      str_detect(obs_data_files, "\\.xml$|\\.xlsx$") == FALSE ~ 
+         paste0(obs_data_files, ".xlsx"), 
+      .default = obs_data_files)
+   
+   # Checking that the file exists.
+   FileCheck <- data.frame(OrigFile = obs_data_files) %>% 
+      mutate(Exists = file.exists(OrigFile), 
+             File_xlsx = sub("\\.xml$", ".xlsx", OrigFile), 
+             File_xml = sub("\\.xlsx$", ".xml", OrigFile), 
+             Exists_xlsx = file.exists(File_xlsx), 
+             Exists_xml = file.exists(File_xml), 
+             FileToUse = case_when(Exists ~ OrigFile, 
+                                   Exists_xlsx ~ File_xlsx, 
+                                   Exists_xml ~ File_xml))
+   
+   if(any(is.na(FileCheck$FileToUse))){
+      warning(wrapn(paste0(
+         "The file(s) ", str_comma(
+            paste0("'", FileCheck$OrigFile[which(is.na(FileCheck$FileToUse))], "'")), 
+         " is/are not present and will be skipped.")), 
+         call. = FALSE)
+   }
+   
    
    # Main body of function ---------------------------------------------------
    
