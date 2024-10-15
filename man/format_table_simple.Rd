@@ -9,6 +9,9 @@ format_table_simple(
   shading_column,
   merge_shaded_cells = TRUE,
   merge_columns = NA,
+  highlight_gmr_colors = NA,
+  highlight_so_cutoffs = NA,
+  highlight_so_colors = "yellow to red",
   font = "Palatino Linotype",
   fontsize = 11,
   column_widths = NA,
@@ -49,6 +52,51 @@ in the SimcypConsultancy package, which require unquoted column names.
 Honestly, we just don't know how code things for you to supply a variable
 number of unquoted column names for a single argument; we've just hit a
 coding knowledge limitation here!}
+
+\item{highlight_gmr_colors}{optionally specify a set of colors to use for
+highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+"green to red", "traffic" (a more vivid version of "green to red"), or a
+vector of 4 colors of your choosing. If left as NA, no highlighting for GMR
+level will be done.}
+
+\item{highlight_so_cutoffs}{optionally specify cutoffs for highlighting any
+simulated-to-observed ratios. Anything that is above those values or below
+the inverse of those values will be highlighted. To figure out what cells
+to highlight, this looks for a column titled "Statistic" or "Stat", then
+looks for what row contains "S/O" or "simulated (something something)
+observed" (as in, we'll use some wildcards to try to match your specific
+text). Next, it looks for any values in that same row that are above those
+cutoffs. This overrides anything else you specified for highlighting. The
+default is NA, for \emph{not} highlighting based on S/O value. Acceptable
+input for, say, highlighting values that are > 125\% or < 80\% of the
+observed and also, with a second color, values that are > 150\% or < 66\%
+would be: \code{highlight_so_cutoffs = c(1.25, 1.5)}. If you would like the
+middle range of values to be highlighted, include 1 in your cutoffs. For
+example, say you would like everything that's < 80\% or > 125\% to be
+highlighted red but you'd like the "good" values from 80\% to 125\% to be
+green, you can get that by specifying
+\code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
+c("green", "red")}}
+
+\item{highlight_so_colors}{optionally specify a set of colors to use for
+  highlighting S/O values outside the limits you specified with
+  \code{highlight_so_cutoffs}. Options: \describe{
+
+  \item{"yellow to red" (default)}{A range of light yellow to light orange to
+  light red. If you have included 1 in your cutoffs and you leave
+  \code{highlight_so_colors} with the default setting, values in the middle,
+  "good" range of S/O values will be highlighted a light green.}
+
+  \item{"traffic"}{light green, yellow, and red designed to display values
+  outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
+  \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O
+  values. This color scheme was borrowed from Lisa, so if you've seen her
+  slides, these will look familiar.}
+
+  \item{a character vector of specific colors}{Any R-acceptable colors, will
+  work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
+  If you do specify your own bespoke colors, you'll need to make sure that
+  you supply one color for every value in \code{highlight_so_cutoffs}.}}
 
 \item{font}{font to use. Default is "Palatino Linotype" and any fonts
 available on your machine in either Word or PowerPoint should be
@@ -91,8 +139,8 @@ a formatted table
 }
 \description{
 \code{format_table_simple} is meant to for use with writing compound summary
-files. It is a wrapper function for formatTable_Simcyp and includes fewer
-options for formatting, providing a somewhat simpler output style of table.
+files. It is a wrapper function for formatTable_Simcyp that creates a
+somewhat simpler style of table.
 }
 \examples{
 # None yet

@@ -30,18 +30,58 @@ set_boundary_colors <- function(color_set,
                                 boundaries, 
                                 break_type = "GMR"){
    
-   # NOTE: Not doing any error catching here b/c internal and I'm assuming that
-   # I'll have done the appropriate error catching in the parent function.
+   # Error catching --------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   # Tidying inputs
+   if(any(boundaries < 1)){
+      warning("At least one of the numbers you specified for boundaries was < 1. We will automatically use both the original number you specified and its inverse for highlighting, so we'll ignore any values < 1 here.", 
+              call. = FALSE)
+   }
+   
+   boundaries <- sort(unique(c(boundaries, 1/boundaries)))
+   boundaries <- boundaries[which(boundaries >= 1)]
+   
+   color_set <- tolower(color_set)
+   
+   GoodColors <- c("red black", "yellow to red", "green to red", 
+                   "muted red green", "lisa", "traffic")
+   
+   if(length(boundaries) != length(color_set) &
+      tolower(color_set[1]) %in% GoodColors == FALSE){
+      warning("You have specified one number of colors for highlighting values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting.", 
+              call. = FALSE)
+      color_set <- "yellow to red"
+   }
+   
+   if(color_set[1] %in% GoodColors == FALSE && 
+      tryCatch(is.matrix(col2rgb(color_set)),
+               error = function(x) FALSE) == FALSE){
+      warning("The values you used for highlighting are not all valid colors in R. We'll used the default colors instead.", 
+              call. = FALSE)
+      color_set <- "yellow to red"
+   } 
+   
+   # A little Easter egg 
+   if(all(tolower(color_set) == "lisa")){
+      color_set <- "traffic"
+   }
+   
+   # "green to red" is the same as "muted red green"
+   if(all(tolower(color_set) == "green to red")){
+      color_set <- "muted red green"
+   }
    
    # Upper number of breaks not including 1
    MaxBound <- length(boundaries)
    
    # Tidying inputs
    if(1 %in% boundaries & 
-      any(color_set %in% c("red black", "yellow to red", "green to red", 
-                           "muted red green", "red green", "traffic"))){
+      any(color_set %in% GoodColors)){
       color_set <- paste(color_set, "1")
-      
    }
    
    # Boundaries are only set up with *specific* colors when there are <= 3
@@ -197,23 +237,23 @@ set_boundary_colors <- function(color_set,
              "yellow to red (4,Inf]" = colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
                 length(boundaries)),
              
-             # Just highlight everything green. This would be weird and
+             # Just highlight everything white This would be weird and
              # probably not what the user wants, but is among the possible
              # choices for inputs.
-             "yellow to red 1 (0,1]" = c("#C7FEAC"),
+             "yellow to red 1 (0,1]" = c("white"),
              
              # highlight middle, 1 boundary other than middle
-             "yellow to red 1 (1,2]" = c("#C7FEAC", "#FF9595"),
+             "yellow to red 1 (1,2]" = c("white", "#FF9595"),
              
              # highlight middle, 2 boundaries other than middle
-             "yellow to red 1 (2,3]" = c("#C7FEAC", "#FFFF95", "#FF9595"),
+             "yellow to red 1 (2,3]" = c("white", "#FFFF95", "#FF9595"),
              
              # highlight middle, 3 boundaries other than middle
-             "yellow to red 1 (3,4]" = c("#C7FEAC", "#FFFF95", "#FFDA95", "#FF9595"),
+             "yellow to red 1 (3,4]" = c("white", "#FFFF95", "#FFDA95", "#FF9595"),
              
              # highlight middle, >3 boundaries other than middle
              "yellow to red 1 (4,Inf]" =
-                c("#C7FEAC",
+                c("white",
                   colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
                      length(boundaries))),
              
@@ -286,5 +326,122 @@ set_boundary_colors <- function(color_set,
    return(boundary_color_set)
    
 }
+
+#' Make a key for highlighted geometric mean ratios for DDIs in a table 
+#'
+#' @param highlight_gmr_colors a set of colors for highlighting geometric mean
+#'   ratios for DDIs. Options are "yellow to red", "green to red", "traffic" (a
+#'   more vivid version of "green to red"), or a vector of 4 colors of your
+#'   choosing. 
+#'
+#' @return a flextable for use as a key for which colors mean what GMR cutoff
+#' @export
+#'
+#' @examples
+#' make_gmr_highlight_key("yellow to red")
+#' 
+make_gmr_highlight_key <- function(highlight_gmr_colors){
+   
+   highlight_gmr_colors <- set_boundary_colors(color_set = highlight_gmr_colors, 
+                                               boundaries = c(1, 1.25, 2, 5), 
+                                               break_type = "GMR")
+   
+   tibble(`Interaction level` = names(highlight_gmr_colors)) %>% 
+      flextable::flextable() %>% 
+      flextable::bold(part = "header") %>% 
+      flextable::bg(i = 1, 
+                    bg = highlight_gmr_colors["negligible"]) %>% 
+      flextable::bg(i = 2, 
+                    bg = highlight_gmr_colors["weak"]) %>% 
+      flextable::bg(i = 3, 
+                    bg = highlight_gmr_colors["moderate"]) %>% 
+      flextable::bg(i = 4, 
+                    bg = highlight_gmr_colors["strong"]) %>% 
+      flextable::width(width = 1.5) %>% 
+      flextable::align(align = "center", part = "all")
+   
+}
+
+
+#' Make a key for highlighted S/O values in a table or graph
+#'
+#' @param highlight_so_cutoffs cutoffs for highlighting simulated-to-observed
+#'   ratios. Anything that is above those values or below the inverse of those
+#'   values will be highlighted. Acceptable input for, say, highlighting values
+#'   that are > 125\% or < 80\% of the observed and also, with a second color,
+#'   values that are > 150\% or < 66\% would be: \code{highlight_so_cutoffs =
+#'   c(1.25, 1.5)}. If you would like the middle range of values to be
+#'   highlighted, include 1 in your cutoffs. For example, say you would like
+#'   everything that's < 80\% or > 125\% to be highlighted red but you'd like
+#'   the "good" values from 80\% to 125\% to be green, you can get that by
+#'   specifying
+#'   \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
+#'   c("green", "red")}
+#' @param highlight_so_colors optionally specify a set of colors to use for
+#'   highlighting S/O values outside the limits you specified with
+#'   \code{highlight_so_cutoffs}. Options: \describe{
+#'
+#'   \item{"yellow to red" (default)}{A range of light yellow to light orange to
+#'   light red. If you have included 1 in your cutoffs and you leave
+#'   \code{highlight_so_colors} with the default setting, values in the middle,
+#'   "good" range of S/O values will be highlighted a light green.}
+#'
+#'   \item{"traffic"}{light green, yellow, and red designed to display values
+#'   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
+#'   \code{highlight_so_cutoffs}, you'll get a darker green for "good" S/O
+#'   values. This color scheme was borrowed from Lisa, so if you've seen her
+#'   slides, these will look familiar.}
+#'
+#'   \item{a character vector of specific colors}{Any R-acceptable colors, will
+#'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
+#'   If you do specify your own bespoke colors, you'll need to make sure that
+#'   you supply one color for every value in \code{highlight_so_cutoffs}.}
+#'
+#' @return a flextable for use as a key for which colors mean what S/O cutoff
+#' @export
+#'
+#' @examples
+#' make_so_highlight_key(highlight_so_colors = "green to red",
+#'                       highlight_so_cutoffs = c(1, 1.25, 1.5, 2))
+#' 
+make_so_highlight_key <- function(highlight_so_cutoffs, 
+                                  highlight_so_colors){
+   
+   highlight_so_colors <- set_boundary_colors(color_set = highlight_so_colors, 
+                                              boundaries = highlight_so_cutoffs, 
+                                              break_type = "SO")
+   
+   SOkey <- data.frame(UpperA = highlight_so_cutoffs[1:(length(highlight_so_cutoffs)-1)],
+                       UpperB = highlight_so_cutoffs[2:(length(highlight_so_cutoffs))],
+                       LowerA = 1/highlight_so_cutoffs[2:(length(highlight_so_cutoffs))],
+                       LowerB = 1/highlight_so_cutoffs[1:(length(highlight_so_cutoffs)-1)]) %>%
+      bind_rows(data.frame(UpperA = NA,
+                           UpperB = highlight_so_cutoffs[length(highlight_so_cutoffs)],
+                           LowerA = NA,
+                           LowerB = 1/highlight_so_cutoffs[length(highlight_so_cutoffs)])) %>%
+      mutate(across(.cols = everything(), .fns = round_consultancy),
+             Text = paste(LowerA, "to", LowerB, "fold or", UpperA, "to", UpperB, "fold"))
+   
+   SOkey$Text[1] <- paste(SOkey$LowerA[1], "to", SOkey$UpperB[1], "fold")
+   SOkey$Text[nrow(SOkey)] <- paste("<", SOkey$LowerB[nrow(SOkey)],
+                                    "fold or >", SOkey$UpperB[nrow(SOkey)], "fold")
+   
+   SOkey <- SOkey %>% select(Text) %>%
+      rename(`S/O cutoff` = Text) %>%
+      flextable::flextable() %>%
+      flextable::bold(part = "header") %>%
+      flextable::width(width = 3.5) %>%
+      flextable::align(align = "center", part = "all")
+   
+   for(i in 1:length(highlight_so_cutoffs)){
+      SOkey <- SOkey %>%
+         flextable::bg(i = i,
+                       bg = highlight_so_colors[i])
+   }
+   
+   SOkey
+   
+}
+
 
 

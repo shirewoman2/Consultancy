@@ -635,21 +635,13 @@ formatTable_Simcyp <- function(DF,
    ## Highlight GMRs ---------------------------------------------------------
    
    if(any(complete.cases(highlight_gmr_colors))){
-      if(highlight_gmr_colors[1] %in% c("yellow to red", "green to red", "traffic")){
+      if(tolower(highlight_gmr_colors[1]) %in% 
+         c("yellow to red", "green to red", "traffic", "lisa")){
          
-         highlight_gmr_colors <- switch(tolower(highlight_gmr_colors), 
-                                        "green to red" = c("negligible" = "#C7FEAC", 
-                                                           "weak" = "#FFFF95",
-                                                           "moderate" = "#FFDA95",
-                                                           "strong" = "#FF9595"),
-                                        "yellow to red" = c("negligible" = "white", 
-                                                            "weak" = "#FFFF95",
-                                                            "moderate" = "#FFDA95",
-                                                            "strong" = "#FF9595"), 
-                                        "traffic" = c("negligible" = "#00B050", 
-                                                      "weak" = "#92D050",
-                                                      "moderate" = "#FFC000",
-                                                      "strong" = "#FF0000"))
+         highlight_gmr_colors <-
+            set_boundary_colors(color_set = highlight_gmr_colors, 
+                                boundaries = c(1, 1.25, 2, 5), 
+                                break_type = "GMR")
          
       } else {
          
@@ -725,25 +717,25 @@ formatTable_Simcyp <- function(DF,
    if(any(complete.cases(highlight_so_cutoffs))){
       
       # Tidying inputs
-      HighlightMiddle <- 1 %in% highlight_so_cutoffs
-      
       if(any(highlight_so_cutoffs < 1)){
          warning("At least one of the numbers you specified for highlight_so_cutoffs was < 1. We will automatically use both the original number you specified and its inverse for highlighting, so we'll ignore any values < 1 here.", 
                  call. = FALSE)
          highlight_so_cutoffs <- highlight_so_cutoffs[which(highlight_so_cutoffs >= 1)]
       }
       
+      highlight_so_colors <- tolower(highlight_so_colors)
+      highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
+      
       if(length(highlight_so_cutoffs) != length(highlight_so_colors) &
-         highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE){
+         tolower(highlight_so_colors[1]) %in% c("yellow to red", "green to red", 
+                                                "lisa", "traffic") == FALSE){
          warning("You have specified one number of colors for highlighting S/O values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
       }
       
-      highlight_so_colors <- tolower(highlight_so_colors)
-      highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
-      
-      if(highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE && 
+      if(highlight_so_colors[1] %in% c("yellow to red", "green to red", 
+                                       "lisa", "traffic") == FALSE && 
          tryCatch(is.matrix(col2rgb(highlight_so_colors)),
                   error = function(x) FALSE) == FALSE){
          warning("The values you used for highlighting problematic S/O ratios are not all valid colors in R. We'll used the default colors instead.", 
@@ -751,94 +743,13 @@ formatTable_Simcyp <- function(DF,
          highlight_so_colors <- "yellow to red"
       } 
       
-      if(highlight_so_colors[1] %in% c("yellow to red", "traffic")){
+      if(highlight_so_colors[1] %in% c("yellow to red", "green to red", 
+                                       "lisa", "traffic")){
          
-         ColorChoices <- paste(
-            highlight_so_colors,
-            HighlightMiddle,
-            cut(length(highlight_so_cutoffs), breaks = c(0:4, Inf)))
-         
-         highlight_so_colors <-
-            switch(ColorChoices,
-                   ## yellow to red
-                   
-                   # no middle, 1 cutoff
-                   "yellow to red FALSE (0,1]" = "#FF9595",
-                   
-                   # no middle, 2 cutoffs
-                   "yellow to red FALSE (1,2]" = c("#FFFF95", "#FF9595"),
-                   
-                   # no middle, 3 cutoffs
-                   "yellow to red FALSE (2,3]" = c("#FFFF95", "#FFDA95", "#FF9595"),
-                   
-                   # no middle, >3 cutoffs
-                   "yellow to red FALSE (3,4]" = colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                      length(highlight_so_cutoffs)),
-                   # This is the same as the above on purpose.
-                   "FALSE (4,Inf]" = colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                      length(highlight_so_cutoffs)),
-                   
-                   # Just highlight everything green. This would be weird and
-                   # probably not what the user wants, but is among the possible
-                   # choices for inputs.
-                   "yellow to red TRUE (0,1]" = c("#C7FEAC"),
-                   
-                   # highlight middle, 1 cutoff other than middle
-                   "yellow to red TRUE (1,2]" = c("#C7FEAC", "#FF9595"),
-                   
-                   # highlight middle, 2 cutoffs other than middle
-                   "yellow to red TRUE (2,3]" = c("#C7FEAC", "#FFFF95", "#FF9595"),
-                   
-                   # highlight middle, 3 cutoffs other than middle
-                   "yellow to red TRUE (3,4]" = c("#C7FEAC", "#FFFF95", "#FFDA95", "#FF9595"),
-                   
-                   # highlight middle, >3 cutoffs other than middle
-                   "yellow to red TRUE (4,Inf]" =
-                      c("#C7FEAC",
-                        colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                           length(highlight_so_cutoffs))),
-                   
-                   ## traffic
-                   
-                   # no middle, 1 cutoff
-                   "traffic FALSE (0,1]" = "#FF0000",
-                   
-                   # no middle, 2 cutoffs
-                   "traffic FALSE (1,2]" = c("#FFC000", "#FF0000"),
-                   
-                   # no middle, 3 cutoffs
-                   "traffic FALSE (2,3]" = colorRampPalette(c("#FFC000", "#FF0000"))(
-                      length(highlight_so_cutoffs)),
-                   
-                   # no middle, >3 cutoffs
-                   "traffic FALSE (3,4]" = colorRampPalette(c("#FFC000", "#FF0000"))(
-                      length(highlight_so_cutoffs)),
-                   # This is the same as the above on purpose.
-                   
-                   "FALSE (4,Inf]" = colorRampPalette(c("#FFC000", "#FF0000"))(
-                      length(highlight_so_cutoffs)),
-                   # This is the same as the above on purpose.
-                   
-                   # Just highlight everything green. This would be weird and
-                   # probably not what the user wants, but is among the possible
-                   # choices for inputs.
-                   "traffic TRUE (0,1]" = c("#00B050"),
-                   
-                   # highlight middle, 1 cutoff other than middle
-                   "traffic TRUE (1,2]" = c("#00B050", "#FF0000"),
-                   
-                   # highlight middle, 2 cutoffs other than middle
-                   "traffic TRUE (2,3]" = c("#00B050", "#92D050", "#FF0000"),
-                   
-                   # highlight middle, 3 cutoffs other than middle
-                   "traffic TRUE (3,4]" = c("#00B050", "#92D050", "#FFC000", "#FF0000"),
-                   
-                   # highlight middle, >3 cutoffs other than middle
-                   "traffic TRUE (4,Inf]" =
-                      c("#00B050",
-                        colorRampPalette(c("#FFC000", "#FF0000"))(
-                           length(highlight_so_cutoffs)))
-            )
+         highlight_so_colors <- 
+            set_boundary_colors(color_set = highlight_so_colors, 
+                                boundaries = highlight_so_cutoffs, 
+                                break_type = "SO")
       }
       
       StatCol <- which(str_detect(names(DF), "[Ss]tat$|[Ss]tatistic"))
@@ -922,9 +833,9 @@ formatTable_Simcyp <- function(DF,
    
    # FIXME - Is it ok to include this if user sets col widths?
    # if(all(is.na(column_widths))){
-      # making the width autofitted to contents
-      FT <- FT %>% 
-         flextable::set_table_properties(width = 1, layout = "autofit")
+   # making the width autofitted to contents
+   FT <- FT %>% 
+      flextable::set_table_properties(width = 1, layout = "autofit")
    # }
    
    # Dealing with subscripts
