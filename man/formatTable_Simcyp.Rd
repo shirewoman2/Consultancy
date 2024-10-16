@@ -136,9 +136,8 @@ c("green", "red")}}
   \code{highlight_so_cutoffs}. Options: \describe{
 
   \item{"yellow to red" (default)}{A range of light yellow to light orange to
-  light red. If you have included 1 in your cutoffs and you leave
-  \code{highlight_so_colors} with the default setting, values in the middle,
-  "good" range of S/O values will be highlighted a light green.}
+  light red. If you have included 1 in your cutoffs, values in the middle,
+  the "good" range of S/O values around 1 will be highlighted a light green.}
 
   \item{"traffic"}{light green, yellow, and red designed to display values
   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in

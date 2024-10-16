@@ -79,19 +79,13 @@
 #'   green, you can get that by specifying
 #'   \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
 #'   c("green", "red")}
-#' @param highlight_gmr_colors optionally specify a set of colors to use for
-#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
-#'   "green to red", "traffic" (a more vivid version of "green to red"), or a
-#'   vector of 4 colors of your choosing. If left as NA, no highlighting for GMR
-#'   level will be done.
 #' @param highlight_so_colors optionally specify a set of colors to use for
 #'   highlighting S/O values outside the limits you specified with
 #'   \code{highlight_so_cutoffs}. Options: \describe{
 #'
 #'   \item{"yellow to red" (default)}{A range of light yellow to light orange to
-#'   light red. If you have included 1 in your cutoffs and you leave
-#'   \code{highlight_so_colors} with the default setting, values in the middle,
-#'   "good" range of S/O values will be highlighted a light green.}
+#'   light red. If you have included 1 in your cutoffs, values in the middle,
+#'   the "good" range of S/O values around 1 will be highlighted a light green.}
 #'
 #'   \item{"traffic"}{light green, yellow, and red designed to display values
 #'   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
@@ -103,6 +97,11 @@
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
 #'   If you do specify your own bespoke colors, you'll need to make sure that
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
+#' @param highlight_gmr_colors optionally specify a set of colors to use for
+#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+#'   "green to red", "traffic" (a more vivid version of "green to red"), or a
+#'   vector of 4 colors of your choosing. If left as NA, no highlighting for GMR
+#'   level will be done.
 #' @param highlight_cells optionally specify cells in the table to be
 #'   highlighted with a numeric vector where the 1st number is the row number
 #'   and the 2nd number is the column number (just like regular row and column
@@ -376,6 +375,7 @@ formatTable_Simcyp <- function(DF,
    
    if(complete.cases(highlight_gmr_colors) && 
       tolower(highlight_gmr_colors[1]) == "lisa"){highlight_gmr_colors = "traffic"}
+   
    if(complete.cases(highlight_so_colors) &&
       tolower(highlight_so_colors[1]) == "lisa"){highlight_so_colors = "traffic"}
    
@@ -393,8 +393,13 @@ formatTable_Simcyp <- function(DF,
       } 
    }
    
+   if(all(highlight_so_colors == "green to red")){
+      highlight_so_colors <- "yellow to red"
+      highlight_so_cutoffs <- sort(unique(1, highlight_so_cutoffs))
+   }
+   
    if(any(complete.cases(highlight_so_colors)) &&
-      highlight_so_colors[1] %in% c("yellow to red", "green to red", "traffic") == FALSE &&
+      highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE &&
       tryCatch(is.matrix(col2rgb(highlight_so_colors)),
                error = function(x) FALSE) == FALSE){
       warning("The values you used for highlighting S/O values are not all valid colors in R. We'll used the default colors instead.\n", 
@@ -727,8 +732,9 @@ formatTable_Simcyp <- function(DF,
       highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
       
       if(length(highlight_so_cutoffs) != length(highlight_so_colors) &
-         tolower(highlight_so_colors[1]) %in% c("yellow to red", "green to red", 
-                                                "lisa", "traffic") == FALSE){
+         tolower(highlight_so_colors[1]) %in% 
+         c("yellow to red", "lisa", "traffic") == FALSE){
+         
          warning("You have specified one number of colors for highlighting S/O values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
@@ -738,18 +744,21 @@ formatTable_Simcyp <- function(DF,
                                        "lisa", "traffic") == FALSE && 
          tryCatch(is.matrix(col2rgb(highlight_so_colors)),
                   error = function(x) FALSE) == FALSE){
+         
          warning("The values you used for highlighting problematic S/O ratios are not all valid colors in R. We'll used the default colors instead.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
       } 
       
-      if(highlight_so_colors[1] %in% c("yellow to red", "green to red", 
-                                       "lisa", "traffic")){
+      if(highlight_so_colors[1] %in% c("yellow to red", "lisa", "traffic")){
          
-         highlight_so_colors <- 
-            set_boundary_colors(color_set = highlight_so_colors, 
-                                boundaries = highlight_so_cutoffs, 
-                                break_type = "SO")
+         highlight_so_colors <- set_boundary_colors(
+            color_set = case_when(1 %in% highlight_so_cutoffs &
+                                     highlight_so_colors == "yellow to red" ~ "green to red", 
+                                  .default = highlight_so_colors), 
+            boundaries = highlight_so_cutoffs, 
+            break_type = "SO highlight")
+         
       }
       
       StatCol <- which(str_detect(names(DF), "[Ss]tat$|[Ss]tatistic"))
