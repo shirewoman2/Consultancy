@@ -5,7 +5,15 @@
 \title{Insert the standard Certara UK Limited copyright box that appears in compound
 summary files}
 \usage{
-insert_copyright()
+insert_copyright(font = "Arial")
+}
+\arguments{
+\item{font}{font to use. Default is "Arial" and any fonts available on your
+machine in either Word or PowerPoint should be acceptable. If you get Times
+New Roman in your table when you asked for something else, it means that
+that font isn't available or maybe wasn't spelled the way R is expecting
+it. For example, "Calibri" works but "Calibri (Body)" doesn't even though
+the latter is listed in PowerPoint and Word.}
 }
 \value{
 a flextable with the current copyright information in it
