@@ -132,8 +132,13 @@ tidy_input_PK <- function(PKparameters,
          InputWasDF <- FALSE
       }
    } else if("data.frame" %in% class(PKparameters)){
-      # This is when they have supplied a data.frame
-      InputWasDF <- TRUE
+      if(nrow(PKparameters) == 0){
+         InputWasDF <- FALSE
+         PKparameters <- data.frame(PKparameter = NA)
+      } else {
+         # This is when they have supplied a data.frame
+         InputWasDF <- TRUE
+      }
       
    } else {
       # This is when PKparameters is NA. 
@@ -150,10 +155,12 @@ tidy_input_PK <- function(PKparameters,
    
    # Dealing with situation in which user supplied a data.frame that they
    # probably read themselves and includes "" instead of NA
-   PKparameters <- PKparameters %>% 
-      mutate(across(.cols = everything(), 
-                    .fns = \(x) case_when(x == "" ~ NA, 
-                                          .default = x)))
+   if(nrow(PKparameters) > 0){
+      PKparameters <- PKparameters %>% 
+         mutate(across(.cols = everything(), 
+                       .fns = \(x) case_when(x == "" ~ NA, 
+                                             .default = x)))
+   }
    
    # Dealing with possible input from calc_PK_ratios
    FromCalcPKRatios <- any(str_detect(tolower(names(PKparameters)), "numerator")) | 
@@ -770,8 +777,8 @@ tidy_input_PK <- function(PKparameters,
    
    if(length(BadParams) > 0 &&
       any(complete.cases(BadParams))){
-      warning(paste0("The following PK parameters are not among the possible options and will be ignored:\n", 
-                     str_c(BadParams, collapse = "\n")), 
+      warning(paste0(wrapn("The following PK parameters are not among the possible options and will be ignored:"), 
+                     str_c(BadParams, collapse = "\n"), "\n"), 
               call. = FALSE)
       PKparameters <- PKparameters %>% 
          filter(PKparameter %in% BadParams == FALSE)
@@ -1166,7 +1173,7 @@ tidy_input_PK <- function(PKparameters,
                 AllPKParameters$PKparameter_nodosenum & is.na(Sheet))
    
    if(any(PKparameters$DoseNumProblem)){
-      warning("You have not specified which interval you want for the following PK:\n", 
+      warning(wrapn("You have not specified which interval you want for the following PK:"), 
               call. = FALSE)
       
       Problem <- PKparameters %>% filter(DoseNumProblem == TRUE) %>% 
