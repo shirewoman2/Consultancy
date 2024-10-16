@@ -3,42 +3,42 @@
 \name{set_boundary_colors}
 \alias{set_boundary_colors}
 \title{INTERNAL: Create a set of boundary colors based on the color set and the
-boundaries the user needs ---- CONSIDERING WHETHER IT'S WORTH IT TO MAKE
-THIS. It doesn't actually save me much copying and pasting since I only use
-it once in formatTable_Simcyp, where it has one set of color_set options and
-boundaries and number of breaks, and only twice in so_graph, where it has a
-different set of color_set options and boundaries and number of breaks.}
+boundaries the user needs.}
 \usage{
-set_boundary_colors(color_set, boundaries, break_type = "GMR")
+set_boundary_colors(color_set, boundaries, break_type = "SO highlight")
 }
 \arguments{
 \item{color_set}{either a single value, e.g., "red green" or a character
-  vector of colors. Acceptable single-value color set names:\itemize{
-  \item{"yellow to red" - for highlighting in PK tables}
+  vector of colors. Acceptable single-value color set names:\describe{
+  \item{"yellow to red"}{for highlighting in PK tables}
 
-  \item{"traffic" - for highlighting in PK tables}
+  \item{"green to red"}{for highlighting in PK tables}
 
-  \item{"red black lines" or "red black fill" - for S/O boundary lines or fill}
+  \item{"traffic"}{for highlighting in PK tables}
 
-  \item{"red green lines" or "red green fill" - for S/O boundary lines or fill}
+  \item{"red black"}{for S/O boundary lines or fill}
 
-  \item{"muted red green lines" or "muted red green fill" - for S/O boundary lines or fill}}}
+  \item{"red green"}{for S/O boundary lines or fill}
 
-\item{boundaries}{numeric vector of boundaries}
+  \item{"muted red green"}{for S/O boundary lines or fill}}}
 
-\item{max_num_breaks}{maximum number of breaks. For so_graph, this should be
-3 and for formatTable_Simcyp, this should be 4.}
+\item{break_type}{What type of breaks are these? Options are "GMR" (there
+will only be 4 and the output will be a named character vector for the
+intensity of the DDI), "SO highlight" (default) for S/O values in tables,
+and "SO line" for coloring the lines in S/O graphs. This distinction
+between "SO highlight" and "SO line" arises because the colors for the
+lines in the S/O graphs generally should have the 1st color repeated
+whereas the highlighting for tables should \emph{not} have any repeats. At
+present, "yellow to red", "traffic", and "green to red" are only available
+for break_types of "GMR" or "SO highlight". "red black", "red green", and
+"muted red green" are only available for a break_type of "SO line".}
 }
 \value{
 a character vector of colors, one for each numeric boundary
 }
 \description{
 INTERNAL: Create a set of boundary colors based on the color set and the
-boundaries the user needs ---- CONSIDERING WHETHER IT'S WORTH IT TO MAKE
-THIS. It doesn't actually save me much copying and pasting since I only use
-it once in formatTable_Simcyp, where it has one set of color_set options and
-boundaries and number of breaks, and only twice in so_graph, where it has a
-different set of color_set options and boundaries and number of breaks.
+boundaries the user needs.
 }
 \examples{
 # None. Internal use only.
