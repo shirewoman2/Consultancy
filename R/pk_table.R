@@ -428,6 +428,27 @@ pk_table <- function(PKparameters = NA,
                                    sheet_PKparameters = sheet_PKparameters, 
                                    existing_exp_details = existing_exp_details)
    
+   # Check for any duplicate observed values b/c that messes up things
+   # downstream.
+   DupCheck <- PKparam_tidied$PKparameters %>% 
+      group_by(File, Sheet, CompoundID, Tissue, PKparameter) %>% 
+      summarize(N = n()) %>% 
+      filter(N > 1)
+   
+   if(nrow(DupCheck) > 0){
+      warning(wrapn(paste0("There are some duplicate observed PK data included in your input for PKparameters. We can only manage one observed value for each PK parameter, tissue, and compound, so we will have to ignore any duplicates. Specifically, we will ignore the following observed PK:")))
+      print(DupCheck)
+      
+      DupCheck <- DupCheck %>% 
+         mutate(ID = paste(File, Sheet, CompoundID, Tissue, PKparameter))
+      
+      PKparam_tidied$PKparameters <- PKparam_tidied$PKparameters %>% 
+         mutate(ID = paste(File, Sheet, CompoundID, Tissue, PKparameter)) %>% 
+         filter(!ID %in% DupCheck$ID) %>% 
+         select(-ID)
+      
+   }
+   
    existing_exp_details <- PKparam_tidied$existing_exp_details
    PKparameters <- PKparam_tidied$PKparameters %>% 
       mutate(FileExists = file.exists(File)) %>% 
