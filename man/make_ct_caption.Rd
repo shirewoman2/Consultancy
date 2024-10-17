@@ -68,6 +68,3 @@ a string of text for making a caption
 \description{
 INTERNAL - make caption for conc-time plots
 }
-\examples{
-# none 
-}

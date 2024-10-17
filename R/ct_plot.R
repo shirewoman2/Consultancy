@@ -653,14 +653,14 @@ ct_plot <- function(ct_dataframe = NA,
    # argument correctly and set up the character vector of preferences.
    HLineAES <- str_split(hline_style, pattern = " ")[[1]]
    if(length(HLineAES) < 2 & any(complete.cases(hline_position))){
-      warning(wrapn("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want."), 
+      warning(wrapn("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll set this to `red dotted` for now, but please check the help file to get what you want."), 
               call. = FALSE)
       HLineAES <- c("red", "dotted")
    }
    
    VLineAES <- str_split(vline_style, pattern = " ")[[1]]
    if(length(VLineAES) < 2 & any(complete.cases(vline_position))){
-      warning(wrapn("You requested that a vertical line be added to the graph, but you've supplied input that doesn't work for `vline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want."), 
+      warning(wrapn("You requested that a vertical line be added to the graph, but you've supplied input that doesn't work for `vline_style`. We'll set this to `red dotted` for now, but please check the help file to get what you want."), 
               call. = FALSE)
       VLineAES <- c("red", "dotted")
    }

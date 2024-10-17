@@ -27,12 +27,10 @@
 #'   101, fed cohort". If you have more than one study, that's fine; we'll take
 #'   care of stringing them together appropriately. Just list them as a
 #'   character vector, e.g., \code{name_clinical_study = c("101",
-#'   "102", "103")} will become "clinical studies 101, 102, and 103."
+#'   "102", "103")} will become "clinical studies 101, 102, and 103." 
 #'
 #' @return a string of text for making a caption
-#'
-#' @examples
-#' # none 
+#' 
 make_ct_caption <- function(ct_dataframe, 
                             single_or_multiple_profiles = "single", 
                             plot_type = "concentration-time", 

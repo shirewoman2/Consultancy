@@ -395,7 +395,7 @@ formatTable_Simcyp <- function(DF,
    
    if(all(highlight_so_colors == "green to red")){
       highlight_so_colors <- "yellow to red"
-      highlight_so_cutoffs <- sort(unique(1, highlight_so_cutoffs))
+      highlight_so_cutoffs <- sort(unique(c(1, highlight_so_cutoffs)))
    }
    
    if(any(complete.cases(highlight_so_colors)) &&
