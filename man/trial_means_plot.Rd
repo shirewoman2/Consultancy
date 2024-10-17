@@ -13,11 +13,13 @@ trial_means_plot(
   sheet = NA,
   mean_type = "geometric",
   variability_type = "90\% CI",
+  lines_for_population_stats = "none",
   y_axis_limits_lin = NA,
   include_dose_num = FALSE,
   existing_exp_details = NA,
   observed_PK = NA,
   return_caption = FALSE,
+  prettify_compound_names = TRUE,
   name_clinical_study = NA
 )
 }
@@ -54,11 +56,24 @@ we don't know which dose these data were for, you'll see that the output
 parameter names do not include the suffixes "_last" or "_dose1".}
 
 \item{mean_type}{What kind of means do you want to use for the center point
-on the graph? Options are "arithmetic" or "geometric" (default).}
+on the graph? Options are "geometric" (default), "arithmetic", or "median".}
 
 \item{variability_type}{What variability statistic to you want to use for the
 error bars? Options are "90% CI", "SD", "CV", "GCV" (for geometric CV), or
 "range".}
+
+\item{lines_for_population_stats}{optionally include horizontal lines for the
+overall simulated population by specifying the desired line color and type.
+If left as "none" (default), no lines will be included. If set to, e.g.,
+"red solid dotted" or "gray50 dashed dashed" or even "#87A896 solid E2",
+then lines will be added to the graph at whatever centeral statistic you
+specified for "mean_type" and whatever variability statistic you specified
+for "variability_type". The first word must be a legitimate color in R (hex
+codes are fine), the second word, separated by a space, must be the line
+type you want for the central statistic, and the third word must be the
+line type you want for the variability statistic. If you add another space
+and then a fourth number, that will set the line width, which will be 0.5
+by default.}
 
 \item{y_axis_limits_lin}{optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
@@ -85,6 +100,23 @@ CONSTRUCTION. LIKELY SUPER BUGGY.}
 caption text to use with the graph. This works best if you supply something
 for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
 output a list of the graph, the figure heading, and the figure caption.}
+
+\item{prettify_compound_names}{TRUE (default), FALSE or a character vector:
+This is asking whether to make compound names prettier in the figure
+heading and caption. This was designed for simulations where the substrate
+and any metabolites, perpetrators, or perpetrator metabolites are among the
+standard options for the simulator, and leaving
+\code{prettify_compound_names = TRUE} will make the name of those compounds
+something more human readable. For example, "SV-Rifampicin-MD" will become
+"rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+FALSE will leave the compound names as is. For an approach with more
+control over what the compound names will look like in legends and Word
+output, set each compound to the exact name you  want with a named
+character vector where the names are "substrate" and, as applicable,
+"inhibitor 1", "primary metabolite 1", etc. and the values are the names
+you want, e.g.,
+\code{prettify_compound_names = c("inhibitor 1" = "teeswiftavir",
+"substrate" = "superstatin")}.}
 
 \item{name_clinical_study}{optionally specify the name(s) of the clinical
 study or studies for any observed data. This only affects the caption of

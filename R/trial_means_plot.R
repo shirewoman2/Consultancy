@@ -40,10 +40,22 @@
 #'   \code{extractExpDetails} behind the scenes to figure out some information
 #'   about your experimental set up.
 #' @param mean_type What kind of means do you want to use for the center point
-#'   on the graph? Options are "arithmetic" or "geometric" (default).
+#'   on the graph? Options are "geometric" (default), "arithmetic", or "median".
 #' @param variability_type What variability statistic to you want to use for the
 #'   error bars? Options are "90% CI", "SD", "CV", "GCV" (for geometric CV), or
 #'   "range".
+#' @param lines_for_population_stats optionally include horizontal lines for the
+#'   overall simulated population by specifying the desired line color and type.
+#'   If left as "none" (default), no lines will be included. If set to, e.g.,
+#'   "red solid dotted" or "gray50 dashed dashed" or even "#87A896 solid E2",
+#'   then lines will be added to the graph at whatever centeral statistic you
+#'   specified for "mean_type" and whatever variability statistic you specified
+#'   for "variability_type". The first word must be a legitimate color in R (hex
+#'   codes are fine), the second word, separated by a space, must be the line
+#'   type you want for the central statistic, and the third word must be the
+#'   line type you want for the variability statistic. If you add another space
+#'   and then a fourth number, that will set the line width, which will be 0.5
+#'   by default.
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 #'   limits for the linear plot will be automatically selected. (Setting up
@@ -66,6 +78,22 @@
 #'   caption text to use with the graph. This works best if you supply something
 #'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
 #'   output a list of the graph, the figure heading, and the figure caption.
+#' @param prettify_compound_names TRUE (default), FALSE or a character vector:
+#'   This is asking whether to make compound names prettier in the figure
+#'   heading and caption. This was designed for simulations where the substrate
+#'   and any metabolites, perpetrators, or perpetrator metabolites are among the
+#'   standard options for the simulator, and leaving
+#'   \code{prettify_compound_names = TRUE} will make the name of those compounds
+#'   something more human readable. For example, "SV-Rifampicin-MD" will become
+#'   "rifampicin", and "Sim-Midazolam" will become "midazolam". Setting this to
+#'   FALSE will leave the compound names as is. For an approach with more
+#'   control over what the compound names will look like in legends and Word
+#'   output, set each compound to the exact name you  want with a named
+#'   character vector where the names are "substrate" and, as applicable,
+#'   "inhibitor 1", "primary metabolite 1", etc. and the values are the names
+#'   you want, e.g.,
+#'   \code{prettify_compound_names = c("inhibitor 1" = "teeswiftavir",
+#'   "substrate" = "superstatin")}.
 #' @param name_clinical_study optionally specify the name(s) of the clinical
 #'   study or studies for any observed data. This only affects the caption of
 #'   the graph. For example, specifying \code{name_clinical_study = "101, fed
@@ -88,11 +116,13 @@ trial_means_plot <- function(sim_data_file,
                              sheet = NA, 
                              mean_type = "geometric", 
                              variability_type = "90% CI", 
+                             lines_for_population_stats = "none", 
                              y_axis_limits_lin = NA, 
                              include_dose_num = FALSE, 
                              existing_exp_details = NA, 
                              observed_PK = NA, 
                              return_caption = FALSE, 
+                             prettify_compound_names = TRUE,
                              name_clinical_study = NA){
    
    # Error catching ----------------------------------------------------------
@@ -128,8 +158,8 @@ trial_means_plot <- function(sim_data_file,
    }
    
    mean_type <- tolower(mean_type)[1]
-   if(mean_type %in% c("arithmetic", "geometric") == FALSE){
-      warning(wrapn("The only possibilities for the mean type are 'arithmetic' or 'geometric', and you have entered something else. We'll use the default of 'geometric'."), 
+   if(mean_type %in% c("arithmetic", "geometric", "median") == FALSE){
+      warning(wrapn("The only possibilities for the mean type are 'geometric', 'arithmetic', or 'median', and you have entered something else. We'll use the default of 'geometric'."), 
               call. = FALSE)
       mean_type <- "geometric"
    }
@@ -143,14 +173,36 @@ trial_means_plot <- function(sim_data_file,
       variability_type <- "90% CI"
    }
    
+   if(mean_type != "median" & str_detect(PKparameter, "tmax")){
+      warning(wrapn(paste("You requested tmax for the PK parameter and then requested", 
+                          mean_type, "means. Are you sure you didn't mean to request a mean_type of 'median' and a variability_type of 'range'?")), 
+              call. = FALSE)
+   }
+   
    # Fixing mismatched stats
    if(mean_type == "geometric" & variability_type == "SD"){
       warning(wrapn("You have requested a geometric mean type but then an arithmetic variability type (SD), which does not make for a clear graph. We'll set the variability type to the geometric CV instead."), 
               call. = FALSE)
       variability_type <- "GCV"
    }
-   if(mean_type == "arithmetic" & variability_type == "CV"){
+   if(mean_type == "geometric" & variability_type == "CV"){
       variability_type <- "GCV"
+   }
+   
+   # If user wanted lines_for_population_stats added, check that they have
+   # specified argument correctly and set up the character vector of preferences.
+   LineAES <- str_split(lines_for_population_stats, pattern = " ")[[1]]
+   if(length(LineAES) < 3 & any(complete.cases(lines_for_population_stats))){
+      warning(wrapn("You requested that lines for the overall simulated population statistics be added to the graph, but you've supplied input that doesn't work for `lines_for_population_stats`. We'll set this to `gray solid dashed` for now, but please check the help file to get what you want."), 
+              call. = FALSE)
+      LineAES <- c("gray", "solid", "dashed", "0.5")
+   }
+   # This doesn't check that they've specified legit colors or linetypes, but
+   # I'm hoping that ggplot2 errors will cover that.
+   
+   # Adding a linewidth to LineAES if user didn't specify one.
+   if(length(LineAES) < 4){
+      LineAES[4] <- "0.5"
    }
    
    
@@ -179,10 +231,12 @@ trial_means_plot <- function(sim_data_file,
                 GCV = gm_CV(Value, na.rm = T), 
                 CI90_low = switch(mean_type, 
                                   "arithmetic" = confInt(Value, CI = 0.9, distribution_type = "t")[[1]], 
-                                  "geometric" = gm_conf(Value, CI = 0.9, distribution_type = "t")[[1]]), 
+                                  "geometric" = gm_conf(Value, CI = 0.9, distribution_type = "t")[[1]], 
+                                  "median" = NA), 
                 CI90_high = switch(mean_type, 
                                    "arithmetic" = confInt(Value, CI = 0.9, distribution_type = "t")[[2]], 
-                                   "geometric" = gm_conf(Value, CI = 0.9, distribution_type = "t")[[2]]), 
+                                   "geometric" = gm_conf(Value, CI = 0.9, distribution_type = "t")[[2]], 
+                                   "median" = NA), 
                 Median = median(Value, na.rm = T)) %>% 
       mutate(SorO = "simulated")
    
@@ -249,31 +303,33 @@ trial_means_plot <- function(sim_data_file,
    } 
    
    PK_long <- PK_long %>% 
-      mutate(Center = case_when(!str_detect({{PKparameter}}, "tmax") &
-                                   mean_type == "arithmetic" ~ Mean, 
-                                
-                                !str_detect({{PKparameter}}, "tmax") &
-                                   mean_type == "geometric" ~ Geomean, 
-                                
-                                str_detect({{PKparameter}}, "tmax") ~ Median), 
-             
-             Lower = case_when(!str_detect({{PKparameter}}, "tmax") &
-                                  mean_type == "arithmetic" & 
-                                  variability_type == "SD" ~ Mean - SD, 
-                               
-                               !str_detect({{PKparameter}}, "tmax") &
-                                  mean_type == "geometric" & 
-                                  variability_type == "GCV" ~ GCV, 
-                               
-                               str_detect({{PKparameter}}, "tmax") ~ Min), 
-             
-             Upper = case_when(!str_detect({{PKparameter}}, "tmax") &
-                                  mean_type == "arithmetic" ~ Mean + SD, 
-                               
-                               !str_detect({{PKparameter}}, "tmax") &
-                                  mean_type == "geometric" ~ CI90_high, 
-                               
-                               str_detect({{PKparameter}}, "tmax") ~ Max))
+      mutate(
+         Center = case_when(mean_type == "arithmetic" ~ Mean, 
+                            mean_type == "geometric" ~ Geomean, 
+                            mean_type == "median" ~ Median), 
+         
+         Lower = case_when(
+            mean_type == "arithmetic" & 
+               variability_type %in% c("SD", "CV") ~ Mean - SD, 
+            
+            mean_type == "geometric" & 
+               variability_type == "GCV" ~ Geomean  - Geomean * GCV, 
+            
+            variability_type == "90% CI" ~ CI90_low, 
+            
+            variability_type == "RANGE" ~ Min), 
+         
+         Upper = case_when(
+            mean_type == "arithmetic" & 
+               variability_type %in% c("SD", "CV") ~ Mean + SD, 
+            
+            mean_type == "geometric" & 
+               variability_type == "GCV" ~ Geomean  + Geomean * GCV, 
+            
+            variability_type == "90% CI" ~ CI90_high, 
+            
+            variability_type == "RANGE" ~ Max))
+   
    
    if("logical" %in% class(observed_PK) == FALSE){
       PK_long <- PK_long %>% 
@@ -292,10 +348,81 @@ trial_means_plot <- function(sim_data_file,
    
    # Making graph -------------------------------------------------------------
    
-   G <- 
-      ggplot(PK_long,
-             aes(x = Trial, color = SorO, 
-                 y = Center, ymin = Lower, ymax = Upper)) +
+   G <- ggplot(PK_long, aes(x = Trial, color = SorO, 
+                            y = Center, ymin = Lower, ymax = Upper))
+   
+   if(lines_for_population_stats != "none"){
+      
+      AggStats <- PKdata$aggregate[[1]]
+      names(AggStats) <- renameStats(names(PKdata$aggregate[[1]]))
+      
+      # Simulator does not output arithmetic CIs, so need to add those here.
+      CI90_arith <- confInt(PKdata$individual %>% 
+                               pull({{PKparameter}}),
+                            CI = 0.9, 
+                            distribution_type = "t")
+      
+      AggStats <- c(AggStats, CI90_arith_low = CI90_arith[[1]], 
+                    CI90_arith_high = CI90_arith[[2]])
+      
+      G <- G + 
+         geom_hline(yintercept = 
+                       case_match(mean_type, 
+                                  "arithmetic" ~ AggStats["mean"], 
+                                  "geometric" ~ AggStats["geomean"], 
+                                  "median" ~ AggStats["median"]), 
+                    color = LineAES[1], 
+                    linetype = LineAES[2], 
+                    linewidth = as.numeric(LineAES[4])) +
+         geom_hline(yintercept = 
+                       case_when(
+                          mean_type == "arithmetic" & 
+                          variability_type ==  "SD" ~ AggStats["mean"] + AggStats["SD"], 
+                          
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "CV" ~ AggStats["mean"] + AggStats["SD"], 
+                          
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_arith_high"], 
+                          
+                          mean_type == "geometric" & 
+                             variability_type ==  "GCV" ~ AggStats["geomean"] + 
+                             AggStats["geomean"] * AggStats["GCV"], 
+                          
+                          mean_type == "geometric" & 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_high"], 
+                          
+                          variability_type == "RANGE" ~ AggStats["max"]), 
+                    
+                    color = LineAES[1], 
+                    linetype = LineAES[3], 
+                    linewidth = as.numeric(LineAES[4])) +
+         geom_hline(yintercept = 
+                       case_when(
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "SD" ~ AggStats["mean"] - AggStats["SD"], 
+                          
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "CV" ~ AggStats["mean"] - AggStats["SD"], 
+                          
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_arith_low"], 
+                          
+                          mean_type == "geometric" & 
+                             variability_type ==  "GCV" ~ AggStats["geomean"] - 
+                             AggStats["geomean"] * AggStats["GCV"], 
+                          
+                          mean_type == "geometric" & 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_low"], 
+                          
+                          variability_type == "RANGE" ~ AggStats["min"]), 
+                    
+                    color = LineAES[1], 
+                    linetype = LineAES[3], 
+                    linewidth = as.numeric(LineAES[4]))
+   }
+   
+   G <- G +
       geom_errorbar(width = 0.5) +
       geom_point() +
       scale_color_brewer(palette = "Set1") +
@@ -314,7 +441,7 @@ trial_means_plot <- function(sim_data_file,
       
       Legos <- make_text_legos(sim_data_file = basename(sim_data_file), 
                                existing_exp_details = PKdata[["ExpDetails"]], 
-                               prettify_compound_names = T)
+                               prettify_compound_names = prettify_compound_names)
       
       PKparameter_rmd <- case_match(sub("_dose1|_last", "", PKparameter), 
                                     "Cmax" ~ "C~max~", 
@@ -327,11 +454,17 @@ trial_means_plot <- function(sim_data_file,
                                     "CLinf" ~ "CL/F")
       
       Caption <- 
-         paste0("Figure shows ", mean_type, " mean (point) and ", 
+         paste0("Figure shows ", 
+                case_match(mean_type,
+                           "arithmetic" ~ "arithmetic mean", 
+                           "geometric" ~ "geometric mean", 
+                           "median" ~ "median"), 
+                " (point) and ", 
                 case_match(variability_type, 
                            "SD" ~ "standard deviation", 
                            "CV" ~ "standard deviation", 
                            "GCV" ~ "standard deviation", 
+                           "90% CI" ~ "90% confidence interval", 
                            "RANGE" ~ "range"), 
                 " (error bars) for ", 
                 PKparameter_rmd, 
@@ -351,16 +484,38 @@ trial_means_plot <- function(sim_data_file,
                 ifelse(str_detect(PKparameter, "withInhib|ratio"), 
                        paste0(" following ", Legos$DosingText_inhib_lower), ""), 
                 ifelse("logical" %in% class(observed_PK), 
-                       ". ", 
+                       "", 
                        paste0(". Observed data from clinical study ", 
                               ifelse(is.na(name_clinical_study), 
-                                     "***XXX***", name_clinical_study), ". ")), 
+                                     "***XXX***", name_clinical_study))), 
+                ". ", 
+                ifelse(lines_for_population_stats == "none", 
+                       "", 
+                       paste0("Horizontal lines indicated the ", 
+                              case_match(mean_type,
+                                         "arithmetic" ~ "arithmetic mean", 
+                                         "geometric" ~ "geometric mean", 
+                                         "median" ~ "median"), 
+                              " and ", 
+                              case_match(variability_type, 
+                                         "SD" ~ "standard deviation", 
+                                         "CV" ~ "standard deviation", 
+                                         "GCV" ~ "standard deviation", 
+                                         "90% CI" ~ "90% confidence interval", 
+                                         "RANGE" ~ "range"), 
+                              " for the simulated population. ")), 
                 "Source simulated data: ", sim_data_file, ".")
       
       Heading <- paste0("Simulated ", 
                         ifelse("logical" %in% class(observed_PK), 
                                "", "and observed "), 
-                        "values for ", PKparameter_rmd, " comparing variability across trials.")
+                        "values for ", PKparameter_rmd,
+                        " for ", 
+                        PKdata[["ExpDetails"]] %>% 
+                           filter(File == sim_data_file) %>% 
+                           select(AllCompounds$DetailNames[
+                              AllCompounds$CompoundID == compoundToExtract]), 
+                        " comparing variability across trials.")
       
       Out[["figure_heading"]] <- Heading
       Out[["figure_caption"]]  <-  Caption
