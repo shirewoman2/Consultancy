@@ -411,6 +411,10 @@ tidy_input_PK <- function(PKparameters,
       # PKparameters should now be long by PK parameter instead of wide, but the
       # column names might be incorrect. Fixing that next. 
       
+      # FIXME - I took most of this section and make a standalone function
+      # tidy_PKparameters_names for fixing issues with column names. At some
+      # point, go back and replace most of this next section with that function.
+      
       ### PKparameters ------------------------------------------------------------
       
       names(PKparameters)[tolower(names(PKparameters)) == "pkparameter"] <- "PKparameter"

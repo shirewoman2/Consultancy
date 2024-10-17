@@ -1,8 +1,15 @@
 #' Make graphs comparing center statistic and variability in PK across trials
 #' and, optionally, against observed PK data as well
 #'
-#' @description UNDER CONSTRUCTION. For now, must supply observed_PK as a
-#'   data.frame.
+#' @description \code{trial_means_plot} creates a graph of the PK parameter
+#'   selected showing the central statistic chosen as a dot and the variability
+#'   statistic chosen as error bars for each of the trials included in a
+#'   simulation. The simulated trials may be compared to variability in the
+#'   corresponding observed PK when provided. UNDER CONSTRUCTION.
+#'
+#'   \strong{IMPORTANT:} If the summary statistics used for your observed data
+#'   don't match the summary statistics you choose for \code{mean_type} and
+#'   \code{variability_type}, you will get a misleading graph, so be careful!
 #'
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output,
@@ -44,6 +51,33 @@
 #' @param variability_type What variability statistic to you want to use for the
 #'   error bars? Options are "90% CI", "SD", "CV", "GCV" (for geometric CV), or
 #'   "range".
+#' @param observed_PK a data.frame of observed PK that you would like to
+#'   compare. This must include the columns "ObsValue" or "Value" for the center
+#'   value for the observed data and "ObsVariability" or "Variability" for the
+#'   error bars for the observed data. Some filtering this will do
+#'   automatically: 
+#'   
+#'   \itemize{\item{If you include a column titled "File", we will only use PK
+#'   data that have the same value in that column as what you supply for
+#'   \code{sim_data_file}.}
+#'
+#'   \item{If you include a column titled "PKparameter", we will
+#'   only use PK data that match what you supply for \code{PKparameter}.}
+#'
+#'   \item{If you want to include comparisons to more than one clinical study, add a column
+#'   titled "Study" to your data. The value listed in that column will be used
+#'   for labeling the study on your graph. If there is not a column titled
+#'   "Study" in your observed PK, we will label the data "observed" in the
+#'   graph.}
+#'   
+#'   \item{If you include a column titled "CompoundID", we will only include PK 
+#'   data that match what you supplied for \code{compoundToExtract}.}
+#'   
+#'   \item{If you include a column titled "Tissue", we will only include PK 
+#'   data that match what you supplied for \code{tissue}.}
+#'   
+#'   }
+#'   
 #' @param lines_for_population_stats optionally include horizontal lines for the
 #'   overall simulated population by specifying the desired line color and type.
 #'   If left as "none" (default), no lines will be included. If set to, e.g.,
@@ -56,11 +90,79 @@
 #'   line type you want for the variability statistic. If you add another space
 #'   and then a fourth number, that will set the line width, which will be 0.5
 #'   by default.
+#' @param color_set the set of colors to use. Options: \describe{
+#'
+#'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
+#'   that are friendly to those with red-green colorblindness. The first three
+#'   colors are green, orange, and purple. This can also be referred to as
+#'   "Brewer set 2". If there are only two unique values in the colorBy_column,
+#'   then Brewer set 1 will be used since red and blue are still easily
+#'   distinguishable but also more aesthetically pleasing than green and
+#'   orange.}
+#'
+#'   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+#'   first three colors are red, blue, and green.}
+#'
+#'   \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+#'   (ggplot2 is an R package for graphing.)}
+#'
+#'   \item{"rainbow"}{colors selected from a rainbow palette. The default
+#'   palette is limited to something like 6 colors, so if you have more than
+#'   that, that's when this palette is most useful. It's \emph{not} very useful
+#'   when you only need a couple of colors.}
+#'
+#'   \item{"blue-green"}{a set of blues fading into greens. This palette can be
+#'   especially useful if you are comparing a systematic change in some
+#'   continuous variable -- for example, increasing dose or predicting how a
+#'   change in intrinsic solubility will affect concentration-time profiles --
+#'   because the direction of the trend will be clear.}
+#'
+#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"greens"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+#'   package}
+#'
+#'   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+#'   colors from purple to blue to green to yellow in a manner that is
+#'   "printer-friendly, perceptually uniform and easy to read by those with
+#'   colorblindness", according to the package author}
+#'
+#'   \item{a character vector of colors}{If you'd prefer to set all the colors
+#'   yourself to \emph{exactly} the colors you want, you can specify those
+#'   colors here. An example of how the syntax should look: \code{color_set =
+#'   c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+#'   which item in \code{colorBy_column} gets which color, you can supply a
+#'   named vector. For example, if you're coloring the lines by the compound ID,
+#'   you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+#'   "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+#'   like help creating a specific gradation of colors, please talk to a member
+#'   of the R Working Group about how to do that using
+#'   \link{colorRampPalette}.}}
+#' @param color_option How do you want to color information in the graph?
+#'   Options are: \describe{\item{"by study" (default)}{all simulated trials
+#'   will be the first color from \code{color_set} and then each set of
+#'   observed data will be a different color from that set}
+#'
+#'   \item{"by trial"}{uses a different color from \code{color_set} for every
+#'   trial, whether simulated or observed}}
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 #'   limits for the linear plot will be automatically selected. (Setting up
 #'   semi-log plot y axis intervals manually is a bit tricky and is not
 #'   currently supported.)
+#' @param legend_position specify where you want the legend to be. Options are
+#'   "left", "right" (default), "bottom", "top", or "none" if you don't want one
+#'   at all.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
@@ -68,12 +170,6 @@
 #'   time by supplying that object here, unquoted. If left as NA, this function
 #'   will run \code{extractExpDetails} behind the scenes anyway to figure out
 #'   some information about your experimental set up.
-#' @param observed_PK a data.frame of observed PK that you would like to
-#'   compare. This must include the columns "ObsValue" for the center value for
-#'   the observed data and "ObsVariability" for the error bars for the observed
-#'   data. We'll assume that observed PK mean type and variability type match
-#'   what's supplied here. This will probably be buggy if they don't. UNDER
-#'   CONSTRUCTION. LIKELY SUPER BUGGY.
 #' @param return_caption TRUE or FALSE (default) for whether to return any
 #'   caption text to use with the graph. This works best if you supply something
 #'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
@@ -116,11 +212,14 @@ trial_means_plot <- function(sim_data_file,
                              sheet = NA, 
                              mean_type = "geometric", 
                              variability_type = "90% CI", 
+                             observed_PK = NA, 
                              lines_for_population_stats = "none", 
+                             color_set = "default",
+                             color_option = "by study", 
                              y_axis_limits_lin = NA, 
+                             legend_position = "right", 
                              include_dose_num = FALSE, 
                              existing_exp_details = NA, 
-                             observed_PK = NA, 
                              return_caption = FALSE, 
                              prettify_compound_names = TRUE,
                              name_clinical_study = NA){
@@ -205,9 +304,24 @@ trial_means_plot <- function(sim_data_file,
       LineAES[4] <- "0.5"
    }
    
+   color_option <- tolower(color_option)[1]
+   if(color_option %in% c("by study", "by trial") == FALSE){
+      warning(wrapn("You have specified something for the argument 'color_option' that is not among the possible options. We will color the data by the study, which is the default."), 
+              call. = FALSE)
+      color_option <- "by study"
+   }
+   
+   legend_position <- tolower(legend_position)[1]
+   if(legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
+      warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'right', the default."), 
+              call. = FALSE)
+      legend_position <- "right"
+   }
+   
    
    # Main body of function -----------------------------------------------------
    
+   ## Getting simulated data --------------------------------------------------
    PKdata <- extractPK(sim_data_file = sim_data_file, 
                        PKparameters = PKparameter, 
                        tissue = tissue, 
@@ -238,28 +352,75 @@ trial_means_plot <- function(sim_data_file,
                                    "geometric" = gm_conf(Value, CI = 0.9, distribution_type = "t")[[2]], 
                                    "median" = NA), 
                 Median = median(Value, na.rm = T)) %>% 
-      mutate(SorO = "simulated")
+      mutate(SorO = "simulated", 
+             Study = "simulated", 
+             Center = case_when(mean_type == "arithmetic" ~ Mean, 
+                                mean_type == "geometric" ~ Geomean, 
+                                mean_type == "median" ~ Median), 
+             
+             Lower = case_when(
+                mean_type == "arithmetic" & 
+                   variability_type %in% c("SD", "CV") ~ Mean - SD, 
+                
+                mean_type == "geometric" & 
+                   variability_type == "GCV" ~ Geomean  - Geomean * GCV, 
+                
+                variability_type == "90% CI" ~ CI90_low, 
+                
+                variability_type == "RANGE" ~ Min), 
+             
+             Upper = case_when(
+                mean_type == "arithmetic" & 
+                   variability_type %in% c("SD", "CV") ~ Mean + SD, 
+                
+                mean_type == "geometric" & 
+                   variability_type == "GCV" ~ Geomean  + Geomean * GCV, 
+                
+                variability_type == "90% CI" ~ CI90_high, 
+                
+                variability_type == "RANGE" ~ Max))
    
-   # Getting observed PK for comparison
-   if("File" %in% names(observed_PK)){
-      observed_PK <- observed_PK %>% 
-         filter(basename(File) == basename(sim_data_file))
-   }
    
-   if("CompoundID" %in% names(observed_PK)){
-      observed_PK <- observed_PK %>% 
-         filter(CompoundID == {{compoundToExtract}})
-   }
-   
-   if("Tissue" %in% names(observed_PK)){
-      observed_PK <- observed_PK %>% 
-         filter(Tissue == {{tissue}})
-   }
+   ## Getting observed PK for comparison ---------------------------------------
    
    if("logical" %in% class(observed_PK) == FALSE){
+      
+      if("character" %in% class(observed_PK) && 
+         str_detect(observed_PK, "csv$")){
+         observed_PK <- read.csv(observed_PK)
+      }
+      
+      # Tidying column names. 
+      observed_PK <- tidy_PKparameters_names(observed_PK)
+      
+      if("File" %in% names(observed_PK) &&
+         any(complete.cases(observed_PK$File))){
+         observed_PK <- observed_PK %>% 
+            filter(basename(File) == basename(sim_data_file))
+      }
+      
+      if("CompoundID" %in% names(observed_PK) &&
+         any(complete.cases(observed_PK$CompoundID))){
+         observed_PK <- observed_PK %>% 
+            filter(CompoundID == {{compoundToExtract}})
+      }
+      
+      if("Tissue" %in% names(observed_PK) &&
+         any(complete.cases(observed_PK$Tissue))){
+         observed_PK <- observed_PK %>% 
+            filter(Tissue == {{tissue}})
+      }
+      
+      if("PKparameter" %in% names(observed_PK) && 
+         any(complete.cases(observed_PK$PKparameter))){
+         observed_PK <- observed_PK %>% 
+            filter(PKparameter == {{PKparameter}})
+      } else {
+         observed_PK$PKparameter <- PKparameter
+      }
+      
       suppressWarnings(
          observed_PK <- observed_PK %>%
-            filter(PKparameter == {{PKparameter}}) %>% 
             separate(ObsVariability, into = c("Lower", "Upper"), 
                      sep = "( )?to( )?|( )?-( )?", remove = FALSE) %>% 
             rename(Center = ObsValue) %>% 
@@ -300,36 +461,30 @@ trial_means_plot <- function(sim_data_file,
                                      
                                      .default = Upper))
       )
+      
+      names(observed_PK)[tolower(names(observed_PK)) == "study"] <- "Study"
+      if("Study" %in% names(observed_PK)){
+         
+         # We need the trial itself to be just, e.g., "study 1", "study 2"
+         # because the study labels are invariably much too long otherwise. It's
+         # just really hard to get things to look good when all of the simulated
+         # trials are a digit or 2 and then the observed data are all, e.g.,
+         # "Clinical study 101, fasted". Instead, adding a legend when coloring
+         # by study and there are multiple observed data sets.
+         observed_PK <- observed_PK %>% 
+            mutate(Trial = factor(Study, 
+                                  levels = unique(Study)), 
+                   Trial = paste("study", as.numeric(Trial)), 
+                   Study = paste0(Trial, ": ", Study))
+         
+      } else {
+         observed_PK$Trial <- "observed"
+      }
+      
+      ObsTrialLevels <- unique(observed_PK$Trial)
+      ObsStudyLevels <- unique(observed_PK$Study)
+      
    } 
-   
-   PK_long <- PK_long %>% 
-      mutate(
-         Center = case_when(mean_type == "arithmetic" ~ Mean, 
-                            mean_type == "geometric" ~ Geomean, 
-                            mean_type == "median" ~ Median), 
-         
-         Lower = case_when(
-            mean_type == "arithmetic" & 
-               variability_type %in% c("SD", "CV") ~ Mean - SD, 
-            
-            mean_type == "geometric" & 
-               variability_type == "GCV" ~ Geomean  - Geomean * GCV, 
-            
-            variability_type == "90% CI" ~ CI90_low, 
-            
-            variability_type == "RANGE" ~ Min), 
-         
-         Upper = case_when(
-            mean_type == "arithmetic" & 
-               variability_type %in% c("SD", "CV") ~ Mean + SD, 
-            
-            mean_type == "geometric" & 
-               variability_type == "GCV" ~ Geomean  + Geomean * GCV, 
-            
-            variability_type == "90% CI" ~ CI90_high, 
-            
-            variability_type == "RANGE" ~ Max))
-   
    
    if("logical" %in% class(observed_PK) == FALSE){
       PK_long <- PK_long %>% 
@@ -337,7 +492,9 @@ trial_means_plot <- function(sim_data_file,
          mutate(Trial = factor(Trial, 
                                levels = c(as.character(1:length(
                                   unique(PKdata$individual$Trial))), 
-                                  "observed")))
+                                  ObsTrialLevels)), 
+                Study = factor(Study, 
+                               levels = c("simulated", ObsStudyLevels)))
    } else {
       PK_long <- PK_long %>% 
          mutate(Trial = factor(Trial, 
@@ -348,8 +505,32 @@ trial_means_plot <- function(sim_data_file,
    
    # Making graph -------------------------------------------------------------
    
-   G <- ggplot(PK_long, aes(x = Trial, color = SorO, 
-                            y = Center, ymin = Lower, ymax = Upper))
+   # Setting colors
+   if(color_option == "by study"){
+      
+      MyColors <- make_color_set(color_set = color_set, 
+                                 num_colors = length(unique(PK_long$Study)))
+      
+      if(length(unique(PK_long$Study)) == 1){
+         legend_position <- "none"
+      }
+      
+      G <- ggplot(PK_long, aes(x = Trial, color = Study, 
+                               y = Center, ymin = Lower, ymax = Upper))
+      
+   } else if(color_option == "by trial"){
+      
+      MyColors <- make_color_set(color_set = color_set, 
+                                 num_colors = length(unique(PK_long$Trial)))
+      
+      if(length(unique(PK_long$Trial)) == 1){
+         legend_position <- "none"
+      }
+      
+      G <- ggplot(PK_long, aes(x = Trial, color = Trial, 
+                               y = Center, ymin = Lower, ymax = Upper))
+      
+   }
    
    if(lines_for_population_stats != "none"){
       
@@ -377,7 +558,7 @@ trial_means_plot <- function(sim_data_file,
          geom_hline(yintercept = 
                        case_when(
                           mean_type == "arithmetic" & 
-                          variability_type ==  "SD" ~ AggStats["mean"] + AggStats["SD"], 
+                             variability_type ==  "SD" ~ AggStats["mean"] + AggStats["SD"], 
                           
                           mean_type == "arithmetic" & 
                              variability_type ==  "CV" ~ AggStats["mean"] + AggStats["SD"], 
@@ -425,10 +606,10 @@ trial_means_plot <- function(sim_data_file,
    G <- G +
       geom_errorbar(width = 0.5) +
       geom_point() +
-      scale_color_brewer(palette = "Set1") +
+      scale_color_manual(values = MyColors) +
       theme_consultancy() +
-      ylab(PKexpressions[[sub("_last|_dose1", "", PKparameter)]]) +
-      theme(legend.position = "none")
+      ylab(PKexpressions[[sub("_last|_dose1", "", PKparameter)]]) + 
+      theme(legend.position = legend_position)
    
    if(any(complete.cases(y_axis_limits_lin))){
       G <- G +
