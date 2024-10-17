@@ -69,22 +69,47 @@ set_boundary_colors <- function(color_set,
    
    color_set <- tolower(color_set)
    
-   GoodColors <- c("red black", "yellow to red", "green to red", 
+   GoodColors <- c("red black", "yellow to red", "green to red", "red green",
                    "muted red green", "lisa", "traffic")
    
-   if(length(boundaries) != length(color_set) &
-      tolower(color_set[1]) %in% GoodColors == FALSE){
-      warning("You have specified one number of colors for highlighting values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting.", 
+   if(length(color_set) == 1 & length(boundaries) > 1 &&
+      color_set %in% GoodColors == FALSE){
+      
+      color_set <- switch(break_type, 
+                          "SO LINE" = "red black", 
+                          "SO HIGHLIGHT" = "yellow to red")
+      
+      warning(wrapn(paste0("It looks like you're trying to use a set of colors but that you have not provided one of the acceptable color sets. Please check the help file for options here. We'll use a color set of '", 
+                           color_set, "'.")), 
               call. = FALSE)
-      color_set <- "yellow to red"
    }
    
-   if(color_set[1] %in% GoodColors == FALSE && 
-      tryCatch(is.matrix(col2rgb(color_set)),
-               error = function(x) FALSE) == FALSE){
-      warning("The values you used for highlighting are not all valid colors in R. We'll used the default colors instead.", 
+   if(length(color_set) > 1 && 
+      length(boundaries) != length(color_set)){
+      
+      color_set <- switch(break_type, 
+                          "SO LINE" = "red black", 
+                          "SO HIGHLIGHT" = "yellow to red")
+      
+      warning(wrapn(paste0("The number of colors specified does not match the number of boundaries. We'll use the color set '",
+                           color_set, "' instead.")),
               call. = FALSE)
-      color_set <- "yellow to red"
+      
+   }
+   
+   # Checking that they're real colors if not one of the sets.
+   ColorCheck <- try(expr = col2rgb(color_set), silent = TRUE)
+   if(color_set[1] %in% GoodColors == FALSE && 
+      is.matrix(ColorCheck) == FALSE){
+      
+      color_set <- switch(break_type, 
+                          "SO LINE" = "red black", 
+                          "SO HIGHLIGHT" = "yellow to red")
+      
+      warning(wrapn(paste0("The values you used for highlighting are not all valid colors in R. We'll use the color set '",
+                           color_set, "' instead.")),
+              call. = FALSE)
+      
    } 
    
    # A little Easter egg 
