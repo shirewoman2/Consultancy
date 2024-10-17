@@ -21,6 +21,7 @@ calc_PK_ratios_mult(
   include_dose_num = NA,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
+  name_clinical_study = NA,
   rounding = NA,
   checkDataSource = TRUE,
   extract_forest_data = FALSE,
@@ -247,6 +248,15 @@ like this
 if you're including perpetrator metabolites: \code{prettify_compound_names =
 c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
+
+\item{name_clinical_study}{optionally specify the name(s) of the clinical
+study or studies for any observed data. This only affects the caption of
+the graph. For example, specifying \code{name_clinical_study = "101, fed
+cohort"} will result in a figure caption that reads in part "clinical study
+101, fed cohort". If you have more than one study, that's fine; we'll take
+care of stringing them together appropriately. Just list them as a
+character vector, e.g., \code{name_clinical_study = c("101",
+"102", "103")} will become "clinical studies 101, 102, and 103."}
 
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{NA or "Consultancy"}{All output will be rounded according
