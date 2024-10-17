@@ -702,6 +702,14 @@ ct_plot_overlay <- function(ct_dataframe,
       )
    }
    
+   legend_position <- tolower(legend_position)[1]
+   if(complete.cases(legend_position) && 
+      legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
+      warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'right'."), 
+              call. = FALSE)
+      legend_position <- "right"
+   }
+   
    # If user wanted hline or vline added, check that they have specified
    # argument correctly and set up the character vector of preferences.
    HLineAES <- str_split(hline_style, pattern = " ")[[1]]

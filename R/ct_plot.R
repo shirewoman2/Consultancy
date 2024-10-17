@@ -616,9 +616,9 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Making most character arguments lower case to avoid case sensitivity
    figure_type <- tolower(figure_type) # LOWER CASE ONLY FROM HERE DOWN.
-   mean_type <- tolower(mean_type)
-   legend_position <- tolower(legend_position)
-   linear_or_log <- tolower(linear_or_log)
+   mean_type <- tolower(mean_type)[1]
+   legend_position <- tolower(legend_position)[1]
+   linear_or_log <- tolower(linear_or_log)[1]
    if(str_detect(linear_or_log, "horiz") & str_detect(linear_or_log, "vert")){
       linear_or_log <- "horizontal and vertical"
    }
@@ -727,6 +727,15 @@ ct_plot <- function(ct_dataframe = NA,
               call. = FALSE)
       figure_type <- "freddy"
    }
+   
+   legend_position <- tolower(legend_position)[1]
+   if(complete.cases(legend_position) && 
+      legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
+      warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'right'."), 
+              call. = FALSE)
+      legend_position <- "right"
+   }
+   
    
    # Main body of function --------------------------------------------------
    
@@ -1009,12 +1018,17 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    if(figure_type == "compound summary"){
-      NumColorsNeeded <- length(sort(unique(obs_dataframe$Study)))
-      if(length(obs_color) < NumColorsNeeded){
-         warning(wrapn(paste0("You have ", NumColorsNeeded, 
+      if(all(is.na(obs_color_user))){
+         obs_color <- make_color_set(
+            color_set = "default", 
+            num_colors = length(sort(unique(obs_dataframe$Study))))
+      } else if(length(obs_color) < length(sort(unique(obs_dataframe$Study)))){
+         warning(wrapn(paste0("You have ", length(sort(unique(obs_dataframe$Study))), 
                               " unique studies in your data but have only specified ", 
                               length(obs_color), " color. You might want to specify more colors to distinguish between studies.")), 
                  call. = FALSE)
+         
+         obs_color <- rep(obs_color_user, length(sort(unique(obs_dataframe$Study))))
       }
    }
    
@@ -1135,15 +1149,18 @@ ct_plot <- function(ct_dataframe = NA,
    obs_fill_trans<- AesthetStuff$obs_fill_trans
    obs_line_trans <- AesthetStuff$obs_line_trans
    
-   # Making sure there are enough colors for "compound summary" figures. 
+   # Making sure there are enough shapes and colors for "compound summary"
+   # figures.
    if(figure_type == "compound summary"){
       obs_color <- rep(obs_color, 
+                       length(unique(obs_dataframe$Study)))
+      obs_shape <- rep(obs_shape, 
                        length(unique(obs_dataframe$Study)))
    }
    
    # Warning for a figure type that's not recommended
    
-   # Is this a graph showing substate +/- perpetrator?
+   # Is this a graph showing substrate +/- perpetrator?
    Eff_plusminus <- length(MyPerpetrator) > 0 && 
       complete.cases(MyPerpetrator[1]) &&
       MyPerpetrator[1] != "none" &
@@ -1195,7 +1212,7 @@ ct_plot <- function(ct_dataframe = NA,
                                           aes(x = Time, y = Conc, group = Group,
                                               linetype = Inhibitor, shape = Inhibitor,
                                               color = Inhibitor, fill = Inhibitor))
-                         ), 
+                  ), 
                
                "compound summary" = 
                   switch(as.character(Eff_plusminus), 
@@ -1205,7 +1222,7 @@ ct_plot <- function(ct_dataframe = NA,
                                              linetype = Inhibitor, shape = Inhibitor)), 
                          "FALSE" = ggplot(sim_data_trial,
                                           aes(x = Time, y = Conc, group = Group))
-                         ), 
+                  ), 
                
                "means only" = ggplot(sim_data_mean %>%
                                         filter(Trial == MyMeanType), 

@@ -32,7 +32,14 @@ set_aesthet <- function(line_type, figure_type, MyPerpetrator, MyCompoundID,
    }
    
    if(is.na(obs_shape[1])){
-      obs_shape <- c(1, 2)
+      if(figure_type == "compound summary"){
+         # Not sure how many we'll need, and the main ct_plot function will
+         # replicate this as needed until we have enough shapes, so just picking
+         # several good-ish ones to use.
+         obs_shape <- c(16, 17, 15, 18, 1, 2, 0, 5, 6, 8, 7, 9, 10, 12, 13, 3, 4, 14)
+      } else {
+         obs_shape <- c(1, 2)
+      }
    }
    
    if(is.na(line_color[1])){
