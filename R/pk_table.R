@@ -1256,37 +1256,42 @@ pk_table <- function(PKparameters = NA,
       
    }
    
+   Out <- list("Table" = MyPKResults)
+   
+   
    # Setting up table caption ------------------------------------------------
    
-   if(single_table){
-      
-      MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
-                                               prettify_compound_names = TRUE)
-      
-      DosesIncluded <- c("Dose1" = any(str_detect(PKparameters$PKparameter, "_dose1")),
-                         "Last" = any(str_detect(PKparameters$PKparameter, "_last")), 
-                         "User" = any(complete.cases(PKparameters$Sheet)))
-      DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
-      
-      Annotations <- make_table_annotations(
-         MyPKResults = MyPKResults %>% purrr::discard(~all(is.na(.))), 
-         MyFile = unique(MyPKResults$File), 
-         MyCompoundID = unique(MyPKResults$CompoundID), 
-         prettify_compound_names = prettify_compound_names,
-         Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
-                        "TRUE" = data.frame(), 
-                        "FALSE" = Deets), 
-         MeanType = MeanType, 
-         DosesIncluded = case_match(DosesIncluded, 
-                                    "Dose1 User" ~ "Dose1 Last", 
-                                    "Last User" ~ "Last", 
-                                    .default = DosesIncluded), 
-         tissue = unique(MyPKResults$Tissue), 
-         name_clinical_study = name_clinical_study)
-      
-   } else {
-      
-      return_caption <- FALSE
+   
+   MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
+                                            prettify_compound_names = TRUE)
+   
+   DosesIncluded <- c("Dose1" = any(str_detect(PKparameters$PKparameter, "_dose1")),
+                      "Last" = any(str_detect(PKparameters$PKparameter, "_last")), 
+                      "User" = any(complete.cases(PKparameters$Sheet)))
+   DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
+   
+   Annotations <- make_table_annotations(
+      MyPKResults = MyPKResults %>% purrr::discard(~all(is.na(.))), 
+      MyFile = unique(MyPKResults$File), 
+      MyCompoundID = unique(MyPKResults$CompoundID), 
+      prettify_compound_names = prettify_compound_names,
+      Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
+                     "TRUE" = data.frame(), 
+                     "FALSE" = Deets), 
+      MeanType = MeanType, 
+      DosesIncluded = case_match(DosesIncluded, 
+                                 "Dose1 User" ~ "Dose1 Last", 
+                                 "Last User" ~ "Last", 
+                                 .default = DosesIncluded), 
+      tissue = unique(MyPKResults$Tissue), 
+      name_clinical_study = name_clinical_study)
+   
+   if(return_caption){
+      Out[["table_heading"]] <- Annotations$table_heading
+      Out[["table_caption"]] <- Annotations$table_caption
+   } 
+   
+   if(single_table == FALSE){
       
       Annotations <- list("table_heading" = "", 
                           "table_caption" = "")
@@ -1381,8 +1386,6 @@ pk_table <- function(PKparameters = NA,
       
    }
    
-   Out <- list("Table" = MyPKResults)
-   
    if(checkDataSource){
       Out[["QC"]] <- OutQC
       
@@ -1404,11 +1407,6 @@ pk_table <- function(PKparameters = NA,
    if(return_PK_pulled){
       Out[["PKpulled"]] <- PKpulled
    }
-   
-   if(return_caption){
-      Out[["table_heading"]] <- Annotations$table_heading
-      Out[["table_caption"]] <- Annotations$table_caption
-   } 
    
    if(length(Out) == 1){
       Out <- Out[[1]]

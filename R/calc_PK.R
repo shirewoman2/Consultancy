@@ -1,5 +1,4 @@
-#' Calculate basic PK parameters for the 1st and last doses of
-#' concentration-time data
+#' Calculate basic PK parameters for concentration-time data
 #'
 #' \code{calc_PK} calculates AUCinf_dose1, AUCt_dose1, AUCtau_last, Cmax_dose1,
 #' Cmax_last, tmax_dose1, tmax_last, CLinf_dose1, and CLtau_last for the

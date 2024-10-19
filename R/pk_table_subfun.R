@@ -137,7 +137,7 @@ pk_table_subfun <- function(sim_data_file,
    
    # Changing units if user wants. 
    if(complete.cases(convert_conc_units) & is.na(Deets$Units_Cmax)){
-      warning("You requested that we convert the concentration units, but we can't find what units were used in your simulation. (This is often the case for Discovery simulations in particular.) We won't be able to convert the concentration units.\n", 
+      warning(wrapn("You requested that we convert the concentration units, but we can't find what units were used in your simulation. (This is often the case for Discovery simulations in particular.) We won't be able to convert the concentration units."), 
               call. = FALSE)
       convert_conc_units <- NA
    }
@@ -210,9 +210,9 @@ pk_table_subfun <- function(sim_data_file,
    # change PKpulled to reflect that change.
    if(any(str_detect(PKrequested, "AUCinf")) & 
       any(str_detect(PKpulled, "AUCinf")) == FALSE){
-      warning(paste0("AUCinf included NA values in the file `", 
-                     sim_data_file, 
-                     "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt instead."),
+      warning(wrapn(paste0("AUCinf included NA values in the file `", 
+                           sim_data_file, 
+                           "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt instead.")),
               call. = FALSE)
       PKparameters <- PKparameters %>% 
          filter(!str_detect(PKparameter, "AUCinf"))

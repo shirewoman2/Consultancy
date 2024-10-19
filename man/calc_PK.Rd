@@ -2,8 +2,7 @@
 % Please edit documentation in R/calc_PK.R
 \name{calc_PK}
 \alias{calc_PK}
-\title{Calculate basic PK parameters for the 1st and last doses of
-concentration-time data}
+\title{Calculate basic PK parameters for concentration-time data}
 \usage{
 calc_PK(
   ct_dataframe,
