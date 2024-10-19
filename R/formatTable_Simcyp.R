@@ -518,8 +518,7 @@ formatTable_Simcyp <- function(DF,
       
       TopRowValues <- OrigNames
       TopRowValues[BLcols] <- "Baseline"
-      TopRowValues[DDIcols] <- paste("With", AllPerps_colposition[
-         complete.cases(AllPerps_colposition)])
+      TopRowValues[DDIcols] <- paste("With", perpetrator_name)
       TopRowValues[RatioCols] <- "GMR"
       
       NewNames <- sub(str_c(paste(" with", AllPerps), collapse = "|"),
