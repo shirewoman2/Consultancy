@@ -455,9 +455,14 @@ make_ct_caption <- function(ct_dataframe,
                       ""), 
                " ", Tissue, " concentration-time profiles of ",
                MyCompound, " following ", DosingText_sub_lower, 
-               " (solid line) and on the ", DoseDay_ordinal, 
-               " day of ", NumDaysInhib, " days of dosing ",
-               MyPerpetrator, " (dashed line)"), 
+               " (solid line) and ",
+               
+               ifelse(DoseFreq_inhib == "single dose", 
+                      DosingText_inhib_lower, 
+                      paste0("on the ", DoseDay_ordinal, 
+                             " day of ", NumDaysInhib, " days of dosing ", 
+                             MyPerpetrator)), 
+               " (dashed line)"), 
             
             "InhibPresent perpetrator-victim concentration-time" = paste0(
                ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
