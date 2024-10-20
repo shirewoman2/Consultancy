@@ -1,17 +1,17 @@
 #' Change interaction parameters in Simcyp Simulator workspace files
 #'
-#' \code{change_wksz_interactions} changes interaction parameters such as Kapp,
-#' Ki, or IndMax in Simulator workspace files. Currently only set up to change
-#' CYP, P-gp, and a few UGT parameters, but we can add more options upon
-#' request. A few notes: 1. Pay attention to the "switch" arguments, which are
-#' set up just like in the Simulator but are easy to overlook. 2. This will
-#' automatically fix any XML file paths such as observed data overlay files or
-#' fixed trial design XML files to match the current user's path on SharePoint.
-#' If you don't want that, set \code{fix_xml_paths} to FALSE. 3.
-#' \strong{WARNING:} Do NOT mix Simulator versions in a single call. If you need
-#' more than one Simulator version, run this separately for each. It seems to
-#' have trouble otherwise, and I haven't discerned exactly where that trouble
-#' arises. - LSh
+#' @description \code{change_wksz_interactions} changes interaction parameters
+#'   such as Kapp, Ki, or IndMax in Simulator workspace files. Currently only
+#'   set up to change CYP, P-gp, and a few UGT parameters, but we can add more
+#'   options upon request. A few notes: \enumerate{\item{Pay attention to the "switch"
+#'   arguments, which are set up just like in the Simulator but are easy to
+#'   overlook.} \item{This will automatically fix any XML file paths such as
+#'   observed data overlay files or fixed trial design XML files to match the
+#'   current user's path on SharePoint. If you don't want that, set
+#'   \code{fix_xml_paths} to FALSE.} \item{\strong{WARNING:} Do NOT mix Simulator
+#'   versions in a single call. If you need more than one Simulator version, run
+#'   this separately for each. It seems to have trouble otherwise, and I haven't
+#'   discerned exactly where that trouble arises. - LSh}}
 #'
 #' @param sim_workspace_files the set of workspace files to modify; must end in
 #'   ".wksz" if you're specifying individual files. Leave as NA to change all
@@ -359,12 +359,12 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
              Level5 = case_when(Parameter == "competitive_inhibition_switch" &
                                    str_detect(enzymes, "CYP|UGT") ~ "KiSwitch", 
                                 Parameter == "competitive_inhibition_switch" &
-                                   str_detect(enzymes, "Pgp") ~ "KiEnabled", 
+                                   str_detect(enzymes, "Pgp|BCRP|MATE") ~ "KiEnabled", 
                                 
                                 Parameter == "Ki_fumic" &
                                    str_detect(enzymes, "CYP|UGT") ~ "Fumic",
                                 Parameter == "Ki_fumic" &
-                                   str_detect(enzymes, "Pgp") ~ "KiFuinc",
+                                   str_detect(enzymes, "Pgp|BCRP|MATE") ~ "KiFuinc",
                                 
                                 Parameter == "TDI_switch" ~ "KappSwitch",
                                 Parameter == "kinact" ~ "Kinact",
@@ -372,12 +372,12 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                 Parameter == "induction_IndMax_switch" &
                                    str_detect(enzymes, "CYP|UGT") ~ "IndSlopeSwitch",
                                 Parameter == "induction_IndMax_switch" &
-                                   str_detect(enzymes, "Pgp") ~ "Ind_max_switch",
+                                   str_detect(enzymes, "Pgp|BCRP|MATE") ~ "Ind_max_switch",
                                 
                                 Parameter == "Ind_slope" &
                                    str_detect(enzymes, "CYP|UGT") ~ "IndSlope",
                                 Parameter == "induction_IndMax_switch" &
-                                   str_detect(enzymes, "Pgp") ~ "Ind_slope",
+                                   str_detect(enzymes, "Pgp|BCRP|MATE") ~ "Ind_slope",
                                 
                                 Parameter == "induction_IndC50_switch" &
                                    str_detect(enzymes, "CYP|UGT") ~ "IndC50Switch",
@@ -385,12 +385,12 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                    str_detect(enzymes, "Pgp") ~ "Ind_C50_switch",
                                 
                                 Parameter == "IndC50" &
-                                   str_detect(enzymes, "Pgp") ~ "Ind_C50",
+                                   str_detect(enzymes, "Pgp|BCRP|MATE") ~ "Ind_C50",
                                 
                                 Parameter == "Ind_gamma" &
                                    str_detect(enzymes, "CYP|UGT") ~ "Y",
                                 Parameter == "Ind_gamma" &
-                                   str_detect(enzymes, "Pgp") ~ "Induction_Hill",
+                                   str_detect(enzymes, "Pgp|BCRP|MATE") ~ "Induction_Hill",
                                 
                                 TRUE ~ Parameter))
    
@@ -445,7 +445,7 @@ change_wksz_interactions <- function(sim_workspace_files = NA,
                                  "primary metabolite 2" = 8)
          
          EnzIntRoutes <- switch(str_extract(Changes[[i]]$enzymes[j], 
-                                            "CYP|UGT|Pgp|BCRP|OATP1B"), 
+                                            "CYP|UGT|Pgp|BCRP|OATP1B|MATE1|MATE2-K"), 
                                 "CYP" = "CYPInteractionRoutes", 
                                 "UGT" = "UGTInteractionRoutes", 
                                 "Pgp" = switch(Changes[[i]]$tissues[j], 
