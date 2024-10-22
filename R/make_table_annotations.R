@@ -383,9 +383,14 @@ make_table_annotations <- function(MyPKResults, # only PK table
                               "inhibitor 1 metabolite") == FALSE |
              length(setdiff(names(AllPerpetrators), MyCompoundID)) > 0),
       paste(" with or without", 
-            sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
-            "mg",
-            MyPerpetrator, DoseFreq_inhib),
+            ifelse(DoseFreq_inhib == "single dose", 
+                   paste("a single dose of", 
+                         sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
+                         "mg",
+                         MyPerpetrator), 
+                   paste(sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
+                         "mg",
+                         MyPerpetrator, DoseFreq_inhib))),
       "")
    
    Heading <- paste0("Simulated ",
