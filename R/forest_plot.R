@@ -1123,61 +1123,6 @@ forest_plot <- function(forest_dataframe,
       }
    } 
    
-   # Dealing with missing AUCinf values
-   if(use_AUCt_when_AUCinf_NA){
-      
-      forest_dataframe <- forest_dataframe %>% 
-         unite(col = ID, File, PKparameter, remove = FALSE)
-      
-      ExtrapProbs <- forest_dataframe %>% 
-         filter(PKparameter %in% c("AUCinf_ratio_dose1", 
-                                   "AUCinf_ratio") & 
-                   is.na(GeoMean))
-      if(nrow(ExtrapProbs) > 0){
-         ProbID <- ExtrapProbs$ID
-      } else {
-         ProbID <- NULL
-      }
-      
-      ExtrapProbs <- ExtrapProbs %>% pull(File)
-      
-      ExtrapProbs <- sort(unique(c(
-         ExtrapProbs, 
-         
-         setdiff(forest_dataframe$File, 
-                 forest_dataframe %>% 
-                    filter(PKparameter %in% c("AUCinf_ratio_dose1", 
-                                              "AUCinf_ratio")) %>% 
-                    pull(File)))))
-      
-      AUCt_swap <- forest_dataframe %>% 
-         filter(File %in% ExtrapProbs & 
-                   PKparameter %in% c("AUCt_ratio_dose1", 
-                                      "AUCt_ratio")) %>% 
-         mutate(PKparameter = ifelse(include_dose_num, 
-                                     "AUCinf_ratio_dose1", 
-                                     "AUCinf_ratio"))
-      
-      forest_dataframe <- forest_dataframe %>% 
-         bind_rows(AUCt_swap)
-      
-      if(all(is.na(PKparameters))){
-         forest_dataframe <- forest_dataframe %>% 
-            filter(!PKparameter %in% c("AUCt_ratio_dose1", 
-                                       "AUCt_ratio"))
-      } else {
-         PKparameters <- setdiff(PKparameters, 
-                                 c("AUCt_ratio_dose1", 
-                                   "AUCt_ratio"))
-      }
-      
-      warning(paste0(str_wrap("The following simulations had missing values for the AUCinf ratio for dose 1 and, by request, have had those values replaced with the AUCt ratio for dose 1:"), 
-                     "\n", str_c(paste0("     ", ExtrapProbs), collapse = "\n"), 
-                     "\nPLEASE NOTE THIS IN YOUR FIGURE CAPTION."), 
-              call. = FALSE)
-      
-   }
-   
    # Setting up y_axis_labels and checking for possible problems. This has to
    # come AFTER rbinding the observed data.
    YLabClass <- tryCatch(class(y_axis_labels), 
@@ -1319,6 +1264,63 @@ forest_plot <- function(forest_dataframe,
               call. = FALSE)
       legend_position <- "none"
    }
+   
+   
+   # Dealing with missing AUCinf values
+   if(use_AUCt_when_AUCinf_NA){
+      
+      forest_dataframe <- forest_dataframe %>% 
+         unite(col = ID, File, YCol, PKparameter, remove = FALSE)
+      
+      ExtrapProbs <- forest_dataframe %>% 
+         filter(PKparameter %in% c("AUCinf_ratio_dose1", 
+                                   "AUCinf_ratio") & 
+                   is.na(GeoMean))
+      if(nrow(ExtrapProbs) > 0){
+         ProbID <- ExtrapProbs$ID
+      } else {
+         ProbID <- NULL
+      }
+      
+      ExtrapProbs <- ExtrapProbs %>% pull(YCol)
+      
+      ExtrapProbs <- sort(unique(c(
+         ExtrapProbs, 
+         
+         setdiff(forest_dataframe$YCol, 
+                 forest_dataframe %>% 
+                    filter(PKparameter %in% c("AUCinf_ratio_dose1", 
+                                              "AUCinf_ratio")) %>% 
+                    pull(YCol)))))
+      
+      AUCt_swap <- forest_dataframe %>% 
+         filter(YCol %in% ExtrapProbs & 
+                   PKparameter %in% c("AUCt_ratio_dose1", 
+                                      "AUCt_ratio")) %>% 
+         mutate(PKparameter = ifelse(include_dose_num, 
+                                     "AUCinf_ratio_dose1", 
+                                     "AUCinf_ratio"))
+      
+      forest_dataframe <- forest_dataframe %>% 
+         bind_rows(AUCt_swap)
+      
+      if(all(is.na(PKparameters))){
+         forest_dataframe <- forest_dataframe %>% 
+            filter(!PKparameter %in% c("AUCt_ratio_dose1", 
+                                       "AUCt_ratio"))
+      } else {
+         PKparameters <- setdiff(PKparameters, 
+                                 c("AUCt_ratio_dose1", 
+                                   "AUCt_ratio"))
+      }
+      
+      warning(paste0(str_wrap("The following simulations (really, the following y axis labels) had missing values for the AUCinf ratio for dose 1 and, by request, have had those values replaced with the AUCt ratio for dose 1:"), 
+                     "\n", str_c(paste0("     ", ExtrapProbs), collapse = "\n"), 
+                     "\nPLEASE NOTE THIS IN YOUR FIGURE CAPTION."), 
+              call. = FALSE)
+      
+   }
+   
    
    
    # Main body of function -------------------------------------------------
@@ -2122,8 +2124,9 @@ forest_plot <- function(forest_dataframe,
          pull(YCol) %>% unique %>% as.character %>% str_comma
       CaptionText <- gsub("\\n", " ", CaptionText)
       
-      G <- G + labs(caption = paste0("For ", CaptionText, 
-                                     ", AUCt was used in lieu of AUCinf"))
+      G <- G + labs(caption = str_wrap(paste0("For ", CaptionText, 
+                                     ", AUCt was used in lieu of AUCinf."), 
+                                     width = 50))
       
    }
    
