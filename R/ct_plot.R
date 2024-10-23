@@ -86,7 +86,7 @@
 #'   that they show the mean as a dark line, the trial means as lighter lines,
 #'   dashed lines for the 5th and 95th percentiles, but then they additionally
 #'   color observed points by a column titled "Study" that you will need to add
-#'   to your data. (And yes, it \emph{must} be titled "Study" exactly.) 
+#'   to your data. (And yes, it \emph{must} be titled "Study" exactly.)
 #'   Everything else in these graphs will be gray or black, but
 #'   you can specify the color of the observed points with the argument
 #'   "obs_color" and the shape of the points with the argument "obs_shape".}}
@@ -176,13 +176,72 @@
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
 #' @param obs_color If you would like the observed data points to be in color,
-#'   either specify a color here or set this to "default". Points will be
-#'   displayed in semi-transparent blue-purple for "default" and the
-#'   semi-transparent version of whatever other color you list otherwise.
-#'   Setting this to "none" will remove observed data from the graph. Hex color
-#'   codes are also ok to use. If left as NA, all observed data will be in black
-#'   or, if you set something for \code{line_color}, whatever colors were used
-#'   for that.
+#'   either specify a color here or leave this as NA to get all black points for
+#'   most graph types or, if you set something for \code{line_color}, whatever
+#'   colors were used for that, semi-transparent blue-purple for a figure_type
+#'   of "Freddy", or a different color for each study (you must have a column
+#'   titled "Study" in ct_dataframe for this to work) for a figure_type of
+#'   "compound summary". Setting this to "none" will remove observed data from
+#'   the graph. Hex color codes are also ok to use. If you've got a figure_type
+#'   of "compound summary", then you can specify each color you want or you can
+#'   call on one of the possible color sets: Options: \describe{
+#'
+#'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
+#'   that are friendly to those with red-green colorblindness. The first three
+#'   colors are green, orange, and purple. This can also be referred to as
+#'   "Brewer set 2". If there are only two unique values in the colorBy_column,
+#'   then Brewer set 1 will be used since red and blue are still easily
+#'   distinguishable but also more aesthetically pleasing than green and
+#'   orange.}
+#'
+#'   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+#'   first three colors are red, blue, and green.}
+#'
+#'   \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+#'   (ggplot2 is an R package for graphing.)}
+#'
+#'   \item{"rainbow"}{colors selected from a rainbow palette. The default
+#'   palette is limited to something like 6 colors, so if you have more than
+#'   that, that's when this palette is most useful. It's \emph{not} very useful
+#'   when you only need a couple of colors.}
+#'
+#'   \item{"blue-green"}{a set of blues fading into greens. This palette can be
+#'   especially useful if you are comparing a systematic change in some
+#'   continuous variable -- for example, increasing dose or predicting how a
+#'   change in intrinsic solubility will affect concentration-time profiles --
+#'   because the direction of the trend will be clear.}
+#'
+#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"greens"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+#'   package}
+#'
+#'   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+#'   colors from purple to blue to green to yellow in a manner that is
+#'   "printer-friendly, perceptually uniform and easy to read by those with
+#'   colorblindness", according to the package author}
+#'
+#'   \item{a character vector of colors}{If you'd prefer to set all the colors
+#'   yourself to \emph{exactly} the colors you want, you can specify those
+#'   colors here. An example of how the syntax should look: \code{color_set =
+#'   c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+#'   which item in \code{colorBy_column} gets which color, you can supply a
+#'   named vector. For example, if you're coloring the lines by the compound ID,
+#'   you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+#'   "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+#'   like help creating a specific gradation of colors, please talk to a member
+#'   of the R Working Group about how to do that using
+#'   \link{colorRampPalette}.}}
 #' @param obs_shape optionally specify what shapes are used to depict observed
 #'   data for 1. the substrate drug alone and 2. the substrate drug in the
 #'   presence of a perpetrator. Input should look like this, for example:
@@ -1021,6 +1080,10 @@ ct_plot <- function(ct_dataframe = NA,
       if(all(is.na(obs_color_user))){
          obs_color <- make_color_set(
             color_set = "default", 
+            num_colors = length(sort(unique(obs_dataframe$Study))))
+      } else if(length(obs_color) == 1){
+         obs_color <- make_color_set(
+            color_set = obs_color_user, 
             num_colors = length(sort(unique(obs_dataframe$Study))))
       } else if(length(obs_color) < length(sort(unique(obs_dataframe$Study)))){
          warning(wrapn(paste0("You have ", length(sort(unique(obs_dataframe$Study))), 

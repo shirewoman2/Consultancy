@@ -477,7 +477,7 @@ inductFit <- function(DF,
       
       Curve <- data.frame(Concentration_uM = seq(min(DF$Concentration_uM, na.rm = T),
                                                  1.2*max(DF$Concentration_uM, na.rm = T),
-                                                 length.out = 300))
+                                                 length.out = 1000))
       MyCurves <- list()
       
       if(any(c("all", "Emax") %in% model) & 
@@ -1124,55 +1124,13 @@ inductFit <- function(DF,
    ## Adding options for colors -----------------------------------------------
    NumColors <- length(unique(DF$DonorID))
    
-   if(color_set == "default"){
-      # Using "Dark2" b/c "Set2" is just really, really light.
-      Out$Graph <- Out$Graph +
-         scale_color_brewer(palette = "Dark2") +
-         scale_fill_brewer(palette="Dark2")
-   }
+   MyColors <- make_color_set(color_set = color_set, 
+                              num_colors = NumColors)
    
-   if(color_set == "blue-green"){
-      Out$Graph <- Out$Graph +
-         scale_color_manual(values = blueGreens(NumColors)) +
-         scale_fill_manual(values = blueGreens(NumColors))
-   }
+   Out$Graph <- Out$Graph +
+      scale_color_manual(values = MyColors) +
+      scale_fill_manual(values = MyColors)
    
-   if(color_set == "blues"){
-      Out$Graph <- Out$Graph +
-         scale_color_manual(values = blues(NumColors)) +
-         scale_fill_manual(values = blues(NumColors))
-   }
-   
-   if(color_set == "rainbow"){
-      Out$Graph <- Out$Graph +
-         scale_color_manual(values = rainbow(NumColors)) +
-         scale_fill_manual(values = rainbow(NumColors))
-   }
-   
-   if(str_detect(tolower(color_set), "brewer.*2|set.*2")){
-      # Using "Dark2" b/c "Set2" is just really, really light.
-      Out$Graph <- Out$Graph +
-         scale_fill_brewer(palette = "Dark2") +
-         scale_color_brewer(palette = "Dark2")
-   }
-   
-   if(str_detect(tolower(color_set), "brewer.*1|set.*1")){
-      Out$Graph <- Out$Graph +
-         scale_fill_brewer(palette = "Set1") +
-         scale_color_brewer(palette = "Set1")
-   }
-   
-   if(color_set == "Tableau"){
-      Out$Graph <- Out$Graph +
-         ggthemes::scale_color_tableau() +
-         ggthemes::scale_fill_tableau()
-   }
-   
-   if(color_set == "viridis"){
-      Out$Graph <- Out$Graph +
-         viridis::scale_color_viridis(discrete = TRUE) +
-         viridis::scale_fill_viridis(discrete = TRUE)
-   }
    
    ## Making the final graph look nice --------------------------------------
    
