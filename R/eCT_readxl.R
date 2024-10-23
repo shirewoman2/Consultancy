@@ -157,9 +157,9 @@ eCT_readxl <- function(sim_data_file,
          PossSheets <- PossSheets[
             str_detect(tolower(PossSheets), 
                        switch(compoundToExtract, 
-                              "inhibitor 1" = "Faeces Prof. .Inh 1", 
+                              "inhibitor 1" = "faeces prof. .inh 1", 
                               # inhibitor 2 does not appear to be available
-                              "substrate" = "Faeces Prof. .Sub"))
+                              "substrate" = "faeces prof. .sub"))
          ]
          
       } else if(TissueType == "tissue"){
