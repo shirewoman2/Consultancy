@@ -143,18 +143,18 @@ set to NA, value will be set to 1.}
 does not return anything in R but saves workspace files
 }
 \description{
-\code{change_wksz_interactions} changes interaction parameters such as Kapp,
-Ki, or IndMax in Simulator workspace files. Currently only set up to change
-CYP, P-gp, and a few UGT parameters, but we can add more options upon
-request. A few notes: 1. Pay attention to the "switch" arguments, which are
-set up just like in the Simulator but are easy to overlook. 2. This will
-automatically fix any XML file paths such as observed data overlay files or
-fixed trial design XML files to match the current user's path on SharePoint.
-If you don't want that, set \code{fix_xml_paths} to FALSE. 3.
-\strong{WARNING:} Do NOT mix Simulator versions in a single call. If you need
-more than one Simulator version, run this separately for each. It seems to
-have trouble otherwise, and I haven't discerned exactly where that trouble
-arises. - LSh
+\code{change_wksz_interactions} changes interaction parameters
+  such as Kapp, Ki, or IndMax in Simulator workspace files. Currently only
+  set up to change CYP, P-gp, and a few UGT parameters, but we can add more
+  options upon request. A few notes: \enumerate{\item{Pay attention to the "switch"
+  arguments, which are set up just like in the Simulator but are easy to
+  overlook.} \item{This will automatically fix any XML file paths such as
+  observed data overlay files or fixed trial design XML files to match the
+  current user's path on SharePoint. If you don't want that, set
+  \code{fix_xml_paths} to FALSE.} \item{\strong{WARNING:} Do NOT mix Simulator
+  versions in a single call. If you need more than one Simulator version, run
+  this separately for each. It seems to have trouble otherwise, and I haven't
+  discerned exactly where that trouble arises. - LSh}}
 }
 \examples{
 # None yet
