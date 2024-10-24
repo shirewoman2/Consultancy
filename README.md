@@ -24,6 +24,8 @@ devtools::install_github(repo = "shirewoman2/Consultancy",
                          upgrade = "never")
 ```
 
+Current version: 3.5.0
+
 # An overview of what SimcypConsultancy functions do
 
 ## Get help on using the SimcypConsultancy package
@@ -66,6 +68,7 @@ devtools::install_github(repo = "shirewoman2/Consultancy",
     simulations
   - calc_PK_ratios_mult() - Calculate the ratio of PK parameters between
     multiple pairs of simulations
+- Calculate PK
   - calc_PK() - Calculate basic PK parameters for concentration-time
     data
   - recalc_PK() - Recalculate the PK for specific concentration-time
@@ -162,39 +165,43 @@ devtools::install_github(repo = "shirewoman2/Consultancy",
 
 ### Make other data visualizations that can help you analyze your data
 
-- checkSS() - Create a graph of simulated concentrations to check for
-  whether a perpetrator drug is at steady-state when the victim drug is
-  dosed
-- demog_table() - Make a table of demographics for a set of simulations
-- demog_plot_sim() - Make plots for comparing populations across
-  simulations
-- demog_plot_SO() - Make a set of plots showing the demographics used in
-  a set of simulations and optionally compare them to observed
-  demographics. UNDER CONSTRUCTION.
-- dissolution_profile_plot() - Make a graph of the dissolution profiles
-  of a compound
-- extractDemog() - Extract simulated demographic data from the
-  Demographic Data tab of a Simcyp Simulator ouptut Excel file
-- fm_treemap() - For comparing fm values, make a treemap as opposed to
-  the standard and arguably inferior pie chart
-- extractForestData() - Extract pertinent data from Simulator output
-  files for creating forest plots
-- forest_plot() - Create a forest plot
-- *forest_plot_old() - No longer being developed* - Create a forest plot
-  – WARNING! TO BE DEPRECATED! This function is no longer being
-  supported and may stop working as internal subfunction dependencies
-  get updated. Please talk to Laura Sh. if you need help with this.
-- graph_boxplot() - Make boxplots or boxplots overlaid with individual
-  points
-- ontogeny_plot() - Graph the ontogenies of drug-metabolizing enzymes
-  and transporters
-- trial_means_plot() - Make graphs comparing center statistic and
-  variability in PK across trials and, optionally, against observed PK
-  data as well
-- release_profile_plot() - Make a graph of the release profiles of a
-  compound
-- sensitivity_plot() - Make graphs of sensitivity analysis results
-- so_graph() - Graph of simulated vs. observed PK
+- Comparing demographics
+  - demog_table() - Make a table of demographics for a set of
+    simulations
+  - demog_plot_sim() - Make plots for comparing populations across
+    simulations
+  - demog_plot_SO() - Make a set of plots showing the demographics used
+    in a simulation and optionally compare them to observed
+    demographics. UNDER CONSTRUCTION.
+  - extractDemog() - Extract simulated demographic data from the
+    Demographic Data tab of a Simcyp Simulator ouptut Excel file
+- Forest plots
+  - forest_plot() - Create a forest plot
+  - *forest_plot_old() - No longer being developed* - Create a forest
+    plot – WARNING! TO BE DEPRECATED! This function is no longer being
+    supported and may stop working as internal subfunction dependencies
+    get updated. Please talk to Laura Sh. if you need help with this.
+  - extractForestData() - Extract pertinent data from Simulator output
+    files for creating forest plots
+- Misc.
+  - checkSS() - Create a graph of simulated concentrations to check for
+    whether a perpetrator drug is at steady-state when the victim drug
+    is dosed
+  - dissolution_profile_plot() - Make a graph of the dissolution
+    profiles of a compound
+  - fm_treemap() - For comparing fm values, make a treemap as opposed to
+    the standard and arguably inferior pie chart
+  - graph_boxplot() - Make boxplots or boxplots overlaid with individual
+    points
+  - ontogeny_plot() - Graph the ontogenies of drug-metabolizing enzymes
+    and transporters
+  - release_profile_plot() - Make a graph of the release profiles of a
+    compound
+  - sensitivity_plot() - Make graphs of sensitivity analysis results
+  - so_graph() - Graph of simulated vs. observed PK
+  - trial_means_plot() - Make graphs comparing center statistic and
+    variability in PK across trials and, optionally, against observed PK
+    data as well
 
 ### Helper functions for graphing
 
