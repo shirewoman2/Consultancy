@@ -48,6 +48,7 @@ ct_plot_1stlast(
   y_axis_limits_log = NA,
   y_axis_interval = NA,
   y_axis_label = NA,
+  conc_units_to_use = NA,
   hline_position = NA,
   hline_style = "red dotted",
   vline_position = NA,
@@ -389,6 +390,14 @@ generally reasonable guesses as to aesthetically pleasing intervals.}
 
 \item{y_axis_label}{optionally supply a character vector or an expression to
 use for the y axis label}
+
+\item{conc_units_to_use}{concentration units to use for graphs. If left as
+NA, the concentration units in the source data will be used. Acceptable
+options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
+"ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
+concentration and your source data were in mass per volume units or vice
+versa, you'll need to provide something for the argument
+\code{existing_exp_details}.}
 
 \item{hline_position}{numerical position(s) of any horizontal lines to add to
 the graph. The default is NA to have no lines, and good syntax if you

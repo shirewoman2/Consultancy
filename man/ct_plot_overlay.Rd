@@ -450,7 +450,8 @@ use for the y axis label}
 NA, the concentration units in the source data will be used. Acceptable
 options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
 "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
-concentration, you'll need to provide something for the argument
+concentration and your source data were in mass per volume units or vice
+versa, you'll need to provide something for the argument
 \code{existing_exp_details}.}
 
 \item{hline_position}{numerical position(s) of any horizontal lines to add to

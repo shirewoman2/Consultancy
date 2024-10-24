@@ -276,6 +276,13 @@
 #'   generally reasonable guesses as to aesthetically pleasing intervals.
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
+#' @param conc_units_to_use concentration units to use for graphs. If left as
+#'   NA, the concentration units in the source data will be used. Acceptable
+#'   options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
+#'   "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
+#'   concentration and your source data were in mass per volume units or vice
+#'   versa, you'll need to provide something for the argument
+#'   \code{existing_exp_details}.
 #' @param hline_position numerical position(s) of any horizontal lines to add to
 #'   the graph. The default is NA to have no lines, and good syntax if you
 #'   \emph{do} want lines would be, for example, \code{hline_position = 10} to
@@ -410,6 +417,7 @@ ct_plot_1stlast <- function(ct_dataframe,
                             y_axis_limits_log = NA, 
                             y_axis_interval = NA,
                             y_axis_label = NA,
+                            conc_units_to_use = NA, 
                             hline_position = NA, 
                             hline_style = "red dotted", 
                             vline_position = NA, 
@@ -522,6 +530,8 @@ ct_plot_1stlast <- function(ct_dataframe,
                       y_axis_limits_log = y_axis_limits_log, 
                       y_axis_interval = y_axis_interval,
                       y_axis_label = y_axis_label,
+                      existing_exp_details = existing_exp_details, 
+                      conc_units_to_use = conc_units_to_use, 
                       hline_position = hline_position, 
                       hline_style = hline_style, 
                       vline_position = vline_position, 
@@ -533,7 +543,6 @@ ct_plot_1stlast <- function(ct_dataframe,
                       legend_position = legend_position,
                       prettify_compound_names = prettify_compound_names,
                       qc_graph = FALSE,
-                      existing_exp_details = NA,
                       save_graph = NA,
                       fig_height = fig_height,
                       fig_width = fig_width)

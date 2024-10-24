@@ -145,6 +145,13 @@
 #'   be limited to the start of the last dose until the end of the simulation.}
 #'   }
 #'
+#' @param conc_units_to_use concentration units to use for graphs. If left as
+#'   NA, the concentration units in the source data will be used. Acceptable
+#'   options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
+#'   "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
+#'   concentration and your source data were in mass per volume units or vice
+#'   versa, you'll need to provide something for the argument
+#'   \code{existing_exp_details}.
 #' @param pad_x_axis optionally add a smidge of padding to the the x axis
 #'   (default is TRUE, which includes some generally reasonable padding). If
 #'   changed to FALSE, the y axis will be placed right at the beginning of your
@@ -326,6 +333,7 @@ ct_plot_mult <- function(ct_dataframe,
                          y_axis_limits_lin = NA, 
                          y_axis_limits_log = NA, 
                          y_axis_label = NA,
+                         conc_units_to_use = NA, 
                          hline_position = NA, 
                          hline_style = "red dotted", 
                          vline_position = NA, 
@@ -506,7 +514,7 @@ ct_plot_mult <- function(ct_dataframe,
    AllGraphs <- list()
    QCGraphs <- list()
    
-   if(is.na(graph_titles[1])){
+   if(all(is.na(graph_titles)) || graph_titles[1] == "none"){
       
       # Splitting the data, which we're about to do, messes up the order b/c you
       # have to split on character data rather than factor. Getting the order of
@@ -521,10 +529,10 @@ ct_plot_mult <- function(ct_dataframe,
       
       if(any(duplicated(DatasetCheck$File))){
          
-         Order <- expand_grid(list("File" = getOrder(ct_dataframe$File), 
-                                   "CompoundID" = getOrder(ct_dataframe$CompoundID), 
-                                   "Tissue" = getOrder(ct_dataframe$Tissue), 
-                                   "Tissue_subtype" = getOrder(ct_dataframe$Tissue_subtype))) %>% 
+         Order <- expand_grid("File" = getOrder(ct_dataframe$File), 
+                              "CompoundID" = getOrder(ct_dataframe$CompoundID), 
+                              "Tissue" = getOrder(ct_dataframe$Tissue), 
+                              "Tissue_subtype" = getOrder(ct_dataframe$Tissue_subtype)) %>% 
             mutate(Order = paste(File, CompoundID, Tissue, Tissue_subtype, sep = ".")) %>% 
             pull(Order)
       } else {
@@ -587,6 +595,8 @@ ct_plot_mult <- function(ct_dataframe,
                  mean_type = mean_type,
                  linear_or_log = linear_or_log,
                  time_range = time_range, 
+                 conc_units_to_use = conc_units_to_use, 
+                 existing_exp_details = existing_exp_details, 
                  x_axis_interval = x_axis_interval, 
                  x_axis_label = x_axis_label,
                  pad_x_axis = pad_x_axis, 
