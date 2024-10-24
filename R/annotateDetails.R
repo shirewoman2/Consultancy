@@ -531,6 +531,7 @@ annotateDetails <- function(existing_exp_details,
          
          # Adding some notes
          Notes = case_when(
+            # CL
             str_detect(Detail, "CLadditional_InVivo") ~ "Additional in vivo clearance",
             str_detect(Detail, "CLbiliary_InVivoCL") ~ "Additional in vivo biliary clearance",
             str_detect(Detail, "CLint_AddHLM") ~ "Additional HLM CLint",
@@ -539,6 +540,24 @@ annotateDetails <- function(existing_exp_details,
             str_detect(Detail, "CLint_CYP|CLint_UGT|CLint_ENZ.USER[1-9]|CLint_Intestine|CLint_Liver") ~ 
                paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|Intestine|Liver"),
                      "CLint"),
+            
+            str_detect(Detail, "^Transporter") ~ 
+               paste0(str_extract(Detail, "ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]"),
+                      " ", 
+                      case_when(str_detect(Detail, "Apical") ~ "apical ", 
+                                str_detect(Detail, "Basolateral") ~ "basolateral ", 
+                                str_detect(Detail, "Canalicular") ~ "canalicular ", 
+                                str_detect(Detail, "Sinusoidal") ~ "sinusoidal ", 
+                                .default = ""), 
+                      
+                      case_when(str_detect(Detail, "CLintT") ~ "CLintT ", 
+                                str_detect(Detail, "RAFREF") ~ "RAF or REF ", 
+                                str_detect(Detail, "fuinc") ~ "fu,inc ", 
+                                str_detect(Detail, "Jmax") ~ "Jmax ", 
+                                str_detect(Detail, "Km") ~ "Km ", 
+                                .default = ""), 
+                      
+                      "in ", tolower(str_extract(Detail, "Liver|Gut|Kidney"))), 
             
             str_detect(Detail, "CLiv_InVivo") ~ "In vivo CLiv",
             str_detect(Detail, "CLpo_InVivo") ~ "In vivo CLpo",
@@ -566,33 +585,42 @@ annotateDetails <- function(existing_exp_details,
             str_detect(Detail, "CL_PercentAvailReabsorption") ~ 
                "Percent available for reabsorption",
             
-            str_detect(Detail, "fu_mic") ~ 
-               paste("fu,mic for", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|Intestine|Liver")),
+            # fu_mic or inc
+            str_detect(Detail, "fu_mic|fu_inc") ~ 
+               paste0(case_when(str_detect(Detail, "fu_mic") ~ "fu,mic for ", 
+                                str_detect(Detail, "fu_inc") ~ "fu,inc for "), 
+                      
+                      case_when(str_detect(Detail, "^Ind") ~ "induction of ", 
+                                str_detect(Detail, "^MBI") ~ "mechanism-based indactivation of ", 
+                                str_detect(Detail, "^Ki") ~ "competitive inhibition of ",
+                                .default = ""), 
+                      
+                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]")),
             
-            str_detect(Detail, "Km_") ~ 
-               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|Intestine|Liver"), "Km"), 
+            # enzyme kinetics 
+            str_detect(Detail, "^Km_") ~ 
+               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]"), "Km"), 
             
-            str_detect(Detail, "Vmax_") ~ 
-               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|Intestine|Liver"), "Vmax"), 
+            str_detect(Detail, "^Vmax_") ~ 
+               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]"), "Vmax"), 
             
-            str_detect(Detail, "Ki_") ~ 
-               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}"), 
+            # inhibition
+            str_detect(Detail, "^Ki_") ~ 
+               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]"), 
                      "competitive inhibition constant"), 
             
-            str_detect(Detail, "MBI_fu_mic") ~ 
-               paste("fu,mic for MBI of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}")), 
-            
             str_detect(Detail, "MBI_Kapp") ~ 
-               paste("Kapp for MBI of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}")), 
+               paste("Kapp for mechanism-based indactivation of", 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]")), 
             
             str_detect(Detail, "MBI_kinact") ~ 
-               paste("kinact for MBI of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}")), 
+               paste("kinact for mechanism-based indactivation of", 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]")), 
             
             TRUE ~ Notes),
+         
+         # Doing a little more cleanup of Notes
+         Notes = gsub("MATE2_K", "MATE2-K", Notes), 
          
          # Setting factors for sorting
          SimulatorSection = factor(SimulatorSection, 
