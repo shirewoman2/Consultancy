@@ -24,7 +24,7 @@ devtools::install_github(repo = "shirewoman2/Consultancy",
                          upgrade = "never")
 ```
 
-Current version: 3.5.0
+Current version: 3.4.5
 
 # An overview of what SimcypConsultancy functions do
 
