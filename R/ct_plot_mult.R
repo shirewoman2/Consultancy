@@ -141,6 +141,8 @@
 #'   be limited to the start of the last dose until the last observed data
 #'   point.}
 #'
+#'   \item{"last dose to end" or "last to end" for short}{Time range will
+#'   be limited to the start of the last dose until the end of the simulation.}
 #'   }
 #'
 #' @param pad_x_axis optionally add a smidge of padding to the the x axis

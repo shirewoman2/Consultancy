@@ -23,6 +23,7 @@ inductFit(
   omit = NA,
   color_set = "default",
   y_axis_limits = NA,
+  y_axis_label = NA,
   hline_foldinduct1 = FALSE,
   vert_line = NA,
   Imaxu_line = NA,
@@ -177,6 +178,9 @@ which(DF$Concentration > 100)}}
 \item{y_axis_limits}{optionally set the Y axis limits, e.g., \code{c(1, 5)}.
 If left as NA, the Y axis limits will be automatically selected. (Reminder:
 Numeric data should not be in quotes.)}
+
+\item{y_axis_label}{optionally supply a character vector or an expression to
+use for the y axis label}
 
 \item{hline_foldinduct1}{TRUE or FALSE (default) on whether to include a
 dotted red line where the fold induction = 1.}

@@ -168,7 +168,7 @@ make_color_set <- function(color_set, num_colors){
       }
    }
    
-   return(MyColors[1:num_colors])
+   return(as.character(MyColors[1:num_colors]))
    
 }
 

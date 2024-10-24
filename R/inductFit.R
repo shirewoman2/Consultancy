@@ -147,6 +147,8 @@
 #' @param y_axis_limits optionally set the Y axis limits, e.g., \code{c(1, 5)}.
 #'   If left as NA, the Y axis limits will be automatically selected. (Reminder:
 #'   Numeric data should not be in quotes.)
+#' @param y_axis_label optionally supply a character vector or an expression to
+#'   use for the y axis label
 #' @param hline_foldinduct1 TRUE or FALSE (default) on whether to include a
 #'   dotted red line where the fold induction = 1.
 #' @param vert_line optionally include a vertical dotted red line at some
@@ -265,6 +267,7 @@ inductFit <- function(DF,
                       omit = NA,
                       color_set = "default",
                       y_axis_limits = NA,
+                      y_axis_label = NA,
                       hline_foldinduct1 = FALSE,
                       vert_line = NA,
                       Imaxu_line = NA, 
@@ -436,9 +439,13 @@ inductFit <- function(DF,
                    Sig3Param = "sigmoidal 3-parameter model")
    
    # Changing the y axis label to fit activity or mRNA
-   Ylab <- switch(measurement,
-                  activity = "Fold change\n(activity with drug / activity with vehicle control)",
-                  mRNA = "Fold change\n(mRNA with drug / mRNA with vehicle control)")
+   if(is.na(y_axis_label)){
+      Ylab <- switch(measurement,
+                     activity = "Fold change\n(activity with drug / activity with vehicle control)",
+                     mRNA = "Fold change\n(mRNA with drug / mRNA with vehicle control)")
+   } else {
+      Ylab <- y_axis_label
+   }
    
    # starting parameters for each model
    StartVals <- switch(model,
@@ -1123,7 +1130,6 @@ inductFit <- function(DF,
    
    ## Adding options for colors -----------------------------------------------
    NumColors <- length(unique(DF$DonorID))
-   
    MyColors <- make_color_set(color_set = color_set, 
                               num_colors = NumColors)
    

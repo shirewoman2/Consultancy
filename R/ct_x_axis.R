@@ -32,9 +32,10 @@ ct_x_axis <- function(Data, time_range, t0,
       !any(time_range %in% c("last dose", "first dose", "penultimate dose",
                              "all obs", "all observed", "last obs", 
                              "last observed", "last to last obs", 
-                             "last dose to last observed")) &
+                             "last dose to last observed", 
+                             "last to end", "last dose to end")) &
       !any(str_detect(tolower(time_range), "^dose"))){
-      warning("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), 'all observed', 'last observed', or a numeric time range, e.g., c(12, 24). FOr now, we'll use the full time range.",
+      warning("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), 'all observed', 'last observed', 'last dose to end', or a numeric time range, e.g., c(12, 24). FOr now, we'll use the full time range.",
               call. = FALSE)
       time_range <- NA
    }
@@ -248,6 +249,16 @@ ct_x_axis <- function(Data, time_range, t0,
                        call. = FALSE)
                time_range <- Data %>% pull(Time) %>% range()
             }
+         } else if(all(complete.cases(time_range_input)) &&
+                   time_range_input %in% c("last dose to end", "last to end")){ 
+            suppressWarnings(
+               time_range <- Data %>% 
+                  filter(DoseNum == MaxNumDoses) %>% 
+                  pull(Time) %>% range()
+            )
+            
+            time_range[1] <- DoseTimes$LastDoseStart
+            
          }
          
       } else if(MultDoseInt){

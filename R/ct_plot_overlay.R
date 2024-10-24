@@ -1,60 +1,53 @@
 #' Overlay multiple data sets onto a single concentration-time graph
 #'
-#' \code{ct_plot_overlay} is meant to be used in conjunction with
-#' \code{\link{extractConcTime_mult}} to create single graphs with overlaid
-#' concentration-time data for multiple tissues, compounds, or Simcyp Simulator
-#' output files for easy comparisons. \emph{Note:} There are some nuances to
-#' overlaying observed data. Please see the "Details" section at the bottom of
-#' this help file. For detailed instructions and examples, please see the
-#' SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
-#' Files/SimcypConsultancy function examples and instructions/Concentration-time
-#' plots 3 - overlaying plots/Concentration-time-plot-examples-3.docx". (Sorry,
-#' we are unable to include a link to it here.)
+#' @description \code{ct_plot_overlay} is meant to be used in conjunction with
+#'   \code{\link{extractConcTime_mult}} to create a graph with overlaid
+#'   concentration-time data for multiple tissues, compounds, or simulations for
+#'   easy comparisons. Please see the "Note" section at the bottom of the help
+#'   file for a more-detailed overview of what this function is designed to do.
 #'
-#' \strong{Notes on including observed data:} We recently added the option of
-#' including observed data and are in the process of testing this. To include
-#' observed data, you have two options: \enumerate{
+#' @note To make an overlaid graph, the ct_plot_overlay function will ask you to
+#'   map specific columns in your source data to aesthetics in your graph, e.g.,
+#'   you can color the lines in your data based on which tissue is being graphed
+#'   (column in ct_dataframe: Tissue) or set the line type based on whether a
+#'   DDI perpetrator drug is present (column in ct_dataframe: Inhibitor) or
+#'   break up the graphs into small multiples based on which simulation it is
+#'   (column in ct_dataframe: File). When you run this function, two of the
+#'   messages you'll see will be "Columns that vary in your data: ..." and
+#'   "Graphing aesthetics you've assigned: ..." We set up these messages to try
+#'   to let you know what columns in your source data -- the object you supplied
+#'   for \code{ct_dataframe} -- have multiple unique values that might be useful
+#'   for mapping aesthetics in your graphs. If you have a problem with your
+#'   graphs such as multiple lines that are the same color or multiple lines
+#'   that are the same line type and that's not what you expected and it's not
+#'   clear why you're getting that graph, this pair of messages is meant to help
+#'   you figure out what groups are present in your data and which of them you
+#'   have mapped to an aesthetic aspect of your graph.
 #'
-#' \item{Use the Simulator Excel PE data entry template to save your observed
-#' data. Then, when you run \code{\link{extractConcTime_mult}}, supply the names
-#' of those Excel files to the observed data  function argument. This is the
-#' BEST option because it contains the most information about the observed
-#' data.}
+#'   The faceting arguments may take a little playing around to understand and
+#'   will probably be clearest if you're already a ggplot2 user. (This and all
+#'   graphing functions in the SimcypConsultancy package use the package ggplot2
+#'   to make graphs.) Here's what's going on under the hood with the faceting
+#'   arguments: If you set \code{floating_facet_scale = FALSE}, the default,
+#'   then \code{ct_plot_overlay} will use facet_grid to break up your graphs and
+#'   set \code{facet1_column} to the rows and \code{facet2_column} to the
+#'   columns. If you set \code{floating_facet_scale = TRUE}, then
+#'   \code{ct_plot_overlay} will use facet_wrap to break up your data and
+#'   \code{facet1_column} will be the first variable it uses and
+#'   \code{facet2_column} will be the second.
 #'
-#' \item{Include observed data in your simulation files. Those data will be
-#' automatically extracted when you run \code{\link{extractConcTime_mult}} if
-#' "obs_data_files" is left as the default NA. The drawback to this approach is
-#' that it's not clear whether there was an inhibitor present, for example, or
-#' which compound the data describe.} }
+#'   \strong{A note reqgarding observed data:} There are some nuances to
+#'   overlaying observed data. For detailed instructions and examples, please
+#'   see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+#'   Files/SimcypConsultancy function examples and
+#'   instructions/Concentration-time plots 3 - overlaying
+#'   plots/Concentration-time-plot-examples-3.docx". (Sorry, we are unable to
+#'   include a link to it here.) If you have observed concentration-time data to
+#'   match your simulated data but you don't see those observed data on your
+#'   graph, please check the help file for the function you used -- either
+#'   \code{\link{extractConcTime}} or \code{\link{extractConcTime_mult}} -- to
+#'   extract your data. Something has likely gone wrong in the data extraction.
 #'
-#' The \code{ct_plot_overlay} function will automatically figure out which
-#' observed data should be compared with which simulated compound IDs, tissues,
-#' etc. However, because the function doesn't know which simulator \emph{file}
-#' goes with which observed data, it will assume that \emph{all} the observed
-#' data are appropriate to compare to \emph{all} the files included in
-#' \code{ct_dataframe} by default. If that's not the case, after you use
-#' \code{\link{extractConcTime_mult}} to extract your data, you can indicate
-#' which simulator output file goes with which observed file by setting the
-#' simulator output file in the column "File". This admittedly requires a bit of
-#' R knowledge, so please ask a member of the R Working Group for help if you're
-#' not clear on how to do this. Be warned, though, that if you assign "File" for
-#' some observed data but not all, only the observed data with an assignment for
-#' "File" will show up on the graph.
-#'
-#' One other note: The observed data files from the PE data-entry template don't
-#' include the \emph{name} of the compound you're simulating (column:
-#' "Compound"). They do include whether it was a substrate, metabolite, or
-#' inhibitor (column: CompoundID), but not the compound's actual name. For that
-#' reason, try coloring or facetting your data by CompoundID rather than by
-#' Compound if you have observed data. Similarly, if you have an inhibitor and
-#' you have observed data, the inhibitor will be listed as the generic
-#' "inhibitor" here rather than, e.g., "ketoconazole" because the observed data
-#' file doesn't indicate that.
-#'
-#' \strong{Other notes:} There's a bug in RStudio (I think) that sometimes
-#' causes the last shape in a legend to vanish when you're looking at the graph
-#' in RStudio, but, if you save the graph, the shape \emph{should} be present.
-#' Let me know if that doesn't happen. -LSh
 #'
 #' @param ct_dataframe the input concentration-time data generated by running
 #'   the function \code{\link{extractConcTime_mult}} or
@@ -278,8 +271,7 @@
 #' @param facet1_column optionally break up the graph into small multiples; this
 #'   specifies the first of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet1_column =
-#'   Tissue}. If you have graphs where the rows are broken up by one variable 
-#'   and the columns by another, then this will specify the rows of the graphs.
+#'   Tissue}.
 #' @param facet1_title optionally specify a title to describe facet 1. This is
 #'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
 #'   \code{facet_ncol} or \code{facet_nrow}.
@@ -289,30 +281,39 @@
 #' @param facet2_column optionally break up the graph into small multiples; this
 #'   specifies the second of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet2_column =
-#'   CompoundID}. If you have graphs where the rows are broken up by one variable 
-#'   and the columns by another, then this will specify the columns of the graphs.
+#'   CompoundID}. If you have graphs where the rows are broken up by one variable
+#'   and the columns by another, then this will specify the columns of the
+#'   graphs.
 #' @param facet_ncol optionally specify the number of columns of facetted graphs
 #'   you would like to have. This only applies when you have specified a column
 #'   for \code{facet1_column} and/or \code{facet2_column}.
 #' @param facet_nrow optionally specify the number of rows of facetted graphs
 #'   you would like to have. This only applies when you have specified a column
 #'   for \code{facet1_column} and/or \code{facet2_column}.
-#' @param floating_facet_scale TRUE, FALSE (default), "x", "y", or "xy" for whether to
-#'   allow the axes for each facet of a multi-facetted graph to scale freely to
-#'   best fit whatever data are present. Default is FALSE, which means that all
-#'   data will be on the same scale for easy comparison. However, this could
-#'   mean that some graphs have lines that are hard to see, so you can set this
-#'   to TRUE to allow the axes to shrink or expand according to what data are
-#'   present for that facet. If this is set to "x", "y", or "xy", then the scale will
-#'   only float along that axis. Play around with this to see what we mean.
+#' @param floating_facet_scale TRUE, FALSE (default), "x", "y", or "xy" for
+#'   whether to allow the axes for each facet of a multi-facetted graph to scale
+#'   freely to best fit whatever data are present. Default is FALSE, which means
+#'   that all data will be on the same scale for easy comparison. However, this
+#'   could mean that some graphs have lines that are hard to see, so you can set
+#'   this to TRUE to allow the axes to shrink or expand according to what data
+#'   are present for that facet. If this is set to "x", "y", or "xy", then the
+#'   scale will only float along that axis. Play around with this to see what we
+#'   mean.
+#'
 #'   Floating axes comes with a trade-off for the looks of the graphs, though:
 #'   Setting this to TRUE does mean that your x axis won't automatically have
-#'   pretty breaks that are sensible for times in hours and that you can't 
+#'   pretty breaks that are sensible for times in hours and that you can't
 #'   specify intervals or limits for either the x or the y axis.
+#'
+#'   If you're a ggplot2 user, here's what's going on under the hood: If you set
+#'   \code{floating_facet_scale = FALSE}, the default, then ct_plot_overlay will
+#'   use facet_grid to break up your graphs and set \code{facet1_column} to the
+#'   rows and \code{facet2_column} to the columns. If you set
+#'   \code{floating_facet_scale = TRUE}, then ct_plot_overlay will use
+#'   facet_wrap to break up your data.
 #' @param facet_spacing Optionally set the spacing between facets. If left as
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
-#'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
-#'   should not be in quotes.)
+#'   "lines", so try, e.g. \code{facet_spacing = 2}.
 #' @param time_range time range to display. Options: \describe{
 #'
 #'   \item{NA}{entire time range of data; default}
@@ -338,7 +339,11 @@
 #'
 #'   \item{"last dose to last observed" or "last obs" for short}{Time range will
 #'   be limited to the start of the last dose until the last observed data
-#'   point.} }
+#'   point.}
+#'
+#'   \item{"last dose to end" or "last to end" for short}{Time range will
+#'   be limited to the start of the last dose until the end of the simulation.}
+#'   }
 #'
 #' @param x_axis_interval set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values, which are
@@ -595,12 +600,14 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # tictoc::tic(msg = "error catching: unique and droplevels")
    
-   # Ungrouping anything that came pre-grouped b/c it messes things up.
-   ct_dataframe <- ungroup(ct_dataframe)
+   # Ungrouping anything that came pre-grouped and also dropping levels not
+   # present b/c those two things complicate or just mess up a bunch of stuff
+   # for setting aesthetics.
+   ct_dataframe <- ungroup(ct_dataframe) %>% droplevels()
    
    if(assume_unique == FALSE){
       # Making sure the data.frame contains unique observations and no unnecessary levels.
-      ct_dataframe <- unique(ct_dataframe) %>% droplevels()
+      ct_dataframe <- unique(ct_dataframe)
    }
    
    # tictoc::toc(log = TRUE)
@@ -1793,8 +1800,8 @@ ct_plot_overlay <- function(ct_dataframe,
                                figure_type = figure_type,
                                MyPerpetrator = MyPerpetrator, 
                                MyCompoundID = switch(as.character(EnzPlot),
-                                                          "TRUE" = "substrate", 
-                                                          "FALSE" = unique(sim_dataframe$CompoundID)),
+                                                     "TRUE" = "substrate", 
+                                                     "FALSE" = unique(sim_dataframe$CompoundID)),
                                obs_shape = obs_shape, obs_color = obs_color,
                                obs_fill_trans = obs_fill_trans,
                                obs_line_trans = obs_line_trans,
@@ -2499,94 +2506,31 @@ ct_plot_overlay <- function(ct_dataframe,
          
       }
       
-      # # If there's only one unique value in the colorBy_column, then make that
-      # # item black.
-      # if(length(sort(unique(c(sim_dataframe$colorBy_column, 
-      #                         obs_dataframe$colorBy_column)))) == 1){
-      #    A <- A + scale_color_manual(values = "black") +
-      #       scale_fill_manual(values = "black")
-      # } else {
-      
-      # This is when the user wants specific user-specified colors rather
-      # that one of the pre-made sets.
-      if(length(color_set) > 1){
-         
-         # If they supply a named character vector whose values are not
-         # present in the data, convert it to an unnamed character vector.
-         if(is.null(names(color_set)) == FALSE && 
-            all(unique(sim_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
+      # If they supply a named character vector whose values are not
+      # present in the data, convert it to an unnamed character vector.
+      if(is.null(names(color_set)) == FALSE){
+         if(all(unique(sim_dataframe$colorBy_column) %in%
+                names(color_set) == FALSE)){
             warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
                            as_label(colorBy_column),
                            " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
                            as_label(colorBy_column), ".\n"), 
                     call. = FALSE)
             
-            MyColors <- as.character(color_set)
-         } else if(length(color_set) < NumColorsNeeded){
-            warning(paste("There are", NumColorsNeeded,
-                          "unique values in the column you have specified for the colors, but you have only specified", 
-                          length(color_set), 
-                          "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph.\n"), 
-                    call. = FALSE)
-            
-            MyColors <- rep(color_set, 100)[1:NumColorsNeeded]
+            color_set <- as.character(color_set)
+            MyColNames <- NA
          } else {
-            MyColors <- color_set
+            MyColNames <- names(color_set)
          }
-         
-         # FIXME - Add a check here that the colors supplied are all actually colors.
-         
       } else {
-         
-         # NOTE: For no reason I can discern, if the user has observed
-         # data that should be all one color but then uses scale_color_X
-         # where x is anything except "manual", the observed points
-         # DISAPPEAR. That's why, below, whenever it's scale_color_x, I'm
-         # setting the colors needed and then using scale_color_manual
-         # instead of scale_color_x. -LSh
-         
-         color_set <- ifelse(str_detect(tolower(color_set), 
-                                        "default|brewer.*2|set.*2"), 
-                             "set2", color_set)
-         color_set <- ifelse(str_detect(tolower(color_set),
-                                        "brewer.*1|set.*1"), 
-                             "set1", color_set)
-         
-         if(tryCatch(is.matrix(col2rgb(color_set)), error = function(x) FALSE)){
-            MyColors <- color_set
-         } else {
-            
-            suppressWarnings(
-               MyColors <- 
-                  switch(
-                     color_set,
-                     # Using "Dark2" b/c "Set2" is just really,
-                     # really light.
-                     "set2" = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")[
-                        1:NumColorsNeeded], 
-                     "blue-green" = blueGreens(NumColorsNeeded),
-                     "blues" = blues(NumColorsNeeded),
-                     "greens" = chartreuse(NumColorsNeeded, shade = "darker"), 
-                     "purples" = purples(NumColorsNeeded, shade = "darker"), 
-                     "rainbow" = rainbow(NumColorsNeeded),
-                     "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
-                        1:NumColorsNeeded],
-                     "Tableau" = ggthemes::tableau_color_pal(
-                        palette = "Tableau 10")(NumColorsNeeded),
-                     "viridis" = viridis::viridis_pal()(NumColorsNeeded))
-            )
-            # NB: For the RColorBrewer palettes, the minimum number of
-            # colors you can get is 3. Since sometimes we might only want 1
-            # or 2 colors, though, we have to add the [1:NumColorsNeeded]
-            # bit.
-            
-            if(any(is.na(MyColors))){
-               warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.\n", 
-                       call. = FALSE)
-               
-               MyColors <- rainbow(NumColorsNeeded)
-            }
-         }
+         MyColNames <- NA
+      }
+      
+      MyColors <- make_color_set(color_set = color_set, 
+                                 num_colors = NumColorsNeeded)
+      
+      if(any(complete.cases(MyColNames))){
+         names(MyColors) <- MyColNames
       }
       
       if(MapObsFile_color){
@@ -2617,7 +2561,6 @@ ct_plot_overlay <- function(ct_dataframe,
          A <-  A + scale_color_manual(values = MyColors, drop = FALSE) +
             scale_fill_manual(values = MyColors, drop = FALSE)
       )
-      # }
    }
    
    # Specifying linetypes
