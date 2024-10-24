@@ -43,7 +43,7 @@ insert_copyright <- function(font = "Arial"){
                     "Level 2 - Acero, 1 Concourse Way,", 
                     "Sheffield, S1 2BJ, United Kingdom"))) %>% 
       flextable::bold(i = c(1, 3)) %>% 
-      delete_part(part = "header") %>%
+      flextable::delete_part(part = "header") %>%
       flextable::width(width = 6, unit = "in") %>% 
       flextable::align(align = "center", part = "all") %>% 
       # Set the font
