@@ -24,6 +24,7 @@ harmonize_PK_names <- function(PKparameters){
    
    # other misc errors
    PKparameters <- sub("AUCt_last", "AUCtau_last", PKparameters)
+   PKparameters <- sub("AUC_last", "AUCtau_last", PKparameters)
    PKparameters <- sub("AUC_inf", "AUCinf", PKparameters)
    PKparameters <- sub("AUC_t", "AUCt", PKparameters)
    PKparameters <- sub("AUCtau_dose1", "AUCt_dose1", PKparameters)
