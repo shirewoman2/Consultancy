@@ -912,7 +912,7 @@ extractPK <- function(sim_data_file,
                AUC_xl[IndexRow, PossCol])), ToDetect$SearchText))][1]
          }
          
-         if(length(ColNum) == 0 | is.na(ColNum)){
+         if(length(ColNum) == 0 || is.na(ColNum)){
             if(any(PKparameters_orig %in% c("all", "AUC tab")) == FALSE){
                warning(wrapn(paste0("The column with information for ", i,
                                     " on the tab 'AUC' cannot be found in the file '", 
@@ -1000,7 +1000,7 @@ extractPK <- function(sim_data_file,
                   AUC_xl[IndexRow, PossCol])), ToDetect$SearchText))][1]
             }
             
-            if(length(ColNum) == 0 | is.na(ColNum)){
+            if(length(ColNum) == 0 || is.na(ColNum)){
                if(any(PKparameters_orig %in% c("all", "AUC tab") == FALSE)){
                   warning(wrapn(paste0("The column with information for ", i,
                                        " on the tab 'AUC' cannot be found in the file '", 
@@ -1257,7 +1257,7 @@ extractPK <- function(sim_data_file,
                   as.character(FaFg_xl[2, StartCol:(StartCol+2)]),
                   ToDetect$SearchText)) + StartCol - 1
                
-               if(length(ColNum) == 0 | is.na(ColNum)){
+               if(length(ColNum) == 0 || is.na(ColNum)){
                   if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
                      warning(wrapn(paste0("The column with information for ", i,
                                           " on the tab `Overall Fa Fg` cannot be found in the file '", 
@@ -1336,10 +1336,11 @@ extractPK <- function(sim_data_file,
                      next
                   }
                   
-                  # Looking for the regular expression specific to this parameter
-                  # i. For the absorption tab, there are columns for the substrate
-                  # and columns for Inhibitor 1. (There are also columns for
-                  # Inhibitor 2 and 3 but I've never seen them filled in. -LSh)
+                  # Looking for the regular expression specific to this
+                  # parameter i. For the absorption tab, there are columns for
+                  # the substrate and columns for Inhibitor 1. (There are also
+                  # columns for Inhibitor 2 and 3 but I've never seen them
+                  # filled in. -LSh)
                   StartCol <- ifelse(str_detect(i, "sub"),
                                      SubCols, InhibCols)
                   
@@ -1347,7 +1348,7 @@ extractPK <- function(sim_data_file,
                      as.character(Abs_xl[9, StartCol:(StartCol+2)]),
                      ToDetect$SearchText)) + StartCol - 1
                   
-                  if(length(ColNum) == 0 | is.na(ColNum)){
+                  if(length(ColNum) == 0 || is.na(ColNum)){
                      if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
                         warning(wrapn(paste0("The column with information for ", i,
                                              " on the tab 'Absorption' cannot be found in the file '", 
@@ -1496,7 +1497,7 @@ extractPK <- function(sim_data_file,
             ColNum <- which(str_detect(as.vector(t(DrugPop_xl[2, ])),
                                        ToDetect$SearchText))
             
-            if(length(ColNum) == 0 | is.na(ColNum)){
+            if(length(ColNum) == 0 || is.na(ColNum)){
                if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
                   warning(wrapn(paste0("The column with information for ", i,
                                        " on the tab 'Drug-Population Parameters' cannot be found in the file '", 
@@ -1639,10 +1640,14 @@ extractPK <- function(sim_data_file,
             
             # Looking for the regular expression specific to this parameter
             # i. 
-            ColNum <- which(str_detect(as.vector(t(CLTSS_xl[1, ])),
+            RowNum <- which(str_detect(CLTSS_xl$...1, "Index"))[1]
+            RowNum <- ifelse(length(RowNum) == 0 || is.na(RowNum), 
+                             21, RowNum)
+            
+            ColNum <- which(str_detect(as.vector(t(CLTSS_xl[RowNum, ])),
                                        ToDetect$SearchText))
             
-            if(length(ColNum) == 0 | is.na(ColNum)){
+            if(length(ColNum) == 0 || is.na(ColNum)){
                if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
                   warning(wrapn(paste0("The column with information for ", i,
                                        " on the tab 'Clearance Trials SS' cannot be found in the file '", 
@@ -1655,7 +1660,7 @@ extractPK <- function(sim_data_file,
             }
             
             suppressWarnings(
-               Out_ind[[i]] <- CLTSS_xl[2:nrow(CLTSS_xl), ColNum] %>%
+               Out_ind[[i]] <- CLTSS_xl[(RowNum + 1):nrow(CLTSS_xl), ColNum] %>%
                   pull(1) %>% as.numeric
             )
             
@@ -1667,31 +1672,21 @@ extractPK <- function(sim_data_file,
                                        Column = ColNum, 
                                        StartRow_agg = NA,
                                        EndRow_agg = NA,
-                                       StartRow_ind = 2,
+                                       StartRow_ind = (RowNum + 1),
                                        EndRow_ind = nrow(CLTSS_xl)))
             }
          }   
          
          if(includeTrialInfo & length(PKparameters_CLTSS) > 0){
             # Subject and trial info
-            SubjTrial_CLTSS <- CLTSS_xl[2:nrow(CLTSS_xl), 1:2] %>%
+            SubjTrial_CLTSS <- CLTSS_xl[(RowNum + 1):nrow(CLTSS_xl), 1:2] %>%
                rename("Individual" = ...1, "Trial" = ...2)
             
             Out_ind[["CLTSStab"]] <- cbind(SubjTrial_CLTSS,
                                            as.data.frame(Out_ind[PKparameters_CLTSS]))
          }
          
-         # AGGREGATE VALUES: For the CLTSS tab, the aggregate values are
-         # stored in a COMPLETELY different place, so extracting those values
-         # completely separately. I *think* the aggregate values always start
-         # in column 10, but I'm not sure, so let's check each time.
-         StartCol_agg <- which(str_detect(t(CLTSS_xl[1, ]), "Total Systemic"))
-         StartRow_agg <- which(CLTSS_xl[, StartCol_agg] == "Statistics") + 1
-         EndRow_agg <- which(is.na(CLTSS_xl[, StartCol_agg]))
-         EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
-         EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(CLTSS_xl), EndRow_agg)
-         
-         # Looping through parameters and extracting values
+         # AGGREGATE VALUES: Looping through parameters and extracting values
          for(i in PKparameters_CLTSS){
             
             # Using regex to find the correct column. See
@@ -1703,10 +1698,14 @@ extractPK <- function(sim_data_file,
             
             # Looking for the regular expression specific to this parameter
             # i. 
-            ColNum <-  which(str_detect(as.vector(t(CLTSS_xl[StartRow_agg, ])),
-                                        ToDetect$SearchText))
+            RowNum <- which(str_detect(CLTSS_xl$...1, "Mean"))[1] - 1
+            RowNum <- ifelse(length(RowNum) == 0 || is.na(RowNum), 
+                             1, RowNum)
             
-            if(length(ColNum) == 0 | is.na(ColNum)){
+            ColNum <- which(str_detect(as.vector(t(CLTSS_xl[RowNum, ])),
+                                       ToDetect$SearchText))
+            
+            if(length(ColNum) == 0 || is.na(ColNum)){
                if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
                   warning(wrapn(paste0("The column with information for ", i,
                                        " on the tab 'Clearance Trials SS' cannot be found in the file '", 
@@ -1718,11 +1717,15 @@ extractPK <- function(sim_data_file,
                next
             }
             
+            # "Fold" should be the penultimate row. There's also "Std Dev", but
+            # I think that's not always spelled/abbreviated consistently.
+            EndRow_agg <- which(str_detect(tolower(CLTSS_xl$...1), "fold"))[1] + 1
+            
             suppressWarnings(
-               Out_agg[[i]] <- CLTSS_xl[(StartRow_agg + 1):EndRow_agg, ColNum] %>%
+               Out_agg[[i]] <- CLTSS_xl[(RowNum + 1):EndRow_agg, ColNum] %>%
                   pull(1) %>% as.numeric
             )
-            names(Out_agg[[i]]) <- CLTSS_xl[(StartRow_agg + 1):EndRow_agg, StartCol_agg] %>%
+            names(Out_agg[[i]]) <- CLTSS_xl[(RowNum + 1):EndRow_agg, 1] %>%
                pull(1)
             
             if(checkDataSource){
@@ -1730,18 +1733,11 @@ extractPK <- function(sim_data_file,
                   bind_rows(data.frame(PKparam = i, 
                                        Tab = "Clearance Trials SS",
                                        SearchText = ToDetect$SearchText,
-                                       Column = ColNum,
-                                       StartRow_agg = StartRow_agg + 1,
-                                       EndRow_agg = EndRow_agg,
-                                       StartRow_ind = NA,
-                                       EndRow_ind = NA))
+                                       Column = ColNum, 
+                                       StartRow_agg = RowNum + 1,
+                                       EndRow_agg = EndRow_agg))
             }
-            
-            # end of iteration i
-            suppressWarnings(rm(ToDetect, ColNum))
-         }
-         
-         suppressWarnings(rm(StartRow_agg, EndRow_agg, StartCol_agg, EndRow_ind))
+         }  
       }
    }
    
@@ -1808,7 +1804,7 @@ extractPK <- function(sim_data_file,
             # fa values 1st, fm values 2nd for this sheet
             ColNum <- ifelse(str_detect(i, "fa"), ColNum[1], ColNum[2])
             
-            if(length(ColNum) == 0 | is.na(ColNum)){
+            if(length(ColNum) == 0 || is.na(ColNum)){
                if(any(PKparameters_orig %in% c("all", "Regional ADAM")) == FALSE){
                   warning(wrapn(paste0("The column with information for ", i,
                                        " on the tab `Regional ADAM Fractions (Sub)` cannot be found in the file '", 
@@ -1957,6 +1953,7 @@ extractPK <- function(sim_data_file,
                select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
                left_join(data.frame(File = unique(DataCheck$File), 
                                     Stat = StatNames)) %>% 
+               filter(complete.cases(StartRow_agg)) %>% 
                mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
                       Cell = paste0(Column, Row_agg), 
                       Cell = ifelse(is.na(Row_agg), NA, Cell)) %>% 
