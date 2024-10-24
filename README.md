@@ -54,10 +54,7 @@ Current version: 3.5.0
 ### Make typical PK tables
 
 - pk_table() - Make tables of PK values from Simulator output Excel
-  files, e.g.,
-
-<img src="man/figures/README-unnamed-chunk-2-1.png" width="50%" />
-
+  files
 - *pksummary_mult() - Soon to be deprecated in favor of the more
   versatile pk_table()* - Make PK summary tables from multiple simulator
   output files at once
@@ -92,14 +89,9 @@ Current version: 3.5.0
 ## Formatting and saving tables
 
 - format_table_simple() - Format a table rather simply to look nice in a
-  Word file, e.g.,
-
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="50%" />
-
+  Word file
 - formatTable_Simcyp() - Format tables according to Simcyp Consultancy
   Team specifications, e.g.,
-  <img src="man/figures/README-unnamed-chunk-4-1.png" width="50%" />
-
 - save_table_to_Word() - Save a bespoke PK table to Word using the
   pksummary_mult rmarkdown template
 
@@ -108,13 +100,6 @@ Current version: 3.5.0
 - insert_copyright() - Insert the standard Certara UK Limited copyright
   box that appears in compound summary files - Yes, this is actually a
   table, even though it just looks like a box.
-
-``` r
-insert_copyright()
-```
-
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="50%" />
-
 - make_Simcyp_inputs_table() - Summarize a PBPK model using parameters
   pulled from simulations - UNDER CONSTRUCTION
 - make_simulation_directory() - Make a directory of simulations
@@ -126,15 +111,7 @@ insert_copyright()
 
 ### Make concentration-time plots or variations thereof
 
-- ct_plot() - Concentration-time plots to match Consultancy template,
-  e.g.,
-
-``` r
-ct_plot(LMVct)
-```
-
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="50%" />
-
+- ct_plot() - Concentration-time plots to match Consultancy template  
 - ct_plot3() - Concentration-time plots of the full time range, first
   dose, and last dose
 - ct_plot_1stlast() - Make concentration-time plots of the 1st and last
@@ -262,12 +239,18 @@ ct_plot(LMVct)
 ### Fit induction models to *in vitro* data
 
 - inductFit() - Fit induction data to calculate EC50, Emax, and/or slope
-  \### Getting data from a pdf table
-- pdf_to_csv() - Convert a page from a pdf file to a csv file \###
-  Examining DDIs  
+
+### Getting data from a pdf table
+
+- pdf_to_csv() - Convert a page from a pdf file to a csv file
+
+### Examining DDIs
+
 - list_interactions() - Find all the possible drug-drug interactions
-  between compounds included in a single simulation \#### Tidbits for
-  making quick calculations
+  between compounds included in a single simulation
+
+#### Tidbits for making quick calculations
+
 - calcKi() - Calculate the Ki of an inhibitor with the Cheng-Prusoff
   equation
 - centerBin() - Cut a set of numeric data into bins based on the middle
@@ -294,21 +277,24 @@ ct_plot(LMVct)
 
 ## Interact with the Simulator or with workspaces
 
-#### Read or change workspaces - Most functions that actually change workspaces are only available in the beta version of the package.
+#### Read or change workspaces
 
-- change_wksz_interactions() - Change interaction parameters in Simcyp
-  Simulator workspace files
-- change_wksz_trial_design() - Change a limited set of trial-design
-  parameters in Simcyp Simulator workspace files. UNDER CONSTRUCTION.
-- change_xml_path() - Set the user name in the path of observed data
-  overlay XML files and fixed trial design XML files
-- detect_file_timestamp() - Figure out what date/time stamps on Excel
-  results files would be removed by the function remove_file_timestamp
-- remove_file_timestamp() - Remove date/time stamps from Excel results
-  files created by the Autorunner
-- make_xml_path_mine() - Make the user name in the path of observed data
-  overlay XML files and fixed trial design XML files match that of the
-  current user \#### Helper functions that call on the Simcyp package
+*NB: Most functions that actually change workspaces are only available
+in the beta version of the package.* - change_wksz_interactions() -
+Change interaction parameters in Simcyp Simulator workspace files -
+change_wksz_trial_design() - Change a limited set of trial-design
+parameters in Simcyp Simulator workspace files. UNDER CONSTRUCTION. -
+change_xml_path() - Set the user name in the path of observed data
+overlay XML files and fixed trial design XML files -
+detect_file_timestamp() - Figure out what date/time stamps on Excel
+results files would be removed by the function remove_file_timestamp -
+remove_file_timestamp() - Remove date/time stamps from Excel results
+files created by the Autorunner - make_xml_path_mine() - Make the user
+name in the path of observed data overlay XML files and fixed trial
+design XML files match that of the current user
+
+#### Helper functions that call on the Simcyp package
+
 - check_simulator_initialized() - check whether the Simcyp Simulator has
   been initialized
 
