@@ -618,11 +618,13 @@ formatTable_Simcyp <- function(DF,
             flextable::bg(i = NoShadeRows, bg = "white") %>%
             flextable::bg(part = "header", bg = "white")
          
-         if(merge_shaded_cells){
-            FT <- FT %>% 
-               flextable::merge_v(j = which(names(DF) == as_label(shading_column)))
-         }
       }
+      
+      if(merge_shaded_cells){
+         FT <- FT %>% 
+            flextable::merge_v(j = which(names(DF) == as_label(shading_column)))
+      }
+      
    } else {
       ShadeRows <- c()
    }
