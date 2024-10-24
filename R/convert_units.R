@@ -198,6 +198,13 @@ convert_conc_units <- function(DF_to_convert,
    if(unique(DF_with_good_units$Conc_units) %in% MassUnits &
       unique(DF_to_convert$Conc_units) %in% MolarUnits){
       
+      if(all(is.na(MW))){
+         warning(wrapn("You requested that we convert your concentration units, but, since you haven't provided us anything for 'existing_exp_details', so we don't know what the molecular weights are and thus cannot perform this conversion."), 
+                 call. = FALSE)
+         
+         return(DF_to_convert)
+      }
+      
       suppressMessages(
          ConvTable_conc <- data.frame(
             
@@ -225,6 +232,13 @@ convert_conc_units <- function(DF_to_convert,
       
    } else if(unique(DF_with_good_units$Conc_units) %in% MolarUnits &
              unique(DF_to_convert$Conc_units) %in% MassUnits){
+      
+      if(all(is.na(MW))){
+         warning(wrapn("You requested that we convert your concentration units, but, since you haven't provided us anything for 'existing_exp_details', so we don't know what the molecular weights are and thus cannot perform this conversion."), 
+                       call. = FALSE)
+         
+         return(DF_to_convert)
+      }
       
       suppressMessages(
          ConvTable_conc <- data.frame(

@@ -916,14 +916,14 @@ extractExpDetails <- function(sim_data_file,
       if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
          exists("InputTab", inherits = FALSE) &&
          any(str_detect(unlist(c(InputTab[, ColLocations + 1])), 
-                        "Solubility-pH profile"),
+                        "Solubility-pH profile|User defined pH-Solubility"),
              na.rm = TRUE)){
          
          pHSol <- list()
          
          for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
             StartRow <- which(str_detect(t(InputTab[, ColLocations[i] + 1]), 
-                                         "Solubility-pH profile"))[1] + 1
+                                         "Solubility-pH profile|User defined pH-Solubility"))[1] + 1
             EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), 
                                        "Entry [0-9]{1,} Solubility"))
             EndRow <- EndRow[which.max(EndRow)]
@@ -1311,6 +1311,7 @@ extractExpDetails <- function(sim_data_file,
             
             Suffix <- str_extract(j, "_sub$|_inhib$|_inhib2$|_met1$|_secmet$|_inhib1met$")
             NameCol <- InputDeets$NameCol[InputDeets$Deet == j]
+            ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
             IntRows <- which(str_detect(InputTab[ , NameCol] %>% pull(),
                                         "^Enzyme$|^Transporter$"))
             IntRows <- IntRows[complete.cases(InputTab[IntRows + 1, NameCol])]
@@ -1336,7 +1337,9 @@ extractExpDetails <- function(sim_data_file,
                IntRows <- IntRows[IntRows >= IntRowStart]
                
                for(i in IntRows){
-                  Enzyme <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
+                  Enzyme <- gsub(" |\\(|\\)|-|/", "_", InputTab[i, NameCol + 1])
+                  Enzyme <- gsub("_{2,}", "_", Enzyme)
+                  Enzyme <- sub("_$", "", Enzyme)
                   NextEmptyCell <- which(is.na(InputTab[, NameCol + 1]))
                   NextEmptyCell <- NextEmptyCell[NextEmptyCell > i][1]
                   # If there's another interaction listed
@@ -1346,6 +1349,7 @@ extractExpDetails <- function(sim_data_file,
                   NextInt <- ifelse(i == IntRows[length(IntRows)],
                                     nrow(InputTab), NextInt)
                   ThisIntRows <- i:(c(NextEmptyCell, NextInt)[which.min(c(NextEmptyCell, NextInt))])
+                  ThisIntRows <- setdiff(ThisIntRows, NextEmptyCell)
                   
                   # Induction
                   IndParam1stRow <- which(str_detect(InputTab[ThisIntRows, NameCol] %>% pull(),
@@ -1484,6 +1488,7 @@ extractExpDetails <- function(sim_data_file,
          for(j in MyInputDeets4){
             
             NameCol <- InputDeets$NameCol[which(InputDeets$Deet == j)]
+            ValueCol <- InputDeets$ValueCol[InputDeets$Deet == j]
             Row_day <- which(str_detect(InputTab[, NameCol] %>% pull(), "Start Day"))
             # If this is not present, which sometimes happens with a custom
             # dosing schedule, then will need to pull info from custom
@@ -1560,7 +1565,13 @@ extractExpDetails <- function(sim_data_file,
                      TransRowLast <- ifelse(length(TransRowLast) == 0, 
                                             nrow(InputTab), TransRowLast[1])
                      TransRowNames <- InputTab[i:TransRowLast, NameCol] %>% pull(1)
-                     Transporter <- gsub(" |\\(|\\)|-|/", "", InputTab[i, NameCol + 1])
+                     Transporter <- gsub(" |\\(|\\)|-|/", "_", InputTab[i, NameCol + 1])
+                     Transporter <- gsub("_{2,}", "_", Transporter)
+                     Transporter <- sub("_$", "", Transporter)
+                     Transporter <- case_match(Transporter, 
+                                               "Apical_Efflux_Kidney" ~ "General_Apical_Efflux", 
+                                               .default = Transporter)
+                     
                      Location <- gsub(" |\\(|\\)|-|/", "", 
                                       InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],
                                                ValueCol] %>% pull(1))
