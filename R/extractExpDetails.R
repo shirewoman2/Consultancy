@@ -1568,6 +1568,9 @@ extractExpDetails <- function(sim_data_file,
                      Transporter <- gsub(" |\\(|\\)|-|/", "_", InputTab[i, NameCol + 1])
                      Transporter <- gsub("_{2,}", "_", Transporter)
                      Transporter <- sub("_$", "", Transporter)
+                     Transporter <- case_match(Transporter, 
+                                               "Apical_Efflux_Kidney" ~ "General_Apical_Efflux", 
+                                               .default = Transporter)
                      
                      Location <- gsub(" |\\(|\\)|-|/", "", 
                                       InputTab[c(i:TransRowLast)[which(TransRowNames == "Location")],

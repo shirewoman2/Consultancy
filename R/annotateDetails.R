@@ -542,7 +542,7 @@ annotateDetails <- function(existing_exp_details,
                      "CLint"),
             
             str_detect(Detail, "^Transporter") ~ 
-               paste0(str_extract(Detail, "ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]"),
+               paste0(str_extract(Detail, "ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"),
                       " ", 
                       case_when(str_detect(Detail, "Apical") ~ "apical ", 
                                 str_detect(Detail, "Basolateral") ~ "basolateral ", 
@@ -595,27 +595,39 @@ annotateDetails <- function(existing_exp_details,
                                 str_detect(Detail, "^Ki") ~ "competitive inhibition of ",
                                 .default = ""), 
                       
-                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]")),
+                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")),
             
             # enzyme kinetics 
             str_detect(Detail, "^Km_") ~ 
-               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]"), "Km"), 
+               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), "Km"), 
             
             str_detect(Detail, "^Vmax_") ~ 
-               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]"), "Vmax"), 
+               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), "Vmax"), 
             
             # inhibition
             str_detect(Detail, "^Ki_") ~ 
-               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]"), 
-                     "competitive inhibition constant"), 
+               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+                     " competitive inhibition constant", 
+                     case_when(str_detect(Detail, "Gut|Kidney|Liver") ~
+                                  paste0(" in ", 
+                                         tolower(str_extract(Detail, "Gut|Kidney|Liver"))), 
+                               .default = "")), 
             
             str_detect(Detail, "MBI_Kapp") ~ 
                paste("Kapp for mechanism-based indactivation of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]")), 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")), 
             
             str_detect(Detail, "MBI_kinact") ~ 
                paste("kinact for mechanism-based indactivation of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]")), 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")), 
+            
+            # Induction
+            str_detect(Detail, "^Ind") ~ 
+               paste0(case_when(str_detect(Detail, "IndMax|IndC50") ~ str_extract(Detail, "IndMax|IndC50"), 
+                                str_detect(Detail, "Ind_gamma") ~ "induction Hill coefficient (gamma)", 
+                                str_detect(Detail, "slope") ~ "induction slope"), 
+                      " for ", 
+                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")),
             
             TRUE ~ Notes),
          
