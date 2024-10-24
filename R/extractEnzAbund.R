@@ -72,9 +72,8 @@
 #' @examples
 #' extractEnzAbund(sim_data_file = "../Example simulator output MD.xlsx",
 #'                 enzyme = "CYP3A4", tissue = "liver")
-
-
-
+#'                 
+#'                 
 extractEnzAbund <- function(sim_data_file,
                             enzyme = "CYP3A4",
                             tissue = "liver",
@@ -120,10 +119,45 @@ extractEnzAbund <- function(sim_data_file,
       return(data.frame())
    }
    
-   
-   # Main body of function ----------------------------------------------------------------
    tissue <- tolower(tissue)
    enzyme <- gsub(" |_|-", "", toupper(enzyme))
+   
+   # Checking that what they're asking for is possible
+   LiverEnz <- c(paste0("CYP", c("1A1", "1A2", "2A6", "2B6", "2C8", "2C9", "2C18", 
+                                 "2C19", "2D6", "2E1", "2J2", "3A4", "3A5", "3A7")), 
+                 paste0("UGT", c(paste0("1A", c(1,3:10)), 
+                                 paste0("2B", c(4, 7, 10, 11, 15, 17, 28)), 
+                                 " User Defined")))
+   
+   GutEnz <- c(paste0("CYP", c("2C9", "2C19", "2D6", "2J2", "3A4", "3A5")), 
+               paste0("UGT", c(paste0("1A", c(1,3:10)), 
+                               paste0("2B", c(4, 7, 10, 11, 15, 17, 28)), 
+                               " User Defined")))
+   
+   KidneyEnz <- paste0("UGT", c(paste0("1A", c(1,3:10)), 
+                                paste0("2B", c(4, 7, 10, 11, 15, 17, 28)), 
+                                " User Defined"))
+   
+   if(tissue == "liver" & enzyme %in% LiverEnz == FALSE){
+      warning(wrapn(paste0("You requested ", enzyme, " levels in the liver, which is not among the possible outputs from the Simcyp Simulator, so we cannot return any data.")), 
+              call. = FALSE)
+      return(data.frame())
+   }
+   
+   if(tissue == "gut" & enzyme %in% GutEnz == FALSE){
+      warning(wrapn(paste0("You requested ", enzyme, " levels in the gut, which is not among the possible outputs from the Simcyp Simulator, so we cannot return any data.")), 
+              call. = FALSE)
+      return(data.frame())
+   }
+   
+   if(tissue == "kidney" & enzyme %in% KidneyEnz == FALSE){
+      warning(wrapn(paste0("You requested ", enzyme, " levels in the kidney, which is not among the possible outputs from the Simcyp Simulator, so we cannot return any data.")), 
+              call. = FALSE)
+      return(data.frame())
+   }
+   
+   
+   # Main body of function ----------------------------------------------------------------
    
    # Getting summary data for the simulation(s)
    if("logical" %in% class(existing_exp_details)){ # logical when user has supplied NA
