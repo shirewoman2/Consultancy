@@ -1098,7 +1098,10 @@ extractExpDetails <- function(sim_data_file,
                      Enzyme <- gsub(" ", "", InputTab[i, NameCol + 1])
                      Pathway <- gsub(" |-", "", InputTab[i - 1, NameCol + 1])
                      if(as.character(InputTab[i+1, NameCol]) == "Genotype"){
-                        Enzyme <- paste0(Enzyme, InputTab[i+1, NameCol + 1])
+                        Genotype <- InputTab[i+1, NameCol + 1]
+                        Genotype <- gsub("\\*", "star", Genotype)
+                        Genotype <- gsub("/", "", Genotype)
+                        Enzyme <- paste0(Enzyme, "_", Genotype)
                         CLrow <- i + 2
                      } else if((str_detect(Enzyme, "User") &
                                 !str_detect(InputTab[i+1, NameCol], "CLint|Vmax")) |
@@ -1114,19 +1117,25 @@ extractExpDetails <- function(sim_data_file,
                      
                      if(CLType == "CLint"){
                         
-                        Units <- str_extract(InputTab[CLrow, NameCol], 
-                                             "\\(.*\\)")
-                        Units <- gsub("\\(|\\)", "", Units)
-                        Units <- gsub("/| ", "_", Units)
-                        # Dealing with mu since it's causing some problems
-                        # downstream when a symbol
-                        Units <- gsub(rlang::chr_unserialise_unicode("<U+00B5>"), 
-                                      "u", Units)
+                        # NOTE TO CODERS: I'd been including units for CLint in
+                        # the past, but I realized that I hadn't included units
+                        # for other enzymes, so I decided later to omit them.
+                        # Keeping this bit of code, albeit commented out, so
+                        # that we can add them back easily if we want.
+                        
+                        # Units <- str_extract(InputTab[CLrow, NameCol], 
+                        #                      "\\(.*\\)")
+                        # Units <- gsub("\\(|\\)", "", Units)
+                        # Units <- gsub("/| ", "_", Units)
+                        # # Dealing with mu since it's causing some problems
+                        # # downstream when a symbol
+                        # Units <- gsub(rlang::chr_unserialise_unicode("<U+00B5>"), 
+                        #               "u", Units)
                         
                         suppressWarnings(
                            Out[[paste0(
-                              paste("CLint", Enzyme,
-                                    Pathway, Units, sep = "_"),
+                              paste("CLint", Enzyme, Pathway, # Units,
+                                    sep = "_"),
                               Suffix)]] <-
                               as.numeric(InputTab[CLrow, NameCol + 1])
                         )
