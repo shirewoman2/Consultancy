@@ -42,6 +42,7 @@ forest_plot(
   vline_at_1 = "gray dashed",
   dose_units = "mg",
   save_graph = NA,
+  return_caption = FALSE,
   fig_height = 6,
   fig_width = 5,
   prettify_compound_names = NA
@@ -426,6 +427,10 @@ saved as that file format. Acceptable graphical file extensions are "eps",
 "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any
 slashes, dollar signs, or periods in the file name. Leaving this as NA
 means the file will not be saved to disk.}
+
+\item{return_caption}{TRUE or FALSE (default) for whether to return any
+caption text to use with the graph. If set to TRUE, you'll get as output a
+list of the graph, the figure heading, and the figure caption.}
 
 \item{fig_height}{figure height in inches; default is 6}
 

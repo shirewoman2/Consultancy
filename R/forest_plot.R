@@ -296,6 +296,9 @@
 #'   FALSE, the y axis tick marks will be placed closer to the top and bottom of
 #'   your data. The default amount of padding varies depending on how many PK
 #'   parameters you're including, but try something in the realm of 0 to 3.
+#' @param return_caption TRUE or FALSE (default) for whether to return any
+#'   caption text to use with the graph. If set to TRUE, you'll get as output a
+#'   list of the graph, the figure heading, and the figure caption.
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My forest plot.png" or "My forest plot.docx". If you
 #'   leave off ".png" or ".docx" from the file name, it will be saved as a png
@@ -568,6 +571,7 @@ forest_plot <- function(forest_dataframe,
                         vline_at_1 = "gray dashed",
                         dose_units = "mg",
                         save_graph = NA,
+                        return_caption = FALSE, 
                         fig_height = 6,
                         fig_width = 5, 
                         prettify_compound_names = NA){
@@ -938,6 +942,18 @@ forest_plot <- function(forest_dataframe,
            call. = FALSE)
    }
    
+   # Noting what doses were included for use later w/the caption
+   DosesIncluded <- c("Dose1" = any(str_detect(forest_dataframe$PKparameter, "_dose1")),
+                      "Last" = any(str_detect(forest_dataframe$PKparameter, "_last")), 
+                      "User" = any(str_detect(forest_dataframe$PKparameter, "_dose1|_last") == FALSE))
+   DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
+   
+   Dose1included <- any(str_detect(forest_dataframe$PKparameter, "_dose1|Dose 1")) |
+      str_detect(tolower(DosesIncluded), "dose( )?1")
+   LastDoseincluded <- any(str_detect(forest_dataframe$PKparameter, "_last|Last dose")) |
+      str_detect(tolower(DosesIncluded), "last")
+   
+   # omitting the dose number if requested
    include_dose_num <- check_include_dose_num(PK = forest_dataframe, 
                                               include_dose_num = include_dose_num)
    
@@ -993,6 +1009,24 @@ forest_plot <- function(forest_dataframe,
    
    forest_dataframe <- forest_dataframe %>% 
       mutate(SimOrObs = "predicted")
+   
+   # Noting victims and perpetrators if possible
+   if(all(c("Victim", "Perpetrator") %in% names(forest_dataframe))){
+      UniformVictim <- length(unique(forest_dataframe$Victim)) == 1
+      UniformPerp <- length(unique(forest_dataframe$Perpetrator)) == 1
+      
+      MyVictim <- str_comma(sort(unique(forest_dataframe$Victim)))
+      MyPerp <- str_comma(sort(unique(forest_dataframe$Perpetrator)))
+      
+   } else {
+      # Setting both of these to FALSE will create a caption that the user can
+      # then modify as needed
+      UniformPerp <- FALSE
+      UniformVictim <- FALSE
+      
+      MyVictim <- "XXX"
+      MyPerp <- "YYY"
+   }
    
    # Checking that the stats requested are available
    FDnames <- factor(names(forest_dataframe), 
@@ -1328,7 +1362,8 @@ forest_plot <- function(forest_dataframe,
    forest_dataframe <- forest_dataframe %>% 
       select(File, YCol, PKparameter, SimOrObs, 
              any_of(c(as_label(facet_column_x), 
-                      CenterStat, VarStat, as_label(point_color_column))))
+                      CenterStat, VarStat, as_label(point_color_column), 
+                      "Tissue")))
    
    if(any(complete.cases(PKparameters)) &&
       any(PKparameters %in% forest_dataframe$PKparameter) == FALSE){
@@ -2118,17 +2153,76 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
-   if(use_AUCt_when_AUCinf_NA && nrow(AUCt_swap) > 0 &
-      include_AUCt_for_AUCinf_caption == TRUE){
-      CaptionText <- forest_dataframe %>% filter(File %in% AUCt_swap$File) %>% 
+   if(use_AUCt_when_AUCinf_NA && nrow(AUCt_swap) > 0){
+      
+      AUCinf_CaptionText <- forest_dataframe %>% filter(File %in% AUCt_swap$File) %>% 
          pull(YCol) %>% unique %>% as.character %>% str_comma
-      CaptionText <- gsub("\\n", " ", CaptionText)
+      AUCinf_CaptionText <- gsub("\\n", " ", AUCinf_CaptionText)
+      AUCinf_CaptionText <- paste0("For ", AUCinf_CaptionText, 
+                            ", AUCt was used in lieu of AUCinf. ")
       
-      G <- G + labs(caption = str_wrap(paste0("For ", CaptionText, 
-                                     ", AUCt was used in lieu of AUCinf."), 
-                                     width = 50))
-      
+      if(include_AUCt_for_AUCinf_caption == TRUE){
+         G <- G + labs(caption = str_wrap(AUCinf_CaptionText, 
+                                          width = 50))
+      }
+   } else {
+      AUCinf_CaptionText <- ""
    }
+   
+   
+   # Making caption -----------------------------------------------------------
+   
+   fig_heading1 <- paste0("Forest plot comparing ", 
+                          ifelse("Tissue" %in% names(forest_dataframe), 
+                                 str_comma(sort(unique(forest_dataframe$Tissue))), 
+                                 ""))
+   
+   fig_heading2 <- data.frame(PKparameter = ParamToUse) %>% 
+      left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
+                   bind_rows(
+                      AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
+                         mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
+                                PrettifiedNames = sub("Dose 1 |Last dose ", 
+                                                      "", PrettifiedNames))), 
+                by = "PKparameter") %>% 
+      pull(PrettifiedNames) %>% unique() %>%
+      sub("ratio", "ratios", .) %>% 
+      sub("Cmax", "C~max~", .) %>% 
+      sub("AUCinf", "AUC~inf~", .) %>% 
+      sub("AUCtau", "AUC~tau~", .) %>% 
+      sub("AUCt", "AUC~t~", .) %>% 
+      str_comma()
+   
+   fig_heading3 <- 
+      paste0("for ", case_when(
+         DosesIncluded == "Dose1" ~ "a single dose",
+         DosesIncluded %in% c("Dose1 Last", "Dose1 User", "Dose1 Last User") ~
+            "multiple doses", 
+         str_detect(DosesIncluded, "Dose1") == FALSE ~ "multiple doses"), 
+         " of ", 
+         # ok to add the substrate and perpetrator info when one or the
+         # other is all the same. 
+         case_when(
+            # perpetrator DDI forest plot
+            UniformVictim == TRUE & UniformPerp == FALSE ~ 
+               paste0(MyVictim, 
+                      " when co-administered with various DDI perpetrators."), 
+            
+            # victim DDI forest plot
+            UniformVictim == FALSE & UniformPerp == TRUE ~ 
+               paste0("various DDI victims when co-administered with ", 
+                      MyPerp, "."), 
+            
+            .default = "for a single dose/multiple doses of XXX when co-administered with YYY."))
+   
+   fig_heading <- paste(fig_heading1, fig_heading2, fig_heading3)
+   
+   fig_caption <- paste0(AUCinf_CaptionText, 
+                         "Source simulated data: ",
+                         str_comma(sort(unique(forest_dataframe$File))))
+   
+   
+   # Saving ------------------------------------------------------------------
    
    if(complete.cases(save_graph)){
       FileName <- save_graph
@@ -2180,12 +2274,24 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
-   return(switch(as.character(show_numbers_on_right), 
-                 "TRUE" = patchwork::wrap_plots(G, 
-                                                NumTable, 
-                                                nrow = 1,
-                                                widths = rel_widths),
-                 "FALSE" = G))
+   Out <- list("graph" = switch(as.character(show_numbers_on_right), 
+                                "TRUE" = patchwork::wrap_plots(G, 
+                                                               NumTable, 
+                                                               nrow = 1,
+                                                               widths = rel_widths),
+                                "FALSE" = G))
+   
+   if(return_caption){
+      Out[["fig_heading"]] <- fig_heading
+      Out[["fig_caption"]] <- fig_caption
+   }
+   
+   if(length(Out) == 1){
+      Out <- Out[[1]]
+   }
+   
+   return(Out)
+   
 }
 
 
