@@ -417,9 +417,15 @@ pk_table <- function(PKparameters = NA,
       tissues <- sys.call()$tissue
    }
    
-   if("observed_PK" %in% names(match.call()) &
-      "PKparameters" %in% names(match.call()) == FALSE){
-      PKparameters <- sys.call()$observed_PK
+   if("observed_PK" %in% names(match.call())){
+      if("PKparameters" %in% names(match.call()) == FALSE){
+         warning(wrapn("You have supplied an argument called 'observed_PK', which is what the older, soon-to-be-deprecated functions pksummary_table and pksummary_mult used to get observed data. For the pk_table function, we need to have the observed data included with the argument 'PKparameters'. Please check the help file to see how this should be set up. You can see examples for how to supply this by running `make_PK_example_input()`. For now, we will set the argument 'PKparameters' to what you supplied for 'observed_PK'."), 
+                 call. = FALSE)
+         PKparameters <- sys.call()$observed_PK
+      } else {
+         warning(wrapn("You have supplied an argument called 'observed_PK', which is what the older, soon-to-be-deprecated functions pksummary_table and pksummary_mult used to get observed data. For the pk_table function, we need to have the observed data included with the argument 'PKparameters'. Please check the help file to see how this should be set up. You can see examples for how to supply this by running `make_PK_example_input()`. Since you did supply something for the argument 'PKparameters' already, we cannot include your observed data."), 
+                 call. = FALSE)
+      }
    }
    
    # sheet_PKparameters should be length 1 and not be named b/c, if they want
