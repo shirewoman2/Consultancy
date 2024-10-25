@@ -176,15 +176,32 @@ TempTable <- MyPKResults[[i]] %>% ungroup() %>%
    select(-any_of(c("CompoundID", "Tissue", "File", "Compound")))
 names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
 
-formatTable_Simcyp(TempTable,
-                   merge_shaded_cells = merge_shaded_cells,
-                   perpetrator_name = MyPerpetrator, 
-                   fontsize = fontsize,
-                   prettify_columns = prettify_columns, 
-                   add_header_for_DDI = add_header_for_DDI, 
-                   highlight_so_cutoffs = highlight_so_cutoffs, 
-                   highlight_so_colors = highlight_so_colors, 
-                   highlight_gmr_colors = highlight_gmr_colors)
+if(as_label(shading_column) == "<empty>"){
+   
+   formatTable_Simcyp(TempTable,
+                      merge_shaded_cells = TRUE,
+                      perpetrator_name = MyPerpetrator, 
+                      fontsize = fontsize,
+                      prettify_columns = prettify_columns, 
+                      add_header_for_DDI = add_header_for_DDI, 
+                      highlight_so_cutoffs = highlight_so_cutoffs, 
+                      highlight_so_colors = highlight_so_colors, 
+                      highlight_gmr_colors = highlight_gmr_colors)
+   
+} else {
+   
+   formatTable_Simcyp(TempTable,
+                      shading_column = !!shading_column, 
+                      merge_shaded_cells = TRUE,
+                      perpetrator_name = MyPerpetrator, 
+                      fontsize = fontsize,
+                      prettify_columns = prettify_columns, 
+                      add_header_for_DDI = add_header_for_DDI, 
+                      highlight_so_cutoffs = highlight_so_cutoffs, 
+                      highlight_so_colors = highlight_so_colors, 
+                      highlight_gmr_colors = highlight_gmr_colors)
+   
+}
 
 ```
 

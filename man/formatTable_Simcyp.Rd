@@ -40,7 +40,7 @@ for when to change the shading; every time that column's value changes, the
 shading will alternate between white and light gray. For example, if you
 have a table with PK values for multiple files and you have more than one
 row per file (an example of this would be the output from the function
-\code{\link{pksummary_mult}}), setting \code{shading_column = File} will
+\code{\link{pk_table}}), setting \code{shading_column = File} will
 cause the shading of the rows to alternate between white and light gray
 whenever the file changes. Please see the examples at the bottom of this
 help file.}

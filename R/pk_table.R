@@ -324,6 +324,16 @@
 #'   care of stringing them together appropriately. Just list them as a
 #'   character vector, e.g., \code{name_clinical_study = c("101",
 #'   "102", "103")} will become "clinical studies 101, 102, and 103."
+#' @param shading_column If you would like to alternate the shading of the rows
+#'   in the output table, supply here the unquoted name of the column to check
+#'   for when to change the shading; every time that column's value changes, the
+#'   shading will alternate between white and light gray. By default, we will
+#'   alternate the shading based on the simulation file name. Setting this
+#'   argument can be a little bit tricky because we'll be looking for a column
+#'   that's present in the \emph{output} from this function, something you might
+#'   not know until you run it. If you specify something and the shading doesn't
+#'   show up as expected, double check what the final output column names are
+#'   and make sure you're using one of those.
 #' @param single_table TRUE (default) or FALSE for whether to save all the PK
 #'   data in a single table or break the data up by tissue, compound ID, and
 #'   file into multiple tables. This only applies to the Word output.
@@ -373,6 +383,7 @@ pk_table <- function(PKparameters = NA,
                      highlight_gmr_colors = NA, 
                      highlight_so_cutoffs = NA, 
                      highlight_so_colors = "yellow to red", 
+                     shading_column, 
                      single_table = FALSE,
                      page_orientation = "portrait", 
                      fontsize = 11, 
@@ -404,6 +415,11 @@ pk_table <- function(PKparameters = NA,
    if("tissue" %in% names(match.call()) &
       "tissues" %in% names(match.call()) == FALSE){
       tissues <- sys.call()$tissue
+   }
+   
+   if("observed_PK" %in% names(match.call()) &
+      "PKparameters" %in% names(match.call()) == FALSE){
+      PKparameters <- sys.call()$observed_PK
    }
    
    # sheet_PKparameters should be length 1 and not be named b/c, if they want

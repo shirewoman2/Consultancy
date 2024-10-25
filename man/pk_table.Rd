@@ -36,6 +36,7 @@ pk_table(
   highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
+  shading_column,
   single_table = FALSE,
   page_orientation = "portrait",
   fontsize = 11,
@@ -370,6 +371,17 @@ c("green", "red")}. This only applies when you save the table as a Word file.}
   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
+
+\item{shading_column}{If you would like to alternate the shading of the rows
+in the output table, supply here the unquoted name of the column to check
+for when to change the shading; every time that column's value changes, the
+shading will alternate between white and light gray. By default, we will
+alternate the shading based on the simulation file name. Setting this
+argument can be a little bit tricky because we'll be looking for a column
+that's present in the \emph{output} from this function, something you might
+not know until you run it. If you specify something and the shading doesn't
+show up as expected, double check what the final output column names are
+and make sure you're using one of those.}
 
 \item{single_table}{TRUE (default) or FALSE for whether to save all the PK
 data in a single table or break the data up by tissue, compound ID, and
