@@ -222,6 +222,16 @@
 #'   care of stringing them together appropriately. Just list them as a
 #'   character vector, e.g., \code{name_clinical_study = c("101",
 #'   "102", "103")} will become "clinical studies 101, 102, and 103."
+#' @param shading_column If you would like to alternate the shading of the rows
+#'   in the output table, supply here the unquoted name of the column to check
+#'   for when to change the shading; every time that column's value changes, the
+#'   shading will alternate between white and light gray. By default, we will
+#'   alternate the shading based on the simulation file name. Setting this
+#'   argument can be a little bit tricky because we'll be looking for a column
+#'   that's present in the \emph{output} from this function, something you might
+#'   not know until you run it. If you specify something and the shading doesn't
+#'   show up as expected, double check what the final output column names are
+#'   and make sure you're using one of those.
 #' @param rounding option for what rounding to perform, if any. Options are:
 #'   \describe{\item{NA or "Consultancy"}{All output will be rounded according
 #'   to Simcyp Consultancy Team standards: to three significant figures when the
@@ -296,11 +306,12 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                                 include_dose_num = NA,
                                 prettify_columns = TRUE,
                                 prettify_compound_names = TRUE,
-                                name_clinical_study = NA, 
                                 rounding = NA,
                                 checkDataSource = TRUE, 
                                 extract_forest_data = FALSE, 
                                 save_table = NA, 
+                                name_clinical_study = NA, 
+                                shading_column, 
                                 highlight_gmr_colors = NA, 
                                 single_table = TRUE,
                                 page_orientation = "landscape", 

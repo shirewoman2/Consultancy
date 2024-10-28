@@ -21,11 +21,12 @@ calc_PK_ratios_mult(
   include_dose_num = NA,
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
-  name_clinical_study = NA,
   rounding = NA,
   checkDataSource = TRUE,
   extract_forest_data = FALSE,
   save_table = NA,
+  name_clinical_study = NA,
+  shading_column,
   highlight_gmr_colors = NA,
   single_table = TRUE,
   page_orientation = "landscape",
@@ -249,15 +250,6 @@ if you're including perpetrator metabolites: \code{prettify_compound_names =
 c("inhibitor" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
-\item{name_clinical_study}{optionally specify the name(s) of the clinical
-study or studies for any observed data. This only affects the caption of
-the graph. For example, specifying \code{name_clinical_study = "101, fed
-cohort"} will result in a figure caption that reads in part "clinical study
-101, fed cohort". If you have more than one study, that's fine; we'll take
-care of stringing them together appropriately. Just list them as a
-character vector, e.g., \code{name_clinical_study = c("101",
-"102", "103")} will become "clinical studies 101, 102, and 103."}
-
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{NA or "Consultancy"}{All output will be rounded according
 to Simcyp Consultancy Team standards: to three significant figures when the
@@ -301,6 +293,26 @@ leave off the file extension, we'll assume you want it to be ".csv". While
 the main PK table data will be in whatever file format you requested, if
 you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
 its own and will have "- QC" added to the end of the file name.}
+
+\item{name_clinical_study}{optionally specify the name(s) of the clinical
+study or studies for any observed data. This only affects the caption of
+the graph. For example, specifying \code{name_clinical_study = "101, fed
+cohort"} will result in a figure caption that reads in part "clinical study
+101, fed cohort". If you have more than one study, that's fine; we'll take
+care of stringing them together appropriately. Just list them as a
+character vector, e.g., \code{name_clinical_study = c("101",
+"102", "103")} will become "clinical studies 101, 102, and 103."}
+
+\item{shading_column}{If you would like to alternate the shading of the rows
+in the output table, supply here the unquoted name of the column to check
+for when to change the shading; every time that column's value changes, the
+shading will alternate between white and light gray. By default, we will
+alternate the shading based on the simulation file name. Setting this
+argument can be a little bit tricky because we'll be looking for a column
+that's present in the \emph{output} from this function, something you might
+not know until you run it. If you specify something and the shading doesn't
+show up as expected, double check what the final output column names are
+and make sure you're using one of those.}
 
 \item{highlight_gmr_colors}{optionally specify a set of colors to use for
 highlighting geometric mean ratios for DDIs. Options are "yellow to red",
