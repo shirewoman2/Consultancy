@@ -62,6 +62,15 @@ make_ct_caption <- function(ct_dataframe,
                           .default = str_c(sort(unique(AllCompounds$DDIrole[
                              AllCompounds$CompoundID %in% CompoundID])), collapse = "-"))
    
+   # Adding one more plot_type to account for ADAM model data where it's not
+   # really "concentration" but "amount".
+   if(plot_type == "concentration-time" & 
+      all(unique(ct_dataframe$Conc_units) %in% c("µM", "nM", "mg/L", "mg/mL",
+                                                 "µg/L", "µg/mL", "ng/L",
+                                                 "ng/mL") == FALSE)){
+      plot_type <- "mass-time"
+   }
+   
    if(plot_type == "enzyme-abundance"){
       MyCompound <- str_comma(sort(unique(ct_dataframe$Enzyme)))
    } else {
@@ -240,7 +249,8 @@ make_ct_caption <- function(ct_dataframe,
                                "enzyme-abundance" = " enzyme-abundance profiles of ",
                                "release-profile" = " release profiles of ",
                                "dissolution-profile" = " dissolution profiles of ",
-                               "concentration-time" = " concentration-time profiles of "), 
+                               "concentration-time" = " concentration-time profiles of ", 
+                               "mass-time" = " profiles of "), 
                         MyCompound, " ", DDItext1, "in ", 
                         Pop, ".")
       
