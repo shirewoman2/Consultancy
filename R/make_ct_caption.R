@@ -365,7 +365,7 @@ make_ct_caption <- function(ct_dataframe,
          HLineAES <- str_split(hline_style, pattern = " ")[[1]]
          
          CapText2 <- paste0(CapText2, "* ",
-                            paste("*The", HLineAES[1], HLineAES[2], "horizontal",
+                            paste("*The horizontal", HLineAES[1], HLineAES[2], 
                                   ifelse(length(hline_position) > 1, 
                                          "lines indicate*", "line indicates*"), 
                                   "***XXX.*** "))
@@ -377,7 +377,7 @@ make_ct_caption <- function(ct_dataframe,
          
          CapText2 <- paste0(CapText2, ifelse(any(complete.cases(hline_position)), 
                                              " ", "* "),
-                            paste("*The", VLineAES[1], VLineAES[2], "vertical",
+                            paste("*The vertical", VLineAES[1], VLineAES[2],
                                   ifelse(length(hline_position) > 1, 
                                          "lines indicate*", "line indicates*"), 
                                   "***XXX.*** "))

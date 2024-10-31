@@ -802,7 +802,9 @@ ct_plot_overlay <- function(ct_dataframe,
       floating_facet_scale <- ifelse(is.na(floating_facet_scale), 
                                      FALSE, floating_facet_scale)
    } else if("character" %in% class(floating_facet_scale) &&
-             tolower(floating_facet_scale) %in% c("x", "y", "xy")){
+             tolower(floating_facet_scale) %in% c("x", "y", "xy", "free x", 
+                                                  "free y")){
+      floating_facet_scale <- sub("free ", "", floating_facet_scale)
       floating_facet_scale <- tolower(floating_facet_scale)
    } else {
       warning(wrapn("You have entered something other than one of the permissible values for the argument 'floating_facet_scale', so we will set it to the default of FALSE."), 
