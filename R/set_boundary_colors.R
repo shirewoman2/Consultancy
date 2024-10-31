@@ -121,8 +121,9 @@ set_boundary_colors <- function(color_set,
    # be more likely to mess up the break_type than the color_set, so, when there
    # is an incompatibility there, prioritize matching the color_set and adjust
    # the break_type as needed.
-   if(break_type %in% c("SO HIGHLIGHT", "GMR") & 
-      color_set %in% c("green to red", "yellow to red", "traffic") == FALSE){
+   if(length(color_set) == 1 &&
+      (break_type %in% c("SO HIGHLIGHT", "GMR") & 
+       color_set %in% c("green to red", "yellow to red", "traffic") == FALSE)){
       warning(wrapn(paste0("You requested ", 
                            color_set, " for the argument 'color_set' and ", 
                            break_type, " for the argument 'break_type', which is not among the available options for that break_type. We will set the break_type to 'SO highlight'.")), 
@@ -130,8 +131,9 @@ set_boundary_colors <- function(color_set,
       break_type <- "SO HIGHLIGHT"
    }
    
-   if(break_type %in% c("SO LINE") & 
-      color_set %in% c("red black", "red green", "muted red green") == FALSE){
+   if(length(color_set) == 1 &&
+      (break_type %in% c("SO LINE") & 
+       color_set %in% c("red black", "red green", "muted red green") == FALSE)){
       warning(wrapn(paste0("You requested ", 
                            color_set, " for the argument 'color_set' and ", 
                            break_type, " for the argument 'break_type', which is not among the available options for that break_type. We will set the break_type to 'SO line'.")), 
@@ -147,7 +149,8 @@ set_boundary_colors <- function(color_set,
    
    # If the user has requested "green to red" but not included 1 in their
    # cutoffs, add 1 to their cutoffs.
-   if(color_set == "green to red" & 1 %in% boundaries == FALSE){
+   if(length(color_set) == 1 && 
+      (color_set == "green to red" & 1 %in% boundaries == FALSE)){
       boundaries <- sort(unique(c(1, boundaries)))
    }
    
@@ -156,7 +159,8 @@ set_boundary_colors <- function(color_set,
    # "green to red". If the user has requested "yellow to red" and NOT included
    # 1 in the boundaries, leave the color set as is but add a 1 so that the
    # middle will be white.
-   if(color_set == "yellow to red" & break_type == "SO HIGHLIGHT"){
+   if(length(color_set) == 1 &&
+      (color_set == "yellow to red" & break_type == "SO HIGHLIGHT")){
       if(1 %in% boundaries){
          color_set <- "green to red"
       } else {
@@ -167,7 +171,8 @@ set_boundary_colors <- function(color_set,
    # If the user has requested "traffic" and NOT included 1 in the boundaries,
    # set the name to traffic_no_middle and add a 1 so that the middle will be
    # white.
-   if(color_set == "traffic" & 1 %in% boundaries == FALSE){
+   if(length(color_set) == 1 &&
+      (color_set == "traffic" & 1 %in% boundaries == FALSE)){
       color_set <- "traffic_no_middle"
       boundaries <- sort(unique(c(1, boundaries)))
    }
@@ -184,249 +189,252 @@ set_boundary_colors <- function(color_set,
       color_set <- paste(color_set, "1")
    }
    
-   # Boundaries are only set up with *specific* colors when there are <= 3
-   # boundaries, not including the middle. If there are more boundaries than
-   # that, then we'll use colorRampPalette to pick the colors. Because of how
-   # this is set up in the boundary_color_set switch, we want the breaks to be
-   # no larger than 4. Note that break_type is set to "SO HIGHLIGHT" if it's a
-   # GMR break type b/c those result in the same sets of colors.
-   ColorChoices <- paste(
-      color_set, 
-      case_match(break_type, 
-                 "GMR" ~ "SO HIGHLIGHT", 
-                 .default = break_type), 
-      cut(length(boundaries), breaks = c(0:min(c(4, MaxBound)), Inf)))
-   
-   boundary_color_set <- 
-      switch(ColorChoices, 
-             # red black -----------------------------------------------------
-             
-             # 1 boundary, e.g., it's only unity
-             "red black SO LINE (0,1]" = "black", 
-             
-             # 2 boundaries
-             "red black SO LINE (1,2]" = c("black", "black"), 
-             
-             # 3 boundaries
-             "red black SO LINE (2,3]" = c("black", "black", "red"), 
-             
-             # 4 boundaries
-             "red black SO LINE (3,4]" = c("black",
-                                           colorRampPalette(c("black", "#FFC000", "red"))(
-                                              length(boundaries) - 1)), 
-             
-             # > 4 boundaries (this is same as above intentionally)
-             "red black SO LINE (4,Inf]" = c("black",
-                                             colorRampPalette(c("black", "#FFC000", "red"))(
-                                                length(boundaries) - 1)), 
-             
-             # 1 boundary, e.g., it's only unity
-             "red black 1 SO LINE (0,1]" = "black", 
-             
-             # 2 boundaries
-             "red black 1 SO LINE (1,2]" = c("black", "black"), 
-             
-             # 3 boundaries
-             "red black 1 SO LINE (2,3]" = c("black", "black", "red"), 
-             
-             # 4 boundaries
-             "red black 1 SO LINE (3,4]" = c("black",
-                                             colorRampPalette(c("black", "#FFC000", "red"))(
-                                                length(boundaries) - 1)), 
-             
-             # > 4 boundaries (this is same as above intentionally)
-             "red black 1 SO LINE (4,Inf]" = c("black",
-                                               colorRampPalette(c("black", "#FFC000", "red"))(
-                                                  length(boundaries) - 1)), 
-             
-             # red green ------------------------------------------------------
-             
-             # 1 boundary, e.g., it's only unity
-             "red green SO LINE (0,1]" = "#17A142", 
-             
-             # 2 boundaries
-             "red green SO LINE (1,2]" = c("#17A142", "#17A142"), 
-             
-             # 3 boundaries
-             "red green SO LINE (2,3]" = c("#17A142", "#17A142", "red"), 
-             
-             # 4 boundaries
-             "red green SO LINE (3,4]" = c("#17A142", 
-                                           colorRampPalette(c("#17A142", "red"))(
-                                              length(boundaries) - 1)), 
-             
-             # >4 boundaries (this is same as above intentionally)
-             "red green SO LINE (4,Inf]" = c("#17A142", 
-                                             colorRampPalette(c("#17A142", "red"))(
-                                                length(boundaries) - 1)), 
-             
-             
-             # 1 boundary, e.g., it's only unity
-             "red green 1 SO LINE (0,1]" = "#17A142", 
-             
-             # 2 boundaries
-             "red green 1 SO LINE (1,2]" = c("#17A142", "red"), 
-             
-             # 3 boundaries
-             "red green 1 SO LINE (2,3]" = c("#17A142", "orange", "red"), 
-             
-             # 4 boundaries
-             "red green 1 SO LINE (3,4]" = c("#17A142", 
-                                             colorRampPalette(c("#17A142", "red"))(
-                                                length(boundaries) - 1)), 
-             
-             # >4 boundaries (this is same as above intentionally)
-             "red green 1 SO LINE (4,Inf]" = c("#17A142", 
-                                               colorRampPalette(c("#17A142", "red"))(
-                                                  length(boundaries) - 1)), 
-             
-             
-             # muted red green ------------------------------------------------
-             
-             # 1 boundary, e.g., it's only unity
-             "muted red green SO LINE (0,1]" = "#A4E4AF", 
-             
-             # 2 boundaries
-             "muted red green SO LINE (1,2]" = c("#A4E4AF", "#A4E4AF"), 
-             
-             # 3 boundaries
-             "muted red green SO LINE (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
-             
-             # 4 boundaries
-             "muted red green SO LINE (3,4]" = c("#A4E4AF", 
-                                                 colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                    length(boundaries)-1)), 
-             
-             # >4 boundaries (this is same as above intentionally)
-             "muted red green SO LINE (4,Inf]" = c("#A4E4AF", 
-                                                   colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                      length(boundaries)-1)), 
-             
-             
-             # 1 boundary, e.g., it's only unity
-             "muted red green 1 SO LINE (0,1]" = "#A4E4AF", 
-             
-             # 2 boundaries
-             "muted red green 1 SO LINE (1,2]" = c("#A4E4AF", "#A4E4AF"), 
-             
-             # 3 boundaries
-             "muted red green 1 SO LINE (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
-             
-             # 4 boundaries
-             "muted red green 1 SO LINE (3,4]" = c("#A4E4AF", 
-                                                   colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                      length(boundaries)-1)), 
-             
-             # >4 boundaries (this is same as above intentionally)
-             "muted red green 1 SO LINE (4,Inf]" = c("#A4E4AF", 
-                                                     colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                        length(boundaries)-1)), 
-             
-             
-             # yellow to red ---------------------------------------------------
-             
-             # Note that it is not possible to have a color set of "yellow to
-             # red" without 1 among the boundaries. That is why there is only
-             # one set of colors here and not a similar, near replicate set that
-             # don't have 1 included.
-             
-             # Just highlight everything white. This would be weird and
-             # probably not what the user wants, but is among the possible
-             # choices for inputs.
-             "yellow to red 1 SO HIGHLIGHT (0,1]" = c("white"),
-             
-             # white middle, 1 boundary other than middle
-             "yellow to red 1 SO HIGHLIGHT (1,2]" = c("white", "#FF9595"),
-             
-             # white middle, 2 boundaries other than middle
-             "yellow to red 1 SO HIGHLIGHT (2,3]" = c("white", "#FFFF95", "#FF9595"),
-             
-             # white middle, 3 boundaries other than middle
-             "yellow to red 1 SO HIGHLIGHT (3,4]" = c("white", "#FFFF95", "#FFDA95", "#FF9595"),
-             
-             # white middle, >3 boundaries other than middle
-             "yellow to red 1 SO HIGHLIGHT (4,Inf]" =
-                c("white",
-                  colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                     length(boundaries))),
-             
-             
-             # green to red --------------------------------------------------
-             
-             # Note that it is not possible to have a color set of "green to
-             # red" without 1 among the boundaries. That is why there is only
-             # one set of colors here and not a similar, near replicate set that
-             # don't have 1 included.
-             
-             # 1 boundary, e.g., it's only unity
-             "green to red 1 SO HIGHLIGHT (0,1]" = "#A4E4AF", 
-             
-             # 2 boundaries
-             "green to red 1 SO HIGHLIGHT (1,2]" = c("#A4E4AF", "#E6A2A2"), 
-             
-             # 3 boundaries
-             "green to red 1 SO HIGHLIGHT (2,3]" = c("#A4E4AF", "#FFDA95", "#E6A2A2"), 
-             
-             # 4 boundaries
-             "green to red 1 SO HIGHLIGHT (3,4]" = c("#A4E4AF", "#FFFF95", "#FFDA95", "#FF9595"), 
-             
-             # >4 boundaries
-             "green to red 1 SO HIGHLIGHT (4,Inf]" = c("#A4E4AF", 
-                                                       colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                                                          length(boundaries)-1)), 
-             
-             # traffic --------------------------------------------------------
-             
-             # Note that it is not possible to have a color set of "traffic"
-             # without 1 among the boundaries. When the user doesn't include 1,
-             # we're assuming they want the middle values to be white and only
-             # the high values to be highlighted, so that color set changes
-             # internally to "traffic_no_middle". 
-             
-             # Just highlight everything white. This would be weird and
-             # probably not what the user wants, but is among the possible
-             # choices for inputs.
-             "traffic_no_middle 1 SO HIGHLIGHT (0,1]" = c("white"),
-             
-             # middle is white, 1 boundary other than middle
-             "traffic_no_middle 1 SO HIGHLIGHT (1,2]" = c("white", "#FF0000"),
-             
-             # middle is white, 2 boundaries other than middle
-             "traffic_no_middle 1 SO HIGHLIGHT (2,3]" = c("white", "#FFC000", "#FF0000"),
-             
-             # middle is white, 3 boundaries other than middle
-             "traffic_no_middle 1 SO HIGHLIGHT (3,4]" = 
-                c("white", colorRampPalette(c("#FFC000", "#FF0000"))(
-                   length(boundaries)-1)), 
-             
-             # middle is white, >3 boundaries other than middle (this is same as
-             # above intentionally)
-             "traffic_no_middle 1 SO HIGHLIGHT (4,Inf]" =
-                c("white", colorRampPalette(c("#FFC000", "#FF0000"))(
-                   length(boundaries)-1)), 
-             
-             
-             # Just highlight everything green. This would be weird and
-             # probably not what the user wants, but is among the possible
-             # choices for inputs.
-             "traffic 1 SO HIGHLIGHT (0,1]" = c("#00B050"),
-             
-             # highlight middle, 1 boundary other than middle
-             "traffic 1 SO HIGHLIGHT (1,2]" = c("#00B050", "#FF0000"),
-             
-             # highlight middle, 2 boundaries other than middle
-             "traffic 1 SO HIGHLIGHT (2,3]" = c("#00B050", "#92D050", "#FF0000"),
-             
-             # highlight middle, 3 boundaries other than middle
-             "traffic 1 SO HIGHLIGHT (3,4]" = c("#00B050", "#92D050", "#FFC000", "#FF0000"),
-             
-             # highlight middle, >3 boundaries other than middle
-             "traffic 1 SO HIGHLIGHT (4,Inf]" =
-                c("#00B050", "#92D050", 
-                  colorRampPalette(c("#FFC000", "#FF0000"))(
-                     length(boundaries)-2))
-      ) 
-   
+   if(length(color_set) == 1){
+      # Boundaries are only set up with *specific* colors when there are <= 3
+      # boundaries, not including the middle. If there are more boundaries than
+      # that, then we'll use colorRampPalette to pick the colors. Because of how
+      # this is set up in the boundary_color_set switch, we want the breaks to be
+      # no larger than 4. Note that break_type is set to "SO HIGHLIGHT" if it's a
+      # GMR break type b/c those result in the same sets of colors.
+      ColorChoices <- paste(
+         color_set, 
+         case_match(break_type, 
+                    "GMR" ~ "SO HIGHLIGHT", 
+                    .default = break_type), 
+         cut(length(boundaries), breaks = c(0:min(c(4, MaxBound)), Inf)))
+      
+      boundary_color_set <- 
+         switch(ColorChoices, 
+                # red black -----------------------------------------------------
+                
+                # 1 boundary, e.g., it's only unity
+                "red black SO LINE (0,1]" = "black", 
+                
+                # 2 boundaries
+                "red black SO LINE (1,2]" = c("black", "black"), 
+                
+                # 3 boundaries
+                "red black SO LINE (2,3]" = c("black", "black", "red"), 
+                
+                # 4 boundaries
+                "red black SO LINE (3,4]" = c("black",
+                                              colorRampPalette(c("black", "#FFC000", "red"))(
+                                                 length(boundaries) - 1)), 
+                
+                # > 4 boundaries (this is same as above intentionally)
+                "red black SO LINE (4,Inf]" = c("black",
+                                                colorRampPalette(c("black", "#FFC000", "red"))(
+                                                   length(boundaries) - 1)), 
+                
+                # 1 boundary, e.g., it's only unity
+                "red black 1 SO LINE (0,1]" = "black", 
+                
+                # 2 boundaries
+                "red black 1 SO LINE (1,2]" = c("black", "black"), 
+                
+                # 3 boundaries
+                "red black 1 SO LINE (2,3]" = c("black", "black", "red"), 
+                
+                # 4 boundaries
+                "red black 1 SO LINE (3,4]" = c("black",
+                                                colorRampPalette(c("black", "#FFC000", "red"))(
+                                                   length(boundaries) - 1)), 
+                
+                # > 4 boundaries (this is same as above intentionally)
+                "red black 1 SO LINE (4,Inf]" = c("black",
+                                                  colorRampPalette(c("black", "#FFC000", "red"))(
+                                                     length(boundaries) - 1)), 
+                
+                # red green ------------------------------------------------------
+                
+                # 1 boundary, e.g., it's only unity
+                "red green SO LINE (0,1]" = "#17A142", 
+                
+                # 2 boundaries
+                "red green SO LINE (1,2]" = c("#17A142", "#17A142"), 
+                
+                # 3 boundaries
+                "red green SO LINE (2,3]" = c("#17A142", "#17A142", "red"), 
+                
+                # 4 boundaries
+                "red green SO LINE (3,4]" = c("#17A142", 
+                                              colorRampPalette(c("#17A142", "red"))(
+                                                 length(boundaries) - 1)), 
+                
+                # >4 boundaries (this is same as above intentionally)
+                "red green SO LINE (4,Inf]" = c("#17A142", 
+                                                colorRampPalette(c("#17A142", "red"))(
+                                                   length(boundaries) - 1)), 
+                
+                
+                # 1 boundary, e.g., it's only unity
+                "red green 1 SO LINE (0,1]" = "#17A142", 
+                
+                # 2 boundaries
+                "red green 1 SO LINE (1,2]" = c("#17A142", "red"), 
+                
+                # 3 boundaries
+                "red green 1 SO LINE (2,3]" = c("#17A142", "orange", "red"), 
+                
+                # 4 boundaries
+                "red green 1 SO LINE (3,4]" = c("#17A142", 
+                                                colorRampPalette(c("#17A142", "red"))(
+                                                   length(boundaries) - 1)), 
+                
+                # >4 boundaries (this is same as above intentionally)
+                "red green 1 SO LINE (4,Inf]" = c("#17A142", 
+                                                  colorRampPalette(c("#17A142", "red"))(
+                                                     length(boundaries) - 1)), 
+                
+                
+                # muted red green ------------------------------------------------
+                
+                # 1 boundary, e.g., it's only unity
+                "muted red green SO LINE (0,1]" = "#A4E4AF", 
+                
+                # 2 boundaries
+                "muted red green SO LINE (1,2]" = c("#A4E4AF", "#A4E4AF"), 
+                
+                # 3 boundaries
+                "muted red green SO LINE (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
+                
+                # 4 boundaries
+                "muted red green SO LINE (3,4]" = c("#A4E4AF", 
+                                                    colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                                                       length(boundaries)-1)), 
+                
+                # >4 boundaries (this is same as above intentionally)
+                "muted red green SO LINE (4,Inf]" = c("#A4E4AF", 
+                                                      colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                                                         length(boundaries)-1)), 
+                
+                
+                # 1 boundary, e.g., it's only unity
+                "muted red green 1 SO LINE (0,1]" = "#A4E4AF", 
+                
+                # 2 boundaries
+                "muted red green 1 SO LINE (1,2]" = c("#A4E4AF", "#A4E4AF"), 
+                
+                # 3 boundaries
+                "muted red green 1 SO LINE (2,3]" = c("#A4E4AF", "#A4E4AF", "#E6A2A2"), 
+                
+                # 4 boundaries
+                "muted red green 1 SO LINE (3,4]" = c("#A4E4AF", 
+                                                      colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                                                         length(boundaries)-1)), 
+                
+                # >4 boundaries (this is same as above intentionally)
+                "muted red green 1 SO LINE (4,Inf]" = c("#A4E4AF", 
+                                                        colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                                                           length(boundaries)-1)), 
+                
+                
+                # yellow to red ---------------------------------------------------
+                
+                # Note that it is not possible to have a color set of "yellow to
+                # red" without 1 among the boundaries. That is why there is only
+                # one set of colors here and not a similar, near replicate set that
+                # don't have 1 included.
+                
+                # Just highlight everything white. This would be weird and
+                # probably not what the user wants, but is among the possible
+                # choices for inputs.
+                "yellow to red 1 SO HIGHLIGHT (0,1]" = c("white"),
+                
+                # white middle, 1 boundary other than middle
+                "yellow to red 1 SO HIGHLIGHT (1,2]" = c("white", "#FF9595"),
+                
+                # white middle, 2 boundaries other than middle
+                "yellow to red 1 SO HIGHLIGHT (2,3]" = c("white", "#FFFF95", "#FF9595"),
+                
+                # white middle, 3 boundaries other than middle
+                "yellow to red 1 SO HIGHLIGHT (3,4]" = c("white", "#FFFF95", "#FFDA95", "#FF9595"),
+                
+                # white middle, >3 boundaries other than middle
+                "yellow to red 1 SO HIGHLIGHT (4,Inf]" =
+                   c("white",
+                     colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                        length(boundaries))),
+                
+                
+                # green to red --------------------------------------------------
+                
+                # Note that it is not possible to have a color set of "green to
+                # red" without 1 among the boundaries. That is why there is only
+                # one set of colors here and not a similar, near replicate set that
+                # don't have 1 included.
+                
+                # 1 boundary, e.g., it's only unity
+                "green to red 1 SO HIGHLIGHT (0,1]" = "#A4E4AF", 
+                
+                # 2 boundaries
+                "green to red 1 SO HIGHLIGHT (1,2]" = c("#A4E4AF", "#E6A2A2"), 
+                
+                # 3 boundaries
+                "green to red 1 SO HIGHLIGHT (2,3]" = c("#A4E4AF", "#FFDA95", "#E6A2A2"), 
+                
+                # 4 boundaries
+                "green to red 1 SO HIGHLIGHT (3,4]" = c("#A4E4AF", "#FFFF95", "#FFDA95", "#FF9595"), 
+                
+                # >4 boundaries
+                "green to red 1 SO HIGHLIGHT (4,Inf]" = c("#A4E4AF", 
+                                                          colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                                                             length(boundaries)-1)), 
+                
+                # traffic --------------------------------------------------------
+                
+                # Note that it is not possible to have a color set of "traffic"
+                # without 1 among the boundaries. When the user doesn't include 1,
+                # we're assuming they want the middle values to be white and only
+                # the high values to be highlighted, so that color set changes
+                # internally to "traffic_no_middle". 
+                
+                # Just highlight everything white. This would be weird and
+                # probably not what the user wants, but is among the possible
+                # choices for inputs.
+                "traffic_no_middle 1 SO HIGHLIGHT (0,1]" = c("white"),
+                
+                # middle is white, 1 boundary other than middle
+                "traffic_no_middle 1 SO HIGHLIGHT (1,2]" = c("white", "#FF0000"),
+                
+                # middle is white, 2 boundaries other than middle
+                "traffic_no_middle 1 SO HIGHLIGHT (2,3]" = c("white", "#FFC000", "#FF0000"),
+                
+                # middle is white, 3 boundaries other than middle
+                "traffic_no_middle 1 SO HIGHLIGHT (3,4]" = 
+                   c("white", colorRampPalette(c("#FFC000", "#FF0000"))(
+                      length(boundaries)-1)), 
+                
+                # middle is white, >3 boundaries other than middle (this is same as
+                # above intentionally)
+                "traffic_no_middle 1 SO HIGHLIGHT (4,Inf]" =
+                   c("white", colorRampPalette(c("#FFC000", "#FF0000"))(
+                      length(boundaries)-1)), 
+                
+                
+                # Just highlight everything green. This would be weird and
+                # probably not what the user wants, but is among the possible
+                # choices for inputs.
+                "traffic 1 SO HIGHLIGHT (0,1]" = c("#00B050"),
+                
+                # highlight middle, 1 boundary other than middle
+                "traffic 1 SO HIGHLIGHT (1,2]" = c("#00B050", "#FF0000"),
+                
+                # highlight middle, 2 boundaries other than middle
+                "traffic 1 SO HIGHLIGHT (2,3]" = c("#00B050", "#92D050", "#FF0000"),
+                
+                # highlight middle, 3 boundaries other than middle
+                "traffic 1 SO HIGHLIGHT (3,4]" = c("#00B050", "#92D050", "#FFC000", "#FF0000"),
+                
+                # highlight middle, >3 boundaries other than middle
+                "traffic 1 SO HIGHLIGHT (4,Inf]" =
+                   c("#00B050", "#92D050", 
+                     colorRampPalette(c("#FFC000", "#FF0000"))(
+                        length(boundaries)-2))
+         ) 
+   } else {
+      boundary_color_set <- color_set
+   }
    
    if(break_type == "GMR"){
       names(boundary_color_set) <- c("negligible", 
