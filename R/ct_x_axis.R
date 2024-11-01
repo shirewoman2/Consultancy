@@ -95,8 +95,10 @@ ct_x_axis <- function(Data, time_range, t0,
    
    if(class(time_range_input) == "character" | t0 != "simulation start"){
       
-      if(complete.cases(time_range) && str_detect(time_range, "dose 1$")){
-         time_range <- sub("dose 1", "first dose", time_range)
+      if(complete.cases(time_range) && str_detect(time_range, "first dose")){
+         # Things work most consistently if "first dose" becomes "dose 1". 
+         time_range <- sub("first dose", "dose 1", time_range)
+         time_range_input <- "dose 1"
       }
       
       if(EnzPlot){
