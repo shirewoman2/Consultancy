@@ -3,7 +3,7 @@
 #' @param sim_data_file sim_data_file
 #' @param PKparameters data.frame that includes Tissue, CompoundID, and Sheet
 #' @param existing_exp_details harmonized existing_exp_details
-#' @param convert_conc_units how to convert conc units, if desired
+#' @param conc_units how to convert conc units, if desired
 #' @param MeanType main mean type
 #' @param GMR_mean_type GMR mean type
 #' @param includeTrialMeans determines whether to get individual data
@@ -23,7 +23,7 @@
 pk_table_subfun <- function(sim_data_file, 
                             PKparameters, 
                             existing_exp_details, 
-                            convert_conc_units, 
+                            conc_units, 
                             MeanType, 
                             GMR_mean_type, 
                             includeTrialMeans, 
@@ -136,16 +136,16 @@ pk_table_subfun <- function(sim_data_file,
    }
    
    # Changing units if user wants. 
-   if(complete.cases(convert_conc_units) & is.na(Deets$Units_Cmax)){
+   if(complete.cases(conc_units) & is.na(Deets$Units_Cmax)){
       warning(wrapn("You requested that we convert the concentration units, but we can't find what units were used in your simulation. (This is often the case for Discovery simulations in particular.) We won't be able to convert the concentration units."), 
               call. = FALSE)
-      convert_conc_units <- NA
+      conc_units <- NA
    }
    
-   if(complete.cases(convert_conc_units)){
+   if(complete.cases(conc_units)){
       # Only adjusting AUC and Cmax values and not adjusting time portion of
       # units -- only conc.
-      if(Deets$Units_Cmax != convert_conc_units){
+      if(Deets$Units_Cmax != conc_units){
          ColsToChange <- names(MyPKResults_all$aggregate)[
             intersect(which(str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax|Cmin")), 
                       which(!str_detect(names(MyPKResults_all$aggregate), "ratio")))
@@ -158,7 +158,7 @@ pk_table_subfun <- function(sim_data_file,
                   mutate(CompoundID = unique(PKparameters$CompoundID), 
                          Conc_units = Deets$Units_Cmax, 
                          Time = 1, Time_units = "hours"),
-               DF_with_good_units = list("Conc_units" = convert_conc_units, 
+               DF_with_good_units = list("Conc_units" = conc_units, 
                                          "Time_units" = "hours"), 
                MW = c(compoundToExtract = 
                          switch(unique(PKparameters$CompoundID), 
@@ -180,7 +180,7 @@ pk_table_subfun <- function(sim_data_file,
                      mutate(CompoundID = unique(PKparameters$CompoundID), 
                             Conc_units = Deets$Units_Cmax, 
                             Time = 1, Time_units = "hours"),
-                  DF_with_good_units = list("Conc_units" = convert_conc_units, 
+                  DF_with_good_units = list("Conc_units" = conc_units, 
                                             "Time_units" = "hours"), 
                   MW = c(compoundToExtract = 
                             switch(unique(PKparameters$CompoundID), 
@@ -197,8 +197,8 @@ pk_table_subfun <- function(sim_data_file,
          }
          
          # Need to change units in Deets now to match.
-         Deets$Units_AUC <- sub(Deets$Units_Cmax, convert_conc_units, Deets$Units_AUC)
-         Deets$Units_Cmax <- convert_conc_units
+         Deets$Units_AUC <- sub(Deets$Units_Cmax, conc_units, Deets$Units_AUC)
+         Deets$Units_Cmax <- conc_units
       }
    }
    

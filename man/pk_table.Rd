@@ -22,9 +22,10 @@ pk_table(
   includeTrialMeans = FALSE,
   concatVariability = TRUE,
   variability_format = "to",
-  convert_conc_units = NA,
+  conc_units = NA,
   include_dose_num = NA,
   PKorder = "default",
+  file_order = "as is",
   add_header_for_DDI = TRUE,
   rounding = NA,
   prettify_columns = TRUE,
@@ -37,12 +38,13 @@ pk_table(
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
   shading_column,
-  single_table = FALSE,
+  single_table = TRUE,
   page_orientation = "portrait",
   fontsize = 11,
   return_PK_pulled = FALSE,
   return_caption = FALSE,
-  ...
+  ...,
+  convert_conc_units = NA
 )
 }
 \arguments{
@@ -223,15 +225,17 @@ an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
 ambiguity; this was written by an American who didn't originally realize
 that there was another name for parentheses.)}
 
-\item{convert_conc_units}{Would you like to convert the units to something
-other than what was used in the simulation? Default is NA to leave the
-units as is, but if you set the concentration units to something else, this
-will attempt to convert the units to match that. This only adjusts only the
-simulated values, since we're assuming that that's the most likely problem
-and that observed units are relatively easy to fix, and it also only
-affects AUC and Cmax values. Acceptable input is any concentration unit
-listed in the Excel form for PE data entry, e.g. \code{convert_conc_units =
-"ng/mL"} or \code{convert_conc_units = "uM"}. Molar concentrations will be
+\item{conc_units}{What concentration units should be used in the
+table? Default is NA to leave the units as is, but if you set the
+concentration units to something else, this will attempt to convert the
+units to match that. This only adjusts only the simulated values, since
+we're assuming that that's the most likely problem and that observed units
+are relatively easy to fix, and it also only affects AUC and Cmax values.
+If you leave this as NA, the units in the 1st simulation will be used as
+the units for \emph{all} the simulations for consistency and clarity.
+Acceptable input is any concentration unit
+listed in the Excel form for PE data entry, e.g. \code{conc_units =
+"ng/mL"} or \code{conc_units = "uM"}. Molar concentrations will be
 automatically converted using the molecular weight of whatever you set for
 \code{compoundToExtract}.}
 
@@ -248,6 +252,10 @@ the default behavior and get exactly what you want.}
 specified in the Consultancy Report Template (default), or would you like
 the order to match the order you specified with the argument
 \code{PKparameters}? Options are "default" or "user specified".}
+
+\item{file_order}{order of the simulations in the output table, default is to
+leave the order "as is", in which case the order will be whatever is
+specified with \code{sim_data_files}.}
 
 \item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
 header row to the top of your table denoting when the PK are for baseline,
@@ -405,6 +413,9 @@ FALSE}, this will not return anything at this point. We may add that later,
 but at present, this is not set up to return multiple table captions.}
 
 \item{...}{used under-the-hood to check for mis-specified arguments}
+
+\item{convert_conc_units}{SOON TO BE DEPRECATED. Please use the argument
+"conc_units" instead.}
 }
 \value{
 a data.frame

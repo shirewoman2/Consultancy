@@ -131,6 +131,9 @@
 #'   specified in the Consultancy Report Template (default), or would you like
 #'   the order to match the order you specified with the argument
 #'   \code{PKparameters}? Options are "default" or "user specified".
+#' @param file_order order of the simulations in the output table, default is to
+#'   leave the order "as is", in which case the order will be whatever is
+#'   specified with \code{sim_data_files}.
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Otherwise, this should be left as NA. \code{sheet_PKparameters} can
@@ -193,15 +196,17 @@
 #'   an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
 #'   ambiguity; this was written by an American who didn't originally realize
 #'   that there was another name for parentheses.)
-#' @param convert_conc_units Would you like to convert the units to something
-#'   other than what was used in the simulation? Default is NA to leave the
-#'   units as is, but if you set the concentration units to something else, this
-#'   will attempt to convert the units to match that. This only adjusts only the
-#'   simulated values, since we're assuming that that's the most likely problem
-#'   and that observed units are relatively easy to fix, and it also only
-#'   affects AUC and Cmax values. Acceptable input is any concentration unit
-#'   listed in the Excel form for PE data entry, e.g. \code{convert_conc_units =
-#'   "ng/mL"} or \code{convert_conc_units = "uM"}. Molar concentrations will be
+#' @param conc_units What concentration units should be used in the
+#'   table? Default is NA to leave the units as is, but if you set the
+#'   concentration units to something else, this will attempt to convert the
+#'   units to match that. This only adjusts only the simulated values, since
+#'   we're assuming that that's the most likely problem and that observed units
+#'   are relatively easy to fix, and it also only affects AUC and Cmax values.
+#'   If you leave this as NA, the units in the 1st simulation will be used as
+#'   the units for \emph{all} the simulations for consistency and clarity.
+#'   Acceptable input is any concentration unit
+#'   listed in the Excel form for PE data entry, e.g. \code{conc_units =
+#'   "ng/mL"} or \code{conc_units = "uM"}. Molar concentrations will be
 #'   automatically converted using the molecular weight of whatever you set for
 #'   \code{compoundToExtract}.
 #' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
@@ -345,6 +350,8 @@
 #' @param return_PK_pulled TRUE or FALSE (default) for whether to return as a
 #'   list item what PK parameters were pulled. This is used internally for
 #'   writing table headings later.
+#' @param convert_conc_units SOON TO BE DEPRECATED. Please use the argument
+#'   "conc_units" instead.
 #'
 #' @return a data.frame
 #' @export
@@ -369,9 +376,10 @@ pk_table <- function(PKparameters = NA,
                      includeTrialMeans = FALSE, 
                      concatVariability = TRUE, 
                      variability_format = "to",
-                     convert_conc_units = NA, 
+                     conc_units = NA, 
                      include_dose_num = NA,
                      PKorder = "default", 
+                     file_order = "as is", 
                      add_header_for_DDI = TRUE, 
                      rounding = NA,
                      prettify_columns = TRUE, 
@@ -384,12 +392,13 @@ pk_table <- function(PKparameters = NA,
                      highlight_so_cutoffs = NA, 
                      highlight_so_colors = "yellow to red", 
                      shading_column, 
-                     single_table = FALSE,
+                     single_table = TRUE,
                      page_orientation = "portrait", 
                      fontsize = 11, 
                      return_PK_pulled = FALSE, 
                      return_caption = FALSE, 
-                     ...){
+                     ..., 
+                     convert_conc_units = NA){
    
    # Error catching ----------------------------------------------------------
    
@@ -415,6 +424,19 @@ pk_table <- function(PKparameters = NA,
    if("tissue" %in% names(match.call()) &
       "tissues" %in% names(match.call()) == FALSE){
       tissues <- sys.call()$tissue
+   }
+   
+   if("convert_conc_units" %in% names(match.call())){
+      if("conc_units" %in% names(match.call()) == FALSE){
+         conc_units <- convert_conc_units
+         warning(wrapn("You have used the argument 'convert_conc_units' to indicate which units to use in your table, and we're deprecating that argument in favor of the argument 'conc_units'. Please use 'conc_units' going forward."), 
+                 call. = FALSE)
+      } else {
+         if(all(convert_conc_units == conc_units, na.rm = T) == FALSE){
+            warning(wrapn("You have used both the argument 'conc_units' and the argument 'convert_conc_units' to indicate which units to use in your table, and they do not match. We're deprecating 'convert_conc_units' in favor of 'conc_units', so that is what we will use for your table. Please use 'conc_units' going forward."), 
+                    call. = FALSE)
+         }
+      }
    }
    
    if("observed_PK" %in% names(match.call())){
@@ -483,6 +505,58 @@ pk_table <- function(PKparameters = NA,
       warning("You have not supplied a permissible value for the order of PK parameters. Options are `default` or `user specified`. The default PK parameter order will be used.", 
               call. = FALSE)
       PKorder <- "default"
+   }
+   
+   # Possibilities here: 
+   
+   # 1. There could be only 1 sim, in which case it doesn't matter what they
+   # list for file_order, so setting it to "as is".
+   
+   # 2. There could be more than 1 sim but they've only specified 1 thing for
+   # "file_order" rather than specifically listing the order of sims they want.
+   # If there's more than 1 sim and only 1 thing for file_order, then file_order
+   # must be "as is".
+   
+   # 3. There is more than 1 sim and more than 1 file listed for file_order.
+   # Check that they've got all the sims included and specified correctly, etc.
+   
+   # Possibility 1
+   if(length(sim_data_files) == 1){
+      file_order <- sim_data_files
+   } else {
+      
+      # Possibility 2. Note that we've already established that there is more
+      # than 1 item in sim_data_files.
+      if(length(file_order) == 1){
+         if(tolower(file_order) != "as is"){
+            warning(wrapn("You specified something for 'file_order' that we can't interpret, so we'll leave the file order as is."), 
+                    call. = FALSE)
+            file_order <- sim_data_files
+         }
+      } else {
+         # Possibility 3. Dealing w/all possible ways this could go wrong.
+         MissingSims <- setdiff(sim_data_files, file_order)
+         
+         if(length(MissingSims) > 0){
+            warning(paste0(wrapn("You specified a set of simulations for the argument 'file_order', but they don't include all of the simulations we found from 'sim_data_files'. We'll add the following simulations to the end of the order you specified:"), 
+                           str_c(paste0("   ", MissingSims), collapse = "\n"), 
+                           "\n"), 
+                    call. = FALSE)
+            
+            file_order <- c(file_order, MissingSims)
+         }
+         
+         ExtraSims <- setdiff(file_order, sim_data_files)
+         if(length(ExtraSims) > 0){
+            warning(paste0(wrapn("You specified a set of simulations for the argument 'file_order', but not all of the simulations in 'file_order' are included in 'sim_data_files'. We won't be able to include the following simulations in the order requested because they're not included in 'sim_data_files' (possibly because they are not present):"), 
+                           str_c(paste0("   ", ExtraSims), collapse = "\n"), 
+                           "\n"), 
+                    call. = FALSE)
+         }
+         
+         # file_order should be correct now and include all the files in
+         # sim_data_files in the order the user requested plus an missing sims.
+      }
    }
    
    # Checking mean type input syntax
@@ -560,9 +634,9 @@ pk_table <- function(PKparameters = NA,
       }
    }
    
-   if(complete.cases(highlight_gmr_colors) && 
+   if(any(complete.cases(highlight_gmr_colors)) && 
       tolower(highlight_gmr_colors[1]) == "lisa"){highlight_gmr_colors = "traffic"}
-   if(complete.cases(highlight_so_colors) &&
+   if(any(complete.cases(highlight_so_colors)) &&
       tolower(highlight_so_colors[1]) == "lisa"){highlight_so_colors = "traffic"}
    
    if(any(complete.cases(highlight_gmr_colors)) &&
@@ -601,6 +675,12 @@ pk_table <- function(PKparameters = NA,
    
    
    # Main body of function --------------------------------------------------
+   
+   # Checking what concentration units to use. Using the same units for ALL sims
+   # for consistency, clarity, and ease of coding.
+   if(is.na(conc_units)){
+      conc_units <- existing_exp_details$MainDetails$Units_Cmax[1]
+   }
    
    ## Getting simulated data ------------------------------------------------
    MyPKResults <- list()
@@ -664,7 +744,7 @@ pk_table <- function(PKparameters = NA,
             sim_data_file = unique(PKparameters[[i]]$File), 
             PKparameters = PKparameters[[i]], 
             existing_exp_details = existing_exp_details, 
-            convert_conc_units = convert_conc_units,
+            conc_units = conc_units,
             MeanType = MeanType, 
             GMR_mean_type = GMR_mean_type, 
             includeTrialMeans = includeTrialMeans, 
@@ -1067,7 +1147,8 @@ pk_table <- function(PKparameters = NA,
              Statistic = ifelse(SorO == "Obs" & Statistic == "Simulated", 
                                 "Observed", Statistic), 
              SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
-             Stat = factor(Stat, levels = names(StatNames))) %>% 
+             Stat = factor(Stat, levels = names(StatNames)), 
+             File = factor(File, levels = file_order)) %>% 
       arrange(File, CompoundID, SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
@@ -1197,21 +1278,15 @@ pk_table <- function(PKparameters = NA,
             filter(ColName != "Sheet")
       }
       
-      # FIXME - CHeck whether this works w/multiple units in table. 
-      
       # Adjusting units as needed.
-      if("Units_AUC" %in% names(Deets) && complete.cases(Deets$Units_AUC)){
-         ColNames$PrettifiedNames <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), ColNames$PrettifiedNames)
-      }
-      if("Units_CL" %in% names(Deets) && complete.cases(Deets$Units_CL)){
-         ColNames$PrettifiedNames <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), ColNames$PrettifiedNames)
-      }
-      if("Units_Cmax" %in% names(Deets) && complete.cases(Deets$Units_Cmax)){
-         ColNames$PrettifiedNames <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), ColNames$PrettifiedNames)
-      }
-      if("Units_tmax" %in% names(Deets) && complete.cases(Deets$Units_tmax)){
-         ColNames$PrettifiedNames <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), ColNames$PrettifiedNames)
-      }
+      ColNames$PrettifiedNames <- sub("\\(ng/mL.h\\)",
+                                      paste0("(", conc_units, ")"), 
+                                      ColNames$PrettifiedNames)
+      
+      ColNames$PrettifiedNames <- sub("\\(ng/mL\\)", 
+                                      paste0("(", conc_units, ")"),
+                                      ColNames$PrettifiedNames)
+      
       ColNames$PrettifiedNames <- gsub("ug/mL", "µg/mL", ColNames$PrettifiedNames)
       
       MyPerpetrator <- determine_myperpetrator(existing_exp_details,
@@ -1297,9 +1372,7 @@ pk_table <- function(PKparameters = NA,
       MyFile = unique(MyPKResults$File), 
       MyCompoundID = unique(MyPKResults$CompoundID), 
       prettify_compound_names = prettify_compound_names,
-      Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
-                     "TRUE" = data.frame(), 
-                     "FALSE" = Deets), 
+      Deets = existing_exp_details, 
       MeanType = MeanType, 
       DosesIncluded = case_match(DosesIncluded, 
                                  "Dose1 User" ~ "Dose1 Last", 

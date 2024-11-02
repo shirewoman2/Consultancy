@@ -373,10 +373,10 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
-   if(complete.cases(highlight_gmr_colors) && 
+   if(any(complete.cases(highlight_gmr_colors)) && 
       tolower(highlight_gmr_colors[1]) == "lisa"){highlight_gmr_colors = "traffic"}
    
-   if(complete.cases(highlight_so_colors) &&
+   if(any(complete.cases(highlight_so_colors)) &&
       tolower(highlight_so_colors[1]) == "lisa"){highlight_so_colors = "traffic"}
    
    if(any(complete.cases(highlight_gmr_colors)) &&
