@@ -1280,7 +1280,7 @@ pk_table <- function(PKparameters = NA,
       
       # Adjusting units as needed.
       ColNames$PrettifiedNames <- sub("\\(ng/mL.h\\)",
-                                      paste0("(", conc_units, ")"), 
+                                      paste0("(", conc_units, ".h)"), 
                                       ColNames$PrettifiedNames)
       
       ColNames$PrettifiedNames <- sub("\\(ng/mL\\)", 
