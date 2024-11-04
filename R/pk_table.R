@@ -531,8 +531,8 @@ pk_table <- function(PKparameters = NA,
          if(tolower(file_order) != "as is"){
             warning(wrapn("You specified something for 'file_order' that we can't interpret, so we'll leave the file order as is."), 
                     call. = FALSE)
-            file_order <- sim_data_files
          }
+         file_order <- sim_data_files
       } else {
          # Possibility 3. Dealing w/all possible ways this could go wrong.
          MissingSims <- setdiff(sim_data_files, file_order)

@@ -173,7 +173,9 @@ make_table_annotations <- function(MyPKResults, # only PK table
    # There are some situations where we want to just pass through generic info,
    # so that's why I'm returning things here rather than stopping.
    if("logical" %in% class(Deets) | 
-      ("data.frame" %in% class(Deets) && nrow(Deets) == 0) |
+      ("data.frame" %in% class(Deets) && 
+       nrow(Deets) == 0) |
+      nrow(filter_sims(Deets, MyFile, "include")$MainDetails) == 0 |
       any(c(MyTissueLen, MyCompoundIDLen, MyFileLen) > 1)){
       return(list(table_heading = paste0("Simulated ",
                                          ifelse(Observedincluded, "and observed ", ""),
