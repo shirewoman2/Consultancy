@@ -520,9 +520,12 @@ pk_table <- function(PKparameters = NA,
    # 3. There is more than 1 sim and more than 1 file listed for file_order.
    # Check that they've got all the sims included and specified correctly, etc.
    
+   FilesToInclude <- unique(PKparam_tidied$PKparameters$File)
+   
    # Possibility 1
-   if(length(sim_data_files) == 1){
-      file_order <- sim_data_files
+   if(length(sim_data_files) == 1 && 
+      complete.cases(sim_data_files)){
+      file_order <- FilesToInclude
    } else {
       
       # Possibility 2. Note that we've already established that there is more
@@ -532,10 +535,11 @@ pk_table <- function(PKparameters = NA,
             warning(wrapn("You specified something for 'file_order' that we can't interpret, so we'll leave the file order as is."), 
                     call. = FALSE)
          }
-         file_order <- sim_data_files
+         file_order <- FilesToInclude
+         
       } else {
          # Possibility 3. Dealing w/all possible ways this could go wrong.
-         MissingSims <- setdiff(sim_data_files, file_order)
+         MissingSims <- setdiff(FilesToInclude, file_order)
          
          if(length(MissingSims) > 0){
             warning(paste0(wrapn("You specified a set of simulations for the argument 'file_order', but they don't include all of the simulations we found from 'sim_data_files'. We'll add the following simulations to the end of the order you specified:"), 
@@ -546,7 +550,7 @@ pk_table <- function(PKparameters = NA,
             file_order <- c(file_order, MissingSims)
          }
          
-         ExtraSims <- setdiff(file_order, sim_data_files)
+         ExtraSims <- setdiff(file_order, FilesToInclude)
          if(length(ExtraSims) > 0){
             warning(paste0(wrapn("You specified a set of simulations for the argument 'file_order', but not all of the simulations in 'file_order' are included in 'sim_data_files'. We won't be able to include the following simulations in the order requested because they're not included in 'sim_data_files' (possibly because they are not present):"), 
                            str_c(paste0("   ", ExtraSims), collapse = "\n"), 
@@ -1262,18 +1266,22 @@ pk_table <- function(PKparameters = NA,
                       by = join_by(ColName)) %>% 
             mutate(ColName = ifelse(is.na(ColName_int), ColName, ColName_int)) %>% 
             select(-ColName_int) %>% 
-            mutate(UnitsToAdd = ifelse(CustomInt, 
-                                       str_extract(PrettifiedNames, 
-                                                   " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)"), 
-                                       ""), 
-                   PrettifiedNames = ifelse(CustomInt, 
-                                            str_replace(PrettifiedNames, " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", ""), 
-                                            PrettifiedNames), 
-                   PrettifiedNames = ifelse(CustomInt, 
-                                            paste0(PrettifiedNames, 
-                                                   " for interval ", Interval, 
-                                                   UnitsToAdd), 
-                                            PrettifiedNames)) %>% 
+            mutate(
+               UnitsToAdd = case_when(
+                  CustomInt == TRUE ~ str_extract(PrettifiedNames, 
+                                                  " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)"), 
+                  .default = ""), 
+               
+               PrettifiedNames = case_when(
+                  CustomInt == TRUE ~ str_replace(PrettifiedNames, " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", ""), 
+                  .default = PrettifiedNames),
+               
+               PrettifiedNames = case_when(
+                  CustomInt == TRUE & complete.cases(UnitsToAdd) ~ 
+                     paste0(PrettifiedNames, " for interval ", Interval, UnitsToAdd), 
+                  CustomInt == TRUE & is.na(UnitsToAdd) ~ 
+                     paste0(PrettifiedNames, " for interval ", Interval), 
+                  .default = PrettifiedNames)) %>% 
             # We had to remove the sheet or this would have unnecessary rows. Remove that column name. 
             filter(ColName != "Sheet")
       }
