@@ -543,9 +543,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
                       ObsFile_xml = sub("\\.xlsx$", ".xml", ObsFile), 
                       Exists_xlsx = file.exists(ObsFile_xlsx), 
                       Exists_xml = file.exists(ObsFile_xml), 
-                      ObsFileToUse = case_when(Exists ~ ObsFile, 
-                                               Exists_xlsx ~ ObsFile_xlsx, 
-                                               Exists_xml ~ ObsFile_xml))
+                      ObsFileToUse = case_when(
+                         Exists_xlsx ~ ObsFile_xlsx, 
+                         # To get data from the xml file, we need to have the
+                         # Simcyp package installed and it has to be a version
+                         # of Simcyp that has the ReadPEData function, which was
+                         # added around V22 or maybe V23.
+                         length(find.package("Simcyp", quiet = TRUE)) > 0 &&
+                            ("ReadPEData" %in% getNamespaceExports("Simcyp") & 
+                                Exists_xml) ~ ObsFile_xml, 
+                         Exists ~ ObsFile))
             
             if(any(is.na(ObsAssign$ObsFileToUse))){
                warning(wrapn(paste0(
