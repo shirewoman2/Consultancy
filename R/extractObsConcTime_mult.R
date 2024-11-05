@@ -72,29 +72,45 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
    
    # Error catching ---------------------------------------------------
    
+   obs_data_files_input <- obs_data_files
+   
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx".
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx" or in all subfolders if they wanted it to be
    # recursive.
    if(length(obs_data_files) == 1 &&
-      (is.na(obs_data_files) | obs_data_files == "recursive")){
+      (is.na(obs_data_files_input) | obs_data_files_input == "recursive")){
       obs_data_files <- list.files(pattern = "xlsx$",
-                                   recursive = (complete.cases(obs_data_files) &&
+                                   recursive = (complete.cases(obs_data_files_input) &&
                                                    obs_data_files == "recursive"))
       obs_data_files <- obs_data_files[!str_detect(obs_data_files, "^~")]
    }
    
    # The Consultancy Team's support group includes Excel files we can ignore.
-   # Removing those from consideration.
-   obs_data_files <- obs_data_files[!str_detect(obs_data_files, 
-                                                "support-docs")]
+   # Removing those from consideration if we're collecting file names in an
+   # automated fashion.
+   if(is.na(obs_data_files_input) || obs_data_files_input == "recursive"){
+      obs_data_files <- obs_data_files[!str_detect(obs_data_files, 
+                                                   "support-docs")]
+   }
    
-   # If they didn't include ".xlsx" at the end, add that. 
+   # If they didn't include ".xlsx" or ".xml" at the end, add ".xlsx" for now
+   # b/c that's what we used historically and doesn't require the Simcyp
+   # package.
    obs_data_files <- case_when(
       str_detect(obs_data_files, "\\.xml$|\\.xlsx$") == FALSE ~ 
          paste0(obs_data_files, ".xlsx"), 
       .default = obs_data_files)
+   
+   # Make this work for whoever the current user is, even if the XML
+   # obs file path was for someone else.
+   obs_data_files <- normalizePath(obs_data_files, 
+                                   mustWork = FALSE, 
+                                   winslash = "/")
+   obs_data_files <- str_replace(obs_data_files, 
+                                 "Users/(?<=\\/)[^\\/]+(?=\\/)", 
+                                 paste0("Users/", Sys.info()["user"]))
    
    # Checking that the file exists.
    FileCheck <- data.frame(OrigFile = obs_data_files) %>% 
@@ -115,6 +131,7 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
          call. = FALSE)
    }
    
+   obs_data_files <- FileCheck$FileToUse
    
    # Main body of function ---------------------------------------------------
    
