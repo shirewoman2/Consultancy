@@ -46,9 +46,7 @@ if(FromCalcPKRatios){
       MyFile = unique(MyPKResults[[i]]$File), 
       MyCompoundID = unique(MyPKResults[[i]]$CompoundID), 
       prettify_compound_names = prettify_compound_names,
-      Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
-                     "TRUE" = data.frame(), 
-                     "FALSE" = Deets), 
+      Deets = existing_exp_details, 
       MeanType = MeanType, 
       DosesIncluded = case_match(DosesIncluded, 
                                  "Dose1 User" ~ "Dose1 Last", 
@@ -176,15 +174,32 @@ TempTable <- MyPKResults[[i]] %>% ungroup() %>%
    select(-any_of(c("CompoundID", "Tissue", "File", "Compound")))
 names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
 
-formatTable_Simcyp(TempTable,
-                   merge_shaded_cells = merge_shaded_cells,
-                   perpetrator_name = MyPerpetrator, 
-                   fontsize = fontsize,
-                   prettify_columns = prettify_columns, 
-                   add_header_for_DDI = add_header_for_DDI, 
-                   highlight_so_cutoffs = highlight_so_cutoffs, 
-                   highlight_so_colors = highlight_so_colors, 
-                   highlight_gmr_colors = highlight_gmr_colors)
+if(as_label(shading_column) == "<empty>"){
+   
+   formatTable_Simcyp(TempTable,
+                      merge_shaded_cells = TRUE,
+                      perpetrator_name = MyPerpetrator, 
+                      fontsize = fontsize,
+                      prettify_columns = prettify_columns, 
+                      add_header_for_DDI = add_header_for_DDI, 
+                      highlight_so_cutoffs = highlight_so_cutoffs, 
+                      highlight_so_colors = highlight_so_colors, 
+                      highlight_gmr_colors = highlight_gmr_colors)
+   
+} else {
+   
+   formatTable_Simcyp(TempTable,
+                      shading_column = !!shading_column, 
+                      merge_shaded_cells = TRUE,
+                      perpetrator_name = MyPerpetrator, 
+                      fontsize = fontsize,
+                      prettify_columns = prettify_columns, 
+                      add_header_for_DDI = add_header_for_DDI, 
+                      highlight_so_cutoffs = highlight_so_cutoffs, 
+                      highlight_so_colors = highlight_so_colors, 
+                      highlight_gmr_colors = highlight_gmr_colors)
+   
+}
 
 ```
 

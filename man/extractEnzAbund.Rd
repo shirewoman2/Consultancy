@@ -90,4 +90,6 @@ to get the dose number for a custom-dosing regimen.
 \examples{
 extractEnzAbund(sim_data_file = "../Example simulator output MD.xlsx",
                 enzyme = "CYP3A4", tissue = "liver")
+                
+                
 }

@@ -48,6 +48,7 @@ ct_plot_1stlast(
   y_axis_limits_log = NA,
   y_axis_interval = NA,
   y_axis_label = NA,
+  conc_units_to_use = NA,
   hline_position = NA,
   hline_style = "red dotted",
   vline_position = NA,
@@ -390,6 +391,14 @@ generally reasonable guesses as to aesthetically pleasing intervals.}
 \item{y_axis_label}{optionally supply a character vector or an expression to
 use for the y axis label}
 
+\item{conc_units_to_use}{concentration units to use for graphs. If left as
+NA, the concentration units in the source data will be used. Acceptable
+options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
+"ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
+concentration and your source data were in mass per volume units or vice
+versa, you'll need to provide something for the argument
+\code{existing_exp_details}.}
+
 \item{hline_position}{numerical position(s) of any horizontal lines to add to
 the graph. The default is NA to have no lines, and good syntax if you
 \emph{do} want lines would be, for example, \code{hline_position = 10} to
@@ -442,11 +451,14 @@ guesses about what a prettier compound name should be. An example of
 setting this to TRUE: "SV-Rifampicin-MD" would become "rifampicin", and
 "Sim-Ketoconazole-200 mg BID" would become "ketoconazole".}
 
-\item{name_clinical_study}{optionally specify the name of the clinical study
-for any observed data. This only affects the caption of the graph. For
-example, specifying \code{name_clinical_study = "101, fed cohort"} will
-result in a figure caption that reads in part "Clinical Study 101, fed
-cohort".}
+\item{name_clinical_study}{optionally specify the name(s) of the clinical
+study or studies for any observed data. This only affects the caption of
+the graph. For example, specifying \code{name_clinical_study = "101, fed
+cohort"} will result in a figure caption that reads in part "clinical study
+101, fed cohort". If you have more than one study, that's fine; we'll take
+care of stringing them together appropriately. Just list them as a
+character vector, e.g., \code{name_clinical_study = c("101",
+"102", "103")} will become "clinical studies 101, 102, and 103."}
 
 \item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}} to be used for creating figure

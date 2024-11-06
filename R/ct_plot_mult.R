@@ -141,8 +141,17 @@
 #'   be limited to the start of the last dose until the last observed data
 #'   point.}
 #'
+#'   \item{"last dose to end" or "last to end" for short}{Time range will
+#'   be limited to the start of the last dose until the end of the simulation.}
 #'   }
 #'
+#' @param conc_units_to_use concentration units to use for graphs. If left as
+#'   NA, the concentration units in the source data will be used. Acceptable
+#'   options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
+#'   "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
+#'   concentration and your source data were in mass per volume units or vice
+#'   versa, you'll need to provide something for the argument
+#'   \code{existing_exp_details}.
 #' @param pad_x_axis optionally add a smidge of padding to the the x axis
 #'   (default is TRUE, which includes some generally reasonable padding). If
 #'   changed to FALSE, the y axis will be placed right at the beginning of your
@@ -251,15 +260,16 @@
 #'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
 #'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
 #'   legend.
-#' @param name_clinical_study optionally specify the name of the clinical study
-#'   for any observed data. This only affects the caption of the graph. For
-#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
-#'   result in a figure caption that reads in part "Clinical Study 101, fed
-#'   cohort".
-#' @param return_caption TRUE or FALSE (default) for whether to return any
-#'   caption text to use with the graph. This works best if you supply something
-#'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
-#'   output a list of the graph, the figure heading, and the figure caption.
+#' @param name_clinical_study optionally specify the name(s) of the clinical
+#'   study or studies for any observed data. This only affects the caption of
+#'   the graph. For example, specifying \code{name_clinical_study = "101, fed
+#'   cohort"} will result in a figure caption that reads in part "clinical study
+#'   101, fed cohort". If you have more than one study, that's fine; we'll take
+#'   care of stringing them together appropriately. Just list them as a
+#'   character vector, e.g., \code{name_clinical_study = c("101",
+#'   "102", "103")} will become "clinical studies 101, 102, and 103."
+#' @param report_progress TRUE or FALSE (default) for whether show a progress
+#'   message on creating and saving graphs
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
 #'   If you leave off ".png" or ".docx", it will be saved as a png file, but if
@@ -323,6 +333,7 @@ ct_plot_mult <- function(ct_dataframe,
                          y_axis_limits_lin = NA, 
                          y_axis_limits_log = NA, 
                          y_axis_label = NA,
+                         conc_units_to_use = NA, 
                          hline_position = NA, 
                          hline_style = "red dotted", 
                          vline_position = NA, 
@@ -334,6 +345,7 @@ ct_plot_mult <- function(ct_dataframe,
                          graph_labels = TRUE,
                          prettify_compound_names = TRUE,
                          name_clinical_study = NA, 
+                         report_progress = FALSE, 
                          save_graph = NA,
                          file_suffix = NA,
                          fig_height = 8,
@@ -392,18 +404,29 @@ ct_plot_mult <- function(ct_dataframe,
    }
    
    ct_dataframe <- ct_dataframe %>% 
-      mutate(Tissue_subtype = ifelse(is.na(Tissue_subtype),
-                                     "none", Tissue_subtype),
-             GraphLabs = paste(File, CompoundID, Tissue, Tissue_subtype, sep = "."))
+      mutate(Tissue_subtype = data.table::fifelse(is.na(Tissue_subtype), 
+                                                  "none", 
+                                                  as.character(Tissue_subtype)), 
+             # Could add the below commented-out code to deal w/possibility that
+             # user has included my separation marker in their file names, but
+             # it takes longer. Thinking about whether it's worth it. On a large
+             # dataset, it adds ~5 sec. 
+             # File_orig = File, 
+             # File = gsub("__", "-", File), 
+             GraphLabs = paste(File, CompoundID, Tissue, Tissue_subtype, sep = "__"))
    
    # Checking for situations where they'll get the same file name for more than
-   # one set of data
-   DatasetCheck <- ct_dataframe %>% filter(Simulated == TRUE) %>% 
-      select(File, Tissue, CompoundID, Tissue_subtype, GraphLabs) %>% 
-      unique()
+   # one set of data. This is also going to be used for making graph titles if
+   # they have specified some but not all.
+   DatasetCheck <- unique(ct_dataframe$GraphLabs[ct_dataframe$Simulated == TRUE])
+   DatasetCheck <- data.frame(GraphLabs = DatasetCheck) %>% 
+      separate(col = GraphLabs, 
+               into = c("File", "CompoundID", "Tissue", "Tissue_subtype"), 
+               sep = "__", 
+               remove = FALSE)
    
    if(any(duplicated(DatasetCheck$File)) == FALSE){
-      ct_dataframe <- ct_dataframe %>% 
+      ct_dataframe <- ct_dataframe %>%
          mutate(GraphLabs = File)
       DatasetCheck$GraphLabs <- DatasetCheck$File
    }
@@ -491,7 +514,7 @@ ct_plot_mult <- function(ct_dataframe,
    AllGraphs <- list()
    QCGraphs <- list()
    
-   if(is.na(graph_titles[1])){
+   if(all(is.na(graph_titles)) || graph_titles[1] == "none"){
       
       # Splitting the data, which we're about to do, messes up the order b/c you
       # have to split on character data rather than factor. Getting the order of
@@ -506,10 +529,10 @@ ct_plot_mult <- function(ct_dataframe,
       
       if(any(duplicated(DatasetCheck$File))){
          
-         Order <- expand_grid(list("File" = getOrder(ct_dataframe$File), 
-                                   "CompoundID" = getOrder(ct_dataframe$CompoundID), 
-                                   "Tissue" = getOrder(ct_dataframe$Tissue), 
-                                   "Tissue_subtype" = getOrder(ct_dataframe$Tissue_subtype))) %>% 
+         Order <- expand_grid("File" = getOrder(ct_dataframe$File), 
+                              "CompoundID" = getOrder(ct_dataframe$CompoundID), 
+                              "Tissue" = getOrder(ct_dataframe$Tissue), 
+                              "Tissue_subtype" = getOrder(ct_dataframe$Tissue_subtype)) %>% 
             mutate(Order = paste(File, CompoundID, Tissue, Tissue_subtype, sep = ".")) %>% 
             pull(Order)
       } else {
@@ -564,12 +587,16 @@ ct_plot_mult <- function(ct_dataframe,
       # print(i)
       # print(head(ct_dataframe[[i]]))
       
+      if(report_progress){message(paste0("Creating graph ID ", i))}
+      
       AllGraphs[[i]] <- 
          ct_plot(ct_dataframe = ct_dataframe[[i]], 
                  figure_type = figure_type,
                  mean_type = mean_type,
                  linear_or_log = linear_or_log,
                  time_range = time_range, 
+                 conc_units_to_use = conc_units_to_use, 
+                 existing_exp_details = existing_exp_details, 
                  x_axis_interval = x_axis_interval, 
                  x_axis_label = x_axis_label,
                  pad_x_axis = pad_x_axis, 
@@ -669,6 +696,8 @@ ct_plot_mult <- function(ct_dataframe,
                                       paste0(" subsection ADAM ", Split_i[5])),
                                FileName)
          } 
+         
+         if(report_progress){message(paste0("Saving graph ID ", i))}
          
          ggsave(FileName, 
                 height = fig_height, width = fig_width, dpi = 600, 

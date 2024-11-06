@@ -503,25 +503,6 @@ recalc_PK <- function(ct_dataframe,
                         File, ObsFile, DoseNum)) %>% 
       filter(DoseNum %in% c(1, MaxDoseNum))
    
-   if(add_t0_point & 1 %in% CTsubset$DoseNum){
-      T0 <- CTsubset %>% 
-         filter(DoseNum == 1) %>% 
-         group_by(across(
-            .cols = c(ID, CompoundID, Inhibitor, Tissue, Individual, Trial, 
-                      Simulated, File, ObsFile, DoseNum, 
-                      any_of(c("Dose_sub", "Dose_inhib", "Dose_inhib2",
-                               "Compound", "Conc_units", "Time_units", 
-                               "MaxDoseNum"))))) %>% 
-         summarize(Time = min(Time)) %>% 
-         ungroup() %>% 
-         filter(Time != 0) %>% 
-         mutate(Conc = 0, 
-                Time = 0)
-      
-      CTsubset <- CTsubset %>% bind_rows(T0)
-      
-   }
-   
    
    ### Calculating PK parameters for individual datasets ------------------------
    
@@ -571,7 +552,7 @@ recalc_PK <- function(ct_dataframe,
             }
             
             suppressMessages(suppressWarnings(
-               FirstDoseTime <- existing_exp_details$MainDetails %>% 
+               FirstDoseInfo <- existing_exp_details$MainDetails %>% 
                   select(File, StartHr_sub, StartHr_inhib, StartHr_inhib2, 
                          DoseInt_sub, DoseInt_inhib, DoseInt_inhib2) %>% 
                   left_join(CTsubset[["1"]] %>% select(File, CompoundID) %>% unique()) %>% 
@@ -612,15 +593,45 @@ recalc_PK <- function(ct_dataframe,
                          .groups = "keep") 
             
             suppressMessages(
-               FirstDoseTime <- FirstDoseTime %>% 
+               FirstDoseInfo <- FirstDoseInfo %>% 
                   left_join(MaxPossDoseTime) %>% 
                   mutate(MaxTime = ifelse(is.na(MaxTime), 
                                           MaxPossTime, MaxTime)))
             
          } else {
             
+            if(add_t0_point){
+               if(complete.cases(first_dose_time)){
+                  # If user specified 1st dose time, then use that for t0.
+                  T0_toadd <- CTsubset[["1"]] %>% 
+                     select(-Time, -Conc) %>% unique() %>% 
+                     mutate(Conc = 0, 
+                            Time = first_dose_time)
+               } else {
+                  # If user did not specify 1st dose time, then use minimum time
+                  # in data.
+                  T0 <- CTsubset[["1"]] %>% 
+                     group_by(across(
+                        .cols = c(ID, CompoundID, Inhibitor, Tissue, Individual, Trial, 
+                                  Simulated, File, ObsFile, DoseNum, 
+                                  any_of(c("Dose_sub", "Dose_inhib", "Dose_inhib2",
+                                           "Compound", "Conc_units", "Time_units", 
+                                           "MaxDoseNum"))))) %>% 
+                     summarize(T0 = min(Time)) %>% 
+                     ungroup() 
+                  
+                  T0_toadd <- CTsubset[["1"]] %>% 
+                     select(-Time, -Conc) %>% unique() %>% 
+                     mutate(Conc = 0, 
+                            Time = first_dose_time)
+               }
+               
+               CTsubset[["1"]] <- CTsubset[["1"]] %>% bind_rows(T0_toadd)
+               
+            }
+            
             suppressMessages(suppressWarnings(
-               FirstDoseTime <- CTsubset[["1"]] %>% ungroup() %>%
+               FirstDoseInfo <- CTsubset[["1"]] %>% ungroup() %>%
                   filter(complete.cases(Conc)) %>%
                   group_by(across(.cols = any_of(c("Compound", "CompoundID",
                                                    "Inhibitor", "Tissue",
@@ -642,16 +653,16 @@ recalc_PK <- function(ct_dataframe,
                   mutate(MaxTime =
                             switch(as.character(complete.cases(dosing_interval)),
                                    "TRUE" = t0 + dosing_interval,
-                                   "FALSE" = MaxTime)) %>% 
+                                   "FALSE" = MaxTime)) %>%
                   filter(complete.cases(File) | complete.cases(ObsFile))
             ))
-            
+
             if(complete.cases(first_dose_time)){
-               FirstDoseTime$t0 <- first_dose_time
+               FirstDoseInfo$t0 <- first_dose_time
             }
-            
+
             if(complete.cases(dosing_interval)){
-               FirstDoseTime$MaxTime <- FirstDoseTime$t0 + dosing_interval
+               FirstDoseInfo$MaxTime <- FirstDoseInfo$t0 + dosing_interval
             }
          }
          
@@ -673,7 +684,7 @@ recalc_PK <- function(ct_dataframe,
             
             suppressMessages(
                CT_temp <- CTsubset[["1"]][[j]] %>% 
-                  left_join(FirstDoseTime) %>% 
+                  left_join(FirstDoseInfo) %>% 
                   filter(Time >= t0 & Time <= MaxTime) %>% 
                   # NB: Need to subtract t0 here so that fitting starts at the
                   # right time. Also, there may be 0 concs *after* t0 depending
@@ -834,7 +845,7 @@ recalc_PK <- function(ct_dataframe,
                   # on the absorption, so I'm specifically using the minimum
                   # value so that all subjects in the same simulation have the
                   # same t0 for dose 1.
-                  left_join(FirstDoseTime) %>% 
+                  left_join(FirstDoseInfo) %>% 
                   mutate(Time = Time - t0) %>% 
                   summarize(Cmax = max(Conc, na.rm = T), 
                             tmax = Time[which.max(Conc)], 
@@ -1127,7 +1138,7 @@ recalc_PK <- function(ct_dataframe,
          
          if("logical" %in% class(existing_exp_details) == FALSE){
             suppressMessages(
-               FirstDoseTime <- existing_exp_details$MainDetails %>% 
+               FirstDoseInfo <- existing_exp_details$MainDetails %>% 
                   select(File, StartHr_sub, StartHr_inhib, StartHr_inhib2, 
                          DoseInt_sub, DoseInt_inhib, DoseInt_inhib2) %>% 
                   left_join(CTsubset[["1"]] %>% select(File, CompoundID) %>% unique()) %>% 
@@ -1153,7 +1164,7 @@ recalc_PK <- function(ct_dataframe,
             )
          } else {
             suppressMessages(suppressWarnings(
-               FirstDoseTime <- CTsubset[["1"]] %>% ungroup() %>%
+               FirstDoseInfo <- CTsubset[["1"]] %>% ungroup() %>%
                   filter(complete.cases(Conc)) %>%
                   group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial,
                            Simulated, File, ObsFile, DoseNum, ID) %>%
@@ -1177,14 +1188,14 @@ recalc_PK <- function(ct_dataframe,
             ))
             
             if(complete.cases(first_dose_time)){
-               FirstDoseTime$t0 <- first_dose_time
+               FirstDoseInfo$t0 <- first_dose_time
             }
          }
          
          if(omit_0_concs){
             CTsubset[[i]][[j]] <- CTsubset[[i]][[j]] %>%
-               filter((Time > FirstDoseTime$t0 & Conc > 0) |
-                         (Time == FirstDoseTime$t0))
+               filter((Time > FirstDoseInfo$t0 & Conc > 0) |
+                         (Time == FirstDoseInfo$t0))
          }
          
          CTtemp <- ct_dataframe_orig %>% 

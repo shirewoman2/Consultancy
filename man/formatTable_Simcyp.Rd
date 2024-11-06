@@ -12,6 +12,7 @@ formatTable_Simcyp(
   sort_column,
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
+  column_widths = NA,
   add_header_for_DDI = TRUE,
   perpetrator_name = "perpetrator",
   prettify_columns = FALSE,
@@ -22,6 +23,7 @@ formatTable_Simcyp(
   highlight_color = "yellow",
   font = "Arial",
   fontsize = 11,
+  borders = TRUE,
   save_table = NA,
   page_orientation = "portrait",
   title_document = NA,
@@ -38,7 +40,7 @@ for when to change the shading; every time that column's value changes, the
 shading will alternate between white and light gray. For example, if you
 have a table with PK values for multiple files and you have more than one
 row per file (an example of this would be the output from the function
-\code{\link{pksummary_mult}}), setting \code{shading_column = File} will
+\code{\link{pk_table}}), setting \code{shading_column = File} will
 cause the shading of the rows to alternate between white and light gray
 whenever the file changes. Please see the examples at the bottom of this
 help file.}
@@ -82,6 +84,10 @@ the examples at the bottom of the help file.}
 
 \item{center_1st_column}{TRUE or FALSE (default) for whether to make the
 alignment of the first column centered}
+
+\item{column_widths}{optionally specify what the widths of the columns should
+be with a numeric vector of the widths in inches, e.g., \code{column_widths
+= c(1.5, 2, 0.5, 3)}}
 
 \item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
 header row to the top of your table denoting when the PK are for baseline,
@@ -130,9 +136,8 @@ c("green", "red")}}
   \code{highlight_so_cutoffs}. Options: \describe{
 
   \item{"yellow to red" (default)}{A range of light yellow to light orange to
-  light red. If you have included 1 in your cutoffs and you leave
-  \code{highlight_so_colors} with the default setting, values in the middle,
-  "good" range of S/O values will be highlighted a light green.}
+  light red. If you have included 1 in your cutoffs, values in the middle,
+  the "good" range of S/O values around 1 will be highlighted a light green.}
 
   \item{"traffic"}{light green, yellow, and red designed to display values
   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
@@ -168,6 +173,9 @@ the latter is listed in PowerPoint and Word.}
 
 \item{fontsize}{the numeric font size for the output table. Default is 11
 point.}
+
+\item{borders}{TRUE (default) or FALSE for whether to include borders around
+cells}
 
 \item{save_table}{optionally save the output table by supplying a file name
 in quotes here, e.g., "My nicely formatted table.docx".  Do not include any

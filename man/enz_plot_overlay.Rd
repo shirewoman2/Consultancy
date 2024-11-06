@@ -226,15 +226,27 @@ for \code{facet1_column} and/or \code{facet2_column}.}
 you would like to have. This only applies when you have specified a column
 for \code{facet1_column} and/or \code{facet2_column}.}
 
-\item{floating_facet_scale}{TRUE or FALSE (default) for whether to allow the
-axes for each facet of a multi-facetted graph to scale freely to best fit
-whatever data are present. Default is FALSE, which means that all data will
-be on the same scale for easy comparison. However, this could mean that
-some graphs have lines that are hard to see, so you can set this to TRUE to
-allow the axes to shrink or expand according to what data are present for
-that facet. Floating axes comes with a trade-off for the looks of the
-graphs, though: Setting this to TRUE does mean that your x axis won't
-automatically have pretty breaks that are sensible for times in hours.}
+\item{floating_facet_scale}{TRUE, FALSE (default), "x", "y", or "xy" for
+  whether to allow the axes for each facet of a multi-facetted graph to scale
+  freely to best fit whatever data are present. Default is FALSE, which means
+  that all data will be on the same scale for easy comparison. However, this
+  could mean that some graphs have lines that are hard to see, so you can set
+  this to TRUE to allow the axes to shrink or expand according to what data
+  are present for that facet. If this is set to "x", "y", or "xy", then the
+  scale will only float along that axis. Play around with this to see what we
+  mean.
+
+  Floating axes comes with a trade-off for the looks of the graphs, though:
+  Setting this to TRUE does mean that your x axis won't automatically have
+  pretty breaks that are sensible for times in hours and that you can't
+  specify intervals or limits for either the x or the y axis.
+
+  If you're a ggplot2 user, here's what's going on under the hood: If you set
+  \code{floating_facet_scale = FALSE}, the default, then ct_plot_overlay will
+  use facet_grid to break up your graphs and set \code{facet1_column} to the
+  rows and \code{facet2_column} to the columns. If you set
+  \code{floating_facet_scale = TRUE}, then ct_plot_overlay will use
+  facet_wrap to break up your data.}
 
 \item{facet_spacing}{Optionally set the spacing between facets. If left as
 NA, a best-guess as to a reasonable amount of space will be used. Units are

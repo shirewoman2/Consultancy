@@ -21,6 +21,7 @@ ct_plot_mult(
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
   y_axis_label = NA,
+  conc_units_to_use = NA,
   hline_position = NA,
   hline_style = "red dotted",
   vline_position = NA,
@@ -32,6 +33,7 @@ ct_plot_mult(
   graph_labels = TRUE,
   prettify_compound_names = TRUE,
   name_clinical_study = NA,
+  report_progress = FALSE,
   save_graph = NA,
   file_suffix = NA,
   fig_height = 8,
@@ -156,6 +158,8 @@ argument \code{existing_exp_details}.}
   be limited to the start of the last dose until the last observed data
   point.}
 
+  \item{"last dose to end" or "last to end" for short}{Time range will
+  be limited to the start of the last dose until the end of the simulation.}
   }}
 
 \item{x_axis_interval}{optionally set the x-axis major tick-mark interval.
@@ -196,6 +200,14 @@ limits for the semi-log plot will be automatically selected.}
 
 \item{y_axis_label}{optionally supply a character vector or an expression to
 use for the y axis label}
+
+\item{conc_units_to_use}{concentration units to use for graphs. If left as
+NA, the concentration units in the source data will be used. Acceptable
+options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
+"ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
+concentration and your source data were in mass per volume units or vice
+versa, you'll need to provide something for the argument
+\code{existing_exp_details}.}
 
 \item{hline_position}{numerical position(s) of any horizontal lines to add to
 the graph. The default is NA to have no lines, and good syntax if you
@@ -282,11 +294,17 @@ c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
 "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
 legend.}
 
-\item{name_clinical_study}{optionally specify the name of the clinical study
-for any observed data. This only affects the caption of the graph. For
-example, specifying \code{name_clinical_study = "101, fed cohort"} will
-result in a figure caption that reads in part "Clinical Study 101, fed
-cohort".}
+\item{name_clinical_study}{optionally specify the name(s) of the clinical
+study or studies for any observed data. This only affects the caption of
+the graph. For example, specifying \code{name_clinical_study = "101, fed
+cohort"} will result in a figure caption that reads in part "clinical study
+101, fed cohort". If you have more than one study, that's fine; we'll take
+care of stringing them together appropriately. Just list them as a
+character vector, e.g., \code{name_clinical_study = c("101",
+"102", "103")} will become "clinical studies 101, 102, and 103."}
+
+\item{report_progress}{TRUE or FALSE (default) for whether show a progress
+message on creating and saving graphs}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
@@ -313,11 +331,6 @@ percentiles.png". This is only used when \code{graph_arrangement =
 \item{fig_width}{figure width in inches; default is 8}
 
 \item{...}{arguments that pass through to \code{\link{ct_plot}}}
-
-\item{return_caption}{TRUE or FALSE (default) for whether to return any
-caption text to use with the graph. This works best if you supply something
-for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
-output a list of the graph, the figure heading, and the figure caption.}
 }
 \value{
 a set of arranged ggplot2 graphs and/or saved files of those graphs

@@ -1,8 +1,8 @@
 #' INTERNAL - make caption for conc-time plots
 #'
 #' @param ct_dataframe ct_dataframe
-#' @param plot_type options are "concentration-time", "enzyme-abundance", "dissolution-profile", "release-profile". May
-#'   change these to be prettier.
+#' @param plot_type options are "concentration-time", "enzyme-abundance",
+#'   "dissolution-profile", "release-profile". May change these to be prettier.
 #' @param single_or_multiple_profiles whether this is for a ct_plot graph (only
 #'   1 compound, tissue, file, etc.) or a graph with multiple profiles (multiple
 #'   compounds, tissues, files, etc.). Options are "single" (default) or
@@ -20,16 +20,17 @@
 #' @param hline_style hline_style
 #' @param vline_position vline_position
 #' @param vline_style vline_style
-#' @param name_clinical_study optionally specify the name of the clinical study
-#'   for any observed data. This only affects the caption of the graph. For
-#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
-#'   result in a figure caption that reads in part "clinical study 101, fed
-#'   cohort".
+#' @param name_clinical_study optionally specify the name(s) of the clinical
+#'   study or studies for any observed data. This only affects the caption of
+#'   the graph. For example, specifying \code{name_clinical_study = "101, fed
+#'   cohort"} will result in a figure caption that reads in part "clinical study
+#'   101, fed cohort". If you have more than one study, that's fine; we'll take
+#'   care of stringing them together appropriately. Just list them as a
+#'   character vector, e.g., \code{name_clinical_study = c("101",
+#'   "102", "103")} will become "clinical studies 101, 102, and 103." 
 #'
 #' @return a string of text for making a caption
-#'
-#' @examples
-#' # none 
+#' 
 make_ct_caption <- function(ct_dataframe, 
                             single_or_multiple_profiles = "single", 
                             plot_type = "concentration-time", 
@@ -61,20 +62,13 @@ make_ct_caption <- function(ct_dataframe,
                           .default = str_c(sort(unique(AllCompounds$DDIrole[
                              AllCompounds$CompoundID %in% CompoundID])), collapse = "-"))
    
-   # This defaults to "none" if nothing was supplied for
-   # existing_exp_details, so, if that's the case, hacking this afterwards to
-   # check for whatever inhibitor was present in the data.
-   MyPerpetrator <- determine_myperpetrator(existing_exp_details, 
-                                            prettify_compound_names = prettify_compound_names)
-   
-   if("Inhibitor" %in% names(ct_dataframe) &&
-      MyPerpetrator == "none" & any(ct_dataframe$Inhibitor != "none")){
-      
-      AllPerpsInCT <- unique(as.character(ct_dataframe$Inhibitor[
-         ct_dataframe$Inhibitor != "none"]))
-      MyPerpetrator <- ifelse(length(AllPerpsInCT) > 1, 
-                              str_comma(sort(AllPerpsInCT), conjunction = "or"), 
-                              AllPerpsInCT)
+   # Adding one more plot_type to account for ADAM model data where it's not
+   # really "concentration" but "amount".
+   if(plot_type == "concentration-time" & 
+      all(unique(ct_dataframe$Conc_units) %in% c("µM", "nM", "mg/L", "mg/mL",
+                                                 "µg/L", "µg/mL", "ng/L",
+                                                 "ng/mL") == FALSE)){
+      plot_type <- "mass-time"
    }
    
    if(plot_type == "enzyme-abundance"){
@@ -111,6 +105,21 @@ make_ct_caption <- function(ct_dataframe,
          existing_exp_details <- NA
       } 
       
+      # determine_myperpetrator defaults to "none" if nothing was supplied for
+      # existing_exp_details, so that's why this is "none" automatically.
+      # Checking for whatever inhibitor was present in the data.
+      if("Inhibitor" %in% names(ct_dataframe) &&
+         any(ct_dataframe$Inhibitor != "none")){
+         
+         AllPerpsInCT <- unique(as.character(ct_dataframe$Inhibitor[
+            ct_dataframe$Inhibitor != "none"]))
+         MyPerpetrator <- ifelse(length(AllPerpsInCT) > 1, 
+                                 str_comma(sort(AllPerpsInCT), conjunction = "or"), 
+                                 AllPerpsInCT)
+      } else {
+         MyPerpetrator <- "none"
+      }
+      
       DetailsAvailable <- FALSE
       
       Pop <- "**healthy subjects / patients with [complaint]**"
@@ -136,6 +145,9 @@ make_ct_caption <- function(ct_dataframe,
                                           "include")
       
       DetailsAvailable <- TRUE
+      
+      MyPerpetrator <- determine_myperpetrator(existing_exp_details, 
+                                               prettify_compound_names = prettify_compound_names)
       
       TextPieces <- unique(ct_dataframe$File) %>% 
          set_names() %>% 
@@ -195,6 +207,17 @@ make_ct_caption <- function(ct_dataframe,
       
    }
    
+   # Setting up text for clinical study or studies ----------------------------
+   
+   if(length(name_clinical_study) > 1){
+      MyClinStudies <- str_comma(name_clinical_study)
+   } else if(complete.cases(name_clinical_study)){
+      MyClinStudies <- paste("clinical study", name_clinical_study)
+   } else {
+      MyClinStudies <- "clinical study **XXX**"
+   }
+   
+   
    # single profile -----------------------------------------------------------
    
    if(single_or_multiple_profiles == "single"){
@@ -226,7 +249,8 @@ make_ct_caption <- function(ct_dataframe,
                                "enzyme-abundance" = " enzyme-abundance profiles of ",
                                "release-profile" = " release profiles of ",
                                "dissolution-profile" = " dissolution profiles of ",
-                               "concentration-time" = " concentration-time profiles of "), 
+                               "concentration-time" = " concentration-time profiles of ", 
+                               "mass-time" = " profiles of "), 
                         MyCompound, " ", DDItext1, "in ", 
                         Pop, ".")
       
@@ -260,13 +284,21 @@ make_ct_caption <- function(ct_dataframe,
                    "perpetrator" = paste0(DosingText_inhib_lower, "."),
                    
                    "victim" = paste0(DosingText_sub_lower, 
-                                     " in the absence of ", MyPerpetrator, 
-                                     " (solid line) and on the ", 
-                                     DoseDay_ordinal, " day of ",
-                                     NumDaysInhib, " days of dosing of ",
-                                     MyPerpetrator, " ", Dose_inhib, " ",
-                                     Units_dose_inhib, " ",
-                                     DoseFreq_inhib, " (dashed line).")))
+                                     " at baseline (solid line) and ", 
+                                     ifelse(DoseFreq_inhib == "single dose", 
+                                            # single dose of perp 
+                                            paste0("following ", 
+                                                   DosingText_inhib_lower, 
+                                                   " (dashed line)."), 
+                                            
+                                            # multiple doses of perp
+                                            paste0("on the ", 
+                                                   DoseDay_ordinal, " day of ",
+                                                   NumDaysInhib, " days of dosing of ",
+                                                   MyPerpetrator, " ", Dose_inhib, " ",
+                                                   Units_dose_inhib, " ",
+                                                   DoseFreq_inhib, " (dashed line).")))
+            ))
          
       } else {
          
@@ -280,10 +312,7 @@ make_ct_caption <- function(ct_dataframe,
                                         " individuals; "), 
                                  paste0(" n = ", N_subjpertrial, 
                                         " individuals; ")),
-                          ifelse(complete.cases(name_clinical_study), 
-                                 paste("clinical study", name_clinical_study), 
-                                 "clinical study **XXX**"),
-                          ") "),
+                          MyClinStudies, ") "),
                    "simulated "), 
             Tissue, 
             switch(plot_type, 
@@ -323,6 +352,12 @@ make_ct_caption <- function(ct_dataframe,
                    mean_type, 
                    " mean values of simulated individual trials and the darker lines portray the ",
                    mean_type, 
+                   " mean data of the simulated population (n = ", N_indiv, "). The dashed lines represent the 5^th^ and 95^th^ percentiles."), 
+         "compound summary" = 
+            paste0("The lighter lines represent the ", 
+                   mean_type, 
+                   " mean values of simulated individual trials and the darker lines portray the ",
+                   mean_type, 
                    " mean data of the simulated population (n = ", N_indiv, "). The dashed lines represent the 5^th^ and 95^th^ percentiles."))
       
       if(any(complete.cases(hline_position))){
@@ -330,7 +365,7 @@ make_ct_caption <- function(ct_dataframe,
          HLineAES <- str_split(hline_style, pattern = " ")[[1]]
          
          CapText2 <- paste0(CapText2, "* ",
-                            paste("*The", HLineAES[1], HLineAES[2], "horizontal",
+                            paste("*The horizontal", HLineAES[1], HLineAES[2], 
                                   ifelse(length(hline_position) > 1, 
                                          "lines indicate*", "line indicates*"), 
                                   "***XXX.*** "))
@@ -342,7 +377,7 @@ make_ct_caption <- function(ct_dataframe,
          
          CapText2 <- paste0(CapText2, ifelse(any(complete.cases(hline_position)), 
                                              " ", "* "),
-                            paste("*The", VLineAES[1], VLineAES[2], "vertical",
+                            paste("*The vertical", VLineAES[1], VLineAES[2],
                                   ifelse(length(hline_position) > 1, 
                                          "lines indicate*", "line indicates*"), 
                                   "***XXX.*** "))
@@ -393,85 +428,95 @@ make_ct_caption <- function(ct_dataframe,
       ## Caption --------------------------------------------------------------
       
       CapText1 <-
-         switch(paste(ifelse(InhibPresent, "InhibPresent", "NoInhibPresent"), 
-                      CmpdRoles, plot_type), 
-                
-                # Note that when NoInhibPresent, CmpdRoles will ALWAYS be
-                # "victim" and that when InhibPresent, CmpdRoles can be any of
-                # "perpetrator", "perpetrator-victim", or "victim".
-                
-                "NoInhibPresent victim concentration-time" = ifelse(
-                   nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                   paste0("simulated and observed data (circles; mean of n = ",
-                          N_subjpertrial, " individuals; ",
-                          ifelse(complete.cases(name_clinical_study), 
-                                 paste0("clinical study ", 
-                                        name_clinical_study, ")"), 
-                                 "clinical study* ***XXX**** *)")), 
-                   "simulated data"), 
-                
-                "NoInhibPresent victim enzyme-abundance" = "simulated data", 
-                
-                "NoInhibPresent victim release-profile" = "release profile data", 
-                
-                "NoInhibPresent victim dissolution-profile" = "dissolution profile data", 
-                
-                "InhibPresent victim concentration-time" = paste0(
-                   ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                          paste0("simulated and observed data (circles; mean of n = ",
-                                 N_subjpertrial, " individuals; ",
-                                 ifelse(complete.cases(name_clinical_study), 
-                                        paste0("clinical study ", 
-                                               name_clinical_study, ")"), 
-                                        "clinical study* ***XXX**** *)")), 
-                          ""), 
-                   " ", Tissue, " concentration-time profiles of ",
-                   MyCompound, " following ", DosingText_sub_lower, 
-                   " (solid line) and on the ", DoseDay_ordinal, 
-                   " day of ", NumDaysInhib, " days of dosing ",
-                   MyPerpetrator, " (dashed line)"), 
-                
-                "InhibPresent perpetrator-victim concentration-time" = paste0(
-                   ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                          paste0("simulated and observed data (circles; mean of n = ",
-                                 N_subjpertrial, " individuals; ",
-                                 ifelse(complete.cases(name_clinical_study), 
-                                        paste0("clinical study ", 
-                                               name_clinical_study, ")"), 
-                                        "clinical study* ***XXX**** *)")), 
-                          ""), 
-                   " ", Tissue, " concentration-time profiles of ",
-                   MyCompound, " following ", DosingText_sub_lower, 
-                   " and ", DosingText_inhib_lower), 
-                
-                "InhibPresent perpetrator concentration-time" = paste0(
-                   ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
-                          paste0("simulated and observed data (circles; mean of n = ",
-                                 N_subjpertrial, " individuals; ",
-                                 ifelse(complete.cases(name_clinical_study), 
-                                        paste0("clinical study ", 
-                                               name_clinical_study, ")"), 
-                                        "clinical study* ***XXX**** *)")), 
-                          ""), 
-                   " ", Tissue, " concentration-time profiles of ",
-                   MyCompound, " following ", DosingText_inhib_lower), 
-                
-                # NB: I *think* that enzyme-abundance plots will only have the
-                # DDI role be victim when there's no perpetrator present in the
-                # simulation and so you'd only be interested in autoinduction or
-                # autosuppression. This text should work for that.
-                "InhibPresent victim enzyme-abundance" = paste0(
-                   "simulated enzyme-abundance profiles of ",
-                   str_comma(unique(ct_dataframe$Enzyme), conjunction = "or"), 
-                   " following ", DosingText_sub_lower),  
-                
-                # This is text for a regular enzyme-abundance plot +/- a
-                # perpetrator.
-                "InhibPresent perpetrator enzyme-abundance" = paste0(
-                   "simulated enzyme-abundance profiles of ",
-                   str_comma(unique(ct_dataframe$Enzyme), conjunction = "or"), 
-                   " in the absence or presence of ", MyPerpetrator, 
-                   " following ", DosingText_inhib_lower)
+         switch(
+            paste(ifelse(InhibPresent, "InhibPresent", "NoInhibPresent"), 
+                  CmpdRoles, plot_type), 
+            
+            # Note that when NoInhibPresent, CmpdRoles will ALWAYS be
+            # "victim" and that when InhibPresent, CmpdRoles can be any of
+            # "perpetrator", "perpetrator-victim", or "victim".
+            
+            "NoInhibPresent victim concentration-time" = ifelse(
+               nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+               
+               # obs data present
+               paste0("simulated and observed data (circles; mean of n = ",
+                      N_subjpertrial, " individuals; ",
+                      MyClinStudies, ")"),  
+               
+               # no obs data present
+               "simulated data"), 
+            
+            "NoInhibPresent victim enzyme-abundance" = "simulated data", 
+            
+            "NoInhibPresent victim release-profile" = "release profile data", 
+            
+            "NoInhibPresent victim dissolution-profile" = "dissolution profile data", 
+            
+            "InhibPresent victim concentration-time" = paste0(
+               ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                      
+                      # obs data present
+                      paste0("simulated and observed data (circles; mean of n = ",
+                             N_subjpertrial, " individuals; ",
+                             MyClinStudies, ")"),
+                      
+                      # no obs data present       
+                      ""), 
+               " ", Tissue, " concentration-time profiles of ",
+               MyCompound, " following ", DosingText_sub_lower, 
+               " (solid line) and ",
+               
+               ifelse(DoseFreq_inhib == "single dose", 
+                      DosingText_inhib_lower, 
+                      paste0("on the ", DoseDay_ordinal, 
+                             " day of ", NumDaysInhib, " days of dosing ", 
+                             MyPerpetrator)), 
+               " (dashed line)"), 
+            
+            "InhibPresent perpetrator-victim concentration-time" = paste0(
+               ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                      
+                      # obs data present
+                      paste0("simulated and observed data (circles; mean of n = ",
+                             N_subjpertrial, " individuals; ",
+                             MyClinStudies, ")"), 
+                      
+                      # no obs data present
+                      ""), 
+               " ", Tissue, " concentration-time profiles of ",
+               MyCompound, " following ", DosingText_sub_lower, 
+               " and ", DosingText_inhib_lower), 
+            
+            "InhibPresent perpetrator concentration-time" = paste0(
+               ifelse(nrow(ct_dataframe %>% filter(Simulated == FALSE)) > 0,
+                      
+                      # obs data present
+                      paste0("simulated and observed data (circles; mean of n = ",
+                             N_subjpertrial, " individuals; ",
+                             MyClinStudies, ")"), 
+                      
+                      # no obs data present
+                      ""), 
+               " ", Tissue, " concentration-time profiles of ",
+               MyCompound, " following ", DosingText_inhib_lower), 
+            
+            # NB: I *think* that enzyme-abundance plots will only have the
+            # DDI role be victim when there's no perpetrator present in the
+            # simulation and so you'd only be interested in autoinduction or
+            # autosuppression. This text should work for that.
+            "InhibPresent victim enzyme-abundance" = paste0(
+               "simulated enzyme-abundance profiles of ",
+               str_comma(unique(ct_dataframe$Enzyme), conjunction = "or"), 
+               " following ", DosingText_sub_lower),  
+            
+            # This is text for a regular enzyme-abundance plot +/- a
+            # perpetrator.
+            "InhibPresent perpetrator enzyme-abundance" = paste0(
+               "simulated enzyme-abundance profiles of ",
+               str_comma(unique(ct_dataframe$Enzyme), conjunction = "or"), 
+               " in the absence or presence of ", MyPerpetrator, 
+               " following ", DosingText_inhib_lower)
          )
       
       CapText2 <- switch(

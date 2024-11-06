@@ -135,18 +135,29 @@ match_obs_to_sim <- function(ct_dataframe,
       ObsAssign <- obs_to_sim_assignment
    } 
    
-   # Adding ".xlsx" to any files that don't have it already since people often
-   # omit the extension or use the wrong one.
+   # Adding ".xml" to any files that don't have it already since people often
+   # omit the extension or use the wrong one. Checking that the file exists.
    ObsAssign <- ObsAssign %>% 
       mutate(Extension = str_extract(basename(ObsFile), pattern = "\\.(?<=\\.)[^\\.]+$"), 
-             ObsFile = case_when(
-                is.na(ObsFile) ~ NA, 
-                complete.cases(ObsFile) & is.na(Extension) ~ paste0(ObsFile, ".xlsx"), 
-                complete.cases(ObsFile) & Extension == ".xml" ~ sub("xml", "xlsx", ObsFile), 
-                TRUE ~ ObsFile))
-   
+             ObsFile_xml = case_when(is.na(Extension) ~ paste0(ObsFile, ".xml"), 
+                                     Extension == ".xml" ~ ObsFile, 
+                                     Extension == ".xlsx" ~ sub("xlsx$", "xml", ObsFile)), 
+             ObsFile_xlsx = case_when(is.na(Extension) ~ paste0(ObsFile, ".xlsx"), 
+                                      Extension == ".xlsx" ~ ObsFile, 
+                                      Extension == ".xml" ~ sub("xml$", "xlsx", ObsFile)), 
+             ObsFile_xml_exists = file.exists(ObsFile_xml), 
+             ObsFile_xlsx_exists = file.exists(ObsFile_xlsx), 
+             
+             # Preferentially using the XML file since people don't always save
+             # the xlsx version of the file
+             ObsFile = case_when(ObsFile_xml_exists == TRUE ~ ObsFile_xml, 
+                                 ObsFile_xml_exists == FALSE & 
+                                    ObsFile_xlsx_exists == TRUE ~ ObsFile_xlsx, 
+                                 .default = ObsFile_xml))
+
    # Making sure we have all the info we need.
-   if(all(ObsAssign$File %in% existing_exp_details$MainDetails$File) == FALSE){
+   if(all(ObsAssign$File[complete.cases(ObsAssign$File)] %in%
+          existing_exp_details$MainDetails$File) == FALSE){
       suppressMessages(
          existing_exp_details <- 
             extractExpDetails_mult(sim_data_files = ObsAssign$File, 

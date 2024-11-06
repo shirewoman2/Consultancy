@@ -1,60 +1,53 @@
 #' Overlay multiple data sets onto a single concentration-time graph
 #'
-#' \code{ct_plot_overlay} is meant to be used in conjunction with
-#' \code{\link{extractConcTime_mult}} to create single graphs with overlaid
-#' concentration-time data for multiple tissues, compounds, or Simcyp Simulator
-#' output files for easy comparisons. \emph{Note:} There are some nuances to
-#' overlaying observed data. Please see the "Details" section at the bottom of
-#' this help file. For detailed instructions and examples, please see the
-#' SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
-#' Files/SimcypConsultancy function examples and instructions/Concentration-time
-#' plots 3 - overlaying plots/Concentration-time-plot-examples-3.docx". (Sorry,
-#' we are unable to include a link to it here.)
+#' @description \code{ct_plot_overlay} is meant to be used in conjunction with
+#'   \code{\link{extractConcTime_mult}} to create a graph with overlaid
+#'   concentration-time data for multiple tissues, compounds, or simulations for
+#'   easy comparisons. Please see the "Note" section at the bottom of the help
+#'   file for a more-detailed overview of what this function is designed to do.
 #'
-#' \strong{Notes on including observed data:} We recently added the option of
-#' including observed data and are in the process of testing this. To include
-#' observed data, you have two options: \enumerate{
+#' @note To make an overlaid graph, the ct_plot_overlay function will ask you to
+#'   map specific columns in your source data to aesthetics in your graph, e.g.,
+#'   you can color the lines in your data based on which tissue is being graphed
+#'   (column in ct_dataframe: Tissue) or set the line type based on whether a
+#'   DDI perpetrator drug is present (column in ct_dataframe: Inhibitor) or
+#'   break up the graphs into small multiples based on which simulation it is
+#'   (column in ct_dataframe: File). When you run this function, two of the
+#'   messages you'll see will be "Columns that vary in your data: ..." and
+#'   "Graphing aesthetics you've assigned: ..." We set up these messages to try
+#'   to let you know what columns in your source data -- the object you supplied
+#'   for \code{ct_dataframe} -- have multiple unique values that might be useful
+#'   for mapping aesthetics in your graphs. If you have a problem with your
+#'   graphs such as multiple lines that are the same color or multiple lines
+#'   that are the same line type and that's not what you expected and it's not
+#'   clear why you're getting that graph, this pair of messages is meant to help
+#'   you figure out what groups are present in your data and which of them you
+#'   have mapped to an aesthetic aspect of your graph.
 #'
-#' \item{Use the Simulator Excel PE data entry template to save your observed
-#' data. Then, when you run \code{\link{extractConcTime_mult}}, supply the names
-#' of those Excel files to the observed data  function argument. This is the
-#' BEST option because it contains the most information about the observed
-#' data.}
+#'   The faceting arguments may take a little playing around to understand and
+#'   will probably be clearest if you're already a ggplot2 user. (This and all
+#'   graphing functions in the SimcypConsultancy package use the package ggplot2
+#'   to make graphs.) Here's what's going on under the hood with the faceting
+#'   arguments: If you set \code{floating_facet_scale = FALSE}, the default,
+#'   then \code{ct_plot_overlay} will use facet_grid to break up your graphs and
+#'   set \code{facet1_column} to the rows and \code{facet2_column} to the
+#'   columns. If you set \code{floating_facet_scale = TRUE}, then
+#'   \code{ct_plot_overlay} will use facet_wrap to break up your data and
+#'   \code{facet1_column} will be the first variable it uses and
+#'   \code{facet2_column} will be the second.
 #'
-#' \item{Include observed data in your simulation files. Those data will be
-#' automatically extracted when you run \code{\link{extractConcTime_mult}} if
-#' "obs_data_files" is left as the default NA. The drawback to this approach is
-#' that it's not clear whether there was an inhibitor present, for example, or
-#' which compound the data describe.} }
+#'   \strong{A note reqgarding observed data:} There are some nuances to
+#'   overlaying observed data. For detailed instructions and examples, please
+#'   see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+#'   Files/SimcypConsultancy function examples and
+#'   instructions/Concentration-time plots 3 - overlaying
+#'   plots/Concentration-time-plot-examples-3.docx". (Sorry, we are unable to
+#'   include a link to it here.) If you have observed concentration-time data to
+#'   match your simulated data but you don't see those observed data on your
+#'   graph, please check the help file for the function you used -- either
+#'   \code{\link{extractConcTime}} or \code{\link{extractConcTime_mult}} -- to
+#'   extract your data. Something has likely gone wrong in the data extraction.
 #'
-#' The \code{ct_plot_overlay} function will automatically figure out which
-#' observed data should be compared with which simulated compound IDs, tissues,
-#' etc. However, because the function doesn't know which simulator \emph{file}
-#' goes with which observed data, it will assume that \emph{all} the observed
-#' data are appropriate to compare to \emph{all} the files included in
-#' \code{ct_dataframe} by default. If that's not the case, after you use
-#' \code{\link{extractConcTime_mult}} to extract your data, you can indicate
-#' which simulator output file goes with which observed file by setting the
-#' simulator output file in the column "File". This admittedly requires a bit of
-#' R knowledge, so please ask a member of the R Working Group for help if you're
-#' not clear on how to do this. Be warned, though, that if you assign "File" for
-#' some observed data but not all, only the observed data with an assignment for
-#' "File" will show up on the graph.
-#'
-#' One other note: The observed data files from the PE data-entry template don't
-#' include the \emph{name} of the compound you're simulating (column:
-#' "Compound"). They do include whether it was a substrate, metabolite, or
-#' inhibitor (column: CompoundID), but not the compound's actual name. For that
-#' reason, try coloring or facetting your data by CompoundID rather than by
-#' Compound if you have observed data. Similarly, if you have an inhibitor and
-#' you have observed data, the inhibitor will be listed as the generic
-#' "inhibitor" here rather than, e.g., "ketoconazole" because the observed data
-#' file doesn't indicate that.
-#'
-#' \strong{Other notes:} There's a bug in RStudio (I think) that sometimes
-#' causes the last shape in a legend to vanish when you're looking at the graph
-#' in RStudio, but, if you save the graph, the shape \emph{should} be present.
-#' Let me know if that doesn't happen. -LSh
 #'
 #' @param ct_dataframe the input concentration-time data generated by running
 #'   the function \code{\link{extractConcTime_mult}} or
@@ -278,9 +271,7 @@
 #' @param facet1_column optionally break up the graph into small multiples; this
 #'   specifies the first of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet1_column =
-#'   Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
-#'   \code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
-#'   designate the rows of the output graphs.
+#'   Tissue}.
 #' @param facet1_title optionally specify a title to describe facet 1. This is
 #'   ignored if \code{floating_facet_scale} is TRUE or if you have specified
 #'   \code{facet_ncol} or \code{facet_nrow}.
@@ -290,28 +281,39 @@
 #' @param facet2_column optionally break up the graph into small multiples; this
 #'   specifies the second of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet2_column =
-#'   CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
-#'   specified \code{facet_ncol} or  \code{facet_nrow}, then
-#'   \code{facet2_column} will designate the columns of the output graphs.
+#'   CompoundID}. If you have graphs where the rows are broken up by one variable
+#'   and the columns by another, then this will specify the columns of the
+#'   graphs.
 #' @param facet_ncol optionally specify the number of columns of facetted graphs
 #'   you would like to have. This only applies when you have specified a column
 #'   for \code{facet1_column} and/or \code{facet2_column}.
 #' @param facet_nrow optionally specify the number of rows of facetted graphs
 #'   you would like to have. This only applies when you have specified a column
 #'   for \code{facet1_column} and/or \code{facet2_column}.
-#' @param floating_facet_scale TRUE or FALSE (default) for whether to allow the
-#'   axes for each facet of a multi-facetted graph to scale freely to best fit
-#'   whatever data are present. Default is FALSE, which means that all data will
-#'   be on the same scale for easy comparison. However, this could mean that
-#'   some graphs have lines that are hard to see, so you can set this to TRUE to
-#'   allow the axes to shrink or expand according to what data are present for
-#'   that facet. Floating axes comes with a trade-off for the looks of the
-#'   graphs, though: Setting this to TRUE does mean that your x axis won't
-#'   automatically have pretty breaks that are sensible for times in hours.
+#' @param floating_facet_scale TRUE, FALSE (default), "x", "y", or "xy" for
+#'   whether to allow the axes for each facet of a multi-facetted graph to scale
+#'   freely to best fit whatever data are present. Default is FALSE, which means
+#'   that all data will be on the same scale for easy comparison. However, this
+#'   could mean that some graphs have lines that are hard to see, so you can set
+#'   this to TRUE to allow the axes to shrink or expand according to what data
+#'   are present for that facet. If this is set to "x", "y", or "xy", then the
+#'   scale will only float along that axis. Play around with this to see what we
+#'   mean.
+#'
+#'   Floating axes comes with a trade-off for the looks of the graphs, though:
+#'   Setting this to TRUE does mean that your x axis won't automatically have
+#'   pretty breaks that are sensible for times in hours and that you can't
+#'   specify intervals or limits for either the x or the y axis.
+#'
+#'   If you're a ggplot2 user, here's what's going on under the hood: If you set
+#'   \code{floating_facet_scale = FALSE}, the default, then ct_plot_overlay will
+#'   use facet_grid to break up your graphs and set \code{facet1_column} to the
+#'   rows and \code{facet2_column} to the columns. If you set
+#'   \code{floating_facet_scale = TRUE}, then ct_plot_overlay will use
+#'   facet_wrap to break up your data.
 #' @param facet_spacing Optionally set the spacing between facets. If left as
 #'   NA, a best-guess as to a reasonable amount of space will be used. Units are
-#'   "lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
-#'   should not be in quotes.)
+#'   "lines", so try, e.g. \code{facet_spacing = 2}.
 #' @param time_range time range to display. Options: \describe{
 #'
 #'   \item{NA}{entire time range of data; default}
@@ -337,7 +339,11 @@
 #'
 #'   \item{"last dose to last observed" or "last obs" for short}{Time range will
 #'   be limited to the start of the last dose until the last observed data
-#'   point.} }
+#'   point.}
+#'
+#'   \item{"last dose to end" or "last to end" for short}{Time range will
+#'   be limited to the start of the last dose until the end of the simulation.}
+#'   }
 #'
 #' @param x_axis_interval set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values, which are
@@ -360,7 +366,8 @@
 #'   NA, the concentration units in the source data will be used. Acceptable
 #'   options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
 #'   "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
-#'   concentration, you'll need to provide something for the argument
+#'   concentration and your source data were in mass per volume units or vice
+#'   versa, you'll need to provide something for the argument
 #'   \code{existing_exp_details}.
 #' @param pad_y_axis optionally add a smidge of padding to the y axis (default
 #'   is TRUE, which includes some generally reasonable padding). As with
@@ -436,13 +443,13 @@
 #'   FALSE will leave the compound names as is. For an approach with more
 #'   control over what the compound names will look like in legends and Word
 #'   output, set each compound to the exact name you  want with a named
-#'   character vector. This will be looking for all the compound names in the 
-#'   columns "Compound" and "Inhibitor" in whatever you supply for ct_dataframe. 
+#'   character vector. This will be looking for all the compound names in the
+#'   columns "Compound" and "Inhibitor" in whatever you supply for ct_dataframe.
 #'   For example, \code{prettify_compound_names =
 #'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
-#'   "Drug ABC", "Itraconazole_Fasted Soln and OH-Itraconazole" = "itraconazole")} 
-#'   will make those compounds "ketoconazole", "Drug ABC", and "itraconazole" in a
-#'   legend.
+#'   "Drug ABC", "Itraconazole_Fasted Soln and OH-Itraconazole" = "itraconazole")}
+#'   will make those compounds "ketoconazole", "Drug ABC", and "itraconazole" in
+#'   a legend.
 #' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of
 #'   the graph where the left panel shows the original graph and the right panel
 #'   shows information about the simulation trial design. This works MUCH faster
@@ -451,11 +458,14 @@
 #'   that object to the argument \code{existing_exp_details}.
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}
-#' @param name_clinical_study optionally specify the name of the clinical study
-#'   for any observed data. This only affects the caption of the graph. For
-#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
-#'   result in a figure caption that reads in part "Clinical Study 101, fed
-#'   cohort".
+#' @param name_clinical_study optionally specify the name(s) of the clinical
+#'   study or studies for any observed data. This only affects the caption of
+#'   the graph. For example, specifying \code{name_clinical_study = "101, fed
+#'   cohort"} will result in a figure caption that reads in part "clinical study
+#'   101, fed cohort". If you have more than one study, that's fine; we'll take
+#'   care of stringing them together appropriately. Just list them as a
+#'   character vector, e.g., \code{name_clinical_study = c("101",
+#'   "102", "103")} will become "clinical studies 101, 102, and 103."
 #' @param return_caption TRUE or FALSE (default) for whether to return any
 #'   caption text to use with the graph. This works best if you supply something
 #'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
@@ -591,12 +601,14 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # tictoc::tic(msg = "error catching: unique and droplevels")
    
-   # Ungrouping anything that came pre-grouped b/c it messes things up.
-   ct_dataframe <- ungroup(ct_dataframe)
+   # Ungrouping anything that came pre-grouped and also dropping levels not
+   # present b/c those two things complicate or just mess up a bunch of stuff
+   # for setting aesthetics.
+   ct_dataframe <- ungroup(ct_dataframe) %>% droplevels()
    
    if(assume_unique == FALSE){
       # Making sure the data.frame contains unique observations and no unnecessary levels.
-      ct_dataframe <- unique(ct_dataframe) %>% droplevels()
+      ct_dataframe <- unique(ct_dataframe)
    }
    
    # tictoc::toc(log = TRUE)
@@ -698,18 +710,26 @@ ct_plot_overlay <- function(ct_dataframe,
       )
    }
    
+   legend_position <- tolower(legend_position)[1]
+   if(complete.cases(legend_position) && 
+      legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
+      warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'right'."), 
+              call. = FALSE)
+      legend_position <- "right"
+   }
+   
    # If user wanted hline or vline added, check that they have specified
    # argument correctly and set up the character vector of preferences.
    HLineAES <- str_split(hline_style, pattern = " ")[[1]]
    if(length(HLineAES) < 2 & any(complete.cases(hline_position))){
-      warning(wrapn("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want."), 
+      warning(wrapn("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll set this to `red dotted` for now, but please check the help file to get what you want."), 
               call. = FALSE)
       HLineAES <- c("red", "dotted")
    }
    
    VLineAES <- str_split(vline_style, pattern = " ")[[1]]
    if(length(VLineAES) < 2 & any(complete.cases(vline_position))){
-      warning(wrapn("You requested that a vertical line be added to the graph, but you've supplied input that doesn't work for `vline_style`. We'll see this to `red dotted` for now, but please check the help file to get what you want."), 
+      warning(wrapn("You requested that a vertical line be added to the graph, but you've supplied input that doesn't work for `vline_style`. We'll set this to `red dotted` for now, but please check the help file to get what you want."), 
               call. = FALSE)
       VLineAES <- c("red", "dotted")
    }
@@ -777,6 +797,21 @@ ct_plot_overlay <- function(ct_dataframe,
          conc_units_to_use <- "ng/mL"
       }
    }
+   
+   if("logical" %in% class(floating_facet_scale)){
+      floating_facet_scale <- ifelse(is.na(floating_facet_scale), 
+                                     FALSE, floating_facet_scale)
+   } else if("character" %in% class(floating_facet_scale) &&
+             tolower(floating_facet_scale) %in% c("x", "y", "xy", "free x", 
+                                                  "free y")){
+      floating_facet_scale <- sub("free ", "", floating_facet_scale)
+      floating_facet_scale <- tolower(floating_facet_scale)
+   } else {
+      warning(wrapn("You have entered something other than one of the permissible values for the argument 'floating_facet_scale', so we will set it to the default of FALSE."), 
+              call. = FALSE)
+      floating_facet_scale <- FALSE
+   }
+   
    
    # tictoc::toc(log = TRUE)
    
@@ -1651,7 +1686,7 @@ ct_plot_overlay <- function(ct_dataframe,
                        time_range = time_range, 
                        t0 = "simulation start",
                        pad_x_axis = pad_x_axis,
-                       compoundToExtract = AnchorCompound, 
+                       MyCompoundID = AnchorCompound, 
                        EnzPlot = EnzPlot)
    
    xlab <- XStuff$xlab
@@ -1687,54 +1722,6 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    obs_dataframe <- obs_dataframe_temp
    rm(obs_dataframe_temp)
-   
-   # Setting up the y axis using the subfunction ct_y_axis
-   Ylim_data <- bind_rows(sim_dataframe, obs_dataframe) %>%
-      mutate(Time_orig = Time)
-   
-   if("SD_SE" %in% names(Ylim_data)){
-      Ylim_data <- Ylim_data %>% 
-         mutate(MaxConc = Conc + ifelse(complete.cases(SD_SE), SD_SE, 0), 
-                MinConc = Conc - ifelse(complete.cases(SD_SE), SD_SE, 0))
-      
-      Ylim_data <- bind_rows(Ylim_data, 
-                             data.frame(Conc = c(
-                                max(Ylim_data$MaxConc, na.rm = T), 
-                                min(Ylim_data$MinConc, na.rm = T))))
-   }
-   
-   YStuff <- ct_y_axis(ADAMorAdvBrain = any(ADAM, AdvBrainModel),
-                       Tissue_subtype = switch(as.character(EnzPlot), 
-                                               "TRUE" = NA, 
-                                               "FALSE" = unique(sim_dataframe$Tissue_subtype)), 
-                       prettify_compound_names = prettify_compound_names,
-                       EnzPlot = any(c(EnzPlot, DissolutionProfPlot, ReleaseProfPlot)), 
-                       time_range = time_range,
-                       time_range_relative = time_range_relative,
-                       Ylim_data = Ylim_data, 
-                       pad_y_axis = pad_y_axis,
-                       normalize_by_dose = normalize_by_dose, 
-                       y_axis_limits_lin = y_axis_limits_lin, 
-                       y_axis_limits_log = y_axis_limits_log, 
-                       y_axis_interval = y_axis_interval)
-   
-   if("Tissue_subtype" %in% names(sim_dataframe) && 
-      length(unique(sim_dataframe$Tissue_subtype)) > 1){
-      warning("You have more than one subtype of tissue in the column Tissue_subtype, which is fine but does make it challenging to come up with a universally workable y axis label. We'll supply a generic one, but we recommend setting it yourself with `y_axis_label`.\n", 
-              call. = FALSE)
-   }
-   
-   ObsConcUnits <- YStuff$ObsConcUnits
-   ylab <- YStuff$ylab
-   YLabels <- YStuff$YLabels
-   YLogLabels <- YStuff$YLogLabels
-   YBreaks <- YStuff$YBreaks
-   YLogBreaks <- YStuff$YLogBreaks
-   Ylim_log <- YStuff$Ylim_log
-   YmaxRnd <- YStuff$YmaxRnd
-   pad_y_num <- YStuff$pad_y_num
-   pad_y_axis <- YStuff$pad_y_axis
-   
    
    
    # Setting figure types and general aesthetics ------------------------------
@@ -1815,9 +1802,9 @@ ct_plot_overlay <- function(ct_dataframe,
    AesthetStuff <- set_aesthet(line_type = linetypes, 
                                figure_type = figure_type,
                                MyPerpetrator = MyPerpetrator, 
-                               compoundToExtract = switch(as.character(EnzPlot),
-                                                          "TRUE" = "substrate", 
-                                                          "FALSE" = unique(sim_dataframe$CompoundID)),
+                               MyCompoundID = switch(as.character(EnzPlot),
+                                                     "TRUE" = "substrate", 
+                                                     "FALSE" = unique(sim_dataframe$CompoundID)),
                                obs_shape = obs_shape, obs_color = obs_color,
                                obs_fill_trans = obs_fill_trans,
                                obs_line_trans = obs_line_trans,
@@ -1928,6 +1915,95 @@ ct_plot_overlay <- function(ct_dataframe,
                                      "colorBy_column", "FC1", "FC2")), 
                sep = " ", remove = FALSE)
    } 
+   
+   # Setting up the y axis using the subfunction ct_y_axis
+   Ylim_data <- bind_rows(
+      switch(figure_type, 
+             "percentiles" = sim_dataframe %>% 
+                filter(Trial %in% c(switch(mean_type, 
+                                           "arithmetic" = "mean", 
+                                           "geometric" = "geomean", 
+                                           "median" = "median"),
+                                    "per5", "per95")), 
+             
+             "trial means" = bind_rows(
+                sim_data_trial, 
+                sim_dataframe %>% 
+                   filter(Trial %in% c(switch(mean_type, 
+                                              "arithmetic" = "mean", 
+                                              "geometric" = "geomean", 
+                                              "median" = "median")))), 
+             
+             "percentile ribbon" = sim_dataframe %>% 
+                filter(Trial %in% c(switch(mean_type, 
+                                           "arithmetic" = "mean", 
+                                           "geometric" = "geomean", 
+                                           "median" = "median"),
+                                    "per5", "per95")), 
+             
+             "means only" = sim_dataframe %>% 
+                filter(Trial %in% c(switch(mean_type, 
+                                           "arithmetic" = "mean", 
+                                           "geometric" = "geomean", 
+                                           "median" = "median"))), 
+             
+             "Freddy" = bind_rows(
+                sim_data_trial, 
+                sim_dataframe %>% 
+                   filter(Trial %in% c(switch(mean_type, 
+                                              "arithmetic" = "mean", 
+                                              "geometric" = "geomean", 
+                                              "median" = "median"),
+                                       "per5", "per95")))
+             
+      ), 
+      
+      obs_dataframe) %>%
+      mutate(Time_orig = Time)
+   
+   if("SD_SE" %in% names(Ylim_data)){
+      Ylim_data <- Ylim_data %>% 
+         mutate(MaxConc = Conc + ifelse(complete.cases(SD_SE), SD_SE, 0), 
+                MinConc = Conc - ifelse(complete.cases(SD_SE), SD_SE, 0))
+      
+      Ylim_data <- bind_rows(Ylim_data, 
+                             data.frame(Conc = c(
+                                max(Ylim_data$MaxConc, na.rm = T), 
+                                min(Ylim_data$MinConc, na.rm = T))))
+   }
+   
+   YStuff <- ct_y_axis(ADAMorAdvBrain = any(ADAM, AdvBrainModel),
+                       Tissue_subtype = switch(as.character(EnzPlot), 
+                                               "TRUE" = NA, 
+                                               "FALSE" = unique(sim_dataframe$Tissue_subtype)), 
+                       prettify_compound_names = prettify_compound_names,
+                       EnzPlot = any(c(EnzPlot, DissolutionProfPlot, ReleaseProfPlot)), 
+                       time_range = time_range,
+                       time_range_relative = time_range_relative,
+                       Ylim_data = Ylim_data, 
+                       pad_y_axis = pad_y_axis,
+                       normalize_by_dose = normalize_by_dose, 
+                       y_axis_limits_lin = y_axis_limits_lin, 
+                       y_axis_limits_log = y_axis_limits_log, 
+                       y_axis_interval = y_axis_interval)
+   
+   if("Tissue_subtype" %in% names(sim_dataframe) && 
+      length(unique(sim_dataframe$Tissue_subtype)) > 1){
+      warning("You have more than one subtype of tissue in the column Tissue_subtype, which is fine but does make it challenging to come up with a universally workable y axis label. We'll supply a generic one, but we recommend setting it yourself with `y_axis_label`.\n", 
+              call. = FALSE)
+   }
+   
+   ObsConcUnits <- YStuff$ObsConcUnits
+   ylab <- YStuff$ylab
+   YLabels <- YStuff$YLabels
+   YLogLabels <- YStuff$YLogLabels
+   YBreaks <- YStuff$YBreaks
+   YLogBreaks <- YStuff$YLogBreaks
+   Ylim_log <- YStuff$Ylim_log
+   YmaxRnd <- YStuff$YmaxRnd
+   pad_y_num <- YStuff$pad_y_num
+   pad_y_axis <- YStuff$pad_y_axis
+   
    
    # tictoc::toc(log = TRUE)
    
@@ -2239,69 +2315,38 @@ ct_plot_overlay <- function(ct_dataframe,
       facet_nrow <- NA
    }
    
-   if(floating_facet_scale){
-      
-      strip.position <- ifelse(complete.cases(facet_ncol) && 
-                                  facet_ncol == 1 & is.na(facet_nrow), 
-                               "right", "top")
-      
-      A <- A + 
-         facet_wrap(vars(!!facet1_column, !!facet2_column), 
-                    scales = "free", 
-                    ncol = switch(as.character(is.na(facet_ncol)),
-                                  "TRUE" = NULL, 
-                                  "FALSE" = facet_ncol),
-                    nrow = switch(as.character(is.na(facet_nrow)),
-                                  "TRUE" = NULL, 
-                                  "FALSE" = facet_nrow), 
-                    strip.position = strip.position)
-      
-      if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
-         A <- A +
-            scale_y_continuous(expand = expansion(mult = pad_y_num),
-                               labels = scales::percent)
-      } else {
-         A <- A +
-            scale_y_continuous(expand = expansion(mult = pad_y_num))
-      }
-      
-      A <- A + scale_x_time(time_units = TimeUnits, 
-                            x_axis_interval = x_axis_interval, 
-                            pad_x_axis = pad_x_axis)
-      
-   } else if(complete.cases(facet_ncol) | complete.cases(facet_nrow)){
-      
-      suppressWarnings(
-         A <- A +
-            coord_cartesian(xlim = time_range_relative, 
-                            ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                            0, y_axis_limits_lin[1]),
-                                     YmaxRnd)) +
-            scale_x_time(time_units = TimeUnits, 
-                         x_axis_interval = x_axis_interval, 
-                         pad_x_axis = pad_x_axis) +
-            facet_wrap(switch(paste(AESCols["facet1"] == "<empty>",
-                                    AESCols["facet2"] == "<empty>"), 
-                              "TRUE FALSE" = vars(!!facet2_column),
-                              "FALSE TRUE" = vars(!!facet1_column),
-                              "FALSE FALSE" = vars(!!facet1_column, !!facet2_column)),
-                       ncol = switch(as.character(is.na(facet_ncol)), "TRUE" = NULL, "FALSE" = facet_ncol), 
-                       nrow = switch(as.character(is.na(facet_nrow)), "TRUE" = NULL, "FALSE" = facet_nrow))
-      )
-      
-      if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
-         A <- suppressWarnings(suppressMessages(
-            A + scale_y_continuous(labels = scales::percent,
-                                   expand = expansion(mult = pad_y_num)) 
-         ))
-      } else {
-         A <- suppressWarnings(suppressMessages(
-            A + scale_y_continuous(breaks = YBreaks, labels = YLabels,
-                                   expand = expansion(mult = pad_y_num)) 
-         ))
-      }
-      
-   } else {
+   # Options here (and some of this is just notes to myself to keep things clear
+   # in my head):
+   FacetOptions <-
+      expand_grid(facet_ncol_or_facet_nrow = c("specified", "not specified"), 
+                  # facet1_column = c("specified", "not specified"), 
+                  # facet2_column = c("specified", "not specified"), 
+                  floating_facet_scale = c(as.character(c(TRUE, FALSE)), 
+                                           "x", "y", "xy")) %>% 
+      mutate(WrapOrGrid = case_when(facet_ncol_or_facet_nrow == "specified" ~ "facet_wrap", 
+                                    facet_ncol_or_facet_nrow == "not specified" & 
+                                       floating_facet_scale == "TRUE" ~ "facet_wrap", 
+                                    facet_ncol_or_facet_nrow == "not specified" & 
+                                       floating_facet_scale != "TRUE" ~ "facet_grid"), 
+             Scales = case_match(floating_facet_scale, 
+                                 "FALSE" ~ "fixed", 
+                                 "TRUE" ~ "free", 
+                                 "x" ~ "free_x", 
+                                 "y" ~ "free_y", 
+                                 "xy" ~ "free"), 
+             ID = paste(facet_ncol_or_facet_nrow, 
+                        floating_facet_scale)) %>% 
+      # The above are the options. Now, figuring out which applies to current
+      # scenario.
+      mutate(facet_ncol_or_facet_nrow_used =
+                ifelse(any(complete.cases(c({{facet_ncol}}, {{facet_nrow}}))),
+                       "specified", "not specified"),
+             floating_facet_scale_used = {{floating_facet_scale}}) %>%
+      filter(facet_ncol_or_facet_nrow == facet_ncol_or_facet_nrow_used & 
+                floating_facet_scale == floating_facet_scale_used)
+   
+   if(FacetOptions$WrapOrGrid == "facet_grid"){
+      # This is when we want facet_grid. 
       
       # Setting up theme for facet titles
       FacetTitleTheme_XY <- ggh4x::strip_nested(
@@ -2335,53 +2380,102 @@ ct_plot_overlay <- function(ct_dataframe,
                                         size = calc_element("strip.text.x", theme_consultancy())$size), 
          by_layer_y = TRUE)
       
+      A <- A + 
+         switch(
+            FacetOpts, 
+            "ggplot2 facets" = facet_grid(rows = vars(!!facet1_column), 
+                                          cols = vars(!!facet2_column), 
+                                          scales = FacetOptions$Scales), 
+            
+            "FC1PlusTitle FC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ FC2, 
+                                                     strip = FacetTitleTheme_Y, 
+                                                     scales = FacetOptions$Scales), 
+            
+            "FC1PlusTitle NoFC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ ., 
+                                                       strip = FacetTitleTheme_Y, 
+                                                       scales = FacetOptions$Scales), 
+            
+            "FC1 FC2PlusTitle" = ggh4x::facet_nested(FC1 ~ Facet2Title + FC2, 
+                                                     strip = FacetTitleTheme_X, 
+                                                     scales = FacetOptions$Scales), 
+            
+            "FC1PlusTitle FC2PlusTitle" = ggh4x::facet_nested(Facet1Title + FC1 ~ Facet2Title + FC2, 
+                                                              strip = FacetTitleTheme_XY, 
+                                                              scales = FacetOptions$Scales), 
+            
+            "NoFC1 FC2PlusTitle" = ggh4x::facet_nested(. ~ Facet2Title + FC2, 
+                                                       strip = FacetTitleTheme_X, 
+                                                       scales = FacetOptions$Scales))
       
-      A <- A + coord_cartesian(xlim = time_range_relative, 
-                               ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                               0, y_axis_limits_lin[1]),
-                                        YmaxRnd)) +
+   } else {
+      # This is when we want facet_wrap
+      strip.position <- ifelse(complete.cases(facet_ncol) && 
+                                  facet_ncol == 1 & is.na(facet_nrow), 
+                               "right", "top")
+      
+      A <- A + 
+         facet_wrap(vars(!!facet1_column, !!facet2_column), 
+                    scales = FacetOptions$Scales, 
+                    ncol = switch(as.character(is.na(facet_ncol)),
+                                  "TRUE" = NULL, 
+                                  "FALSE" = facet_ncol),
+                    nrow = switch(as.character(is.na(facet_nrow)),
+                                  "TRUE" = NULL, 
+                                  "FALSE" = facet_nrow), 
+                    strip.position = strip.position)
+      
+   } 
+   
+   # Setting axis limits and breaks
+   if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
+      A <- suppressWarnings(suppressMessages(
+         A + scale_y_continuous(labels = scales::label_percent(big.mark = ","),
+                                breaks = switch(FacetOptions$Scales, 
+                                                "free" = waiver(), 
+                                                "fixed" = YBreaks, 
+                                                "free_x" = YBreaks, 
+                                                "free_y" = waiver()), 
+                                expand = expansion(mult = pad_y_num))
+      ))
+   } else {
+      A <- suppressWarnings(suppressMessages(
+         A + scale_y_continuous(breaks = switch(FacetOptions$Scales, 
+                                                "free" = waiver(), 
+                                                "fixed" = YBreaks, 
+                                                "free_x" = YBreaks, 
+                                                "free_y" = waiver()), 
+                                labels = switch(FacetOptions$Scales, 
+                                                "free" = waiver(), 
+                                                "fixed" = YLabels, 
+                                                "free_x" = YLabels, 
+                                                "free_y" = waiver()), 
+                                expand = expansion(mult = pad_y_num))
+      ))
+   }
+   
+   if(FacetOptions$Scales == "free_y"){
+      A <- A + coord_cartesian(xlim = time_range_relative) +
          scale_x_time(time_units = TimeUnits, 
                       time_range = time_range_relative,
                       x_axis_interval = x_axis_interval, 
-                      pad_x_axis = pad_x_axis) +
-         switch(FacetOpts, 
-                "ggplot2 facets" = facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)), 
-                "FC1PlusTitle FC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ FC2, 
-                                                         strip = FacetTitleTheme_Y), 
-                "FC1PlusTitle NoFC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ ., 
-                                                           strip = FacetTitleTheme_Y), 
-                "FC1 FC2PlusTitle" = ggh4x::facet_nested(FC1 ~ Facet2Title + FC2, 
-                                                         strip = FacetTitleTheme_X), 
-                "FC1PlusTitle FC2PlusTitle" = ggh4x::facet_nested(Facet1Title + FC1 ~ Facet2Title + FC2, 
-                                                                  strip = FacetTitleTheme_XY), 
-                "NoFC1 FC2PlusTitle" = ggh4x::facet_nested(. ~ Facet2Title + FC2, 
-                                                           strip = FacetTitleTheme_X))
+                      pad_x_axis = pad_x_axis)
       
-      # A <- A +
-      #    coord_cartesian(xlim = time_range_relative, 
-      #                    ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-      #                                    0, y_axis_limits_lin[1]),
-      #                             YmaxRnd)) +
-      #    scale_x_time(time_units = TimeUnits, 
-      #                 time_range = time_range_relative,
-      #                 x_axis_interval = x_axis_interval, 
-      #                 pad_x_axis = pad_x_axis) +
-      #    facet_grid(rows = vars(!!facet1_column), cols = vars(!!facet2_column)) 
-      
-      if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
-         A <- suppressWarnings(suppressMessages(
-            A + scale_y_continuous(labels = scales::label_percent(big.mark = ","),
-                                   breaks = YBreaks,
-                                   expand = expansion(mult = pad_y_num))
-         ))
-      } else {
-         A <- suppressWarnings(suppressMessages(
-            A + scale_y_continuous(breaks = YBreaks,
-                                   labels = YLabels,
-                                   expand = expansion(mult = pad_y_num))
-         ))
-      }
+   } else if(FacetOptions$Scales == "free_x"){
+      A <- A + coord_cartesian(ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                               0, y_axis_limits_lin[1]),
+                                        YmaxRnd))
+   } else if(FacetOptions$Scales == "fixed"){
+      A <- A + coord_cartesian(ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                               0, y_axis_limits_lin[1]),
+                                        YmaxRnd), 
+                               xlim = time_range_relative) +
+         scale_x_time(time_units = TimeUnits, 
+                      time_range = time_range_relative,
+                      x_axis_interval = x_axis_interval, 
+                      pad_x_axis = pad_x_axis)
    }
+   # NB: If FacetOptions$Scales == "free", then we can't set any axis limits
+   # or intervals b/c they will vary as needed for all facets.
    
    # Adding spacing between facets if requested 
    if(complete.cases(facet_spacing)){
@@ -2415,94 +2509,31 @@ ct_plot_overlay <- function(ct_dataframe,
          
       }
       
-      # # If there's only one unique value in the colorBy_column, then make that
-      # # item black.
-      # if(length(sort(unique(c(sim_dataframe$colorBy_column, 
-      #                         obs_dataframe$colorBy_column)))) == 1){
-      #    A <- A + scale_color_manual(values = "black") +
-      #       scale_fill_manual(values = "black")
-      # } else {
-      
-      # This is when the user wants specific user-specified colors rather
-      # that one of the pre-made sets.
-      if(length(color_set) > 1){
-         
-         # If they supply a named character vector whose values are not
-         # present in the data, convert it to an unnamed character vector.
-         if(is.null(names(color_set)) == FALSE && 
-            all(unique(sim_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
+      # If they supply a named character vector whose values are not
+      # present in the data, convert it to an unnamed character vector.
+      if(is.null(names(color_set)) == FALSE){
+         if(all(unique(sim_dataframe$colorBy_column) %in%
+                names(color_set) == FALSE)){
             warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
                            as_label(colorBy_column),
                            " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
                            as_label(colorBy_column), ".\n"), 
                     call. = FALSE)
             
-            MyColors <- as.character(color_set)
-         } else if(length(color_set) < NumColorsNeeded){
-            warning(paste("There are", NumColorsNeeded,
-                          "unique values in the column you have specified for the colors, but you have only specified", 
-                          length(color_set), 
-                          "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph.\n"), 
-                    call. = FALSE)
-            
-            MyColors <- rep(color_set, 100)[1:NumColorsNeeded]
+            color_set <- as.character(color_set)
+            MyColNames <- NA
          } else {
-            MyColors <- color_set
+            MyColNames <- names(color_set)
          }
-         
-         # FIXME - Add a check here that the colors supplied are all actually colors.
-         
       } else {
-         
-         # NOTE: For no reason I can discern, if the user has observed
-         # data that should be all one color but then uses scale_color_X
-         # where x is anything except "manual", the observed points
-         # DISAPPEAR. That's why, below, whenever it's scale_color_x, I'm
-         # setting the colors needed and then using scale_color_manual
-         # instead of scale_color_x. -LSh
-         
-         color_set <- ifelse(str_detect(tolower(color_set), 
-                                        "default|brewer.*2|set.*2"), 
-                             "set2", color_set)
-         color_set <- ifelse(str_detect(tolower(color_set),
-                                        "brewer.*1|set.*1"), 
-                             "set1", color_set)
-         
-         if(tryCatch(is.matrix(col2rgb(color_set)), error = function(x) FALSE)){
-            MyColors <- color_set
-         } else {
-            
-            suppressWarnings(
-               MyColors <- 
-                  switch(
-                     color_set,
-                     # Using "Dark2" b/c "Set2" is just really,
-                     # really light.
-                     "set2" = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")[
-                        1:NumColorsNeeded], 
-                     "blue-green" = blueGreens(NumColorsNeeded),
-                     "blues" = blues(NumColorsNeeded),
-                     "greens" = chartreuse(NumColorsNeeded, shade = "darker"), 
-                     "purples" = purples(NumColorsNeeded, shade = "darker"), 
-                     "rainbow" = rainbow(NumColorsNeeded),
-                     "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
-                        1:NumColorsNeeded],
-                     "Tableau" = ggthemes::tableau_color_pal(
-                        palette = "Tableau 10")(NumColorsNeeded),
-                     "viridis" = viridis::viridis_pal()(NumColorsNeeded))
-            )
-            # NB: For the RColorBrewer palettes, the minimum number of
-            # colors you can get is 3. Since sometimes we might only want 1
-            # or 2 colors, though, we have to add the [1:NumColorsNeeded]
-            # bit.
-            
-            if(any(is.na(MyColors))){
-               warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.\n", 
-                       call. = FALSE)
-               
-               MyColors <- rainbow(NumColorsNeeded)
-            }
-         }
+         MyColNames <- NA
+      }
+      
+      MyColors <- make_color_set(color_set = color_set, 
+                                 num_colors = NumColorsNeeded)
+      
+      if(any(complete.cases(MyColNames))){
+         names(MyColors) <- MyColNames
       }
       
       if(MapObsFile_color){
@@ -2533,7 +2564,6 @@ ct_plot_overlay <- function(ct_dataframe,
          A <-  A + scale_color_manual(values = MyColors, drop = FALSE) +
             scale_fill_manual(values = MyColors, drop = FALSE)
       )
-      # }
    }
    
    # Specifying linetypes
@@ -2705,8 +2735,12 @@ ct_plot_overlay <- function(ct_dataframe,
             switch(as.character(floating_facet_scale), 
                    "TRUE" = coord_cartesian(ylim = Ylim_log), 
                    "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                             xlim = time_range_relative))
+                                             xlim = time_range_relative), 
+                   "x" = coord_cartesian(ylim = Ylim_log), 
+                   "y" = coord_cartesian(ylim = Ylim_log, 
+                                         xlim = time_range_relative))
       ))
+      
    } else {
       B <- suppressMessages(suppressWarnings(
          A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
@@ -2714,7 +2748,10 @@ ct_plot_overlay <- function(ct_dataframe,
             switch(as.character(floating_facet_scale), 
                    "TRUE" = coord_cartesian(ylim = Ylim_log), 
                    "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                             xlim = time_range_relative))
+                                             xlim = time_range_relative), 
+                   "x" = coord_cartesian(ylim = Ylim_log), 
+                   "y" = coord_cartesian(ylim = Ylim_log, 
+                                         xlim = time_range_relative))
       ))
    }
    
@@ -2831,6 +2868,13 @@ ct_plot_overlay <- function(ct_dataframe,
          PrettyCmpds <- as.character(PrettyCmpds1$Compound)
          names(PrettyCmpds) <- as.character(PrettyCmpds1$CompoundID)
       }
+   }
+   
+   if("logical" %in% class(existing_exp_details) == FALSE){
+      existing_exp_details <- harmonize_details(existing_exp_details)
+      existing_exp_details <- filter_sims(existing_exp_details,
+                                          which_sims = unique(ct_dataframe$File),
+                                          include_or_omit = "include")
    }
    
    FigText <- make_ct_caption(ct_dataframe = ct_dataframe, 

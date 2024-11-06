@@ -22,9 +22,10 @@ pk_table(
   includeTrialMeans = FALSE,
   concatVariability = TRUE,
   variability_format = "to",
-  convert_conc_units = NA,
+  conc_units = NA,
   include_dose_num = NA,
   PKorder = "default",
+  file_order = "as is",
   add_header_for_DDI = TRUE,
   rounding = NA,
   prettify_columns = TRUE,
@@ -36,12 +37,14 @@ pk_table(
   highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
-  single_table = FALSE,
+  shading_column,
+  single_table = TRUE,
   page_orientation = "portrait",
   fontsize = 11,
   return_PK_pulled = FALSE,
   return_caption = FALSE,
-  ...
+  ...,
+  convert_conc_units = NA
 )
 }
 \arguments{
@@ -222,15 +225,17 @@ an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
 ambiguity; this was written by an American who didn't originally realize
 that there was another name for parentheses.)}
 
-\item{convert_conc_units}{Would you like to convert the units to something
-other than what was used in the simulation? Default is NA to leave the
-units as is, but if you set the concentration units to something else, this
-will attempt to convert the units to match that. This only adjusts only the
-simulated values, since we're assuming that that's the most likely problem
-and that observed units are relatively easy to fix, and it also only
-affects AUC and Cmax values. Acceptable input is any concentration unit
-listed in the Excel form for PE data entry, e.g. \code{convert_conc_units =
-"ng/mL"} or \code{convert_conc_units = "uM"}. Molar concentrations will be
+\item{conc_units}{What concentration units should be used in the
+table? Default is NA to leave the units as is, but if you set the
+concentration units to something else, this will attempt to convert the
+units to match that. This only adjusts only the simulated values, since
+we're assuming that that's the most likely problem and that observed units
+are relatively easy to fix, and it also only affects AUC and Cmax values.
+If you leave this as NA, the units in the 1st simulation will be used as
+the units for \emph{all} the simulations for consistency and clarity.
+Acceptable input is any concentration unit
+listed in the Excel form for PE data entry, e.g. \code{conc_units =
+"ng/mL"} or \code{conc_units = "uM"}. Molar concentrations will be
 automatically converted using the molecular weight of whatever you set for
 \code{compoundToExtract}.}
 
@@ -247,6 +252,10 @@ the default behavior and get exactly what you want.}
 specified in the Consultancy Report Template (default), or would you like
 the order to match the order you specified with the argument
 \code{PKparameters}? Options are "default" or "user specified".}
+
+\item{file_order}{order of the simulations in the output table, default is to
+leave the order "as is", in which case the order will be whatever is
+specified with \code{sim_data_files}.}
 
 \item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
 header row to the top of your table denoting when the PK are for baseline,
@@ -290,11 +299,14 @@ if you're including perpetrator metabolites: \code{prettify_compound_names =
 c("perpetrator" = "teeswiftavir and 1-OH-teeswiftavir", "substrate" =
 "superstatin")}.}
 
-\item{name_clinical_study}{optionally specify the name of the clinical study
-for any observed data. This only affects the caption of the graph. For
-example, specifying \code{name_clinical_study = "101, fed cohort"} will
-result in a figure caption that reads in part "clinical study 101, fed
-cohort".}
+\item{name_clinical_study}{optionally specify the name(s) of the clinical
+study or studies for any observed data. This only affects the caption of
+the graph. For example, specifying \code{name_clinical_study = "101, fed
+cohort"} will result in a figure caption that reads in part "clinical study
+101, fed cohort". If you have more than one study, that's fine; we'll take
+care of stringing them together appropriately. Just list them as a
+character vector, e.g., \code{name_clinical_study = c("101",
+"102", "103")} will become "clinical studies 101, 102, and 103."}
 
 \item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
 the same time. This only applies when the compound to extract is the
@@ -368,6 +380,17 @@ c("green", "red")}. This only applies when you save the table as a Word file.}
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
 
+\item{shading_column}{If you would like to alternate the shading of the rows
+in the output table, supply here the unquoted name of the column to check
+for when to change the shading; every time that column's value changes, the
+shading will alternate between white and light gray. By default, we will
+alternate the shading based on the simulation file name. Setting this
+argument can be a little bit tricky because we'll be looking for a column
+that's present in the \emph{output} from this function, something you might
+not know until you run it. If you specify something and the shading doesn't
+show up as expected, double check what the final output column names are
+and make sure you're using one of those.}
+
 \item{single_table}{TRUE (default) or FALSE for whether to save all the PK
 data in a single table or break the data up by tissue, compound ID, and
 file into multiple tables. This only applies to the Word output.}
@@ -390,6 +413,9 @@ FALSE}, this will not return anything at this point. We may add that later,
 but at present, this is not set up to return multiple table captions.}
 
 \item{...}{used under-the-hood to check for mis-specified arguments}
+
+\item{convert_conc_units}{SOON TO BE DEPRECATED. Please use the argument
+"conc_units" instead.}
 }
 \value{
 a data.frame

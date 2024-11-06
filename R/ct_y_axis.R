@@ -208,6 +208,9 @@ ct_y_axis <- function(ADAMorAdvBrain,
       # limit for the y axis to be 0 rather than 100 in the case of induction.
       # Setting that here, but user can override w/y_axis_limits_lin argument.
       Ylim[1] <- 0
+   } else if(all(is.na(y_axis_limits_lin))){
+      # Lower limit is 0 by default. 
+      Ylim[1] <- 0
    }
    
    # Some users are sometimes getting Inf for possible upper limit of data,
@@ -314,9 +317,10 @@ ct_y_axis <- function(ADAMorAdvBrain,
       near_match <- function(x, t) {x[which.min(abs(t - x))]} # LS to HB: Clever solution to this problem! :-)
       
       Ylim_log[1] <- Ylim_data %>% 
-         filter(Conc >= 0) %>%  # Not allowing BLQ values that were set below 0.
+         filter(Conc > 0) %>%  # Not allowing BLQ values that were set below 0.
          filter(complete.cases(Conc)) %>% 
-         mutate(TimeMatch = Time == near_match(Time, time_range_relative[2])) %>%
+         mutate(TimeMatch = Time >= near_match(Time, time_range_relative[1]) &
+                   Time <= near_match(Time, time_range_relative[2])) %>%
          filter(TimeMatch == TRUE) %>% 
          pull(Conc) %>% min()
       

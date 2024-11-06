@@ -99,6 +99,9 @@ if(any(str_detect(CheckDoseInt$message, "mismatch")) &
 
 ```{r makeTablePKSummaryOutput}
 
+# Setting things up for nonstandard evaluation 
+shading_column <- rlang::enquo(shading_column)
+
 if("File" %in% names(MyPKResults)){
    MyPKResults <- MyPKResults %>% 
       relocate(File, .after = last_col())
@@ -139,15 +142,32 @@ if(single_table){
       names(MyPKResults) <- sub("Dose 1 |Last dose |_dose1|_last", "", names(MyPKResults))
    }
    
-   formatTable_Simcyp(MyPKResults,
-                      shading_column = File, 
-                      merge_shaded_cells = TRUE, 
-                      fontsize = fontsize,
-                      prettify_columns = prettify_columns, 
-                      add_header_for_DDI = add_header_for_DDI, 
-                      highlight_gmr_colors = highlight_gmr_colors, 
-                      highlight_so_cutoffs = highlight_so_cutoffs, 
-                      highlight_so_colors = highlight_so_colors)
+   if(as_label(shading_column) == "<empty>"){
+      
+      formatTable_Simcyp(MyPKResults,
+                         shading_column = File, 
+                         merge_shaded_cells = TRUE, 
+                         fontsize = fontsize,
+                         prettify_columns = prettify_columns, 
+                         add_header_for_DDI = add_header_for_DDI, 
+                         highlight_gmr_colors = highlight_gmr_colors, 
+                         highlight_so_cutoffs = highlight_so_cutoffs, 
+                         highlight_so_colors = highlight_so_colors)
+      
+   } else {
+      
+      formatTable_Simcyp(MyPKResults,
+                         shading_column = !!shading_column, 
+                         merge_shaded_cells = TRUE, 
+                         fontsize = fontsize,
+                         prettify_columns = prettify_columns, 
+                         add_header_for_DDI = add_header_for_DDI, 
+                         highlight_gmr_colors = highlight_gmr_colors, 
+                         highlight_so_cutoffs = highlight_so_cutoffs, 
+                         highlight_so_colors = highlight_so_colors)
+      
+   }
+   
 }
 
 
@@ -223,23 +243,7 @@ if(any(complete.cases(highlight_gmr_colors))){
 
 if(any(complete.cases(highlight_gmr_colors))){
    
-   highlight_gmr_colors_v <- set_boundary_colors(color_set = highlight_gmr_colors, 
-                                                 boundaries = c(1, 1.25, 2, 5), 
-                                                 break_type = "GMR")
-   
-   tibble(`Interaction level` = names(highlight_gmr_colors_v)) %>% 
-      flextable::flextable() %>% 
-      flextable::bold(part = "header") %>% 
-      flextable::bg(i = 1, 
-                    bg = highlight_gmr_colors_v["negligible"]) %>% 
-      flextable::bg(i = 2, 
-                    bg = highlight_gmr_colors_v["weak"]) %>% 
-      flextable::bg(i = 3, 
-                    bg = highlight_gmr_colors_v["moderate"]) %>% 
-      flextable::bg(i = 4, 
-                    bg = highlight_gmr_colors_v["strong"]) %>% 
-      flextable::width(width = 1.5) %>% 
-      flextable::align(align = "center", part = "all")
+   make_gmr_highlight_key(highlight_gmr_colors = highlight_gmr_colors)
    
 } 
 
@@ -262,40 +266,8 @@ if(any(complete.cases(highlight_so_cutoffs))){
 
 if(any(complete.cases(highlight_so_cutoffs))){
    
-   highlight_so_colors <- set_boundary_colors(color_set = highlight_so_colors, 
-                                              boundaries = highlight_so_cutoffs, 
-                                              break_type = "SO")
-   
-   SOkey <- data.frame(UpperA = highlight_so_cutoffs[1:(length(highlight_so_cutoffs)-1)], 
-                       UpperB = highlight_so_cutoffs[2:(length(highlight_so_cutoffs))], 
-                       LowerA = 1/highlight_so_cutoffs[2:(length(highlight_so_cutoffs))], 
-                       LowerB = 1/highlight_so_cutoffs[1:(length(highlight_so_cutoffs)-1)]) %>% 
-      bind_rows(data.frame(UpperA = NA, 
-                           UpperB = highlight_so_cutoffs[length(highlight_so_cutoffs)], 
-                           LowerA = NA, 
-                           LowerB = 1/highlight_so_cutoffs[length(highlight_so_cutoffs)])) %>% 
-      mutate(across(.fns = round_consultancy), 
-             Text = paste(LowerA, "to", LowerB, "fold or", UpperA, "to", UpperB, "fold"))
-   
-   SOkey$Text[1] <- paste(SOkey$LowerA[1], "to", SOkey$UpperB[1], "fold")
-   SOkey$Text[nrow(SOkey)] <- paste("<", SOkey$LowerB[nrow(SOkey)], 
-                                    "fold or >", SOkey$UpperB[nrow(SOkey)], "fold")
-   
-   SOkey <- SOkey %>% select(Text) %>% 
-      rename(`S/O cutoff` = Text) %>% 
-      flextable::flextable() %>% 
-      flextable::bold(part = "header") %>% 
-      flextable::width(width = 3.5) %>% 
-      flextable::align(align = "center", part = "all")
-   
-   for(i in 1:length(highlight_so_cutoffs)){
-      SOkey <- SOkey %>% 
-         flextable::bg(i = i, 
-                       bg = highlight_so_colors[i])
-   }
-   
-   SOkey 
-   
+   make_so_highlight_key(highlight_so_cutoffs = highlight_so_cutoffs, 
+                         highlight_so_colors = highlight_so_colors)
    
 } 
 

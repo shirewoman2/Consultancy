@@ -144,25 +144,22 @@ MakeBold <- which(AllFits$DonorID == "mean")
 MakeBold <- as.list(MakeBold) %>% map(.f = \(x) c(x, NA))
 MakeBold[[length(MakeBold) + 1]] <- c(0, NA)
 
-if(model == "all"){
-   AllFits <- AllFits %>% 
-      formatTable_Simcyp(shading_column = Model, 
-                         bold_cells = MakeBold, 
-                         center_1st_column = TRUE) 
-} else {
-   AllFits <- AllFits %>% 
-      formatTable_Simcyp(bold_cells = list(c(0, NA)), 
-                         center_1st_column = TRUE) 
-}
+AllFits <- AllFits %>% 
+   formatTable_Simcyp(shading_column = Model, 
+                      merge_shaded_cells = TRUE, 
+                      bold_cells = MakeBold, 
+                      center_1st_column = TRUE) 
 
-if(fitByDonor){
-   AllFits <- AllFits %>% 
-      flextable::bold(i = which(AllFits$DonorID == "mean"))
-} 
+# if(fitByDonor){
+#    AllFits <- AllFits %>% 
+#       flextable::bold(i = which(AllFits$DonorID == "mean"))
+# } 
+# 
+# AllFits %>%
+#    flextable::merge_v(j = 1) %>% 
+#    flextable::hline_bottom(border = officer::fp_border(width = 0.5))
 
-AllFits %>%
-   flextable::merge_v(j = 1) %>% 
-   flextable::hline_bottom(border = officer::fp_border(width = 0.5))
+AllFits
 
 ```
 

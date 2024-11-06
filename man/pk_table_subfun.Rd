@@ -8,7 +8,7 @@ pk_table_subfun(
   sim_data_file,
   PKparameters,
   existing_exp_details,
-  convert_conc_units,
+  conc_units,
   MeanType,
   GMR_mean_type,
   includeTrialMeans,
@@ -22,7 +22,7 @@ pk_table_subfun(
 
 \item{existing_exp_details}{harmonized existing_exp_details}
 
-\item{convert_conc_units}{how to convert conc units, if desired}
+\item{conc_units}{how to convert conc units, if desired}
 
 \item{MeanType}{main mean type}
 

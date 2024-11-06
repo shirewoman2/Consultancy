@@ -42,6 +42,7 @@ forest_plot(
   vline_at_1 = "gray dashed",
   dose_units = "mg",
   save_graph = NA,
+  return_caption = FALSE,
   fig_height = 6,
   fig_width = 5,
   prettify_compound_names = NA
@@ -371,9 +372,10 @@ prettify if you supply a column name for \code{y_axis_labels} and we
 *won't* prettify if you supply a named character vector there.}
 
 \item{PK_labels}{optionally specify what you would like to have appear on the
-y axis for labels for each PK parameter with a named vector of expressions,
-e.g., \code{PK_labels = c("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
-"Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}.
+y axis for labels for each PK parameter with a named list of expressions,
+e.g., \code{PK_labels = list("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
+"Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}. Please 
+particularly note that it must be a \strong{list} rather than a vector. 
 To see examples of PK parameters set up as expressions for use in graph
 labels, try running \code{PKexpressions}.}
 
@@ -426,6 +428,10 @@ saved as that file format. Acceptable graphical file extensions are "eps",
 "ps", "jpeg", "jpg", "tiff", "png", "bmp", or "svg". Do not include any
 slashes, dollar signs, or periods in the file name. Leaving this as NA
 means the file will not be saved to disk.}
+
+\item{return_caption}{TRUE or FALSE (default) for whether to return any
+caption text to use with the graph. If set to TRUE, you'll get as output a
+list of the graph, the figure heading, and the figure caption.}
 
 \item{fig_height}{figure height in inches; default is 6}
 

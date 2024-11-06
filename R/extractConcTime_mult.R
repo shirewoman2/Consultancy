@@ -501,63 +501,91 @@ extractConcTime_mult <- function(sim_data_files = NA,
          
          existing_exp_details <- harmonize_details(existing_exp_details)
          
-         if(all(sim_data_files %in% existing_exp_details$MainDetails$File) == FALSE){
-            existing_exp_details <- extractExpDetails_mult(sim_data_files = sim_data_files, 
-                                                           existing_exp_details = existing_exp_details,
-                                                           exp_details = "Summary and Input")
+         if(all(sim_data_files %in% 
+                existing_exp_details$MainDetails$File) == FALSE){
+            existing_exp_details <- extractExpDetails_mult(
+               sim_data_files = sim_data_files, 
+               existing_exp_details = existing_exp_details,
+               exp_details = "Summary and Input")
          }
          
-         if("ObsOverlayFile" %in% names(existing_exp_details$MainDetails) == FALSE){
-            warning("The observed data overlay file was not included in `existing_exp_details`, so we don't know which observed data files to use for the simulated files. We cannot extract any observed data.\n", 
+         if("ObsOverlayFile" %in% 
+            names(existing_exp_details$MainDetails) == FALSE){
+            
+            warning(wrapn("The observed data overlay file was not included in 'existing_exp_details', so we don't know which observed data files to use for the simulated files. We cannot extract any observed data."), 
                     call. = FALSE)
             ObsAssign <- data.frame()
             obs_to_sim_assignment <- NA
+            
          } else {
             
-            # Make this work for whoever the current user is, even if the XML
-            # obs file path was for someone else.
-            existing_exp_details$MainDetails$ObsOverlayFile <- 
-               sub("Users\\\\.*\\?", 
-                   paste0("Users\\\\", Sys.info()["user"], "\\\\"), 
-                   existing_exp_details$MainDetails$ObsOverlayFile)
+            # Make this work for whoever the current user is, even if the XML obs file
+            # path was for someone else. This will normalize paths ONLY when the full
+            # path is present and starts w/"Users". Otherwise, keeping the original input
+            # just b/c I don't want to change the input from basename to full path
+            # unexpectedly.
+            existing_exp_details$MainDetails$ObsOverlayFile[
+               str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users")] <- 
+               normalizePath(existing_exp_details$MainDetails$ObsOverlayFile[
+                  str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users")], 
+                  winslash = "/", mustWork = FALSE)
+            
+            existing_exp_details$MainDetails$ObsOverlayFile <-
+               str_replace(existing_exp_details$MainDetails$ObsOverlayFile, 
+                           "Users/(?<=\\/)[^\\/]+(?=\\/)", 
+                           paste0("Users/", Sys.info()["user"]))
             
             ObsAssign <- existing_exp_details$MainDetails %>% 
                select(File, ObsOverlayFile) %>% 
                rename(ObsFile = ObsOverlayFile) %>% 
-               mutate(ObsFile = sub("\\.xml$", ".xlsx", ObsFile), 
-                      ObsFile = gsub("\\\\", "/", ObsFile), 
+               mutate(ObsFile = gsub("\\\\", "/", ObsFile), 
                       ObsFile = sub("Users/.*/Certara", 
                                     paste0("Users/", Sys.info()["user"], 
-                                           "/Certara"), ObsFile))
+                                           "/Certara"), ObsFile), 
+                      # Checking that the file exists.
+                      Exists = file.exists(ObsFile), 
+                      ObsFile_xlsx = sub("\\.xml$", ".xlsx", ObsFile), 
+                      ObsFile_xml = sub("\\.xlsx$", ".xml", ObsFile), 
+                      Exists_xlsx = file.exists(ObsFile_xlsx), 
+                      Exists_xml = file.exists(ObsFile_xml), 
+                      ObsFileToUse = case_when(
+                         Exists_xlsx ~ ObsFile_xlsx, 
+                         Exists_xml ~ ObsFile_xml, 
+                         Exists ~ ObsFile))
             
-            if(nrow(ObsAssign %>% filter(complete.cases(ObsFile) & 
-                                         File %in% sim_data_files_topull)) == 0){
+            # To get data from the xml file, we need to have the Simcyp package
+            # installed and it has to be a version of Simcyp that has the
+            # ReadPEData function, which was added around V22 or maybe V23. I
+            # can't seem to incorporate this into the case_when evaluation, so
+            # doing this separately.
+            if(length(find.package("Simcyp", quiet = TRUE)) > 0 &&
+               "ReadPEData" %in% getNamespaceExports("Simcyp") == FALSE){
+               ObsAssign$Exists_xml <- FALSE
+            } 
+            
+            if(any(is.na(ObsAssign$ObsFileToUse))){
+               warning(wrapn(paste0(
+                  "The file(s) ", str_comma(
+                     paste0("'", unique(ObsAssign$ObsFile[
+                        which(is.na(ObsAssign$ObsFileToUse))]), "'")), 
+                  " is/are not present and will be skipped.")), 
+                  call. = FALSE)
+            }
+            
+            # Now that we've figured out whether to use the xlsx or
+            # xml version, set the correct one for ObsFile. 
+            ObsAssign <- ObsAssign %>% 
+               mutate(ObsFile = ObsFileToUse) %>% 
+               filter(complete.cases(ObsFileToUse) &
+                         File %in% sim_data_files_topull)
+            
+            # Checking whether we can find any obs files 
+            if(nrow(ObsAssign) == 0){
+               warning(wrapn("We couldn't find any of your observed data files."), 
+                       call. = FALSE)
                ObsAssign <- data.frame()
                obs_to_sim_assignment <- NA
-            } else {
-               if(any(file.exists(ObsAssign$ObsFile[
-                  complete.cases(ObsAssign$ObsFile) &
-                  ObsAssign$File %in% sim_data_files_topull]) == FALSE)){
-                  warning(paste0("We couldn't find the following observed data Excel files and thus cannot extract their data:\n", 
-                                 str_c(ObsAssign$ObsFile[
-                                    which(
-                                       file.exists(ObsAssign$ObsFile[
-                                          complete.cases(ObsAssign$ObsFile) &
-                                             ObsAssign$File %in% sim_data_files_topull]) == FALSE)], 
-                                    collapse = "\n"), "\n"), 
-                          call. = FALSE)
-               }
-               
-               ObsAssign <- ObsAssign %>% filter(file.exists(ObsFile) & 
-                                                    File %in% sim_data_files_topull)
-               
-               if(nrow(ObsAssign) == 0){
-                  warning("We can't find the Excel files that match the observed overlay files in your simulations. We cannot extract any observed data.\n", 
-                          call. = FALSE)
-                  ObsAssign <- data.frame()
-                  obs_to_sim_assignment <- NA
-               } 
-            }
+            } 
          }
       }
    } else if("logical" %in% class(obs_to_sim_assignment)){
@@ -637,10 +665,10 @@ extractConcTime_mult <- function(sim_data_files = NA,
             select(File, ObsFile)
          
          if(any(duplicated(ObsAssign$File))){ 
-            Dups <- ObsAssign$File[duplicated(ObsAssign$File)]
-            warning(paste0("You have more than one observed data file assigned to the simulator files ",
-                           str_comma(paste0("`", Dups, "`")),
-                           ". This function can only handle one observed file per simulator file, so only the first observed file listed will be used.\n"),
+            Dups <- ObsAssign$File[duplicated(ObsAssign$File)] %>% unique()
+            warning(wrapn(paste0("You have more than one observed data file assigned to the simulator files ",
+                                 str_comma(paste0("`", Dups, "`")),
+                                 ". This function can only handle one observed file per simulator file, so only the first observed file listed will be used.")),
                     call. = FALSE)
             ObsAssign <- ObsAssign[!duplicated(ObsAssign$File), ]
          }
@@ -649,13 +677,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
             MissingFiles <- setdiff(ObsAssign$File,
                                     unique(c(sim_data_files, ct_dataframe$File)))
             if(length(MissingFiles) > 0){
-               warning(paste0("When you assigned observed data files to simulator files with the argument `obs_to_sim_assignment`, you included simulator files that are *not* included in `sim_data_files`. We cannot include these observed data files in the output data because we don't know which simulator files they belong with. The problem simulator files is/are: ", 
-                              str_comma(MissingFiles), ", which is/are set to match the following observed files ",
-                              str_comma(names(obs_to_sim_assignment[
-                                 which(obs_to_sim_assignment %in%
-                                          unique(c(sim_data_files, ct_dataframe$File)) == FALSE)])), 
-                              ".\n"), 
-                       call. = FALSE)
+               warning(paste0(wrapn(
+                  "When you assigned observed data files to simulator files with the argument `obs_to_sim_assignment`, you included simulator files that are *not* included in `sim_data_files`. We cannot include these observed data files in the output data because we don't know which simulator files they belong with. The problem simulator files is/are: "), 
+                  str_comma(MissingFiles), ", which is/are set to match the following observed files: ",
+                  str_comma(names(obs_to_sim_assignment[
+                     which(obs_to_sim_assignment %in%
+                              unique(c(sim_data_files, ct_dataframe$File)) == FALSE)])), 
+                  ".\n"), 
+                  call. = FALSE)
                
                ObsAssign <-
                   ObsAssign %>% 
@@ -667,10 +696,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
                
                MissingObsFiles <- ObsAssign$ObsFile[
                   which(file.exists(ObsAssign$ObsFile) == FALSE)]
-               warning(paste0("The file(s) ", 
-                              str_comma(paste0("`", unique(MissingObsFiles), "`")), 
-                              " is/are not present and thus will not be extracted.\n"), 
-                       call. = FALSE)
+               warning(wrapn(paste0(
+                  "The file(s) ", 
+                  str_comma(paste0("`", unique(MissingObsFiles), "`")), 
+                  " is/are not present and thus will not be extracted.")), 
+                  call. = FALSE)
                ObsAssign <- ObsAssign %>% filter(!ObsFile %in% MissingObsFiles)
             }
             
@@ -910,15 +940,15 @@ extractConcTime_mult <- function(sim_data_files = NA,
                
                if(str_detect(ff, "\\.db$")){
                   for(l in compoundsToExtract_k){
-                  
-                  MultData[[ff]][[j]][[k]][[l]] <-
-                     extractConcTime_DB(
-                        sim_data_file = ff,
-                        # obs_data_file = MyObsFile, 
-                        compoundToExtract = l,
-                        tissue = j,
-                        returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                        existing_exp_details = existing_exp_details) 
+                     
+                     MultData[[ff]][[j]][[k]][[l]] <-
+                        extractConcTime_DB(
+                           sim_data_file = ff,
+                           # obs_data_file = MyObsFile, 
+                           compoundToExtract = l,
+                           tissue = j,
+                           returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                           existing_exp_details = existing_exp_details) 
                   }
                   
                   MultData[[ff]][[j]][[k]] <- bind_rows(MultData[[ff]][[j]][[k]])

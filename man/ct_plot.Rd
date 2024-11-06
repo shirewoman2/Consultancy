@@ -100,7 +100,17 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   \emph{sharp}, makes it easy to see the defining characteristics of the
   data, and I recommend checking it out, even just for your own purposes of
   examining your data. If the color is too much for you but you like the
-  rest, try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}}}
+  rest, try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}
+
+  \item{"compound summary"}{matches the concentration-time plots in Simcyp
+  compound summary files. These are similar to "Freddy" types of graphs in
+  that they show the mean as a dark line, the trial means as lighter lines,
+  dashed lines for the 5th and 95th percentiles, but then they additionally
+  color observed points by a column titled "Study" that you will need to add
+  to your data. (And yes, it \emph{must} be titled "Study" exactly.)
+  Everything else in these graphs will be gray or black, but
+  you can specify the color of the observed points with the argument
+  "obs_color" and the shape of the points with the argument "obs_shape".}}}
 
 \item{Tissue_subtype}{Certain types of models have additional subtypes of
 tissues. Currently, the SimcypConsultancy package supports ADAM-model and
@@ -141,7 +151,8 @@ output, you'll get a warning and the graph will include one that was.}
   be limited to the start of the last dose until the last observed data
   point.}
 
-
+  \item{"last dose to end" or "last to end" for short}{Time range will
+  be limited to the start of the last dose until the end of the simulation.}
   }}
 
 \item{x_axis_interval}{optionally set the x-axis major tick-mark interval.
@@ -211,17 +222,77 @@ use for the y axis label}
 NA, the concentration units in the source data will be used. Acceptable
 options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
 "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
-concentration, you'll need to provide something for the argument
+concentration and your source data were in mass per volume units or vice
+versa, you'll need to provide something for the argument
 \code{existing_exp_details}.}
 
 \item{obs_color}{If you would like the observed data points to be in color,
-either specify a color here or set this to "default". Points will be
-displayed in semi-transparent blue-purple for "default" and the
-semi-transparent version of whatever other color you list otherwise.
-Setting this to "none" will remove observed data from the graph. Hex color
-codes are also ok to use. If left as NA, all observed data will be in black
-or, if you set something for \code{line_color}, whatever colors were used
-for that.}
+  either specify a color here or leave this as NA to get all black points for
+  most graph types or, if you set something for \code{line_color}, whatever
+  colors were used for that, semi-transparent blue-purple for a figure_type
+  of "Freddy", or a different color for each study (you must have a column
+  titled "Study" in ct_dataframe for this to work) for a figure_type of
+  "compound summary". Setting this to "none" will remove observed data from
+  the graph. Hex color codes are also ok to use. If you've got a figure_type
+  of "compound summary", then you can specify each color you want or you can
+  call on one of the possible color sets: Options: \describe{
+
+  \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
+  that are friendly to those with red-green colorblindness. The first three
+  colors are green, orange, and purple. This can also be referred to as
+  "Brewer set 2". If there are only two unique values in the colorBy_column,
+  then Brewer set 1 will be used since red and blue are still easily
+  distinguishable but also more aesthetically pleasing than green and
+  orange.}
+
+  \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+  first three colors are red, blue, and green.}
+
+  \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+  (ggplot2 is an R package for graphing.)}
+
+  \item{"rainbow"}{colors selected from a rainbow palette. The default
+  palette is limited to something like 6 colors, so if you have more than
+  that, that's when this palette is most useful. It's \emph{not} very useful
+  when you only need a couple of colors.}
+
+  \item{"blue-green"}{a set of blues fading into greens. This palette can be
+  especially useful if you are comparing a systematic change in some
+  continuous variable -- for example, increasing dose or predicting how a
+  change in intrinsic solubility will affect concentration-time profiles --
+  because the direction of the trend will be clear.}
+
+  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"greens"}{a set of blues fading light blue to dark blue. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+  package}
+
+  \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+  colors from purple to blue to green to yellow in a manner that is
+  "printer-friendly, perceptually uniform and easy to read by those with
+  colorblindness", according to the package author}
+
+  \item{a character vector of colors}{If you'd prefer to set all the colors
+  yourself to \emph{exactly} the colors you want, you can specify those
+  colors here. An example of how the syntax should look: \code{color_set =
+  c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+  which item in \code{colorBy_column} gets which color, you can supply a
+  named vector. For example, if you're coloring the lines by the compound ID,
+  you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+  "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+  like help creating a specific gradation of colors, please talk to a member
+  of the R Working Group about how to do that using
+  \link{colorRampPalette}.}}}
 
 \item{obs_shape}{optionally specify what shapes are used to depict observed
 data for 1. the substrate drug alone and 2. the substrate drug in the
@@ -413,11 +484,14 @@ caption text to use with the graph. This works best if you supply something
 for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
 output a list of the graph, the figure heading, and the figure caption.}
 
-\item{name_clinical_study}{optionally specify the name of the clinical study
-for any observed data. This only affects the caption of the graph. For
-example, specifying \code{name_clinical_study = "101, fed cohort"} will
-result in a figure caption that reads in part "Clinical Study 101, fed
-cohort".}
+\item{name_clinical_study}{optionally specify the name(s) of the clinical
+study or studies for any observed data. This only affects the caption of
+the graph. For example, specifying \code{name_clinical_study = "101, fed
+cohort"} will result in a figure caption that reads in part "clinical study
+101, fed cohort". If you have more than one study, that's fine; we'll take
+care of stringing them together appropriately. Just list them as a
+character vector, e.g., \code{name_clinical_study = c("101",
+"102", "103")} will become "clinical studies 101, 102, and 103."}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -451,38 +525,40 @@ Output is a ggplot2 graph or two ggplot2 graphs arranged with
   ggpubr::ggarrange()
 }
 \description{
-Using observed and simulated concentration-time data generated from the
-function \code{\link{extractConcTime}}, make publication-quality graphs that
-match the consultancy template formatting instructions. We've tried to
-include a fair number of options here for flexibility, but many of the
-function arguments are optional; most of the time, you'll get decent-looking
-graphs while only setting a minimal number of arguments. If you want to plot
-enzyme abundance data, please see \code{\link{enz_plot}}. Please also see
-"Details" at the bottom of this help file for some general notes and advice
-on how to use this function most effectively to get the graph you want. For
-detailed instructions and examples, please see the SharePoint file "Simcyp
-PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
-examples and instructions/Concentration-time plots 1 - one sim at a
-time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
-include a link to it here.)
-}
-\details{
+Using observed and simulated concentration-time data generated
+  from the function \code{\link{extractConcTime}}, make publication-quality
+  graphs that comply with the Simcyp Consultancy Team's standards. We've
+  tried to include a fair number of options here for flexibility, but many of
+  the function arguments are optional; most of the time, you'll get
+  decent-looking graphs while only setting a minimal number of arguments.
+
+  For detailed instructions and examples, please see the SharePoint file
+  "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+  function examples and instructions/Concentration-time plots 1 - one sim at
+  a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+  include a link to it here.)
+
 \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 inhibitors, or inhibitor metabolites are available in all tissues. If it's
-not present in your Excel output, we can't graph it here.}\item{When observed
-data are included in a simulator output file, because the simulator output
-does not explicitly say whether those observed data were in the presence of
-a perpetrator, this function cannot tell the difference and will thus assume
-all observed data included in the simulator output were for the substrate in
-the \emph{absence} of any perpetrator. It will further assume that the compound
-the observed data is for is the same as \code{compoundToExtract}. If you want
-to specify which compound the observed data were for and/or whether any
-perpetrators were present, please supply an observed data file to the argument
-\code{obs_data_file}.} \item{If you attempt to use data generated by
+not present in your output, we can't graph it here.}
+
+\item{If you have observed concentration-time data to match your simulated data
+but you don't see those observed data on your graph, please check the help
+file for the function you used -- either \code{\link{extractConcTime}} or
+\code{\link{extractConcTime_mult}} -- to extract your data. Something has
+likely gone wrong in the data extraction.}
+
+\item{If you attempt to use data generated by
 \code{\link{extractConcTime_mult}} here, you can get weird results if you're
-not careful to only include one tissue and one compound ID. If you see
+not careful to include only one tissue and one compound. If you see
 something odd, try including the legend with, e.g., \code{legend_position =
-"right"} to help decipher what might have gone awry.}}
+"right"} to help decipher what might have gone awry. It can also be
+informative to use the function \code{\link{ct_plot_overlay}} to make a
+draft version of your graph because that function will give you some messages
+about what data are included.}
+
+\item{If you want to plot enzyme abundance data, please see
+  \code{\link{enz_plot}} or \code{\link{enz_plot_overlay}}.}}
 }
 \examples{
 # Load some concentration-time data to play with:

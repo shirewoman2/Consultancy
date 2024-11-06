@@ -16,26 +16,26 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 
 ```{r CaptionText}
 
-Head1 <- data.frame(PKparameter = ParamToUse) %>% 
-   left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
-                bind_rows(
-                   AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
-                      mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
-                             PrettifiedNames = sub("Dose 1 |Last dose ", 
-                                                   "", PrettifiedNames))), 
-             by = "PKparameter") %>% 
-   pull(PrettifiedNames) %>% unique() %>%
-   sub("ratio", "ratios", .) %>% 
-   sub("Cmax", "C~max~", .) %>% 
-   sub("AUCinf", "AUC~inf~", .) %>% 
-   sub("AUCtau", "AUC~tau~", .) %>% 
-   sub("AUCt", "AUC~t~", .) %>% 
-   str_comma()
+# fig_heading <- data.frame(PKparameter = ParamToUse) %>% 
+#    left_join(AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
+#                 bind_rows(
+#                    AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
+#                       mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
+#                              PrettifiedNames = sub("Dose 1 |Last dose ", 
+#                                                    "", PrettifiedNames))), 
+#              by = "PKparameter") %>% 
+#    pull(PrettifiedNames) %>% unique() %>%
+#    sub("ratio", "ratios", .) %>% 
+#    sub("Cmax", "C~max~", .) %>% 
+#    sub("AUCinf", "AUC~inf~", .) %>% 
+#    sub("AUCtau", "AUC~tau~", .) %>% 
+#    sub("AUCt", "AUC~t~", .) %>% 
+#    str_comma()
 
 ```
 
 
-***Figure XXX***. *Forest plot comparing plasma `r Head1` for a single dose/multiple doses of XXX when co-administered with YYY.*
+***Figure XXX***. *`r fig_heading`*
 
 ```{r forestplot, fig.width = fig_width, fig.height = fig_height}
 
@@ -48,6 +48,6 @@ switch(as.character(show_numbers_on_right),
 
 ```
 
-*Source simulated data: `r sort(unique(forest_dataframe$File))`* 
+*`r fig_caption`* 
 
 

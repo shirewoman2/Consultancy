@@ -20,9 +20,10 @@ simulator}
 \item{existing_exp_details}{the output from running
 \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}}}
 
-\item{include_victim_fms}{TRUE or FALSE (default) for whether to
-additionally read in any information on the substrate fm values for each
-pathway included in the interactions}
+\item{include_victim_fms}{TRUE or FALSE (default) for whether to additionally
+read in any information on the substrate fm values for each pathway
+included in the interactions. This requires that a sheet titled "Time
+variance \%fm and fe", be included in the output.}
 
 \item{include_auto_DDI}{TRUE or FALSE (default) for whether to list
 auto-induction or auto-inhibition.}
@@ -33,14 +34,15 @@ a list: "affected_pathways" (a character vector of the metabolic
   pathways and their exact values for elimination and interaction paraemters)
 }
 \description{
-\code{list_interactions} looks through the parameters for a Simcyp simulation
-for any pathways involved in the elimination of the substrate, primary
-metabolite 1, primary metabolite 2, or secondary metabolite that are also
-affected by any interactions for the inhibitor 1, inhibitor 1 metabolite, or
-inhibitor 2. This returns a list of a) "affected_pathways" -- the affected
-metabolic pathways -- and b) "interactions" -- the specific set of
-elimination and interaction parameters and their values in the specified
-simulation.
+\code{list_interactions} looks through the parameters for a
+  Simcyp simulation for any pathways involved in the transport or elimination
+  of the substrate, primary metabolite 1, primary metabolite 2, or secondary
+  metabolite that are affected by any interactions for the inhibitor 1,
+  inhibitor 1 metabolite, or inhibitor 2. This optionally includes
+  interactions of the drug with itself. This returns a list of a)
+  "affected_pathways" -- the affected metabolic pathways -- and b)
+  "interactions" -- the specific set of elimination and interaction
+  parameters and their values in the specified simulation.
 }
 \examples{
 # none yet

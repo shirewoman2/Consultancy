@@ -7,14 +7,14 @@
 #'   extractConcTime
 #' @param time_range the user-supplied input for time_range
 #' @param t0 the user-supplied input for t0
-#' @param compoundToExtract user-requested compound to extract/graph
+#' @param MyCompoundID user-requested compound to extract/graph
 #' @param pad_x_axis user-supplied value for padding x axis
 #' @param EnzPlot T or F for whether this is an enzyme-abundance plut
 #'
 #' @return values to use for ct_plots
 #' 
 ct_x_axis <- function(Data, time_range, t0, 
-                      compoundToExtract, pad_x_axis, EnzPlot){
+                      MyCompoundID, pad_x_axis, EnzPlot){
    
    if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
       length(time_range) != 2){
@@ -32,9 +32,10 @@ ct_x_axis <- function(Data, time_range, t0,
       !any(time_range %in% c("last dose", "first dose", "penultimate dose",
                              "all obs", "all observed", "last obs", 
                              "last observed", "last to last obs", 
-                             "last dose to last observed")) &
+                             "last dose to last observed", 
+                             "last to end", "last dose to end")) &
       !any(str_detect(tolower(time_range), "^dose"))){
-      warning("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), 'all observed', 'last observed', or a numeric time range, e.g., c(12, 24). FOr now, we'll use the full time range.",
+      warning("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), 'all observed', 'last observed', 'last dose to end', or a numeric time range, e.g., c(12, 24). FOr now, we'll use the full time range.",
               call. = FALSE)
       time_range <- NA
    }
@@ -94,8 +95,10 @@ ct_x_axis <- function(Data, time_range, t0,
    
    if(class(time_range_input) == "character" | t0 != "simulation start"){
       
-      if(complete.cases(time_range) && str_detect(time_range, "dose 1$")){
-         time_range <- sub("dose 1", "first dose", time_range)
+      if(complete.cases(time_range) && str_detect(time_range, "first dose")){
+         # Things work most consistently if "first dose" becomes "dose 1". 
+         time_range <- sub("first dose", "dose 1", time_range)
+         time_range_input <- "dose 1"
       }
       
       if(EnzPlot){
@@ -138,25 +141,25 @@ ct_x_axis <- function(Data, time_range, t0,
          if(SingleDose){
             DoseTimes <- data.frame(
                FirstDoseStart = Data %>%
-                  filter(CompoundID == compoundToExtract & 
+                  filter(CompoundID == MyCompoundID & 
                             DoseNum == 1) %>% 
                   summarize(Min = min(Time)) %>% pull(floor(Min)), 
                
-               FirstDoseEnd = ceiling(max(Data$Time[Data$CompoundID == compoundToExtract])),
+               FirstDoseEnd = ceiling(max(Data$Time[Data$CompoundID == MyCompoundID])),
                
                PenultDoseStart = floor(min(Data$Time[Data$DoseNum == 1 &
-                                                        Data$CompoundID == compoundToExtract])),
+                                                        Data$CompoundID == MyCompoundID])),
                LastDoseStart = floor(min(Data$Time[Data$DoseNum == 1 &
-                                                      Data$CompoundID == compoundToExtract])))
+                                                      Data$CompoundID == MyCompoundID])))
          } else {
             DoseTimes1 <- Data %>% 
-               filter(DoseNum > 0 & CompoundID == compoundToExtract) %>%
+               filter(DoseNum > 0 & CompoundID == MyCompoundID) %>%
                group_by(DoseNum) %>%
                summarize(t0 = round(min(Time)), # Is it safe to round this to the nearest unit? Probably ok but may need to adjust this later.
                          tlast = ceiling(max(Time))) %>% 
                ungroup()
             
-            MaxNumDoses <- max(Data$DoseNum[Data$CompoundID == compoundToExtract])
+            MaxNumDoses <- max(Data$DoseNum[Data$CompoundID == MyCompoundID])
             DoseTimes <- data.frame(FirstDoseStart = DoseTimes1 %>% 
                                        filter(DoseNum == 1) %>% pull(t0),
                                     FirstDoseEnd = DoseTimes1 %>% 
@@ -225,7 +228,7 @@ ct_x_axis <- function(Data, time_range, t0,
                
                time_range <- Data %>% 
                   filter(DoseNum %in% DoseNumToPull &
-                            CompoundID == compoundToExtract) %>% 
+                            CompoundID == MyCompoundID) %>% 
                   summarize(Min = round(min(Time)), 
                             Max = ceiling(max(Time))) %>% 
                   t() %>% as.numeric()
@@ -248,6 +251,16 @@ ct_x_axis <- function(Data, time_range, t0,
                        call. = FALSE)
                time_range <- Data %>% pull(Time) %>% range()
             }
+         } else if(all(complete.cases(time_range_input)) &&
+                   time_range_input %in% c("last dose to end", "last to end")){ 
+            suppressWarnings(
+               time_range <- Data %>% 
+                  filter(DoseNum == MaxNumDoses) %>% 
+                  pull(Time) %>% range()
+            )
+            
+            time_range[1] <- DoseTimes$LastDoseStart
+            
          }
          
       } else if(MultDoseInt){

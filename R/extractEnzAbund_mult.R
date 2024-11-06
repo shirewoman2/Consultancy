@@ -110,11 +110,14 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       "enzymes" %in% names(match.call()) == FALSE){
       enzymes <- sys.call()$enzyme
    }
+   enzymes <- gsub(" |_|-", "", toupper(enzymes))
+   
    
    if("tissue" %in% names(match.call()) &
       "tissues" %in% names(match.call()) == FALSE){
       tissues <- sys.call()$tissue
    }
+   tissues <- tolower(tissues)
    
    # If they didn't include ".xlsx" at the end, add that.
    sim_data_files <- as.character(
@@ -142,10 +145,51 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       sim_enz_dataframe <- "none"
    }
    
+   # Checking for combinations of enzymes and tissues that are not available and
+   # removing them.
+   LiverEnz <- c(paste0("CYP", c("1A1", "1A2", "2A6", "2B6", "2C8", "2C9", "2C18", 
+                                 "2C19", "2D6", "2E1", "2J2", "3A4", "3A5", "3A7")), 
+                 paste0("UGT", c(paste0("1A", c(1,3:10)), 
+                                 paste0("2B", c(4, 7, 10, 11, 15, 17, 28)), 
+                                 " User Defined")))
+   
+   GutEnz <- c(paste0("CYP", c("2C9", "2C19", "2D6", "2J2", "3A4", "3A5")), 
+               paste0("UGT", c(paste0("1A", c(1,3:10)), 
+                               paste0("2B", c(4, 7, 10, 11, 15, 17, 28)), 
+                               " User Defined")))
+   
+   KidneyEnz <- paste0("UGT", c(paste0("1A", c(1,3:10)), 
+                                paste0("2B", c(4, 7, 10, 11, 15, 17, 28)), 
+                                " User Defined"))
+   
+   EnzTisCheck <- data.frame(Tissue = c(rep("liver", length(LiverEnz)), 
+                                        rep("gut", length(GutEnz)), 
+                                        rep("kidney", length(KidneyEnz))), 
+                             Enzyme = c(LiverEnz, 
+                                        GutEnz, 
+                                        KidneyEnz)) %>% 
+      mutate(ID = paste(Tissue, Enzyme))
+   
+   InputEnzTis <- expand_grid(Tissue = tissues, 
+                              Enzyme = enzymes) %>% 
+      mutate(ID = paste(Tissue, Enzyme))
+   
+   Problem <- setdiff(InputEnzTis$ID, EnzTisCheck$ID)
+   Problem <- InputEnzTis %>%
+      filter(ID %in% Problem) %>% 
+      select(-ID) %>% as.data.frame()
+   
+   if(nrow(Problem) > 0){
+      Problem <- capture.output(print(Problem, row.names = FALSE))
+      
+      message("Warning:\nThe following combination of tissues and enzymes are not available:\n")
+      message(str_c(Problem, collapse = "\n"))
+   }
+   
    
    # Main body of function -----------------------------------------------
    
-   enzymesToExtract <- toupper(enzymes)
+   enzymesToExtract <- enzymes
    
    sim_data_files <- unique(sim_data_files)
    

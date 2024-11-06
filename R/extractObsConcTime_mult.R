@@ -72,40 +72,70 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
    
    # Error catching ---------------------------------------------------
    
+   obs_data_files_input <- obs_data_files
+   
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx".
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx" or in all subfolders if they wanted it to be
    # recursive.
    if(length(obs_data_files) == 1 &&
-      (is.na(obs_data_files) | obs_data_files == "recursive")){
+      (is.na(obs_data_files_input) | obs_data_files_input == "recursive")){
       obs_data_files <- list.files(pattern = "xlsx$",
-                                   recursive = (complete.cases(obs_data_files) &&
+                                   recursive = (complete.cases(obs_data_files_input) &&
                                                    obs_data_files == "recursive"))
       obs_data_files <- obs_data_files[!str_detect(obs_data_files, "^~")]
    }
    
-   # If they didn't include ".xlsx" at the end, add that. At the same time, if
-   # they ended the files with XML, let's try just substituting xlsx for that.
-   # We'll check whether that file exists in a moment.
-   obs_data_files <- paste0(sub("\\.xml$|\\.xlsx$", "", obs_data_files), 
-                            ".xlsx")
-   
-   # Making sure that all the files exist before attempting to pull data
-   if(any(file.exists(obs_data_files) == FALSE)){
-      MissingSimFiles <- obs_data_files[
-         which(file.exists(obs_data_files) == FALSE)]
-      warning(paste0("The file(s) ", 
-                     str_comma(paste0("`", MissingSimFiles, "`")), 
-                     " is/are not present, so we cannot extract any concentration-time data."), 
-              call. = FALSE)
-      obs_data_files <- setdiff(obs_data_files, MissingSimFiles)
+   # The Consultancy Team's support group includes Excel files we can ignore.
+   # Removing those from consideration if we're collecting file names in an
+   # automated fashion.
+   if(is.na(obs_data_files_input) || obs_data_files_input == "recursive"){
+      obs_data_files <- obs_data_files[!str_detect(obs_data_files, 
+                                                   "support-docs")]
    }
    
-   # The Consultancy Team's support group includes Excel files we can ignore.
-   # Removing those from consideration.
-   obs_data_files <- obs_data_files[!str_detect(obs_data_files, 
-                                                "support-docs")]
+   # If they didn't include ".xlsx" or ".xml" at the end, add ".xlsx" for now
+   # b/c that's what we used historically and doesn't require the Simcyp
+   # package.
+   obs_data_files <- case_when(
+      str_detect(obs_data_files, "\\.xml$|\\.xlsx$") == FALSE ~ 
+         paste0(obs_data_files, ".xlsx"), 
+      .default = obs_data_files)
+   
+   # Make this work for whoever the current user is, even if the XML obs file
+   # path was for someone else. This will normalize paths ONLY when the full
+   # path is present and starts w/"Users". Otherwise, keeping the original input
+   # just b/c I don't want to change the input from basename to full path
+   # unexpectedly.
+   obs_data_files[str_detect(obs_data_files, "Users")] <- 
+      normalizePath(obs_data_files[str_detect(obs_data_files, "Users")], 
+                    winslash = "/", mustWork = FALSE)
+   
+   obs_data_files <- str_replace(obs_data_files, 
+                                 "Users/(?<=\\/)[^\\/]+(?=\\/)", 
+                                 paste0("Users/", Sys.info()["user"]))
+   
+   # Checking that the file exists.
+   FileCheck <- data.frame(OrigFile = obs_data_files) %>% 
+      mutate(Exists = file.exists(OrigFile), 
+             File_xlsx = sub("\\.xml$", ".xlsx", OrigFile), 
+             File_xml = sub("\\.xlsx$", ".xml", OrigFile), 
+             Exists_xlsx = file.exists(File_xlsx), 
+             Exists_xml = file.exists(File_xml), 
+             FileToUse = case_when(Exists ~ OrigFile, 
+                                   Exists_xlsx ~ File_xlsx, 
+                                   Exists_xml ~ File_xml))
+   
+   if(any(is.na(FileCheck$FileToUse))){
+      warning(wrapn(paste0(
+         "The file(s) ", str_comma(
+            paste0("'", FileCheck$OrigFile[which(is.na(FileCheck$FileToUse))], "'")), 
+         " is/are not present and will be skipped.")), 
+         call. = FALSE)
+   }
+   
+   obs_data_files <- FileCheck$FileToUse
    
    # Main body of function ---------------------------------------------------
    

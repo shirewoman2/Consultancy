@@ -433,7 +433,7 @@ so_graph <- function(PKtable,
       boundary_color_set <- 
          set_boundary_colors(color_set = boundary_color_set,
                              boundaries = boundaries, 
-                             break_type = "SO")
+                             break_type = "SO line")
       
    }
    
@@ -443,12 +443,8 @@ so_graph <- function(PKtable,
       
       boundary_color_set_Guest <- 
          set_boundary_colors(color_set = boundary_color_set_Guest,
-                             boundaries = c(boundaries_Guest, 
-                                            # repeat the last boundary b/c we
-                                            # have curved and straight lines for
-                                            # that one.
-                                            boundaries_Guest[length(boundaries_Guest)]), 
-                             break_type = "SO")
+                             boundaries = c(boundaries_Guest, Inf), # Hack to get enough colors
+                             break_type = "SO line")
       
    } else {
       # Making sure we have enough colors

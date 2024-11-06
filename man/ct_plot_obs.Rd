@@ -50,6 +50,7 @@ ct_plot_obs(
   hline_style = "red dotted",
   vline_position = NA,
   vline_style = "red dotted",
+  name_clinical_study = NA,
   graph_labels = TRUE,
   graph_title = NA,
   graph_title_size = 14,
@@ -420,6 +421,15 @@ but any combination of 1) a color in R and 2) a named linetype is
 acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 into the console.}
+
+\item{name_clinical_study}{optionally specify the name(s) of the clinical
+study or studies for any observed data. This only affects the caption of
+the graph. For example, specifying \code{name_clinical_study = "101, fed
+cohort"} will result in a figure caption that reads in part "clinical study
+101, fed cohort". If you have more than one study, that's fine; we'll take
+care of stringing them together appropriately. Just list them as a
+character vector, e.g., \code{name_clinical_study = c("101",
+"102", "103")} will become "clinical studies 101, 102, and 103."}
 
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs. (Not applicable if only outputting

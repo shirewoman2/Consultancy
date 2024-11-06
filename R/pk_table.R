@@ -131,6 +131,9 @@
 #'   specified in the Consultancy Report Template (default), or would you like
 #'   the order to match the order you specified with the argument
 #'   \code{PKparameters}? Options are "default" or "user specified".
+#' @param file_order order of the simulations in the output table, default is to
+#'   leave the order "as is", in which case the order will be whatever is
+#'   specified with \code{sim_data_files}.
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
 #'   pulled from a specific tab in the simulator output file, list that tab
 #'   here. Otherwise, this should be left as NA. \code{sheet_PKparameters} can
@@ -193,15 +196,17 @@
 #'   an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
 #'   ambiguity; this was written by an American who didn't originally realize
 #'   that there was another name for parentheses.)
-#' @param convert_conc_units Would you like to convert the units to something
-#'   other than what was used in the simulation? Default is NA to leave the
-#'   units as is, but if you set the concentration units to something else, this
-#'   will attempt to convert the units to match that. This only adjusts only the
-#'   simulated values, since we're assuming that that's the most likely problem
-#'   and that observed units are relatively easy to fix, and it also only
-#'   affects AUC and Cmax values. Acceptable input is any concentration unit
-#'   listed in the Excel form for PE data entry, e.g. \code{convert_conc_units =
-#'   "ng/mL"} or \code{convert_conc_units = "uM"}. Molar concentrations will be
+#' @param conc_units What concentration units should be used in the
+#'   table? Default is NA to leave the units as is, but if you set the
+#'   concentration units to something else, this will attempt to convert the
+#'   units to match that. This only adjusts only the simulated values, since
+#'   we're assuming that that's the most likely problem and that observed units
+#'   are relatively easy to fix, and it also only affects AUC and Cmax values.
+#'   If you leave this as NA, the units in the 1st simulation will be used as
+#'   the units for \emph{all} the simulations for consistency and clarity.
+#'   Acceptable input is any concentration unit
+#'   listed in the Excel form for PE data entry, e.g. \code{conc_units =
+#'   "ng/mL"} or \code{conc_units = "uM"}. Molar concentrations will be
 #'   automatically converted using the molecular weight of whatever you set for
 #'   \code{compoundToExtract}.
 #' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
@@ -316,11 +321,24 @@
 #'   leave off the file extension, we'll assume you want it to be ".csv". All PK
 #'   info will be included in a single Word or csv file, and, if
 #'   \code{checkDataSource = TRUE}, that will be saved in a single csv file.
-#' @param name_clinical_study optionally specify the name of the clinical study
-#'   for any observed data. This only affects the caption of the graph. For
-#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
-#'   result in a figure caption that reads in part "clinical study 101, fed
-#'   cohort".
+#' @param name_clinical_study optionally specify the name(s) of the clinical
+#'   study or studies for any observed data. This only affects the caption of
+#'   the graph. For example, specifying \code{name_clinical_study = "101, fed
+#'   cohort"} will result in a figure caption that reads in part "clinical study
+#'   101, fed cohort". If you have more than one study, that's fine; we'll take
+#'   care of stringing them together appropriately. Just list them as a
+#'   character vector, e.g., \code{name_clinical_study = c("101",
+#'   "102", "103")} will become "clinical studies 101, 102, and 103."
+#' @param shading_column If you would like to alternate the shading of the rows
+#'   in the output table, supply here the unquoted name of the column to check
+#'   for when to change the shading; every time that column's value changes, the
+#'   shading will alternate between white and light gray. By default, we will
+#'   alternate the shading based on the simulation file name. Setting this
+#'   argument can be a little bit tricky because we'll be looking for a column
+#'   that's present in the \emph{output} from this function, something you might
+#'   not know until you run it. If you specify something and the shading doesn't
+#'   show up as expected, double check what the final output column names are
+#'   and make sure you're using one of those.
 #' @param single_table TRUE (default) or FALSE for whether to save all the PK
 #'   data in a single table or break the data up by tissue, compound ID, and
 #'   file into multiple tables. This only applies to the Word output.
@@ -332,6 +350,8 @@
 #' @param return_PK_pulled TRUE or FALSE (default) for whether to return as a
 #'   list item what PK parameters were pulled. This is used internally for
 #'   writing table headings later.
+#' @param convert_conc_units SOON TO BE DEPRECATED. Please use the argument
+#'   "conc_units" instead.
 #'
 #' @return a data.frame
 #' @export
@@ -356,9 +376,10 @@ pk_table <- function(PKparameters = NA,
                      includeTrialMeans = FALSE, 
                      concatVariability = TRUE, 
                      variability_format = "to",
-                     convert_conc_units = NA, 
+                     conc_units = NA, 
                      include_dose_num = NA,
                      PKorder = "default", 
+                     file_order = "as is", 
                      add_header_for_DDI = TRUE, 
                      rounding = NA,
                      prettify_columns = TRUE, 
@@ -370,12 +391,14 @@ pk_table <- function(PKparameters = NA,
                      highlight_gmr_colors = NA, 
                      highlight_so_cutoffs = NA, 
                      highlight_so_colors = "yellow to red", 
-                     single_table = FALSE,
+                     shading_column, 
+                     single_table = TRUE,
                      page_orientation = "portrait", 
                      fontsize = 11, 
                      return_PK_pulled = FALSE, 
                      return_caption = FALSE, 
-                     ...){
+                     ..., 
+                     convert_conc_units = NA){
    
    # Error catching ----------------------------------------------------------
    
@@ -403,6 +426,30 @@ pk_table <- function(PKparameters = NA,
       tissues <- sys.call()$tissue
    }
    
+   if("convert_conc_units" %in% names(match.call())){
+      if("conc_units" %in% names(match.call()) == FALSE){
+         conc_units <- convert_conc_units
+         warning(wrapn("You have used the argument 'convert_conc_units' to indicate which units to use in your table, and we're deprecating that argument in favor of the argument 'conc_units'. Please use 'conc_units' going forward."), 
+                 call. = FALSE)
+      } else {
+         if(all(convert_conc_units == conc_units, na.rm = T) == FALSE){
+            warning(wrapn("You have used both the argument 'conc_units' and the argument 'convert_conc_units' to indicate which units to use in your table, and they do not match. We're deprecating 'convert_conc_units' in favor of 'conc_units', so that is what we will use for your table. Please use 'conc_units' going forward."), 
+                    call. = FALSE)
+         }
+      }
+   }
+   
+   if("observed_PK" %in% names(match.call())){
+      if("PKparameters" %in% names(match.call()) == FALSE){
+         warning(wrapn("You have supplied an argument called 'observed_PK', which is what the older, soon-to-be-deprecated functions pksummary_table and pksummary_mult used to get observed data. For the pk_table function, we need to have the observed data included with the argument 'PKparameters'. Please check the help file to see how this should be set up. You can see examples for how to supply this by running `make_PK_example_input()`. For now, we will set the argument 'PKparameters' to what you supplied for 'observed_PK'."), 
+                 call. = FALSE)
+         PKparameters <- sys.call()$observed_PK
+      } else {
+         warning(wrapn("You have supplied an argument called 'observed_PK', which is what the older, soon-to-be-deprecated functions pksummary_table and pksummary_mult used to get observed data. For the pk_table function, we need to have the observed data included with the argument 'PKparameters'. Please check the help file to see how this should be set up. You can see examples for how to supply this by running `make_PK_example_input()`. Since you did supply something for the argument 'PKparameters' already, we cannot include your observed data."), 
+                 call. = FALSE)
+      }
+   }
+   
    # sheet_PKparameters should be length 1 and not be named b/c, if they want
    # more than 1, they need to supply it to PKparameters.
    if(length(sheet_PKparameters) > 1){
@@ -425,6 +472,27 @@ pk_table <- function(PKparameters = NA,
                                    sheet_PKparameters = sheet_PKparameters, 
                                    existing_exp_details = existing_exp_details)
    
+   # Check for any duplicate observed values b/c that messes up things
+   # downstream.
+   DupCheck <- PKparam_tidied$PKparameters %>% 
+      group_by(File, Sheet, CompoundID, Tissue, PKparameter) %>% 
+      summarize(N = n()) %>% 
+      filter(N > 1)
+   
+   if(nrow(DupCheck) > 0){
+      warning(wrapn(paste0("There are some duplicate observed PK data included in your input for PKparameters. We can only manage one observed value for each PK parameter, tissue, and compound, so we will have to ignore any duplicates. Specifically, we will ignore the following observed PK:")))
+      print(DupCheck)
+      
+      DupCheck <- DupCheck %>% 
+         mutate(ID = paste(File, Sheet, CompoundID, Tissue, PKparameter))
+      
+      PKparam_tidied$PKparameters <- PKparam_tidied$PKparameters %>% 
+         mutate(ID = paste(File, Sheet, CompoundID, Tissue, PKparameter)) %>% 
+         filter(!ID %in% DupCheck$ID) %>% 
+         select(-ID)
+      
+   }
+   
    existing_exp_details <- PKparam_tidied$existing_exp_details
    PKparameters <- PKparam_tidied$PKparameters %>% 
       mutate(FileExists = file.exists(File)) %>% 
@@ -437,6 +505,62 @@ pk_table <- function(PKparameters = NA,
       warning("You have not supplied a permissible value for the order of PK parameters. Options are `default` or `user specified`. The default PK parameter order will be used.", 
               call. = FALSE)
       PKorder <- "default"
+   }
+   
+   # Possibilities here: 
+   
+   # 1. There could be only 1 sim, in which case it doesn't matter what they
+   # list for file_order, so setting it to "as is".
+   
+   # 2. There could be more than 1 sim but they've only specified 1 thing for
+   # "file_order" rather than specifically listing the order of sims they want.
+   # If there's more than 1 sim and only 1 thing for file_order, then file_order
+   # must be "as is".
+   
+   # 3. There is more than 1 sim and more than 1 file listed for file_order.
+   # Check that they've got all the sims included and specified correctly, etc.
+   
+   FilesToInclude <- unique(PKparam_tidied$PKparameters$File)
+   
+   # Possibility 1
+   if(length(sim_data_files) == 1 && 
+      complete.cases(sim_data_files)){
+      file_order <- FilesToInclude
+   } else {
+      
+      # Possibility 2. Note that we've already established that there is more
+      # than 1 item in sim_data_files.
+      if(length(file_order) == 1){
+         if(tolower(file_order) != "as is"){
+            warning(wrapn("You specified something for 'file_order' that we can't interpret, so we'll leave the file order as is."), 
+                    call. = FALSE)
+         }
+         file_order <- FilesToInclude
+         
+      } else {
+         # Possibility 3. Dealing w/all possible ways this could go wrong.
+         MissingSims <- setdiff(FilesToInclude, file_order)
+         
+         if(length(MissingSims) > 0){
+            warning(paste0(wrapn("You specified a set of simulations for the argument 'file_order', but they don't include all of the simulations we found from 'sim_data_files'. We'll add the following simulations to the end of the order you specified:"), 
+                           str_c(paste0("   ", MissingSims), collapse = "\n"), 
+                           "\n"), 
+                    call. = FALSE)
+            
+            file_order <- c(file_order, MissingSims)
+         }
+         
+         ExtraSims <- setdiff(file_order, FilesToInclude)
+         if(length(ExtraSims) > 0){
+            warning(paste0(wrapn("You specified a set of simulations for the argument 'file_order', but not all of the simulations in 'file_order' are included in 'sim_data_files'. We won't be able to include the following simulations in the order requested because they're not included in 'sim_data_files' (possibly because they are not present):"), 
+                           str_c(paste0("   ", ExtraSims), collapse = "\n"), 
+                           "\n"), 
+                    call. = FALSE)
+         }
+         
+         # file_order should be correct now and include all the files in
+         # sim_data_files in the order the user requested plus an missing sims.
+      }
    }
    
    # Checking mean type input syntax
@@ -514,9 +638,9 @@ pk_table <- function(PKparameters = NA,
       }
    }
    
-   if(complete.cases(highlight_gmr_colors) && 
+   if(any(complete.cases(highlight_gmr_colors)) && 
       tolower(highlight_gmr_colors[1]) == "lisa"){highlight_gmr_colors = "traffic"}
-   if(complete.cases(highlight_so_colors) &&
+   if(any(complete.cases(highlight_so_colors)) &&
       tolower(highlight_so_colors[1]) == "lisa"){highlight_so_colors = "traffic"}
    
    if(any(complete.cases(highlight_gmr_colors)) &&
@@ -555,6 +679,12 @@ pk_table <- function(PKparameters = NA,
    
    
    # Main body of function --------------------------------------------------
+   
+   # Checking what concentration units to use. Using the same units for ALL sims
+   # for consistency, clarity, and ease of coding.
+   if(is.na(conc_units)){
+      conc_units <- existing_exp_details$MainDetails$Units_Cmax[1]
+   }
    
    ## Getting simulated data ------------------------------------------------
    MyPKResults <- list()
@@ -618,7 +748,7 @@ pk_table <- function(PKparameters = NA,
             sim_data_file = unique(PKparameters[[i]]$File), 
             PKparameters = PKparameters[[i]], 
             existing_exp_details = existing_exp_details, 
-            convert_conc_units = convert_conc_units,
+            conc_units = conc_units,
             MeanType = MeanType, 
             GMR_mean_type = GMR_mean_type, 
             includeTrialMeans = includeTrialMeans, 
@@ -639,6 +769,27 @@ pk_table <- function(PKparameters = NA,
          next
       }
       
+      # tmax variability stats need to be set differently b/c user will get
+      # range if they have requested any variability stats at all.
+      temp$PK <- temp$PK %>% 
+         mutate(Stat = case_when(str_detect(PKParam, "tmax") & 
+                                    Stat == "min" & 
+                                    any(c({{includeConfInt}}, 
+                                          {{includeCV}}, 
+                                          {{includePerc}}, 
+                                          {{includeRange}}, 
+                                          {{includeSD}})) ~ "tmaxmin", 
+                                 
+                                 str_detect(PKParam, "tmax") & 
+                                    Stat == "max" & 
+                                    any(c({{includeConfInt}}, 
+                                          {{includeCV}}, 
+                                          {{includePerc}}, 
+                                          {{includeRange}}, 
+                                          {{includeSD}})) ~ "tmaxmax", 
+                                 
+                                 .default = Stat))
+      
       # Formatting to account for variability preferences
       VarOptions <- c("CV" = includeCV & MeanType == "arithmetic", 
                       "GCV" = includeCV & MeanType == "geometric",
@@ -650,17 +801,26 @@ pk_table <- function(PKparameters = NA,
                       "per95" = includePerc, 
                       "MinMean" = includeTrialMeans, 
                       "MaxMean" = includeTrialMeans, 
-                      "min" = includeRange | any(str_detect(temp$PK$PKParam, "tmax")), 
-                      "max" = includeRange | any(str_detect(temp$PK$PKParam, "tmax")), 
+                      "min" = includeRange, 
+                      "max" = includeRange, 
                       "SD" = includeSD, 
                       "median" = includeMedian, 
                       "mean" = MeanType == "arithmetic", 
-                      "geomean" = MeanType == "geometric", 
+                      "geomean" = MeanType == "geometric",
+                      "tmaxmin" = any(c(includeConfInt, 
+                                        includeCV, 
+                                        includePerc, 
+                                        includeRange, 
+                                        includeSD)), 
+                      "tmaxmax" = any(c(includeConfInt, 
+                                        includeCV, 
+                                        includePerc, 
+                                        includeRange, 
+                                        includeSD)), 
                       "S_O" = TRUE)
       VarOptions <- names(VarOptions)[which(VarOptions)]
       
-      MyPKResults[[i]] <- temp$PK %>%
-         filter(Stat %in% VarOptions)
+      MyPKResults[[i]] <- temp$PK %>% filter(Stat %in% VarOptions)
       
       PKpulled[[i]] <-
          data.frame(File = unique(PKparameters[[i]]$File), 
@@ -717,48 +877,104 @@ pk_table <- function(PKparameters = NA,
                              round_opt(100*Value, rounding),
                              round_opt(Value, rounding)))
    
-   MyPKResults <- MyPKResults %>% 
-      filter(Stat %in% c(case_match(MeanType, 
-                                    "geometric" ~ "geomean",
-                                    "arithmetic" ~ "mean", 
-                                    "median" ~ "median"),
-                         "CI90_low", "CI90_high", "CI95_low", "CI95_high",
-                         "min", "max", "per5", "per95", 
-                         case_match(MeanType, 
-                                    "geometric" ~ "GCV",
-                                    "arithmetic" ~ "CV", 
-                                    "median" ~ NA),
-                         "MinMean", "MaxMean", 
-                         "S_O_TM_MinMean", "S_O_TM_MaxMean",
-                         "S_O", "SD", "median"))
+   # Below should already be done w/VarOptions above. Delete?
+   # MyPKResults <- MyPKResults %>% 
+   #    filter(Stat %in% c(case_match(MeanType, 
+   #                                  "geometric" ~ "geomean",
+   #                                  "arithmetic" ~ "mean", 
+   #                                  "median" ~ "median"),
+   #                       "CI90_low", "CI90_high", "CI95_low", "CI95_high",
+   #                       "min", "max", "per5", "per95", 
+   #                       case_match(MeanType, 
+   #                                  "geometric" ~ "GCV",
+   #                                  "arithmetic" ~ "CV", 
+   #                                  "median" ~ NA),
+   #                       "MinMean", "MaxMean", 
+   #                       "S_O_TM_MinMean", "S_O_TM_MaxMean",
+   #                       "S_O", "SD", "median"))
    
    # If there were any observed data that were a range, e.g., for tmax, then put
    # the range on a single line, even if user did not request concatVariability
    # b/c it just makes things so much easier.
-   if(nrow(MyPKResults %>% filter(Stat == "min" & SorO == "Obs")) > 0){
+   if(nrow(MyPKResults %>% filter(Stat %in% c("min", "tmaxmin", "CI90_low") & 
+                                  SorO == "Obs")) > 0){
       
-      MyPKResults <- MyPKResults %>% unique() %>% 
-         pivot_wider(names_from = Stat, 
-                     values_from = Value) %>% 
-         mutate(min = case_when(complete.cases(min) & 
-                                   complete.cases(max) & SorO == "Obs" ~ 
-                                   switch(variability_format, 
-                                          "to" = paste(min, "to", max), 
-                                          "hyphen" = paste(min, "-", max), 
-                                          "brackets" = paste0("[", min, ", ", max, "]"),
-                                          "parentheses" = paste0("(", min, ", ", max, ")")), 
-                                TRUE ~ min)) %>% 
-         select(-max) %>% 
-         pivot_longer(cols = -c(any_of(c("PKParam", "SorO", "File", "Sheet", 
-                                         "CompoundID", "Tissue"))), 
-                      names_to = "Stat", 
-                      values_to = "Value") %>% 
-         mutate(Stat = ifelse(Stat == "min" & SorO == "Obs", 
-                              switch(MeanType, 
-                                     "geometric" = "GCV", 
-                                     "arithmetic" = "CV"), 
-                              Stat))
+      # Need to do this 1 at a time for min, tmaxmin, and CI90_low. There's
+      # probably a better way to do this.
+      if("min" %in% MyPKResults$Stat){
+         MyPKResults <- MyPKResults %>% unique() %>% 
+            pivot_wider(names_from = Stat, 
+                        values_from = Value) %>% 
+            mutate(min = case_when(complete.cases(min) & 
+                                      complete.cases(max) & SorO == "Obs" ~ 
+                                      switch(variability_format, 
+                                             "to" = paste(min, "to", max), 
+                                             "hyphen" = paste(min, "-", max), 
+                                             "brackets" = paste0("[", min, ", ", max, "]"),
+                                             "parentheses" = paste0("(", min, ", ", max, ")")), 
+                                   TRUE ~ min)) %>% 
+            select(-max) %>% 
+            pivot_longer(cols = -c(any_of(c("PKParam", "SorO", "File", "Sheet", 
+                                            "CompoundID", "Tissue"))), 
+                         names_to = "Stat", 
+                         values_to = "Value")
+         
+      }
+      
+      if("tmaxmin" %in% MyPKResults$Stat){
+         MyPKResults <- MyPKResults %>% unique() %>% 
+            pivot_wider(names_from = Stat, 
+                        values_from = Value) %>% 
+            mutate(tmaxmin = case_when(complete.cases(tmaxmin) & 
+                                          complete.cases(tmaxmax) & SorO == "Obs" ~ 
+                                          switch(variability_format, 
+                                                 "to" = paste(tmaxmin, "to", tmaxmax), 
+                                                 "hyphen" = paste(tmaxmin, "-", tmaxmax), 
+                                                 "brackets" = paste0("[", tmaxmin, ", ", tmaxmax, "]"),
+                                                 "parentheses" = paste0("(", tmaxmin, ", ", tmaxmax, ")")), 
+                                       TRUE ~ tmaxmin)) %>% 
+            select(-tmaxmax) %>% 
+            pivot_longer(cols = -c(any_of(c("PKParam", "SorO", "File", "Sheet", 
+                                            "CompoundID", "Tissue"))), 
+                         names_to = "Stat", 
+                         values_to = "Value")
+      }
+      
+      if("CI90_low" %in% MyPKResults$Stat){
+         MyPKResults <- MyPKResults %>% unique() %>% 
+            pivot_wider(names_from = Stat, 
+                        values_from = Value) %>% 
+            mutate(CI90_low = case_when(complete.cases(CI90_low) & 
+                                           complete.cases(CI90_high) & SorO == "Obs" ~ 
+                                           switch(variability_format, 
+                                                  "to" = paste(CI90_low, "to", CI90_high), 
+                                                  "hyphen" = paste(CI90_low, "-", CI90_high), 
+                                                  "brackets" = paste0("[", CI90_low, ", ", CI90_high, "]"),
+                                                  "parentheses" = paste0("(", CI90_low, ", ", maCI90_high, ")")), 
+                                        TRUE ~ CI90_low)) %>% 
+            select(-tmaxmax) %>% 
+            pivot_longer(cols = -c(any_of(c("PKParam", "SorO", "File", "Sheet", 
+                                            "CompoundID", "Tissue"))), 
+                         names_to = "Stat", 
+                         values_to = "Value")
+         
+      }
+      
+      # FIXME - Left off here      
+      
+      # I don't think we want this... 
+      # MyPKResults <- MyPKResults %>%
+      #    mutate(Stat = ifelse(Stat %in% c("min", "CI90_low") & SorO == "Obs",
+      #                         switch(MeanType,
+      #                                "geometric" = "GCV",
+      #                                "arithmetic" = "CV"),
+      #                         Stat))
    }
+   
+   # # Dealing w/tmax. tmaxmin needs to be switched to one of the variability
+   # # options the user selected.
+   # MyPKResults %>% 
+   #    mutate(Stat = case_when(Stat == "tmaxmin"))
    
    # Checking for any PK parameters where there are no simulated data.
    GoodPKParam <- MyPKResults %>% 
@@ -935,7 +1151,8 @@ pk_table <- function(PKparameters = NA,
              Statistic = ifelse(SorO == "Obs" & Statistic == "Simulated", 
                                 "Observed", Statistic), 
              SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
-             Stat = factor(Stat, levels = names(StatNames))) %>% 
+             Stat = factor(Stat, levels = names(StatNames)), 
+             File = factor(File, levels = file_order)) %>% 
       arrange(File, CompoundID, SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
@@ -1049,37 +1266,35 @@ pk_table <- function(PKparameters = NA,
                       by = join_by(ColName)) %>% 
             mutate(ColName = ifelse(is.na(ColName_int), ColName, ColName_int)) %>% 
             select(-ColName_int) %>% 
-            mutate(UnitsToAdd = ifelse(CustomInt, 
-                                       str_extract(PrettifiedNames, 
-                                                   " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)"), 
-                                       ""), 
-                   PrettifiedNames = ifelse(CustomInt, 
-                                            str_replace(PrettifiedNames, " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", ""), 
-                                            PrettifiedNames), 
-                   PrettifiedNames = ifelse(CustomInt, 
-                                            paste0(PrettifiedNames, 
-                                                   " for interval ", Interval, 
-                                                   UnitsToAdd), 
-                                            PrettifiedNames)) %>% 
+            mutate(
+               UnitsToAdd = case_when(
+                  CustomInt == TRUE ~ str_extract(PrettifiedNames, 
+                                                  " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)"), 
+                  .default = ""), 
+               
+               PrettifiedNames = case_when(
+                  CustomInt == TRUE ~ str_replace(PrettifiedNames, " \\(h\\)| \\(ng/mL(.h)?\\)| \\(L/h\\)", ""), 
+                  .default = PrettifiedNames),
+               
+               PrettifiedNames = case_when(
+                  CustomInt == TRUE & complete.cases(UnitsToAdd) ~ 
+                     paste0(PrettifiedNames, " for interval ", Interval, UnitsToAdd), 
+                  CustomInt == TRUE & is.na(UnitsToAdd) ~ 
+                     paste0(PrettifiedNames, " for interval ", Interval), 
+                  .default = PrettifiedNames)) %>% 
             # We had to remove the sheet or this would have unnecessary rows. Remove that column name. 
             filter(ColName != "Sheet")
       }
       
-      # FIXME - CHeck whether this works w/multiple units in table. 
-      
       # Adjusting units as needed.
-      if("Units_AUC" %in% names(Deets) && complete.cases(Deets$Units_AUC)){
-         ColNames$PrettifiedNames <- sub("\\(ng/mL.h\\)", paste0("(", Deets$Units_AUC, ")"), ColNames$PrettifiedNames)
-      }
-      if("Units_CL" %in% names(Deets) && complete.cases(Deets$Units_CL)){
-         ColNames$PrettifiedNames <- sub("\\(L/h\\)", paste0("(", Deets$Units_CL, ")"), ColNames$PrettifiedNames)
-      }
-      if("Units_Cmax" %in% names(Deets) && complete.cases(Deets$Units_Cmax)){
-         ColNames$PrettifiedNames <- sub("\\(ng/mL\\)", paste0("(", Deets$Units_Cmax, ")"), ColNames$PrettifiedNames)
-      }
-      if("Units_tmax" %in% names(Deets) && complete.cases(Deets$Units_tmax)){
-         ColNames$PrettifiedNames <- sub("\\(h\\)", paste0("(", Deets$Units_tmax, ")"), ColNames$PrettifiedNames)
-      }
+      ColNames$PrettifiedNames <- sub("\\(ng/mL.h\\)",
+                                      paste0("(", conc_units, ".h)"), 
+                                      ColNames$PrettifiedNames)
+      
+      ColNames$PrettifiedNames <- sub("\\(ng/mL\\)", 
+                                      paste0("(", conc_units, ")"),
+                                      ColNames$PrettifiedNames)
+      
       ColNames$PrettifiedNames <- gsub("ug/mL", "µg/mL", ColNames$PrettifiedNames)
       
       MyPerpetrator <- determine_myperpetrator(existing_exp_details,
@@ -1146,37 +1361,40 @@ pk_table <- function(PKparameters = NA,
       
    }
    
+   Out <- list("Table" = MyPKResults)
+   
+   
    # Setting up table caption ------------------------------------------------
    
-   if(single_table){
-      
-      MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
-                                               prettify_compound_names = TRUE)
-      
-      DosesIncluded <- c("Dose1" = any(str_detect(PKparameters$PKparameter, "_dose1")),
-                         "Last" = any(str_detect(PKparameters$PKparameter, "_last")), 
-                         "User" = any(complete.cases(PKparameters$Sheet)))
-      DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
-      
-      Annotations <- make_table_annotations(
-         MyPKResults = MyPKResults %>% purrr::discard(~all(is.na(.))), 
-         MyFile = unique(MyPKResults$File), 
-         MyCompoundID = unique(MyPKResults$CompoundID), 
-         prettify_compound_names = prettify_compound_names,
-         Deets = switch(as.character("logical" %in% class(existing_exp_details)), 
-                        "TRUE" = data.frame(), 
-                        "FALSE" = Deets), 
-         MeanType = MeanType, 
-         DosesIncluded = case_match(DosesIncluded, 
-                                    "Dose1 User" ~ "Dose1 Last", 
-                                    "Last User" ~ "Last", 
-                                    .default = DosesIncluded), 
-         tissue = unique(MyPKResults$Tissue), 
-         name_clinical_study = name_clinical_study)
-      
-   } else {
-      
-      return_caption <- FALSE
+   
+   MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
+                                            prettify_compound_names = TRUE)
+   
+   DosesIncluded <- c("Dose1" = any(str_detect(PKparameters$PKparameter, "_dose1")),
+                      "Last" = any(str_detect(PKparameters$PKparameter, "_last")), 
+                      "User" = any(complete.cases(PKparameters$Sheet)))
+   DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
+   
+   Annotations <- make_table_annotations(
+      MyPKResults = MyPKResults %>% purrr::discard(~all(is.na(.))), 
+      MyFile = unique(MyPKResults$File), 
+      MyCompoundID = unique(MyPKResults$CompoundID), 
+      prettify_compound_names = prettify_compound_names,
+      Deets = existing_exp_details, 
+      MeanType = MeanType, 
+      DosesIncluded = case_match(DosesIncluded, 
+                                 "Dose1 User" ~ "Dose1 Last", 
+                                 "Last User" ~ "Last", 
+                                 .default = DosesIncluded), 
+      tissue = unique(MyPKResults$Tissue), 
+      name_clinical_study = name_clinical_study)
+   
+   if(return_caption){
+      Out[["table_heading"]] <- Annotations$table_heading
+      Out[["table_caption"]] <- Annotations$table_caption
+   } 
+   
+   if(single_table == FALSE){
       
       Annotations <- list("table_heading" = "", 
                           "table_caption" = "")
@@ -1271,8 +1489,6 @@ pk_table <- function(PKparameters = NA,
       
    }
    
-   Out <- list("Table" = MyPKResults)
-   
    if(checkDataSource){
       Out[["QC"]] <- OutQC
       
@@ -1294,11 +1510,6 @@ pk_table <- function(PKparameters = NA,
    if(return_PK_pulled){
       Out[["PKpulled"]] <- PKpulled
    }
-   
-   if(return_caption){
-      Out[["table_heading"]] <- Annotations$table_heading
-      Out[["table_caption"]] <- Annotations$table_caption
-   } 
    
    if(length(Out) == 1){
       Out <- Out[[1]]

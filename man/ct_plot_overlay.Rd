@@ -315,9 +315,7 @@ this to "none".}
 \item{facet1_column}{optionally break up the graph into small multiples; this
 specifies the first of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet1_column =
-Tissue}. If \code{floating_facet_scale} is FALSE and you haven't specified
-\code{facet_ncol} or  \code{facet_nrow}, then \code{facet1_column} will
-designate the rows of the output graphs.}
+Tissue}.}
 
 \item{facet1_title}{optionally specify a title to describe facet 1. This is
 ignored if \code{floating_facet_scale} is TRUE or if you have specified
@@ -326,9 +324,9 @@ ignored if \code{floating_facet_scale} is TRUE or if you have specified
 \item{facet2_column}{optionally break up the graph into small multiples; this
 specifies the second of up to two columns to break up the data by, and the
 designated column name should be unquoted, e.g., \code{facet2_column =
-CompoundID}. If \code{floating_facet_scale} is FALSE and you haven't
-specified \code{facet_ncol} or  \code{facet_nrow}, then
-\code{facet2_column} will designate the columns of the output graphs.}
+CompoundID}. If you have graphs where the rows are broken up by one variable
+and the columns by another, then this will specify the columns of the
+graphs.}
 
 \item{facet2_title}{optionally specify a title to describe facet 2. This is
 ignored if \code{floating_facet_scale} is TRUE or if you have specified
@@ -342,20 +340,31 @@ for \code{facet1_column} and/or \code{facet2_column}.}
 you would like to have. This only applies when you have specified a column
 for \code{facet1_column} and/or \code{facet2_column}.}
 
-\item{floating_facet_scale}{TRUE or FALSE (default) for whether to allow the
-axes for each facet of a multi-facetted graph to scale freely to best fit
-whatever data are present. Default is FALSE, which means that all data will
-be on the same scale for easy comparison. However, this could mean that
-some graphs have lines that are hard to see, so you can set this to TRUE to
-allow the axes to shrink or expand according to what data are present for
-that facet. Floating axes comes with a trade-off for the looks of the
-graphs, though: Setting this to TRUE does mean that your x axis won't
-automatically have pretty breaks that are sensible for times in hours.}
+\item{floating_facet_scale}{TRUE, FALSE (default), "x", "y", or "xy" for
+  whether to allow the axes for each facet of a multi-facetted graph to scale
+  freely to best fit whatever data are present. Default is FALSE, which means
+  that all data will be on the same scale for easy comparison. However, this
+  could mean that some graphs have lines that are hard to see, so you can set
+  this to TRUE to allow the axes to shrink or expand according to what data
+  are present for that facet. If this is set to "x", "y", or "xy", then the
+  scale will only float along that axis. Play around with this to see what we
+  mean.
+
+  Floating axes comes with a trade-off for the looks of the graphs, though:
+  Setting this to TRUE does mean that your x axis won't automatically have
+  pretty breaks that are sensible for times in hours and that you can't
+  specify intervals or limits for either the x or the y axis.
+
+  If you're a ggplot2 user, here's what's going on under the hood: If you set
+  \code{floating_facet_scale = FALSE}, the default, then ct_plot_overlay will
+  use facet_grid to break up your graphs and set \code{facet1_column} to the
+  rows and \code{facet2_column} to the columns. If you set
+  \code{floating_facet_scale = TRUE}, then ct_plot_overlay will use
+  facet_wrap to break up your data.}
 
 \item{facet_spacing}{Optionally set the spacing between facets. If left as
 NA, a best-guess as to a reasonable amount of space will be used. Units are
-"lines", so try, e.g. \code{facet_spacing = 2}. (Reminder: Numeric data
-should not be in quotes.)}
+"lines", so try, e.g. \code{facet_spacing = 2}.}
 
 \item{time_range}{time range to display. Options: \describe{
 
@@ -382,7 +391,11 @@ should not be in quotes.)}
 
   \item{"last dose to last observed" or "last obs" for short}{Time range will
   be limited to the start of the last dose until the last observed data
-  point.} }}
+  point.}
+
+  \item{"last dose to end" or "last to end" for short}{Time range will
+  be limited to the start of the last dose until the end of the simulation.}
+  }}
 
 \item{x_axis_interval}{set the x-axis major tick-mark interval. Acceptable
 input: any number or leave as NA to accept default values, which are
@@ -437,7 +450,8 @@ use for the y axis label}
 NA, the concentration units in the source data will be used. Acceptable
 options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
 "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
-concentration, you'll need to provide something for the argument
+concentration and your source data were in mass per volume units or vice
+versa, you'll need to provide something for the argument
 \code{existing_exp_details}.}
 
 \item{hline_position}{numerical position(s) of any horizontal lines to add to
@@ -499,13 +513,13 @@ something more human readable. For example, "SV-Rifampicin-MD" will become
 FALSE will leave the compound names as is. For an approach with more
 control over what the compound names will look like in legends and Word
 output, set each compound to the exact name you  want with a named
-character vector. This will be looking for all the compound names in the 
-columns "Compound" and "Inhibitor" in whatever you supply for ct_dataframe. 
+character vector. This will be looking for all the compound names in the
+columns "Compound" and "Inhibitor" in whatever you supply for ct_dataframe.
 For example, \code{prettify_compound_names =
 c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
-"Drug ABC", "Itraconazole_Fasted Soln and OH-Itraconazole" = "itraconazole")} 
-will make those compounds "ketoconazole", "Drug ABC", and "itraconazole" in a
-legend.}
+"Drug ABC", "Itraconazole_Fasted Soln and OH-Itraconazole" = "itraconazole")}
+will make those compounds "ketoconazole", "Drug ABC", and "itraconazole" in
+a legend.}
 
 \item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
 the graph where the left panel shows the original graph and the right panel
@@ -517,11 +531,14 @@ that object to the argument \code{existing_exp_details}.}
 \item{existing_exp_details}{output from \code{\link{extractExpDetails}} or
 \code{\link{extractExpDetails_mult}} to be used with \code{qc_graph}}
 
-\item{name_clinical_study}{optionally specify the name of the clinical study
-for any observed data. This only affects the caption of the graph. For
-example, specifying \code{name_clinical_study = "101, fed cohort"} will
-result in a figure caption that reads in part "Clinical Study 101, fed
-cohort".}
+\item{name_clinical_study}{optionally specify the name(s) of the clinical
+study or studies for any observed data. This only affects the caption of
+the graph. For example, specifying \code{name_clinical_study = "101, fed
+cohort"} will result in a figure caption that reads in part "clinical study
+101, fed cohort". If you have more than one study, that's fine; we'll take
+care of stringing them together appropriately. Just list them as a
+character vector, e.g., \code{name_clinical_study = c("101",
+"102", "103")} will become "clinical studies 101, 102, and 103."}
 
 \item{return_caption}{TRUE or FALSE (default) for whether to return any
 caption text to use with the graph. This works best if you supply something
@@ -559,61 +576,53 @@ a ggplot2 graphs or a set of arranged ggplot2 graphs
 }
 \description{
 \code{ct_plot_overlay} is meant to be used in conjunction with
-\code{\link{extractConcTime_mult}} to create single graphs with overlaid
-concentration-time data for multiple tissues, compounds, or Simcyp Simulator
-output files for easy comparisons. \emph{Note:} There are some nuances to
-overlaying observed data. Please see the "Details" section at the bottom of
-this help file. For detailed instructions and examples, please see the
-SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
-Files/SimcypConsultancy function examples and instructions/Concentration-time
-plots 3 - overlaying plots/Concentration-time-plot-examples-3.docx". (Sorry,
-we are unable to include a link to it here.)
+  \code{\link{extractConcTime_mult}} to create a graph with overlaid
+  concentration-time data for multiple tissues, compounds, or simulations for
+  easy comparisons. Please see the "Note" section at the bottom of the help
+  file for a more-detailed overview of what this function is designed to do.
 }
-\details{
-\strong{Notes on including observed data:} We recently added the option of
-including observed data and are in the process of testing this. To include
-observed data, you have two options: \enumerate{
+\note{
+To make an overlaid graph, the ct_plot_overlay function will ask you to
+  map specific columns in your source data to aesthetics in your graph, e.g.,
+  you can color the lines in your data based on which tissue is being graphed
+  (column in ct_dataframe: Tissue) or set the line type based on whether a
+  DDI perpetrator drug is present (column in ct_dataframe: Inhibitor) or
+  break up the graphs into small multiples based on which simulation it is
+  (column in ct_dataframe: File). When you run this function, two of the
+  messages you'll see will be "Columns that vary in your data: ..." and
+  "Graphing aesthetics you've assigned: ..." We set up these messages to try
+  to let you know what columns in your source data -- the object you supplied
+  for \code{ct_dataframe} -- have multiple unique values that might be useful
+  for mapping aesthetics in your graphs. If you have a problem with your
+  graphs such as multiple lines that are the same color or multiple lines
+  that are the same line type and that's not what you expected and it's not
+  clear why you're getting that graph, this pair of messages is meant to help
+  you figure out what groups are present in your data and which of them you
+  have mapped to an aesthetic aspect of your graph.
 
-\item{Use the Simulator Excel PE data entry template to save your observed
-data. Then, when you run \code{\link{extractConcTime_mult}}, supply the names
-of those Excel files to the observed data  function argument. This is the
-BEST option because it contains the most information about the observed
-data.}
+  The faceting arguments may take a little playing around to understand and
+  will probably be clearest if you're already a ggplot2 user. (This and all
+  graphing functions in the SimcypConsultancy package use the package ggplot2
+  to make graphs.) Here's what's going on under the hood with the faceting
+  arguments: If you set \code{floating_facet_scale = FALSE}, the default,
+  then \code{ct_plot_overlay} will use facet_grid to break up your graphs and
+  set \code{facet1_column} to the rows and \code{facet2_column} to the
+  columns. If you set \code{floating_facet_scale = TRUE}, then
+  \code{ct_plot_overlay} will use facet_wrap to break up your data and
+  \code{facet1_column} will be the first variable it uses and
+  \code{facet2_column} will be the second.
 
-\item{Include observed data in your simulation files. Those data will be
-automatically extracted when you run \code{\link{extractConcTime_mult}} if
-"obs_data_files" is left as the default NA. The drawback to this approach is
-that it's not clear whether there was an inhibitor present, for example, or
-which compound the data describe.} }
-
-The \code{ct_plot_overlay} function will automatically figure out which
-observed data should be compared with which simulated compound IDs, tissues,
-etc. However, because the function doesn't know which simulator \emph{file}
-goes with which observed data, it will assume that \emph{all} the observed
-data are appropriate to compare to \emph{all} the files included in
-\code{ct_dataframe} by default. If that's not the case, after you use
-\code{\link{extractConcTime_mult}} to extract your data, you can indicate
-which simulator output file goes with which observed file by setting the
-simulator output file in the column "File". This admittedly requires a bit of
-R knowledge, so please ask a member of the R Working Group for help if you're
-not clear on how to do this. Be warned, though, that if you assign "File" for
-some observed data but not all, only the observed data with an assignment for
-"File" will show up on the graph.
-
-One other note: The observed data files from the PE data-entry template don't
-include the \emph{name} of the compound you're simulating (column:
-"Compound"). They do include whether it was a substrate, metabolite, or
-inhibitor (column: CompoundID), but not the compound's actual name. For that
-reason, try coloring or facetting your data by CompoundID rather than by
-Compound if you have observed data. Similarly, if you have an inhibitor and
-you have observed data, the inhibitor will be listed as the generic
-"inhibitor" here rather than, e.g., "ketoconazole" because the observed data
-file doesn't indicate that.
-
-\strong{Other notes:} There's a bug in RStudio (I think) that sometimes
-causes the last shape in a legend to vanish when you're looking at the graph
-in RStudio, but, if you save the graph, the shape \emph{should} be present.
-Let me know if that doesn't happen. -LSh
+  \strong{A note reqgarding observed data:} There are some nuances to
+  overlaying observed data. For detailed instructions and examples, please
+  see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+  Files/SimcypConsultancy function examples and
+  instructions/Concentration-time plots 3 - overlaying
+  plots/Concentration-time-plot-examples-3.docx". (Sorry, we are unable to
+  include a link to it here.) If you have observed concentration-time data to
+  match your simulated data but you don't see those observed data on your
+  graph, please check the help file for the function you used -- either
+  \code{\link{extractConcTime}} or \code{\link{extractConcTime_mult}} -- to
+  extract your data. Something has likely gone wrong in the data extraction.
 }
 \examples{
 data(MDZct)

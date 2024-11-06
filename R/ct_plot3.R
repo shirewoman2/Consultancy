@@ -104,6 +104,13 @@
 #'   "First dose"
 #' @param graph_title_LR graph title for the lower right graph; defaults to
 #'   "Last dose"
+#' @param conc_units_to_use concentration units to use for graphs. If left as
+#'   NA, the concentration units in the source data will be used. Acceptable
+#'   options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
+#'   "ng/L", "ng/mL", "µM" (or "uM"), or "nM". If you want to use a molar
+#'   concentration and your source data were in mass per volume units or vice
+#'   versa, you'll need to provide something for the argument
+#'   \code{existing_exp_details}.
 #' @param hline_position numerical position(s) of any horizontal lines to add to
 #'   the graph. The default is NA to have no lines, and good syntax if you
 #'   \emph{do} want lines would be, for example, \code{hline_position = 10} to
@@ -160,11 +167,14 @@
 #'   c("Sim-Ketoconazole-400 mg QD" = "ketoconazole", "Wks-Drug ABC-low_ka" =
 #'   "Drug ABC")} will make those compounds "ketoconazole" and "Drug ABC" in a
 #'   legend.
-#' @param name_clinical_study optionally specify the name of the clinical study
-#'   for any observed data. This only affects the caption of the graph. For
-#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
-#'   result in a figure caption that reads in part "Clinical Study 101, fed
-#'   cohort".
+#' @param name_clinical_study optionally specify the name(s) of the clinical
+#'   study or studies for any observed data. This only affects the caption of
+#'   the graph. For example, specifying \code{name_clinical_study = "101, fed
+#'   cohort"} will result in a figure caption that reads in part "clinical study
+#'   101, fed cohort". If you have more than one study, that's fine; we'll take
+#'   care of stringing them together appropriately. Just list them as a
+#'   character vector, e.g., \code{name_clinical_study = c("101",
+#'   "102", "103")} will become "clinical studies 101, 102, and 103."
 #' @param return_caption TRUE or FALSE (default) for whether to return any
 #'   caption text to use with the graph. This works best if you supply something
 #'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
@@ -255,6 +265,7 @@ ct_plot3 <- function(ct_dataframe,
                      x_axis_interval_LR = NA,
                      legend_position = "none",
                      graph_labels = TRUE, 
+                     conc_units_to_use = NA, 
                      hline_position = NA, 
                      hline_style = "red dotted", 
                      vline_position = NA, 
@@ -349,6 +360,8 @@ ct_plot3 <- function(ct_dataframe,
                            linear_or_log = linear_or_log,
                            time_range = NA,
                            x_axis_interval = x_axis_interval_U,
+                           existing_exp_details = existing_exp_details, 
+                           conc_units_to_use = conc_units_to_use, 
                            graph_title = graph_title_U,
                            qc_graph = FALSE,
                            graph_labels = FALSE, 
@@ -364,6 +377,8 @@ ct_plot3 <- function(ct_dataframe,
                               linear_or_log = linear_or_log,
                               time_range = time_range_LL,
                               x_axis_interval = x_axis_interval_LL,
+                              existing_exp_details = existing_exp_details, 
+                              conc_units_to_use = conc_units_to_use, 
                               graph_title = graph_title_LL,
                               qc_graph = FALSE,
                               graph_labels = FALSE, 
@@ -379,6 +394,8 @@ ct_plot3 <- function(ct_dataframe,
                               time_range = time_range_LR, 
                               graph_title = graph_title_LR,
                               x_axis_interval = x_axis_interval_LR,
+                              existing_exp_details = existing_exp_details, 
+                              conc_units_to_use = conc_units_to_use, 
                               qc_graph = FALSE,
                               graph_labels = FALSE, 
                               legend_position = "none", 
@@ -412,6 +429,8 @@ ct_plot3 <- function(ct_dataframe,
                    time_range = NA, 
                    x_axis_interval = x_axis_interval_U,
                    graph_title = graph_title_U,
+                   existing_exp_details = existing_exp_details, 
+                   conc_units_to_use = conc_units_to_use, 
                    save_graph = NA, 
                    qc_graph = FALSE,
                    graph_labels = FALSE, 
@@ -427,6 +446,8 @@ ct_plot3 <- function(ct_dataframe,
                       time_range = time_range_LL, 
                       x_axis_interval = x_axis_interval_LL,
                       graph_title = graph_title_LL,
+                      existing_exp_details = existing_exp_details, 
+                      conc_units_to_use = conc_units_to_use, 
                       qc_graph = FALSE,
                       graph_labels = FALSE, 
                       save_graph = NA)))
@@ -441,6 +462,8 @@ ct_plot3 <- function(ct_dataframe,
                       ..., 
                       time_range = time_range_LR, 
                       x_axis_interval = x_axis_interval_LR,
+                      existing_exp_details = existing_exp_details, 
+                      conc_units_to_use = conc_units_to_use, 
                       graph_title = graph_title_LR,
                       graph_labels = FALSE, 
                       save_graph = NA)))

@@ -316,6 +316,14 @@
 #'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 #'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 #'   into the console.
+#' @param name_clinical_study optionally specify the name(s) of the clinical
+#'   study or studies for any observed data. This only affects the caption of
+#'   the graph. For example, specifying \code{name_clinical_study = "101, fed
+#'   cohort"} will result in a figure caption that reads in part "clinical study
+#'   101, fed cohort". If you have more than one study, that's fine; we'll take
+#'   care of stringing them together appropriately. Just list them as a
+#'   character vector, e.g., \code{name_clinical_study = c("101",
+#'   "102", "103")} will become "clinical studies 101, 102, and 103."
 #' @param graph_labels TRUE or FALSE for whether to include labels (A, B, C,
 #'   etc.) for each of the small graphs. (Not applicable if only outputting
 #'   linear or only semi-log graphs.)
@@ -406,6 +414,7 @@ ct_plot_obs <- function(ct_dataframe,
                         hline_style = "red dotted", 
                         vline_position = NA, 
                         vline_style = "red dotted",
+                        name_clinical_study = NA, 
                         graph_labels = TRUE,
                         graph_title = NA,
                         graph_title_size = 14, 
@@ -547,6 +556,7 @@ ct_plot_obs <- function(ct_dataframe,
                    hline_style = hline_style, 
                    vline_position = vline_position, 
                    vline_style = vline_style,
+                   name_clinical_study = name_clinical_study, 
                    graph_labels = graph_labels,
                    graph_title = graph_title,
                    graph_title_size = graph_title_size, 

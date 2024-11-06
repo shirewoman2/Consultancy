@@ -24,11 +24,12 @@ make_text_legos <- function(sim_data_file,
                             existing_exp_details, 
                             prettify_compound_names){
    
-   Deets <- filter_sims(existing_exp_details, 
+   Deets <- harmonize_details(existing_exp_details)
+   Deets <- filter_sims(Deets, 
                         sim_data_file, 
                         "include")$MainDetails
    
-   if(nrow(Deets) == 0){
+   if(is.null(Deets) || nrow(Deets) == 0){
       warning("We can't find the sim_data_file requested in what you supplied for existing_exp_details. We can't return any info here.\n", 
               call. = FALSE)
       
@@ -145,16 +146,20 @@ make_text_legos <- function(sim_data_file,
       
       NumDaysInhib <- suppressWarnings(
          Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
-      NumDaysInhib <- ifelse(is.na(NumDaysInhib), "**CUSTOM DOSING - FILL IN MANUALLY**",
+      NumDaysInhib <- ifelse(is.na(NumDaysInhib) & 
+                                DoseFreq_inhib != "single dose",
+                             "**CUSTOM DOSING - FILL IN MANUALLY**",
                              NumDaysInhib)
       
       DoseDay_ordinal <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
       LastDig <- as.numeric(str_sub(DoseDay_ordinal, start = -1, end = -1))
-      DoseDay_ordinal <- paste0(DoseDay_ordinal,
-                                case_when(LastDig %in% c(0, 4:9) ~ "^th^",
-                                          LastDig == 1 ~ "^st^",
-                                          LastDig == 2~ "^nd^",
-                                          LastDig == 3 ~ "^rd^"))
+      PenultDig <- as.numeric(str_sub(DoseDay_ordinal, start = -2, end = -2))
+      DoseDay_ordinal <- paste0(
+         DoseDay_ordinal,
+         case_when(LastDig == 1 & PenultDig != "1" ~ "^st^",
+                   LastDig == 2 & PenultDig != "1" ~ "^nd^",
+                   LastDig == 3 & PenultDig != "1" ~ "^rd^", 
+                   .default = "^th^"))
       
    } else {
       DosingText_inhib_lower <- NA
@@ -181,6 +186,10 @@ make_text_legos <- function(sim_data_file,
    PopCap <- sub("Healthy Volunteers", "Healthy Subjects",
                  tidyPop(Deets$Population)$PopulationCap)
    
+   DemogSummary <- paste0(Deets$PercFemale * 100, "% female, ages ", 
+                          Deets$Age_min, " to ", 
+                          Deets$Age_max)
+   
    # Heading text -------------------------------------------------------------
    
    Heading_DDI <- ifelse(MyPerpetrator == "none", 
@@ -206,6 +215,7 @@ make_text_legos <- function(sim_data_file,
       DosingText_inhib_lower = DosingText_inhib_lower, 
       DosingText_inhib_upper = DosingText_inhib_upper,
       Pop = Pop,
+      DemogSummary = DemogSummary, 
       LastDoseDay_sub = LastDoseDay_sub,
       DoseDay_ordinal = DoseDay_ordinal,
       NumDaysInhib = NumDaysInhib, 

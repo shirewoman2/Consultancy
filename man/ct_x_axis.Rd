@@ -4,7 +4,7 @@
 \alias{ct_x_axis}
 \title{Set up x axis in a conc-time plot}
 \usage{
-ct_x_axis(Data, time_range, t0, compoundToExtract, pad_x_axis, EnzPlot)
+ct_x_axis(Data, time_range, t0, MyCompoundID, pad_x_axis, EnzPlot)
 }
 \arguments{
 \item{Data}{the data.frame containing conc-time data; this is the output from
@@ -14,7 +14,7 @@ extractConcTime}
 
 \item{t0}{the user-supplied input for t0}
 
-\item{compoundToExtract}{user-requested compound to extract/graph}
+\item{MyCompoundID}{user-requested compound to extract/graph}
 
 \item{pad_x_axis}{user-supplied value for padding x axis}
 

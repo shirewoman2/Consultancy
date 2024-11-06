@@ -17,7 +17,7 @@
 #'   shading will alternate between white and light gray. For example, if you
 #'   have a table with PK values for multiple files and you have more than one
 #'   row per file (an example of this would be the output from the function
-#'   \code{\link{pksummary_mult}}), setting \code{shading_column = File} will
+#'   \code{\link{pk_table}}), setting \code{shading_column = File} will
 #'   cause the shading of the rows to alternate between white and light gray
 #'   whenever the file changes. Please see the examples at the bottom of this
 #'   help file.
@@ -79,19 +79,13 @@
 #'   green, you can get that by specifying
 #'   \code{highlight_so_cutoffs = c(1, 1.25)} and \code{highlight_so_colors =
 #'   c("green", "red")}
-#' @param highlight_gmr_colors optionally specify a set of colors to use for
-#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
-#'   "green to red", "traffic" (a more vivid version of "green to red"), or a
-#'   vector of 4 colors of your choosing. If left as NA, no highlighting for GMR
-#'   level will be done.
 #' @param highlight_so_colors optionally specify a set of colors to use for
 #'   highlighting S/O values outside the limits you specified with
 #'   \code{highlight_so_cutoffs}. Options: \describe{
 #'
 #'   \item{"yellow to red" (default)}{A range of light yellow to light orange to
-#'   light red. If you have included 1 in your cutoffs and you leave
-#'   \code{highlight_so_colors} with the default setting, values in the middle,
-#'   "good" range of S/O values will be highlighted a light green.}
+#'   light red. If you have included 1 in your cutoffs, values in the middle,
+#'   the "good" range of S/O values around 1 will be highlighted a light green.}
 #'
 #'   \item{"traffic"}{light green, yellow, and red designed to display values
 #'   outside 1.25, 1.5, and 2 fold of unity, respectively. If you include 1 in
@@ -103,6 +97,11 @@
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
 #'   If you do specify your own bespoke colors, you'll need to make sure that
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
+#' @param highlight_gmr_colors optionally specify a set of colors to use for
+#'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
+#'   "green to red", "traffic" (a more vivid version of "green to red"), or a
+#'   vector of 4 colors of your choosing. If left as NA, no highlighting for GMR
+#'   level will be done.
 #' @param highlight_cells optionally specify cells in the table to be
 #'   highlighted with a numeric vector where the 1st number is the row number
 #'   and the 2nd number is the column number (just like regular row and column
@@ -123,6 +122,11 @@
 #'   the latter is listed in PowerPoint and Word.
 #' @param fontsize the numeric font size for the output table. Default is 11
 #'   point.
+#' @param borders TRUE (default) or FALSE for whether to include borders around
+#'   cells
+#' @param column_widths optionally specify what the widths of the columns should
+#'   be with a numeric vector of the widths in inches, e.g., \code{column_widths
+#'   = c(1.5, 2, 0.5, 3)}
 #' @param save_table optionally save the output table by supplying a file name
 #'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
 #'   slashes, dollar signs, or periods in the file name. If you leave off the
@@ -226,6 +230,7 @@ formatTable_Simcyp <- function(DF,
                                sort_column, 
                                bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
+                               column_widths = NA, 
                                add_header_for_DDI = TRUE, 
                                perpetrator_name = "perpetrator", 
                                prettify_columns = FALSE, 
@@ -236,6 +241,7 @@ formatTable_Simcyp <- function(DF,
                                highlight_color = "yellow",
                                font = "Arial", 
                                fontsize = 11, 
+                               borders = TRUE, 
                                save_table = NA, 
                                page_orientation = "portrait", 
                                title_document = NA, 
@@ -323,6 +329,19 @@ formatTable_Simcyp <- function(DF,
            call. = FALSE)
    }
    
+   # Error catching column_widths now that we have DF
+   if("logical" %in% class(column_widths) == FALSE){
+      if("numeric" %in% class(column_widths) == FALSE){
+         warning(wrapn("You have supplied something other than numeric data for the column widths, so we don't know what you want and will ignore this."), 
+                 call. = FALSE)
+         column_widths <- NA
+      } else {
+         # Making sure we have more than enough values
+         column_widths <- rep(column_widths, ncol(DF))
+      }
+   } 
+   
+   
    if(any(complete.cases(highlight_cells))){
       if(class(highlight_cells) == "numeric"){
          highlight_cells <- list(highlight_cells[1:2])
@@ -354,9 +373,10 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
-   if(complete.cases(highlight_gmr_colors) && 
+   if(any(complete.cases(highlight_gmr_colors)) && 
       tolower(highlight_gmr_colors[1]) == "lisa"){highlight_gmr_colors = "traffic"}
-   if(complete.cases(highlight_so_colors) &&
+   
+   if(any(complete.cases(highlight_so_colors)) &&
       tolower(highlight_so_colors[1]) == "lisa"){highlight_so_colors = "traffic"}
    
    if(any(complete.cases(highlight_gmr_colors)) &&
@@ -373,8 +393,13 @@ formatTable_Simcyp <- function(DF,
       } 
    }
    
+   if(all(highlight_so_colors == "green to red")){
+      highlight_so_colors <- "yellow to red"
+      highlight_so_cutoffs <- sort(unique(c(1, highlight_so_cutoffs)))
+   }
+   
    if(any(complete.cases(highlight_so_colors)) &&
-      highlight_so_colors[1] %in% c("yellow to red", "green to red", "traffic") == FALSE &&
+      highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE &&
       tryCatch(is.matrix(col2rgb(highlight_so_colors)),
                error = function(x) FALSE) == FALSE){
       warning("The values you used for highlighting S/O values are not all valid colors in R. We'll used the default colors instead.\n", 
@@ -445,7 +470,12 @@ formatTable_Simcyp <- function(DF,
       add_header_for_DDI
    OrigNames <- names(DF)
    
-   FT <- flextable::flextable(DF)
+   if("Parameter" %in% names(DF)){
+      FT <- format_scripts(DF, parameter_column = Parameter)
+   } else {
+      FT <- format_scripts(DF)
+   }
+   
    
    ## Adding DDI header row --------------------------------------------------
    
@@ -488,8 +518,7 @@ formatTable_Simcyp <- function(DF,
       
       TopRowValues <- OrigNames
       TopRowValues[BLcols] <- "Baseline"
-      TopRowValues[DDIcols] <- paste("With", AllPerps_colposition[
-         complete.cases(AllPerps_colposition)])
+      TopRowValues[DDIcols] <- paste("With", perpetrator_name)
       TopRowValues[RatioCols] <- "GMR"
       
       NewNames <- sub(str_c(paste(" with", AllPerps), collapse = "|"),
@@ -589,13 +618,16 @@ formatTable_Simcyp <- function(DF,
             flextable::bg(i = NoShadeRows, bg = "white") %>%
             flextable::bg(part = "header", bg = "white")
          
-         if(merge_shaded_cells){
-            FT <- FT %>% 
-               flextable::merge_v(j = which(names(DF) == as_label(shading_column)))
-         }
       }
+      
+      if(merge_shaded_cells){
+         FT <- FT %>% 
+            flextable::merge_v(j = which(names(DF) == as_label(shading_column)))
+      }
+      
    } else {
       ShadeRows <- c()
+      ShadeChange <- c()
    }
    
    ## Merge other columns, too -----------------------------------------------
@@ -610,21 +642,13 @@ formatTable_Simcyp <- function(DF,
    ## Highlight GMRs ---------------------------------------------------------
    
    if(any(complete.cases(highlight_gmr_colors))){
-      if(highlight_gmr_colors[1] %in% c("yellow to red", "green to red", "traffic")){
+      if(tolower(highlight_gmr_colors[1]) %in% 
+         c("yellow to red", "green to red", "traffic", "lisa")){
          
-         highlight_gmr_colors <- switch(tolower(highlight_gmr_colors), 
-                                        "green to red" = c("negligible" = "#C7FEAC", 
-                                                           "weak" = "#FFFF95",
-                                                           "moderate" = "#FFDA95",
-                                                           "strong" = "#FF9595"),
-                                        "yellow to red" = c("negligible" = "white", 
-                                                            "weak" = "#FFFF95",
-                                                            "moderate" = "#FFDA95",
-                                                            "strong" = "#FF9595"), 
-                                        "traffic" = c("negligible" = "#00B050", 
-                                                      "weak" = "#92D050",
-                                                      "moderate" = "#FFC000",
-                                                      "strong" = "#FF0000"))
+         highlight_gmr_colors <-
+            set_boundary_colors(color_set = highlight_gmr_colors, 
+                                boundaries = c(1, 1.25, 2, 5), 
+                                break_type = "GMR")
          
       } else {
          
@@ -679,7 +703,7 @@ formatTable_Simcyp <- function(DF,
          # they also have asked for shading, adjust so that we don't have one
          # column that's white where everything else in the row is a light gray.
          if(all(col2rgb(highlight_gmr_colors["negligible"]) == 
-                col2rgb("white"))){
+                col2rgb("white")) & length(ShadeChange) > 0){
             RowsToMakeGray <- intersect(
                intersect(which(DF[, j] >= 0.8 & DF[, j] <= 1.25), 
                          RowsToShade), 
@@ -700,120 +724,43 @@ formatTable_Simcyp <- function(DF,
    if(any(complete.cases(highlight_so_cutoffs))){
       
       # Tidying inputs
-      HighlightMiddle <- 1 %in% highlight_so_cutoffs
-      
       if(any(highlight_so_cutoffs < 1)){
          warning("At least one of the numbers you specified for highlight_so_cutoffs was < 1. We will automatically use both the original number you specified and its inverse for highlighting, so we'll ignore any values < 1 here.", 
                  call. = FALSE)
          highlight_so_cutoffs <- highlight_so_cutoffs[which(highlight_so_cutoffs >= 1)]
       }
       
+      highlight_so_colors <- tolower(highlight_so_colors)
+      highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
+      
       if(length(highlight_so_cutoffs) != length(highlight_so_colors) &
-         highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE){
+         tolower(highlight_so_colors[1]) %in% 
+         c("yellow to red", "lisa", "traffic") == FALSE){
+         
          warning("You have specified one number of colors for highlighting S/O values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
       }
       
-      highlight_so_colors <- tolower(highlight_so_colors)
-      highlight_so_cutoffs <- sort(unique(highlight_so_cutoffs))
-      
-      if(highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE && 
+      if(highlight_so_colors[1] %in% c("yellow to red", "green to red", 
+                                       "lisa", "traffic") == FALSE && 
          tryCatch(is.matrix(col2rgb(highlight_so_colors)),
                   error = function(x) FALSE) == FALSE){
+         
          warning("The values you used for highlighting problematic S/O ratios are not all valid colors in R. We'll used the default colors instead.", 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
       } 
       
-      if(highlight_so_colors[1] %in% c("yellow to red", "traffic")){
+      if(highlight_so_colors[1] %in% c("yellow to red", "lisa", "traffic")){
          
-         ColorChoices <- paste(
-            highlight_so_colors,
-            HighlightMiddle,
-            cut(length(highlight_so_cutoffs), breaks = c(0:4, Inf)))
+         highlight_so_colors <- set_boundary_colors(
+            color_set = case_when(1 %in% highlight_so_cutoffs &
+                                     highlight_so_colors == "yellow to red" ~ "green to red", 
+                                  .default = highlight_so_colors), 
+            boundaries = highlight_so_cutoffs, 
+            break_type = "SO highlight")
          
-         highlight_so_colors <-
-            switch(ColorChoices,
-                   ## yellow to red
-                   
-                   # no middle, 1 cutoff
-                   "yellow to red FALSE (0,1]" = "#FF9595",
-                   
-                   # no middle, 2 cutoffs
-                   "yellow to red FALSE (1,2]" = c("#FFFF95", "#FF9595"),
-                   
-                   # no middle, 3 cutoffs
-                   "yellow to red FALSE (2,3]" = c("#FFFF95", "#FFDA95", "#FF9595"),
-                   
-                   # no middle, >3 cutoffs
-                   "yellow to red FALSE (3,4]" = colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                      length(highlight_so_cutoffs)),
-                   # This is the same as the above on purpose.
-                   "FALSE (4,Inf]" = colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                      length(highlight_so_cutoffs)),
-                   
-                   # Just highlight everything green. This would be weird and
-                   # probably not what the user wants, but is among the possible
-                   # choices for inputs.
-                   "yellow to red TRUE (0,1]" = c("#C7FEAC"),
-                   
-                   # highlight middle, 1 cutoff other than middle
-                   "yellow to red TRUE (1,2]" = c("#C7FEAC", "#FF9595"),
-                   
-                   # highlight middle, 2 cutoffs other than middle
-                   "yellow to red TRUE (2,3]" = c("#C7FEAC", "#FFFF95", "#FF9595"),
-                   
-                   # highlight middle, 3 cutoffs other than middle
-                   "yellow to red TRUE (3,4]" = c("#C7FEAC", "#FFFF95", "#FFDA95", "#FF9595"),
-                   
-                   # highlight middle, >3 cutoffs other than middle
-                   "yellow to red TRUE (4,Inf]" =
-                      c("#C7FEAC",
-                        colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
-                           length(highlight_so_cutoffs))),
-                   
-                   ## traffic
-                   
-                   # no middle, 1 cutoff
-                   "traffic FALSE (0,1]" = "#FF0000",
-                   
-                   # no middle, 2 cutoffs
-                   "traffic FALSE (1,2]" = c("#FFC000", "#FF0000"),
-                   
-                   # no middle, 3 cutoffs
-                   "traffic FALSE (2,3]" = colorRampPalette(c("#FFC000", "#FF0000"))(
-                      length(highlight_so_cutoffs)),
-                   
-                   # no middle, >3 cutoffs
-                   "traffic FALSE (3,4]" = colorRampPalette(c("#FFC000", "#FF0000"))(
-                      length(highlight_so_cutoffs)),
-                   # This is the same as the above on purpose.
-                   
-                   "FALSE (4,Inf]" = colorRampPalette(c("#FFC000", "#FF0000"))(
-                      length(highlight_so_cutoffs)),
-                   # This is the same as the above on purpose.
-                   
-                   # Just highlight everything green. This would be weird and
-                   # probably not what the user wants, but is among the possible
-                   # choices for inputs.
-                   "traffic TRUE (0,1]" = c("#00B050"),
-                   
-                   # highlight middle, 1 cutoff other than middle
-                   "traffic TRUE (1,2]" = c("#00B050", "#FF0000"),
-                   
-                   # highlight middle, 2 cutoffs other than middle
-                   "traffic TRUE (2,3]" = c("#00B050", "#92D050", "#FF0000"),
-                   
-                   # highlight middle, 3 cutoffs other than middle
-                   "traffic TRUE (3,4]" = c("#00B050", "#92D050", "#FFC000", "#FF0000"),
-                   
-                   # highlight middle, >3 cutoffs other than middle
-                   "traffic TRUE (4,Inf]" =
-                      c("#00B050",
-                        colorRampPalette(c("#FFC000", "#FF0000"))(
-                           length(highlight_so_cutoffs)))
-            )
       }
       
       StatCol <- which(str_detect(names(DF), "[Ss]tat$|[Ss]tatistic"))
@@ -878,21 +825,29 @@ formatTable_Simcyp <- function(DF,
       
       # Set the font
       flextable::font(part = "all", 
-                      fontname = font) %>% 
-      
-      # setting up which borderlines to show
-      flextable::border_remove() %>% 
-      flextable::border_inner_v(part = "all", 
-                                border = officer::fp_border(width = 0.5)) %>% 
-      flextable::border_inner_h(part = "header", 
-                                border = officer::fp_border(width = 0.5)) %>% 
-      flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
-      flextable::hline_bottom(part = "body", 
-                              border = officer::fp_border(width = 0.5)) %>% 
-      flextable::fix_border_issues() %>% 
-      
-      # making the width autofitted to contents
+                      fontname = font)
+   
+   if(borders){
+      FT <- FT %>% 
+         
+         # setting up which borderlines to show
+         flextable::border_remove() %>% 
+         flextable::border_inner_v(part = "all", 
+                                   border = officer::fp_border(width = 0.5)) %>% 
+         flextable::border_inner_h(part = "header", 
+                                   border = officer::fp_border(width = 0.5)) %>% 
+         flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
+         flextable::hline_bottom(part = "body", 
+                                 border = officer::fp_border(width = 0.5)) %>% 
+         flextable::fix_border_issues()
+   } 
+   
+   # FIXME - Is it ok to include this if user sets col widths?
+   # if(all(is.na(column_widths))){
+   # making the width autofitted to contents
+   FT <- FT %>% 
       flextable::set_table_properties(width = 1, layout = "autofit")
+   # }
    
    # Dealing with subscripts
    ColNames <- sub("AUCt( |$)", "AUC~t~ ", NewNames)
@@ -928,6 +883,14 @@ formatTable_Simcyp <- function(DF,
                                   ColNames[cols, 1],
                                   flextable::as_sub(ColNames[cols, 2]), 
                                   ColNames[cols, 3]))
+      }
+   }
+   
+   # Setting columnn widths 
+   if("logical" %in% class(column_widths) == FALSE){
+      for(col in 1:ncol(DF)){
+         FT <- FT %>% 
+            flextable::width(j = col, width = column_widths[col])
       }
    }
    
