@@ -72,11 +72,26 @@ extractObsConcTime <- function(obs_data_file,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   # If they didn't include ".xlsx" at the end, add that. 
+   # If they didn't include ".xlsx" or ".xml" at the end, add ".xlsx" for now
+   # b/c that's what we used historically and doesn't require the Simcyp
+   # package.
    obs_data_file <- case_when(
       str_detect(obs_data_file, "\\.xml$|\\.xlsx$") == FALSE ~ 
          paste0(obs_data_file, ".xlsx"), 
       .default = obs_data_file)
+   
+   # Make this work for whoever the current user is, even if the XML obs file
+   # path was for someone else. This will normalize paths ONLY when the full
+   # path is present and starts w/"Users". Otherwise, keeping the original input
+   # just b/c I don't want to change the input from basename to full path
+   # unexpectedly.
+   obs_data_file[str_detect(obs_data_file, "Users")] <- 
+      normalizePath(obs_data_file[str_detect(obs_data_file, "Users")], 
+                    winslash = "/", mustWork = FALSE)
+   
+   obs_data_file <- str_replace(obs_data_file, 
+                                 "Users/(?<=\\/)[^\\/]+(?=\\/)", 
+                                 paste0("Users/", Sys.info()["user"]))
    
    # Checking that the file exists.
    if(file.exists(obs_data_file) == FALSE){

@@ -627,6 +627,7 @@ formatTable_Simcyp <- function(DF,
       
    } else {
       ShadeRows <- c()
+      ShadeChange <- c()
    }
    
    ## Merge other columns, too -----------------------------------------------
@@ -702,7 +703,7 @@ formatTable_Simcyp <- function(DF,
          # they also have asked for shading, adjust so that we don't have one
          # column that's white where everything else in the row is a light gray.
          if(all(col2rgb(highlight_gmr_colors["negligible"]) == 
-                col2rgb("white"))){
+                col2rgb("white")) & length(ShadeChange) > 0){
             RowsToMakeGray <- intersect(
                intersect(which(DF[, j] >= 0.8 & DF[, j] <= 1.25), 
                          RowsToShade), 

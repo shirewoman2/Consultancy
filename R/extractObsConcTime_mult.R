@@ -103,11 +103,15 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
          paste0(obs_data_files, ".xlsx"), 
       .default = obs_data_files)
    
-   # Make this work for whoever the current user is, even if the XML
-   # obs file path was for someone else.
-   obs_data_files <- normalizePath(obs_data_files, 
-                                   mustWork = FALSE, 
-                                   winslash = "/")
+   # Make this work for whoever the current user is, even if the XML obs file
+   # path was for someone else. This will normalize paths ONLY when the full
+   # path is present and starts w/"Users". Otherwise, keeping the original input
+   # just b/c I don't want to change the input from basename to full path
+   # unexpectedly.
+   obs_data_files[str_detect(obs_data_files, "Users")] <- 
+      normalizePath(obs_data_files[str_detect(obs_data_files, "Users")], 
+                    winslash = "/", mustWork = FALSE)
+   
    obs_data_files <- str_replace(obs_data_files, 
                                  "Users/(?<=\\/)[^\\/]+(?=\\/)", 
                                  paste0("Users/", Sys.info()["user"]))

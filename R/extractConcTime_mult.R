@@ -519,13 +519,18 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
          } else {
             
-            # Make this work for whoever the current user is, even if the XML
-            # obs file path was for someone else.
-            existing_exp_details$MainDetails$ObsOverlayFile <- 
-               normalizePath(existing_exp_details$MainDetails$ObsOverlayFile, 
-                             mustWork = FALSE, 
-                             winslash = "/")
-            existing_exp_details$MainDetails$ObsOverlayFile <- 
+            # Make this work for whoever the current user is, even if the XML obs file
+            # path was for someone else. This will normalize paths ONLY when the full
+            # path is present and starts w/"Users". Otherwise, keeping the original input
+            # just b/c I don't want to change the input from basename to full path
+            # unexpectedly.
+            existing_exp_details$MainDetails$ObsOverlayFile[
+               str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users")] <- 
+               normalizePath(existing_exp_details$MainDetails$ObsOverlayFile[
+                  str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users")], 
+                  winslash = "/", mustWork = FALSE)
+            
+            existing_exp_details$MainDetails$ObsOverlayFile <-
                str_replace(existing_exp_details$MainDetails$ObsOverlayFile, 
                            "Users/(?<=\\/)[^\\/]+(?=\\/)", 
                            paste0("Users/", Sys.info()["user"]))
@@ -545,14 +550,18 @@ extractConcTime_mult <- function(sim_data_files = NA,
                       Exists_xml = file.exists(ObsFile_xml), 
                       ObsFileToUse = case_when(
                          Exists_xlsx ~ ObsFile_xlsx, 
-                         # To get data from the xml file, we need to have the
-                         # Simcyp package installed and it has to be a version
-                         # of Simcyp that has the ReadPEData function, which was
-                         # added around V22 or maybe V23.
-                         length(find.package("Simcyp", quiet = TRUE)) > 0 &&
-                            ("ReadPEData" %in% getNamespaceExports("Simcyp") & 
-                                Exists_xml) ~ ObsFile_xml, 
+                         Exists_xml ~ ObsFile_xml, 
                          Exists ~ ObsFile))
+            
+            # To get data from the xml file, we need to have the Simcyp package
+            # installed and it has to be a version of Simcyp that has the
+            # ReadPEData function, which was added around V22 or maybe V23. I
+            # can't seem to incorporate this into the case_when evaluation, so
+            # doing this separately.
+            if(length(find.package("Simcyp", quiet = TRUE)) > 0 &&
+               "ReadPEData" %in% getNamespaceExports("Simcyp") == FALSE){
+               ObsAssign$Exists_xml <- FALSE
+            } 
             
             if(any(is.na(ObsAssign$ObsFileToUse))){
                warning(wrapn(paste0(
