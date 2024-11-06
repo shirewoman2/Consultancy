@@ -15,11 +15,6 @@ knitr::opts_chunk$set(
 
 library(tidyverse)
 library(SimcypConsultancy)
-
-
-# FIXME - Notes: Need to manually set the version number unless you've actually
-# installed the package, not simply loaded it w/load_all.
-
 ```
 
 # SimcypConsultancy
@@ -44,7 +39,7 @@ devtools::install_github(repo = "shirewoman2/Consultancy",
                          upgrade = "never")
 ```
 
-Current version: 3.4.5
+Current version: `r packageVersion("SimcypConsultancy")`
 
 
 # An overview of what SimcypConsultancy functions do 

@@ -22,11 +22,14 @@
 #'   include_dose_num = TRUE in original PK table call but less so when
 #'   include_dose_num = FALSE. Set to "no dose num included" to use the
 #'   most-generic text for the annotations.
-#' @param name_clinical_study optionally specify the name of the clinical study
-#'   for any observed data. This only affects the caption of the graph. For
-#'   example, specifying \code{name_clinical_study = "101, fed cohort"} will
-#'   result in a figure caption that reads in part "clinical study 101, fed
-#'   cohort".
+#' @param name_clinical_study optionally specify the name(s) of the clinical
+#'   study or studies for any observed data. This only affects the caption of
+#'   the graph. For example, specifying \code{name_clinical_study = "101, fed
+#'   cohort"} will result in a figure caption that reads in part "clinical study
+#'   101, fed cohort". If you have more than one study, that's fine; we'll take
+#'   care of stringing them together appropriately. Just list them as a
+#'   character vector, e.g., \code{name_clinical_study = c("101",
+#'   "102", "103")} will become "clinical studies 101, 102, and 103."
 #' @param return_all_objects T or F (default) for whether to return a ton of
 #'   objects for use downstream
 #'
@@ -127,6 +130,17 @@ make_table_annotations <- function(MyPKResults, # only PK table
       tissue <- str_comma(tissue)
    }
    
+   # Setting up text for clinical study or studies ----------------------------
+   
+   if(length(name_clinical_study) > 1){
+      MyClinStudies <- str_comma(name_clinical_study)
+   } else if(complete.cases(name_clinical_study)){
+      MyClinStudies <- paste("clinical study", name_clinical_study)
+   } else {
+      MyClinStudies <- "clinical study **XXX**"
+   }
+   
+   
    # Caption ---------------------------------------------------------------
    
    CapText1 <- ifelse(any(str_detect(names(MyPKResults), "tmax")), 
@@ -140,10 +154,13 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    CapText2 <- paste0(sub("; $", ". ", CapText2a), 
                       ifelse(Observedincluded, 
+                             
+                             # obs data present
                              paste0("S/O: simulated/observed. Source observed data: ", 
-                                    ifelse(complete.cases(name_clinical_study), 
-                                           paste0("clinical study ", name_clinical_study), 
-                                           "**Clinical Study XXX**"), "; "),
+                                    MyClinStudies, 
+                                    "; "),
+                             
+                             # no obs data present
                              ""))
    
    Caption <- paste0("Simulated values listed are ", 
@@ -156,7 +173,9 @@ make_table_annotations <- function(MyPKResults, # only PK table
    # There are some situations where we want to just pass through generic info,
    # so that's why I'm returning things here rather than stopping.
    if("logical" %in% class(Deets) | 
-      ("data.frame" %in% class(Deets) && nrow(Deets) == 0) |
+      ("data.frame" %in% class(Deets) && 
+       nrow(Deets) == 0) |
+      nrow(filter_sims(Deets, MyFile, "include")$MainDetails) == 0 |
       any(c(MyTissueLen, MyCompoundIDLen, MyFileLen) > 1)){
       return(list(table_heading = paste0("Simulated ",
                                          ifelse(Observedincluded, "and observed ", ""),
@@ -366,9 +385,14 @@ make_table_annotations <- function(MyPKResults, # only PK table
                               "inhibitor 1 metabolite") == FALSE |
              length(setdiff(names(AllPerpetrators), MyCompoundID)) > 0),
       paste(" with or without", 
-            sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
-            "mg",
-            MyPerpetrator, DoseFreq_inhib),
+            ifelse(DoseFreq_inhib == "single dose", 
+                   paste("a single dose of", 
+                         sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
+                         "mg",
+                         MyPerpetrator), 
+                   paste(sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
+                         "mg",
+                         MyPerpetrator, DoseFreq_inhib))),
       "")
    
    Heading <- paste0("Simulated ",
