@@ -92,6 +92,19 @@ change_xml_path <- function(sim_workspace_files = NA,
            call. = FALSE)
    }
    
+   
+   # subfun for V23+ data extraction ------------------------------------------
+   
+   # For some reason, you have to unzip the workspaces 1st if they're V23 or
+   # later. Not sure what changed.
+   unzip1st_fun <- function(workspace){
+      R.utils::gunzip(workspace, destname = "TEMP.wks", remove = FALSE)
+      workspace_xml <- XML::xmlTreeParse("TEMP.wks", useInternal = TRUE)
+      file.remove("TEMP.wks")
+      return(workspace_xml)
+   }
+   
+   
    # Main body of function ---------------------------------------------------
    
    if(class(workspace_objects) == "list"){
@@ -107,7 +120,8 @@ change_xml_path <- function(sim_workspace_files = NA,
    for(i in NewXMLs){
       
       if(class(workspace_objects) != "list"){
-         workspace_xml <- XML::xmlTreeParse(i, useInternal = TRUE)
+         workspace_xml <- tryCatch(XML::xmlTreeParse(i, useInternal = TRUE), 
+                                   error = unzip1st_fun(i))
       } else {
          workspace_xml <- MyXMLs[[i]]
       }
