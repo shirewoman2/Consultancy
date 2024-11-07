@@ -150,11 +150,22 @@ match_obs_to_sim <- function(ct_dataframe,
              
              # Preferentially using the XML file since people don't always save
              # the xlsx version of the file
-             ObsFile = case_when(ObsFile_xml_exists == TRUE ~ ObsFile_xml, 
-                                 ObsFile_xml_exists == FALSE & 
-                                    ObsFile_xlsx_exists == TRUE ~ ObsFile_xlsx, 
-                                 .default = ObsFile_xml))
-
+             ObsFileToUse = case_when(ObsFile_xml_exists == TRUE ~ ObsFile_xml, 
+                                      ObsFile_xml_exists == FALSE & 
+                                         ObsFile_xlsx_exists == TRUE ~ ObsFile_xlsx, 
+                                      .default = ObsFile_xml))
+   
+   # Matching the file extension in obs_dataframe or this will have trouble
+   obs_dataframe <- obs_dataframe %>% 
+      left_join(ObsAssign %>% select(ObsFile, ObsFileToUse), 
+                by = "ObsFile") %>% 
+      select(-ObsFile) %>% 
+      rename(ObsFile = ObsFileToUse)
+   
+   ObsAssign <- ObsAssign %>% 
+      select(-ObsFile) %>% 
+      rename(ObsFile = ObsFileToUse)
+   
    # Making sure we have all the info we need.
    if(all(ObsAssign$File[complete.cases(ObsAssign$File)] %in%
           existing_exp_details$MainDetails$File) == FALSE){
@@ -175,7 +186,8 @@ match_obs_to_sim <- function(ct_dataframe,
       ObsAssign <- ObsAssign %>% filter(File %in% unique(ct_dataframe$File))
    }
    
-   MissingObsFile <- setdiff(unique(ObsAssign$ObsFile), unique(obs_dataframe$ObsFile))
+   MissingObsFile <- setdiff(unique(ObsAssign$ObsFile), 
+                             unique(obs_dataframe$ObsFile))
    if(length(MissingObsFile) > 0){
       warning(paste0("The observed data file(s) ", 
                      str_comma(paste0("`", MissingObsFile, "`")), 
@@ -253,7 +265,7 @@ match_obs_to_sim <- function(ct_dataframe,
                              DF_with_good_units = ct_dataframe[[k]][[cmpd]], 
                              MW = as.numeric(
                                 Deets$MainDetails[
-                                paste0("MW", AllCompounds$Suffix[AllCompounds$CompoundID == cmpd])]))
+                                   paste0("MW", AllCompounds$Suffix[AllCompounds$CompoundID == cmpd])]))
             
          }
          
