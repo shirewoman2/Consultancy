@@ -19,7 +19,7 @@ if("logical" %in% class(existing_exp_details)){
 }
 
 MyPerpetrator <- determine_myperpetrator(Deets = Deets, 
-                                         prettify_compound_names = TRUE)
+                                         prettify_compound_names = prettify_compound_names)
 
 DosesIncluded <- c("Dose1" = any(str_detect(PKparameters[[i]]$PKparameter, "_dose1")),
                    "Last" = any(str_detect(PKparameters[[i]]$PKparameter, "_last")), 

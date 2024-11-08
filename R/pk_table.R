@@ -877,105 +877,6 @@ pk_table <- function(PKparameters = NA,
                              round_opt(100*Value, rounding),
                              round_opt(Value, rounding)))
    
-   # Below should already be done w/VarOptions above. Delete?
-   # MyPKResults <- MyPKResults %>% 
-   #    filter(Stat %in% c(case_match(MeanType, 
-   #                                  "geometric" ~ "geomean",
-   #                                  "arithmetic" ~ "mean", 
-   #                                  "median" ~ "median"),
-   #                       "CI90_low", "CI90_high", "CI95_low", "CI95_high",
-   #                       "min", "max", "per5", "per95", 
-   #                       case_match(MeanType, 
-   #                                  "geometric" ~ "GCV",
-   #                                  "arithmetic" ~ "CV", 
-   #                                  "median" ~ NA),
-   #                       "MinMean", "MaxMean", 
-   #                       "S_O_TM_MinMean", "S_O_TM_MaxMean",
-   #                       "S_O", "SD", "median"))
-   
-   # If there were any observed data that were a range, e.g., for tmax, then put
-   # the range on a single line, even if user did not request concatVariability
-   # b/c it just makes things so much easier.
-   if(nrow(MyPKResults %>% filter(Stat %in% c("min", "tmaxmin", "CI90_low") & 
-                                  SorO == "Obs")) > 0){
-      
-      # Need to do this 1 at a time for min, tmaxmin, and CI90_low. There's
-      # probably a better way to do this.
-      if("min" %in% MyPKResults$Stat){
-         MyPKResults <- MyPKResults %>% unique() %>% 
-            pivot_wider(names_from = Stat, 
-                        values_from = Value) %>% 
-            mutate(min = case_when(complete.cases(min) & 
-                                      complete.cases(max) & SorO == "Obs" ~ 
-                                      switch(variability_format, 
-                                             "to" = paste(min, "to", max), 
-                                             "hyphen" = paste(min, "-", max), 
-                                             "brackets" = paste0("[", min, ", ", max, "]"),
-                                             "parentheses" = paste0("(", min, ", ", max, ")")), 
-                                   TRUE ~ min)) %>% 
-            select(-max) %>% 
-            pivot_longer(cols = -c(any_of(c("PKParam", "SorO", "File", "Sheet", 
-                                            "CompoundID", "Tissue"))), 
-                         names_to = "Stat", 
-                         values_to = "Value")
-         
-      }
-      
-      if("tmaxmin" %in% MyPKResults$Stat){
-         MyPKResults <- MyPKResults %>% unique() %>% 
-            pivot_wider(names_from = Stat, 
-                        values_from = Value) %>% 
-            mutate(tmaxmin = case_when(complete.cases(tmaxmin) & 
-                                          complete.cases(tmaxmax) & SorO == "Obs" ~ 
-                                          switch(variability_format, 
-                                                 "to" = paste(tmaxmin, "to", tmaxmax), 
-                                                 "hyphen" = paste(tmaxmin, "-", tmaxmax), 
-                                                 "brackets" = paste0("[", tmaxmin, ", ", tmaxmax, "]"),
-                                                 "parentheses" = paste0("(", tmaxmin, ", ", tmaxmax, ")")), 
-                                       TRUE ~ tmaxmin)) %>% 
-            select(-tmaxmax) %>% 
-            pivot_longer(cols = -c(any_of(c("PKParam", "SorO", "File", "Sheet", 
-                                            "CompoundID", "Tissue"))), 
-                         names_to = "Stat", 
-                         values_to = "Value")
-      }
-      
-      if("CI90_low" %in% MyPKResults$Stat){
-         MyPKResults <- MyPKResults %>% unique() %>% 
-            pivot_wider(names_from = Stat, 
-                        values_from = Value) %>% 
-            mutate(CI90_low = case_when(complete.cases(CI90_low) & 
-                                           complete.cases(CI90_high) & SorO == "Obs" ~ 
-                                           switch(variability_format, 
-                                                  "to" = paste(CI90_low, "to", CI90_high), 
-                                                  "hyphen" = paste(CI90_low, "-", CI90_high), 
-                                                  "brackets" = paste0("[", CI90_low, ", ", CI90_high, "]"),
-                                                  "parentheses" = paste0("(", CI90_low, ", ", maCI90_high, ")")), 
-                                        TRUE ~ CI90_low)) %>% 
-            select(-tmaxmax) %>% 
-            pivot_longer(cols = -c(any_of(c("PKParam", "SorO", "File", "Sheet", 
-                                            "CompoundID", "Tissue"))), 
-                         names_to = "Stat", 
-                         values_to = "Value")
-         
-      }
-      
-      # FIXME - Left off here      
-      
-      # I don't think we want this... 
-      # MyPKResults <- MyPKResults %>%
-      #    mutate(Stat = ifelse(Stat %in% c("min", "CI90_low") & SorO == "Obs",
-      #                         switch(MeanType,
-      #                                "geometric" = "GCV",
-      #                                "arithmetic" = "CV"),
-      #                         Stat))
-   }
-   
-   # # Dealing w/tmax. tmaxmin needs to be switched to one of the variability
-   # # options the user selected.
-   # MyPKResults %>% 
-   #    mutate(Stat = case_when(Stat == "tmaxmin"))
-   
    # Checking for any PK parameters where there are no simulated data.
    GoodPKParam <- MyPKResults %>% 
       filter(Stat == switch(MeanType, 
@@ -1053,23 +954,30 @@ pk_table <- function(PKparameters = NA,
                            f = list(MyPKResults$File, 
                                     MyPKResults$Sheet, 
                                     MyPKResults$Tissue, 
-                                    MyPKResults$CompoundID))
+                                    MyPKResults$CompoundID, 
+                                    MyPKResults$SorO))
       
       for(i in names(MyPKResults)){
          if(nrow(MyPKResults[[i]]) == 0){next}
          
-         # Note: When multiple options are chosen for variability type,
-         # concatVariability doesn't work. Will need to fix this later.
+         # All possible places where we need to concatenate the variability
          VarRows <- list("ConfInt90" = c("CI90_low", "CI90_high"), 
                          "ConfInt95" = c("CI95_low", "CI95_high"),
                          "Perc" = c("per5", "per95"), 
                          "Range" = c("min", "max"))
+         # Only the ones that should be present in our data
          VarRows <- VarRows[sapply(VarRows, function(x) unlist(x[[1]])) %in% VarOptions]
          
-         VarRows[["obs"]] <- c("CIL_obs", "CIU_obs")
          for(j in names(VarRows)){
             temp <- MyPKResults[[i]] %>%
-               filter(Stat %in% as.character(unlist(VarRows[[j]]))) %>%
+               filter(Stat %in% as.character(unlist(VarRows[[j]])))
+            
+            if(nrow(temp) == 0){
+               rm(temp)
+               next
+            }
+            
+            temp <- temp %>%
                mutate(across(.cols = !any_of(c("Stat", "SorO", "Statistic",
                                                "File", "Sheet", 
                                                "CompoundID", "Tissue")),
@@ -1139,6 +1047,7 @@ pk_table <- function(PKparameters = NA,
                   "CIL_obs" = "observed CI - Lower",
                   "CIU_obs" = "observed CI - Upper",
                   "CIconcat_obs" = "Observed CI",
+                  "Rangeconcat_obs" = "Observed range", 
                   
                   "S_O" = "S/O",
                   "S_O_TM_MinMean" = "S/O range for trial means",
