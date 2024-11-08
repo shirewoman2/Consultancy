@@ -123,8 +123,18 @@ match_obs_to_sim <- function(ct_dataframe,
    # originally. We'll then split it into a list of data.frames and loop
    # through to assign.
    if("character" %in% class(obs_to_sim_assignment)){
-      ObsAssign <- data.frame(ObsFile = names(obs_to_sim_assignment), 
-                              File = obs_to_sim_assignment)
+      if(all(obs_to_sim_assignment == "use existing_exp_details")){
+         ObsAssign <- existing_exp_details$MainDetails %>% 
+            select(File, ObsOverlayFile) %>% 
+            rename(ObsFile = ObsOverlayFile)
+      } else {
+         if(is.null(names(obs_to_sim_assignment))){
+            stop(wrapn("You appear to have supplied a character vector for the argument 'obs_to_sim_assignment', but you haven't supplied names for that vector, so we don't know how to match your simulated and observed files. Please check the help file for the argument 'obs_to_sim_assignment' and try again."), 
+                 call. = FALSE)
+         }
+         ObsAssign <- data.frame(ObsFile = names(obs_to_sim_assignment), 
+                                 File = obs_to_sim_assignment)
+      }
    } else if("logical" %in% class(obs_to_sim_assignment)){
       # This is when they have left obs_to_sim_assignment as NA and want all the
       # obs data to match all the sim.

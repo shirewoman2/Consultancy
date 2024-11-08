@@ -90,7 +90,8 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
    # The Consultancy Team's support group includes Excel files we can ignore.
    # Removing those from consideration if we're collecting file names in an
    # automated fashion.
-   if(is.na(obs_data_files_input) || obs_data_files_input == "recursive"){
+   if(all(is.na(obs_data_files_input)) || 
+      all(obs_data_files_input == "recursive")){
       obs_data_files <- obs_data_files[!str_detect(obs_data_files, 
                                                    "support-docs")]
    }
@@ -108,8 +109,8 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
    # path is present and starts w/"Users". Otherwise, keeping the original input
    # just b/c I don't want to change the input from basename to full path
    # unexpectedly.
-   obs_data_files[str_detect(obs_data_files, "Users")] <- 
-      normalizePath(obs_data_files[str_detect(obs_data_files, "Users")], 
+   obs_data_files[which(str_detect(obs_data_files, "Users"))] <- 
+      normalizePath(obs_data_files[which(str_detect(obs_data_files, "Users"))], 
                     winslash = "/", mustWork = FALSE)
    
    obs_data_files <- str_replace(obs_data_files, 
@@ -125,7 +126,8 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
              Exists_xml = file.exists(File_xml), 
              FileToUse = case_when(Exists ~ OrigFile, 
                                    Exists_xlsx ~ File_xlsx, 
-                                   Exists_xml ~ File_xml))
+                                   Exists_xml ~ File_xml)) %>% 
+      filter(complete.cases(OrigFile))
    
    if(any(is.na(FileCheck$FileToUse))){
       warning(wrapn(paste0(
