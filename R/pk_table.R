@@ -156,7 +156,8 @@
 #'   FALSE}, this will not return anything at this point. We may add that later,
 #'   but at present, this is not set up to return multiple table captions.
 #' @param mean_type What kind of means and CVs do you want listed in the output
-#'   table? Options are "arithmetic" or "geometric" (default).
+#'   table? Options are "geometric" (default), "arithmetic", or "arithmetic for
+#'   most, geometric for ratios".
 #' @param use_median_for_tmax TRUE (default) or FALSE for whether to use median
 #'   for tmax values, regardless of what the other summary statistics are. This
 #'   is typically the case, but, if you've got client data where they actually
@@ -196,15 +197,15 @@
 #'   an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
 #'   ambiguity; this was written by an American who didn't originally realize
 #'   that there was another name for parentheses.)
-#' @param conc_units What concentration units should be used in the
-#'   table? Default is NA to leave the units as is, but if you set the
-#'   concentration units to something else, this will attempt to convert the
-#'   units to match that. This only adjusts only the simulated values, since
-#'   we're assuming that that's the most likely problem and that observed units
-#'   are relatively easy to fix, and it also only affects AUC and Cmax values.
-#'   If you leave this as NA, the units in the 1st simulation will be used as
-#'   the units for \emph{all} the simulations for consistency and clarity.
-#'   Acceptable input is any concentration unit
+#' @param conc_units What concentration units should be used in the table?
+#'   Default is NA to leave the units as is, but if you set the concentration
+#'   units to something else, this will attempt to convert the units to match
+#'   that. This only adjusts only the simulated values, since we're assuming
+#'   that that's the most likely problem and that observed units are relatively
+#'   easy to fix, and it also only affects AUC and Cmax values. If you leave
+#'   this as NA, the units in the 1st simulation will be used as the units for
+#'   \emph{all} the simulations for consistency and clarity. Acceptable input is
+#'   any concentration unit
 #'   listed in the Excel form for PE data entry, e.g. \code{conc_units =
 #'   "ng/mL"} or \code{conc_units = "uM"}. Molar concentrations will be
 #'   automatically converted using the molecular weight of whatever you set for
@@ -470,6 +471,7 @@ pk_table <- function(PKparameters = NA,
                                    sim_data_files = sim_data_files, 
                                    compoundsToExtract = compoundsToExtract, 
                                    sheet_PKparameters = sheet_PKparameters, 
+                                   tissues = tissues, 
                                    existing_exp_details = existing_exp_details)
    
    # Check for any duplicate observed values b/c that messes up things
@@ -568,8 +570,8 @@ pk_table <- function(PKparameters = NA,
       if(mean_type %in% c("geometric", "arithmetic", 
                           "arithmetic for most, geometric for ratios") == FALSE){
          if(mean_type == "mean"){
-            warning(paste0(str_wrap("Technically, the input for mean_type should be `geometric` (default), `arithmetic`, or `arithmetic for most, geometric for ratios`. You specified a mean type of `mean`, so we think you want arithmetic means. If that's incorrect, please set mean_type to `geometric`."),
-                           "\n"), call. = FALSE)
+            warning(str_wrap("Technically, the input for mean_type should be `geometric` (default), `arithmetic`, or `arithmetic for most, geometric for ratios`. You specified a mean type of `mean`, so we think you want arithmetic means. If that's incorrect, please set mean_type to `geometric`."),
+                    call. = FALSE)
          }
          
          mean_type <- case_when(str_detect(tolower(mean_type), "geo") & 
@@ -1289,8 +1291,8 @@ pk_table <- function(PKparameters = NA,
       MyFile = unique(MyPKResults$File), 
       MyCompoundID = unique(MyPKResults$CompoundID), 
       prettify_compound_names = prettify_compound_names,
-      Deets = existing_exp_details, 
-      MeanType = MeanType, 
+      existing_exp_details = existing_exp_details, 
+      mean_type = mean_type, 
       DosesIncluded = case_match(DosesIncluded, 
                                  "Dose1 User" ~ "Dose1 Last", 
                                  "Last User" ~ "Last", 

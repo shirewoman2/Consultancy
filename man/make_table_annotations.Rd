@@ -10,8 +10,8 @@ make_table_annotations(
   MyFile = NA,
   MyCompoundID = NA,
   prettify_compound_names,
-  Deets = NA,
-  MeanType,
+  existing_exp_details = NA,
+  mean_type,
   tissue = NA,
   DosesIncluded = NA,
   name_clinical_study = NA,
@@ -28,11 +28,11 @@ length > 1, then generic info will be used.}
 
 \item{prettify_compound_names}{pass through from parent function}
 
-\item{Deets}{experimental details for only the single sim_data_file in
-question rather than for all possible files that may have been contained in
-existing_exp_details}
+\item{existing_exp_details}{experimental details for only the single
+sim_data_file in question rather than for all possible files that may have
+been contained in existing_exp_details}
 
-\item{MeanType}{mean type used}
+\item{mean_type}{mean type used}
 
 \item{tissue}{tissue in which the PK parameters were measured}
 
