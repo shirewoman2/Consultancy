@@ -453,7 +453,7 @@ forest_plot_old <- function(forest_dataframe,
                       names_to = "PKParam", values_to = "Value") %>% 
          separate(PKParam, into = c("PKparameter", "Statistic"), sep = "__") %>% 
          mutate(Statistic = case_match(Statistic, 
-                                       "GMR" ~ "GeoMean", 
+                                       "GMR" ~ "geomean", 
                                        "CI90_lo"~ "CI90_Lower",
                                        "CI90_hi" ~ "CI90_Upper", 
                                        .default = Statistic)) %>% 
@@ -469,7 +469,7 @@ forest_plot_old <- function(forest_dataframe,
                             names_to = "PKParam", values_to = "Value") %>% 
                separate(PKParam, into = c("PKparameter", "Statistic"), sep = "__") %>% 
                mutate(Statistic = case_match(Statistic, 
-                                             "GMR" ~ "GeoMean", 
+                                             "GMR" ~ "geomean", 
                                              "CI90_lo"~ "CI90_Lower",
                                              "CI90_hi" ~ "CI90_Upper", 
                                              .default = Statistic)) %>% 
@@ -567,7 +567,7 @@ forest_plot_old <- function(forest_dataframe,
    
    # Checking that the stats requested are available
    FDnames <- factor(names(forest_dataframe), 
-                     levels = c("GeoMean", "Mean", "Median", 
+                     levels = c("geomean", "mean", "median", 
                                 "CI90_Lower", "CI90_Upper", 
                                 "CI95_Lower", "CI95_Upper", 
                                 "Centile5th_Lower","Centile95th_Upper", 
@@ -575,11 +575,11 @@ forest_plot_old <- function(forest_dataframe,
    FDnames <- sort(FDnames)
    CenterStat <- as.character(
       FDnames[which(FDnames %in% switch(mean_type, 
-                                        "geometric" = "GeoMean", 
-                                        "arithmetic" = "Mean", 
-                                        "median" = "Median"))])
+                                        "geometric" = "geomean", 
+                                        "arithmetic" = "mean", 
+                                        "median" = "median"))])
    if(length(CenterStat) == 0){
-      CenterStat <- FDnames[which(FDnames %in% c("GeoMean", "Mean", "Median"))][1]
+      CenterStat <- FDnames[which(FDnames %in% c("geomean", "mean", "median"))][1]
       
       if(length(CenterStat) == 0){
          stop("You must have geometric mean, arithmetic mean, or median data included in forest_dataframe to be able to make a forest plot.",
@@ -634,13 +634,13 @@ forest_plot_old <- function(forest_dataframe,
    
    if(any(VarStat %in% c("GeoCV"))){
       forest_dataframe <- forest_dataframe %>% 
-         mutate(GeoCV_Lower = GeoMean + GeoMean * GeoCV, 
-                GeoCV_Upper = GeoMean - GeoMean * GeoCV)
+         mutate(GeoCV_Lower = geomean + geomean * GeoCV, 
+                GeoCV_Upper = geomean - geomean * GeoCV)
       
       if(ObsIncluded){
          observed_PK <- observed_PK %>% 
-            mutate(GeoCV_Lower = GeoMean + GeoMean * GeoCV, 
-                   GeoCV_Upper = GeoMean - GeoMean * GeoCV)
+            mutate(GeoCV_Lower = geomean + geomean * GeoCV, 
+                   GeoCV_Upper = geomean - geomean * GeoCV)
       }
       
       VarStat <- c("GeoCV_Lower", "GeoCV_Upper")
@@ -648,13 +648,13 @@ forest_plot_old <- function(forest_dataframe,
    
    if(any(VarStat %in% c("ArithCV"))){
       forest_dataframe <- forest_dataframe %>% 
-         mutate(ArithCV_Lower = Mean + Mean * ArithCV, 
-                ArithCV_Upper = Mean - Mean * ArithCV)
+         mutate(ArithCV_Lower = mean + mean * ArithCV, 
+                ArithCV_Upper = mean - mean * ArithCV)
       
       if(ObsIncluded){
          observed_PK <- observed_PK %>% 
-            mutate(ArithCV_Lower = Mean + Mean * ArithCV, 
-                   ArithCV_Upper = Mean - Mean * ArithCV)
+            mutate(ArithCV_Lower = mean + mean * ArithCV, 
+                   ArithCV_Upper = mean - mean * ArithCV)
       }
       
       VarStat <- c("ArithCV_Lower", "ArithCV_Upper")
@@ -662,13 +662,13 @@ forest_plot_old <- function(forest_dataframe,
    
    if(any(VarStat %in% c("SD", "standard deviation"))){
       forest_dataframe <- forest_dataframe %>% 
-         mutate(SD_Lower = Mean + SD, 
-                SD_Upper = Mean - SD)
+         mutate(SD_Lower = mean + SD, 
+                SD_Upper = mean - SD)
       
       if(ObsIncluded){
          observed_PK <- observed_PK %>% 
-            mutate(SD_Lower = Mean + SD, 
-                   SD_Upper = Mean - SD)
+            mutate(SD_Lower = mean + SD, 
+                   SD_Upper = mean - SD)
       }
       
       VarStat <- c("SD_Lower", "SD_Upper")
@@ -691,7 +691,7 @@ forest_plot_old <- function(forest_dataframe,
       # troubleshoot than invisibly removing obs data here.
       
       CenterStat_obs <- names(observed_PK)[
-         which(names(observed_PK) %in% c("GeoMean", "Mean", "Median"))]
+         which(names(observed_PK) %in% c("geomean", "mean", "median"))]
       VarStat_obs <- names(observed_PK)[
          which(names(observed_PK) %in% c("CI90_Lower", "CI95_Lower", "SD_Lower",
                                          "Centile5th_Lower", "Min"))]
@@ -1183,9 +1183,9 @@ forest_plot_old <- function(forest_dataframe,
    
    # Figuring out what x axis title should be
    XTitle <- paste(switch(CenterStat, 
-                          "GeoMean" = "Geometric Mean Ratio", 
-                          "Mean" = "Arithmetic Mean Ratio", 
-                          "Median" = "Ratio of Medians"), 
+                          "geomean" = "Geometric mean Ratio", 
+                          "mean" = "Arithmetic mean Ratio", 
+                          "median" = "Ratio of Medians"), 
                    switch(VarStat[1], 
                           "CI90_Lower" = "(90% Confidence Interval)", 
                           "CI95_Lower" = "(95% Confidence Interval)", 
