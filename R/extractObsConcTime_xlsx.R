@@ -11,16 +11,13 @@ extractObsConcTime_xlsx <- function(obs_data_file){
                                   sheet = "PK PD Profiles",
                                   col_names = FALSE),
                error = function(.){
-                  warning(paste0("The file `", obs_data_file, 
-                                 "` does not appear to be an Excel file of observed data that's ready to be converted to an XML file. We cannot extract any data."), 
-                          call. = FALSE)
                   return(list())
                }))
    
    if(length(obs_data_xl) == 0){
       warning(paste("The file", obs_data_file, "does not appear to be an Excel file of observed data that's ready to be converted to an XML file. We cannot extract any data."), 
               call. = FALSE)
-      return(data.frame())
+      return(list())
    }
    
    # Checking on whether this was animal data

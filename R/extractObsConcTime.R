@@ -130,6 +130,13 @@ extractObsConcTime <- function(obs_data_file,
       obs_data_untidy <- extractObsConcTime_XML(obs_data_file)
    }
    
+   if(length(obs_data_untidy) == 0){
+      warning(wrapn(paste0("The file '", obs_data_file, 
+                           "' does not appear to contain observed concentration-time data.")), 
+              call. = FALSE)
+      return(data.frame())
+   }
+   
    obs_data <- obs_data_untidy$obs_data
    dose_data <- obs_data_untidy$dose_data
    

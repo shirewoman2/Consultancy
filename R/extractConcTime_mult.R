@@ -525,9 +525,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
             # just b/c I don't want to change the input from basename to full path
             # unexpectedly.
             existing_exp_details$MainDetails$ObsOverlayFile[
-               str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users")] <- 
+               which(str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users"))] <- 
                normalizePath(existing_exp_details$MainDetails$ObsOverlayFile[
-                  str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users")], 
+                  which(str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users"))], 
                   winslash = "/", mustWork = FALSE)
             
             existing_exp_details$MainDetails$ObsOverlayFile <-

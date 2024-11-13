@@ -145,6 +145,8 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
    DosingInfo <- list()
    
    for(i in obs_data_files){
+      message(paste0("Extracting observed data from ", i))
+      
       TEMP <- extractObsConcTime(obs_data_file = i, 
                                  compound_name = compound_name, 
                                  perpetrator_name = perpetrator_name,
@@ -165,9 +167,8 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
       Out <- Out[["ObsData"]]
    }
    
-   return(ObsData)
+   return(Out)
 }
-
 
 
 
