@@ -10,7 +10,8 @@ save_table_to_Excel(
   output_tab_name = "Sheet1",
   freeze_top_row = TRUE,
   center_top_row = TRUE,
-  wrap = TRUE
+  wrap_text = TRUE,
+  highlight_cells = NA
 )
 }
 \arguments{
@@ -31,7 +32,35 @@ in Excel so that the top row will always be visible}
 \item{center_top_row}{TRUE (default) or FALSE for whether to center the text
 in the top row}
 
-\item{wrap}{TRUE (default) or FALSE for whether to wrap text}
+\item{wrap_text}{TRUE (default) or FALSE for whether to wrap text}
+
+\item{highlight_cells}{a named list of cells to highlight where the names are
+the colors to use for highlighting and the values are the cells to
+highlight. Default is NA for no highlighting. There are two possible ways
+to specify which cells to highlight: \enumerate{\item{Use Excel-style cell
+names, e.g., \code{highlight_cells = list("yellow" = "A2",
+"pink" = "B5:C10")}. Please note that the 1st row in the output is
+\emph{not} the 1st row in your data.frame but the \emph{header} of your
+data.frame. Keep that in mind when specifying which row should be
+highlighted.}
+\item{Specify the cells in your data.frame as items in a list. Admittedly,
+this can be a little confusing because it requires nested lists. The first
+item will be a numeric vector of the rows and the second item will be a
+numeric vector of the columns for everything that is contiguously
+highlighted. If you want multiple, noncontiguous cells to be highlighted
+the same color, use multiple lists. For example, this will highlight two
+patches of cells yellow:
+\code{highlight_cells = list("yellow" = list(list("rows" = c(1:2), "columns" = c(3:4)),
+list("rows" = c(18:20), "columns" = 6)))}. Try it out and see what we mean. 
+Since this is focused on the \emph{input} to the function, we have set 
+this up so that row 1 here is
+row 1 in your input data.frame, which is different from how we set it up
+if you use Excel cell names to specify which thing should be highlighted.
+Please note that distinction. If you want to add highlighting to something
+in the header, refer to that as row 0. If you want to highlight all the
+rows or all the columns, set the rows or columns to NA, e.g.,
+\code{highlight_cells = list("yellow" = list(list("rows" = 1, "columns" = NA))} will
+make everything in row 1 highlighted yellow.}}}
 }
 \value{
 does not return a new object; only saves an existing object to Excel
