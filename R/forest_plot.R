@@ -1310,7 +1310,7 @@ forest_plot <- function(forest_dataframe,
       ExtrapProbs <- forest_dataframe %>% 
          filter(PKparameter %in% c("AUCinf_ratio_dose1", 
                                    "AUCinf_ratio") & 
-                   is.na(geomean))
+                   is.na(Geomean))
       if(nrow(ExtrapProbs) > 0){
          ProbID <- ExtrapProbs$ID
       } else {
