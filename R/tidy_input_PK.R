@@ -1014,7 +1014,8 @@ tidy_input_PK <- function(PKparameters,
    if(any(PKparameters$GoodCmpd == FALSE)){
       Problem <- PKparameters %>%
          filter(GoodCmpd == FALSE) %>% 
-         select(File, CompoundID)
+         select(File, CompoundID) %>% 
+         as.data.frame()
       
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
@@ -1150,7 +1151,9 @@ tidy_input_PK <- function(PKparameters,
       all(complete.cases(PKparameters_orig)) & FromCalcPKRatios == FALSE){
       
       Problem <- PKparameters %>% filter(Harmonious == FALSE) %>% 
-         select(PKparameter, File, Sheet, CompoundID, Tissue)
+         select(PKparameter, File, Sheet, CompoundID, Tissue) %>% 
+         as.data.frame()
+      
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
       message("Warning:\nThe following requested PK parameters do not apply to the following scenarios:\n")
@@ -1178,11 +1181,12 @@ tidy_input_PK <- function(PKparameters,
                 AllPKParameters$PKparameter_nodosenum & is.na(Sheet))
    
    if(any(PKparameters$DoseNumProblem)){
-      warning(wrapn("You have not specified which interval you want for the following PK:"), 
-              call. = FALSE)
+      message(wrapn("You have not specified which interval you want for the following PK:"))
       
       Problem <- PKparameters %>% filter(DoseNumProblem == TRUE) %>% 
-         select(File, CompoundID, Tissue, PKparameter)
+         select(File, CompoundID, Tissue, PKparameter) %>% 
+         as.data.frame()
+      
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
       message(str_c(Problem, collapse = "\n"))

@@ -11,7 +11,8 @@ make_simulation_directory(
   which_files = NA,
   existing_exp_details = NA,
   relative_paths = TRUE,
-  save_table = NA
+  save_table = NA,
+  wrap_text = FALSE
 )
 }
 \arguments{
@@ -45,17 +46,26 @@ simulation files in subfolders}
 \code{which_files = "use existing_exp_details"}}
 
 \item{relative_paths}{TRUE (default) or FALSE for whether to put relative
-(rather than full) paths in the table}
+(rather than full) paths in the table. This means "relative to your current
+working directory", so it matters what folder you'r in when you call this
+function.}
 
 \item{save_table}{optionally specify either an Excel or csv file name for
 saving your simulation directory}
+
+\item{wrap_text}{TRUE or FALSE (default) for whether to wrap text in the
+Excel output}
 }
 \value{
 a data.frame of simulation files and their respective file paths
 }
 \description{
-Make a directory of simulations indicating which simulation file is located
-in which folder
+\code{make_simulation_directory} will create a data.frame of
+simulations in a given project folder and, optionally, save that data.frame
+to an Excel file. It will also perform a few checks such as checking whether
+the file names comply with USFDA and Consultancy Team standards. 
+
+This is wicked fast.
 }
 \examples{
 # none yet

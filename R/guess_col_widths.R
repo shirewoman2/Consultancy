@@ -1,7 +1,7 @@
 #' INTERNAL guess appropriate column widths
 #'
 #' @param DF data.frame to write to Excel
-#' @param wrap TRUE (default) or FALSE for whether to assume that text will be
+#' @param wrap_text TRUE (default) or FALSE for whether to assume that text will be
 #'   wrapped in the output file. If FALSE, the width will be larger b/c it will
 #'   accommodate the entire column contents.
 #'
@@ -10,7 +10,7 @@
 #' @examples
 #' # none
 guess_col_widths <- function(DF, 
-                             wrap = TRUE){
+                             wrap_text = TRUE){
    
    ## Column widths ---------------------------------------------------------
    # Guessing at appropriate column width based on max number of characters
@@ -27,7 +27,7 @@ guess_col_widths <- function(DF,
       dplyr::summarize_all(function(x) max(nchar(as.character(x)), na.rm = TRUE)) %>%
       as.numeric()
    
-   if(wrap){
+   if(wrap_text){
       
       # For anything where the max number of characters is > 15, look for spaces
       # or hyphens to separate words and then find the max number of characters

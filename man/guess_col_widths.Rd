@@ -4,12 +4,12 @@
 \alias{guess_col_widths}
 \title{INTERNAL guess appropriate column widths}
 \usage{
-guess_col_widths(DF, wrap = TRUE)
+guess_col_widths(DF, wrap_text = TRUE)
 }
 \arguments{
 \item{DF}{data.frame to write to Excel}
 
-\item{wrap}{TRUE (default) or FALSE for whether to assume that text will be
+\item{wrap_text}{TRUE (default) or FALSE for whether to assume that text will be
 wrapped in the output file. If FALSE, the width will be larger b/c it will
 accommodate the entire column contents.}
 }
