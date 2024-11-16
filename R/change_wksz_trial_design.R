@@ -1,16 +1,20 @@
 #' Change a limited set of trial-design parameters in Simcyp Simulator workspace
-#' files. UNDER CONSTRUCTION.
+#' files.
 #'
-#' \code{change_wksz_trial_design} changes a few trial-design parameters such as
-#' the number of subjects, the percent female, the dose or dose interval, etc.
-#' It does \emph{not} change populations because there are simply too many
-#' parameters to change in an automatic fashion in R like this and also because
-#' the Simulator starting with V22 can change populations for you with its
-#' workflow function. It also doesn't turn on or off a fixed trial design
-#' because we just haven't figured out how to get that to work right. This will
-#' change \emph{all} the workspace files provided to have the \emph{same}
-#' trial-design parameters you list here. USE WITH CAUTION. THIS PERMANENTLY
-#' CHANGES WORKSPACES.
+#' @description \code{change_wksz_trial_design} changes a few trial-design
+#'   parameters such as the number of subjects, the percent female, the dose or
+#'   dose interval, etc. It does \emph{not} change populations because there are
+#'   simply too many parameters to change in an automatic fashion in R like this
+#'   and also because the Simulator starting with V22 can change populations for
+#'   you with its workflow function. It also doesn't turn on or off a fixed
+#'   trial design because we just haven't figured out how to get that to work
+#'   right. A few other parameters that we \emph{thought} we could change here
+#'   but that just don't seem to work: simulation duration, time of dosing, and
+#'   the number of samples. 
+#'
+#'   This will change \emph{all} the workspace files provided to have the
+#'   \emph{same} trial-design parameters you list here. USE WITH CAUTION. THIS
+#'   PERMANENTLY CHANGES WORKSPACES.
 #'
 #' @param sim_workspace_files the set of workspace files to modify; must end in
 #'   ".wksz" if you're specifying individual files. Leave as NA to change all
@@ -41,7 +45,6 @@
 #' @param PercFemale percent of subjects who are female
 #' @param Age_min minimum age
 #' @param Age_max maximum age
-#' @param SimDuration study duration in hours
 #' @param activate_inhibitor1 TRUE or FALSE for whether to turn on inhibitor 1.
 #'   (At this point, this function will only use parameters for substrate or
 #'   inhibitor 1.)
@@ -53,11 +56,6 @@
 #' @param DoseInt_inhib dose interval for inhibitor 1 in hours. If you would
 #'   like to have a single-dose regimen, set this to "single dose". Does not
 #'   allow for custom-dosing regimens.
-#' @param StartHr_sub start time for administering substrate in hours -- This
-#'   may be tricky to do! May need to also adjust StartDayTime_sub!
-#' @param StartHr_inhib start time for administering inhibitor 1 in hours
-#' @param NumTimePts number of time points to use ("Number of Time Samples" in
-#'   the Simulator)
 #' @param DoseRoute_sub Dose route for substrate
 #' @param DoseRoute_inhib Dose route for inhibitor 1
 #' @param ObsOverlayFile Observed overlay XML file name
@@ -86,7 +84,6 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      PercFemale = "no change", 
                                      Age_min = "no change", 
                                      Age_max = "no change", 
-                                     SimDuration = "no change", 
                                      activate_inhibitor1 = "no change",
                                      Dose_sub = "no change", 
                                      Units_dose_sub = "no change", 
@@ -96,9 +93,6 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                                      DoseRoute_inhib = "no change",
                                      DoseInt_sub = "no change", 
                                      DoseInt_inhib = "no change", 
-                                     StartHr_sub = "no change", 
-                                     StartHr_inhib = "no change", 
-                                     NumTimePts = "no change", 
                                      ObsOverlayFile = "no change", 
                                      UseObservedData = "no change",
                                      CYP3A4_ontogeny_profile = "no change"){
@@ -165,7 +159,6 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                          "PercFemale",
                          "Age_min",
                          "Age_max",
-                         "SimDuration", 
                          "activate_inhibitor1",
                          "Dose_sub", 
                          "Units_dose_sub",
@@ -175,9 +168,6 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                          "DoseRoute_inhib",
                          "DoseInt_sub", 
                          "DoseInt_inhib",
-                         "StartHr_sub",
-                         "StartHr_inhib",
-                         "NumTimePts", 
                          "ObsOverlayFile",
                          "UseObservedData", 
                          "CYP3A4_ontogeny_profile")))
@@ -192,7 +182,6 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                       PercFemale = PercFemale, 
                       Age_min = Age_min, 
                       Age_max = Age_max, 
-                      SimDuration = SimDuration, 
                       activate_inhibitor1 = activate_inhibitor1,
                       Dose_sub = Dose_sub,
                       Units_dose_sub = Units_dose_sub,
@@ -202,9 +191,6 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
                       DoseRoute_inhib = DoseRoute_inhib,
                       DoseInt_sub = DoseInt_sub, 
                       DoseInt_inhib = DoseInt_inhib, 
-                      StartHr_sub = StartHr_sub, 
-                      StartHr_inhib = StartHr_inhib, 
-                      NumTimePts = NumTimePts, 
                       ObsOverlayFile = ObsOverlayFile, 
                       CYP3A4_ontogeny_profile = CYP3A4_ontogeny_profile)
       
@@ -398,22 +384,6 @@ change_wksz_trial_design <- function(sim_workspace_files = NA,
          }
          
          rm(NumDosesNeeded_inhib, NumDosesNeeded_sub)
-      }
-      
-      # Setting the simulation end day as needed
-      if("SimDuration" %in% Changes[[i]]$Detail){
-         EndDay <- as.numeric(Changes[[i]]$Value[which(Changes[[i]]$Detail == "SimDuration")])
-         EndDay <- as.character(EndDay %/% 24)
-         
-         Changes[[i]] <- bind_rows(
-            Changes[[i]], 
-            data.frame(
-               sim_workspace_files = unique(Changes[[i]]$sim_workspace_files), 
-               new_sim_workspace_files = unique(Changes[[i]]$new_sim_workspace_files), 
-               Detail = "StudyEndDay",
-               Value = EndDay, 
-               Level1 = "SimulationData", 
-               Level2 = "idStudyEndDay"))
       }
       
       # Dealing w/all other changes

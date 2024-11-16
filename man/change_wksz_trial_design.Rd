@@ -3,7 +3,7 @@
 \name{change_wksz_trial_design}
 \alias{change_wksz_trial_design}
 \title{Change a limited set of trial-design parameters in Simcyp Simulator workspace
-files. UNDER CONSTRUCTION.}
+files.}
 \usage{
 change_wksz_trial_design(
   sim_workspace_files = NA,
@@ -15,7 +15,6 @@ change_wksz_trial_design(
   PercFemale = "no change",
   Age_min = "no change",
   Age_max = "no change",
-  SimDuration = "no change",
   activate_inhibitor1 = "no change",
   Dose_sub = "no change",
   Units_dose_sub = "no change",
@@ -25,9 +24,6 @@ change_wksz_trial_design(
   DoseRoute_inhib = "no change",
   DoseInt_sub = "no change",
   DoseInt_inhib = "no change",
-  StartHr_sub = "no change",
-  StartHr_inhib = "no change",
-  NumTimePts = "no change",
   ObsOverlayFile = "no change",
   UseObservedData = "no change",
   CYP3A4_ontogeny_profile = "no change"
@@ -72,8 +68,6 @@ MUST also set the number of trials.}
 
 \item{Age_max}{maximum age}
 
-\item{SimDuration}{study duration in hours}
-
 \item{activate_inhibitor1}{TRUE or FALSE for whether to turn on inhibitor 1.
 (At this point, this function will only use parameters for substrate or
 inhibitor 1.)}
@@ -100,14 +94,6 @@ allow for custom-dosing regimens.}
 like to have a single-dose regimen, set this to "single dose". Does not
 allow for custom-dosing regimens.}
 
-\item{StartHr_sub}{start time for administering substrate in hours -- This
-may be tricky to do! May need to also adjust StartDayTime_sub!}
-
-\item{StartHr_inhib}{start time for administering inhibitor 1 in hours}
-
-\item{NumTimePts}{number of time points to use ("Number of Time Samples" in
-the Simulator)}
-
 \item{ObsOverlayFile}{Observed overlay XML file name}
 
 \item{UseObservedData}{Include the observed data in the results? TRUE or
@@ -121,16 +107,20 @@ on Upreti Wahlstrom 2016 J Clin Pharm).}
 does not return anything in R but saves workspace files
 }
 \description{
-\code{change_wksz_trial_design} changes a few trial-design parameters such as
-the number of subjects, the percent female, the dose or dose interval, etc.
-It does \emph{not} change populations because there are simply too many
-parameters to change in an automatic fashion in R like this and also because
-the Simulator starting with V22 can change populations for you with its
-workflow function. It also doesn't turn on or off a fixed trial design
-because we just haven't figured out how to get that to work right. This will
-change \emph{all} the workspace files provided to have the \emph{same}
-trial-design parameters you list here. USE WITH CAUTION. THIS PERMANENTLY
-CHANGES WORKSPACES.
+\code{change_wksz_trial_design} changes a few trial-design
+  parameters such as the number of subjects, the percent female, the dose or
+  dose interval, etc. It does \emph{not} change populations because there are
+  simply too many parameters to change in an automatic fashion in R like this
+  and also because the Simulator starting with V22 can change populations for
+  you with its workflow function. It also doesn't turn on or off a fixed
+  trial design because we just haven't figured out how to get that to work
+  right. A few other parameters that we \emph{thought} we could change here
+  but that just don't seem to work: simulation duration, time of dosing, and
+  the number of samples. 
+
+  This will change \emph{all} the workspace files provided to have the
+  \emph{same} trial-design parameters you list here. USE WITH CAUTION. THIS
+  PERMANENTLY CHANGES WORKSPACES.
 }
 \examples{
 # None yet
