@@ -4,15 +4,10 @@
 \alias{renameStats}
 \title{Rename the statistics listed in Simulator output to R-friendly versions}
 \usage{
-renameStats(OrigStat, use = "internal")
+renameStats(OrigStat)
 }
 \arguments{
 \item{OrigStat}{the original statistic name}
-
-\item{use}{options are "internal" for internal use when renaming stats from
-Simulator-output names into R-friendly column names or "report" for
-renaming R columns into the values that show up in the Simcyp Consultancy
-report template tables of PK parameters.}
 }
 \value{
 an R-friendly version of that statistic name
@@ -20,12 +15,12 @@ an R-friendly version of that statistic name
 \description{
 \code{renameStats} takes Simulator statistic names such as "90% confidence
 interval around the geometric mean(lower limit)" and converts them to names
-that would work for R column names, e.g., "CI90_lower", or converts them to
-names that comply with Simcyp Consultancy Team report templates. This is
-mainly meant for internal use in the SimcypConsultancy package to help make
-sure we're naming things consistently.
+that would work for R column names, e.g., "CI90_low". This is mainly meant
+for internal use in the SimcypConsultancy package to help make sure we're
+naming things consistently.
 }
 \examples{
+#' 
 renameStats(c("Geometric Mean", "Min Val", "5th centile"))
 
 }
