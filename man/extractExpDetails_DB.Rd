@@ -2,26 +2,25 @@
 % Please edit documentation in R/extractExpDetails_DB.R
 \name{extractExpDetails_DB}
 \alias{extractExpDetails_DB}
-\title{Extract simulation experimental details from a database file}
+\title{Extract simulation experimental details from a database file - UNDER
+CONSTRUCTION!!!!!}
 \usage{
 extractExpDetails_DB(sim_data_file)
 }
 \arguments{
-\item{sim_data_file}{the database file to get information from. To get
-\emph{all} possible information, please be sure that a matching workspace
-MUST also be present, as in, the exact same file name but ending in ".wksz"
-instead of ".db". This is because some information is not present in the
+\item{sim_data_file}{the database file to get information from. Note that a
+matching workspace MUST also be present, as in, the exact same file name
+but ending in ".wksz" instead of ".db" in order to get all the possible
+information. This is because some information is not present in the
 database file but \emph{is} in the workspace.}
 }
 \value{
-a list of information about how your simulations were set up, and
-  this list will take the same format as the lists you would receive from
-  other extractExpDetails_x functions.
+a list of information, same as other extractExpDetails_x functions
 }
 \description{
-\code{extractExpDetails_DB} reads a Simcyp Simulator database
-  file for information about how the simulation was set up. This uses the
-  Simcyp package under the hood.
+\code{extractExpDetails_DB} reads a Simcyp Simulator database file for
+information about how the simulation was set up. This uses the Simcyp package
+under the hood.
 }
 \examples{
 # none yet
