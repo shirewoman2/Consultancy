@@ -62,18 +62,33 @@ pk_table_subfun <- function(sim_data_file,
       bind_rows(ToAdd) %>% 
       select(-ID)
    
-   MyPKResults_all <- extractPK(
-      sim_data_file = sim_data_file,
-      PKparameters = PKparameters$PKparameter,
-      tissue = unique(PKparameters$Tissue),
-      compoundToExtract = unique(PKparameters$CompoundID),
-      sheet = ifelse(unique(PKparameters$Sheet) == "default", 
-                     NA, unique(PKparameters$Sheet)), 
-      existing_exp_details = existing_exp_details,
-      returnAggregateOrIndiv =
-         switch(as.character(includeTrialMeans),
-                "TRUE" = c("aggregate", "individual"),
-                "FALSE" = "aggregate"))
+   if(str_detect(sim_data_file, "xlsx$")){
+      MyPKResults_all <- extractPK(
+         sim_data_file = sim_data_file,
+         PKparameters = PKparameters$PKparameter,
+         tissue = unique(PKparameters$Tissue),
+         compoundToExtract = unique(PKparameters$CompoundID),
+         sheet = ifelse(unique(PKparameters$Sheet) == "default", 
+                        NA, unique(PKparameters$Sheet)), 
+         existing_exp_details = existing_exp_details,
+         returnAggregateOrIndiv =
+            switch(as.character(includeTrialMeans),
+                   "TRUE" = c("aggregate", "individual"),
+                   "FALSE" = "aggregate"))
+      
+   } else if(str_detect(sim_data_file, "db$")){
+      MyPKResults_all <- extractPK_DB(
+         sim_data_file = sim_data_file,
+         PKparameters = PKparameters$PKparameter,
+         tissue = unique(PKparameters$Tissue),
+         compoundToExtract = unique(PKparameters$CompoundID),
+         existing_exp_details = existing_exp_details,
+         returnAggregateOrIndiv =
+            switch(as.character(includeTrialMeans),
+                   "TRUE" = c("aggregate", "individual"),
+                   "FALSE" = "aggregate"))
+   }
+   
    
    # If there were no PK parameters to be pulled, MyPKResults_all will have
    # length 0 and we can't proceed.
@@ -115,7 +130,7 @@ pk_table_subfun <- function(sim_data_file,
    } else {
       CheckDoseInt$interval <- CheckDoseInt$interval %>% 
          left_join(MyPKResults_all$TimeInterval %>% 
-                      select(Interval, Sheet) %>% unique(), 
+                      select(any_of(c("Interval", "Sheet"))) %>% unique(), 
                    by = "Interval")
    }
    CheckDoseInt$interval$Tissue <- unique(PKparameters$Tissue)

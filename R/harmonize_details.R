@@ -180,7 +180,8 @@ harmonize_details <- function(existing_exp_details){
          "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
          
          SheetNames <- as.character(c())
-         for(i in existing_exp_details$MainDetails$File){
+         for(i in existing_exp_details$MainDetails$File[
+            str_detect(existing_exp_details$MainDetails$File, "xlsx$")]){
             if(file.exists(i)){
                SheetNames[i] <- 
                   str_c(paste0("'", 
