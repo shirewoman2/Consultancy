@@ -1918,29 +1918,15 @@ extractExpDetails <- function(sim_data_file,
    }
    
    # Other functions call on "Inhibitor1", etc., so we need those objects to
-   # exist. If user pulled data from Input Sheet, they might not, so setting
-   # them to NA if they don't exist.
-   if("Inhibitor1" %in% names(Out) == FALSE){
-      Out$Inhibitor1 <- NA
-   }
-   if("Inhibitor2" %in% names(Out) == FALSE){
-      Out$Inhibitor2 <- NA
-   }
-   if("PrimaryMetabolite1" %in% names(Out) == FALSE){
-      Out$PrimaryMetabolite1 <- NA
-   }
-   if("PrimaryMetabolite2" %in% names(Out) == FALSE){
-      Out$PrimaryMetabolite2 <- NA
-   }
-   if("SecondaryMetabolite" %in% names(Out) == FALSE){
-      Out$SecondaryMetabolite <- NA
-   }
-   if("Inhibitor1Metabolite" %in% names(Out) == FALSE){
-      Out$Inhibitor1Metabolite <- NA
-   }
+   # exist, even if they were not used in this simulation. Setting them to NA if
+   # they don't exist.
+   MissingCmpd <- setdiff(AllCompounds$DetailNames, 
+                          names(Out))
+   MissingCmpd_list <- as.list(rep(NA, length(MissingCmpd)))
+   names(MissingCmpd_list) <- MissingCmpd
+   Out <- c(Out, MissingCmpd_list)
    
-   # Always including the file name. It's just a good practice and it makes
-   # extractExpDetails output more like extractExpDetails_mult.
+   # Always including the file name. 
    Out$File <- sim_data_file
    
    # Noting when workspace, if there is a matching one, was last changed.
@@ -2004,7 +1990,71 @@ extractExpDetails <- function(sim_data_file,
    # and dissolution profiles. 
    Main <- as.data.frame(Out[which(sapply(Out, length) == 1)])
    
+   # Setting up Dosing data.frame to include ALL dosing info, so custom dosing
+   # when appropriate and, for compounds and/or simulations w/out custom dosing,
+   # then a data.frame of all dosing events filled in based on interval, amount,
+   # etc.
+   Dosing <- list()
+   
+   for(cmpd in unique(AllCompounds$DosedCompoundID)){
+      if(is.na(Main[[AllCompounds$DetailNames[
+         AllCompounds$CompoundID == cmpd]]])){next}
+      
+      if(is.na(switch(cmpd, 
+                      "substrate" = as.numeric(Main$DoseInt_sub), 
+                      "inhibitor 1" = as.numeric(Main$DoseInt_inhib), 
+                      "inhibitor 2" = as.numeric(Main$DoseInt_inhib2)))){
+         
+         Dosing[[cmpd]] <- data.frame(
+            Time = switch(cmpd, 
+                          "substrate" = as.numeric(Main$StartHr_sub), 
+                          "inhibitor 1" = as.numeric(Main$StartHr_inhib), 
+                          "inhibitor 2" = as.numeric(Main$StartHr_inhib2)))
+         
+      } else {
+         
+         Dosing[[cmpd]] <- data.frame(
+            Time = seq(from = 
+                          switch(cmpd, 
+                                 "substrate" = as.numeric(Main$StartHr_sub), 
+                                 "inhibitor 1" = as.numeric(Main$StartHr_inhib), 
+                                 "inhibitor 2" = as.numeric(Main$StartHr_inhib2)), 
+                       to = as.numeric(Main$SimDuration), 
+                       by = 
+                          switch(cmpd, 
+                                 "substrate" = as.numeric(Main$DoseInt_sub), 
+                                 "inhibitor 1" = as.numeric(Main$DoseInt_inhib), 
+                                 "inhibitor 2" = as.numeric(Main$DoseInt_inhib2)))) 
+         
+      }
+      
+      Dosing[[cmpd]] <- Dosing[[cmpd]] %>% 
+         mutate(File = sim_data_file, 
+                CompoundID = cmpd, 
+                Compound = Main[[AllCompounds$DetailNames[
+                   AllCompounds$CompoundID == cmpd]]], 
+                Time_units = Main$Units_tmax, 
+                Dose = switch(cmpd, 
+                              "substrate" = as.numeric(Main$Dose_sub), 
+                              "inhibitor 1" = as.numeric(Main$Dose_inhib), 
+                              "inhibitor 2" = as.numeric(Main$Dose_inhib2)), 
+                Dose_units = switch(cmpd, 
+                                    "substrate" = Main$Units_dose_sub, 
+                                    "inhibitor 1" = Main$Units_dose_inhib, 
+                                    "inhibitor 2" = Main$Units_dose_inhib2), 
+                DoseRoute = switch(cmpd, 
+                                   "substrate" = Main$DoseRoute_sub, 
+                                   "inhibitor 1" = Main$DoseRoute_inhib, 
+                                   "inhibitor 2" = Main$DoseRoute_inhib2)) %>% 
+         mutate(DoseNum = 1:nrow(.)) %>% 
+         select(File, CompoundID, Compound, Time, Time_units, DoseNum,
+                Dose, Dose_units, DoseRoute)
+         
+   }
+   
+   
    Out <- list(MainDetails = Main, 
+               Dosing = bind_rows(Dosing), 
                CustomDosing = bind_rows(Out$CustomDosing_sub, 
                                         Out$CustomDosing_inhib, 
                                         Out$CustomDosing_inhib2), 
@@ -2013,6 +2063,8 @@ extractExpDetails <- function(sim_data_file,
                ConcDependent_fup = CDfupProfs, 
                ConcDependent_BP = CDBPProfs, 
                pH_dependent_solubility = pHSol)
+   
+   Out <- Out[ExpDetailListItems]
    
    for(j in names(Out)[unlist(lapply(Out, is.null)) == FALSE]){
       Out[[j]] <- Out[[j]] %>% 
