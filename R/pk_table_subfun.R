@@ -62,18 +62,33 @@ pk_table_subfun <- function(sim_data_file,
       bind_rows(ToAdd) %>% 
       select(-ID)
    
-   MyPKResults_all <- extractPK(
-      sim_data_file = sim_data_file,
-      PKparameters = PKparameters$PKparameter,
-      tissue = unique(PKparameters$Tissue),
-      compoundToExtract = unique(PKparameters$CompoundID),
-      sheet = ifelse(unique(PKparameters$Sheet) == "default", 
-                     NA, unique(PKparameters$Sheet)), 
-      existing_exp_details = existing_exp_details,
-      returnAggregateOrIndiv =
-         switch(as.character(includeTrialMeans),
-                "TRUE" = c("aggregate", "individual"),
-                "FALSE" = "aggregate"))
+   if(str_detect(sim_data_file, "xlsx$")){
+      MyPKResults_all <- extractPK(
+         sim_data_file = sim_data_file,
+         PKparameters = PKparameters$PKparameter,
+         tissue = unique(PKparameters$Tissue),
+         compoundToExtract = unique(PKparameters$CompoundID),
+         sheet = ifelse(unique(PKparameters$Sheet) == "default", 
+                        NA, unique(PKparameters$Sheet)), 
+         existing_exp_details = existing_exp_details,
+         returnAggregateOrIndiv =
+            switch(as.character(includeTrialMeans),
+                   "TRUE" = c("aggregate", "individual"),
+                   "FALSE" = "aggregate"))
+      
+   } else if(str_detect(sim_data_file, "db$")){
+      MyPKResults_all <- extractPK_DB(
+         sim_data_file = sim_data_file,
+         PKparameters = PKparameters$PKparameter,
+         tissue = unique(PKparameters$Tissue),
+         compoundToExtract = unique(PKparameters$CompoundID),
+         existing_exp_details = existing_exp_details,
+         returnAggregateOrIndiv =
+            switch(as.character(includeTrialMeans),
+                   "TRUE" = c("aggregate", "individual"),
+                   "FALSE" = "aggregate"))
+   }
+   
    
    # If there were no PK parameters to be pulled, MyPKResults_all will have
    # length 0 and we can't proceed.
@@ -115,7 +130,7 @@ pk_table_subfun <- function(sim_data_file,
    } else {
       CheckDoseInt$interval <- CheckDoseInt$interval %>% 
          left_join(MyPKResults_all$TimeInterval %>% 
-                      select(Interval, Sheet) %>% unique(), 
+                      select(any_of(c("Interval", "Sheet"))) %>% unique(), 
                    by = "Interval")
    }
    CheckDoseInt$interval$Tissue <- unique(PKparameters$Tissue)
@@ -124,13 +139,16 @@ pk_table_subfun <- function(sim_data_file,
    # that here. I thought that there wouldn't be any values for AUCinf, but
    # there definitely are. If any of the AUCinf_X parameters have trouble with
    # extrapolation, the others won't be useful either. Checking for any NA
-   # values in geomean, mean, or median. 
+   # values in geomean b/c they will definitely be NA if there's a problem. 
    ExtrapCheck <- MyPKResults_all$aggregate %>% 
-      filter(Statistic %in% c("mean", "median", "geometric mean")) %>%
-      select(matches("AUCinf")) %>% 
-      summarize(across(.cols = everything(), .fns = function(x) any(is.na(x))))
+      filter(str_detect(PKparameter, "AUCinf")) %>% 
+      group_by(PKparameter) %>% 
+      summarize(Check = any(is.na(Geomean)))
+      # filter(Statistic %in% c("mean", "median", "geometric mean")) %>%
+      # select(matches("AUCinf")) %>% 
+      # summarize(across(.cols = everything(), .fns = function(x) any(is.na(x))))
    
-   if(any(ExtrapCheck == TRUE)){
+   if(any(ExtrapCheck$Check == TRUE)){
       MyPKResults_all$aggregate <- MyPKResults_all$aggregate %>% 
          select(-matches("AUCinf"))
    }
@@ -203,7 +221,7 @@ pk_table_subfun <- function(sim_data_file,
    }
    
    # Noting PK that were successfully pulled.
-   PKpulled <- setdiff(names(MyPKResults_all$aggregate), "Statistic")
+   PKpulled <- unique(MyPKResults_all$aggregate$PKparameter)
    
    # If they requested AUCinf but there was trouble with that extrapolation,
    # AUCinf won't be present in the data but AUCt will be. Check for that and
@@ -247,22 +265,20 @@ pk_table_subfun <- function(sim_data_file,
       complete.cases(GMR_mean_type) &&
       GMR_mean_type == "geometric"){
       
-      MyPKResults[MyPKResults$Statistic == "mean",
-                  str_detect(names(MyPKResults), "ratio")] <-
-         MyPKResults[MyPKResults$Statistic == "geometric mean",
-                     str_detect(names(MyPKResults), "ratio")]
+      MyPKResults$Mean[str_detect(MyPKResults$PKparameter, "ratio")] <-
+         MyPKResults$Geomean[str_detect(MyPKResults$PKparameter, "ratio")]
    }
    
    # Adding trial means since they're not part of the default output
    if(includeTrialMeans){
-      
+      # FIXME 
       suppressWarnings(
          TrialMeans <- MyPKResults_all$individual %>%
             group_by(Trial) %>%
             summarize(across(.cols = -Individual,
-                             .fns = list("geomean" = gm_mean, 
-                                         "mean" = mean, 
-                                         "median" = median), 
+                             .fns = list("Geomean" = gm_mean, 
+                                         "Mean" = mean, 
+                                         "Median" = median), 
                              .names = "{.col}-{.fn}")) %>%
             ungroup() %>%
             pivot_longer(cols = -Trial, names_to = "Parameter",
