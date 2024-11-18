@@ -225,7 +225,7 @@ extractPK <- function(sim_data_file,
                                  exp_details = "Summary and Input")[["MainDetails"]]
    } else {
       Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>% 
-         filter(File == sim_data_file)
+         filter(File %in% sim_data_file) 
       
       if(nrow(Deets) == 0){
          Deets <- extractExpDetails(sim_data_file = sim_data_file, 
@@ -236,34 +236,41 @@ extractPK <- function(sim_data_file,
    
    ## A bit more error catching w/Deets ---------------------------------------
    
-   # Checking that the file is, indeed, a simulator output file. 
-   SheetNames <- gsub("`", "", str_split_1(Deets$SheetNames, "` `"))
-   
-   if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
-      # Using "warning" instead of "stop" here b/c I want this to be able to
-      # pass through to other functions and just skip any files that
-      # aren't simulator output.
-      warning(paste("The file", sim_data_file,
-                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
-              call. = FALSE)
-      return(list())
-   }
-   
-   if(any(complete.cases(sheet))){
-      # Using SheetWasSpecified later for flow control. If they specified a
-      # sheet name originally, even if that sheet name wasn't found, then only
-      # attempt to get PK from the user-specified sheet.
-      SheetWasSpecified <- TRUE 
-      GoodSheets <- sheet[complete.cases(sheet) & sheet %in% SheetNames]
-      BadSheets <- setdiff(sheet, GoodSheets)
-      BadSheets <- BadSheets[complete.cases(BadSheets)]
+   # Can't do this check if it was actually a db file that we got
+   # existing_exp_details on, so skipping this.
+   if(str_detect(sim_data_file, "xlsx$")){
       
-      if(length(BadSheets) > 0){
-         warning(paste0("Some of the sheets requested could not be found in the Simulator results file. We will skip PK parameters for the sheet `", 
-                        BadSheets, "`.\n"), 
+      # Checking that the file is, indeed, a simulator output file. 
+      SheetNames <- gsub("`", "", str_split_1(Deets$SheetNames, "` `"))
+      
+      if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
+         # Using "warning" instead of "stop" here b/c I want this to be able to
+         # pass through to other functions and just skip any files that
+         # aren't simulator output.
+         warning(paste("The file", sim_data_file,
+                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
                  call. = FALSE)
+         return(list())
+      }
+      
+      if(any(complete.cases(sheet))){
+         # Using SheetWasSpecified later for flow control. If they specified a
+         # sheet name originally, even if that sheet name wasn't found, then only
+         # attempt to get PK from the user-specified sheet.
+         SheetWasSpecified <- TRUE 
+         GoodSheets <- sheet[complete.cases(sheet) & sheet %in% SheetNames]
+         BadSheets <- setdiff(sheet, GoodSheets)
+         BadSheets <- BadSheets[complete.cases(BadSheets)]
          
-         sheet <- GoodSheets
+         if(length(BadSheets) > 0){
+            warning(paste0("Some of the sheets requested could not be found in the Simulator results file. We will skip PK parameters for the sheet `", 
+                           BadSheets, "`.\n"), 
+                    call. = FALSE)
+            
+            sheet <- GoodSheets
+         }
+      } else {
+         SheetWasSpecified <- FALSE
       }
    } else {
       SheetWasSpecified <- FALSE
@@ -1565,62 +1572,9 @@ extractPK <- function(sim_data_file,
       # Error catching
       if("Clearance Trials SS" %in% SheetNames == FALSE){
          
-         ## Pulling data from the Summary tab -------------------------------
-         
-         warning(paste0("The sheet `Clearance Trials SS` was not present in the Excel simulated data file to extract the PK parameters ",
-                        str_comma(PKparameters_CLTSS),
-                        ", so only the aggregated data from the `PKPD Parameters` section on the `Summary` tab will be extracted."),
+         warning(wrapn(paste0("The sheet `Clearance Trials SS` was not present in the Excel simulated data file to extract the PK parameters ",
+                              str_comma(PKparameters_CLTSS), ", so those will be skipped.")), 
                  call. = FALSE)
-         
-         # Getting anything that we couldn't get if user didn't export
-         # "Clearance Trials SS" tab
-         Sum_xl <- suppressMessages(
-            readxl::read_excel(path = sim_data_file, sheet = "Summary",
-                               col_names = FALSE))
-         
-         StartRow_agg <- which(Sum_xl$...1 == "PKPD Parameters") + 1
-         EndRow_agg <- which(is.na(Sum_xl$...1[StartRow_agg:nrow(Sum_xl)]))[1] +
-            StartRow_agg - 2
-         
-         TEMP <- Sum_xl[StartRow_agg:EndRow_agg, 1:6]
-         names(TEMP) <- c("Parameter", as.character(Sum_xl[StartRow_agg - 1, 2:5]),
-                          "CI_lo")
-         TEMP <- TEMP %>% 
-            mutate(Parameter = recode(Parameter, 
-                                      "CL (L/h)" = "CL_hepatic", 
-                                      "CLpo (L/h)" = "CL_po", 
-                                      "F (Sub)" = "F_sub", 
-                                      "Fg (Sub)" = "Fg_sub", 
-                                      "Fh (Sub)" = "Fh_sub")) %>% 
-            filter(Parameter %in% PKparameters_CLTSS) %>% 
-            pivot_longer(cols = -Parameter, 
-                         names_to = "Statistic", 
-                         values_to = "Value") %>% 
-            mutate(Value = as.numeric(Value),
-                   Statistic = recode(Statistic, 
-                                      "Confidence Interval" = "90% confidence interval around the geometric mean(lower limit)", 
-                                      "CI_lo" = "90% confidence interval around the geometric mean(upper limit)"))
-         TEMP <- split(TEMP, f = TEMP$Parameter)
-         TEMP <- lapply(TEMP, function(x){
-            Stat_names <- x$Statistic
-            Stat_values <- x$Value
-            names(Stat_values) <- Stat_names
-            return(Stat_values)
-         })
-         
-         Out_agg <- append(Out_agg, TEMP)
-         
-         DataCheck <- DataCheck %>%
-            bind_rows(data.frame(PKparam = PKparameters_CLTSS,
-                                 Tab = "Summary",
-                                 SearchText = NA,
-                                 Column = 1,
-                                 StartRow_agg = StartRow_agg,
-                                 EndRow_agg = EndRow_agg,
-                                 StartRow_ind = NA,
-                                 EndRow_ind = NA))
-         
-         rm(TEMP)
          
       } else {
          
@@ -1856,36 +1810,40 @@ extractPK <- function(sim_data_file,
    
    
    # Putting all data together ---------------------------------------------- 
-   # If user only wanted one parameter and includeTrialInfo was FALSE and so
-   # was returnExpDetails, make the output a vector instead of a list
-   if(length(Out_ind) == 1 & includeTrialInfo == FALSE & 
-      returnExpDetails == FALSE){
+   
+   if(length(Out_ind) > 0){
       
-      Out_ind <- Out_ind[[1]]
+      # Putting objects in alphabetical order
+      Out_ind <- Out_ind[order(names(Out_ind))]
       
-   } else {
-      
-      if(length(Out_ind) > 1){
-         
-         # Putting objects in alphabetical order
-         Out_ind <- Out_ind[order(names(Out_ind))]
-         
-         if(includeTrialInfo & "individual" %in% returnAggregateOrIndiv){
-            Out_ind <- Out_ind[names(Out_ind)[str_detect(names(Out_ind), "tab$")]]
-            Out_ind <- bind_rows(Out_ind) %>%
-               pivot_longer(cols = -(c(Individual, Trial)),
-                            names_to = "Parameter",
-                            values_to = "Value") %>%
-               filter(complete.cases(Value)) %>%
-               arrange(Parameter, as.numeric(Trial),
-                       as.numeric(Individual)) %>%
-               pivot_wider(names_from = Parameter,
-                           values_from = Value)
-         } else {
-            Out_ind <- Out_ind[names(Out_ind)[!str_detect(names(Out_ind), "tab$")]] %>%
-               as.data.frame()
-         }
+      if(includeTrialInfo & "individual" %in% returnAggregateOrIndiv){
+         Out_ind <- Out_ind[names(Out_ind)[str_detect(names(Out_ind), "tab$")]]
+         Out_ind <- bind_rows(Out_ind) %>%
+            pivot_longer(cols = -(c(Individual, Trial)),
+                         names_to = "Parameter",
+                         values_to = "Value") %>%
+            filter(complete.cases(Value)) %>%
+            arrange(Parameter, as.numeric(Trial),
+                    as.numeric(Individual)) 
+      } else {
+         Out_ind <- Out_ind[names(Out_ind)[!str_detect(names(Out_ind), "tab$")]] %>%
+            as.data.frame()
       }
+      
+      Out_ind <- Out_ind %>% 
+         mutate(File = sim_data_file, 
+                Tissue = tissue, 
+                CompoundID = compoundToExtract, 
+                Compound = as.character(Deets[
+                   AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
+                Simulated = TRUE,
+                # FIXME - Add DoseNum
+                Dose = as.numeric(
+                   Deets %>%
+                      pull(any_of(paste0("Dose",
+                                         AllCompounds$DosedCompoundSuffix[
+                                            AllCompounds$CompoundID == compoundToExtract])))))
+      
    }
    
    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv) & 
@@ -1910,17 +1868,45 @@ extractPK <- function(sim_data_file,
          Statistic_char <- tolower(names(Out_agg[[i]]))
          Out_agg[[i]] <- as.data.frame(Out_agg[[i]]) %>%
             mutate(Statistic = Statistic_char,
-                   Parameter = i)
+                   PKparameter = i)
          names(Out_agg[[i]])[1] <- "Value"
       }
       
       Out_agg <- bind_rows(Out_agg) %>%
-         select(Parameter, Statistic, Value) %>%
-         pivot_wider(names_from = Parameter, values_from = Value,
-                     id_cols = Statistic)
+         select(PKparameter, Statistic, Value) %>%
+         mutate(Statistic = renameStats(OrigStat = Statistic, 
+                                        use = "internal"), 
+                File = sim_data_file, 
+                Inhibitor = 
+                   case_when(
+                      str_detect(PKparameter, "_withInhib|_ratio") ~ 
+                         determine_myperpetrator(Deets, 
+                                                 prettify_compound_names = F), 
+                      .default = "none"),
+                Tissue = tissue, 
+                CompoundID = compoundToExtract, 
+                Compound = as.character(Deets[
+                   AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
+                Simulated = TRUE,
+                # FIXME - Add DoseNum
+                Dose = as.numeric(
+                   Deets %>%
+                      pull(any_of(paste0("Dose",
+                                         AllCompounds$DosedCompoundSuffix[
+                                            AllCompounds$CompoundID == compoundToExtract])))), 
+                # Units are always these for db files
+                Units = case_when(str_detect(PKparameter, "AUC") ~ Deets$Units_AUC, 
+                                  str_detect(PKparameter, "CL") ~ Deets$Units_CL, 
+                                  str_detect(PKparameter, "Cmax") ~ Deets$Units_Cmax, 
+                                  str_detect(PKparameter, "tmax") ~ Deets$Units_tmax)) %>% 
+         pivot_wider(names_from = Statistic, 
+                     values_from = Value) %>% 
+         select(File, CompoundID, Compound, Inhibitor, Tissue, Simulated,
+                Dose, # DoseNum, 
+                PKparameter, # N, 
+                Geomean, GCV, CI90_lower, CI90_upper, 
+                Mean, SD, Median, Minimum, Maximum)
       
-      Out_agg <- Out_agg[c("Statistic",
-                           sort(setdiff(names(Out_agg), "Statistic")))]
    }
    
    Out <- list("individual" = Out_ind,
@@ -1939,12 +1925,8 @@ extractPK <- function(sim_data_file,
       
       if(any(returnAggregateOrIndiv %in% c("both", "aggregate"))){
          
-         if(length(Out_agg) > 1){
-            StatNames <- renameStats(Out_agg$Statistic) %>% as.character()
-         } else {
-            StatNames <- renameStats(names(Out_agg[[1]]))
-         }
-         
+         StatNames <- c("Geomean", "GCV", "CI90_lower", "CI90_upper", 
+                        "Mean", "SD", "Median", "Minimum", "Maximum")
          StatNum <- 1:length(StatNames)
          names(StatNum) <- StatNames
          
