@@ -226,45 +226,47 @@ extractPK_DB <- function(sim_data_file,
    
    MaxDoseNum <- max(PK_indiv$DoseNum)
    
-   PK_indiv <- PK_indiv %>% 
-      mutate(Inhibition = case_match(Inhibition, 
-                                     0 ~ "noinhib", 
-                                     1 ~ "yesinhib")) %>% 
-      select(Trial, Individual, Inhibition, DoseNum, 
-             Tmax, Cmin, Cmax, AUC, AUCinf, HalfLife, AccumulationIndex) %>% 
-      filter(DoseNum != -1) %>%
-      pivot_longer(cols = -c(Trial, Individual, DoseNum, Inhibition), 
-                   names_to = "PKparameter", 
-                   values_to = "Value") %>% 
-      # Adding fup 
-      mutate(fu = existing_exp_details$MainDetails %>% 
-                pull(paste0("fu", AllCompounds$Suffix[
-                   AllCompounds$CompoundID == compoundToExtract])), 
-             CalcRequired = AllTissues %>% filter(Tissue == tissue) %>% 
-                pull(Simcyp_calculation_required), 
-             Value = case_match(CalcRequired, 
-                                "Multiply by fu" ~ Value * as.numeric(fu), 
-                                .default = Value),  
-             PKparameter = case_match(PKparameter, 
-                                      "Tmax" ~ "tmax", 
-                                      "AUC" ~ "AUCt", 
-                                      .default = PKparameter), 
-             PKparameter = paste0(PKparameter, 
-                                  case_match(DoseNum, 
-                                             1 ~ "_dose1",
-                                             MaxDoseNum ~ "_last", 
-                                             .default = "")), 
-             CompoundID = compoundToExtract,
-             Compound = as.character(Deets[
-                AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]),
-             Tissue = tissue,
-             Simulated = TRUE,
-             File = sim_data_file,
-             Dose = as.numeric(
-                Deets %>%
-                   pull(any_of(paste0("Dose",
-                                      AllCompounds$DosedCompoundSuffix[
-                                         AllCompounds$CompoundID == compoundToExtract])))))
+   suppressWarnings(
+      PK_indiv <- PK_indiv %>% 
+         mutate(Inhibition = case_match(Inhibition, 
+                                        0 ~ "noinhib", 
+                                        1 ~ "yesinhib")) %>% 
+         select(Trial, Individual, Inhibition, DoseNum, 
+                Tmax, Cmin, Cmax, AUC, AUCinf, HalfLife, AccumulationIndex) %>% 
+         filter(DoseNum != -1) %>%
+         pivot_longer(cols = -c(Trial, Individual, DoseNum, Inhibition), 
+                      names_to = "PKparameter", 
+                      values_to = "Value") %>% 
+         # Adding fup 
+         mutate(fu = existing_exp_details$MainDetails %>% 
+                   pull(paste0("fu", AllCompounds$Suffix[
+                      AllCompounds$CompoundID == compoundToExtract])), 
+                CalcRequired = AllTissues %>% filter(Tissue == tissue) %>% 
+                   pull(Simcyp_calculation_required), 
+                Value = case_match(CalcRequired, 
+                                   "Multiply by fu" ~ Value * as.numeric(fu), 
+                                   .default = Value),  
+                PKparameter = case_match(PKparameter, 
+                                         "Tmax" ~ "tmax", 
+                                         "AUC" ~ "AUCt", 
+                                         .default = PKparameter), 
+                PKparameter = paste0(PKparameter, 
+                                     case_match(DoseNum, 
+                                                1 ~ "_dose1",
+                                                MaxDoseNum ~ "_last", 
+                                                .default = "")), 
+                CompoundID = compoundToExtract,
+                Compound = as.character(Deets[
+                   AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]),
+                Tissue = tissue,
+                Simulated = TRUE,
+                File = sim_data_file,
+                Dose = as.numeric(
+                   Deets %>%
+                      pull(any_of(paste0("Dose",
+                                         AllCompounds$DosedCompoundSuffix[
+                                            AllCompounds$CompoundID == compoundToExtract])))))
+   )
    
    # Calculating ratios
    if(any(PK_indiv$Inhibition == "yesinhib") & 
