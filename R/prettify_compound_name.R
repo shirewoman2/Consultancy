@@ -34,6 +34,26 @@ prettify_compound_name <- function(compound_name,
    SimText <- "[sS][vV]-|[sS]im-|[wW][sS][pP]-|_[eE][cC]|_[sS][rR]|-[mM][dD]|-[sS][dD]|_[fF][oO]|-[1-9]00 mg [QqMmSsTtBbIidD]{1,3}|_fasted soln|_fed capsule|RES-"
    compound_name <- gsub(SimText, "", compound_name)
    
+   SimCompounds <- c("Alfentanil", "Alprazolam", "Atomoxetine", "Atorvastatin", 
+                     "Bufuralol", "Buprenorphine", "Bupropion", "Caffeine", 
+                     "Celecoxib", "Clozapine", "Crizotinib", "Cyclosporine", 
+                     "Dabigatran", "Desipramine", "Dexamethasone", 
+                     "Dextromethorphan", "Digoxin", "Drospirenone", 
+                     "Duloxetine", "Esomeprazole", "Ethinylestradiol", 
+                     "Fedratinib", "Flurbiprofen", "Gemfibrozil", 
+                     "Glyburide", "Ibrutinib", "Imipramine", "Itraconazole", 
+                     "Lansoprazole", "Lorazepam", "Metformin", "Metoprolol", 
+                     "Midazolam", "Montelukast", "Nebivolol", "Nifedipine", 
+                     "Omeprazole", "Ondansetron", "Oxycodone", "Phenacetin", 
+                     "Pioglitazone", "Pravastatin", "Quinidine", "Raltegravir", 
+                     "Repaglinide", "Rivaroxaban", "Rosiglitazone", 
+                     "Rosuvastatin", "Ruxolitinib", "Mephenytoin", "Warfarin", 
+                     "Sildenafil", "Simvastatin", "Siponimod", "Tenofovir", 
+                     "Theophylline", "Tolbutamide", "Tolterodine", "Triazolam", 
+                     "Valsartan", "Voriconazole", "Zidovudine", "Zolpidem",
+                     "Adalimumab", "Atezolizumab", "Efalizumab", "Etanercept", 
+                     "Omalizumab", "Trastuzumab")
+   
    # Dealing with case
    compound_name <- switch(case, 
                            "lower" = tolower(compound_name), 
@@ -61,8 +81,12 @@ prettify_compound_name <- function(compound_name,
    # Not changing compounds that are likely not from the Simulator if that's
    # what the user wants
    if(force == FALSE){
-      compound_name[which(str_detect(OrigCompoundName, SimText) == FALSE)] <- 
-         OrigCompoundName[which(str_detect(OrigCompoundName, SimText) == FALSE)]
+      compound_name[which(str_detect(OrigCompoundName, 
+                                     str_c(c(SimText, SimCompounds), 
+                                           collapse = "|")) == FALSE)] <- 
+         OrigCompoundName[which(str_detect(OrigCompoundName, 
+                                           str_c(c(SimText, SimCompounds), 
+                                                 collapse = "|")) == FALSE)]
    }
    
    return(compound_name)
