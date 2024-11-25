@@ -1337,6 +1337,7 @@ forest_plot <- function(forest_dataframe,
                                      "AUCinf_ratio"))
       
       forest_dataframe <- forest_dataframe %>% 
+         filter(!ID %in% ProbID) %>% 
          bind_rows(AUCt_swap)
       
       if(all(is.na(PKparameters))){
