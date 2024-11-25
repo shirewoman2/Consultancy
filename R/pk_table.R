@@ -810,15 +810,11 @@ pk_table <- function(PKparameters = NA,
                       "Mean" = MeanType == "arithmetic", 
                       "Geomean" = MeanType == "geometric",
                       "tmaxmin" = any(c(includeConfInt, 
-                                        includeCV, 
                                         includePerc, 
-                                        includeRange, 
-                                        includeSD)), 
+                                        includeRange)), 
                       "tmaxmax" = any(c(includeConfInt, 
-                                        includeCV, 
                                         includePerc, 
-                                        includeRange, 
-                                        includeSD)), 
+                                        includeRange)), 
                       "S_O" = TRUE)
       VarOptions <- names(VarOptions)[which(VarOptions)]
       
@@ -889,7 +885,36 @@ pk_table <- function(PKparameters = NA,
    
    MyPKResults <- MyPKResults %>%
       filter(PKParam %in% GoodPKParam &
-                complete.cases(Value)) %>% unique() %>%
+                complete.cases(Value)) %>% unique() 
+   
+   TmaxStuff <- MyPKResults %>% 
+      filter(str_detect(PKParam, "tmax") & 
+                !Stat %in% c("Geomean", "Mean", "Median")) %>% 
+      mutate(Stat = case_when(Stat == "tmaxmin" &
+                                 {{includeRange}} ~ "Minimum", 
+                              str_detect(PKParam, "tmax") & 
+                                 Stat == "tmaxmax" &
+                                 {{includeRange}} ~ "Maximum", 
+                              
+                              Stat == "tmaxmin" &
+                                 {{includeConfInt}} ~ "CI90_lower", 
+                              
+                              Stat == "tmaxmax" &
+                                 {{includeConfInt}} ~ "CI90_upper", 
+                              
+                              Stat == "tmaxmin" &
+                                 {{includePerc}} ~ "Per5", 
+                              
+                              Stat == "tmaxmax" &
+                                 {{includePerc}} ~ "Per95")) %>% 
+      filter(complete.cases(Stat)) %>% 
+      unique()
+   
+   MyPKResults <- MyPKResults %>% 
+      filter(!str_detect(PKParam, "tmax") |
+                (str_detect(PKParam, "tmax") & 
+                    Stat %in% c("Geomean", "Mean", "Median"))) %>% 
+   bind_rows(TmaxStuff) %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>%
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
              Stat = factor(Stat, levels = unique(
@@ -957,10 +982,10 @@ pk_table <- function(PKparameters = NA,
          if(nrow(MyPKResults[[i]]) == 0){next}
          
          # All possible places where we need to concatenate the variability
-         VarRows <- list("ConfInt90" = c("CI90_lower", "CI90_upper"), 
-                         "ConfInt95" = c("CI95_lower", "CI95_upper"),
-                         "Perc" = c("Per5", "Per95"), 
-                         "Range" = c("Minimum", "Maximum"))
+         VarRows <- list("CI90concat" = c("CI90_lower", "CI90_upper"), 
+                         "CI95concat" = c("CI95_lower", "CI95_upper"),
+                         "Per95concat" = c("Per5", "Per95"), 
+                         "Rangeconcat" = c("Minimum", "Maximum"))
          # Only the ones that should be present in our data
          VarRows <- VarRows[sapply(VarRows, function(x) unlist(x[[1]])) %in% VarOptions]
          
@@ -985,12 +1010,7 @@ pk_table <- function(PKparameters = NA,
                                               "brackets" = paste0("[", x[1], ", ", x[2], "]"), 
                                               "parentheses" = paste0("(", x[1], ", ", x[2], ")")),
                                        NA)}),
-                      Stat = switch(j,
-                                    "ConfInt90" = "CI90concat",
-                                    "ConfInt95" = "CI95concat",
-                                    "Perc" = "per95concat",
-                                    "Range" = "Rangeconcat",
-                                    "obs" = "CIobsconcat"))
+                      Stat = j)
             
             MyPKResults[[i]][which(MyPKResults[[i]]$Stat == VarRows[[j]][1]), ] <-
                temp[1, ]
@@ -1012,7 +1032,7 @@ pk_table <- function(PKparameters = NA,
       }
       
       if(includePerc == FALSE){
-         MyPKResults <- MyPKResults %>% filter(!Stat %in% c("per95concat"))
+         MyPKResults <- MyPKResults %>% filter(!Stat %in% c("Per95concat"))
       }
    }
    
