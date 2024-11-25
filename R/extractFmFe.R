@@ -87,6 +87,12 @@ extractFmFe <- function(sim_data_file,
       }
    }
    
+   if(is.null(Deets)){
+      # Skipping the warning b/c they will have already gotten it from
+      # extractExpDetails.
+      return(data.frame())
+   }
+   
    if(Deets$PopRepSim == "Yes"){
       warning(paste0("The simulator file supplied, `", 
                      sim_data_file, 
