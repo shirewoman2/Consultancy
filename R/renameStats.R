@@ -25,15 +25,16 @@ renameStats <- function(OrigStat,
    if(use == "internal"){
       # This is when we're starting from Simulator names and going to R column
       # names
-      AllStats <- AllStats %>% filter(SimulatorNames %in% OrigStat)
-      StatNames <- AllStats$InternalColNames
-      names(StatNames) <- AllStats$SimulatorNames
+      MyStats <- AllStats %>% filter(SimulatorNames %in% OrigStat)
+      StatNames <- MyStats$InternalColNames
+      names(StatNames) <- MyStats$SimulatorNames
    } else {
       # This is when we're starting from R column names and going to report
       # names
-      AllStats <- AllStats %>% filter(InternalColNames %in% OrigStat)
-      StatNames <- AllStats$ReportNames
-      names(StatNames) <- AllStats$InternalColNames
+      MyStats <- AllStats %>% filter(InternalColNames %in% OrigStat) %>% 
+         select(InternalColNames, ReportNames) %>% unique()
+      StatNames <- MyStats$ReportNames
+      names(StatNames) <- MyStats$InternalColNames
    }
    
    return(StatNames[OrigStat])
