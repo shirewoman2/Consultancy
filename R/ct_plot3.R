@@ -525,10 +525,8 @@ ct_plot3 <- function(ct_dataframe,
                       Notes, CompoundID, Compound)), 
          shading_column = Detail)
       
-      # Out would have been just the graph or just the two arranged graphs at
-      # this point, so need to convert it to a list here.
       Out[["QCgraph"]] <- ggpubr::ggarrange(
-         plotlist = list(Out, flextable::gen_grob(QCTable)),
+         plotlist = list(Out$graph, flextable::gen_grob(QCTable)),
          font.label = list(size = graph_title_size))
    }
    
@@ -582,9 +580,7 @@ ct_plot3 <- function(ct_dataframe,
       } else {
          # This is when they want any kind of graphical file format.
          ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
-                plot = switch(as.character(qc_graph), 
-                              "TRUE" = Out$Graph, 
-                              "FALSE" = Out))
+                plot = Out$graph)
          
       }
    }
