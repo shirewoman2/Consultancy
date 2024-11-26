@@ -97,6 +97,9 @@
 #'   explanatory than just "File". The default is to use whatever the column
 #'   name is for \code{colorBy_column}. If you don't want a label for this
 #'   legend item, set this to "none".
+#' @param legend_position specify where you want the legend to be. Options are
+#'   "left", "right", "bottom" (default), "top", or "none" if you don't want one
+#'   at all.
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -160,9 +163,10 @@ demog_plot_sim <- function(demog_dataframe,
                            demog_parameters = NA, 
                            variability_display = "kernel density", 
                            colorBy_column, 
+                           color_set = "default", 
                            color_labels = NA, 
                            legend_label_color = NA,
-                           color_set = "default", 
+                           legend_position = "bottom", 
                            graph_title = "Demographics", 
                            alpha = 0.8, 
                            ncol = NULL, 
@@ -186,6 +190,13 @@ demog_plot_sim <- function(demog_dataframe,
       facet_by_sex = FALSE
    }
    
+   legend_position <- tolower(legend_position)[1]
+   if(complete.cases(legend_position) && 
+      legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
+      warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'bottom', the default."), 
+              call. = FALSE)
+      legend_position <- "bottom"
+   }
    
    # Keeping only requested sims ----------------------------------------------
    
@@ -210,6 +221,7 @@ demog_plot_sim <- function(demog_dataframe,
       }
       
       demog_dataframe$colorBy_column <- demog_dataframe$File
+      
    } else {
       if(class(demog_dataframe %>% pull(!!colorBy_column)) == "numeric"){
          
@@ -230,8 +242,14 @@ demog_plot_sim <- function(demog_dataframe,
    
    # If user filled in color_labels but not colorBy_column, give a warning.
    if(as_label(colorBy_column) == "<empty>" & any(complete.cases(color_labels))){
-      warning("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored.\n", 
-              call. = FALSE)
+      if("colorBy_column" %in% names(demog_dataframe)){
+         warning(wrapn("You have specified something for the argument 'color_labels' but nothing for the argument 'colorBy_column'. We think you want to color things by the simulation file name, so that's what we're using to assign colors. This might not work out great if that's a bad assumption, in which case, please assign a column in your data to the argument 'colorBy_column'."), 
+                 call. = FALSE) 
+      } else {
+         warning(wrapn("You have specified something for the argument 'color_labels' but nothing for the argument 'colorBy_column'. Since we don't know which column contains the data to use for your color labels, the labels will be ignored."), 
+                 call. = FALSE) 
+         
+      }
    }
    
    # If there are any replicate names for color_labels, give a warning.
@@ -426,9 +444,9 @@ demog_plot_sim <- function(demog_dataframe,
    names(DemogLabs) <- tolower(PossDemogParams$Parameter)
    
    if(all(is.na(demog_parameters))){
-      Graphs <- tolower(PossDemogParams$Parameter)
+      DemogParams <- tolower(PossDemogParams$Parameter)
    } else {
-      Graphs <- tolower(demog_parameters)
+      DemogParams <- tolower(demog_parameters)
    }
    
    
@@ -438,7 +456,11 @@ demog_plot_sim <- function(demog_dataframe,
    
    # This is when the user wants specific user-specified colors rather
    # that one of the pre-made sets.
-   if(length(color_set) > 1){
+   
+   ColorCheck <- try(expr = col2rgb(color_set), silent = TRUE)
+   
+   if(length(color_set) > 1 |
+      (NumColorsNeeded == 1 & is.matrix(ColorCheck))){
       
       # If they supply a named character vector whose values are not
       # present in the data, convert it to an unnamed character vector.
@@ -524,12 +546,40 @@ demog_plot_sim <- function(demog_dataframe,
    
    # Graphing -----------------------------------------------------------------
    
+   # # Setting up function for making the glyph be a filled rectangle no matter
+   # # what. Credit for this:
+   # # https://stackoverflow.com/questions/76872072/change-legend-geom-with-override-aes-or-key-glyph
+   # 
+   # "%||%" <- function(a, b) {
+   #    if (!is.null(a)) a else b
+   # }
+   # 
+   # draw_key_cust <- function(data, params, size) {
+   #    # make fill inherit color if NA
+   #    if (is.na(data$fill)) data$fill <- data$col
+   #    
+   #    grid::rectGrob(
+   #       gp = grid::gpar(
+   #          col = NA, fill = alpha(data$fill %||%
+   #                                    data$colour %||% "grey20", data$alpha),
+   #          lty = data$linetype %||%
+   #             1
+   #       )
+   #    )
+   # }
+   
    subfun_density <- function(Var){
       names(demog_dataframe)[names(demog_dataframe) == Var] <- "MyVar"
       
       suppressWarnings(
          G <- ggplot(demog_dataframe, aes(x = MyVar, fill = colorBy_column)) +
             geom_density(alpha = 0.5) +
+            guides(fill = guide_legend(override.aes = 
+                                          list(shape = 15,
+                                               size = 6, 
+                                               color = NA,
+                                               alpha = 1)), 
+                   color = "none") + 
             ylab("Distribution") +
             xlab(DemogLabs[Var])
       )
@@ -543,7 +593,8 @@ demog_plot_sim <- function(demog_dataframe,
       G <- G +
          scale_fill_manual(values = MyColors) +
          theme_consultancy(border = border_facets) + 
-         theme(strip.placement = "outside")
+         theme(strip.placement = "outside", 
+               legend.position = legend_position)
       
       return(G)
    }
@@ -556,6 +607,12 @@ demog_plot_sim <- function(demog_dataframe,
          G <- ggplot(demog_dataframe, aes(y = MyVar, 
                                           x = colorBy_column,  fill = colorBy_column)) +
             geom_boxplot(alpha = 0.8) +
+            guides(fill = guide_legend(override.aes = 
+                                          list(shape = 15,
+                                               size = 6, 
+                                               color = NA,
+                                               alpha = 1)), 
+                   color = "none") + 
             ylab(DemogLabs[Var]) +
             xlab(NULL)
       )
@@ -569,7 +626,8 @@ demog_plot_sim <- function(demog_dataframe,
       G <- G +
          scale_fill_manual(values = MyColors) +
          theme_consultancy(border = border_facets) + 
-         theme(strip.placement = "outside")
+         theme(strip.placement = "outside", 
+               legend.position = legend_position)
       
       return(G)
    }
@@ -577,7 +635,7 @@ demog_plot_sim <- function(demog_dataframe,
    
    MyGraphs <- list()
    
-   for(yy in Graphs){
+   for(yy in DemogParams){
       if(yy == "sex vs age"){
          MyGraphs[[yy]] <- 
             ggplot(demog_dataframe, 
@@ -585,10 +643,17 @@ demog_plot_sim <- function(demog_dataframe,
             facet_grid(sex ~ ., switch = "y") +
             geom_violin(alpha = 0.7) +
             scale_fill_manual(values = MyColors) +
+            guides(fill = guide_legend(override.aes = 
+                                          list(shape = 15,
+                                               size = 6, 
+                                               color = NA,
+                                               alpha = 1)), 
+                   color = "none") + 
             ylab("Sex") +
             xlab("Age (years)") +
             theme_consultancy(border = border_facets) + 
-            theme(strip.placement = "outside")
+            theme(strip.placement = "outside", 
+                  legend.position = legend_position)
          
          if(complete.cases(legend_label_color)){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
@@ -612,6 +677,12 @@ demog_plot_sim <- function(demog_dataframe,
             ggplot(PercFemale, aes(x = colorBy_column, fill = colorBy_column,
                                    y = PercFemale)) +
             geom_bar(stat = "identity", alpha = 0.7) +
+            guides(fill = guide_legend(override.aes = 
+                                          list(shape = 15, 
+                                               size = 6, 
+                                               color = NA, 
+                                               alpha = 1)), 
+                   color = "none") + 
             scale_fill_manual(values = MyColors) +
             scale_y_continuous(labels = scales::percent, 
                                limits = c(0, 1)) +
@@ -619,7 +690,8 @@ demog_plot_sim <- function(demog_dataframe,
             xlab(NULL) +
             labs(fill = NULL) +
             theme_consultancy(border = border_facets) + 
-            theme(strip.placement = "outside")
+            theme(strip.placement = "outside", 
+                  legend.position = legend_position)
          
          if(complete.cases(legend_label_color)){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
@@ -644,6 +716,12 @@ demog_plot_sim <- function(demog_dataframe,
             geom_point(alpha = alpha) + 
             scale_color_manual(values = MyColors) +
             labs(color = NULL) +
+            guides(color = guide_legend(override.aes = 
+                                           list(shape = 15, 
+                                                size = 6, 
+                                                fill = NA, 
+                                                alpha = 1)), 
+                   shape = guide_legend(override.aes = list())) + 
             ylab(case_match(yy, 
                             "weight vs height" ~ "Weight (kg)", 
                             "height vs age" ~ "Height (cm)", 
@@ -652,7 +730,7 @@ demog_plot_sim <- function(demog_dataframe,
                             "weight vs height" ~ "Height (cm)", 
                             "height vs age" ~ "Age (years)", 
                             "weight vs age" ~ "Age (years)")) +
-            theme_consultancy(border = border_facets) 
+            theme_consultancy(border = border_facets)
          
          if(length(unique(demog_dataframe$sex)) == 1){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + guides(shape = "none") 
@@ -675,43 +753,52 @@ demog_plot_sim <- function(demog_dataframe,
          if(as_label(facet_column_additional) != "<empty>"){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + 
                facet_grid(sex ~ fc, switch = "y") +
-               theme(strip.placement = "outside")
+               theme(strip.placement = "outside", 
+                     legend.position = legend_position)
             
          } else {
             MyGraphs[[yy]] <- MyGraphs[[yy]] + 
                facet_grid(sex ~ ., switch = "y") +
-               theme(strip.placement = "outside")
+               theme(strip.placement = "outside", 
+                     legend.position = legend_position)
             
          }
       } else {
          if(as_label(facet_column_additional) != "<empty>"){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + 
                facet_grid(. ~ fc, switch = "y") +
-               theme(strip.placement = "outside")
+               theme(strip.placement = "outside", 
+                     legend.position = legend_position)
          }  
       }
-      
-      # Only include the legend for the 1st graph
-      if(yy != Graphs[1]){
-         MyGraphs[[yy]] <- MyGraphs[[yy]] +
-            theme(legend.position = "none")
-      }
-      
    }
    
    patchwork::wrap_plots(MyGraphs) +
-      patchwork::plot_layout(guides = "collect", 
-                             ncol = ncol, 
-                             nrow = nrow) + 
-      patchwork::plot_annotation(title = graph_title, 
-                                 tag_levels = switch(as.character(graph_labels), 
-                                                     "TRUE" = "A", 
-                                                     "FALSE" = NULL)) & 
-      theme(plot.title = element_text(size = 12, 
-                                      hjust = 0.5, 
-                                      face = "bold"), 
-            legend.position = "bottom")
+      patchwork::plot_layout(guides = "collect",
+                             ncol = ncol,
+                             nrow = nrow) +
+      patchwork::plot_annotation(title = graph_title,
+                                 tag_levels = switch(as.character(graph_labels),
+                                                     "TRUE" = "A",
+                                                     "FALSE" = NULL)) &
+      theme(plot.title = element_text(size = 12,
+                                      hjust = 0.5,
+                                      face = "bold"),
+            legend.position = legend_position)
    
+
+   # # This does not work. ggpubr only keeps the 1st legend. 
+   # G <- ggpubr::ggarrange(plotlist = MyGraphs, 
+   #                   ncol = ncol, 
+   #                   nrow = nrow, 
+   #                   common.legend = TRUE, 
+   #                   legend = legend_position)
+   # 
+   # ggpubr::annotate_figure(G, 
+   #                         top = ggpubr::text_grob(graph_title,
+   #                                                 size = 12, 
+   #                                                 hjust = 0.5, 
+   #                                                 face = "bold"))   
    
 }
 
