@@ -273,23 +273,23 @@ pk_table_subfun <- function(sim_data_file,
    if(includeTrialMeans){
       suppressWarnings(
          TrialMeans <- MyPKResults_all$individual %>%
-            group_by(Trial) %>%
-            summarize(across(.cols = -Individual,
-                             .fns = list("Geomean" = gm_mean, 
-                                         "Mean" = mean, 
-                                         "Median" = median), 
-                             .names = "{.col}-{.fn}")) %>%
+            group_by(Trial, PKparameter, File, Tissue, CompoundID, Compound, 
+                     Simulated, Dose) %>%
+            summarize(Geomean = gm_mean(Value), 
+                      Mean = mean(Value), 
+                      Median = median(Value)) %>%
             ungroup() %>%
-            pivot_longer(cols = -Trial, names_to = "Parameter",
+            pivot_longer(cols = -c(PKparameter, Trial, File, Tissue, CompoundID, Compound, 
+                                   Simulated, Dose), 
+                         names_to = "Stat",
                          values_to = "Value") %>%
-            separate(col = Parameter, into = c("Parameter", "Stat"), 
-                     sep = "-") 
-      )
+            pivot_wider(names_from = PKparameter, 
+                        values_from = Value))
       
       if(use_median_for_tmax){
          TrialMeans <- TrialMeans %>% 
-            filter((str_detect(Parameter, "tmax") & Stat == "median") |
-                      (!str_detect(Parameter, "tmax") & 
+            filter((str_detect(PKparameter, "tmax") & Stat == "median") |
+                      (!str_detect(PKparameter, "tmax") & 
                           Stat == switch(MeanType, 
                                          "geometric" = "Geomean", 
                                          "arithmetic" = "Mean")))
@@ -301,13 +301,13 @@ pk_table_subfun <- function(sim_data_file,
       }
       
       TrialMeans <- TrialMeans %>% 
-         group_by(Parameter) %>%
+         group_by(PKparameter) %>%
          summarize(MinMean = min(Value),
                    MaxMean = max(Value)) %>%
-         pivot_longer(cols = -Parameter,
+         pivot_longer(cols = -PKparameter,
                       names_to = "Statistic", 
                       values_to = "Value") %>%
-         pivot_wider(names_from = Parameter, 
+         pivot_wider(names_from = PKparameter, 
                      values_from = Value)
       
       MyPKResults <- MyPKResults %>% bind_rows(TrialMeans)
@@ -347,7 +347,7 @@ pk_table_subfun <- function(sim_data_file,
             MyPKResults$tmax_dose1[which(MyPKResults$Stat == "Median")]
          
          MyPKResults$tmax_dose1[
-            MyPKResults$Stat %in% c("Per5", "CI95_lowerer", "CI90_lowerer")] <-
+            MyPKResults$Stat %in% c("Per5", "CI95_lower", "CI90_lower")] <-
             MyPKResults$tmax_dose1[MyPKResults$Stat == "Minimum"]
          
          MyPKResults$tmax_dose1[

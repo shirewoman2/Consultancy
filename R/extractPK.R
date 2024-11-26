@@ -1820,10 +1820,10 @@ extractPK <- function(sim_data_file,
          Out_ind <- Out_ind[names(Out_ind)[str_detect(names(Out_ind), "tab$")]]
          Out_ind <- bind_rows(Out_ind) %>%
             pivot_longer(cols = -(c(Individual, Trial)),
-                         names_to = "Parameter",
+                         names_to = "PKparameter",
                          values_to = "Value") %>%
             filter(complete.cases(Value)) %>%
-            arrange(Parameter, as.numeric(Trial),
+            arrange(PKparameter, as.numeric(Trial),
                     as.numeric(Individual)) 
       } else {
          Out_ind <- Out_ind[names(Out_ind)[!str_detect(names(Out_ind), "tab$")]] %>%
