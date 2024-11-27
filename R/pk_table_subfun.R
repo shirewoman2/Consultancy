@@ -278,39 +278,39 @@ pk_table_subfun <- function(sim_data_file,
             summarize(Geomean = gm_mean(Value), 
                       Mean = mean(Value), 
                       Median = median(Value)) %>%
-            ungroup() %>%
-            pivot_longer(cols = -c(PKparameter, Trial, File, Tissue, CompoundID, Compound, 
-                                   Simulated, Dose), 
-                         names_to = "Stat",
-                         values_to = "Value") %>%
-            pivot_wider(names_from = PKparameter, 
-                        values_from = Value))
+            ungroup())
       
       if(use_median_for_tmax){
          TrialMeans <- TrialMeans %>% 
-            filter((str_detect(PKparameter, "tmax") & Stat == "median") |
-                      (!str_detect(PKparameter, "tmax") & 
-                          Stat == switch(MeanType, 
-                                         "geometric" = "Geomean", 
-                                         "arithmetic" = "Mean")))
-      } else {
-         TrialMeans <- TrialMeans %>% 
-            filter(Stat == switch(MeanType, 
-                                  "geometric" = "Geomean", 
-                                  "arithmetic" = "Mean"))
-      }
+            mutate(
+               Geomean = case_when(
+                  {{MeanType}} == "geometric" & 
+                     str_detect(PKparameter, "tmax") ~ Median, 
+                  .default = Geomean), 
+               
+               Mean = case_when(
+                  {{MeanType}} == "arithmetic" & 
+                     str_detect(PKparameter, "tmax") ~ Median, 
+                  .default = Geomean))
+      } 
       
       TrialMeans <- TrialMeans %>% 
          group_by(PKparameter) %>%
-         summarize(MinMean = min(Value),
-                   MaxMean = max(Value)) %>%
-         pivot_longer(cols = -PKparameter,
-                      names_to = "Statistic", 
-                      values_to = "Value") %>%
-         pivot_wider(names_from = PKparameter, 
-                     values_from = Value)
+         summarize(
+            MinMean = case_when(
+               {{MeanType}} == "geometric" ~ min(Geomean), 
+               {{MeanType}} == "arithmetic" ~ min(Mean), 
+               {{MeanType}} == "median" ~ min(Median)), 
+            
+            MaxMean = case_when(
+               {{MeanType}} == "geometric" ~ max(Geomean), 
+               {{MeanType}} == "arithmetic" ~ max(Mean), 
+               {{MeanType}} == "median" ~ max(Median)))
       
-      MyPKResults <- MyPKResults %>% bind_rows(TrialMeans)
+      MyPKResults <- MyPKResults %>% 
+         left_join(TrialMeans, by = c("File", "CompoundID", "Compound", 
+                                      "Tissue", "Simulated",
+                                      "Dose", "PKparameter"))
    }
    
    # FIXME - May make this bit a standalone function b/c I sometimes would like

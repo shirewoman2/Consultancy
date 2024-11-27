@@ -455,6 +455,7 @@ extractFmFe <- function(sim_data_file,
       StartCol_BL <- StartCols_main[1]
       EndCol_BL <- as.character(t(sim_data_xl[4, (StartCol_BL + 1):ncol(sim_data_xl)]))
       EndCol_BL <- which(is.na(EndCol_BL))[1] - 1 + StartCol_BL
+      EndCol_BL <- ifelse(is.na(EndCol_BL), ncol(sim_data_xl), EndCol_BL)
       
       # These do not seem to change
       StartRow <- 5
