@@ -501,7 +501,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
          
          existing_exp_details <- harmonize_details(existing_exp_details)
          
-         if(all(sim_data_files %in% 
+         if(all(sim_data_files_topull %in% 
                 existing_exp_details$MainDetails$File) == FALSE){
             existing_exp_details <- extractExpDetails_mult(
                sim_data_files = sim_data_files, 
@@ -524,11 +524,13 @@ extractConcTime_mult <- function(sim_data_files = NA,
             # path is present and starts w/"Users". Otherwise, keeping the original input
             # just b/c I don't want to change the input from basename to full path
             # unexpectedly.
-            existing_exp_details$MainDetails$ObsOverlayFile[
-               which(str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users"))] <- 
-               normalizePath(existing_exp_details$MainDetails$ObsOverlayFile[
-                  which(str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users"))], 
-                  winslash = "/", mustWork = FALSE)
+            if(any(complete.cases(existing_exp_details$MainDetails$ObsOverlayFile))){
+               existing_exp_details$MainDetails$ObsOverlayFile[
+                  which(str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users"))] <- 
+                  normalizePath(existing_exp_details$MainDetails$ObsOverlayFile[
+                     which(str_detect(existing_exp_details$MainDetails$ObsOverlayFile, "Users"))], 
+                     winslash = "/", mustWork = FALSE)
+            }
             
             existing_exp_details$MainDetails$ObsOverlayFile <-
                str_replace(existing_exp_details$MainDetails$ObsOverlayFile, 
