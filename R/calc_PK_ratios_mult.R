@@ -145,6 +145,19 @@
 #'   if you could see the mathematical equations? We agree but can't easily
 #'   include equations in the help file. However, if you run this and save the
 #'   output to a Word file, the equations will be included in the output.
+#' @param concatVariability TRUE (default) or FALSE for whether to concatenate
+#'   the variability. If "TRUE", the output will be formatted into a single row
+#'   and listed as the lower confidence interval or percentile to the upper CI
+#'   or percentile, e.g., "2400 to 2700". Please note that the current
+#'   SimcypConsultancy template lists one row for each of the upper and lower
+#'   values, so this should be set to FALSE for official reports.
+#' @param variability_format formatting used to indicate the variability When
+#'   the variability is concatenated. Options are "to" (default) to get output
+#'   like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
+#'   output like "[X, Y]", or "parentheses" for the eponymous symbol if you're
+#'   an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
+#'   ambiguity; this was written by an American who didn't originally realize
+#'   that there was another name for parentheses.)
 #' @param match_subjects_by For a paired study design, how would you like to
 #'   match your subjects? Options are "individual and trial" (default), which
 #'   matches by both the simulated individual ID number AND by the trial number,
@@ -240,12 +253,7 @@
 #'   \item{"none"}{No rounding will be performed.} \item{"significant X" where
 #'   "X" is a number}{Output will be rounded to X significant figures. "signif
 #'   X" also works fine.} \item{"round X" where "X" is a number}{Output will be
-#'   rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
-#'   will be rounded using the function \code{\link{round_consultancy}}, but
-#'   nothing will be rounded in the output R object. This can be useful when you
-#'   want to have nicely rounded and formatted output in a Word file but you
-#'   \emph{also} want to use the results from \code{calc_PK_ratios_mult} to make
-#'   forest plots, which requires numbers that are \emph{not} rounded.}}
+#'   rounded to X digits}}
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
@@ -304,6 +312,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                                 includeConfInt = TRUE,
                                 includeCV = TRUE, 
                                 include_dose_num = NA,
+                                concatVariability = TRUE, 
+                                variability_format = "to",
                                 prettify_columns = TRUE,
                                 prettify_compound_names = TRUE,
                                 rounding = NA,
@@ -377,6 +387,15 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       } 
    }
    
+   # Checking rounding
+   rounding <- tolower(rounding[1])
+   rounding <- sub("signif ", "significant ", rounding)
+   rounding <- ifelse(is.na(rounding), "consultancy", rounding)
+   if(str_detect(rounding, "consultancy|none|significant|round") == FALSE){
+      warning(wrapn("You have entered something for the rounding argument other than the available options. We'll set this to the default, `Consultancy`. Please check the help file for details."), 
+              call. = FALSE)
+   }
+   
    
    # Main body of function -------------------------------------------------
    
@@ -438,7 +457,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          include_dose_num = include_dose_num, 
          prettify_columns = FALSE, 
          prettify_compound_names = FALSE, 
-         rounding = "none", 
+         rounding = "none", # will change this later as needed
+         concatVariability = FALSE, # will change this later as needed
          checkDataSource = TRUE, 
          save_table = NA)
       
@@ -469,7 +489,9 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
             Denominator_File = unique(FilePairs[[i]]$Denominator_File), 
             Numerator_Tissue = unique(FilePairs[[i]]$Numerator_Tissue), 
             Denominator_Tissue = unique(FilePairs[[i]]$Denominator_Tissue)) %>% 
-            left_join(MyTable[[i]], by = join_by(File))
+            left_join(MyTable[[i]] %>% 
+                         select(-any_of(c("CompoundID", "Compound", 
+                                          "Tissue", "Sheet"))), by = join_by(File))
       )
       
       rm(TEMP, CmpdDenom, CmpdNum)
@@ -477,42 +499,46 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    
    MyPKResults <- bind_rows(MyTable)
    
-   # Setting the rounding option
-   round_opt <- function(x, round_fun){
+   # Concatenating and rounding as requested
+   if(concatVariability){
       
-      round_fun <- ifelse(is.na(round_fun), "consultancy", tolower(round_fun))
-      round_fun <- ifelse(str_detect(tolower(round_fun), "word"), "none", round_fun)
-      
-      suppressWarnings(
-         NumDig <- as.numeric(str_trim(sub("signif(icant)?|round", "", round_fun)))
-      )
-      
-      if(str_detect(round_fun, "signif|round") & 
-         !str_detect(round_fun, "[0-9]{1,}")){
-         warning(wrapn("You appear to want some rounding, but we're not sure how many digits. We'll use 3 for now, but please check the help file for appropriate input for the argument `rounding`."), 
-                 call. = FALSE)
-         NumDig <- 3
-      }
-      
-      round_fun <- str_trim(sub("[0-9]{1,}", "", round_fun))
-      round_fun <- ifelse(str_detect(round_fun, "signif"), "signif", round_fun)
-      
-      Out <- switch(round_fun, 
-                    "round" = round(x, digits = NumDig),
-                    "signif" = signif(x, digits = NumDig), 
-                    "consultancy" = round_consultancy(x), 
-                    "none" = x)
-      
-      return(Out)
+      # B/c had to run calc_PK_ratios function 1st w/out rounding, data are now
+      # wide by PKparameter. Converting to long format, converting to wide by
+      # stat, concatenating, then converting back to wide.
+      MyPKResults <- MyPKResults %>% 
+         pivot_longer(cols = -any_of(c("Statistic", "CompoundID", "Compound", 
+                                       "Tissue", "File", "Sheet")), 
+                      names_to = "PKparameter", 
+                      values_to = "Value") %>% 
+         mutate(Value = round_opt(Value,  
+                                  round_fun = rounding)) %>% 
+         pivot_wider(names_from = Statistic, 
+                     values_from = Value) %>% 
+         mutate(`90% CI` = case_when(
+            all(complete.cases(c(`90% CI - Lower`, `90% CI - Upper`))) ~
+               switch(variability_format, 
+                      "to" = paste(`90% CI - Lower`, "to", `90% CI - Upper`),
+                      "hyphen" = paste(`90% CI - Lower`, "-", `90% CI - Upper`),
+                      "brackets" = paste0("[", `90% CI - Lower`, ", ", `90% CI - Upper`, "]"), 
+                      "parentheses" = paste0("(", `90% CI - Lower`, ", ", `90% CI - Upper`, ")")),
+            .default = NA)) %>% 
+         select(-`90% CI - Lower`, -`90% CI - Upper`) %>% 
+         pivot_longer(cols = -c(CompoundID, Tissue, File, PKparameter), 
+                      names_to = "Statistic", 
+                      values_to = "Value") %>% 
+         pivot_wider(names_from = PKparameter, 
+                     values_from = Value)
+   } else {
+      MyPKResults <- MyPKResults %>% 
+         mutate(across(.cols = where(is.numeric), 
+                       .fns = round_opt, 
+                       round_fun = ifelse(complete.cases(rounding) & 
+                                             rounding == "Word only", 
+                                          "none", rounding)))
    }
    
-   # Rounding as requested and setting column order
+   # Setting column order
    MyPKResults <- MyPKResults %>% 
-      mutate(across(.cols = where(is.numeric), 
-                    .fns = round_opt, 
-                    round_fun = ifelse(complete.cases(rounding) & 
-                                          rounding == "Word only", 
-                                       "none", rounding))) %>% 
       relocate(CompoundID, Tissue, File, .after = last_col())
    
    
@@ -661,13 +687,6 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    
    if(extract_forest_data){
       
-      StatNames <- unique(MyPKResults$Statistic[
-         str_detect(MyPKResults$Statistic, "Mean Ratio|CI|^Simulated$")])
-      names(StatNames) <- StatNames
-      StatNames[which(str_detect(StatNames, "Ratio|^Simulated$"))] <- "GeoMean"
-      StatNames[which(str_detect(StatNames, "CI - Lower"))] <- "CI_Lower"
-      StatNames[which(str_detect(StatNames, "CI - Upper"))] <- "CI_Upper"
-      
       GoodPKRatios <- c("Cmax_ratio",
                         "Cmax_ratio_last", 
                         "Cmax_nounits",
@@ -689,7 +708,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       
       FD <- bind_rows(ForestInfo) %>% 
          select(File, Statistic,
-                any_of(c("Substrate", "Dose_sub", "Inhibitor1", "Dose_inhib",
+                any_of(c(
+                   "Dose_sub", "Inhibitor1", "Dose_inhib",
                          "Numerator_CompoundID", "Denominator_CompoundID", 
                          "Numerator_Compound", "Denominator_Compound", 
                          "Numerator_File", "Denominator_File",
@@ -704,7 +724,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                                        "Numerator_Tissue", "Denominator_Tissue")), 
                       names_to = "PKparameter", 
                       values_to = "Value") %>% 
-         mutate(Statistic = StatNames[Statistic],
+         mutate(Statistic = renameStats(Statistic, use = "report to R"),
                 # If they used " / " in their specification of PK parameters and
                 # used it the way I envision, then we know when we have, e.g.,
                 # "AUCinf_ratio_dose1" or "Cmax_ratio_last". However, if they
