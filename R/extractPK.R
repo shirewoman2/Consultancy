@@ -1874,10 +1874,10 @@ extractPK <- function(sim_data_file,
             Out_ind <- Out_ind[names(Out_ind)[str_detect(names(Out_ind), "tab$")]]
             Out_ind <- bind_rows(Out_ind) %>%
                pivot_longer(cols = -(c(Individual, Trial)),
-                            names_to = "Parameter",
+                         names_to = "PKparameter",
                             values_to = "Value") %>%
                filter(complete.cases(Value)) %>%
-               arrange(Parameter, as.numeric(Trial),
+            arrange(PKparameter, as.numeric(Trial),
                        as.numeric(Individual)) %>%
                pivot_wider(names_from = Parameter,
                            values_from = Value)
@@ -1886,6 +1886,21 @@ extractPK <- function(sim_data_file,
                as.data.frame()
          }
       }
+      suppressWarnings(
+         Out_ind <- Out_ind %>% 
+            mutate(File = sim_data_file, 
+                   Tissue = tissue, 
+                   CompoundID = compoundToExtract, 
+                   Compound = as.character(Deets[
+                      AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
+                   Simulated = TRUE,
+                   # FIXME - Add DoseNum
+                   Dose = as.numeric(
+                      Deets %>%
+                         pull(any_of(paste0("Dose",
+                                            AllCompounds$DosedCompoundSuffix[
+                                               AllCompounds$CompoundID == compoundToExtract])))))
+      )
    }
    
    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv) & 
@@ -1914,10 +1929,42 @@ extractPK <- function(sim_data_file,
          names(Out_agg[[i]])[1] <- "Value"
       }
       
-      Out_agg <- bind_rows(Out_agg) %>%
-         select(Parameter, Statistic, Value) %>%
-         pivot_wider(names_from = Parameter, values_from = Value,
-                     id_cols = Statistic)
+      suppressWarnings(
+         Out_agg <- bind_rows(Out_agg) %>%
+            select(PKparameter, Statistic, Value) %>%
+            mutate(Statistic = renameStats(OrigStat = Statistic, 
+                                           use = "simulator to r"), 
+                   File = sim_data_file, 
+                   Inhibitor = 
+                      case_when(
+                         str_detect(PKparameter, "_withInhib|_ratio") ~ 
+                            determine_myperpetrator(Deets, 
+                                                    prettify_compound_names = F), 
+                         .default = "none"),
+                   Tissue = tissue, 
+                   CompoundID = compoundToExtract, 
+                   Compound = as.character(Deets[
+                      AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
+                   Simulated = TRUE,
+                   # FIXME - Add DoseNum
+                   Dose = as.numeric(
+                      Deets %>%
+                         pull(any_of(paste0("Dose",
+                                            AllCompounds$DosedCompoundSuffix[
+                                               AllCompounds$CompoundID == compoundToExtract])))), 
+                   # Units are always these for db files
+                   Units = case_when(str_detect(PKparameter, "AUC") ~ Deets$Units_AUC, 
+                                     str_detect(PKparameter, "CL") ~ Deets$Units_CL, 
+                                     str_detect(PKparameter, "Cmax") ~ Deets$Units_Cmax, 
+                                     str_detect(PKparameter, "tmax") ~ Deets$Units_tmax)) %>% 
+            pivot_wider(names_from = Statistic, 
+                        values_from = Value) %>% 
+            select(File, CompoundID, Compound, Inhibitor, Tissue, Simulated,
+                   Dose, # DoseNum, 
+                   PKparameter, # N, 
+                   Geomean, GCV, CI90_lower, CI90_upper, 
+                   Mean, SD, Median, Minimum, Maximum)
+      )
       
       Out_agg <- Out_agg[c("Statistic",
                            sort(setdiff(names(Out_agg), "Statistic")))]

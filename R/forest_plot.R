@@ -736,6 +736,8 @@ forest_plot <- function(forest_dataframe,
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "gcv"))][1] <- "GCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "^mean|arith.*mean"))][1] <- "Mean"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "^cv$"))][1] <- "ArithCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "ci(90|95)?_low(er)?"))][1] <- "CI_Lower"
@@ -760,6 +762,8 @@ forest_plot <- function(forest_dataframe,
                                           "geomean|geometric"))] <- "Geomean"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "gcv"))] <- "GCV"
+      names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                               "^mean|arith.*mean"))][1] <- "Mean"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "^cv$"))] <- "ArithCV"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
@@ -1043,7 +1047,9 @@ forest_plot <- function(forest_dataframe,
                                         "arithmetic" = "Mean", 
                                         "median" = "Median"))])
    if(length(CenterStat) == 0){
-      CenterStat <- FDnames[which(FDnames %in% c("Geomean", "Mean", "Median"))][1]
+      CenterStat <- 
+         FDnames[which(FDnames %in% c("Geomean", "Mean", "Median"))][1] %>% 
+         as.character()
       
       if(length(CenterStat) == 0){
          stop("You must have geometric mean, arithmetic mean, or median data included in forest_dataframe to be able to make a forest plot.",
@@ -1051,7 +1057,11 @@ forest_plot <- function(forest_dataframe,
       } else {
          warning(wrapn(paste0("You requested a mean_type of ", 
                               mean_type, ", but that was not available in your data. Instead, ", 
-                              CenterStat, " will be used.")), 
+                              case_match(CenterStat, 
+                                         "Geomean" ~ "geometric means", 
+                                         "Mean" ~ "arithmetic means", 
+                                         "Median" ~ "medians"), 
+                              " will be used.")), 
                  call. = FALSE)
       }
    }
@@ -1337,6 +1347,7 @@ forest_plot <- function(forest_dataframe,
                                      "AUCinf_ratio"))
       
       forest_dataframe <- forest_dataframe %>% 
+         filter(!ID %in% ProbID) %>% 
          bind_rows(AUCt_swap)
       
       if(all(is.na(PKparameters))){
@@ -1363,7 +1374,9 @@ forest_plot <- function(forest_dataframe,
    forest_dataframe <- forest_dataframe %>% 
       select(File, YCol, PKparameter, SimOrObs, 
              any_of(c(as_label(facet_column_x), 
-                      CenterStat, VarStat, as_label(point_color_column), 
+                      CenterStat, 
+                      VarStat, 
+                      as_label(point_color_column), 
                       "Tissue")))
    
    if(any(complete.cases(PKparameters)) &&

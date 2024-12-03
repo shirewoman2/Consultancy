@@ -11,7 +11,9 @@
 #'   maximum and minimum fm values -- basically, return the table in the upper
 #'   left corner of the "Time variant \%fm and fe" tab.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated fm
-#'   and fe data? Options are "individual", "aggregate", or "both" (default).
+#'   and fe data? This currently only applies to the dynamic fms and has not yet
+#'   been developed for the static fms, which will only return aggregate data at
+#'   present. Options are "individual", "aggregate", or "both" (default).
 #'   Aggregated data are not calculated here but are pulled from the simulator
 #'   output rows labeled as "mean".
 #' @param existing_exp_details If you have already run
@@ -83,6 +85,12 @@ extractFmFe <- function(sim_data_file,
             extractExpDetails(sim_data_file)
          Deets <- existing_exp_details[["MainDetails"]]
       }
+   }
+   
+   if(is.null(Deets)){
+      # Skipping the warning b/c they will have already gotten it from
+      # extractExpDetails.
+      return(data.frame())
    }
    
    if(Deets$PopRepSim == "Yes"){
@@ -447,6 +455,7 @@ extractFmFe <- function(sim_data_file,
       StartCol_BL <- StartCols_main[1]
       EndCol_BL <- as.character(t(sim_data_xl[4, (StartCol_BL + 1):ncol(sim_data_xl)]))
       EndCol_BL <- which(is.na(EndCol_BL))[1] - 1 + StartCol_BL
+      EndCol_BL <- ifelse(is.na(EndCol_BL), ncol(sim_data_xl), EndCol_BL)
       
       # These do not seem to change
       StartRow <- 5
@@ -483,7 +492,8 @@ extractFmFe <- function(sim_data_file,
                mutate(across(.cols = -Statistic, 
                              .fns = as.numeric)) %>% 
                mutate(Statistic = renameStats(Statistic), 
-                      DDI = TRUE)
+                      DDI = TRUE, 
+                      File = sim_data_file)
          )
          
          Out <- bind_rows(Out, DDI) %>% 

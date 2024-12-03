@@ -194,35 +194,48 @@ extractPK_DB <- function(sim_data_file,
    
    Intervals <- PK_indiv %>% select(DoseNum, StartTime, EndTime) %>% unique()
    
-   PK_indiv <- PK_indiv %>% 
-      mutate(Inhibitor = ifelse(Inhibition == 0, 
-                                "none", Deets$Inhibitor1)) %>% 
-      select(Trial, Individual, Inhibitor, DoseNum, Tmax, Cmin, Cmax, AUC, AUCinf, 
-             HalfLife, AccumulationIndex) %>% 
-      filter(DoseNum %in% c(1, max(Intervals$DoseNum))) %>% 
-      pivot_longer(cols = -c(Trial, Individual, DoseNum, Inhibitor), 
-                   names_to = "PKparameter", 
-                   values_to = "Value") %>% 
-      mutate(PKparameter = case_match(PKparameter, 
-                                      "Tmax" ~ "tmax", 
-                                      "AUC" ~ "AUCt", 
-                                      .default = PKparameter), 
-             PKparameter = paste0(PKparameter, ifelse(DoseNum == 1, 
-                                                      "_dose1", "_last")), 
-             PKparameter = ifelse(Inhibitor == "none", 
-                                  PKparameter, paste0(PKparameter, "_withInhib")), 
-             CompoundID = compoundToExtract, 
-             Compound = as.character(Deets[
-                AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
-             Tissue = tissue, 
-             Simulated = TRUE, 
-             File = sub("\\.db", ".xlsx", sim_data_file), 
+   suppressWarnings(
+      PK_indiv <- PK_indiv %>% 
+         mutate(Inhibition = case_match(Inhibition, 
+                                        0 ~ "noinhib", 
+                                        1 ~ "yesinhib")) %>% 
+         select(Trial, Individual, Inhibition, DoseNum, 
+                Tmax, Cmin, Cmax, AUC, AUCinf, HalfLife, AccumulationIndex) %>% 
+         filter(DoseNum != -1) %>%
+         pivot_longer(cols = -c(Trial, Individual, DoseNum, Inhibition), 
+                      names_to = "PKparameter", 
+                      values_to = "Value") %>% 
+         # Adding fup 
+         mutate(fu = existing_exp_details$MainDetails %>% 
+                   pull(paste0("fu", AllCompounds$Suffix[
+                      AllCompounds$CompoundID == compoundToExtract])), 
+                CalcRequired = AllTissues %>% filter(Tissue == tissue) %>% 
+                   pull(Simcyp_calculation_required), 
+                Value = case_match(CalcRequired, 
+                                   "Multiply by fu" ~ Value * as.numeric(fu), 
+                                   .default = Value),  
+                PKparameter = case_match(PKparameter, 
+                                         "Tmax" ~ "tmax", 
+                                         "AUC" ~ "AUCt", 
+                                         .default = PKparameter), 
+                PKparameter = paste0(PKparameter, 
+                                     case_match(DoseNum, 
+                                                1 ~ "_dose1",
+                                                MaxDoseNum ~ "_last", 
+                                                .default = "")), 
+                CompoundID = compoundToExtract,
+                Compound = as.character(Deets[
+                   AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]),
+                Tissue = tissue,
+                Simulated = TRUE,
+                File = sim_data_file,
              DBFile = sim_data_file, 
-             Dose = as.numeric(
-                Deets %>% 
-                   pull(any_of(paste0("Dose", 
-                                      AllCompounds$DosedCompoundSuffix[
-                                         AllCompounds$CompoundID == compoundToExtract])))))
+                Dose = as.numeric(
+                   Deets %>%
+                      pull(any_of(paste0("Dose",
+                                         AllCompounds$DosedCompoundSuffix[
+                                            AllCompounds$CompoundID == compoundToExtract])))))
+   )
    
    ## Calculating aggregate stats --------------------------------------------
    

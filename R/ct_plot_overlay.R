@@ -1534,15 +1534,29 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # Checking whether small intestine and colon abundances are identical. 
    if(EnzPlot){
-      Check <- sim_dataframe %>% 
-         pivot_wider(names_from = Tissue, values_from = Conc)
+      suppressWarnings(
+         Check <- sim_dataframe %>% 
+            pivot_wider(names_from = Tissue, values_from = Conc)
+      )
+      
+      if(class(Check$colon) == "list"){
+         warning(paste0(wrapn("You have some replicates in your data, which can cause some unexpected effects or make the enz_plot_overlay function break. Here are two things you can do to fix this:"), 
+                        "   1. Add this when you call on enz_plot_overlay:\n        assume_unique = FALSE\n      This will make graphing run more slowly, though. Please see the help file.\n", 
+                        "\n   2. Before running enz_plot_overlay, run this to permanently fix this problem:\n", 
+                        "        MyData <- unique(MyData)\n"), 
+                 call. = FALSE)
+         
+         Check <- sim_dataframe %>% unique() %>% 
+            pivot_wider(names_from = Tissue, values_from = Conc)
+         
+      }
       
       if(all(c("colon", "small intestine") %in% names(Check)) &&
          all(Check$colon == Check$`small intestine`, na.rm = TRUE)){
-         warning("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. ", 
-                 "If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame: 
-                    MyEnzData <- MyEnzData %>% mutate(Tissue2 = Tissue)
-                    enz_plot_overlay(sim_enz_dataframe = MyEnzData, colorBy_column = Tissue2, ...)\nReplace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.\n",
+         warning(paste0(wrapn("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame:"),
+                        "\n    MyEnzData <- MyEnzData %>% mutate(Tissue2 = Tissue)\n    enz_plot_overlay(sim_enz_dataframe = MyEnzData, colorBy_column = Tissue2, ...)",
+                        "\n\n", 
+                        wrapn("Replace the ellipsis with whatever other arguments you had.")),
                  call. = FALSE)
          
          sim_dataframe <- sim_dataframe %>% filter(Tissue != "colon") %>% 

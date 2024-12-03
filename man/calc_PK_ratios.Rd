@@ -21,6 +21,8 @@ calc_PK_ratios(
   includeConfInt = TRUE,
   includeCV = TRUE,
   include_dose_num = NA,
+  concatVariability = TRUE,
+  variability_format = "to",
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   rounding = NA,
@@ -230,6 +232,21 @@ dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
 
+\item{concatVariability}{TRUE (default) or FALSE for whether to concatenate
+the variability. If "TRUE", the output will be formatted into a single row
+and listed as the lower confidence interval or percentile to the upper CI
+or percentile, e.g., "2400 to 2700". Please note that the current
+SimcypConsultancy template lists one row for each of the upper and lower
+values, so this should be set to FALSE for official reports.}
+
+\item{variability_format}{formatting used to indicate the variability When
+the variability is concatenated. Options are "to" (default) to get output
+like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
+output like "[X, Y]", or "parentheses" for the eponymous symbol if you're
+an American and a bracket if you're British, e.g., "(X, Y)". (Sorry for the
+ambiguity; this was written by an American who didn't originally realize
+that there was another name for parentheses.)}
+
 \item{prettify_columns}{TRUE (default) or FALSE for whether to make easily
 human-readable column names. TRUE makes pretty column names such as "AUCinf
 (h*ng/mL)" whereas FALSE leaves the column with the R-friendly name from
@@ -263,12 +280,7 @@ function \code{\link{round_consultancy}}, which does the rounding here.}
 \item{"none"}{No rounding will be performed.} \item{"significant X" where
 "X" is a number}{Output will be rounded to X significant figures. "signif
 X" also works fine.} \item{"round X" where "X" is a number}{Output will be
-rounded to X digits} \item{"Word only"}{Output saved to Word or a csv file
-will be rounded using the function \code{\link{round_consultancy}}, but
-nothing will be rounded in the output R object. This can be useful when you
-want to have nicely rounded and formatted output in a Word file but you
-\emph{also} want to use the results from \code{calc_PK_ratios} to make
-forest plots, which requires numbers that are \emph{not} rounded.}}}
+rounded to X digits}}}
 
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the

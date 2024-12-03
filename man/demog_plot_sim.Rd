@@ -10,9 +10,10 @@ demog_plot_sim(
   demog_parameters = NA,
   variability_display = "kernel density",
   colorBy_column,
+  color_set = "default",
   color_labels = NA,
   legend_label_color = NA,
-  color_set = "default",
+  legend_position = "bottom",
   graph_title = "Demographics",
   alpha = 0.8,
   ncol = NULL,
@@ -94,21 +95,6 @@ used for determining which color lines and/or points will be. This should
 be unquoted, e.g., \code{colorBy_column = File}. If left blank, we will
 color by the simulation file name.}
 
-\item{color_labels}{optionally specify a character vector for how you'd like
-the labels for whatever you choose for \code{colorBy_column} to show up in
-the legend. For example, use \code{color_labels = c("file 1.xlsx" =
-"healthy subjects", "file 2.xlsx" = "renally impaired subjects")} to
-indicate which simulations represent what. The order in the legend will
-match the order designated here.}
-
-\item{legend_label_color}{optionally indicate on the legend something
-explanatory about what the colors represent. For example, if
-\code{colorBy_column = File} and \code{legend_label_color = "Population"},
-that will make the label above the file names in the legend more
-explanatory than just "File". The default is to use whatever the column
-name is for \code{colorBy_column}. If you don't want a label for this
-legend item, set this to "none".}
-
 \item{color_set}{the set of colors to use. Options: \describe{
 
   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -159,6 +145,25 @@ legend item, set this to "none".}
   like help creating a specific gradation of colors, please talk to a member
   of the R Working Group about how to do that using
   \link{colorRampPalette}.}}}
+
+\item{color_labels}{optionally specify a character vector for how you'd like
+the labels for whatever you choose for \code{colorBy_column} to show up in
+the legend. For example, use \code{color_labels = c("file 1.xlsx" =
+"healthy subjects", "file 2.xlsx" = "renally impaired subjects")} to
+indicate which simulations represent what. The order in the legend will
+match the order designated here.}
+
+\item{legend_label_color}{optionally indicate on the legend something
+explanatory about what the colors represent. For example, if
+\code{colorBy_column = File} and \code{legend_label_color = "Population"},
+that will make the label above the file names in the legend more
+explanatory than just "File". The default is to use whatever the column
+name is for \code{colorBy_column}. If you don't want a label for this
+legend item, set this to "none".}
+
+\item{legend_position}{specify where you want the legend to be. Options are
+"left", "right", "bottom" (default), "top", or "none" if you don't want one
+at all.}
 
 \item{graph_title}{title to use on the plots}
 

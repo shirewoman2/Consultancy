@@ -2001,9 +2001,14 @@ extractExpDetails <- function(sim_data_file,
          AllCompounds$CompoundID == cmpd]]])){next}
       
       if(is.na(switch(cmpd, 
-                      "substrate" = as.numeric(Main$DoseInt_sub), 
-                      "inhibitor 1" = as.numeric(Main$DoseInt_inhib), 
-                      "inhibitor 2" = as.numeric(Main$DoseInt_inhib2)))){
+                      "substrate" = 
+                      suppressWarnings(as.numeric(Main$DoseInt_sub)), 
+                      
+                      "inhibitor 1" = 
+                      suppressWarnings(as.numeric(Main$DoseInt_inhib)), 
+                      
+                      "inhibitor 2" = 
+                      suppressWarnings(as.numeric(Main$DoseInt_inhib2))))){
          
          Dosing[[cmpd]] <- data.frame(
             Time = switch(cmpd, 
@@ -2022,34 +2027,41 @@ extractExpDetails <- function(sim_data_file,
                        to = as.numeric(Main$SimDuration), 
                        by = 
                           switch(cmpd, 
-                                 "substrate" = as.numeric(Main$DoseInt_sub), 
-                                 "inhibitor 1" = as.numeric(Main$DoseInt_inhib), 
-                                 "inhibitor 2" = as.numeric(Main$DoseInt_inhib2)))) 
+                                 "substrate" = 
+                                    suppressWarnings(as.numeric(Main$DoseInt_sub)), 
+                                 
+                                 "inhibitor 1" = 
+                                    suppressWarnings(as.numeric(Main$DoseInt_inhib)), 
+                                 
+                                 "inhibitor 2" = 
+                                    suppressWarnings(as.numeric(Main$DoseInt_inhib2))))) 
          
       }
       
-      Dosing[[cmpd]] <- Dosing[[cmpd]] %>% 
-         mutate(File = sim_data_file, 
-                CompoundID = cmpd, 
-                Compound = Main[[AllCompounds$DetailNames[
-                   AllCompounds$CompoundID == cmpd]]], 
-                Time_units = Main$Units_tmax, 
-                Dose = switch(cmpd, 
-                              "substrate" = as.numeric(Main$Dose_sub), 
-                              "inhibitor 1" = as.numeric(Main$Dose_inhib), 
-                              "inhibitor 2" = as.numeric(Main$Dose_inhib2)), 
-                Dose_units = switch(cmpd, 
-                                    "substrate" = Main$Units_dose_sub, 
-                                    "inhibitor 1" = Main$Units_dose_inhib, 
-                                    "inhibitor 2" = Main$Units_dose_inhib2), 
-                DoseRoute = switch(cmpd, 
-                                   "substrate" = Main$DoseRoute_sub, 
-                                   "inhibitor 1" = Main$DoseRoute_inhib, 
-                                   "inhibitor 2" = Main$DoseRoute_inhib2)) %>% 
-         mutate(DoseNum = 1:nrow(.)) %>% 
-         select(File, CompoundID, Compound, Time, Time_units, DoseNum,
-                Dose, Dose_units, DoseRoute)
-         
+      suppressWarnings(
+         Dosing[[cmpd]] <- Dosing[[cmpd]] %>% 
+            mutate(File = sim_data_file, 
+                   CompoundID = cmpd, 
+                   Compound = Main[[AllCompounds$DetailNames[
+                      AllCompounds$CompoundID == cmpd]]], 
+                   Time_units = Main$Units_tmax, 
+                   Dose = switch(cmpd, 
+                                 "substrate" = as.numeric(Main$Dose_sub), 
+                                 "inhibitor 1" = as.numeric(Main$Dose_inhib), 
+                                 "inhibitor 2" = as.numeric(Main$Dose_inhib2)), 
+                   Dose_units = switch(cmpd, 
+                                       "substrate" = Main$Units_dose_sub, 
+                                       "inhibitor 1" = Main$Units_dose_inhib, 
+                                       "inhibitor 2" = Main$Units_dose_inhib2), 
+                   DoseRoute = switch(cmpd, 
+                                      "substrate" = Main$DoseRoute_sub, 
+                                      "inhibitor 1" = Main$DoseRoute_inhib, 
+                                      "inhibitor 2" = Main$DoseRoute_inhib2)) %>% 
+            mutate(DoseNum = 1:nrow(.)) %>% 
+            select(File, CompoundID, Compound, Time, Time_units, DoseNum,
+                   Dose, Dose_units, DoseRoute)
+      )
+      
    }
    
    

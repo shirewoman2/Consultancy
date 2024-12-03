@@ -265,7 +265,7 @@ make_ct_caption <- function(ct_dataframe,
       if(DDI){
          
          if(DetailsAvailable && 
-            complete.cases(existing_exp_details$MainDetails$Inhibitor2)){
+            any(complete.cases(existing_exp_details$MainDetails$Inhibitor2))){
             warning("The figure heading and caption text have not been set up for when there are two perpetrators in a DDI simulation. Please check and adjust the text carefully.\n", 
                     call. = FALSE)
          }

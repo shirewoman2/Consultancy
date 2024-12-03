@@ -171,5 +171,32 @@ purples <- function(ncolors,
    
 }
 
+#' #' Make a vector of colors that match the "green to red" option for highlighting
+#' #' GMR values
+#' #'
+#' #' @return a named character vector
+#' #' @export
+#' #'
+#' green_to_red <- function(){
+#'    c("negligible" = "#C7FEAC", 
+#'      "weak" = "#FFFF95",
+#'      "moderate" = "#FFDA95",
+#'      "strong" = "#FF9595")   
+#' }
+#' 
+#' 
+#' #' Make a vector of colors that match the "yellow to red" option for
+#' #' highlighting GMR values
+#' #'
+#' #' @return a named character vector
+#' #' @export
+#' #' 
+#' yellow_to_red <- function(){
+#'    c("negligible" = "white", 
+#'      "weak" = "#FFFF95",
+#'      "moderate" = "#FFDA95",
+#'      "strong" = "#FF9595")
+#'    
+#' }
 
 

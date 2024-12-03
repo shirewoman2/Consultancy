@@ -1007,6 +1007,7 @@ annotateDetails <- function(existing_exp_details,
          group_by(CompoundID) %>% 
          summarize(Keep = switch(item, 
                                  "MainDetails" = any(complete.cases(Value)), 
+                                 "Dosing" = any(complete.cases(Dose)), 
                                  "CustomDosing" = any(complete.cases(Dose)), 
                                  "ConcDependent_fup" = any(complete.cases(fup)), 
                                  "ConcDependent_BP" = any(complete.cases(BP)),  
@@ -1106,7 +1107,8 @@ annotateDetails <- function(existing_exp_details,
       # ConcDependent_BP: IV = Conc, DV = BP
       # pH_dependent_solubility: IV = pH, DV = Solubility
       
-      if(item %in% c("MainDetails", "CustomDosing", "ConcDependent_fup", 
+      if(item %in% c("MainDetails", "CustomDosing", "Dosing", 
+                     "ConcDependent_fup", 
                      "ConcDependent_BP", "pH_dependent_solubility")){
          
          DF <- DF %>% 
@@ -1114,6 +1116,7 @@ annotateDetails <- function(existing_exp_details,
                         # values_from calls on the dependent variable listed 
                         values_from = switch(item, 
                                              "MainDetails" = "Value", 
+                                             "Dosing" = "Dose", 
                                              "CustomDosing" = "Dose", 
                                              "ConcDependent_fup" = "fup", 
                                              "ConcDependent_BP" = "BP", 
@@ -1151,6 +1154,8 @@ annotateDetails <- function(existing_exp_details,
                                       "CustomDosing" = c("Time", "Time_units", "DoseNum",
                                                          "Dose_units", "DoseRoute", 
                                                          "Day", "TimeOfDay"), 
+                                      "Dosing" = c("Time", "Time_units", "DoseNum",
+                                                   "Dose_units", "DoseRoute"), 
                                       "ConcDependent_fup" = "Conc", 
                                       "ConcDependent_BP" = "Conc", 
                                       "pH_dependent_solubility" = "pH")
@@ -1298,7 +1303,9 @@ annotateDetails <- function(existing_exp_details,
    } 
    
    Out <- list()
-   for(i in names(existing_exp_details)){
+   
+   # FIXME - Need to set things up for Dosing data.frame!
+   for(i in setdiff(names(existing_exp_details), "Dosing")){
       Out[[i]] <- annotate_subfun(i)
    }
    

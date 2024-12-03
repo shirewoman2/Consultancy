@@ -144,9 +144,9 @@ pk_table_subfun <- function(sim_data_file,
       filter(str_detect(PKparameter, "AUCinf")) %>% 
       group_by(PKparameter) %>% 
       summarize(Check = any(is.na(Geomean)))
-      # filter(Statistic %in% c("mean", "median", "geometric mean")) %>%
-      # select(matches("AUCinf")) %>% 
-      # summarize(across(.cols = everything(), .fns = function(x) any(is.na(x))))
+   # filter(Statistic %in% c("mean", "median", "geometric mean")) %>%
+   # select(matches("AUCinf")) %>% 
+   # summarize(across(.cols = everything(), .fns = function(x) any(is.na(x))))
    
    if(any(ExtrapCheck$Check == TRUE)){
       MyPKResults_all$aggregate <- MyPKResults_all$aggregate %>% 
@@ -271,50 +271,65 @@ pk_table_subfun <- function(sim_data_file,
    
    # Adding trial means since they're not part of the default output
    if(includeTrialMeans){
-      # FIXME 
       suppressWarnings(
          TrialMeans <- MyPKResults_all$individual %>%
-            group_by(Trial) %>%
-            summarize(across(.cols = -Individual,
-                             .fns = list("Geomean" = gm_mean, 
-                                         "Mean" = mean, 
-                                         "Median" = median), 
-                             .names = "{.col}-{.fn}")) %>%
-            ungroup() %>%
-            pivot_longer(cols = -Trial, names_to = "Parameter",
-                         values_to = "Value") %>%
-            separate(col = Parameter, into = c("Parameter", "Stat"), 
-                     sep = "-") 
-      )
+            group_by(Trial, PKparameter, File, Tissue, CompoundID, Compound, 
+                     Simulated, Dose) %>%
+            summarize(Geomean = gm_mean(Value), 
+                      Mean = mean(Value), 
+                      Median = median(Value)) %>%
+            ungroup())
       
       if(use_median_for_tmax){
          TrialMeans <- TrialMeans %>% 
-            filter((str_detect(Parameter, "tmax") & Stat == "median") |
-                      (!str_detect(Parameter, "tmax") & 
-                          Stat == switch(MeanType, "geometric" = "geomean", 
-                                         "arithmetic" = "mean")))
-      } else {
-         TrialMeans <- TrialMeans %>% 
-            filter(Stat == switch(MeanType, "geometric" = "geomean", 
-                                  "arithmetic" = "mean"))
-      }
+            mutate(
+               Geomean = case_when(
+                  {{MeanType}} == "geometric" & 
+                     str_detect(PKparameter, "tmax") ~ Median, 
+                  .default = Geomean), 
+               
+               Mean = case_when(
+                  {{MeanType}} == "arithmetic" & 
+                     str_detect(PKparameter, "tmax") ~ Median, 
+                  .default = Geomean))
+      } 
       
       TrialMeans <- TrialMeans %>% 
-         group_by(Parameter) %>%
-         summarize(MinMean = min(Value),
-                   MaxMean = max(Value)) %>%
-         pivot_longer(cols = -Parameter,
-                      names_to = "Statistic", values_to = "Value") %>%
-         pivot_wider(names_from = Parameter, values_from = Value)
+         group_by(PKparameter, File, Tissue, CompoundID, Compound, 
+                  Simulated, Dose) %>%
+         summarize(
+            MinMean = case_when(
+               {{MeanType}} == "geometric" ~ min(Geomean), 
+               {{MeanType}} == "arithmetic" ~ min(Mean), 
+               {{MeanType}} == "median" ~ min(Median)), 
+            
+            MaxMean = case_when(
+               {{MeanType}} == "geometric" ~ max(Geomean), 
+               {{MeanType}} == "arithmetic" ~ max(Mean), 
+               {{MeanType}} == "median" ~ max(Median)))
       
-      MyPKResults <- MyPKResults %>% bind_rows(TrialMeans)
+      MyPKResults <- MyPKResults %>% 
+         left_join(TrialMeans, by = c("File", "CompoundID", "Compound", 
+                                      "Tissue", "Simulated",
+                                      "Dose", "PKparameter"))
    }
    
    # FIXME - May make this bit a standalone function b/c I sometimes would like
    # to use it elsewhere. Low priority.
    
-   # Renaming stats for ease of coding
-   MyPKResults <- MyPKResults %>% mutate(Stat = renameStats(Statistic))
+   # Making this wide by PKparameter and long by stat since that's how the
+   # function was originally set up and there's no point in rewriting
+   # everything.
+   MyPKResults <- MyPKResults %>% 
+      # Removing columns that mess up pivoting even though we'll add them back
+      # later
+      select(-any_of(c("Inhibitor", "Compound", "File", "CompoundID", 
+                       "Tissue", "DoseNum", "Simulated", "Dose"))) %>% 
+      pivot_longer(cols = any_of(sort(unique(AllStats$InternalColNames))), 
+                   names_to = "Stat", 
+                   values_to = "Value") %>% 
+      pivot_wider(names_from = PKparameter, 
+                  values_from = Value)
    
    # Most of the time, people want median for tmax, but, if they don't want the
    # median, don't change anything and skip this next section. 
@@ -327,45 +342,65 @@ pk_table_subfun <- function(sim_data_file,
       # upper range will be the max.
       if("tmax_dose1" %in% names(MyPKResults)){
          MyPKResults$tmax_dose1[
-            which(MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean"))] <-
-            MyPKResults$tmax_dose1[which(MyPKResults$Stat == "median")]
+            which(MyPKResults$Stat == switch(MeanType, 
+                                             "geometric" = "Geomean",
+                                             "arithmetic" = "Mean"))] <-
+            MyPKResults$tmax_dose1[which(MyPKResults$Stat == "Median")]
          
-         MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-            MyPKResults$tmax_dose1[MyPKResults$Stat == "min"]
+         MyPKResults$tmax_dose1[
+            MyPKResults$Stat %in% c("Per5", "CI95_lower", "CI90_lower")] <-
+            MyPKResults$tmax_dose1[MyPKResults$Stat == "Minimum"]
          
-         MyPKResults$tmax_dose1[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-            MyPKResults$tmax_dose1[MyPKResults$Stat == "max"]
+         MyPKResults$tmax_dose1[
+            MyPKResults$Stat %in% c("Per95", "CI95_upper", "CI90_upper")] <-
+            MyPKResults$tmax_dose1[MyPKResults$Stat == "Maximum"]
          
          if(PerpPresent & "tmax_dose1_withInhib" %in% names(MyPKResults)){
             MyPKResults$tmax_dose1_withInhib[
-               MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-               MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "median"]
+               MyPKResults$Stat == switch(MeanType,
+                                          "geometric" = "Geomean", 
+                                          "arithmetic" = "Mean")] <-
+               MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "Median"]
             
-            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-               MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "min"]
+            MyPKResults$tmax_dose1_withInhib[
+               MyPKResults$Stat %in% c("Per5", "CI95_lower", "CI90_lower")] <-
+               MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "Minimum"]
             
-            MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-               MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "max"]
+            MyPKResults$tmax_dose1_withInhib[
+               MyPKResults$Stat %in% c("Per95", "CI95_upper", "CI90_upper")] <-
+               MyPKResults$tmax_dose1_withInhib[MyPKResults$Stat == "Maximum"]
          }
       }
       
       if("tmax_last" %in% names(MyPKResults)){
          MyPKResults$tmax_last[
-            MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-            MyPKResults$tmax_last[MyPKResults$Stat == "median"]
-         MyPKResults$tmax_last[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-            MyPKResults$tmax_last[MyPKResults$Stat == "min"]
-         MyPKResults$tmax_last[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-            MyPKResults$tmax_last[MyPKResults$Stat == "max"]
+            MyPKResults$Stat == switch(MeanType,
+                                       "geometric" = "Geomean", 
+                                       "arithmetic" = "Mean")] <-
+            MyPKResults$tmax_last[MyPKResults$Stat == "Median"]
+         
+         MyPKResults$tmax_last[
+            MyPKResults$Stat %in% c("Per5", "CI95_lower", "CI90_lower")] <-
+            MyPKResults$tmax_last[MyPKResults$Stat == "Minimum"]
+         
+         MyPKResults$tmax_last[
+            MyPKResults$Stat %in% c("Per95", "CI95_upper", "CI90_upper")] <-
+            MyPKResults$tmax_last[MyPKResults$Stat == "Maximum"]
          
          if(PerpPresent & "tmax_last_withInhib" %in% names(MyPKResults)){
             MyPKResults$tmax_last_withInhib[
-               MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-               MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "median"]
-            MyPKResults$tmax_last_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-               MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "min"]
-            MyPKResults$tmax_last_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-               MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "max"]
+               MyPKResults$Stat == switch(MeanType, 
+                                          "geometric" = "Geomean", 
+                                          "arithmetic" = "Mean")] <-
+               MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "Median"]
+            
+            MyPKResults$tmax_last_withInhib[
+               MyPKResults$Stat %in% c("Per5", "CI95_lower", "CI90_lower")] <-
+               MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "Minimum"]
+            
+            MyPKResults$tmax_last_withInhib[
+               MyPKResults$Stat %in% c("Per95", "CI95_upper", "CI90_upper")] <-
+               MyPKResults$tmax_last_withInhib[MyPKResults$Stat == "Maximum"]
          }
          
       }
@@ -373,21 +408,29 @@ pk_table_subfun <- function(sim_data_file,
       # For scenario where user specifies which tab to get data from
       if("tmax" %in% names(MyPKResults)){
          MyPKResults$tmax[
-            MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-            MyPKResults$tmax[MyPKResults$Stat == "median"]
-         MyPKResults$tmax[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-            MyPKResults$tmax[MyPKResults$Stat == "min"]
-         MyPKResults$tmax[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-            MyPKResults$tmax[MyPKResults$Stat == "max"]
+            MyPKResults$Stat == switch(MeanType, 
+                                       "geometric" = "Geomean",
+                                       "arithmetic" = "Mean")] <-
+            MyPKResults$tmax[MyPKResults$Stat == "Median"]
+         
+         MyPKResults$tmax[MyPKResults$Stat %in% c("Per5", "CI95_lower", "CI90_lower")] <-
+            MyPKResults$tmax[MyPKResults$Stat == "Minimum"]
+         
+         MyPKResults$tmax[MyPKResults$Stat %in% c("Per95", "CI95_upper", "CI90_upper")] <-
+            MyPKResults$tmax[MyPKResults$Stat == "Maximum"]
          
          if(PerpPresent & "tmax_withInhib" %in% names(MyPKResults)){
             MyPKResults$tmax_withInhib[
-               MyPKResults$Stat == switch(MeanType, "geometric" = "geomean", "arithmetic" = "mean")] <-
-               MyPKResults$tmax_withInhib[MyPKResults$Stat == "median"]
-            MyPKResults$tmax_withInhib[MyPKResults$Stat %in% c("per5", "CI95_low", "CI90_low")] <-
-               MyPKResults$tmax_withInhib[MyPKResults$Stat == "min"]
-            MyPKResults$tmax_withInhib[MyPKResults$Stat %in% c("per95", "CI95_high", "CI90_high")] <-
-               MyPKResults$tmax_withInhib[MyPKResults$Stat == "max"]
+               MyPKResults$Stat == switch(MeanType, 
+                                          "geometric" = "Geomean",
+                                          "arithmetic" = "Mean")] <-
+               MyPKResults$tmax_withInhib[MyPKResults$Stat == "Median"]
+            
+            MyPKResults$tmax_withInhib[MyPKResults$Stat %in% c("Per5", "CI95_lower", "CI90_lower")] <-
+               MyPKResults$tmax_withInhib[MyPKResults$Stat == "Minimum"]
+            
+            MyPKResults$tmax_withInhib[MyPKResults$Stat %in% c("Per95", "CI95_upper", "CI90_upper")] <-
+               MyPKResults$tmax_withInhib[MyPKResults$Stat == "Maximum"]
          }
          
       }
@@ -401,8 +444,6 @@ pk_table_subfun <- function(sim_data_file,
    }
    
    MyPKResults <- MyPKResults %>%
-      select(-Statistic) %>%
-      select(Stat, everything()) %>%
       pivot_longer(cols = -Stat, 
                    names_to = "PKParam",
                    values_to = "Sim")
@@ -446,8 +487,8 @@ pk_table_subfun <- function(sim_data_file,
                   pivot_longer(cols = c(Variability1, Variability2), 
                                names_to = "VariableType", 
                                values_to = "Value") %>% 
-                  mutate(Stat = case_when(Stat == "range" & VariableType == "Variability1" ~ "min", 
-                                          Stat == "range" & VariableType == "Variability2" ~ "max", 
+                  mutate(Stat = case_when(Stat == "range" & VariableType == "Variability1" ~ "Minimum", 
+                                          Stat == "range" & VariableType == "Variability2" ~ "Maximum", 
                                           TRUE ~ Stat), 
                          SorO = "Obs") %>% 
                   filter(complete.cases(Value)) %>% 
@@ -472,8 +513,8 @@ pk_table_subfun <- function(sim_data_file,
          mutate(Value = as.numeric(Value), 
                 SorO = "Obs", 
                 Stat = switch(MeanType, 
-                              "geometric" = "geomean", 
-                              "arithmetic" = "mean")) %>% 
+                              "geometric" = "Geomean", 
+                              "arithmetic" = "Mean")) %>% 
          filter(complete.cases(Value)) %>% 
          rename(PKParam = PKparameter)
       
@@ -481,8 +522,8 @@ pk_table_subfun <- function(sim_data_file,
       suppressMessages(
          SOratios <- MyPKResults %>% 
             filter(Stat == switch(MeanType, 
-                                  "geometric" = "geomean",
-                                  "arithmetic" = "mean")) %>%
+                                  "geometric" = "Geomean",
+                                  "arithmetic" = "Mean")) %>%
             left_join(ObsPK %>% 
                          rename(Obs = Value) %>% 
                          select(Stat, PKParam, Obs)) %>%
@@ -500,8 +541,8 @@ pk_table_subfun <- function(sim_data_file,
                filter(Stat %in% c("MinMean", "MaxMean")) %>%
                left_join(ObsPK %>% 
                             filter(Stat == switch(MeanType, 
-                                                  "geometric" = "geomean", 
-                                                  "arithmetic" = "mean")) %>% 
+                                                  "geometric" = "Geomean", 
+                                                  "arithmetic" = "Mean")) %>% 
                             select(-Stat)) %>%
                mutate(Value = Sim / Value) %>% 
                select(-Sim) %>% 
@@ -540,9 +581,9 @@ pk_table_subfun <- function(sim_data_file,
       # Extracting forest data only works when the compound to extract is the
       # substrate or a substrate metabolite. Could change that in the future
       # if there's call for it, but that's all for now.
-      if(unique(PKparameters$CompoundID) %in% c("substrate", "primary metabolite 1", 
-                                                "primary metabolite 2", 
-                                                "secondary metabolite") == FALSE){
+      if(unique(PKparameters$CompoundID) %in% 
+         c("substrate", "primary metabolite 1", 
+           "primary metabolite 2", "secondary metabolite") == FALSE){
          warning(wrapn("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped."), 
                  call. = FALSE)
          FD <- list()
@@ -601,8 +642,10 @@ pk_table_subfun <- function(sim_data_file,
          
          # Need to deal with possible character data for custom dosing before
          # row binding for FD
-         FD <- FD %>% mutate(Dose_sub = as.numeric(Dose_sub), 
-                             Dose_inhib = as.numeric(Dose_inhib))
+         suppressWarnings(
+            FD <- FD %>% mutate(Dose_sub = as.numeric(Dose_sub), 
+                                Dose_inhib = as.numeric(Dose_inhib))
+         )
       }  
    } else {
       FD <- list()

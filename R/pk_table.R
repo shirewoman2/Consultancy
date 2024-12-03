@@ -775,7 +775,7 @@ pk_table <- function(PKparameters = NA,
       # range if they have requested any variability stats at all.
       temp$PK <- temp$PK %>% 
          mutate(Stat = case_when(str_detect(PKParam, "tmax") & 
-                                    Stat == "min" & 
+                                    Stat == "Minimum" & 
                                     any(c({{includeConfInt}}, 
                                           {{includeCV}}, 
                                           {{includePerc}}, 
@@ -783,7 +783,7 @@ pk_table <- function(PKparameters = NA,
                                           {{includeSD}})) ~ "tmaxmin", 
                                  
                                  str_detect(PKParam, "tmax") & 
-                                    Stat == "max" & 
+                                    Stat == "Maximum" & 
                                     any(c({{includeConfInt}}, 
                                           {{includeCV}}, 
                                           {{includePerc}}, 
@@ -795,30 +795,28 @@ pk_table <- function(PKparameters = NA,
       # Formatting to account for variability preferences
       VarOptions <- c("CV" = includeCV & MeanType == "arithmetic", 
                       "GCV" = includeCV & MeanType == "geometric",
-                      "CI90_low" = includeConfInt,
-                      "CI90_high" = includeConfInt, 
-                      "CI95_low" = includeConfInt,
-                      "CI95_high" = includeConfInt, 
-                      "per5" = includePerc, 
-                      "per95" = includePerc, 
+                      "CI90_lower" = includeConfInt,
+                      "CI90_upper" = includeConfInt, 
+                      "CI95_lower" = includeConfInt,
+                      "CI95_upper" = includeConfInt, 
+                      "Per5" = includePerc, 
+                      "Per95" = includePerc, 
                       "MinMean" = includeTrialMeans, 
                       "MaxMean" = includeTrialMeans, 
-                      "min" = includeRange, 
-                      "max" = includeRange, 
+                      "Minimum" = includeRange, 
+                      "Maximum" = includeRange, 
                       "SD" = includeSD, 
-                      "median" = includeMedian, 
-                      "mean" = MeanType == "arithmetic", 
-                      "geomean" = MeanType == "geometric",
+                      "Median" = includeMedian, 
+                      "Mean" = MeanType == "arithmetic", 
+                      "Geomean" = MeanType == "geometric",
                       "tmaxmin" = any(c(includeConfInt, 
-                                        includeCV, 
                                         includePerc, 
-                                        includeRange, 
-                                        includeSD)), 
+                                        includeRange)), 
                       "tmaxmax" = any(c(includeConfInt, 
-                                        includeCV, 
                                         includePerc, 
-                                        includeRange, 
-                                        includeSD)), 
+                                        includeRange)), 
+                      "S_O_TM_MaxMean" = includeTrialMeans, 
+                      "S_O_TM_MinMean" = includeTrialMeans, 
                       "S_O" = TRUE)
       VarOptions <- names(VarOptions)[which(VarOptions)]
       
@@ -882,25 +880,48 @@ pk_table <- function(PKparameters = NA,
    # Checking for any PK parameters where there are no simulated data.
    GoodPKParam <- MyPKResults %>% 
       filter(Stat == switch(MeanType, 
-                            "geometric" = "geomean", 
-                            "arithmetic" = "mean") &
+                            "geometric" = "Geomean", 
+                            "arithmetic" = "Mean") &
                 SorO == "Sim" &
                 complete.cases(Value)) %>% pull(PKParam) %>% unique()
    
    MyPKResults <- MyPKResults %>%
       filter(PKParam %in% GoodPKParam &
-                complete.cases(Value)) %>% unique() %>%
+                complete.cases(Value)) %>% unique() 
+   
+   TmaxStuff <- MyPKResults %>% 
+      filter(str_detect(PKParam, "tmax") & 
+                !Stat %in% c("Geomean", "Mean", "Median")) %>% 
+      mutate(Stat = case_when(Stat == "tmaxmin" &
+                                 {{includeRange}} ~ "Minimum", 
+                              str_detect(PKParam, "tmax") & 
+                                 Stat == "tmaxmax" &
+                                 {{includeRange}} ~ "Maximum", 
+                              
+                              Stat == "tmaxmin" &
+                                 {{includeConfInt}} ~ "CI90_lower", 
+                              
+                              Stat == "tmaxmax" &
+                                 {{includeConfInt}} ~ "CI90_upper", 
+                              
+                              Stat == "tmaxmin" &
+                                 {{includePerc}} ~ "Per5", 
+                              
+                              Stat == "tmaxmax" &
+                                 {{includePerc}} ~ "Per95")) %>% 
+      filter(complete.cases(Stat)) %>% 
+      unique()
+   
+   MyPKResults <- MyPKResults %>% 
+      filter(!str_detect(PKParam, "tmax") |
+                (str_detect(PKParam, "tmax") & 
+                    Stat %in% c("Geomean", "Mean", "Median"))) %>% 
+   bind_rows(TmaxStuff) %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>%
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
-             Stat = factor(Stat, levels = c("mean", "geomean", "median",
-                                            "CV", "GCV", 
-                                            "min", "max",
-                                            "CI90_low", "CI90_high", "CI95_low", 
-                                            "CI95_high", "per5", "per95",
-                                            "MinMean", "MaxMean", 
-                                            "SD", "S_O", 
-                                            "S_O_TM_MinMean", 
-                                            "S_O_TM_MaxMean"))) %>% 
+             Stat = factor(Stat, levels = unique(
+                AllStats$InternalColNames[
+                   which(complete.cases(AllStats$InternalColNames))]))) %>% 
       arrange(File, SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) 
@@ -923,6 +944,8 @@ pk_table <- function(PKparameters = NA,
             TM[1, col]
       }
       
+      MyPKResults$Stat[which(MyPKResults$Stat == "MinMean")] <- "TrialMeanRange"
+      
       TM_SO <- MyPKResults %>% 
          filter(Stat %in% c("S_O_TM_MinMean", "S_O_TM_MaxMean")) %>%
          summarize(across(.cols = -c(Stat, SorO, Sheet, CompoundID, 
@@ -937,9 +960,11 @@ pk_table <- function(PKparameters = NA,
             filter(Stat != "S_O_TM_MaxMean")
          
          for(col in names(TM_SO)){
-            MyPKResults[which(MyPKResults$Stat == "MinMean"), col] <- 
+            MyPKResults[which(MyPKResults$Stat == "S_O_TM_MinMean"), col] <- 
                TM_SO[1, col]
          }
+         
+         MyPKResults$Stat[which(MyPKResults$Stat == "S_O_TM_MinMean")] <- "S_O_TM_Range"
       }
    }
    
@@ -963,10 +988,10 @@ pk_table <- function(PKparameters = NA,
          if(nrow(MyPKResults[[i]]) == 0){next}
          
          # All possible places where we need to concatenate the variability
-         VarRows <- list("ConfInt90" = c("CI90_low", "CI90_high"), 
-                         "ConfInt95" = c("CI95_low", "CI95_high"),
-                         "Perc" = c("per5", "per95"), 
-                         "Range" = c("min", "max"))
+         VarRows <- list("CI90concat" = c("CI90_lower", "CI90_upper"), 
+                         "CI95concat" = c("CI95_lower", "CI95_upper"),
+                         "Per95concat" = c("Per5", "Per95"), 
+                         "Rangeconcat" = c("Minimum", "Maximum"))
          # Only the ones that should be present in our data
          VarRows <- VarRows[sapply(VarRows, function(x) unlist(x[[1]])) %in% VarOptions]
          
@@ -991,12 +1016,7 @@ pk_table <- function(PKparameters = NA,
                                               "brackets" = paste0("[", x[1], ", ", x[2], "]"), 
                                               "parentheses" = paste0("(", x[1], ", ", x[2], ")")),
                                        NA)}),
-                      Stat = switch(j,
-                                    "ConfInt90" = "CI90concat",
-                                    "ConfInt95" = "CI95concat",
-                                    "Perc" = "per95concat",
-                                    "Range" = "Rangeconcat",
-                                    "obs" = "CIobsconcat"))
+                      Stat = j)
             
             MyPKResults[[i]][which(MyPKResults[[i]]$Stat == VarRows[[j]][1]), ] <-
                temp[1, ]
@@ -1018,51 +1038,52 @@ pk_table <- function(PKparameters = NA,
       }
       
       if(includePerc == FALSE){
-         MyPKResults <- MyPKResults %>% filter(!Stat %in% c("per95concat"))
+         MyPKResults <- MyPKResults %>% filter(!Stat %in% c("Per95concat"))
       }
    }
    
-   # Renaming statistics to match what's in template
-   StatNames <- c("geomean" = "Simulated",
-                  "mean" = "Simulated",
-                  "GCV" = "CV%",
-                  "CV" = "CV%",
-                  "SD" = "Standard deviation",
-                  "CI90_low" = "90% CI - Lower",
-                  "CI90_high" = "90% CI - Upper",
-                  "CI90concat" = "90% CI",
-                  "CI95_low" = "95% CI - Lower",
-                  "CI95_high" = "95% CI - Upper",
-                  "CI95concat" = "95% CI",
-                  "per5" = "5th Percentile",
-                  "per95" = "95th Percentile",
-                  "per95concat" = "5th to 95th Percentile",
-                  "min" = "Minimum", 
-                  "max" = "Maximum",
-                  "median" = "Median",
-                  "Rangeconcat" = "Range",
-                  
-                  "geomean_obs" = "Observed",
-                  "mean_obs" = "Observed", 
-                  "CV_obs" = "Observed CV%",
-                  "GCV_obs" = "Observed CV%", 
-                  "CIL_obs" = "observed CI - Lower",
-                  "CIU_obs" = "observed CI - Upper",
-                  "CIconcat_obs" = "Observed CI",
-                  "Rangeconcat_obs" = "Observed range", 
-                  
-                  "S_O" = "S/O",
-                  "S_O_TM_MinMean" = "S/O range for trial means",
-                  "MinMean" = "Range of trial means")
+   # StatNames <- c("Geomean" = "Simulated",
+   #                "Mean" = "Simulated",
+   #                "GCV" = "CV%",
+   #                "CV" = "CV%",
+   #                "SD" = "Standard deviation",
+   #                "CI90_lower" = "90% CI - Lower",
+   #                "CI90_upper" = "90% CI - Upper",
+   #                "CI90concat" = "90% CI",
+   #                "CI95_lower" = "95% CI - Lower",
+   #                "CI95_upper" = "95% CI - Upper",
+   #                "CI95concat" = "95% CI",
+   #                "Per5" = "5th Percentile",
+   #                "Per95" = "95th Percentile",
+   #                "Per95concat" = "5th to 95th Percentile",
+   #                "Minimum" = "Minimum", 
+   #                "Maximum" = "Maximum",
+   #                "Median" = "Median",
+   #                "Rangeconcat" = "Range",
+   #                
+   #                "geomean_obs" = "Observed",
+   #                "mean_obs" = "Observed", 
+   #                "CV_obs" = "Observed CV%",
+   #                "GCV_obs" = "Observed CV%", 
+   #                "CIL_obs" = "observed CI - Lower",
+   #                "CIU_obs" = "observed CI - Upper",
+   #                "CIconcat_obs" = "Observed CI",
+   #                "Rangeconcat_obs" = "Observed range", 
+   #                
+   #                "S_O" = "S/O",
+   #                "S_O_TM_MinMean" = "S/O range for trial means",
+   #                "MinMean" = "Range of trial means")
    
    MyPKResults <- MyPKResults %>%
       mutate(Statistic = ifelse(SorO == "Obs", 
                                 paste0(Stat, "_obs"), Stat),
-             Statistic = StatNames[Statistic], 
+             Statistic = renameStats(Statistic, use = "report"), 
              Statistic = ifelse(SorO == "Obs" & Statistic == "Simulated", 
                                 "Observed", Statistic), 
              SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
-             Stat = factor(Stat, levels = names(StatNames)), 
+             Stat = factor(Stat, levels = 
+                              unique(AllStats$InternalColNames[
+                                 which(complete.cases(AllStats$InternalColNames))])), 
              File = factor(File, levels = file_order)) %>% 
       arrange(File, CompoundID, SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 

@@ -12,12 +12,17 @@ A data.frame with columns: \describe{
 
   \item{Notes}{an explanation of what the experimental detail is}
 
+  \item{ReportTableText}{Similar to Notes except more formally written and
+  includes no coding info; info on that detail that will go in the report table}
+
   \item{Regex_row}{When searching the specified column, what regular
   expression should be used for finding the correct row.}
 
   \item{Class}{Data class}
 
-  \item{Sheet}{simulator output sheet this detail is extracted from}
+  \item{DataSource}{Where did this info come from? simulator output sheet
+  this detail is extracted from or whether it's from the workspace or
+  database file or calculated}
 
   \item{NameCol}{the index of the column in the simulator output tab that will
   be searched for matches to the text in the column "Regex_row".}
@@ -55,7 +60,7 @@ A data.frame with columns: \describe{
   this number of rows to get to the actual value we want.}
 
   \item{SortOrder}{Order in which this detail should show
-  up in the output of `annotateDetails`}
+  up in the output from \code{\link{annotateDetails}}}
 
   \item{Level1, Level2, etc.}{the level in the XML file
   where the information lives}
@@ -69,7 +74,22 @@ A data.frame with columns: \describe{
 
   \item{CodingNotes}{Notes specifically to coders}
 
-  \item{CompoundID}{CompoundID (a.k.a. compound position in the Simulator)}
+  \item{SimcypParameterType}{For extracting data from database files or
+  workspaces, what kind of parameter is this? Options are "compound",
+  "general", "population", or "other" and will affect where to find the info
+  needed}
+
+  \item{SimcypTag}{tag used for identifying this parameter in the database or
+  workspace file}
+
+  \item{SimcypSubcategory}{when a subcategory applies in the Simcyp package,
+  what is it? Not currently used, but I wanted a placeholder for better,
+  more seamless data extraction with the Simcyp package.}
+
+  \item{CompoundID}{CompoundID (a.k.a. compound position in the Simulator).
+  This only applies for siutations when that detail is ONLY for a specific
+  CompoundID, which sometimes happens with database or workspace info in
+  particular.}
 
   \item{Suffix}{suffix to append for this detail when it's for a specific
   compound ID}
