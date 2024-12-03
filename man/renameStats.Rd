@@ -2,17 +2,19 @@
 % Please edit documentation in R/renameStats.R
 \name{renameStats}
 \alias{renameStats}
-\title{Rename the statistics listed in Simulator output to R-friendly versions}
+\title{INTERNAL: Rename the statistics listed in Simulator output to R-friendly
+versions}
 \usage{
-renameStats(OrigStat, use = "internal")
+renameStats(OrigStat, use = "Simulator to R")
 }
 \arguments{
 \item{OrigStat}{the original statistic name}
 
-\item{use}{options are "internal" for internal use when renaming stats from
-Simulator-output names into R-friendly column names or "report" for
+\item{use}{options are "Simulator to R" for internal use when renaming stats
+from Simulator-output names into R-friendly column names, "report" for
 renaming R columns into the values that show up in the Simcyp Consultancy
-report template tables of PK parameters.}
+report template tables of PK parameters, or "report to R" when reversing
+from report-friendly names to R-friendly names.}
 }
 \value{
 an R-friendly version of that statistic name

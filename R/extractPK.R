@@ -1878,7 +1878,7 @@ extractPK <- function(sim_data_file,
          Out_agg <- bind_rows(Out_agg) %>%
             select(PKparameter, Statistic, Value) %>%
             mutate(Statistic = renameStats(OrigStat = Statistic, 
-                                           use = "internal"), 
+                                           use = "simulator to r"), 
                    File = sim_data_file, 
                    Inhibitor = 
                       case_when(
