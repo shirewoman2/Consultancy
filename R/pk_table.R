@@ -815,6 +815,8 @@ pk_table <- function(PKparameters = NA,
                       "tmaxmax" = any(c(includeConfInt, 
                                         includePerc, 
                                         includeRange)), 
+                      "S_O_TM_MaxMean" = includeTrialMeans, 
+                      "S_O_TM_MinMean" = includeTrialMeans, 
                       "S_O" = TRUE)
       VarOptions <- names(VarOptions)[which(VarOptions)]
       
@@ -942,6 +944,8 @@ pk_table <- function(PKparameters = NA,
             TM[1, col]
       }
       
+      MyPKResults$Stat[which(MyPKResults$Stat == "MinMean")] <- "TrialMeanRange"
+      
       TM_SO <- MyPKResults %>% 
          filter(Stat %in% c("S_O_TM_MinMean", "S_O_TM_MaxMean")) %>%
          summarize(across(.cols = -c(Stat, SorO, Sheet, CompoundID, 
@@ -956,9 +960,11 @@ pk_table <- function(PKparameters = NA,
             filter(Stat != "S_O_TM_MaxMean")
          
          for(col in names(TM_SO)){
-            MyPKResults[which(MyPKResults$Stat == "MinMean"), col] <- 
+            MyPKResults[which(MyPKResults$Stat == "S_O_TM_MinMean"), col] <- 
                TM_SO[1, col]
          }
+         
+         MyPKResults$Stat[which(MyPKResults$Stat == "S_O_TM_MinMean")] <- "S_O_TM_Range"
       }
    }
    

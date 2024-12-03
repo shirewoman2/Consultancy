@@ -295,7 +295,8 @@ pk_table_subfun <- function(sim_data_file,
       } 
       
       TrialMeans <- TrialMeans %>% 
-         group_by(PKparameter) %>%
+         group_by(PKparameter, File, Tissue, CompoundID, Compound, 
+                  Simulated, Dose) %>%
          summarize(
             MinMean = case_when(
                {{MeanType}} == "geometric" ~ min(Geomean), 
