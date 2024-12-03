@@ -28,7 +28,7 @@ prettify_compound_name <- function(compound_name,
                                    case = "lower", 
                                    force = FALSE){
    
-   OrigCompoundName <- compound_name
+   OrigCompoundName <- as.character(compound_name)
    
    # Removing Simulator decorations
    SimText <- "[sS][vV]-|[sS]im-|[wW][sS][pP]-|_[eE][cC]|_[sS][rR]|-[mM][dD]|-[sS][dD]|_[fF][oO]|-[1-9]00 mg [QqMmSsTtBbIidD]{1,3}|_fasted soln|_fed capsule|RES-"
@@ -36,17 +36,21 @@ prettify_compound_name <- function(compound_name,
    
    SimCompounds <- c("Alfentanil", "Alprazolam", "Atomoxetine", "Atorvastatin", 
                      "Bufuralol", "Buprenorphine", "Bupropion", "Caffeine", 
-                     "Celecoxib", "Clozapine", "Crizotinib", "Cyclosporine", 
+                     "Celecoxib", "Cimetidine", 
+                     "Clozapine", "Crizotinib", "Cyclosporine", 
                      "Dabigatran", "Desipramine", "Dexamethasone", 
                      "Dextromethorphan", "Digoxin", "Drospirenone", 
-                     "Duloxetine", "Esomeprazole", "Ethinylestradiol", 
-                     "Fedratinib", "Flurbiprofen", "Gemfibrozil", 
+                     "Duloxetine", "Efavirenz", "Erythromycin", 
+                     "Esomeprazole", "Ethinylestradiol",
+                     "Fedratinib", "Fluconazole", "Flurbiprofen", "Gemfibrozil", 
                      "Glyburide", "Ibrutinib", "Imipramine", "Itraconazole", 
                      "Lansoprazole", "Lorazepam", "Metformin", "Metoprolol", 
                      "Midazolam", "Montelukast", "Nebivolol", "Nifedipine", 
                      "Omeprazole", "Ondansetron", "Oxycodone", "Phenacetin", 
+                     "Phenytoin", 
                      "Pioglitazone", "Pravastatin", "Quinidine", "Raltegravir", 
-                     "Repaglinide", "Rivaroxaban", "Rosiglitazone", 
+                     "Repaglinide", "Rifampicin", 
+                     "Rivaroxaban", "Rosiglitazone", 
                      "Rosuvastatin", "Ruxolitinib", "Mephenytoin", "Warfarin", 
                      "Sildenafil", "Simvastatin", "Siponimod", "Tenofovir", 
                      "Theophylline", "Tolbutamide", "Tolterodine", "Triazolam", 
@@ -58,12 +62,13 @@ prettify_compound_name <- function(compound_name,
    compound_name <- switch(case, 
                            "lower" = tolower(compound_name), 
                            "title" = str_to_title(compound_name), 
+                           "upper" = toupper(compound_name), 
                            "original" = compound_name)
    
    # Adjusting for compounds (metabolites) w/"OH" in name or other
    # idiosyncracies
    compound_name <- sub("^oh ", "OH-", compound_name)
-   compound_name <- sub("oh-", "OH-", compound_name)
+   compound_name <- sub("[oO][hH]-", "OH-", compound_name)
    compound_name <- sub(" o-", " O-", compound_name)
    compound_name <- sub("-o-", "-O-", compound_name)
    compound_name <- sub("^o-", "O-", compound_name)
@@ -72,7 +77,7 @@ prettify_compound_name <- function(compound_name,
    compound_name <- sub("^n-", "N-", compound_name)
    compound_name <- sub("^s-", "S-", compound_name)
    compound_name <- sub("^r-", "R-", compound_name)
-   compound_name <- sub("_fasted soln|_fed capsule", "", compound_name)
+   compound_name <- sub("_fasted [sS]oln|_fed [cC]apsule", "", compound_name)
    compound_name <- sub("OH-itraconazole", "hydroxyitraconazole", compound_name)
    
    # Misspelled compound files

@@ -725,6 +725,11 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                       names_to = "PKparameter", 
                       values_to = "Value") %>% 
          mutate(Statistic = renameStats(Statistic, use = "report to R"),
+                Statistic = case_when(Statistic == "Mean" & 
+                                         mean_type == "geometric" ~ "Geomean", 
+                                      Statistic == "Mean" & 
+                                         mean_type == "median" ~ "Median", 
+                                      .default = Statistic), 
                 # If they used " / " in their specification of PK parameters and
                 # used it the way I envision, then we know when we have, e.g.,
                 # "AUCinf_ratio_dose1" or "Cmax_ratio_last". However, if they

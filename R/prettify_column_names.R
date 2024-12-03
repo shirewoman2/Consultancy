@@ -88,6 +88,7 @@ prettify_column_names <- function(PKtable,
          ColNamesNoDecorations = str_replace(OrigColNames, " NumeratorSim| DenominatorSim", ""), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_dose1 Ratio|_dose1_withInhib Ratio", "_ratio_dose1"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_last Ratio|_last_withInhib Ratio", "_ratio_last"), 
+         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_withInhib Ratio", "_ratio"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "for interval from.*to [0-9]{1,} h ", ""), 
          
          # Also changing any instances of "steady-state" that the user may have
