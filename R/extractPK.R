@@ -1552,98 +1552,6 @@ extractPK <- function(sim_data_file,
          }
          
          rm(ColNum, ToDetect)
-      
-   if(length(PKparameters_DrugPop) > 0 &
-   }
-   
-   
-   # Pulling data from the "Clearance Trials SS" sheet ------------------------------------------
-   
-   # Some PK parameters show up on multiple sheets. No need to pull
-   # those here if they've already been pulled from another sheet.
-   PKparameters_CLTSS <-
-      setdiff(PKparamDF$PKparameter[PKparamDF$SheetCLTSS == TRUE], 
-              names(Out_agg))
-   
-      any(PKparameters_orig %in% c("AUC tab", "Absorption tab")) == FALSE){
-      
-      if("Drug-Population Parameters" %in% SheetNames == FALSE){
-         # Error catching
-         warning(paste0("The sheet `Drug-Population Parameters` was not present in the Excel simulated data file to extract the parameters ",
-                        str_comma(PKparameters_DrugPop), "."),
-                 call. = FALSE)
-      } else {
-         
-         DrugPop_xl <- suppressMessages(
-            readxl::read_excel(path = sim_data_file, sheet = "Drug-Population Parameters",
-                               col_names = FALSE))
-         
-         StartRow_ind <- which(DrugPop_xl$...1 == "Index")
-         EndRow_agg <- which(is.na(DrugPop_xl$...3))[2] - 1
-         
-         # Looping through parameters and extracting values
-         for(i in PKparameters_DrugPop){
-            
-            # Using regex to find the correct column. See
-            # data(AllPKParameters) for all the possible parameters as well
-            # as what regular expressions are being searched for each. 
-            ToDetect <- AllPKParameters %>% 
-               filter(Sheet == "Drug-Population Parameters" & PKparameter == i) %>% 
-               select(PKparameter, SearchText)
-            
-            # Looking for the regular expression specific to this parameter
-            # i. 
-            ColNum <- which(str_detect(as.vector(t(DrugPop_xl[2, ])),
-                                       ToDetect$SearchText))
-            
-            if(length(ColNum) == 0 || is.na(ColNum)){
-               if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
-                  warning(wrapn(paste0("The column with information for ", i,
-                                       " on the tab 'Drug-Population Parameters' cannot be found in the file '", 
-                                       sim_data_file, "'.")), 
-                          call. = FALSE)
-               }
-               suppressWarnings(suppressMessages(rm(ToDetect, StartCol, EndCol, PossCol, ColNum)))
-               PKparameters_DrugPop <- setdiff(PKparameters_DrugPop, i)
-               next
-            }
-            
-            suppressWarnings(
-               Out_ind[[i]] <- DrugPop_xl[StartRow_ind:nrow(DrugPop_xl), ColNum] %>%
-                  pull(1) %>% as.numeric
-            )
-            
-            suppressWarnings(
-               Out_agg[[i]] <- DrugPop_xl[3:EndRow_agg, ColNum] %>%
-                  pull(1) %>% as.numeric
-            )
-            names(Out_agg[[i]]) <- DrugPop_xl[3:EndRow_agg, 3] %>%
-               pull(1)
-            
-            
-            if(checkDataSource){
-               DataCheck <- DataCheck %>%
-                  bind_rows(data.frame(PKparam = i, 
-                                       Tab = "Drug-Population Parameters",
-                                       SearchText = ToDetect$SearchText,
-                                       Column = ColNum, 
-                                       StartRow_agg = 3,
-                                       EndRow_agg = EndRow_agg,
-                                       StartRow_ind = StartRow_ind,
-                                       EndRow_ind = nrow(DrugPop_xl)))
-            }
-         }   
-         
-         if(includeTrialInfo & length(PKparameters_DrugPop) > 0){
-            # Subject and trial info
-            SubjTrial_DrugPop <- DrugPop_xl[StartRow_ind:nrow(DrugPop_xl), 1:2] %>%
-               rename("Individual" = ...1, "Trial" = ...2)
-            
-            Out_ind[["DrugPoptab"]] <- cbind(SubjTrial_DrugPop,
-                                             as.data.frame(Out_ind[PKparameters_DrugPop]))
-         }
-         
-         rm(ColNum, ToDetect)
          
       }
       
@@ -2002,6 +1910,9 @@ extractPK <- function(sim_data_file,
                    Geomean, GCV, CI90_lower, CI90_upper, 
                    Mean, SD, Median, Minimum, Maximum)
       )
+      
+   }
+   
    Out <- list("individual" = Out_ind,
                "aggregate" = Out_agg, 
                "TimeInterval" = TimeInterval)

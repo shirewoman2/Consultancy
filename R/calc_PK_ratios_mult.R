@@ -353,20 +353,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                                   "Z", "t")
    } else {
       stop(wrapn("You have supplied a value for distribution_type that doesn't work. It must be either `t` (default and what the Simulator uses) or `Z`."), 
-   }
-   
-   if(tolower(distribution_type) %in% c("z", "t")){
-      distribution_type <- ifelse(tolower(distribution_type) == "z", 
-                                  "Z", "t")
-   } else {
-      stop(wrapn("You have supplied a value for distribution_type that doesn't work. It must be either `t` (default and what the Simulator uses) or `Z`."), 
            call. = FALSE)
-   }
-   if(match_subjects_by %in% c("individual and trial", 
-                               "individual only") == FALSE & 
-      paired == TRUE){
-      warning(wrapn("You have specified that you would like us to match the subjects in your paired study design by something other than `individual and trial` or `individual only`, which are the only options. We'll use the default of `individual and trial`."), 
-              call. = FALSE)
    }
    
    page_orientation <- tolower(page_orientation)[1]
@@ -381,12 +368,6 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       paired == TRUE){
       warning(wrapn("You have specified that you would like us to match the subjects in your paired study design by something other than `individual and trial` or `individual only`, which are the only options. We'll use the default of `individual and trial`."), 
               call. = FALSE)
-   }
-                         error = function(x) FALSE) == FALSE){
-         warning("The values you used for highlighting geometric mean ratios are not all valid colors in R. We'll used the default colors instead.\n", 
-                 call. = FALSE)
-         highlight_gmr_colors <- "yellow to red"
-      } 
    }
    
    if(complete.cases(highlight_gmr_colors) && 
@@ -404,6 +385,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                  call. = FALSE)
          highlight_gmr_colors <- "yellow to red"
       } 
+   }
    
    # Checking rounding
    rounding <- tolower(rounding[1])
@@ -412,6 +394,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    if(str_detect(rounding, "consultancy|none|significant|round") == FALSE){
       warning(wrapn("You have entered something for the rounding argument other than the available options. We'll set this to the default, `Consultancy`. Please check the help file for details."), 
               call. = FALSE)
+   }
    
    
    # Main body of function -------------------------------------------------
@@ -430,9 +413,6 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                          sheet_PKparameters = sheet_PKparameters, 
                          tissues = tissue, 
                          existing_exp_details = existing_exp_details)
-                                       c(FilePairs$Denominator_File, 
-                                         FilePairs$Numerator_File), 
-                                       "include")
    
    PKparameters <- TEMP$PKparameters %>% unique()
    FilePairs <- TEMP$FilePairs %>% unique()
@@ -495,13 +475,6 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       CmpdNum <- existing_exp_details$MainDetails %>% 
          filter(File == unique(FilePairs[[i]]$Numerator_File)) %>% 
          pull(AllCompounds$DetailNames[AllCompounds$CompoundID == unique(FilePairs[[i]]$Numerator_CompoundID)])
-      
-      CmpdDenom <- existing_exp_details$MainDetails %>% 
-         filter(File == unique(FilePairs[[i]]$Denominator_File)) %>% 
-         pull(AllCompounds$DetailNames[AllCompounds$CompoundID == unique(FilePairs[[i]]$Denominator_CompoundID)])
-      
-      suppressWarnings(
-      )
       
       CmpdDenom <- existing_exp_details$MainDetails %>% 
          filter(File == unique(FilePairs[[i]]$Denominator_File)) %>% 
@@ -718,25 +691,6 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    }
    
    if(extract_forest_data){
-      
-      GoodPKRatios <- c("Cmax_ratio",
-                        "Cmax_ratio_last", 
-                        "Cmax_nounits",
-                        "Cmax_last_nounits", 
-                        "AUCtau_ratio",
-                        "AUCtau_ratio_last", 
-                        "AUCtau_nounits",
-                        "AUCtau_last_nounits",
-                        "Cmax_ratio_dose1", 
-                        "Cmax_dose1_nounits",
-                        "AUC_ratio",
-                        "AUCt_ratio",
-                        "AUCt_ratio_dose1", 
-                        "AUCt_nounits",
-                        "AUCinf_nounits", 
-                        "AUCinf_dose1_nounits",
-                        "AUCinf_ratio",
-                        "AUCinf_ratio_dose1")
       
       GoodPKRatios <- c("Cmax_ratio",
                         "Cmax_ratio_last", 

@@ -159,7 +159,6 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
   according to the values in the column "Inhibitor1", make sure that
   "Inhibitor1" is included in your observed PK.}
 
-
   \item{(optional) at least one column or set of columns named "CI90_low",
   "CI90_high", "per5", "per95", "GCV", "CV", "min", "max", "SD"}{these will 
   be used for the error bars and are optional.}
@@ -371,14 +370,6 @@ For example, "SV-Rifampicin-MD" will become "rifampicin", and
 "Sim-Midazolam" will become "midazolam". If you leave this as NA, we'll
 prettify if you supply a column name for \code{y_axis_labels} and we
 \emph{won't} prettify if you supply a named character vector there.}
-
-\item{PK_labels}{optionally specify what you would like to have appear on the
-y axis for labels for each PK parameter with a named list of expressions,
-e.g., \code{PK_labels = list("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
-"Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}. Please 
-particularly note that it must be a \strong{list} rather than a vector. 
-To see examples of PK parameters set up as expressions for use in graph
-labels, try running \code{PKexpressions}.}
 
 \item{PK_labels}{optionally specify what you would like to have appear on the
 y axis for labels for each PK parameter with a named list of expressions,

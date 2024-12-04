@@ -91,12 +91,6 @@ extractFmFe <- function(sim_data_file,
       # Skipping the warning b/c they will have already gotten it from
       # extractExpDetails.
       return(data.frame())
-         filter(File == sim_data_file)
-      
-      if(nrow(Deets) == 0){
-         Deets <- extractExpDetails(sim_data_file,
-                                    exp_details = "Summary and Input")[["MainDetails"]]
-      }
    }
    
    if(Deets$PopRepSim == "Yes"){
@@ -137,7 +131,7 @@ extractFmFe <- function(sim_data_file,
                             col_names = FALSE))
       
       ## Extracting only max and min --------------------------------------------
-   
+      
       if(returnOnlyMaxMin){
          
          EndRow <- which(is.na(sim_data_xl$...1[3:nrow(sim_data_xl)]))[1] + 1

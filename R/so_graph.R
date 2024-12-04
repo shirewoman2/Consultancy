@@ -718,9 +718,6 @@ so_graph <- function(PKtable,
                                 "Simulated", Statistic))
    
    names(SO) <- PKCols$PKparameter
-      select(Statistic, File, any_of(c(PKparameters, 
-                                       as_label(point_color_column), 
-                                       as_label(point_shape_column))))
    
    # Removing additional columns since they mess up pivoting.
    SO <- SO %>% 

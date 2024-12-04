@@ -57,43 +57,6 @@ tidy_input_PK <- function(PKparameters,
       sim_data_files <- unique(sim_data_files)
       sim_data_files_input <- sim_data_files
       
-      # Make sure file extension is xlsx. 
-      sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.db$", "", 
-                                   sim_data_files), ".xlsx")
-      
-      # Remove artifacts when there's no file specified. 
-      sim_data_files <- setdiff(sim_data_files, "NA.xlsx")
-      if(length(sim_data_files) == 0){sim_data_files <- NA}
-      
-      # If user did not supply files, then extract all the files in the current
-      # folder that end in "xlsx" or in all subfolders if they wanted it to be
-      # recursive.
-      if(length(sim_data_files) == 1 &&
-         (is.na(sim_data_files) | sim_data_files == "recursive")){
-         sim_data_files <- list.files(pattern = "xlsx$",
-                                      recursive = (complete.cases(sim_data_files) &&
-                                                      sim_data_files == "recursive"))
-         sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
-      } 
-      
-      # Making sure that all the files exist before attempting to pull data
-      if(all(complete.cases(sim_data_files)) && 
-         any(file.exists(sim_data_files) == FALSE)){
-         MissingSimFiles <- sim_data_files[
-            which(file.exists(sim_data_files) == FALSE)]
-         warning(paste0("The file(s) ", 
-                        str_comma(paste0("`", MissingSimFiles, "`")), 
-                        " is/are not present and thus will not be extracted.
-                     "), 
-                 call. = FALSE)
-         sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
-      }
-      
-      return(sim_data_files)
-   }
-   
-   
-   # Setting up PKparameters data.frame ---------------------------------------
       # Make sure file extension is xlsx or db.
       sim_data_files <- case_when(
          str_detect(sim_data_files, "xlsx$|db$") ~ sim_data_files, 
@@ -131,6 +94,8 @@ tidy_input_PK <- function(PKparameters,
       return(sim_data_files)
    }
    
+   
+   # Setting up PKparameters data.frame ---------------------------------------
    
    # PKparameters could be a data.frame, character vector, or could be a file to
    # read. Checking.
@@ -183,8 +148,6 @@ tidy_input_PK <- function(PKparameters,
       
       InputWasDF <- FALSE
    }
-   
-   # PKparameters should now be a data.frame for all input options. 
    
    # PKparameters should now be a data.frame for all input options. 
    

@@ -139,7 +139,6 @@
 #'   according to the values in the column "Inhibitor1", make sure that
 #'   "Inhibitor1" is included in your observed PK.}
 #'
-#'
 #'   \item{(optional) at least one column or set of columns named "CI90_low",
 #'   "CI90_high", "per5", "per95", "GCV", "CV", "min", "max", "SD"}{these will 
 #'   be used for the error bars and are optional.}

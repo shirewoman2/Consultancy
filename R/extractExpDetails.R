@@ -2016,7 +2016,7 @@ extractExpDetails <- function(sim_data_file,
                           "inhibitor 1" = as.numeric(Main$StartHr_inhib), 
                           "inhibitor 2" = as.numeric(Main$StartHr_inhib2)))
          
-   
+      } else {
          
          Dosing[[cmpd]] <- data.frame(
             Time = seq(from = 
@@ -2036,8 +2036,8 @@ extractExpDetails <- function(sim_data_file,
                                  "inhibitor 2" = 
                                     suppressWarnings(as.numeric(Main$DoseInt_inhib2))))) 
          
-   }
-   
+      }
+      
       suppressWarnings(
          Dosing[[cmpd]] <- Dosing[[cmpd]] %>% 
             mutate(File = sim_data_file, 

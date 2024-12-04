@@ -384,7 +384,6 @@ calc_PK_ratios <- function(PKparameters = NA,
    }
    
    
-   
    # Main body of function -------------------------------------------------
    
    ## Tidying PKparameters ------------------------------------------------
@@ -580,8 +579,6 @@ calc_PK_ratios <- function(PKparameters = NA,
    existing_exp_details <- existing_exp_details %>% 
       filter_sims(unique(PKparameters$File[PKparameters$NorD == "Numerator"]),
                   "include")
-      filter_sims(unique(PKparameters$File[PKparameters$NorD == "Numerator"]),
-                  "include")
    
    
    ## Determining column format & arrangement ---------------------------------
@@ -624,27 +621,6 @@ calc_PK_ratios <- function(PKparameters = NA,
    
    
    # !!! IMPORTANT PKPARAMETER NAME CHANGE STEP HERE !!! ----------------------
-   
-   # Need to filter to get only PK parameters that are actually present. If
-   # there were issues with AUCinf extrapolation, then it won't be.
-   GoodColNames <- Comparisons %>% 
-      filter(Denominator_PKparameter %in% names(PKdenominator$individual)) %>% 
-      select(Denominator_PKparameter, Numerator_PKparameter)
-   names(PKdenominator$individual) <- c("Individual", "Trial",
-                                        GoodColNames$Numerator_PKparameter)
-   
-   # I now regret that I made this coding choice ages ago, but if there's only 1
-   # PK parameter, then the aggregate output from extractPK is a list. Need to
-   # work around that.
-   if("list" %in% class(PKdenominator$aggregate)){
-      Stats <- names(PKdenominator$aggregate[[1]])
-      Vals <- PKdenominator$aggregate[[1]]
-      temp <- data.frame(Statistic = Stats, 
-                         Val = Vals)
-      names(temp)[2] <- names(PKdenominator$aggregate)
-      
-      PKdenominator$aggregate <- temp
-   }
    
    # Setting this up to match things later. This is a hack to make PKparameter
    # match even if it doesn't really b/c user wanted to compare, e.g.,
@@ -705,23 +681,9 @@ calc_PK_ratios <- function(PKparameters = NA,
          
       } else if(match_subjects_by == "individual only"){
          MyPKResults <- PKnumerator$individual %>% 
-      
-      if(match_subjects_by == "individual and trial"){
-         MyPKResults <- MyPKResults %>% 
             full_join(PKdenominator$individual %>% 
                          select(-Trial), 
                       join_by(Individual, PKparameter))
-      }
-      
-      MyPKResults <- MyPKResults %>% 
-      } else if(match_subjects_by == "individual only"){
-         MyPKResults <- MyPKResults %>% 
-            full_join(PKdenominator$individual %>% 
-                         select(-Trial) %>% 
-                         pivot_longer(cols = -c(Individual), 
-                                      names_to = "Parameter", 
-                                      values_to = "DenominatorSim"), 
-                      join_by(Individual, Parameter))
       }
       
       MyPKResults <- MyPKResults %>% 
@@ -1026,30 +988,20 @@ calc_PK_ratios <- function(PKparameters = NA,
          filter(!Statistic %in% c("90% CI - Lower", "90% CI - Upper", 
                                   "90% CI"))
    }
+   
    if(prettify_columns){
-      suppressWarnings(
-                   GoodCol =
+      
       PrettyCol <- tibble(OrigName = names(MyPKResults), 
                           GoodCol = prettify_column_names(names(MyPKResults))) %>% 
          mutate(GoodCol = sub("DenominatorSim", "denominator", GoodCol),
                 GoodCol = sub("NumeratorSim", "numerator", GoodCol), 
                 GoodCol = sub("Ratio", "ratio", GoodCol))
-      )
       
       # Adjusting units as needed.
       PrettyCol <- PrettyCol %>% 
          mutate(GoodCol = sub("\\(ng/mL.h\\)", 
                               paste0("(", existing_exp_details$MainDetails$Units_AUC, ")"), 
                               GoodCol), 
-                GoodCol = sub("\\(L/h\\)", 
-                              paste0("(", existing_exp_details$MainDetails$Units_CL, ")"), 
-                              GoodCol), 
-                GoodCol = sub("\\(ng/mL\\)", 
-                              paste0("(", existing_exp_details$MainDetails$Units_Cmax, ")"), 
-                              GoodCol), 
-                GoodCol = sub("\\(h\\)", 
-                              paste0("(", existing_exp_details$MainDetails$Units_tmax, ")"), 
-                              GoodCol))
                 GoodCol = sub("\\(L/h\\)", 
                               paste0("(", existing_exp_details$MainDetails$Units_CL, ")"), 
                               GoodCol), 
@@ -1131,11 +1083,6 @@ calc_PK_ratios <- function(PKparameters = NA,
                                    Numerator_Tissue, 
                                    paste(Numerator_Tissue, "/", Denominator_Tissue))) %>% 
          pull(AllCmpdID) %>% str_comma()
-      
-   } else {
-      MyPKResults$CompoundID <- Comparisons %>% pull(Tissue) %>% 
-         unique() %>% str_comma()
-   }
       
    } else {
       MyPKResults$CompoundID <- Comparisons %>% pull(Tissue) %>% 

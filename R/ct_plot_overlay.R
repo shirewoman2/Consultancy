@@ -2416,64 +2416,6 @@ ct_plot_overlay <- function(ct_dataframe,
             "FC1PlusTitle FC2PlusTitle" = ggh4x::facet_nested(Facet1Title + FC1 ~ Facet2Title + FC2, 
                                                               strip = FacetTitleTheme_XY, 
                                                               scales = FacetOptions$Scales), 
-   
-   if(FacetOptions$WrapOrGrid == "facet_grid"){
-      # This is when we want facet_grid. 
-      
-      # Setting up theme for facet titles
-      FacetTitleTheme_XY <- ggh4x::strip_nested(
-         text_x = ggh4x::elem_list_text(face = c("bold", "plain"), 
-                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
-                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
-         by_layer_x = TRUE, 
-         
-         text_y = ggh4x::elem_list_text(face = c("bold", "plain"), 
-                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
-                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
-         by_layer_y = TRUE)
-      
-      FacetTitleTheme_Y <- ggh4x::strip_nested(
-         text_x = ggh4x::elem_list_text(face = "plain", 
-                                        size = calc_element("strip.text.x", theme_consultancy())$size), 
-         by_layer_x = TRUE, 
-         
-         text_y = ggh4x::elem_list_text(face = c("bold", "plain"), 
-                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
-                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
-         by_layer_y = TRUE)
-      
-      FacetTitleTheme_X <- ggh4x::strip_nested(
-         text_x =             ggh4x::elem_list_text(face = c("bold", "plain"), 
-                                                    size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
-                                                             calc_element("strip.text.x", theme_consultancy())$size)), 
-         by_layer_x = TRUE, 
-         
-         text_y = ggh4x::elem_list_text(face = "plain", 
-                                        size = calc_element("strip.text.x", theme_consultancy())$size), 
-         by_layer_y = TRUE)
-      
-      A <- A + 
-         switch(
-            FacetOpts, 
-            "ggplot2 facets" = facet_grid(rows = vars(!!facet1_column), 
-                                          cols = vars(!!facet2_column), 
-                                          scales = FacetOptions$Scales), 
-            
-            "FC1PlusTitle FC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ FC2, 
-                                                     strip = FacetTitleTheme_Y, 
-                                                     scales = FacetOptions$Scales), 
-            
-            "FC1PlusTitle NoFC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ ., 
-                                                       strip = FacetTitleTheme_Y, 
-                                                       scales = FacetOptions$Scales), 
-            
-            "FC1 FC2PlusTitle" = ggh4x::facet_nested(FC1 ~ Facet2Title + FC2, 
-                                                     strip = FacetTitleTheme_X, 
-                                                     scales = FacetOptions$Scales), 
-            
-            "FC1PlusTitle FC2PlusTitle" = ggh4x::facet_nested(Facet1Title + FC1 ~ Facet2Title + FC2, 
-                                                              strip = FacetTitleTheme_XY, 
-                                                              scales = FacetOptions$Scales), 
             
             "NoFC1 FC2PlusTitle" = ggh4x::facet_nested(. ~ Facet2Title + FC2, 
                                                        strip = FacetTitleTheme_X, 

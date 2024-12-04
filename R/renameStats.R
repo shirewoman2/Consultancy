@@ -46,9 +46,5 @@ renameStats <- function(OrigStat,
    
    return(StatNames[OrigStat])
    
-                   # function and apply to trial-mean min and trial-mean max
-                   "minmMean" = "MinMean", 
-                   "maxmean" = "MaxMean", 
-    
 }
 
