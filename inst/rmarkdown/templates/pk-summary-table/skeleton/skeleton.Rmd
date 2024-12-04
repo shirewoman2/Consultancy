@@ -49,8 +49,8 @@ Annotations <- make_table_annotations(MyPKResults = MyPKResults,
                                       MyFile = sim_data_file, 
                                       MyCompoundID = compoundToExtract, 
                                       prettify_compound_names = prettify_compound_names, 
-                                      Deets = Deets %>% mutate(File = sim_data_file), 
-                                      MeanType = mean_type, 
+                                      existing_exp_details = Deets %>% mutate(File = sim_data_file), 
+                                      mean_type = mean_type, 
                                       tissue = tissue)
 
 # Adding a warning if there was a mismatch between the last dosing interval and

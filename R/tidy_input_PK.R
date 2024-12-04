@@ -94,6 +94,43 @@ tidy_input_PK <- function(PKparameters,
    
    
    # Setting up PKparameters data.frame ---------------------------------------
+      # Make sure file extension is xlsx or db.
+      sim_data_files <- case_when(
+         str_detect(sim_data_files, "xlsx$|db$") ~ sim_data_files, 
+         .default = paste0(sub("\\.wksz$|\\.dscw$|\\.docx$", "", sim_data_files), 
+                           ".xlsx"))
+      
+      # Remove artifacts when there's no file specified. 
+      sim_data_files <- setdiff(sim_data_files, "NA.xlsx")
+      if(length(sim_data_files) == 0){sim_data_files <- NA}
+      
+      # If user did not supply files, then extract all the files in the current
+      # folder that end in "xlsx" or in all subfolders if they wanted it to be
+      # recursive.
+      if(length(sim_data_files) == 1 &&
+         (is.na(sim_data_files) | sim_data_files == "recursive")){
+         sim_data_files <- list.files(pattern = "xlsx$",
+                                      recursive = (complete.cases(sim_data_files) &&
+                                                      sim_data_files == "recursive"))
+         sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+      } 
+      
+      # Making sure that all the files exist before attempting to pull data
+      if(all(complete.cases(sim_data_files)) && 
+         any(file.exists(sim_data_files) == FALSE)){
+         MissingSimFiles <- sim_data_files[
+            which(file.exists(sim_data_files) == FALSE)]
+         warning(paste0("The file(s) ", 
+                        str_comma(paste0("`", MissingSimFiles, "`")), 
+                        " is/are not present and thus will not be extracted.
+                     "), 
+                 call. = FALSE)
+         sim_data_files <- setdiff(sim_data_files, MissingSimFiles)
+      }
+      
+      return(sim_data_files)
+   }
+   
    
    # PKparameters could be a data.frame, character vector, or could be a file to
    # read. Checking.
@@ -149,6 +186,8 @@ tidy_input_PK <- function(PKparameters,
    
    # PKparameters should now be a data.frame for all input options. 
    
+   # PKparameters should now be a data.frame for all input options. 
+   
    if("data.frame" %in% class(PKparameters) == FALSE){
       stop("Tell Laura Shireman that there's a problem with input for PKparameters.")
    }
@@ -166,7 +205,8 @@ tidy_input_PK <- function(PKparameters,
    FromCalcPKRatios <- any(str_detect(tolower(names(PKparameters)), "numerator")) | 
       any(str_detect(tolower(names(PKparameters)), "denominator")) |
       ("PKparameter" %in% names(PKparameters) && 
-          any(str_detect(PKparameters$PKparameter, "/")))
+          any(str_detect(PKparameters$PKparameter, "/"))) |
+      "NorD" %in% names(PKparameters)
    
    if(any(str_detect(tolower(names(PKparameters)), "numerator")) & 
       any(str_detect(tolower(names(PKparameters)), "denominator"))){
@@ -192,12 +232,22 @@ tidy_input_PK <- function(PKparameters,
                     "denominator.*compoundid|compoundid.*denominator")][1] <- "Denominator_CompoundID"
       
       if("Numerator_CompoundID" %in% names(PKparameters) == FALSE){
-         PKparameters$Numerator_CompoundID <- "substrate"
-      }
-      if("Denominator_CompoundID" %in% names(PKparameters) == FALSE){
-         PKparameters$Denominator_CompoundID <- "substrate"
+         PKparameters <- PKparameters %>% 
+            left_join(expand_grid(Numerator_File = unique(PKparameters$Numerator_File), 
+                                  Numerator_CompoundID = compoundsToExtract), 
+                      by = "Numerator_File") %>% 
+            mutate(Numerator_CompoundID = case_when(is.na(Numerator_CompoundID) ~ "substrate", 
+                                                    .default = Numerator_CompoundID))
       }
       
+      if("Denominator_CompoundID" %in% names(PKparameters) == FALSE){
+         PKparameters <- PKparameters %>% 
+            left_join(expand_grid(Denominator_File = unique(PKparameters$Denominator_File), 
+                                  Denominator_CompoundID = compoundsToExtract), 
+                      by = "Denominator_File") %>% 
+            mutate(Denominator_CompoundID = case_when(is.na(Denominator_CompoundID) ~ "substrate", 
+                                                      .default = Denominator_CompoundID))
+      }
       
       # Tissue
       names(PKparameters)[
@@ -209,10 +259,21 @@ tidy_input_PK <- function(PKparameters,
                     "denominator.*tissue|tissue.*denominator")][1] <- "Denominator_Tissue"
       
       if("Numerator_Tissue" %in% names(PKparameters) == FALSE){
-         PKparameters$Numerator_Tissue <- "plasma"
+         PKparameters <- PKparameters %>% 
+            left_join(expand_grid(Numerator_File = unique(PKparameters$Numerator_File), 
+                                  Numerator_Tissue = tissues), 
+                      by = "Numerator_File") %>% 
+            mutate(Numerator_Tissue = case_when(is.na(Numerator_Tissue) ~ "plasma", 
+                                                .default = Numerator_Tissue))
       }
+      
       if("Denominator_Tissue" %in% names(PKparameters) == FALSE){
-         PKparameters$Denominator_Tissue <- "plasma"
+         PKparameters <- PKparameters %>% 
+            left_join(expand_grid(Denominator_File = unique(PKparameters$Denominator_File), 
+                                  Denominator_Tissue = tissues), 
+                      by = "Denominator_File") %>% 
+            mutate(Denominator_Tissue = case_when(is.na(Denominator_Tissue) ~ "plasma", 
+                                                  .default = Denominator_Tissue))
       }
       
       
@@ -228,6 +289,7 @@ tidy_input_PK <- function(PKparameters,
       if("Numerator_Sheet" %in% names(PKparameters) == FALSE){
          PKparameters$Numerator_Sheet <- NA
       }
+      
       if("Denominator_Sheet" %in% names(PKparameters) == FALSE){
          PKparameters$Denominator_Sheet <- NA
       }
@@ -650,7 +712,9 @@ tidy_input_PK <- function(PKparameters,
          rm(ColToUse)
       }
       
-      if("Tissue" %in% names(PKparameters) == FALSE){
+      if("File" %in% names(PKparameters) & # Just making sure this is for pk_table and not calc_PK_ratios
+         "Tissue" %in% names(PKparameters) == FALSE){
+         
          PKparameters <- PKparameters %>% 
             left_join(expand_grid(File = unique(PKparameters$File), 
                                   Tissue = tissues), 
@@ -755,10 +819,6 @@ tidy_input_PK <- function(PKparameters,
          bind_rows(FilesToExpand) %>% 
          select(-MultFiles)
    }
-   
-   # Make sure file extension is xlsx. 
-   PKparameters$File <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.db$", "", 
-                                   PKparameters$File), ".xlsx")
    
    # If user specified values for sim_data_files, then remove any others.
    if(all(complete.cases(sim_data_files))){
@@ -1014,7 +1074,8 @@ tidy_input_PK <- function(PKparameters,
    if(any(PKparameters$GoodCmpd == FALSE)){
       Problem <- PKparameters %>%
          filter(GoodCmpd == FALSE) %>% 
-         select(File, CompoundID)
+         select(File, CompoundID) %>% 
+         as.data.frame()
       
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
@@ -1150,7 +1211,9 @@ tidy_input_PK <- function(PKparameters,
       all(complete.cases(PKparameters_orig)) & FromCalcPKRatios == FALSE){
       
       Problem <- PKparameters %>% filter(Harmonious == FALSE) %>% 
-         select(PKparameter, File, Sheet, CompoundID, Tissue)
+         select(PKparameter, File, Sheet, CompoundID, Tissue) %>% 
+         as.data.frame()
+      
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
       message("Warning:\nThe following requested PK parameters do not apply to the following scenarios:\n")
@@ -1178,11 +1241,12 @@ tidy_input_PK <- function(PKparameters,
                 AllPKParameters$PKparameter_nodosenum & is.na(Sheet))
    
    if(any(PKparameters$DoseNumProblem)){
-      warning(wrapn("You have not specified which interval you want for the following PK:"), 
-              call. = FALSE)
+      message(wrapn("You have not specified which interval you want for the following PK:"))
       
       Problem <- PKparameters %>% filter(DoseNumProblem == TRUE) %>% 
-         select(File, CompoundID, Tissue, PKparameter)
+         select(File, CompoundID, Tissue, PKparameter) %>% 
+         as.data.frame()
+      
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
       message(str_c(Problem, collapse = "\n"))

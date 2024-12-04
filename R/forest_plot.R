@@ -35,11 +35,11 @@
 #'   running \code{view(PKParameterDefinitions)} and looking in the column
 #'   "PKparameter".}
 #'
-#'   \item{at least one of Mean, Median, or GeoMean (not case sensitive)}{This
+#'   \item{at least one of mean, median, or geomean (not case sensitive)}{This
 #'   column will be used for the center statistic.}
 #'
-#'   \item{at least one pair of CI_Lower and CI_Upper, Centile_Lower and
-#'   Centile_Upper, Min and Max, or at least one of GeoCV, ArithCV, or SD (not
+#'   \item{at least one pair of CI90_low and CI90_high, per5 and
+#'   per95, min and max, or at least one of GCV, CV, or SD (not
 #'   case sensitive)}{These columns will be used for the whiskers.}
 #'
 #'   \item{any column you want to facet by}{If you want to break up your graphs
@@ -129,7 +129,7 @@
 #'   these coded names, but they have to match exactly to get displayed nicely
 #'   in the final graph.}
 #'
-#'   \item{at least one column named "Mean", "GeoMean", or "Median"}{Must be
+#'   \item{at least one column named "mean", "geomean", or "median"}{Must be
 #'   specified depending on your choice for \code{mean_type}, this column will
 #'   be used for determining where to place the point. Whatever statistic you
 #'   use \strong{must} be the same for both observed and simulated data.}
@@ -139,9 +139,10 @@
 #'   according to the values in the column "Inhibitor1", make sure that
 #'   "Inhibitor1" is included in your observed PK.}
 #'
-#'   \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
-#'   "Centile_Lower", "Centile_Upper", "GCV", "ArithCV", "Min", "Max",
-#'   "Std Dev"}{these will be used for the error bars and are optional.}
+#'
+#'   \item{(optional) at least one column or set of columns named "CI90_low",
+#'   "CI90_high", "per5", "per95", "GCV", "CV", "min", "max", "SD"}{these will 
+#'   be used for the error bars and are optional.}
 #'
 #'   \item{whatever column you used for \code{facet_column_x}}{If you broke up the
 #'   main graphs into two smaller graphs along the x axis, then whatever column you used for that
@@ -164,9 +165,9 @@
 #'   in \code{forest_dataframe}. If you list the mean type as "mean", we'll
 #'   assume you want arithmetic means.
 #' @param variability_type type of variability to show as whiskers; options are
-#'   "90\% CI" (default, geometric), "95\% CI" (also geometric), "5th to 95th
-#'   percentiles", "range", "geometric CV", "arithmetic CV", or "standard
-#'   deviation" ("sd" is also ok for that last one, and it's arithmetic).
+#'   "90\% CI" (default, geometric), "5th to 95th percentiles", "range",
+#'   "geometric CV" ("geoCV" or "GCV" are fine), "arithmetic CV" ("CV" is fine), 
+#'   or "standard deviation" ("sd" is also ok for that last one, and it's arithmetic).
 #' @param y_axis_title optionally specify a vertical title to be displayed to
 #'   the left of the y axis. Example: \code{y_axis_title = "Perpetrator
 #'   co-administered with Drug X"}. Default ("none") leaves off any y-axis title.
@@ -243,7 +244,7 @@
 #'   For example, "SV-Rifampicin-MD" will become "rifampicin", and
 #'   "Sim-Midazolam" will become "midazolam". If you leave this as NA, we'll
 #'   prettify if you supply a column name for \code{y_axis_labels} and we
-#'   *won't* prettify if you supply a named character vector there.
+#'   \emph{won't} prettify if you supply a named character vector there.
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all.
@@ -285,7 +286,7 @@
 #'   \code{show_numbers_on_right = TRUE}, optionally specify what to use for the
 #'   title above those numbers. Setting this to NA (default) will result in a
 #'   title of what the numbers are, so basically the same text as the default
-#'   for the x axis, e.g., "Geometric Mean Ratio (90\% CI)". Otherwise, specify
+#'   for the x axis, e.g., "Geometric mean Ratio (90\% CI)". Otherwise, specify
 #'   what text you'd like to use. Setting this to "none" will remove the table
 #'   title.
 #' @param rel_widths specify the relative widths of the graph and the table
@@ -471,7 +472,7 @@
 #'                                    Inhibitor1 = "rifampicin",
 #'                                    PKparameter = c("AUCt_ratio_dose1",
 #'                                                    "Cmax_ratio_dose1"),
-#'                                    GeoMean = c(0.4, 0.5),
+#'                                    geomean = c(0.4, 0.5),
 #'                                    CI_Lower = c(0.35, 0.42),
 #'                                    CI_Upper = c(0.45, 0.6)))
 #'
@@ -699,19 +700,19 @@ forest_plot <- function(forest_dataframe,
    
    # Making some guesses about how user might mis-specify variability type.
    variability_type <- case_when(
-      variability_type %in% c("5th to 95th", 
+      variability_type %in% c("5th to 95th", "centiles", 
                               "percentiles") ~ "5th to 95th percentiles", 
       
-      str_detect(variability_type, "CI|conf int") &
+      str_detect(tolower(variability_type), "ci|conf int") &
          !str_detect(variability_type, "95") ~ "90% CI", 
       
-      variability_type %in% c("CV", "cv") &
+      tolower(variability_type) %in% c("cv", "gcv", "geocv", "geo cv") &
          mean_type == "geometric" ~ "geometric CV",
       
-      variability_type %in% c("CV", "cv") &
+      tolower(variability_type) == "cv" &
          mean_type == "arithmetic" ~ "arithmetic CV",
       
-      variability_type %in% c("sd", "SD") ~ "standard deviation", 
+      tolower(variability_type) == "sd" ~ "standard deviation", 
       
       .default = variability_type)
    
@@ -732,9 +733,11 @@ forest_plot <- function(forest_dataframe,
    # just make all the columns lower or upper case but I haven't coded
    # everything else like that, so not fixing that now.
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "geomean|geometric"))][1] <- "GeoMean"
+                                            "geomean|geometric"))][1] <- "Geomean"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "gcv"))][1] <- "GCV"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "^mean|arith.*mean"))][1] <- "Mean"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "^cv$"))][1] <- "ArithCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
@@ -742,24 +745,26 @@ forest_plot <- function(forest_dataframe,
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "ci(90|95)?_up(per)?|ci(90|95)?_high"))][1] <- "CI_Upper"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "centile_lower"))][1] <- "Centile_Lower"
+                                            "centile_lower|per5$"))][1] <- "Per5"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "centile_upper"))][1] <- "Centile_Upper"
+                                            "centile_upper|per95"))][1] <- "Per95"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "^pkparameter$|^pkparameters$"))][1] <- "PKparameter"
    
    names(forest_dataframe)[tolower(names(forest_dataframe)) %in% 
-                              c("file", "mean", "median", "min", "max", 
+                              c("file", "mean", "median", "min", "max", "per5", "per95", 
                                 "fold", "substrate", "inhibitor1")] <- 
       str_to_title(names(forest_dataframe)[tolower(names(forest_dataframe)) %in% 
-                                              c("file", "mean", "median", "min", "max", 
+                                              c("file", "mean", "median", "min", "max", "per5", "per95", 
                                                 "fold", "substrate", "inhibitor1")])
    
    if(ObsIncluded){
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "geomean|geometric"))] <- "GeoMean"
+                                          "geomean|geometric"))] <- "Geomean"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "gcv"))] <- "GCV"
+      names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                               "^mean|arith.*mean"))][1] <- "Mean"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "^cv$"))] <- "ArithCV"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
@@ -767,17 +772,17 @@ forest_plot <- function(forest_dataframe,
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "ci(90|95)?_upper"))] <- "CI_Upper"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "centile_lower"))] <- "Centile_Lower"
+                                          "centile_lower|per5$"))] <- "Per5"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "centile_upper"))] <- "Centile_Upper"
+                                          "centile_upper|per95"))] <- "Per95"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "pkparameter"))] <- "PKparameter"
       
       names(observed_PK)[tolower(names(observed_PK)) %in% 
-                            c("file", "mean", "median", "min", "max", 
+                            c("file", "mean", "median", "min", "max", "per5", "per95", 
                               "fold", "substrate", "inhibitor1")] <- 
          str_to_title(names(observed_PK)[tolower(names(observed_PK)) %in% 
-                                            c("file", "mean", "median", "min", "max", 
+                                            c("file", "mean", "median", "min", "max", "per5", "per95", 
                                               "fold", "substrate", "inhibitor1")])
    } else {
       # If the user supplied observed data when they extracted the PK, then the
@@ -850,7 +855,7 @@ forest_plot <- function(forest_dataframe,
             pivot_longer(cols = matches("^AUC.*ratio|Cmax.*ratio"), 
                          names_to = "PKparameter", values_to = "Value") %>% 
             mutate(Statistic = case_when(
-               Statistic == "Simulated geometric mean" ~ "GeoMean", 
+               Statistic == "Simulated geometric mean" ~ "Geomean", 
                Statistic == "Simulated" & mean_type == "geometric" ~ "Geomean", 
                Statistic == "CV%"  & mean_type == "geometric" ~ "GCV", 
                Statistic == "Simulated" & mean_type == "arithmetic" ~ "Mean", 
@@ -860,14 +865,14 @@ forest_plot <- function(forest_dataframe,
                Statistic == "90% CI" ~ "CI90", 
                
                Statistic == "Standard deviation" ~ "SD",
-               Statistic == "5th Percentile" ~ "per5", 
-               Statistic == "95th Percentile" ~ "per95", 
-               Statistic == "Minimum" ~ "min", 
-               Statistic == "Maximum" ~ "max", 
-               Statistic == "Median" ~ "median", 
+               Statistic == "5th Percentile" ~ "Per5", 
+               Statistic == "95th Percentile" ~ "Per95", 
+               Statistic == "Minimum" ~ "Min", 
+               Statistic == "Maximum" ~ "Max", 
+               Statistic == "median" ~ "Median", 
                
-               Statistic == "Observed" & mean_type == "geometric" ~ "geomean_obs", # FIXME will need to deal w/format of this later
-               Statistic == "Observed" & mean_type == "arithmetic" ~ "mean_obs",
+               Statistic == "Observed" & mean_type == "geometric" ~ "Geomean_obs", # FIXME will need to deal w/format of this later
+               Statistic == "Observed" & mean_type == "arithmetic" ~ "Mean_obs",
                # "CV_obs" = "Observed CV%",
                # "GCV_obs" = "Observed CV%",
                # "CIL_obs" = "observed CI - Lower",
@@ -894,7 +899,7 @@ forest_plot <- function(forest_dataframe,
                          names_to = "PKParam", values_to = "Value") %>% 
             separate(PKParam, into = c("PKparameter", "Statistic"), sep = "__") %>% 
             mutate(Statistic = case_match(Statistic, 
-                                          "GMR" ~ "GeoMean", 
+                                          "GMR" ~ "Geomean", 
                                           "CI90_lo"~ "CI_Lower",
                                           "CI90_hi" ~ "CI_Upper", 
                                           .default = Statistic)) %>% 
@@ -910,7 +915,7 @@ forest_plot <- function(forest_dataframe,
                                names_to = "PKParam", values_to = "Value") %>% 
                   separate(PKParam, into = c("PKparameter", "Statistic"), sep = "__") %>% 
                   mutate(Statistic = case_match(Statistic, 
-                                                "GMR" ~ "GeoMean", 
+                                                "GMR" ~ "Geomean", 
                                                 "CI90_lo"~ "CI_Lower",
                                                 "CI90_hi" ~ "CI_Upper", 
                                                 .default = Statistic)) %>% 
@@ -924,13 +929,17 @@ forest_plot <- function(forest_dataframe,
       # If any of the column names had older stat names, fix that.
       observed_PK <- observed_PK %>% 
          rename_with(.fn = ~ gsub("CI90_lo|CI90_Lower|CI90_lower", "CI_Lower", .x)) %>% 
-         rename_with(.fn = ~ gsub("CI90_hi|CI90_Upper|CI90_upper", "CI_Upper", .x))
+         rename_with(.fn = ~ gsub("CI90_hi|CI90_Upper|CI90_upper", "CI_Upper", .x)) %>% 
+         rename_with(.fn = ~ gsub("Centile_Upper", "Per95", .x)) %>% 
+         rename_with(.fn = ~ gsub("Centile_Lower", "Per5", .x))
    }
    
    # If any of the column names had older stat names, fix that.
    forest_dataframe <- forest_dataframe %>% 
       rename_with(.fn = ~ gsub("CI90_lo|CI90_Lower|CI90_lower", "CI_Lower", .x)) %>% 
-      rename_with(.fn = ~ gsub("CI90_hi|CI90_Upper|CI90_upper", "CI_Upper", .x))
+      rename_with(.fn = ~ gsub("CI90_hi|CI90_Upper|CI90_upper", "CI_Upper", .x)) %>% 
+      rename_with(.fn = ~ gsub("Centile_Upper", "Per95", .x)) %>% 
+      rename_with(.fn = ~ gsub("Centile_Lower", "Per5", .x))
    
    if(all(c("File", "PKparameter") %in% names(forest_dataframe) == FALSE)){
       stop(paste0("There must be a column titled `File` in what you supply for forest_dataframe, and there also must be some PK data. We can't find that in your input. For an example of acceptable data, please run\n", 
@@ -1027,19 +1036,21 @@ forest_plot <- function(forest_dataframe,
    
    # Checking that the stats requested are available
    FDnames <- factor(names(forest_dataframe), 
-                     levels = c("GeoMean", "Mean", "Median", 
+                     levels = c("Geomean", "Mean", "Median", 
                                 "CI_Lower", "CI_Upper", 
-                                "Centile_Lower","Centile_Upper", 
+                                "Per5","Per95", 
                                 "Min", "Max", "SD", "GCV", "ArithCV"))
    FDnames <- sort(FDnames)
    CenterStat <- as.character(
       FDnames[which(FDnames %in% switch(mean_type, 
-                                        "geometric" = "GeoMean", 
+                                        "geometric" = "Geomean", 
                                         "mean" = "Mean",
                                         "arithmetic" = "Mean", 
                                         "median" = "Median"))])
    if(length(CenterStat) == 0){
-      CenterStat <- FDnames[which(FDnames %in% c("GeoMean", "Mean", "Median"))][1]
+      CenterStat <- 
+         FDnames[which(FDnames %in% c("Geomean", "Mean", "Median"))][1] %>% 
+         as.character()
       
       if(length(CenterStat) == 0){
          stop("You must have geometric mean, arithmetic mean, or median data included in forest_dataframe to be able to make a forest plot.",
@@ -1047,7 +1058,11 @@ forest_plot <- function(forest_dataframe,
       } else {
          warning(wrapn(paste0("You requested a mean_type of ", 
                               mean_type, ", but that was not available in your data. Instead, ", 
-                              CenterStat, " will be used.")), 
+                              case_match(CenterStat, 
+                                         "Geomean" ~ "geometric means", 
+                                         "Mean" ~ "arithmetic means", 
+                                         "Median" ~ "medians"), 
+                              " will be used.")), 
                  call. = FALSE)
       }
    }
@@ -1057,7 +1072,7 @@ forest_plot <- function(forest_dataframe,
          variability_type, 
          "90% CI" = c("CI_Lower", "CI_Upper"), 
          "95% CI" = c("CI_Lower", "CI_Upper"), 
-         "5th to 95th percentiles" = c("Centile_Lower", "Centile_Upper"), 
+         "5th to 95th percentiles" = c("Per5", "Per95"), 
          "range" = c("Min", "Max"), 
          "arithmetic CV" = "ArithCV", 
          "geometric CV" = "GCV", 
@@ -1069,7 +1084,7 @@ forest_plot <- function(forest_dataframe,
    if(length(VarStat) == 0){
       VarStat <- FDnames[which(FDnames %in% c("CI_Lower", "CI_Upper", 
                                               "CI_Lower", "CI_Upper", 
-                                              "Centile_Lower","Centile_Upper", 
+                                              "Per5","Per95", 
                                               "Min", "Max", "SD", "GCV", "ArithCV"))][1]
       
       if(length(VarStat) == 0){
@@ -1080,7 +1095,7 @@ forest_plot <- function(forest_dataframe,
                               variability_type, ", but that was not available in your data. Instead, ", 
                               switch(VarStat[1], 
                                      "CI_Lower" = "the geometric X% confidence interval", 
-                                     "Centile_Lower" = "Xth to Yth percentiles",
+                                     "Per5" = "5th to 95th percentiles",
                                      "range" = "the range",
                                      "ArithCV" = "the arithmetic CV",
                                      "GCV" = "the geometric CV",
@@ -1093,13 +1108,13 @@ forest_plot <- function(forest_dataframe,
    
    if(any(VarStat %in% c("GCV"))){
       forest_dataframe <- forest_dataframe %>% 
-         mutate(GeoCV_Lower = GeoMean + GeoMean * GCV, 
-                GeoCV_Upper = GeoMean - GeoMean * GCV)
+         mutate(GeoCV_Lower = Geomean + Geomean * GCV, 
+                GeoCV_Upper = Geomean - Geomean * GCV)
       
       if(ObsIncluded){
          observed_PK <- observed_PK %>% 
-            mutate(GeoCV_Lower = GeoMean + GeoMean * GCV, 
-                   GeoCV_Upper = GeoMean - GeoMean * GCV)
+            mutate(GeoCV_Lower = Geomean + Geomean * GCV, 
+                   GeoCV_Upper = Geomean - Geomean * GCV)
       }
       
       VarStat <- c("GeoCV_Lower", "GeoCV_Upper")
@@ -1140,10 +1155,10 @@ forest_plot <- function(forest_dataframe,
          mutate(SimOrObs = "observed") 
       
       CenterStat_obs <- names(observed_PK)[
-         which(names(observed_PK) %in% c("GeoMean", "Mean", "Median"))]
+         which(names(observed_PK) %in% c("Geomean", "Mean", "Median"))]
       VarStat_obs <- names(observed_PK)[
          which(names(observed_PK) %in% c("CI_Lower", "CI_Lower", "SD_Lower",
-                                         "Centile_Lower", "Min"))]
+                                         "Per5", "Min"))]
       
       if(any(CenterStat_obs %in% CenterStat) == FALSE){
          warning("You have different statistics in your simulated and observed data, so we cannot compare them. We are dropping the observed data for now. Please check your input.", 
@@ -1306,7 +1321,7 @@ forest_plot <- function(forest_dataframe,
       ExtrapProbs <- forest_dataframe %>% 
          filter(PKparameter %in% c("AUCinf_ratio_dose1", 
                                    "AUCinf_ratio") & 
-                   is.na(GeoMean))
+                   is.na(Geomean))
       if(nrow(ExtrapProbs) > 0){
          ProbID <- ExtrapProbs$ID
       } else {
@@ -1333,6 +1348,7 @@ forest_plot <- function(forest_dataframe,
                                      "AUCinf_ratio"))
       
       forest_dataframe <- forest_dataframe %>% 
+         filter(!ID %in% ProbID) %>% 
          bind_rows(AUCt_swap)
       
       if(all(is.na(PKparameters))){
@@ -1359,7 +1375,9 @@ forest_plot <- function(forest_dataframe,
    forest_dataframe <- forest_dataframe %>% 
       select(File, YCol, PKparameter, SimOrObs, 
              any_of(c(as_label(facet_column_x), 
-                      CenterStat, VarStat, as_label(point_color_column), 
+                      CenterStat, 
+                      VarStat, 
+                      as_label(point_color_column), 
                       "Tissue")))
    
    if(any(complete.cases(PKparameters)) &&
@@ -1680,13 +1698,13 @@ forest_plot <- function(forest_dataframe,
    
    # Figuring out what x axis title should be
    XTitle <- paste(switch(CenterStat, 
-                          "GeoMean" = "Geometric Mean Ratio", 
+                          "Geomean" = "Geometric Mean Ratio", 
                           "Mean" = "Arithmetic Mean Ratio", 
                           "Median" = "Ratio of Medians"), 
                    switch(VarStat[1], 
                           "CI_Lower" = "(90% Confidence Interval)", 
                           "CI_Lower" = "(95% Confidence Interval)", 
-                          "Centile_Lower" = "(5th to 95th Percentiles)", 
+                          "Per5" = "(5th to 95th Percentiles)", 
                           "Min" = "(Range)",
                           "SD_Lower" = "(Standard Deviation)", 
                           "GeoCV_Lower" = "(Geometric CV)",

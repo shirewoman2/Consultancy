@@ -332,9 +332,6 @@ trial_means_plot <- function(sim_data_file,
                        returnExpDetails = TRUE)
    
    PK_long <- PKdata$individual %>% 
-      pivot_longer(cols = -c(Individual, Trial), 
-                   names_to = "PKparameter", 
-                   values_to = "Value") %>% 
       filter(PKparameter == {{PKparameter}}) %>% 
       group_by(Trial) %>% 
       summarize(Mean = mean(Value, na.rm = T), 
@@ -539,41 +536,43 @@ trial_means_plot <- function(sim_data_file,
       
       # Simulator does not output arithmetic CIs, so need to add those here.
       CI90_arith <- confInt(PKdata$individual %>% 
-                               pull({{PKparameter}}),
+                               filter(Parameter == {{PKparameter}}) %>% 
+                               pull(Value),
                             CI = 0.9, 
                             distribution_type = "t")
       
-      AggStats <- c(AggStats, CI90_arith_low = CI90_arith[[1]], 
-                    CI90_arith_high = CI90_arith[[2]])
+      AggStats <- c(AggStats, 
+                    CI90_lower_arith = CI90_arith[[1]], 
+                    CI90_upper_arith = CI90_arith[[2]])
       
       G <- G + 
          geom_hline(yintercept = 
                        case_match(mean_type, 
-                                  "arithmetic" ~ AggStats["mean"], 
-                                  "geometric" ~ AggStats["geomean"], 
-                                  "median" ~ AggStats["median"]), 
+                                  "arithmetic" ~ AggStats["Mean"], 
+                                  "geometric" ~ AggStats["Geomean"], 
+                                  "median" ~ AggStats["Median"]), 
                     color = LineAES[1], 
                     linetype = LineAES[2], 
                     linewidth = as.numeric(LineAES[4])) +
          geom_hline(yintercept = 
                        case_when(
                           mean_type == "arithmetic" & 
-                             variability_type ==  "SD" ~ AggStats["mean"] + AggStats["SD"], 
+                             variability_type ==  "SD" ~ AggStats["Mean"] + AggStats["SD"], 
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "CV" ~ AggStats["mean"] + AggStats["SD"], 
+                             variability_type ==  "CV" ~ AggStats["Mean"] + AggStats["SD"], 
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "90% CI" ~ AggStats["CI90_arith_high"], 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_upper_arith"], 
                           
                           mean_type == "geometric" & 
-                             variability_type ==  "GCV" ~ AggStats["geomean"] + 
-                             AggStats["geomean"] * AggStats["GCV"], 
+                             variability_type ==  "GCV" ~ AggStats["Geomean"] + 
+                             AggStats["Geomean"] * AggStats["GCV"], 
                           
                           mean_type == "geometric" & 
-                             variability_type ==  "90% CI" ~ AggStats["CI90_high"], 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_upper"], 
                           
-                          variability_type == "RANGE" ~ AggStats["max"]), 
+                          variability_type == "RANGE" ~ AggStats["Maximum"]), 
                     
                     color = LineAES[1], 
                     linetype = LineAES[3], 
@@ -581,22 +580,22 @@ trial_means_plot <- function(sim_data_file,
          geom_hline(yintercept = 
                        case_when(
                           mean_type == "arithmetic" & 
-                             variability_type ==  "SD" ~ AggStats["mean"] - AggStats["SD"], 
+                             variability_type ==  "SD" ~ AggStats["Mean"] - AggStats["SD"], 
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "CV" ~ AggStats["mean"] - AggStats["SD"], 
+                             variability_type ==  "CV" ~ AggStats["Mean"] - AggStats["SD"], 
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "90% CI" ~ AggStats["CI90_arith_low"], 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_lower_arith"], 
                           
                           mean_type == "geometric" & 
-                             variability_type ==  "GCV" ~ AggStats["geomean"] - 
-                             AggStats["geomean"] * AggStats["GCV"], 
+                             variability_type ==  "GCV" ~ AggStats["Geomean"] - 
+                             AggStats["Geomean"] * AggStats["GCV"], 
                           
                           mean_type == "geometric" & 
-                             variability_type ==  "90% CI" ~ AggStats["CI90_low"], 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_lower"], 
                           
-                          variability_type == "RANGE" ~ AggStats["min"]), 
+                          variability_type == "RANGE" ~ AggStats["Minimum"]), 
                     
                     color = LineAES[1], 
                     linetype = LineAES[3], 
@@ -709,6 +708,7 @@ trial_means_plot <- function(sim_data_file,
    return(Out)
    
 }
+
 
 
 

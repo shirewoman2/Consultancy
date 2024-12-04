@@ -718,21 +718,46 @@ so_graph <- function(PKtable,
                                 "Simulated", Statistic))
    
    names(SO) <- PKCols$PKparameter
-   
-   # Removing additional columns since they mess up pivoting.
-   SO <- SO %>% 
       select(Statistic, File, any_of(c(PKparameters, 
                                        as_label(point_color_column), 
                                        as_label(point_shape_column))))
    
+   # Removing additional columns since they mess up pivoting.
+   SO <- SO %>% 
+      select(Statistic, File,
+             any_of(c(PKparameters, "CompoundID", "Tissue", "Sheet", 
+                      as_label(point_color_column), 
+                      as_label(point_shape_column))))%>% 
+      unique() %>% 
+      mutate(across(.cols = PKparameters, .fns = as.numeric)) %>% 
+      pivot_longer(names_to = "PKparameter", 
+                   values_to = "Value", 
+                   cols = PKparameters) %>% 
+      filter(complete.cases(Value))
+   
+   # A bit more error catching now that everything is tidy
+   if("CompoundID" %in% names(SO) && length(unique(SO$CompoundID)) > 1){
+      warning(paste0(wrapn("You have more than one compound ID present in your PK data, so making a single set of simulated-vs-observed graphs for all of them might not be advisable. Specifically you have the following compounds present in your PK data:"), 
+                     str_c(sort(unique(SO$CompoundID)), collapse = "\n"), "\n"), 
+              call. = FALSE)
+   }
+
+   DupCheck <- SO %>% select(any_of(
+      c("File", "CompoundID", "Tissue", "Sheet", "Statistic", "PKparameter")))
+   DupCheck <- DupCheck[which(duplicated(DupCheck)), ] %>% as.data.frame()
+      
+   if(nrow(DupCheck) > 0){
+      message(wrapn("You have some duplicates present in your data, which makes it unclear which simulated value matches which observed. Specifically, here are the places where you have more than one value for the same thing:"))
+      Problem <- capture.output(print(DupCheck, row.names = FALSE))
+      message(str_c(Problem, collapse = "\n"))
+      
+      stop("We're sorry, but we cannot make your graphs as long as these duplicates are present.", 
+           call. = FALSE)
+      
+   }
+   
    suppressWarnings(
       SO <- SO %>% 
-         unique() %>% 
-         mutate(across(.cols = PKparameters, .fns = as.numeric)) %>% 
-         pivot_longer(names_to = "PKparameter", 
-                      values_to = "Value", 
-                      cols = PKparameters) %>% 
-         filter(complete.cases(Value)) %>% 
          pivot_wider(names_from = Statistic, values_from = Value) %>% 
          filter(complete.cases(Observed) & PKparameter %in% {{PKparameters}})
    )

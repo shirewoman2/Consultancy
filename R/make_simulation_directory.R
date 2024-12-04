@@ -1,12 +1,20 @@
 #' Make a directory of simulations indicating which simulation file is located
 #' in which folder
 #'
+#' @description \code{make_simulation_directory} will create a data.frame of
+#' simulations in a given project folder and, optionally, save that data.frame
+#' to an Excel file. It will also perform a few checks such as checking whether
+#' the file names comply with USFDA and Consultancy Team standards. 
+#' 
+#' This is wicked fast. 
+#'
+#'
 #' @param project_folder location of the project folder to search. Please note
 #'   that R requires forward slashes ("/") in file paths rather than the back
 #'   slashes Microsoft uses. If left as NA (default), we'll assume your current
 #'   working directory is the top level of your project folders. This function
-#'   \emph{only} searches for simulation files in the project folder and
-#'   any subfolders. 
+#'   \emph{only} searches for simulation files in the project folder and any
+#'   subfolders.
 #' @param which_files which files to include in the directory of simulations.
 #'   Options are:
 #'   \describe{\item{NA}{all xlsx or wksz files in the current folder and any
@@ -24,8 +32,16 @@
 #' @param existing_exp_details the output from running
 #'   \code{\link{extractExpDetails_mult}}; only applicable when
 #'   \code{which_files = "use existing_exp_details"}
-#' @param save_output optionally specify either an Excel or csv file name for
+#' @param save_table optionally specify either an Excel or csv file name for
 #'   saving your simulation directory
+#' @param relative_paths TRUE (default) or FALSE for whether to put relative
+#'   (rather than full) paths in the table. This means "relative to your current
+#'   working directory", so it matters what folder you'r in when you call this
+#'   function.
+#' @param recursive TRUE (default) or FALSE for whether to recursively check for
+#'   simulation files in subfolders
+#' @param wrap_text TRUE or FALSE (default) for whether to wrap text in the
+#'   Excel output
 #'
 #' @return a data.frame of simulation files and their respective file paths
 #' @export
@@ -34,9 +50,12 @@
 #' # none yet
 #' 
 make_simulation_directory <- function(project_folder = NA, 
+                                      recursive = TRUE, 
                                       which_files = NA, 
                                       existing_exp_details = NA, 
-                                      save_output = NA){
+                                      relative_paths = TRUE, 
+                                      save_table = NA, 
+                                      wrap_text = FALSE){
    
    # Error catching ----------------------------------------------------------
    
@@ -61,7 +80,7 @@ make_simulation_directory <- function(project_folder = NA,
       if(is.na(which_files)){
          
          which_files <- list.files(path = project_folder, 
-                                   recursive = TRUE)
+                                   recursive = recursive)
          
       } else if(which_files == "use existing_exp_details"){
          
@@ -72,7 +91,7 @@ make_simulation_directory <- function(project_folder = NA,
          
          which_files <- list.files(path = project_folder, 
                                    pattern = which_files, 
-                                   recursive = TRUE)
+                                   recursive = recursive)
       }
    } else {
       # If length(which_files) > 1, then they have supplied a character vector
@@ -81,17 +100,60 @@ make_simulation_directory <- function(project_folder = NA,
       
    } 
    
+   # Checking for other file extensions
+   which_files_wksz <- sub("\\.xlsx|\\.db|\\.wksz", ".wksz", which_files)
+   which_files_wksz <- which_files_wksz[file.exists(which_files_wksz)]
+   
+   which_files_xlsx <- sub("\\.xlsx|\\.db|\\.wksz", ".xlsx", which_files)
+   which_files_xlsx <- which_files_xlsx[file.exists(which_files_xlsx)]
+   
+   which_files_db <- sub("\\.xlsx|\\.db|\\.wksz", ".db", which_files)
+   which_files_db <- which_files_db[file.exists(which_files_db)]
+   
+   which_files <- sort(unique(c(which_files_wksz, which_files_xlsx, 
+                                which_files_db)))
+   
    which_files <- unique(which_files[!str_detect(which_files, "^~")])
    
+   if(length(which_files) == 0){
+      stop(wrapn("There are no files that match what the pattern of text you supplied for 'which_files', so we cannot make your simulation diratory."), 
+           call. = FALSE)
+   }
+   
    Directory <- data.frame(File = which_files, 
-                           Path = as.character(NA))
+                           Folder = as.character(NA)) %>% 
+      # Only keeping xlsx, db, and wksz files
+      filter(str_detect(File, "xlsx$|db$|wksz$"))
+   
+   # Checking for file name issues
+   Directory <- Directory %>% 
+      mutate(FileNameCheck = check_file_name(basename(File)), 
+             DuplicateFileCheck = as.character(NA))
+   BadFileNames <- Directory %>% 
+      filter(!FileNameCheck == "File name meets naming standards.")
+   
+   if(nrow(BadFileNames)> 0){
+      BadFileNames <- BadFileNames %>% 
+         mutate(Bad = paste0(File, ": ", FileNameCheck)) %>% 
+         pull(Bad)
+      
+      warning(paste0("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+                     str_c(paste0("     ", BadFileNames), collapse = "\n"), "\n"),
+              call. = FALSE)
+   }
+   
+   if(nrow(Directory) == 0){
+      stop(wrapn("No simulation files were found in the directory provided. We cannot make your simulation directory."), 
+           call. = FALSE)
+   }
    
    FoundFiles <- tibble(
       FoundFile = list.files(path = project_folder, 
-                             recursive = TRUE, 
+                             pattern = "xlsx$|db$|wksz$", 
+                             recursive = recursive, 
                              full.names = TRUE)) %>% 
-      mutate(Path = dirname(FoundFile), 
-             Path = ifelse(Path == ".", getwd(), Path), 
+      mutate(Folder = dirname(FoundFile), 
+             Folder = ifelse(Folder == ".", getwd(), Folder), 
              File = basename(FoundFile))
    
    for(i in 1:nrow(Directory)){
@@ -101,60 +163,104 @@ make_simulation_directory <- function(project_folder = NA,
          filter(CheckName == TRUE) %>% select(-CheckName) %>% unique()
       
       if(nrow(temp) > 1){
-         warning(paste0("The simulation file `", 
-                        Directory$File[i], 
-                        "` was found in more than one location."), 
-                 call. = FALSE)
+         Directory$DuplicateFileCheck[i] <- "simulation file in multiple locations"
+      } else {
+         Directory$DuplicateFileCheck[i] <- ""
       }
       
-      Directory$Path[i] <- str_comma(temp$Path)
+      Directory$Folder[i] <- str_comma(temp$Folder)
       
    }
    
-   Directory$Path[Directory$Path == ""] <- "FILE NOT FOUND"
+   Directory <- Directory %>% 
+      mutate(Folder = case_when(Folder == "" ~ "FILE NOT FOUND", 
+                                .default = Folder))
+   
+   if(relative_paths){
+      Directory$Folder <- R.utils::getRelativePath(Directory$Folder)
+   }
+   
+   # Formatting per FDA/Consultancy Team requirements
+   Directory <- Directory %>% 
+      mutate(Filename = sub("\\..*$", "", basename(File)), 
+             Filetype = str_extract(File, "xlsx$|db$|wksz$")) %>% 
+      select(Filename, Filetype, Folder, FileNameCheck, DuplicateFileCheck) %>% 
+      unique() %>% 
+      group_by(Filename, Folder, FileNameCheck, DuplicateFileCheck) %>% 
+      summarize(Filetype = str_c(Filetype, collapse = ", ")) %>% 
+      ungroup() %>% 
+      select(Filename, Filetype, Folder, FileNameCheck, DuplicateFileCheck) %>% 
+      mutate(`Table/Figure` = "", 
+             Comments = "", 
+             Folder = case_when(Folder == "." ~ "", 
+                                .default = Folder))
+   
+   if(any(Directory$FileNameCheck != "File name meets naming standards.")){
+      Directory <- Directory %>% 
+         mutate(FileNameCheck = case_when(
+            FileNameCheck == "File name meets naming standards." ~ "", 
+            .default = FileNameCheck))
+   } else {
+      Directory <- Directory %>% select(-FileNameCheck)
+   }
+   
+   if(any(Directory$DuplicateFileCheck == "simulation file in multiple locations") == FALSE){
+      Directory <- Directory %>% select(-DuplicateFileCheck)
+   }
+   
+   # Setting column order 
+   Directory <- Directory %>% 
+      select(any_of(c("Filename", "Filetype", "Folder", "Table/Figure",
+                      "Comments", "FileNameCheck", "DuplicateFileCheck")))
+   
    
    # Saving -----------------------------------------------------------------
    
-   if(complete.cases(save_output)){
+   if(complete.cases(save_table)){
       
-      # Checking whether they have specified just "xlsx" or just "csv" for
-      # output b/c then, we'll use "Simulation directory" as file name.
-      if(str_detect(sub("\\.", "", save_output), "^xlsx$|^csv$")){
-         OutPath <- "."
-         save_output <- paste0("Simulation directory.", sub("\\.", "", save_output))
+      if(str_detect(save_table, "csv$")){
+         write.csv(Directory, file = save_table, row.names = FALSE)
       } else {
-         # If they supplied something other than just "xlsx" or just "csv",
-         # then check whether that file name is formatted appropriately.
-         if(str_detect(basename(save_output), "\\..*")){
-            if(str_detect(basename(save_output), "\\.xlsx") == FALSE){
-               # If they specified a file extension that wasn't xlsx, make that
-               # file extension be .csv
-               save_output <- sub("\\..*", ".csv", save_output)
-            }
-         } else {
-            # If they didn't specify a file extension at all, make it .csv. 
-            save_output <- paste0(save_output, ".csv")
-         }
          
-         # Now that the file should have an appropriate extension, check what
-         # the path and basename should be.
-         OutPath <- dirname(save_output)
-         save_output <- basename(save_output)
-      }
-      
-      if(str_detect(save_output, "\\.csv")){
-         write.csv(Directory, save_output, row.names = FALSE)
-      } else {
-         formatXL_head(Directory, save_output, sheet = "simulation directory")
+         Highlighting <- list()
+         
+         if("FileNameCheck" %in% names(Directory)){
+            Highlighting[["FileNameCheck"]] <- 
+               list("rows" = which(Directory$FileNameCheck != ""), 
+                    "columns" = which(names(Directory) == "FileNameCheck"))
+         } 
+         
+         if(any(Directory$Folder == "FILE NOT FOUND")){
+            Highlighting[["Folder"]] <- 
+               list("rows" = which(Directory$Folder == "FILE NOT FOUND"), 
+                    "columns" = which(names(Directory) == "Folder"))
+         } 
+         
+         if("DuplicateFileCheck" %in% names(Directory)){
+            Highlighting[["DuplicateFileCheck"]] <- 
+               list("rows" = which(Directory$DuplicateFileCheck != ""), 
+                    "columns" = which(names(Directory) == "DuplicateFileCheck"))
+            
+            warning(paste0(wrapn("The following simulation files were found in multiple locations: "), 
+                           str_c(Directory$File[which(Directory$DuplicateFileCheck != "")], 
+                                 collapse = "\n")), 
+                    call. = FALSE)
+         } 
+         
+         Highlighting <- Highlighting[which(lapply(Highlighting, length) > 0)]
+         
+         save_table_to_Excel(table = Directory, 
+                             save_table = save_table, 
+                             output_tab_name = "Simulation directory", 
+                             center_top_row = FALSE, 
+                             highlight_cells = list("yellow" = Highlighting), 
+                             wrap_text = wrap_text)
       }
    }
-   
    
    return(Directory)
    
 }
-
-
 
 
 

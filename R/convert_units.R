@@ -136,14 +136,22 @@ convert_conc_units <- function(DF_to_convert,
    }
    
    if("Conc_units" %in% names(DF_to_convert) == FALSE){
-      stop("The function `convert_conc_units` requires that DF_to_convert have a column titled `Conc_units`, and your data.frame does not. We cannot convert the concentration units here.", 
-           call. = FALSE)
+      warning(wrapn("The function `convert_conc_units` requires that DF_to_convert have a column titled `Conc_units`, and your data.frame does not. We cannot convert the concentration units here."), 
+              call. = FALSE)
+      return(DF_to_convert)
+   }
+   
+   if(nrow(DF_to_convert) == 0){
+      warning(wrapn("The data.frame you supplied to convert units on doesn't have any rows."), 
+              call. = FALSE)
+      return(DF_to_convert)
    }
    
    if(complete.cases(MW[1]) && is.null(names(MW))){
       if(length(MW) > 1){
-         stop("You have supplied more than one molecular weight but not specified which compound belongs to each. Please supply a named numeric vector that indicates which compound ID belongs to which weight. Please see the help file for an example.", 
-              call. = FALSE)
+         warning(wrapn("You have supplied more than one molecular weight but not specified which compound belongs to each. Please supply a named numeric vector that indicates which compound ID belongs to which weight. Please see the help file for an example."), 
+                 call. = FALSE)
+         return(DF_to_convert)
       } 
       
       names(MW) <- unique(DF_to_convert$CompoundID)
@@ -152,13 +160,15 @@ convert_conc_units <- function(DF_to_convert,
              c("substrate", "inhibitor 1", "primary metabolite 1", 
                "primary metabolite 2", "inhibitor 2", "inhibitor 1 metabolite", 
                "secondary metabolite") == FALSE)){
-         stop("The names you have supplied for which molecular weight is which are not among the acceptable options for compound ID. Please see the help file for the acceptable names and an example.", 
-              call. = FALSE)
+         warning(wrapn("The names you have supplied for which molecular weight is which are not among the acceptable options for compound ID. Please see the help file for the acceptable names and an example."), 
+                 call. = FALSE)
+         return(DF_to_convert)
       }
       
       if(all(names(MW) %in% unique(DF_to_convert$CompoundID)) == FALSE){
-         stop("The names you have supplied for which molecular weight is which are not among the compound IDs present in your data. Please check the names and try again.", 
-              call. = FALSE)
+         warning(wrapn("The names you have supplied for which molecular weight is which are not among the compound IDs present in your data. Please check the names and try again."), 
+                 call. = FALSE)
+         return(DF_to_convert)
       }
    }
    
@@ -235,7 +245,7 @@ convert_conc_units <- function(DF_to_convert,
       
       if(all(is.na(MW))){
          warning(wrapn("You requested that we convert your concentration units, but, since you haven't provided us anything for 'existing_exp_details', so we don't know what the molecular weights are and thus cannot perform this conversion."), 
-                       call. = FALSE)
+                 call. = FALSE)
          
          return(DF_to_convert)
       }

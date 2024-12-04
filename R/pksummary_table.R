@@ -550,10 +550,19 @@ pksummary_table <- function(sim_data_file = NA,
    # Make sure that input to variability_format is ok
    if(variability_format %in% c("to", "hyphen", "brackets", "parentheses") == FALSE){
       warning("The input for variability_format is not among the acceptable options, which are `to`, `hyphen`, `brackets` for square brackets, or `parentheses` for the eponymous symbol if you're an American and a bracket if you're British. We'll use the default of `to`.\n", 
-              call. = FALSE)
       variability_format <- "to"
    }
    
+   # Checking mean type syntax
+   if(complete.cases(mean_type)){
+      if(mean_type %in% c("geometric", "arithmetic", 
+                          "arithmetic for most, geometric for ratios") == FALSE){
+         if(mean_type == "mean"){
+            warning("Technically, the input for mean_type should be `geometric` (default), `arithmetic`, or `arithmetic for most, geometric for ratios`. You specified a mean type of `mean`, so we think you want arithmetic means. If that's incorrect, please set mean_type to `geometric`.\n", 
+                    call. = FALSE)
+      variability_format <- "to"
+         }
+         
    # Checking mean type syntax
    if(complete.cases(mean_type)){
       if(mean_type %in% c("geometric", "arithmetic", 
@@ -1529,16 +1538,16 @@ pksummary_table <- function(sim_data_file = NA,
             # don't show up together, so we shouldn't have duplicated column
             # names after pivoting wider.
             mutate(Stat = case_match(Stat, 
-                                     "Geometric Mean" ~ "GeoMean",
+                                     "Geometric Mean" ~ "geomean",
                                      "CI90_low" ~ "CI_Lower", 
                                      "CI90_high" ~ "CI_Upper",
                                      "per5" ~ "Centile_Lower", 
                                      "per95" ~ "Centile_Upper",
-                                     "geomean" ~ "GeoMean",
-                                     "mean" ~ "Mean", 
-                                     "Mean" ~ "Mean", 
-                                     "Median" ~ "Median",
-                                     "median" ~ "Median", 
+                                     "geomean" ~ "geomean",
+                                     "mean" ~ "mean", 
+                                     "Mean" ~ "mean", 
+                                     "Median" ~ "median",
+                                     "median" ~ "median", 
                                      "90% confidence interval around the geometric mean(lower limit)" ~ "CI_Lower", 
                                      "90% confidence interval around the geometric mean(upper limit)" ~ "CI_Upper", 
                                      "95% confidence interval around the geometric mean(lower limit)" ~ "CI_Lower",
@@ -1740,7 +1749,7 @@ pksummary_table <- function(sim_data_file = NA,
                   "per95concat" = "5th to 95th Percentile",
                   "min" = "Minimum", 
                   "max" = "Maximum",
-                  "median" = "Median",
+                  "median" = "median",
                   "Rangeconcat" = "Range",
                   # "geomean_obs" = "Observed",
                   # "CV_obs" = "CV%",

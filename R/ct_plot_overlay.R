@@ -1534,15 +1534,29 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # Checking whether small intestine and colon abundances are identical. 
    if(EnzPlot){
-      Check <- sim_dataframe %>% 
-         pivot_wider(names_from = Tissue, values_from = Conc)
+      suppressWarnings(
+         Check <- sim_dataframe %>% 
+            pivot_wider(names_from = Tissue, values_from = Conc)
+      )
+      
+      if(class(Check$colon) == "list"){
+         warning(paste0(wrapn("You have some replicates in your data, which can cause some unexpected effects or make the enz_plot_overlay function break. Here are two things you can do to fix this:"), 
+                        "   1. Add this when you call on enz_plot_overlay:\n        assume_unique = FALSE\n      This will make graphing run more slowly, though. Please see the help file.\n", 
+                        "\n   2. Before running enz_plot_overlay, run this to permanently fix this problem:\n", 
+                        "        MyData <- unique(MyData)\n"), 
+                 call. = FALSE)
+         
+         Check <- sim_dataframe %>% unique() %>% 
+            pivot_wider(names_from = Tissue, values_from = Conc)
+         
+      }
       
       if(all(c("colon", "small intestine") %in% names(Check)) &&
          all(Check$colon == Check$`small intestine`, na.rm = TRUE)){
-         warning("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. ", 
-                 "If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame: 
-                    MyEnzData <- MyEnzData %>% mutate(Tissue2 = Tissue)
-                    enz_plot_overlay(sim_enz_dataframe = MyEnzData, colorBy_column = Tissue2, ...)\nReplace `colorBy_column` with whatever argument you want with ct_plot_overlay and replace the `...` with whatever other arguments you had.\n",
+         warning(paste0(wrapn("The enzyme abundances for colon and small intestine are identical in your data and thus would result in a plot where they perfectly overlap. We're going to combine them into one and show them together in your graph. If you would like to avoid this behavior, try the following code, where `MyEnzData` is your input data.frame:"),
+                        "\n    MyEnzData <- MyEnzData %>% mutate(Tissue2 = Tissue)\n    enz_plot_overlay(sim_enz_dataframe = MyEnzData, colorBy_column = Tissue2, ...)",
+                        "\n\n", 
+                        wrapn("Replace the ellipsis with whatever other arguments you had.")),
                  call. = FALSE)
          
          sim_dataframe <- sim_dataframe %>% filter(Tissue != "colon") %>% 
@@ -1589,7 +1603,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
    # aesthetically pleasing.
    if(as_label(colorBy_column) != "<empty>" &&
-      UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
+      UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) == 2 &
       color_set[1] == "default"){
       color_set <- "Brewer set 1"
    }
@@ -2344,6 +2358,64 @@ ct_plot_overlay <- function(ct_dataframe,
              floating_facet_scale_used = {{floating_facet_scale}}) %>%
       filter(facet_ncol_or_facet_nrow == facet_ncol_or_facet_nrow_used & 
                 floating_facet_scale == floating_facet_scale_used)
+   
+   if(FacetOptions$WrapOrGrid == "facet_grid"){
+      # This is when we want facet_grid. 
+      
+      # Setting up theme for facet titles
+      FacetTitleTheme_XY <- ggh4x::strip_nested(
+         text_x = ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_x = TRUE, 
+         
+         text_y = ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_y = TRUE)
+      
+      FacetTitleTheme_Y <- ggh4x::strip_nested(
+         text_x = ggh4x::elem_list_text(face = "plain", 
+                                        size = calc_element("strip.text.x", theme_consultancy())$size), 
+         by_layer_x = TRUE, 
+         
+         text_y = ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                        size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                 calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_y = TRUE)
+      
+      FacetTitleTheme_X <- ggh4x::strip_nested(
+         text_x =             ggh4x::elem_list_text(face = c("bold", "plain"), 
+                                                    size = c(1.25 * calc_element("strip.text.x", theme_consultancy())$size,
+                                                             calc_element("strip.text.x", theme_consultancy())$size)), 
+         by_layer_x = TRUE, 
+         
+         text_y = ggh4x::elem_list_text(face = "plain", 
+                                        size = calc_element("strip.text.x", theme_consultancy())$size), 
+         by_layer_y = TRUE)
+      
+      A <- A + 
+         switch(
+            FacetOpts, 
+            "ggplot2 facets" = facet_grid(rows = vars(!!facet1_column), 
+                                          cols = vars(!!facet2_column), 
+                                          scales = FacetOptions$Scales), 
+            
+            "FC1PlusTitle FC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ FC2, 
+                                                     strip = FacetTitleTheme_Y, 
+                                                     scales = FacetOptions$Scales), 
+            
+            "FC1PlusTitle NoFC2" = ggh4x::facet_nested(Facet1Title + FC1 ~ ., 
+                                                       strip = FacetTitleTheme_Y, 
+                                                       scales = FacetOptions$Scales), 
+            
+            "FC1 FC2PlusTitle" = ggh4x::facet_nested(FC1 ~ Facet2Title + FC2, 
+                                                     strip = FacetTitleTheme_X, 
+                                                     scales = FacetOptions$Scales), 
+            
+            "FC1PlusTitle FC2PlusTitle" = ggh4x::facet_nested(Facet1Title + FC1 ~ Facet2Title + FC2, 
+                                                              strip = FacetTitleTheme_XY, 
+                                                              scales = FacetOptions$Scales), 
    
    if(FacetOptions$WrapOrGrid == "facet_grid"){
       # This is when we want facet_grid. 

@@ -7,9 +7,12 @@ in which folder}
 \usage{
 make_simulation_directory(
   project_folder = NA,
+  recursive = TRUE,
   which_files = NA,
   existing_exp_details = NA,
-  save_output = NA
+  relative_paths = TRUE,
+  save_table = NA,
+  wrap_text = FALSE
 )
 }
 \arguments{
@@ -17,8 +20,11 @@ make_simulation_directory(
 that R requires forward slashes ("/") in file paths rather than the back
 slashes Microsoft uses. If left as NA (default), we'll assume your current
 working directory is the top level of your project folders. This function
-\emph{only} searches for simulation files in the project folder and
-any subfolders.}
+\emph{only} searches for simulation files in the project folder and any
+subfolders.}
+
+\item{recursive}{TRUE (default) or FALSE for whether to recursively check for
+simulation files in subfolders}
 
 \item{which_files}{which files to include in the directory of simulations.
   Options are:
@@ -39,15 +45,27 @@ any subfolders.}
 \code{\link{extractExpDetails_mult}}; only applicable when
 \code{which_files = "use existing_exp_details"}}
 
-\item{save_output}{optionally specify either an Excel or csv file name for
+\item{relative_paths}{TRUE (default) or FALSE for whether to put relative
+(rather than full) paths in the table. This means "relative to your current
+working directory", so it matters what folder you'r in when you call this
+function.}
+
+\item{save_table}{optionally specify either an Excel or csv file name for
 saving your simulation directory}
+
+\item{wrap_text}{TRUE or FALSE (default) for whether to wrap text in the
+Excel output}
 }
 \value{
 a data.frame of simulation files and their respective file paths
 }
 \description{
-Make a directory of simulations indicating which simulation file is located
-in which folder
+\code{make_simulation_directory} will create a data.frame of
+simulations in a given project folder and, optionally, save that data.frame
+to an Excel file. It will also perform a few checks such as checking whether
+the file names comply with USFDA and Consultancy Team standards. 
+
+This is wicked fast.
 }
 \examples{
 # none yet

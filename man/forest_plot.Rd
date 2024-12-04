@@ -66,11 +66,11 @@ forest_plot(
   running \code{view(PKParameterDefinitions)} and looking in the column
   "PKparameter".}
 
-  \item{at least one of Mean, Median, or GeoMean (not case sensitive)}{This
+  \item{at least one of mean, median, or geomean (not case sensitive)}{This
   column will be used for the center statistic.}
 
-  \item{at least one pair of CI_Lower and CI_Upper, Centile_Lower and
-  Centile_Upper, Min and Max, or at least one of GeoCV, ArithCV, or SD (not
+  \item{at least one pair of CI90_low and CI90_high, per5 and
+  per95, min and max, or at least one of GCV, CV, or SD (not
   case sensitive)}{These columns will be used for the whiskers.}
 
   \item{any column you want to facet by}{If you want to break up your graphs
@@ -149,7 +149,7 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
   these coded names, but they have to match exactly to get displayed nicely
   in the final graph.}
 
-  \item{at least one column named "Mean", "GeoMean", or "Median"}{Must be
+  \item{at least one column named "mean", "geomean", or "median"}{Must be
   specified depending on your choice for \code{mean_type}, this column will
   be used for determining where to place the point. Whatever statistic you
   use \strong{must} be the same for both observed and simulated data.}
@@ -159,9 +159,10 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
   according to the values in the column "Inhibitor1", make sure that
   "Inhibitor1" is included in your observed PK.}
 
-  \item{(optional) at least one column or set of columns named "CI_Lower", "CI_Upper",
-  "Centile_Lower", "Centile_Upper", "GCV", "ArithCV", "Min", "Max",
-  "Std Dev"}{these will be used for the error bars and are optional.}
+
+  \item{(optional) at least one column or set of columns named "CI90_low",
+  "CI90_high", "per5", "per95", "GCV", "CV", "min", "max", "SD"}{these will 
+  be used for the error bars and are optional.}
 
   \item{whatever column you used for \code{facet_column_x}}{If you broke up the
   main graphs into two smaller graphs along the x axis, then whatever column you used for that
@@ -213,9 +214,9 @@ in \code{forest_dataframe}. If you list the mean type as "mean", we'll
 assume you want arithmetic means.}
 
 \item{variability_type}{type of variability to show as whiskers; options are
-"90\% CI" (default, geometric), "95\% CI" (also geometric), "5th to 95th
-percentiles", "range", "geometric CV", "arithmetic CV", or "standard
-deviation" ("sd" is also ok for that last one, and it's arithmetic).}
+"90\% CI" (default, geometric), "5th to 95th percentiles", "range",
+"geometric CV" ("geoCV" or "GCV" are fine), "arithmetic CV" ("CV" is fine), 
+or "standard deviation" ("sd" is also ok for that last one, and it's arithmetic).}
 
 \item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
 
@@ -351,7 +352,7 @@ default is 14.}
 \code{show_numbers_on_right = TRUE}, optionally specify what to use for the
 title above those numbers. Setting this to NA (default) will result in a
 title of what the numbers are, so basically the same text as the default
-for the x axis, e.g., "Geometric Mean Ratio (90\% CI)". Otherwise, specify
+for the x axis, e.g., "Geometric mean Ratio (90\% CI)". Otherwise, specify
 what text you'd like to use. Setting this to "none" will remove the table
 title.}
 
@@ -369,7 +370,15 @@ TRUE} will make the name of those compounds something more human readable.
 For example, "SV-Rifampicin-MD" will become "rifampicin", and
 "Sim-Midazolam" will become "midazolam". If you leave this as NA, we'll
 prettify if you supply a column name for \code{y_axis_labels} and we
-*won't* prettify if you supply a named character vector there.}
+\emph{won't} prettify if you supply a named character vector there.}
+
+\item{PK_labels}{optionally specify what you would like to have appear on the
+y axis for labels for each PK parameter with a named list of expressions,
+e.g., \code{PK_labels = list("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
+"Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}. Please 
+particularly note that it must be a \strong{list} rather than a vector. 
+To see examples of PK parameters set up as expressions for use in graph
+labels, try running \code{PKexpressions}.}
 
 \item{PK_labels}{optionally specify what you would like to have appear on the
 y axis for labels for each PK parameter with a named list of expressions,
@@ -559,7 +568,7 @@ AddnlObsPK <- bind_rows(BufObsForestData_20mg,
                                    Inhibitor1 = "rifampicin",
                                    PKparameter = c("AUCt_ratio_dose1",
                                                    "Cmax_ratio_dose1"),
-                                   GeoMean = c(0.4, 0.5),
+                                   geomean = c(0.4, 0.5),
                                    CI_Lower = c(0.35, 0.42),
                                    CI_Upper = c(0.45, 0.6)))
 

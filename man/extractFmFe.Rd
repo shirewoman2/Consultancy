@@ -21,7 +21,9 @@ maximum and minimum fm values -- basically, return the table in the upper
 left corner of the "Time variant \%fm and fe" tab.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated fm
-and fe data? Options are "individual", "aggregate", or "both" (default).
+and fe data? This currently only applies to the dynamic fms and has not yet
+been developed for the static fms, which will only return aggregate data at
+present. Options are "individual", "aggregate", or "both" (default).
 Aggregated data are not calculated here but are pulled from the simulator
 output rows labeled as "mean".}
 

@@ -65,17 +65,17 @@ get_obs_PK <- function(observed_PK,
       # ONLY the appropriate one.
       if("value" %in% tolower(names(observed_PK))){
          names(observed_PK)[which(tolower(names(observed_PK)) == "value")] <- "Value"
-      } else if(any(tolower(c("GeoMean", "Mean", "Median")) %in% 
+      } else if(any(c("geomean", "mean", "median") %in% 
                     tolower(names(observed_PK)))){
          
          # Dealing with any inconsistencies in capitalization. 
-         names(observed_PK)[which(tolower(names(observed_PK)) == "geomean")] <- "Geomean"
-         names(observed_PK)[which(tolower(names(observed_PK)) == "mean")] <- "Mean"
-         names(observed_PK)[which(tolower(names(observed_PK)) == "median")] <- "Median"
+         names(observed_PK)[which(tolower(names(observed_PK)) == "geomean")] <- "geomean"
+         names(observed_PK)[which(tolower(names(observed_PK)) == "mean")] <- "mean"
+         names(observed_PK)[which(tolower(names(observed_PK)) == "median")] <- "median"
          
          # Need to have columns for any of those that don't already exist for
          # case_when to work.
-         MissingCols <- setdiff(c("Geomean", "Mean", "Median"), 
+         MissingCols <- setdiff(c("geomean", "mean", "median"), 
                                 names(observed_PK))
          
          if(length(MissingCols) > 0){
@@ -89,13 +89,13 @@ get_obs_PK <- function(observed_PK,
             mutate(Value = switch(
                as.character(use_median_for_tmax), 
                "TRUE" = case_when(
-                  {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ Geomean, 
-                  {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ Mean, 
-                  str_detect(PKparameter, "tmax") ~ Median), 
+                  {mean_type} == "geometric" & !str_detect(PKparameter, "tmax") ~ geomean, 
+                  {mean_type} == "arithmetic" & !str_detect(PKparameter, "tmax") ~ mean, 
+                  str_detect(PKparameter, "tmax") ~ median), 
                
                "FALSE" = case_when(
-                  {mean_type} == "geometric" ~ Geomean, 
-                  {mean_type} == "arithmetic" ~ Mean)))
+                  {mean_type} == "geometric" ~ geomean, 
+                  {mean_type} == "arithmetic" ~ mean)))
       }
       
       if(tolower("GeoCV") %in% tolower(names(observed_PK)) &

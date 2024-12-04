@@ -79,7 +79,6 @@ extractObsConcTime <- function(obs_data_file,
       str_detect(obs_data_file, "\\.xml$|\\.xlsx$") == FALSE ~ 
          paste0(obs_data_file, ".xlsx"), 
       .default = obs_data_file)
-   
    # Make this work for whoever the current user is, even if the XML obs file
    # path was for someone else. This will normalize paths ONLY when the full
    # path is present and starts w/"Users". Otherwise, keeping the original input
@@ -88,28 +87,43 @@ extractObsConcTime <- function(obs_data_file,
    obs_data_file[str_detect(obs_data_file, "Users")] <- 
       normalizePath(obs_data_file[str_detect(obs_data_file, "Users")], 
                     winslash = "/", mustWork = FALSE)
-   
    obs_data_file <- str_replace(obs_data_file, 
-                                 "Users/(?<=\\/)[^\\/]+(?=\\/)", 
-                                 paste0("Users/", Sys.info()["user"]))
-   
-   # Checking that the file exists.
-   if(file.exists(obs_data_file) == FALSE){
-      # Try the opposite file extension if the one they supplied doesn't exist.
-      if(str_detect(obs_data_file, "\\.xml$")){
-         obs_data_file <- sub("xml", "xlsx", obs_data_file)
+                                "Users/(?<=\\/)[^\\/]+(?=\\/)", 
+                                paste0("Users/", Sys.info()["user"]))
+   # Checking that the file exists, that they have a version of Simcyp installed
+   # that can possibly get the obs data, etc.
+   ObsFileCheck <- data.frame(Orig = obs_data_file) %>% 
+      mutate(xlsxFile = sub("\\.xml", ".xlsx", obs_data_file), 
+             xmlFile = sub("\\.xlsx", ".xml", obs_data_file), 
+             SimcypInstalled = length(find.package("Simcyp", quiet = TRUE)) > 0,
+             SimcypV23plus = SimcypInstalled == TRUE & 
+                packageVersion("Simcyp") >= 23, 
+             xlsxExists = file.exists(xlsxFile), 
+             xmlExists = file.exists(xmlFile), 
+             # Preferentially using xlsx since that doesn't require Simcyp
+             # package
+             GoodFile = case_when(xlsxExists == TRUE ~ xlsxFile, 
+                                  xlsxExists == FALSE & xmlExists == TRUE & 
+                                     SimcypV23plus == TRUE ~ xmlFile, 
+                                  .default = NA))
+   if(is.na(ObsFileCheck$GoodFile)){
+      # Using warning instead of stop so that this will pass through to mult
+      # function.
+      if(ObsFileCheck$xmlExists & ObsFileCheck$SimcypV23plus == FALSE){
+         warning(wrapn(paste0("To extract data from the file `", obs_data_file, 
+                              "`, you will need V23 or higher of the 'Simcyp' R package, which is not currently installed. We will have to skip this file.")), 
+                 call. = FALSE)
+         return(data.frame())
+         
       } else {
-         obs_data_file <- sub("xlsx", "xml", obs_data_file)
-      }
-      
-      if(file.exists(obs_data_file) == FALSE){
-         # Using warning instead of stop so that this will pass through to mult function. 
          warning(wrapn(paste0("The file `", obs_data_file, 
                               "` is not present, so it will be skipped.")), 
                  call. = FALSE)
          return(data.frame())
       }
    }
+   
+   obs_data_file <- ObsFileCheck$GoodFile
    
    # Checking for file name issues
    CheckFileNames <- check_file_name(obs_data_file)
@@ -126,12 +140,30 @@ extractObsConcTime <- function(obs_data_file,
    # Call on either xlsx or xml version of sub fun here. 
    if(str_detect(obs_data_file, "\\.xlsx$")){
       obs_data_untidy <- extractObsConcTime_xlsx(obs_data_file)
+      if(str_detect(obs_data_file, "\\.xml$")){
+         obs_data_file <- sub("xml", "xlsx", obs_data_file)
    } else {
       obs_data_untidy <- extractObsConcTime_XML(obs_data_file)
+      }
+   }
+   
+   if(length(obs_data_untidy) == 0){
+      warning(wrapn(paste0("The file '", obs_data_file, 
+                           "' does not appear to contain observed concentration-time data.")), 
+              call. = FALSE)
+      return(data.frame())
+      warning(paste0("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
+                     str_c(paste0("     ", BadFileNames), collapse = "\n"), "\n"), 
+              call. = FALSE)
    }
    
    obs_data <- obs_data_untidy$obs_data
    dose_data <- obs_data_untidy$dose_data
+   # Call on either xlsx or xml version of sub fun here. 
+   if(str_detect(obs_data_file, "\\.xlsx$")){
+      obs_data_untidy <- extractObsConcTime_xlsx(obs_data_file)
+   } else {
+      obs_data_untidy <- extractObsConcTime_XML(obs_data_file)
    
    DoseCols <- ObsColNames %>% bind_rows() %>% 
       select(PEColName, ColName, DosingInfo) %>% 
@@ -144,8 +176,10 @@ extractObsConcTime <- function(obs_data_file,
       pull(ColName) %>% unique()
    
    # Using dosing info to set DoseNum in conc time data
-   if(nrow(dose_data) > 0){
-      
+      select(PEColName, ColName, DosingInfo) %>% 
+      filter(DosingInfo == FALSE) %>% 
+      pull(ColName) %>% unique()
+   
       DoseInts <- dose_data %>%
          select(any_of(c("Individual", "CompoundID", "Time", DoseCols))) %>% 
          rename(DoseTime = Time)
@@ -204,8 +238,8 @@ extractObsConcTime <- function(obs_data_file,
                                      "PlacentaVol_L", "FetalWt_kg")), 
                     .fns = as.numeric)) %>% 
       select(any_of(c(NonDoseCols, "Species", 
-         "Inhibitor", "Simulated", "Trial", "Tissue", "ObsFile", 
-         "Time_units", "Conc_units"))) 
+                      "Inhibitor", "Simulated", "Trial", "Tissue", "ObsFile", 
+                      "Time_units", "Conc_units"))) 
    
    if(add_t0){
       ToAdd <- obs_data %>% 

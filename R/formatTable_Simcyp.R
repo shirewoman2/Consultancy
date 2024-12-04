@@ -671,6 +671,17 @@ formatTable_Simcyp <- function(DF,
          
          RowsToShade <- which(str_detect(DF$Statistic,"CV%") == FALSE)
          
+         # NOTE TO CODERS: I was thinking about trying to change this to
+         # highlight a other rows of stats based on what the value is in the
+         # "Simulated" or central stat row, but I just see too many pitfalls. It
+         # would be really complicated and thus likely buggy to try to do a
+         # grouping thing based on what the user sets as the shading column and
+         # might not be the correct group anyway. It would not necessarily be
+         # accurate -- we'd have both false positives and false negatives -- if
+         # we highlighted based on the 1st number when it's a range. I don't
+         # know how we could make this work in a way that would be clear to the
+         # user, consistent, and accurate. Not going down that path. - LSh
+         
          FT <- FT %>% 
             # Negligible
             flextable::bg(i = intersect(

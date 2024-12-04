@@ -589,6 +589,8 @@ extractConcTime_DB <- function(sim_data_file,
                                 Data$Conc_units))
    
    for(cmpd in names(Data)){
+      if(nrow(Data[[cmpd]]) == 0){next}
+      
       Data[[cmpd]] <- Data[[cmpd]] %>% 
          convert_conc_units(conc_units = conc_units, 
                             MW = Deets %>% select(matches("MW")))
