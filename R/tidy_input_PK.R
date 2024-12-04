@@ -168,7 +168,8 @@ tidy_input_PK <- function(PKparameters,
    FromCalcPKRatios <- any(str_detect(tolower(names(PKparameters)), "numerator")) | 
       any(str_detect(tolower(names(PKparameters)), "denominator")) |
       ("PKparameter" %in% names(PKparameters) && 
-          any(str_detect(PKparameters$PKparameter, "/")))
+          any(str_detect(PKparameters$PKparameter, "/"))) |
+      "NorD" %in% names(PKparameters)
    
    if(any(str_detect(tolower(names(PKparameters)), "numerator")) & 
       any(str_detect(tolower(names(PKparameters)), "denominator"))){
@@ -194,12 +195,22 @@ tidy_input_PK <- function(PKparameters,
                     "denominator.*compoundid|compoundid.*denominator")][1] <- "Denominator_CompoundID"
       
       if("Numerator_CompoundID" %in% names(PKparameters) == FALSE){
-         PKparameters$Numerator_CompoundID <- "substrate"
-      }
-      if("Denominator_CompoundID" %in% names(PKparameters) == FALSE){
-         PKparameters$Denominator_CompoundID <- "substrate"
+         PKparameters <- PKparameters %>% 
+            left_join(expand_grid(Numerator_File = unique(PKparameters$Numerator_File), 
+                                  Numerator_CompoundID = compoundsToExtract), 
+                      by = "Numerator_File") %>% 
+            mutate(Numerator_CompoundID = case_when(is.na(Numerator_CompoundID) ~ "substrate", 
+                                                    .default = Numerator_CompoundID))
       }
       
+      if("Denominator_CompoundID" %in% names(PKparameters) == FALSE){
+         PKparameters <- PKparameters %>% 
+            left_join(expand_grid(Denominator_File = unique(PKparameters$Denominator_File), 
+                                  Denominator_CompoundID = compoundsToExtract), 
+                      by = "Denominator_File") %>% 
+            mutate(Denominator_CompoundID = case_when(is.na(Denominator_CompoundID) ~ "substrate", 
+                                                      .default = Denominator_CompoundID))
+      }
       
       # Tissue
       names(PKparameters)[
@@ -211,10 +222,21 @@ tidy_input_PK <- function(PKparameters,
                     "denominator.*tissue|tissue.*denominator")][1] <- "Denominator_Tissue"
       
       if("Numerator_Tissue" %in% names(PKparameters) == FALSE){
-         PKparameters$Numerator_Tissue <- "plasma"
+         PKparameters <- PKparameters %>% 
+            left_join(expand_grid(Numerator_File = unique(PKparameters$Numerator_File), 
+                                  Numerator_Tissue = tissues), 
+                      by = "Numerator_File") %>% 
+            mutate(Numerator_Tissue = case_when(is.na(Numerator_Tissue) ~ "plasma", 
+                                                .default = Numerator_Tissue))
       }
+      
       if("Denominator_Tissue" %in% names(PKparameters) == FALSE){
-         PKparameters$Denominator_Tissue <- "plasma"
+         PKparameters <- PKparameters %>% 
+            left_join(expand_grid(Denominator_File = unique(PKparameters$Denominator_File), 
+                                  Denominator_Tissue = tissues), 
+                      by = "Denominator_File") %>% 
+            mutate(Denominator_Tissue = case_when(is.na(Denominator_Tissue) ~ "plasma", 
+                                                  .default = Denominator_Tissue))
       }
       
       
@@ -230,6 +252,7 @@ tidy_input_PK <- function(PKparameters,
       if("Numerator_Sheet" %in% names(PKparameters) == FALSE){
          PKparameters$Numerator_Sheet <- NA
       }
+      
       if("Denominator_Sheet" %in% names(PKparameters) == FALSE){
          PKparameters$Denominator_Sheet <- NA
       }
@@ -652,7 +675,9 @@ tidy_input_PK <- function(PKparameters,
          rm(ColToUse)
       }
       
-      if("Tissue" %in% names(PKparameters) == FALSE){
+      if("File" %in% names(PKparameters) & # Just making sure this is for pk_table and not calc_PK_ratios
+         "Tissue" %in% names(PKparameters) == FALSE){
+         
          PKparameters <- PKparameters %>% 
             left_join(expand_grid(File = unique(PKparameters$File), 
                                   Tissue = tissues), 

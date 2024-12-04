@@ -1603,7 +1603,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
    # aesthetically pleasing.
    if(as_label(colorBy_column) != "<empty>" &&
-      UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) <= 2 &
+      UniqueGroups1 %>% select(as_label(colorBy_column)) %>% pull(1) == 2 &
       color_set[1] == "default"){
       color_set <- "Brewer set 1"
    }
