@@ -1,17 +1,18 @@
-#' Extract simulation experimental details from a database file - UNDER
-#' CONSTRUCTION!!!!!
+#' Extract simulation experimental details from a database file
 #'
-#' \code{extractExpDetails_DB} reads a Simcyp Simulator database file for
-#' information about how the simulation was set up. This uses the Simcyp package
-#' under the hood.
+#' @description \code{extractExpDetails_DB} reads a Simcyp Simulator database
+#'   file for information about how the simulation was set up. This uses the
+#'   Simcyp package under the hood.
 #'
-#' @param sim_data_file the database file to get information from. Note that a
-#'   matching workspace MUST also be present, as in, the exact same file name
-#'   but ending in ".wksz" instead of ".db" in order to get all the possible
-#'   information. This is because some information is not present in the
+#' @param sim_data_file the database file to get information from. To get
+#'   \emph{all} possible information, please be sure that a matching workspace
+#'   MUST also be present, as in, the exact same file name but ending in ".wksz"
+#'   instead of ".db". This is because some information is not present in the
 #'   database file but \emph{is} in the workspace.
 #'
-#' @return a list of information, same as other extractExpDetails_x functions
+#' @return a list of information about how your simulations were set up, and
+#'   this list will take the same format as the lists you would receive from
+#'   other extractExpDetails_x functions.
 #' @export
 #'
 #' @examples
@@ -41,14 +42,23 @@ extractExpDetails_DB <- function(sim_data_file){
       return(list())
    }
    
+   if(length(sim_data_file) > 1){
+      warning(wrapn("The extractExpdetails_DB function is for getting information from one database simlation file at a time, and you have provided more than that. Please check your input and try again."), 
+              call. = FALSE)
+      return(list())
+   }
+   
+   # Getting the basic file name w/out extension
+   sim_basename <- sub("\\.db|\\.wksz|\\.xlsx", "", sim_data_file)
+   
    # If they didn't include ".db" at the end, add that.
-   sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.db", "", sim_data_file), ".db")
+   sim_data_file <- paste0(sim_basename, ".db")
    
    
    # Main body of function ---------------------------------------------------
    
    suppressMessages(
-      Simcyp::SetWorkspace(sub("\\.db", ".wksz", sim_data_file), 
+      Simcyp::SetWorkspace(paste0(sim_basename, ".wksz"), 
                            verbose = FALSE))
    
    conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
@@ -233,6 +243,15 @@ extractExpDetails_DB <- function(sim_data_file){
       
    }
    
+   # Setting units here b/c they're always the same for database files; at
+   # least, they always have been. This should allow for some flexibility later
+   # if that changes.
+   Details[["Units_AUC"]] <- "mg/L.h"
+   Details[["Units_CL"]] <- "L/h"
+   Details[["Units_Cmax"]] <- "mg/L"
+   Details[["Units_tmax"]] <- "h"
+   
+   
    # Compound names --------------------------------------------------------
    
    # Getting compound names separately.
@@ -247,6 +266,67 @@ extractExpDetails_DB <- function(sim_data_file){
                 CmpdNames[intersect(AllCompounds$DetailNames, ActiveCompounds)])
    
    # t(as.data.frame(Details))
+   
+   # Other functions call on "Inhibitor1", etc., so we need those objects to
+   # exist, even if they were not used in this simulation. Setting them to NA if
+   # they don't exist.
+   MissingCmpd <- setdiff(AllCompounds$DetailNames, 
+                          names(Details))
+   MissingCmpd_list <- as.list(rep(NA, length(MissingCmpd)))
+   names(MissingCmpd_list) <- MissingCmpd
+   
+   Details <- c(Details, MissingCmpd_list)
+   
+   
+   # Dosing ------------------------------------------------------------------
+   
+   Dosing.db <- DBI::dbGetQuery(conn, "SELECT * FROM Doselist")
+   
+   Dosing <- Dosing.db %>%
+      rename(DoseNum = DoseIndex, 
+             Dose = Site1Dose, 
+             Dose_units = Site1Units, 
+             DoseRoute = DosingRouteDescription, 
+             InfusionDuration = Duration) %>% 
+      mutate(File = sim_data_file, 
+             PrandialSt = case_match(DosingFedState,
+                                     3 ~ "Fasted"),
+             CompoundID_num_Simcyp = CompoundIndex + 1) %>% 
+      left_join(AllCompounds %>% select(CompoundID_num_Simcyp, CompoundID), 
+                by = "CompoundID_num_Simcyp") %>% 
+      filter(CompoundID %in% unique(AllCompounds$DosedCompoundID)) %>% 
+      select(File, CompoundID, Time, DoseNum, PrandialSt, InfusionDuration, 
+             Dose, DoseRoute, Dose_units) %>% unique()
+   
+   # Adding prandial state info. NB: This assumes that the prandial state was
+   # the SAME for all doses and compounds. You *can* change that with a
+   # custom-dosing regimen, but I haven't seen that ever. Not setting that up
+   # here for now.
+   PrandialState <- Dosing %>% 
+      select(CompoundID, PrandialSt) %>% unique() %>% 
+      left_join(AllCompounds %>% select(CompoundID, Suffix), 
+                by = "CompoundID") %>% 
+      mutate(Parameter = paste0("PrandialSt", Suffix))
+   
+   PrandialState_list <- setNames(as.list(PrandialState$PrandialSt), 
+                                  nm = PrandialState$Parameter)
+
+   Details <- c(Details, 
+                PrandialState_list)
+   
+   # Finishing adding dosing info
+   Dosing <- Dosing %>% 
+      mutate(Compound = case_match(CompoundID, 
+                                   "substrate" ~ Details$Substrate, 
+                                   "inhibitor 1" ~ Details$Inhibitor1, 
+                                   "inhibitor 2" ~ Details$Inhibitor2), 
+             # Time units are always hours for db
+             Time_units = "h") %>% 
+      select(File, CompoundID, Compound, #Day, TimeOfDay, 
+             Time, Time_units, DoseNum, 
+             Dose, Dose_units, DoseRoute, InfusionDuration)
+   
+   
    
    # Pulling from workspace file -------------------------------------------
    
@@ -299,6 +379,7 @@ extractExpDetails_DB <- function(sim_data_file){
       mutate(File = sim_data_file)
    
    Details <- harmonize_details(list(MainDetails = Details))
+   Details[["Dosing"]] <- Dosing
    
    return(Details)
    

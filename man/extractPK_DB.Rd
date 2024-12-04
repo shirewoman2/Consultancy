@@ -2,19 +2,21 @@
 % Please edit documentation in R/extractPK_DB.R
 \name{extractPK_DB}
 \alias{extractPK_DB}
-\title{Extract PK from a Simcyp Simulator database file -- UNDER CONSTRUCTION!!!!}
+\title{Extract PK from a Simcyp Simulator database file}
 \usage{
 extractPK_DB(
   sim_data_file,
   compoundToExtract = "substrate",
   PKparameters = NA,
+  which_doses = NA,
   tissue = "plasma",
-  existing_exp_details
+  existing_exp_details,
+  returnAggregateOrIndiv = "aggregate"
 )
 }
 \arguments{
-\item{sim_data_file}{name of the Excel file containing the simulator output,
-in quotes}
+\item{sim_data_file}{name of the database file containing the simulator
+output, in quotes}
 
 \item{compoundToExtract}{For which compound do you want to extract
 PK data? Options are: \itemize{\item{"substrate"
@@ -30,15 +32,11 @@ metabolite of inhibitor 1}}}
 
   \item{"all"}{all possible parameters}
 
-  \item{"AUC tab"}{only those parameters on the "AUC" tab (default). For V21
-  or later, this will look for tabs named something like
-  "Int AUC 1st_CI(Sub)(CPlasma)" for the 1st dose of the substrate, for
-  example, and pull all possible parameters there. For V21,
-  and earlier, this will pull data from the tab literally named "AUC"
-  or the "AUC_CI" tab or "AUC_SD" tab if a tab named "AUC"is not present.}
+  \item{"AUC tab"}{only those parameters that would be found on an "AUC"
+  tab of the Excel output (default)}
 
-  \item{"Absorption tab"}{only those parameters on the "Absorption" or
-  "Overall Fa Fg" tab}
+  \item{"Absorption tab"}{only those parameters that would be found on the
+  "Absorption" or "Overall Fa Fg" tab}
 
   \item{"Regional ADAM"}{regional fraction absorbed and fraction metabolized
   from intestinal segments; only applies to ADAM models where the tab
@@ -52,10 +50,15 @@ metabolite of inhibitor 1}}}
   console. Not case sensitive. If you use "_first" instead of "_dose1", that
   will also work.}}}
 
+\item{which_doses}{optionally specify which doses you would like. If left as
+NA (default), only the first- and last-dose PK will be included. An example
+of good input: \code{which_doses = 1} or \code{which_doses = c(1:3, 7)} or
+\code{which_doses = "first"} or \code{which_doses = "last"}}
+
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
 Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
 "peripheral plasma", or "peripheral blood". \strong{NOTE: PK for peripheral
-sampling is not as well tested as for other tissues and is only set up for 
+sampling is not as well tested as for other tissues and is only set up for
 V21+. Please check your results carefully.}}
 
 \item{existing_exp_details}{If you have already run
@@ -66,14 +69,20 @@ extractExpDetails you said \code{exp_details = "Input Sheet"} or
 that object here, unquoted. If left as NA, this function will run
 \code{extractExpDetails} behind the scenes to figure out some information
 about your experimental set up.}
+
+\item{returnAggregateOrIndiv}{return aggregate (default) and/or individual PK
+parameters? Options are "aggregate", "individual", or "both". For aggregate
+data, values are pulled from simulator output -- not calculated -- and the
+output will be a data.frame with the PK parameters in columns and the
+statistics reported exactly as in the simulator output file.}
 }
 \value{
 a list: "individual" = individual PK data, "aggregate" = aggregate PK
   data, "TimeInterval" = the time intervals used
 }
 \description{
-\code{extractPK_DB} pulls PK data from a database file and calculates summary
-statistics for the data
+\code{extractPK_DB} pulls PK data from a database file and
+  calculates summary statistics for the data
 }
 \examples{
 # none yet

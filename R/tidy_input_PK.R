@@ -57,9 +57,11 @@ tidy_input_PK <- function(PKparameters,
       sim_data_files <- unique(sim_data_files)
       sim_data_files_input <- sim_data_files
       
-      # Make sure file extension is xlsx. 
-      sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.db$", "", 
-                                   sim_data_files), ".xlsx")
+      # Make sure file extension is xlsx or db.
+      sim_data_files <- case_when(
+         str_detect(sim_data_files, "xlsx$|db$") ~ sim_data_files, 
+         .default = paste0(sub("\\.wksz$|\\.dscw$|\\.docx$", "", sim_data_files), 
+                           ".xlsx"))
       
       # Remove artifacts when there's no file specified. 
       sim_data_files <- setdiff(sim_data_files, "NA.xlsx")
@@ -755,10 +757,6 @@ tidy_input_PK <- function(PKparameters,
          bind_rows(FilesToExpand) %>% 
          select(-MultFiles)
    }
-   
-   # Make sure file extension is xlsx. 
-   PKparameters$File <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.docx$|\\.db$", "", 
-                                   PKparameters$File), ".xlsx")
    
    # If user specified values for sim_data_files, then remove any others.
    if(all(complete.cases(sim_data_files))){
