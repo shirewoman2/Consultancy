@@ -2,11 +2,14 @@
 #' in which folder
 #'
 #' @description \code{make_simulation_directory} will create a data.frame of
-#' simulations in a given project folder and, optionally, save that data.frame
-#' to an Excel file. It will also perform a few checks such as checking whether
-#' the file names comply with USFDA and Consultancy Team standards. 
-#' 
-#' This is wicked fast. 
+#'   simulations in a given project folder, which XML files match which
+#'   simulations when applicable (you'll have to provide that information with
+#'   the argument \code{existing_exp_details}), and, optionally, save that
+#'   data.frame to an Excel file. It will also perform a few checks such as
+#'   checking whether the file names comply with USFDA and Consultancy Team
+#'   standards.
+#'
+#'   This is wicked fast.
 #'
 #'
 #' @param project_folder location of the project folder to search. Please note
@@ -18,11 +21,8 @@
 #' @param which_files which files to include in the directory of simulations.
 #'   Options are:
 #'   \describe{\item{NA}{all xlsx or wksz files in the current folder and any
-#'   subfolders}
-#'
-#'   \item{"use existing_exp_details"}{only include simulations in the object
-#'   supplied for \code{existing_exp_details}, which you can generate by running
-#'   \code{\link{extractExpDetails_mult}}.}
+#'   subfolders OR, if you supply something for \code{existing_exp_details},
+#'   the files included in that object}
 #'
 #'   \item{a single text string such as "abc"}{only include files with that
 #'   specific text}
@@ -30,8 +30,7 @@
 #'   \item{a character vector of specific file names, e.g., \code{which_files =
 #'   c("abc.xlsx", "def.xlsx")}}{only include files listed}}
 #' @param existing_exp_details the output from running
-#'   \code{\link{extractExpDetails_mult}}; only applicable when
-#'   \code{which_files = "use existing_exp_details"}
+#'   \code{\link{extractExpDetails_mult}}
 #' @param save_table optionally specify either an Excel or csv file name for
 #'   saving your simulation directory
 #' @param relative_paths TRUE (default) or FALSE for whether to put relative
@@ -70,29 +69,33 @@ make_simulation_directory <- function(project_folder = NA,
            call. = FALSE)
    }
    
+   
    # Main body of function ---------------------------------------------------
    
    if(is.na(project_folder)){
       project_folder <- getwd()
    }
    
+   # Harmonizing input. This will be of class "NULL" if it was NA.
+   existing_exp_details <- harmonize_details(existing_exp_details)
+   
    if(length(which_files) == 1){
       if(is.na(which_files)){
-         
-         which_files <- list.files(path = project_folder, 
-                                   recursive = recursive)
-         
-      } else if(which_files == "use existing_exp_details"){
-         
-         which_files <- existing_exp_details$MainDetails %>% 
-            pull(File)
+         if("NULL" %in% class(existing_exp_details)){
+            
+            which_files <- list.files(path = project_folder, 
+                                      recursive = recursive)
+            
+         } else {
+            which_files <- existing_exp_details$MainDetails %>% pull(File)
+         }
          
       } else {
-         
          which_files <- list.files(path = project_folder, 
                                    pattern = which_files, 
                                    recursive = recursive)
       }
+      
    } else {
       # If length(which_files) > 1, then they have supplied a character vector
       # of files. If they didn't include ".xlsx" at the end, add that.
@@ -100,7 +103,7 @@ make_simulation_directory <- function(project_folder = NA,
       
    } 
    
-   # Checking for other file extensions
+   # Checking for other file extensions and checking that file exists. 
    which_files_wksz <- sub("\\.xlsx|\\.db|\\.wksz", ".wksz", which_files)
    which_files_wksz <- which_files_wksz[file.exists(which_files_wksz)]
    
@@ -116,8 +119,13 @@ make_simulation_directory <- function(project_folder = NA,
    which_files <- unique(which_files[!str_detect(which_files, "^~")])
    
    if(length(which_files) == 0){
-      stop(wrapn("There are no files that match what the pattern of text you supplied for 'which_files', so we cannot make your simulation diratory."), 
-           call. = FALSE)
+      if("NULL" %in% class(existing_exp_details) == FALSE){
+         stop(wrapn(paste0("We can't find any of the files in 'existing_exp_details'. Are you in the main folder for this project or have you set the argument 'project_folder' to that folder? We need to know the project folder to figure out where your files are. Please set the project folder and try again.")), 
+              call. = FALSE)
+      } else {
+         stop(wrapn("There are no files that match what the pattern of text you supplied for 'which_files', so we cannot make your simulation diratory."), 
+              call. = FALSE)
+      }
    }
    
    Directory <- data.frame(File = which_files, 
@@ -195,6 +203,22 @@ make_simulation_directory <- function(project_folder = NA,
              Folder = case_when(Folder == "." ~ "", 
                                 .default = Folder))
    
+   if("logical" %in% class(existing_exp_details) == FALSE){
+      
+      existing_exp_details <- harmonize_details(existing_exp_details)
+      
+      if("NULL" %in% class(existing_exp_details) == FALSE &&
+         "ObsOverlayFile" %in% names(existing_exp_details$MainDetails) &&
+         any(complete.cases(existing_exp_details$MainDetails$ObsOverlayFile))){
+         Directory <- Directory %>% 
+            left_join(existing_exp_details$MainDetails %>% 
+                         select(File, ObsOverlayFile) %>% 
+                         mutate(Filename = sub("\\..*$", "", basename(File))) %>% 
+                         rename("XML file used" = ObsOverlayFile) %>% 
+                         select(-File), by = "Filename")
+      }
+   }
+   
    if(any(Directory$FileNameCheck != "File name meets naming standards.")){
       Directory <- Directory %>% 
          mutate(FileNameCheck = case_when(
@@ -210,7 +234,7 @@ make_simulation_directory <- function(project_folder = NA,
    
    # Setting column order 
    Directory <- Directory %>% 
-      select(any_of(c("Filename", "Filetype", "Folder", "Table/Figure",
+      select(any_of(c("Filename", "Filetype", "Folder", "XML file used", "Table/Figure",
                       "Comments", "FileNameCheck", "DuplicateFileCheck")))
    
    

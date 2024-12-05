@@ -29,11 +29,8 @@ simulation files in subfolders}
 \item{which_files}{which files to include in the directory of simulations.
   Options are:
   \describe{\item{NA}{all xlsx or wksz files in the current folder and any
-  subfolders}
-
-  \item{"use existing_exp_details"}{only include simulations in the object
-  supplied for \code{existing_exp_details}, which you can generate by running
-  \code{\link{extractExpDetails_mult}}.}
+  subfolders OR, if you supply something for \code{existing_exp_details},
+  the files included in that object}
 
   \item{a single text string such as "abc"}{only include files with that
   specific text}
@@ -42,8 +39,7 @@ simulation files in subfolders}
   c("abc.xlsx", "def.xlsx")}}{only include files listed}}}
 
 \item{existing_exp_details}{the output from running
-\code{\link{extractExpDetails_mult}}; only applicable when
-\code{which_files = "use existing_exp_details"}}
+\code{\link{extractExpDetails_mult}}}
 
 \item{relative_paths}{TRUE (default) or FALSE for whether to put relative
 (rather than full) paths in the table. This means "relative to your current
@@ -61,11 +57,14 @@ a data.frame of simulation files and their respective file paths
 }
 \description{
 \code{make_simulation_directory} will create a data.frame of
-simulations in a given project folder and, optionally, save that data.frame
-to an Excel file. It will also perform a few checks such as checking whether
-the file names comply with USFDA and Consultancy Team standards. 
+  simulations in a given project folder, which XML files match which
+  simulations when applicable (you'll have to provide that information with
+  the argument \code{existing_exp_details}), and, optionally, save that
+  data.frame to an Excel file. It will also perform a few checks such as
+  checking whether the file names comply with USFDA and Consultancy Team
+  standards.
 
-This is wicked fast.
+  This is wicked fast.
 }
 \examples{
 # none yet
