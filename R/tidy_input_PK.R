@@ -171,8 +171,7 @@ tidy_input_PK <- function(PKparameters,
           any(str_detect(PKparameters$PKparameter, "/"))) |
       "NorD" %in% names(PKparameters)
    
-   if(any(str_detect(tolower(names(PKparameters)), "numerator")) & 
-      any(str_detect(tolower(names(PKparameters)), "denominator"))){
+   if(FromCalcPKRatios){
       
       # Tidying column names
       
@@ -290,10 +289,34 @@ tidy_input_PK <- function(PKparameters,
       # Denominator_PKparameter and Numerator_PKparameter only.
       PKparameters$PKparameter <- NULL 
       
+      # Harmonizing PKparameters
+      PKparameters <- PKparameters %>% 
+         mutate(Numerator_PKparameter = harmonize_PK_names(Numerator_PKparameter), 
+                Denominator_PKparameter = harmonize_PK_names(Denominator_PKparameter))
+      
       # Noting original file pairs, adding missing required columns, and
       # reshaping data to work w/rest of function
       PKparameters <- PKparameters %>% 
          mutate(FilePair = paste(Numerator_File, "/", Denominator_File))
+      
+      # Fixing PKparameter if they requested a DDI parameter for a perpetrator
+      PKparameters <- PKparameters %>% 
+         mutate(Numerator_PKparameter = 
+                   case_when(
+                      Numerator_CompoundID %in% AllCompounds$CompoundID[
+                         AllCompounds$DDIrole == "perpetrator"] &
+                         str_detect(Numerator_PKparameter, "_withInhib") ~ 
+                         sub("_withInhib", "", Numerator_PKparameter),
+                      .default = Numerator_PKparameter), 
+                
+                Denominator_PKparameter = 
+                   case_when(
+                      Denominator_CompoundID %in% AllCompounds$CompoundID[
+                         AllCompounds$DDIrole == "perpetrator"] &
+                         str_detect(Denominator_PKparameter, "_withInhib") ~ 
+                         sub("_withInhib", "", Denominator_PKparameter),
+                      .default = Denominator_PKparameter)) %>% 
+         unique()
       
       FilePairs <- PKparameters
       
@@ -835,6 +858,29 @@ tidy_input_PK <- function(PKparameters,
       rm(ToAdd)
    }
    
+   # If they asked for PK for inhibitor 1, inhibitor 2, or inhibitor 1
+   # metabolite and they included "withInhib" in the PKparameter, then just
+   # remove the "withInhib" part. If they included "_ratio", then give a warning
+   # and remove those rows.
+   PKparameters <- PKparameters %>% 
+      mutate(PKparameter = case_when(
+         CompoundID %in% AllCompounds$CompoundID[
+            AllCompounds$DDIrole == "perpetrator"] &
+            str_detect(PKparameter, "_withInhib") ~ sub("_withInhib", "", PKparameter),
+         .default = PKparameter)) %>% 
+      left_join(AllCompounds %>% select(CompoundID, DDIrole), 
+                by = "CompoundID") %>% 
+      mutate(HarmoniousDDI = (DDIrole == "perpetrator" & 
+                                 str_detect(PKparameter, "_ratio")) == FALSE)
+   
+   if(any(PKparameters$HarmoniousDDI == FALSE)){
+      warning(wrapn("You requested ratios of PK parameters (PK with a perpetrator present / PK at baseline) for a perpetrator compound (the inhibitor 1, inhibitor 2, or inhibitor 1 metabolite in the simulation), which is not sensible. We will ignore those PK parameters."), 
+              call. = FALSE)
+   }
+   
+   PKparameters <- PKparameters %>% filter(HarmoniousDDI == TRUE) %>% 
+      select(-HarmoniousDDI, -DDIrole) %>% unique()
+   
    
    ## Tissue ---------------------------------------------------------------
    
@@ -1151,10 +1197,6 @@ tidy_input_PK <- function(PKparameters,
       mutate(HarmoniousDDI =  AppliesOnlyWhenPerpPresent == FALSE | 
                 (AppliesOnlyWhenPerpPresent == TRUE & 
                     DDI == TRUE),
-             HarmoniousDDI = ifelse(CompoundID %in% AllCompounds$CompoundID[
-                AllCompounds$DDIrole == "perpetrator"] &
-                   str_detect(PKparameter, "_withInhib|_ratio"), 
-                FALSE, HarmoniousDDI), 
              HarmoniousRegimen = AppliesToSingleDose == TRUE |
                 (AppliesToSingleDose == FALSE & 
                     MD == TRUE))
