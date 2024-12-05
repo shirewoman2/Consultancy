@@ -807,9 +807,6 @@ ct_plot <- function(ct_dataframe = NA,
    # Removing individual data when possible using column IndivOrAgg, which will
    # be NA for observed data and not exist for release- or dissolution-profile
    # data. Dealing with that and harmonizing data. 
-   if(ReleaseProfPlot | DissolutionProfPlot){
-      ct_dataframe$IndivOrAgg <- "aggregate"
-   }
    
    # Adding info for IndivOrAgg for data that were extracted w/older version
    # of package. Uncomment the if statement at some point? 
