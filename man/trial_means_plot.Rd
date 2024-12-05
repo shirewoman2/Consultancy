@@ -2,8 +2,8 @@
 % Please edit documentation in R/trial_means_plot.R
 \name{trial_means_plot}
 \alias{trial_means_plot}
-\title{Make graphs comparing center statistic and variability in PK across trials
-and, optionally, against observed PK data as well}
+\title{Make graphs comparing the center statistic and variability in PK across
+trials and, optionally, against observed PK}
 \usage{
 trial_means_plot(
   sim_data_file,
@@ -32,8 +32,7 @@ in quotes}
 
 \item{PKparameter}{PK parameter you want to extract from the simulator output
 file. To see the full set of possible parameters to extract, enter
-\code{view(PKParameterDefinitions)} into the console. Not case sensitive.
-If you use "_first" instead of "_dose1", that will also work.}
+\code{view(PKParameterDefinitions)} into the console. Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
 PK data? Options are: \itemize{\item{"substrate"
@@ -51,26 +50,24 @@ sampling is not as well tested as for other tissues and is only set up for
 V21+. Please check your results carefully.}}
 
 \item{sheet}{optionally specify the name of the sheet where you'd like to
-pull the PK data, in quotes; for example, specify the tab where you have a
-user-defined AUC integration. \emph{Note:} Unless you want a very specific
-Excel sheet that's not what the usual sheet name would be for a first or
-last dose, this function will work best if this is left as NA. Also, since
-we don't know which dose these data were for, you'll see that the output
-parameter names do not include the suffixes "_last" or "_dose1".}
+pull the PK data, in quotes. For example, if you have a user-defined AUC
+interval, specify the tab where those data are. \strong{NOTE:} If you want
+typical first- or last-dose PK, this should be left as NA. This \emph{only}
+applies for user-defined AUC intervals.}
 
 \item{mean_type}{What kind of means do you want to use for the center point
 on the graph? Options are "geometric" (default), "arithmetic", or "median".}
 
 \item{variability_type}{What variability statistic to you want to use for the
-error bars? Options are "90% CI", "SD", "CV", "GCV" (for geometric CV), or
+error bars? Options are "90\% CI", "SD", "CV", "GCV" (for geometric CV), or
 "range".}
 
 \item{observed_PK}{a data.frame of observed PK that you would like to
   compare. This must include the columns "ObsValue" or "Value" for the center
   value for the observed data and "ObsVariability" or "Variability" for the
   error bars for the observed data. Some filtering this will do
-  automatically: 
-  
+  automatically:
+
   \itemize{\item{If you include a column titled "File", we will only use PK
   data that have the same value in that column as what you supply for
   \code{sim_data_file}.}
@@ -81,29 +78,28 @@ error bars? Options are "90% CI", "SD", "CV", "GCV" (for geometric CV), or
   \item{If you want to include comparisons to more than one clinical study, add a column
   titled "Study" to your data. The value listed in that column will be used
   for labeling the study on your graph. If there is not a column titled
-  "Study" in your observed PK, we will label the data "observed" in the
-  graph.}
-  
-  \item{If you include a column titled "CompoundID", we will only include PK 
+  "Study" in your observed PK, we will label the data in the graph as "observed".}
+
+  \item{If you include a column titled "CompoundID", we will only include PK
   data that match what you supplied for \code{compoundToExtract}.}
-  
-  \item{If you include a column titled "Tissue", we will only include PK 
+
+  \item{If you include a column titled "Tissue", we will only include PK
   data that match what you supplied for \code{tissue}.}
-  
+
   }}
 
 \item{lines_for_population_stats}{optionally include horizontal lines for the
-overall simulated population by specifying the desired line color and type.
-If left as "none" (default), no lines will be included. If set to, e.g.,
-"red solid dotted" or "gray50 dashed dashed" or even "#87A896 solid E2",
-then lines will be added to the graph at whatever centeral statistic you
-specified for "mean_type" and whatever variability statistic you specified
-for "variability_type". The first word must be a legitimate color in R (hex
-codes are fine), the second word, separated by a space, must be the line
-type you want for the central statistic, and the third word must be the
-line type you want for the variability statistic. If you add another space
-and then a fourth number, that will set the line width, which will be 0.5
-by default.}
+overall simulated population statistics by specifying the desired line
+color and type. If left as "none" (default), no lines will be included. If
+set to, e.g., "red solid dotted" or "gray50 dashed dashed" or even "#87A896
+solid E2", then lines will be added to the graph at whatever central
+statistic you specified for "mean_type" and whatever variability statistic
+you specified for "variability_type". The first word must be a legitimate
+color in R (hex codes are fine), the second word, separated by a space,
+must be the line type you want for the central statistic, and the third
+word must be the line type you want for the variability statistic. If you
+add another space and then a fourth value, that will set the line width,
+which will be 0.5 by default.}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
@@ -132,15 +128,15 @@ by default.}
   change in intrinsic solubility will affect concentration-time profiles --
   because the direction of the trend will be clear.}
 
-  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  \item{"blues"}{a set of blues fading from sky to navy. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
-  \item{"greens"}{a set of blues fading light blue to dark blue. Like
+  \item{"greens"}{a set of greens fading from chartreuse to forest. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
-  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  \item{"purples"}{a set of purples fading from lavender to aubergine. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
@@ -225,11 +221,13 @@ character vector, e.g., \code{name_clinical_study = c("101",
 a ggplot2 graph
 }
 \description{
-\code{trial_means_plot} creates a graph of the PK parameter
-  selected showing the central statistic chosen as a dot and the variability
-  statistic chosen as error bars for each of the trials included in a
-  simulation. The simulated trials may be compared to variability in the
-  corresponding observed PK when provided. UNDER CONSTRUCTION.
+\code{trial_means_plot} creates a graph comparing variability
+  across simulated trials and, when supplied, across observed trials as well
+  for a given PK parameter. The central statistic is shown as a dot and the
+  variability statistic is shown as error bars for each of the trials, and
+  you can choose which statistics you want for each, e.g., geometric means
+  for the central statistic and the geometric 90\% confidence interval for
+  the variability statistic. UNDER CONSTRUCTION.
 
   \strong{IMPORTANT:} If the summary statistics used for your observed data
   don't match the summary statistics you choose for \code{mean_type} and
