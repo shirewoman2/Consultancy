@@ -612,6 +612,7 @@ extractConcTime <- function(sim_data_file,
                                    "per10", "per90", "median") == FALSE) %>%
                group_by(across(any_of(c("Compound", "CompoundID", "Tissue",
                                         "Inhibitor", "Simulated", "Trial", 
+                                        "IndivOrAgg", 
                                         "Time", "Time_orig", "Tissue_subtype",
                                         "Time_units", "Conc_units")))) %>%
                summarize(Conc_arith = mean(Conc, na.rm = T),
@@ -647,7 +648,8 @@ extractConcTime <- function(sim_data_file,
                   summarize(Conc = gm_mean(Conc, na.rm = T)) %>%
                   ungroup() %>%
                   mutate(Trial = "geomean", 
-                         Individual = as.character(NA))
+                         Individual = as.character(NA), 
+                         IndivOrAgg = "aggregate")
             )
             
             sim_data[[cmpd]][[ss]] <- bind_rows(sim_data[[cmpd]][[ss]], 
@@ -952,7 +954,8 @@ extractConcTime <- function(sim_data_file,
                               "Individual", "Trial", "Time")))) %>%
       select(any_of(c("Compound", "CompoundID", "Inhibitor", 
                       "Species", "Tissue", "Individual", "Trial",
-                      "Simulated", "Time", "Conc", "SD_SE",
+                      "Simulated", "IndivOrAgg", 
+                      "Time", "Conc", "SD_SE",
                       "Time_units", "Conc_units", "Tissue_subtype", "DoseNum",
                       "DoseInt", "Dose_sub", "Dose_inhib", "Dose_inhib2",
                       "File", "ObsFile"))) %>% 

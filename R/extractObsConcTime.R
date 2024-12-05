@@ -272,7 +272,12 @@ extractObsConcTime <- function(obs_data_file,
    }
    
    obs_data <- obs_data %>% 
-      select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated", 
+      # Need IndivOrAgg to be a column in the data for downstream functions, but
+      # we won't know whether obs data are individual or aggregate so setting
+      # this to NA.
+      mutate(IndivOrAgg = NA) %>% 
+      select(any_of(c("Compound", "CompoundID", "Inhibitor", "IndivOrAgg", 
+                      "Simulated", 
                       "Tissue", "Individual", "Trial",
                       "Time", "Conc", "SD_SE", "Time_units", "Conc_units")), 
              everything())

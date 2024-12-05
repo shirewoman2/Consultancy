@@ -1112,7 +1112,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                               "Individual", "Trial", "Time")))) %>%
       select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated",
                       "Species", "Tissue", "Individual", "Trial",
-                      "Simulated", "Time", "Conc", "SD_SE",
+                      "Simulated", "IndivOrAgg", 
+                      "Time", "Conc", "SD_SE",
                       "Time_units", "Conc_units", "Tissue_subtype", "DoseNum",
                       "DoseInt", "Dose_sub", "Dose_inhib", "Dose_inhib2", 
                       "File", "ObsFile", "subsection_ADAM"))) %>% 

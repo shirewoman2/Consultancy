@@ -237,7 +237,8 @@ eCT_pulldata <- function(sim_data_xl,
                                           SimConcUnits$Type == ss],
                                        SimConcUnits),
                    Tissue = tissue,
-                   Tissue_subtype = ifelse(ADAM|AdvBrainModel, ss, NA))
+                   Tissue_subtype = ifelse(ADAM|AdvBrainModel, ss, NA), 
+                   IndivOrAgg = "aggregate")
       }
    } 
    
@@ -295,7 +296,8 @@ eCT_pulldata <- function(sim_data_xl,
             separate(SubjTrial, into = c("Individual", "Trial"),
                      sep = "_") %>% 
             mutate(Individual = as.character(Individual),
-                   Trial = as.character(Trial))
+                   Trial = as.character(Trial), 
+                   IndivOrAgg = "individual")
       )
       
       # Adjusting for when there was only 1 individual

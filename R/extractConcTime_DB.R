@@ -556,12 +556,14 @@ extractConcTime_DB <- function(sim_data_file,
    if("individual" %in% returnAggregateOrIndiv){
       Data[["indiv"]] <- CT_indiv %>% 
          mutate(Trial = as.character(Trial), 
-                Individual = as.character(Individual))
+                Individual = as.character(Individual), 
+                IndivOrAgg = "individual")
    }
    
    if("aggregate" %in% returnAggregateOrIndiv){
       Data[["agg"]] <- CT_agg %>% 
-         mutate(Trial = as.character(Trial))
+         mutate(Trial = as.character(Trial), 
+                IndivOrAgg = "aggregate")
    }
    
    Data <- bind_rows(Data) %>%
@@ -618,7 +620,8 @@ extractConcTime_DB <- function(sim_data_file,
                               "Individual", "Trial", "Time")))) %>%
       select(any_of(c("Compound", "CompoundID", "Inhibitor", 
                       "Species", "Tissue", "Individual", "Trial",
-                      "Simulated", "Time", "Conc", "SD_SE",
+                      "Simulated", "IndivOrAgg", 
+                      "Time", "Conc", "SD_SE",
                       "Time_units", "Conc_units", "Tissue_subtype", "DoseNum",
                       "DoseInt", "Dose_sub", "Dose_inhib", "Dose_inhib2",
                       "File", "DBFile", "ObsFile")))

@@ -606,11 +606,6 @@ ct_plot_overlay <- function(ct_dataframe,
    # for setting aesthetics.
    ct_dataframe <- ungroup(ct_dataframe) %>% droplevels()
    
-   if(assume_unique == FALSE){
-      # Making sure the data.frame contains unique observations and no unnecessary levels.
-      ct_dataframe <- unique(ct_dataframe)
-   }
-   
    # tictoc::toc(log = TRUE)
    
    # tictoc::tic(msg = "error catching: enz abund?")
@@ -812,12 +807,44 @@ ct_plot_overlay <- function(ct_dataframe,
       floating_facet_scale <- FALSE
    }
    
-   
    # tictoc::toc(log = TRUE)
    
    # Main body of function -------------------------------------------------
    
    # tictoc::tic(msg = "main body of function")
+   
+   # This will run orders of magnitude faster if we only include aggregate data.
+   # Removing individual data when possible using column IndivOrAgg, which will
+   # be NA for observed data and not exist for release- or dissolution-profile
+   # data. Dealing with that and harmonizing data. 
+   if(ReleaseProfPlot | DissolutionProfPlot){
+      ct_dataframe$IndivOrAgg <- "aggregate"
+   }
+   
+   # Adding info for IndivOrAgg for data that were extracted w/older version
+   # of package. Uncomment the if statement at some point? 
+   
+   # if("IndivOrAgg" %in% names(ct_dataframe) == FALSE){
+   ct_dataframe <- ct_dataframe %>% 
+      mutate(IndivOrAgg = case_when(Simulated == FALSE ~ NA, 
+                                    Simulated == TRUE & Trial %in% 
+                                       c("mean", "median",
+                                         "geomean", 
+                                         "per5", "per95", "per10", "per90", 
+                                         "trial mean", "trial geomean", 
+                                         "trial median") ~ "aggregate", 
+                                    .default = "individual"))
+   # }
+   
+   ct_dataframe <- ct_dataframe %>% 
+      filter(Simulated == FALSE |
+                (Simulated == TRUE & IndivOrAgg == "aggregate"))
+   
+   if(assume_unique == FALSE){
+      # Making sure the data.frame contains unique observations and no
+      # unnecessary levels.
+      ct_dataframe <- unique(ct_dataframe)
+   }
    
    # Noting whether the tissue was from an ADAM model
    ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
@@ -1539,7 +1566,7 @@ ct_plot_overlay <- function(ct_dataframe,
             pivot_wider(names_from = Tissue, values_from = Conc)
       )
       
-      if(class(Check$colon) == "list"){
+      if("colon" %in% names(Check) && class(Check$colon) == "list"){
          warning(paste0(wrapn("You have some replicates in your data, which can cause some unexpected effects or make the enz_plot_overlay function break. Here are two things you can do to fix this:"), 
                         "   1. Add this when you call on enz_plot_overlay:\n        assume_unique = FALSE\n      This will make graphing run more slowly, though. Please see the help file.\n", 
                         "\n   2. Before running enz_plot_overlay, run this to permanently fix this problem:\n", 
@@ -1741,8 +1768,11 @@ ct_plot_overlay <- function(ct_dataframe,
    # Setting figure types and general aesthetics ------------------------------
    
    MyPerpetrator <- unique(sim_dataframe$Inhibitor)
-   MyPerpetrator <- fct_relevel(MyPerpetrator, "none")
+   if("none" %in% MyPerpetrator){
+      MyPerpetrator <- fct_relevel(MyPerpetrator, "none")
+   }
    MyPerpetrator <- sort(MyPerpetrator)
+   MyPerpetrator <- factor(MyPerpetrator, levels = MyPerpetrator)
    
    # Making linetype_column and colorBy_column factor data. This will
    # prevent errors w/mapping to color b/c ggplot expects only categorical data

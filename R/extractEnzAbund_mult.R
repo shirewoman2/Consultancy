@@ -333,10 +333,14 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
    sim_enz_dataframe <- bind_rows(sim_enz_dataframe, MultData) %>% 
       arrange(across(any_of(c("File", "Enzyme", "Inhibitor",
                               "Individual", "Trial", "Time")))) %>%
-      select(any_of(c("Enzyme", "Tissue", "Inhibitor", "Species",
+      select(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor", 
+                      "IndivOrAgg", "Species",
                       "Individual", "Trial", "Time", "Abundance",
-                      "Time_units", "DoseNum_sub", "DoseNum_inhib1", 
-                      "DoseNum_inhib2", "File")))
+                      "Time_units", 
+                      "DoseNum_sub", "Dose_int_sub", "TimeSinceDose1_sub",
+                      "DoseNum_inhib1", "Dose_int_inhib1", "TimeSinceDose1_inhib1",
+                      "DoseNum_inhib2", "Dose_int_inhib2", "TimeSinceDose1_inhib2", 
+                      "File")))
    
    if("DoseNum_inhib1" %in% names(sim_enz_dataframe) && 
       all(is.na(sim_enz_dataframe$DoseNum_inhib1))){

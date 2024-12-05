@@ -803,6 +803,33 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Main body of function --------------------------------------------------
    
+   # This will run orders of magnitude faster if we only include aggregate data.
+   # Removing individual data when possible using column IndivOrAgg, which will
+   # be NA for observed data and not exist for release- or dissolution-profile
+   # data. Dealing with that and harmonizing data. 
+   if(ReleaseProfPlot | DissolutionProfPlot){
+      ct_dataframe$IndivOrAgg <- "aggregate"
+   }
+   
+   # Adding info for IndivOrAgg for data that were extracted w/older version
+   # of package. Uncomment the if statement at some point? 
+   
+   # if("IndivOrAgg" %in% names(ct_dataframe) == FALSE){
+   ct_dataframe <- ct_dataframe %>% 
+      mutate(IndivOrAgg = case_when(Simulated == FALSE ~ NA, 
+                                    Simulated == TRUE & Trial %in% 
+                                       c("mean", "median",
+                                         "geomean", 
+                                         "per5", "per95", "per10", "per90", 
+                                         "trial mean", "trial geomean", 
+                                         "trial median") ~ "aggregate", 
+                                    .default = "individual"))
+   # }
+   
+   ct_dataframe <- ct_dataframe %>% 
+      filter(Simulated == FALSE |
+                (Simulated == TRUE & IndivOrAgg == "aggregate"))
+   
    # Noting user's original preferences for a few things
    obs_line_trans_user <- obs_line_trans
    obs_fill_trans_user <- obs_fill_trans
