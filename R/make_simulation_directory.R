@@ -2,12 +2,12 @@
 #' in which folder
 #'
 #' @description \code{make_simulation_directory} will create a data.frame of
-#'   simulations in a given project folder, which XML files match which
-#'   simulations when applicable (you'll have to provide that information with
-#'   the argument \code{existing_exp_details}), and, optionally, save that
-#'   data.frame to an Excel file. It will also perform a few checks such as
-#'   checking whether the file names comply with USFDA and Consultancy Team
-#'   standards.
+#'   simulations in a given project folder, the associated XML files when
+#'   applicable (you'll have to provide that information with the argument
+#'   \code{existing_exp_details}), and, optionally, save that data.frame to an
+#'   Excel file. It will also check whether the file names comply with USFDA and
+#'   Consultancy Team standards and check whether the same simulation is saved
+#'   in more than one place.
 #'
 #'   This is wicked fast.
 #'
@@ -35,8 +35,8 @@
 #'   saving your simulation directory
 #' @param relative_paths TRUE (default) or FALSE for whether to put relative
 #'   (rather than full) paths in the table. This means "relative to your current
-#'   working directory", so it matters what folder you'r in when you call this
-#'   function.
+#'   working directory", so it matters what folder you're in when you call this
+#'   function. We recommend setting this to TRUE. 
 #' @param recursive TRUE (default) or FALSE for whether to recursively check for
 #'   simulation files in subfolders
 #' @param wrap_text TRUE or FALSE (default) for whether to wrap text in the
@@ -76,49 +76,73 @@ make_simulation_directory <- function(project_folder = NA,
       project_folder <- getwd()
    }
    
-   # Harmonizing input. This will be of class "NULL" if it was NA.
+   # Getting all file names
+   AllFiles <- tibble(PathFile = list.files(path = project_folder, 
+                                            recursive = recursive)) %>% 
+      mutate(File = basename(PathFile))
+   
+   # Harmonizing input. This will be of class "NULL" if input for argument was
+   # NA.
    existing_exp_details <- harmonize_details(existing_exp_details)
    
    if(length(which_files) == 1){
       if(is.na(which_files)){
          if("NULL" %in% class(existing_exp_details)){
             
-            which_files <- list.files(path = project_folder, 
-                                      recursive = recursive)
+            Directory <- tibble(PathFile = list.files(path = project_folder, 
+                                                      recursive = recursive)) %>% 
+               mutate(File = basename(PathFile)) %>% 
+               filter(!str_detect(PathFile, "^~"))
             
          } else {
-            which_files <- existing_exp_details$MainDetails %>% pull(File)
+            Directory <- existing_exp_details$MainDetails %>% 
+               mutate(File_orig = File, 
+                      File = basename(File)) %>% 
+               select(File, File_orig) %>% 
+               # adding path 
+               left_join(AllFiles, by = "File")
          }
          
       } else {
-         which_files <- list.files(path = project_folder, 
-                                   pattern = which_files, 
-                                   recursive = recursive)
+         Directory <- tibble(PathFile = list.files(path = project_folder, 
+                                                   pattern = which_files, 
+                                                   recursive = recursive)) %>% 
+            mutate(File = basename(PathFile)) %>% 
+            filter(!str_detect(PathFile, "^~"))
       }
       
    } else {
       # If length(which_files) > 1, then they have supplied a character vector
       # of files. If they didn't include ".xlsx" at the end, add that.
-      which_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", which_files), ".xlsx")
+      Directory <-  tibble(PathFile = which_files) %>% 
+         mutate(PathFile = case_when(str_detect(PathFile, "\\.xlsx|\\.db|\\.wksz") == 
+                                        FALSE ~ paste0(PathFile, ".xlsx")), 
+                File = basename(PathFile)) %>% 
+         filter(!str_detect(PathFile, "^~"))
       
    } 
    
    # Checking for other file extensions and checking that file exists. 
-   which_files_wksz <- sub("\\.xlsx|\\.db|\\.wksz", ".wksz", which_files)
-   which_files_wksz <- which_files_wksz[file.exists(which_files_wksz)]
+   Directory <- Directory %>% 
+      mutate(Folder = dirname(PathFile), 
+             Folder = ifelse(Folder == ".", getwd(), Folder), 
+             Filename = sub("\\.xlsx|\\.db|\\.wksz", "", File), 
+             
+             File.wksz = sub("\\.xlsx|\\.db|\\.wksz", ".wksz", PathFile), 
+             File.wksz = case_when(file.exists(File.wksz) ~ File.wksz, 
+                                   .default = NA), 
+             
+             File.xlsx = sub("\\.xlsx|\\.db|\\.wksz", ".xlsx", PathFile), 
+             File.xlsx = case_when(file.exists(File.xlsx) ~ File.xlsx, 
+                                   .default = NA), 
+             
+             File.db = sub("\\.xlsx|\\.db|\\.wksz", ".db", PathFile), 
+             File.db = case_when(file.exists(File.db) ~ File.db, 
+                                 .default = NA))
    
-   which_files_xlsx <- sub("\\.xlsx|\\.db|\\.wksz", ".xlsx", which_files)
-   which_files_xlsx <- which_files_xlsx[file.exists(which_files_xlsx)]
-   
-   which_files_db <- sub("\\.xlsx|\\.db|\\.wksz", ".db", which_files)
-   which_files_db <- which_files_db[file.exists(which_files_db)]
-   
-   which_files <- sort(unique(c(which_files_wksz, which_files_xlsx, 
-                                which_files_db)))
-   
-   which_files <- unique(which_files[!str_detect(which_files, "^~")])
-   
-   if(length(which_files) == 0){
+   if(length(sort(unique(c(Directory$File.wksz, 
+                           Directory$File.xlsx, 
+                           Directory$File.db)))) == 0){
       if("NULL" %in% class(existing_exp_details) == FALSE){
          stop(wrapn(paste0("We can't find any of the files in 'existing_exp_details'. Are you in the main folder for this project or have you set the argument 'project_folder' to that folder? We need to know the project folder to figure out where your files are. Please set the project folder and try again.")), 
               call. = FALSE)
@@ -128,15 +152,10 @@ make_simulation_directory <- function(project_folder = NA,
       }
    }
    
-   Directory <- data.frame(File = which_files, 
-                           Folder = as.character(NA)) %>% 
-      # Only keeping xlsx, db, and wksz files
-      filter(str_detect(File, "xlsx$|db$|wksz$"))
-   
    # Checking for file name issues
    Directory <- Directory %>% 
-      mutate(FileNameCheck = check_file_name(basename(File)), 
-             DuplicateFileCheck = as.character(NA))
+      mutate(FileNameCheck = check_file_name(Filename))
+   
    BadFileNames <- Directory %>% 
       filter(!FileNameCheck == "File name meets naming standards.")
    
@@ -150,38 +169,12 @@ make_simulation_directory <- function(project_folder = NA,
               call. = FALSE)
    }
    
-   if(nrow(Directory) == 0){
-      stop(wrapn("No simulation files were found in the directory provided. We cannot make your simulation directory."), 
-           call. = FALSE)
-   }
-   
-   FoundFiles <- tibble(
-      FoundFile = list.files(path = project_folder, 
-                             pattern = "xlsx$|db$|wksz$", 
-                             recursive = recursive, 
-                             full.names = TRUE)) %>% 
-      mutate(Folder = dirname(FoundFile), 
-             Folder = ifelse(Folder == ".", getwd(), Folder), 
-             File = basename(FoundFile))
-   
-   for(i in 1:nrow(Directory)){
-      
-      temp <- FoundFiles %>% 
-         mutate(CheckName = str_detect(paste0("^", Directory$File[i], "$"), File)) %>% 
-         filter(CheckName == TRUE) %>% select(-CheckName) %>% unique()
-      
-      if(nrow(temp) > 1){
-         Directory$DuplicateFileCheck[i] <- "simulation file in multiple locations"
-      } else {
-         Directory$DuplicateFileCheck[i] <- ""
-      }
-      
-      Directory$Folder[i] <- str_comma(temp$Folder)
-      
-   }
-   
+   Directory$DuplicateFileCheck <- duplicated(Directory$Filename, fromLast = T) |
+      duplicated(Directory$Filename, fromLast = F)
    Directory <- Directory %>% 
-      mutate(Folder = case_when(Folder == "" ~ "FILE NOT FOUND", 
+      mutate(DuplicateFileCheck = case_when(DuplicateFileCheck == TRUE ~ "simulation file in multiple locations", 
+                                            DuplicateFileCheck == FALSE ~ ""), 
+             Folder = case_when(PathFile %in% AllFiles$PathFile == FALSE ~ "FILE NOT FOUND", 
                                 .default = Folder))
    
    if(relative_paths){
@@ -190,25 +183,20 @@ make_simulation_directory <- function(project_folder = NA,
    
    # Formatting per FDA/Consultancy Team requirements
    Directory <- Directory %>% 
-      mutate(Filename = sub("\\..*$", "", basename(File)), 
-             Filetype = str_extract(File, "xlsx$|db$|wksz$")) %>% 
+      mutate(Filetype = paste0(if_else(complete.cases(File.wksz), "wksz, ", ""), 
+                               if_else(complete.cases(File.xlsx), "xlsx, ", ""), 
+                               if_else(complete.cases(File.db), "db", "")), 
+             Filetype = sub(", $", "", Filetype)) %>% 
       select(Filename, Filetype, Folder, FileNameCheck, DuplicateFileCheck) %>% 
       unique() %>% 
-      group_by(Filename, Folder, FileNameCheck, DuplicateFileCheck) %>% 
-      summarize(Filetype = str_c(Filetype, collapse = ", ")) %>% 
-      ungroup() %>% 
-      select(Filename, Filetype, Folder, FileNameCheck, DuplicateFileCheck) %>% 
       mutate(`Table/Figure` = "", 
              Comments = "", 
              Folder = case_when(Folder == "." ~ "", 
                                 .default = Folder))
    
-   if("logical" %in% class(existing_exp_details) == FALSE){
+   if("NULL" %in% class(existing_exp_details) == FALSE){
       
-      existing_exp_details <- harmonize_details(existing_exp_details)
-      
-      if("NULL" %in% class(existing_exp_details) == FALSE &&
-         "ObsOverlayFile" %in% names(existing_exp_details$MainDetails) &&
+      if("ObsOverlayFile" %in% names(existing_exp_details$MainDetails) &&
          any(complete.cases(existing_exp_details$MainDetails$ObsOverlayFile))){
          Directory <- Directory %>% 
             left_join(existing_exp_details$MainDetails %>% 
@@ -216,6 +204,34 @@ make_simulation_directory <- function(project_folder = NA,
                          mutate(Filename = sub("\\..*$", "", basename(File))) %>% 
                          rename("XML file used" = ObsOverlayFile) %>% 
                          select(-File), by = "Filename")
+         
+         if(relative_paths){
+            
+            Directory$`XML file used` <- gsub("\\\\", "/", Directory$`XML file used`)
+            Directory$`XML file used` <- sub("C:/Users/.*/Certara.*Directory/", 
+                                             "", Directory$`XML file used`)
+            
+            # # Dealing with possibly different user names b/c this mucks up
+            # # getting the relative path
+            # 
+            # X <- gsub("\\\\", "/", Directory$`XML file used`)
+            # Pattern <- gsub("Users/|/Certara", "",
+            #                 str_extract(X, pattern = "Users.*Certara"))
+            # Replacement <- rep(as.character(Sys.info()["user"]), length(Pattern))
+            # # Directory$`XML file used` <- 
+            #    
+            #    str_replace(Pattern, Replacement, X)
+            # 
+            #    map()
+            #    
+            #    THIS IS COMPLETELY NOT WORKING. 
+            #    
+            # 
+            # Directory$`XML file used` <- 
+            #    R.utils::getRelativePath(Directory$`XML file used`)
+            # 
+            # Directory$`XML file used` <- gsub("../.*Working Directory/", "", Directory$`XML file used`)
+         }
       }
    }
    
@@ -234,7 +250,8 @@ make_simulation_directory <- function(project_folder = NA,
    
    # Setting column order 
    Directory <- Directory %>% 
-      select(any_of(c("Filename", "Filetype", "Folder", "XML file used", "Table/Figure",
+      select(any_of(c("Filename", "Filetype", "Folder", 
+                      "XML file used", "Table/Figure",
                       "Comments", "FileNameCheck", "DuplicateFileCheck")))
    
    

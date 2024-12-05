@@ -43,8 +43,8 @@ simulation files in subfolders}
 
 \item{relative_paths}{TRUE (default) or FALSE for whether to put relative
 (rather than full) paths in the table. This means "relative to your current
-working directory", so it matters what folder you'r in when you call this
-function.}
+working directory", so it matters what folder you're in when you call this
+function. We recommend setting this to TRUE.}
 
 \item{save_table}{optionally specify either an Excel or csv file name for
 saving your simulation directory}
@@ -57,12 +57,12 @@ a data.frame of simulation files and their respective file paths
 }
 \description{
 \code{make_simulation_directory} will create a data.frame of
-  simulations in a given project folder, which XML files match which
-  simulations when applicable (you'll have to provide that information with
-  the argument \code{existing_exp_details}), and, optionally, save that
-  data.frame to an Excel file. It will also perform a few checks such as
-  checking whether the file names comply with USFDA and Consultancy Team
-  standards.
+  simulations in a given project folder, the associated XML files when
+  applicable (you'll have to provide that information with the argument
+  \code{existing_exp_details}), and, optionally, save that data.frame to an
+  Excel file. It will also check whether the file names comply with USFDA and
+  Consultancy Team standards and check whether the same simulation is saved
+  in more than one place.
 
   This is wicked fast.
 }
