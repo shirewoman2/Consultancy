@@ -889,10 +889,11 @@ ct_plot <- function(ct_dataframe = NA,
    MyCompoundID <- ifelse(EnzPlot, unique(Data$Enzyme), 
                           unique(Data$CompoundID))
    if(EnzPlot){
-      Data <- Data %>% mutate(CompoundID = Enzyme) %>%
+      Data <- Data %>% 
          rename(Conc = Abundance) %>%
-         mutate(Simulated = TRUE,
+         mutate(CompoundID = Enzyme, 
                 Compound = Enzyme, 
+                Conc_units = "ng/mL", # placeholder only
                 Tissue_subtype = NA, # This avoids some annoying warnings later, and it's easiest to just add it here. 
                 # putting "conc" into decimal format b/c it works better with
                 # using percents on y axis labels

@@ -664,13 +664,15 @@ extractEnzAbund <- function(sim_data_file,
    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
       Data[["agg"]] <- sim_data_mean %>%
          arrange(Trial, Time) %>% 
-         mutate(IndivOrAgg = "aggregate")
+         mutate(IndivOrAgg = "aggregate", 
+                Simulated = TRUE)
    }
    
    if(any(c("individual", "both") %in% returnAggregateOrIndiv)){
       Data[["indiv"]] <- sim_data_ind %>%
          mutate(Individual = as.character(Individual),
                 Trial = as.character(Trial), 
+                Simulated = TRUE, 
                 IndivOrAgg = "individual") %>%
          arrange(Individual, Time)
    }
@@ -884,7 +886,7 @@ extractEnzAbund <- function(sim_data_file,
                               "Substrate", "Inhibitor",
                               "Individual", "Trial", "Time")))) %>%
       select(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor", 
-                      "IndivOrAgg", "Species", 
+                      "Simulated", "IndivOrAgg", "Species", 
                       "Individual", "Trial", "Time", "Abundance",
                       "Time_units", 
                       "DoseNum_sub", "Dose_int_sub", "TimeSinceDose1_sub",

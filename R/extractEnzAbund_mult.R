@@ -334,7 +334,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       arrange(across(any_of(c("File", "Enzyme", "Inhibitor",
                               "Individual", "Trial", "Time")))) %>%
       select(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor", 
-                      "IndivOrAgg", "Species",
+                      "Simulated", "IndivOrAgg", "Species",
                       "Individual", "Trial", "Time", "Abundance",
                       "Time_units", 
                       "DoseNum_sub", "Dose_int_sub", "TimeSinceDose1_sub",
