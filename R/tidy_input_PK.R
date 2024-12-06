@@ -194,21 +194,37 @@ tidy_input_PK <- function(PKparameters,
                     "denominator.*compoundid|compoundid.*denominator")][1] <- "Denominator_CompoundID"
       
       if("Numerator_CompoundID" %in% names(PKparameters) == FALSE){
-         PKparameters <- PKparameters %>% 
-            left_join(expand_grid(Numerator_File = unique(PKparameters$Numerator_File), 
-                                  Numerator_CompoundID = compoundsToExtract), 
-                      by = "Numerator_File") %>% 
-            mutate(Numerator_CompoundID = case_when(is.na(Numerator_CompoundID) ~ "substrate", 
-                                                    .default = Numerator_CompoundID))
+         if("Numerator_File" %in% names(PKparameters)){
+            PKparameters <- PKparameters %>% 
+               left_join(expand_grid(Numerator_File = unique(PKparameters$Numerator_File), 
+                                     Numerator_CompoundID = compoundsToExtract), 
+                         by = "Numerator_File") %>% 
+               mutate(Numerator_CompoundID = case_when(is.na(Numerator_CompoundID) ~ "substrate", 
+                                                       .default = Numerator_CompoundID))
+         } else {
+            # If "Numerator_File" isn't present, I'm not sure what else
+            # definitely WILL be at this point. Hoping for the best here.
+            PKparameters <- PKparameters %>% 
+               mutate(Numerator_CompoundID = case_when(is.na(Numerator_CompoundID) ~ "substrate", 
+                                                       .default = Numerator_CompoundID))
+         }
       }
       
       if("Denominator_CompoundID" %in% names(PKparameters) == FALSE){
-         PKparameters <- PKparameters %>% 
-            left_join(expand_grid(Denominator_File = unique(PKparameters$Denominator_File), 
-                                  Denominator_CompoundID = compoundsToExtract), 
-                      by = "Denominator_File") %>% 
-            mutate(Denominator_CompoundID = case_when(is.na(Denominator_CompoundID) ~ "substrate", 
-                                                      .default = Denominator_CompoundID))
+         if("Denominator_File" %in% names(PKparameters)){
+            PKparameters <- PKparameters %>% 
+               left_join(expand_grid(Denominator_File = unique(PKparameters$Denominator_File), 
+                                     Denominator_CompoundID = compoundsToExtract), 
+                         by = "Denominator_File") %>% 
+               mutate(Denominator_CompoundID = case_when(is.na(Denominator_CompoundID) ~ "substrate", 
+                                                         .default = Denominator_CompoundID))
+         } else {
+            # If "Denominator_File" isn't present, I'm not sure what else
+            # definitely WILL be at this point. Hoping for the best here.
+            PKparameters <- PKparameters %>% 
+               mutate(Denominator_CompoundID = case_when(is.na(Denominator_CompoundID) ~ "substrate", 
+                                                         .default = Denominator_CompoundID))
+         }
       }
       
       # Tissue

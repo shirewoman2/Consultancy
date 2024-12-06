@@ -265,7 +265,7 @@ make_simulation_directory <- function(project_folder = NA,
                     "columns" = which(names(Directory) %in% c("Filename", "FileNameCheck")))
          } 
          
-         if(any(Directory$Folder == "FILE NOT FOUND")){
+         if(any(Directory$Folder == "FILE NOT FOUND", na.rm = T)){
             Highlighting[["Folder"]] <- 
                list("rows" = which(Directory$Folder == "FILE NOT FOUND"), 
                     "columns" = which(names(Directory) %in% c("Folder", "Filename")))
