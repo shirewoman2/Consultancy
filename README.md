@@ -19,30 +19,32 @@ are to:
 
 You can install the SimcypConsultancy package from GitHub like this:
 
-``` r
-devtools::install_github(repo = "shirewoman2/Consultancy", 
-                         upgrade = "never")
-```
+    devtools::install_github(repo = "shirewoman2/Consultancy", 
+                             upgrade = "never")
 
-Current version: 3.5.0
+Current version: 3.6.1
 
 # An overview of what SimcypConsultancy functions do
 
+Below are descriptions of all the functions in the package, and the
+functions most users will want to use most frequently are in bold and
+listed first in each section.
+
 ## Get help on using the SimcypConsultancy package
 
-- launch_package_index() - Launch the shiny app for showing an annotated
-  index of what the SimcypConsultancy package can do
-- make_example_PK_input() - Examples for supplying PK parameters to the
-  pk_table or calc_PK_ratios functions for the argument PKparameters
+- **launch_package_index()** - Launch the shiny app for showing an
+  annotated index of what the SimcypConsultancy package can do
+- **make_example_PK_input()** - Examples for supplying PK parameters to
+  the pk_table or calc_PK_ratios functions for the argument PKparameters
 - show_code_example() - IN PROGRESS - Show some examples for the code to
   use for making PK tables or concentration-time plots
 
 ## Get information about your simulations
 
-- annotateDetails() - Annotate Simcyp Simulator experimental details
+- **extractExpDetails_mult()** - Extract experimental details for
+  multiple files at once
+- **annotateDetails()** - Annotate Simcyp Simulator experimental details
 - qc_sims() - Make an Excel file for QCing simulations
-- extractExpDetails_mult() - Extract experimental details for multiple
-  files at once
 - extractExpDetails() - Extract details about the experimental design
 - extractExpDetails_DB() - Extract simulation experimental details from
   a database file - UNDER CONSTRUCTION!!!!!
@@ -53,28 +55,23 @@ Current version: 3.5.0
 
 ### Make typical PK tables
 
-- pk_table() - Make tables of PK values from Simulator output Excel
+- **pk_table()** - Make tables of PK values from Simulator output Excel
   files
-- *pksummary_mult() - Soon to be deprecated in favor of the more
-  versatile pk_table()* - Make PK summary tables from multiple simulator
-  output files at once
-- *pksummary_table() - Soon to be deprecated in favor of the more
-  versatile pk_table()* - Make a summary PK table for a report or slide
-  deck \### Make PK comparisons not natively available in the Simulator
-  outputs
+
+### Make PK comparisons not natively available in the Simulator outputs
+
+- **calc_PK_ratios_mult()** - Calculate the ratio of PK parameters
+  between multiple pairs of simulations
 - calc_PK_ratios() - Calculate the ratio of PK parameters between two
   simulations
-- calc_PK_ratios_mult() - Calculate the ratio of PK parameters between
-  multiple pairs of simulations \#### Helper functions for PK tables
+
+#### Helper functions for PK tables
+
 - convert_units() - Convert concentration and time units as needed
 - extractPK() - Extract PK data for specific parameters from a simulator
   output Excel file
 - extractPK_DB() - Extract PK from a Simcyp Simulator database file –
   UNDER CONSTRUCTION!!!!
-- *generateReportInputForm() - No longer being developed* - Generate a
-  form for entering data for a report
-- *getSectionInfo() - No longer being developed* - Get information from
-  an Excel report-input file about a section for a report
 
 ### Calculate PK
 
@@ -88,22 +85,22 @@ Current version: 3.5.0
 
 ## Formatting and saving tables
 
+- **formatTable_Simcyp()** - Format tables according to Simcyp
+  Consultancy Team specifications, e.g.,
 - format_table_simple() - Format a table rather simply to look nice in a
   Word file
-- formatTable_Simcyp() - Format tables according to Simcyp Consultancy
-  Team specifications, e.g.,
 - save_table_to_Word() - Save a bespoke PK table to Word using the
   pksummary_mult rmarkdown template
 
 ## Other tables you can make
 
+- **make_simulation_directory()** - Make a directory of simulations
+  indicating which simulation file is located in which folder
 - insert_copyright() - Insert the standard Certara UK Limited copyright
   box that appears in compound summary files - Yes, this is actually a
   table, even though it just looks like a box.
 - make_Simcyp_inputs_table() - Summarize a PBPK model using parameters
   pulled from simulations - UNDER CONSTRUCTION
-- make_simulation_directory() - Make a directory of simulations
-  indicating which simulation file is located in which folder
 - make_trial_design_table() - Create a table describing a simulation
   trial design.
 
@@ -111,7 +108,16 @@ Current version: 3.5.0
 
 ### Make concentration-time plots or variations thereof
 
-- ct_plot() - Concentration-time plots to match Consultancy template  
+- **ct_plot()** - Concentration-time plots to match Consultancy
+  template  
+- **ct_plot_overlay()** - Overlay multiple data sets onto a single
+  concentration-time graph
+- **enz_plot()** - Plots of enzyme abundance changes over time to match
+  Consultancy template
+- **enz_plot_overlay()** - Overlay multiple data sets onto a single
+  enzyme-abundance graph
+- **runShiny()** - Launch the shiny app for making PK summary tables and
+  concentration-time plots
 - ct_plot3() - Concentration-time plots of the full time range, first
   dose, and last dose
 - ct_plot_1stlast() - Make concentration-time plots of the 1st and last
@@ -119,23 +125,16 @@ Current version: 3.5.0
 - ct_plot_mult() - Make graphs for multiple Simulator output files at
   once
 - ct_plot_obs() - Plot observed concentration-time data
-- ct_plot_overlay() - Overlay multiple data sets onto a single
-  concentration-time graph
-- enz_plot() - Plots of enzyme abundance changes over time to match
-  Consultancy template
-- enz_plot_overlay() - Overlay multiple data sets onto a single
-  enzyme-abundance graph
-- runShiny() - Launch the shiny app for making PK summary tables and
-  concentration-time plots
+- fm_plot() - Make a plot of dynamic fm and fe values
 
 #### Helper functions for concentration-time plots
 
+- **extractConcTime_mult()** - Pull concentration-time data from
+  multiple Simcyp Simulator output files
 - extractConcTime() - Extract concentration-time data from a simulator
   output Excel file
 - extractConcTime_DB() - Extract concentration-time data from a Simcyp
   Simulator database file – UNDER CONSTRUCTION!!!
-- extractConcTime_mult() - Pull concentration-time data from multiple
-  Simcyp Simulator output files
 - extractEnzAbund() - Extract enzyme abundance data from a simulator
   output Excel file
 - extractEnzAbund_mult() - Pull enzyme-abundance data from multiple
@@ -173,8 +172,9 @@ Current version: 3.5.0
 
 #### Comparing demographics
 
-- demog_table() - Make a table of demographics for a set of simulations
-- demog_plot_sim() - Make plots for comparing populations across
+- **demog_table()** - Make a table of demographics for a set of
+  simulations
+- **demog_plot_sim()** - Make plots for comparing populations across
   simulations
 - demog_plot_SO() - Make a set of plots showing the demographics used in
   a simulation and optionally compare them to observed demographics.
@@ -184,34 +184,30 @@ Current version: 3.5.0
 
 #### Forest plots
 
-- forest_plot() - Create a forest plot
-- *forest_plot_old() - No longer being developed* - Create a forest plot
-  – WARNING! TO BE DEPRECATED! This function is no longer being
-  supported and may stop working as internal subfunction dependencies
-  get updated. Please talk to Laura Sh. if you need help with this.
+- **forest_plot()** - Create a forest plot
 - extractForestData() - Extract pertinent data from Simulator output
   files for creating forest plots
 
 #### Misc. data visualization functions
 
-- checkSS() - Create a graph of simulated concentrations to check for
-  whether a perpetrator drug is at steady-state when the victim drug is
-  dosed
-- dissolution_profile_plot() - Make a graph of the dissolution profiles
-  of a compound
+- **so_graph()** - Graph of simulated vs. observed PK
+- **sensitivity_plot()** - Make graphs of sensitivity analysis results
+- **trial_means_plot()** - Make graphs comparing center statistic and
+  variability in PK across trials and, optionally, against observed PK
+  data as well
+- **checkSS()** - Create a graph of simulated concentrations to check
+  for whether a perpetrator drug is at steady-state when the victim drug
+  is dosed
 - fm_treemap() - For comparing fm values, make a treemap as opposed to
   the standard and arguably inferior pie chart
+- dissolution_profile_plot() - Make a graph of the dissolution profiles
+  of a compound
 - graph_boxplot() - Make boxplots or boxplots overlaid with individual
   points
 - ontogeny_plot() - Graph the ontogenies of drug-metabolizing enzymes
   and transporters
 - release_profile_plot() - Make a graph of the release profiles of a
   compound
-- sensitivity_plot() - Make graphs of sensitivity analysis results
-- so_graph() - Graph of simulated vs. observed PK
-- trial_means_plot() - Make graphs comparing center statistic and
-  variability in PK across trials and, optionally, against observed PK
-  data as well
 
 ### Helper functions for graphing
 
@@ -238,7 +234,8 @@ Current version: 3.5.0
 
 ### Fit induction models to *in vitro* data
 
-- inductFit() - Fit induction data to calculate EC50, Emax, and/or slope
+- **inductFit()** - Fit induction data to calculate EC50, Emax, and/or
+  slope
 
 ### Getting data from a pdf table
 
@@ -246,7 +243,7 @@ Current version: 3.5.0
 
 ### Examining DDIs
 
-- list_interactions() - Find all the possible drug-drug interactions
+- **list_interactions()** - Find all the possible drug-drug interactions
   between compounds included in a single simulation
 
 #### Tidbits for making quick calculations
@@ -280,18 +277,21 @@ Current version: 3.5.0
 #### Read or change workspaces
 
 *NB: Most functions that actually change workspaces are only available
-in the beta version of the package.* - change_wksz_interactions() -
-Change interaction parameters in Simcyp Simulator workspace files -
-change_wksz_trial_design() - Change a limited set of trial-design
-parameters in Simcyp Simulator workspace files. UNDER CONSTRUCTION. -
-change_xml_path() - Set the user name in the path of observed data
-overlay XML files and fixed trial design XML files -
-detect_file_timestamp() - Figure out what date/time stamps on Excel
-results files would be removed by the function remove_file_timestamp -
-remove_file_timestamp() - Remove date/time stamps from Excel results
-files created by the Autorunner - make_xml_path_mine() - Make the user
-name in the path of observed data overlay XML files and fixed trial
-design XML files match that of the current user
+in the beta version of the package.*
+
+- **make_xml_path_mine()** - Make the user name in the path of observed
+  data overlay XML files and fixed trial design XML files match that of
+  the current user
+- **remove_file_timestamp()** - Remove date/time stamps from Excel
+  results files created by the Autorunner
+- change_wksz_interactions() - Change interaction parameters in Simcyp
+  Simulator workspace files
+- change_wksz_trial_design() - Change a limited set of trial-design
+  parameters in Simcyp Simulator workspace files. UNDER CONSTRUCTION.
+- change_xml_path() - Set the user name in the path of observed data
+  overlay XML files and fixed trial design XML files
+- detect_file_timestamp() - Figure out what date/time stamps on Excel
+  results files would be removed by the function remove_file_timestamp
 
 #### Helper functions that call on the Simcyp package
 
@@ -329,7 +329,6 @@ design XML files match that of the current user
   existing data.frame or list of experimental details and make it be a
   list with standard items
 - harmonize_PK_names() - Harmonize user input for PK parameters
-- get_obs_PK() - INTERNAL - For use w/pksummary_table.
 - make_color_set() - Create a set of colors for use in graphs
 - make_ct_caption() - INTERNAL - make caption for conc-time plots
 - make_table_annotations() - Make table headings and captions for use
