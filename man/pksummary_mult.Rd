@@ -2,8 +2,8 @@
 % Please edit documentation in R/pksummary_mult.R
 \name{pksummary_mult}
 \alias{pksummary_mult}
-\title{Make PK summary tables from multiple simulator output files at once - NOTE:
-WE PLAN TO DEPRECATE THIS FUNCTION IN FAVOR OF THE FUNCTION pk_table.}
+\title{Make a summary PK table for a report or slide deck - THIS FUNCTION HAS BEEN
+DEPRECATED IN FAVOR OF THE FUNCTION pk_table.}
 \usage{
 pksummary_mult(
   sim_data_files = NA,
@@ -354,70 +354,8 @@ Returns a data.frame with summary PK parameters from multiple
   simulator output files
 }
 \description{
-\code{pksummary_mult} creates tables of PK parameters for reports and
-presentations, including reporting means, CVs, and confidence intervals or
-percentiles and, optionally, comparisons to observed data. This function
-automatically finds the correct tabs and the correct cells in a Simulator
-output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Please
-see the notes at the bottom of this help file for how to supply observed data
-in a standardized fashion that this function can read.} \item{For detailed
-instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
-R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
-instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
-include a link to it here.)}}
-}
-\details{
-Because we need to have a standardized way to input observed data, setting up
-the input for this function requires creating a data.frame of the observed PK
-data or supplying a csv or Excel file with observed PK data.
-
-\strong{OPTION A: Supply a data.frame.} Use the column names to indicate
-which PK parameter you want, and include a column titled "File" to indicate
-which simulator output Excel file the observed PK in that row should be
-compared to. If you have CV values for any observed data that you'd like to
-include in the table, make the column name be the PK parameter with a suffix
-of "_CV".
-
-An example of specifying a data.frame: \code{observed_PK = data.frame(File =
-c("abc1a-25mg.xlsx", "abc1a-50mg.xlsx"), AUCinf_dose1 = c(60, 120),
-AUCinf_dose1_CV = c(0.38, 0.42), Cmax_dose1 = c(22, 51), Cmax_dose1_CV =
-c(0.24, 0.39))}
-
-\strong{OPTION B: Use a csv file of observed PK data.} In Excel, create a csv
-file where the first row is the PK parameters you want and the second row
-lists the values for each. Make sure to include one column titled "File" to
-indicate which simulator output Excel file the observed PK in that row should
-be compared to. This should look the same as the examples for Option A. To
-see an example of how this should look, run this in the console and then open
-the csv file:
-
-\code{write.csv(data.frame(File = c("abc1a-25mg.xlsx", "abc1a-50mg.xlsx"),
-AUCinf_dose1 = c(60, 120), AUCinf_dose1_CV = c(0.38, 0.42), Cmax_dose1 =
-c(22, 51), Cmax_dose1_CV = c(0.24, 0.39)), file = "Example observed PK
-values.csv", row.names = FALSE)}
-
-When you call on \code{pksummary_table}, use the following syntax,
-substituting your file name for the example: \code{observed_PK = "Example
-observed PK values.csv"}
-
-\strong{OPTION C: Use a tab named "observed PK" in the compound data sheet
-for your project.} Just as with the other examples, the first row lists the
-PK parameters you want, and subsequent rows list the values for those
-parameters. Include a column titled "File" and list the name of the
-simulation output file that you want to compare. It's ok to leave blank any
-cells where you don't have a value, and it's ok to change the PK parameter
-names to something else that you want as long as it's one of the options for
-"PKparameter" in the table you can see by running this in the console:
-\code{view(PKParameterDefinitions)}. Note that this will require that a copy
-of the compound data sheet exists somewhere that R can read it, i.e., not on
-a SharePoint folder with no path in Windows.
-
-When you call on \code{pksummary_table}, use the following syntax,
-substituting your project's compound data sheet file name for the example:
-\code{observed_PK = paste0(SimcypDir$SharePtDir, "abc-1a/Research/abc-1a
-compound data sheet.xlsx")}  (This assumes that the compound data sheet lives
-on the SharePoint drive in the "Research" folder for you project. Change
-"abc-1a" and the file name to whatever you need for your project.)
+Make a summary PK table for a report or slide deck - THIS FUNCTION HAS BEEN
+DEPRECATED IN FAVOR OF THE FUNCTION pk_table.
 }
 \examples{
 

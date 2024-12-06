@@ -2,8 +2,8 @@
 % Please edit documentation in R/pksummary_table.R
 \name{pksummary_table}
 \alias{pksummary_table}
-\title{Make a summary PK table for a report or slide deck - NOTE: WE PLAN TO
-DEPRECATE THIS FUNCTION IN FAVOR OF THE FUNCTION pk_table.}
+\title{Make a summary PK table for a report or slide deck - THIS FUNCTION HAS BEEN
+DEPRECATED IN FAVOR OF THE FUNCTION pk_table.}
 \usage{
 pksummary_table(
   sim_data_file = NA,
@@ -388,106 +388,8 @@ Returns a data.frame of PK summary data and, if observed data were
   information on where the values came from for QCing (named "QC").
 }
 \description{
-\code{pksummary_table} creates tables of PK parameters for reports and
-presentations, including reporting means, CVs, and confidence intervals or
-percentiles and, optionally, comparisons to observed data. When it's a
-standard PK parameter you're after, this function automatically finds the
-correct tabs and the correct cells in a Simulator output Excel file to obtain
-those data. If you want PK from a user-defined AUC interval, that's possible,
-too, but we'll need you to tell us which sheet
-to use. \strong{Notes:} \itemize{\item{If you want}
-\item{Please
-see the notes at the bottom of this help file for how to supply observed data
-in a standardized fashion that this function can read.} \item{If you would
-like to make a single PK table for multiple files at once, please see the
-function \code{\link{pksummary_mult}}.} \item{You can specify which compound
-(substrate, inhibitor 1, etc.) and which tissue (plasma, blood, or unbound
-versions of each) you want to get the PK data for.}} For detailed
-instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
-R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
-instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
-include a link to it here.)
-}
-\details{
-Because we need to have a standardized way to input observed data, setting up
-the input for this function requires creating a data.frame or named vector of
-the observed PK data, supplying a csv or Excel file with observed PK data, or
-filling out an Excel form. The data can be set up so that the columns are the
-name of the PK parameter or, for a little more flexibility, the data can be
-set up with a single column listing the PK parameters and a separate column
-listing their values. This second approach also allows you to include another
-column specifying which tab you want to use to find those parameters when you
-have a user-defined interval. Here are all the options in more detail:
-
-\strong{OPTION A: Supply a named vector.} Make the names of the vector the PK
-parameters you want. If you have CV values for any observed data that you'd
-like to include in the table, make the name be the PK parameter with a suffix
-of "_CV". An example: \code{observed_PK = c("AUCinf_dose1"
-= 60, "AUCinf_dose1_CV" = 0.38, "Cmax_dose1" = 22, "Cmax_dose1_CV" = 0.24)}.
-
-\strong{OPTION B: Use a csv file or a data.frame of observed PK data with a
-column for the PK
-parameter and a separate column for the value.} In Excel or in R, create a
-table
-
-Alternatively, set this up so that thethe first row is the PK parameters you
-want and the second row lists the values for each. This should look the same
-as the examples for Option A. To see an example of how this should look, run
-this in the console and then open the csv file:
-
-\code{write.csv(data.frame(AUCinf_dose1 = 60, AUCinf_dose1_CV = 0.38,
-Cmax_dose1 = 22, Cmax_dose1_CV = 0.24), file = "Example observed PK
-values.csv", row.names = FALSE)}
-
-When you call on \code{pksummary_table}, use the following syntax,
-substituting your file name for the example: \code{observed_PK = "Example
-observed PK values.csv"}
-
-\strong{OPTION C: Use a tab named "observed PK" in the compound data sheet
-for your project.} Just as with the other examples, the first row lists the
-PK parameters you want, and subsequent rows list the values for those
-parameters. Since this will also work for looking at PK for other possible
-simulations, please include the column "File" and list the name of the
-simulation output file that you want to compare. It's ok to leave blank any
-cells where you don't have a value, and it's ok to change the PK parameter
-names to something else that you want as long as it's one of the options for
-"PKparameter" in the table you can see by running this in the console:
-\code{view(PKParameterDefinitions)}. Note that this will require that a copy
-of the compound data sheet exists somewhere that R can read it, i.e., not on
-a SharePoint folder with no path in Windows.
-
-When you call on \code{pksummary_table}, use the following syntax,
-substituting your project's compound data sheet file name for the example:
-\code{observed_PK = paste0(SimcypDir$SharePtDir, "abc-1a/Research/abc-1a
-compound data sheet.xlsx")}  (This assumes that the compound data sheet lives
-on the SharePoint drive in the "Research" folder for you project. Change
-"abc-1a" and the file name to whatever you need for your project.)
-
-\strong{OPTION D: Fill out an Excel form.} Here are the steps to take for
-this option: \enumerate{
-
-\item{Use the function \code{\link{generateReportInputForm}} to create an
-Excel file where you can enter information about your project. Example:
-\code{generateReportInputForm("My report input form.xlsx")}}
-
-\item{Go to the tab "study info - DDI" or "study info - no DDI", whichever is
-appropriate for your situation. Under the heading "Simulated data", enter the
-name of the specific simulator output Excel file you want to compare.}
-
-\item{Under the heading "Observed data" on that same tab, enter details about
-your observed data. It's ok if you don't have all the information; anything
-that's missing won't be included in the final S/O table. It's also ok to
-rename this tab or make copies of it within the same Excel file for making
-other S/O tables.}
-
-\item{Save the report input form.}
-
-\item{Back in RStudio, run this function using the file name of that Excel
-report form as input for \code{report_input_file} and the name of the "study
-info - DDI/no DDI" tab as the input for \code{sheet_report}. Note: If the
-Excel file lives on SharePoint, you'll need to close it or this function will
-just keep running and not generate any output while it waits for access to
-the file.} }
+Make a summary PK table for a report or slide deck - THIS FUNCTION HAS BEEN
+DEPRECATED IN FAVOR OF THE FUNCTION pk_table.
 }
 \examples{
 pksummary_table("abc1a-5mg-qd.xlsx")
