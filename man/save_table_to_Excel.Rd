@@ -11,6 +11,7 @@ save_table_to_Excel(
   freeze_top_row = TRUE,
   center_top_row = TRUE,
   wrap_text = TRUE,
+  column_widths = NA,
   highlight_cells = NA
 )
 }
@@ -34,6 +35,14 @@ in the top row}
 
 \item{wrap_text}{TRUE (default) or FALSE for whether to wrap text}
 
+\item{column_widths}{optionally specify a numeric vector for the column
+widths. If left as NA, we will guess at reasonable column widths. If you
+specify anything, though, you'll need to specify ALL of the column widths.
+We'll repeat whatever number or numbers you use until we have enough for
+all the columns in your data, so if you want all your columns to be, e.g.,
+20 units wide in whatever units it is that Excel uses, just specify
+\code{column_widths = 20}.}
+
 \item{highlight_cells}{a named list of cells to highlight where the names are
 the colors to use for highlighting and the values are the cells to
 highlight. Default is NA for no highlighting. There are two possible ways
@@ -51,8 +60,8 @@ highlighted. If you want multiple, noncontiguous cells to be highlighted
 the same color, use multiple lists. For example, this will highlight two
 patches of cells yellow:
 \code{highlight_cells = list("yellow" = list(list("rows" = c(1:2), "columns" = c(3:4)),
-list("rows" = c(18:20), "columns" = 6)))}. Try it out and see what we mean. 
-Since this is focused on the \emph{input} to the function, we have set 
+list("rows" = c(18:20), "columns" = 6)))}. Try it out and see what we mean.
+Since this is focused on the \emph{input} to the function, we have set
 this up so that row 1 here is
 row 1 in your input data.frame, which is different from how we set it up
 if you use Excel cell names to specify which thing should be highlighted.

@@ -7,12 +7,9 @@ in which folder}
 \usage{
 make_simulation_directory(
   project_folder = NA,
-  recursive = TRUE,
-  which_files = NA,
+  sim_data_files = NA,
   existing_exp_details = NA,
-  relative_paths = TRUE,
-  save_table = NA,
-  wrap_text = FALSE
+  save_table = NA
 )
 }
 \arguments{
@@ -23,34 +20,31 @@ working directory is the top level of your project folders. This function
 \emph{only} searches for simulation files in the project folder and any
 subfolders.}
 
-\item{recursive}{TRUE (default) or FALSE for whether to recursively check for
-simulation files in subfolders}
-
-\item{which_files}{which files to include in the directory of simulations.
+\item{sim_data_files}{which files to include in the directory of simulations.
   Options are:
-  \describe{\item{NA}{all xlsx or wksz files in the current folder and any
-  subfolders OR, if you supply something for \code{existing_exp_details},
-  the files included in that object}
+  \describe{\item{NA}{all .xlsx, .db, or .wksz files in the current folder}
 
-  \item{a single text string such as "abc"}{only include files with that
-  specific text}
+  \item{"recursive"}{all .xlsx, .db, or .wksz files in the current folder and any
+  subfolders}
 
-  \item{a character vector of specific file names, e.g., \code{which_files =
-  c("abc.xlsx", "def.xlsx")}}{only include files listed}}}
+  \item{"use existing_exp_details"}{use the files included in whatever you
+  supplied for \code{existing_exp_details}. This will fine those files, even
+  if they're in subfolders, as long as they're somewhere in the project
+  folder}
 
-\item{existing_exp_details}{the output from running
-\code{\link{extractExpDetails_mult}}}
+  \item{a single text string such as "abc"}{include any files in the current
+  folder or any folders below it that have that specific text}
 
-\item{relative_paths}{TRUE (default) or FALSE for whether to put relative
-(rather than full) paths in the table. This means "relative to your current
-working directory", so it matters what folder you're in when you call this
-function. We recommend setting this to TRUE.}
+  \item{a character vector of specific file names, e.g., \code{sim_data_files =
+  c("abc.xlsx", "def.xlsx")}}{only include the files listed. We'll figure
+  out which subfolder they're in.}}}
+
+\item{existing_exp_details}{optionally supply the output from running
+\code{\link{extractExpDetails_mult}} to get only the simulation files
+included there in your simulation directory}
 
 \item{save_table}{optionally specify either an Excel or csv file name for
 saving your simulation directory}
-
-\item{wrap_text}{TRUE or FALSE (default) for whether to wrap text in the
-Excel output}
 }
 \value{
 a data.frame of simulation files and their respective file paths

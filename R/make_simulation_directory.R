@@ -18,29 +18,30 @@
 #'   working directory is the top level of your project folders. This function
 #'   \emph{only} searches for simulation files in the project folder and any
 #'   subfolders.
-#' @param which_files which files to include in the directory of simulations.
+#' @param sim_data_files which files to include in the directory of simulations.
 #'   Options are:
-#'   \describe{\item{NA}{all xlsx or wksz files in the current folder and any
-#'   subfolders OR, if you supply something for \code{existing_exp_details},
-#'   the files included in that object}
+#'   \describe{\item{NA}{all .xlsx, .db, or .wksz files in the current folder}
 #'
-#'   \item{a single text string such as "abc"}{only include files with that
-#'   specific text}
+#'   \item{"recursive"}{all .xlsx, .db, or .wksz files in the current folder and any
+#'   subfolders}
 #'
-#'   \item{a character vector of specific file names, e.g., \code{which_files =
-#'   c("abc.xlsx", "def.xlsx")}}{only include files listed}}
-#' @param existing_exp_details the output from running
-#'   \code{\link{extractExpDetails_mult}}
+#'   \item{"use existing_exp_details"}{use the files included in whatever you
+#'   supplied for \code{existing_exp_details}. This will fine those files, even
+#'   if they're in subfolders, as long as they're somewhere in the project
+#'   folder}
+#'
+#'   \item{a single text string such as "abc"}{include any files in the current
+#'   folder or any folders below it that have that specific text}
+#'
+#'   \item{a character vector of specific file names, e.g., \code{sim_data_files =
+#'   c("abc.xlsx", "def.xlsx")}}{only include the files listed. We'll figure
+#'   out which subfolder they're in.}}
+#'
+#' @param existing_exp_details optionally supply the output from running
+#'   \code{\link{extractExpDetails_mult}} to get only the simulation files
+#'   included there in your simulation directory
 #' @param save_table optionally specify either an Excel or csv file name for
 #'   saving your simulation directory
-#' @param relative_paths TRUE (default) or FALSE for whether to put relative
-#'   (rather than full) paths in the table. This means "relative to your current
-#'   working directory", so it matters what folder you're in when you call this
-#'   function. We recommend setting this to TRUE. 
-#' @param recursive TRUE (default) or FALSE for whether to recursively check for
-#'   simulation files in subfolders
-#' @param wrap_text TRUE or FALSE (default) for whether to wrap text in the
-#'   Excel output
 #'
 #' @return a data.frame of simulation files and their respective file paths
 #' @export
@@ -49,12 +50,9 @@
 #' # none yet
 #' 
 make_simulation_directory <- function(project_folder = NA, 
-                                      recursive = TRUE, 
-                                      which_files = NA, 
+                                      sim_data_files = NA, 
                                       existing_exp_details = NA, 
-                                      relative_paths = TRUE, 
-                                      save_table = NA, 
-                                      wrap_text = FALSE){
+                                      save_table = NA){
    
    # Error catching ----------------------------------------------------------
    
@@ -78,49 +76,66 @@ make_simulation_directory <- function(project_folder = NA,
    
    # Getting all file names
    AllFiles <- tibble(PathFile = list.files(path = project_folder, 
-                                            recursive = recursive)) %>% 
+                                            pattern = "\\.xlsx|\\.wksz|\\.db", 
+                                            recursive = TRUE)) %>% 
       mutate(File = basename(PathFile))
    
    # Harmonizing input. This will be of class "NULL" if input for argument was
    # NA.
    existing_exp_details <- harmonize_details(existing_exp_details)
    
-   if(length(which_files) == 1){
-      if(is.na(which_files)){
+   if(length(sim_data_files) == 1){
+      if(is.na(sim_data_files)){
+         Directory <- tibble(PathFile = list.files(path = project_folder, 
+                                                   pattern = "\\.xlsx|\\.wksz|\\.db", 
+                                                   recursive = FALSE))
+         
+      } else if(tolower(sim_data_files) == "recursive"){
+         Directory <- tibble(PathFile = list.files(path = project_folder, 
+                                                   pattern = "\\.xlsx|\\.wksz|\\.db", 
+                                                   recursive = TRUE))
+         
+      } else if(str_detect(tolower(sim_data_files), "existing|details")){
          if("NULL" %in% class(existing_exp_details)){
+            warning(wrapn("You said to use what you supplied for the argument 'existing_exp_details' for the files in your simulation directory, but you did not actually supply anything for 'existing_exp_details'. We'll look at all the files in the project folder and any subfolders and return those instead."), 
+                    call. = FALSE)
             
             Directory <- tibble(PathFile = list.files(path = project_folder, 
-                                                      recursive = recursive)) %>% 
-               mutate(File = basename(PathFile)) %>% 
-               filter(!str_detect(PathFile, "^~"))
+                                                      pattern = "\\.xlsx|\\.wksz|\\.db", 
+                                                      recursive = TRUE)) 
             
          } else {
+            
             Directory <- existing_exp_details$MainDetails %>% 
-               mutate(File_orig = File, 
-                      File = basename(File)) %>% 
-               select(File, File_orig) %>% 
+               mutate(File = basename(File)) %>% 
+               select(File) %>% 
                # adding path 
                left_join(AllFiles, by = "File")
          }
-         
       } else {
+         # This is when they have supplied a character string to match
          Directory <- tibble(PathFile = list.files(path = project_folder, 
-                                                   pattern = which_files, 
-                                                   recursive = recursive)) %>% 
-            mutate(File = basename(PathFile)) %>% 
-            filter(!str_detect(PathFile, "^~"))
+                                                   pattern = sim_data_files, 
+                                                   recursive = recursive)) 
       }
       
    } else {
-      # If length(which_files) > 1, then they have supplied a character vector
-      # of files. If they didn't include ".xlsx" at the end, add that.
-      Directory <-  tibble(PathFile = which_files) %>% 
-         mutate(PathFile = case_when(str_detect(PathFile, "\\.xlsx|\\.db|\\.wksz") == 
-                                        FALSE ~ paste0(PathFile, ".xlsx")), 
-                File = basename(PathFile)) %>% 
-         filter(!str_detect(PathFile, "^~"))
-      
+      # If length(sim_data_files) > 1, then they have supplied a character
+      # vector of files. If they didn't include ".xlsx" at the end, add that.
+      Directory <- tibble(File = sim_data_files) %>% 
+         mutate(
+            File = basename(PathFile), 
+            File = case_when(str_detect(File, "\\.xlsx|\\.db|\\.wksz") == FALSE ~ 
+                                paste0(File, ".xlsx"), 
+                             .default = File)) %>% 
+         # adding path 
+         left_join(AllFiles, by = "File")
    } 
+   
+   # Removing temporary files and making sure that all File values are basename. 
+   Directory <- Directory %>% 
+      mutate(File = basename(PathFile)) %>% 
+      filter(!str_detect(PathFile, "^~"))
    
    # Checking for other file extensions and checking that file exists. 
    Directory <- Directory %>% 
@@ -147,14 +162,16 @@ make_simulation_directory <- function(project_folder = NA,
          stop(wrapn(paste0("We can't find any of the files in 'existing_exp_details'. Are you in the main folder for this project or have you set the argument 'project_folder' to that folder? We need to know the project folder to figure out where your files are. Please set the project folder and try again.")), 
               call. = FALSE)
       } else {
-         stop(wrapn("There are no files that match what the pattern of text you supplied for 'which_files', so we cannot make your simulation diratory."), 
+         stop(wrapn("There are no files that match the pattern of text you supplied for 'sim_data_files', so we cannot make your simulation diratory."), 
               call. = FALSE)
       }
    }
    
    # Checking for file name issues
-   Directory <- Directory %>% 
-      mutate(FileNameCheck = check_file_name(Filename))
+   suppressWarnings(
+      Directory <- Directory %>% 
+         mutate(FileNameCheck = check_file_name(Filename))
+   )
    
    BadFileNames <- Directory %>% 
       filter(!FileNameCheck == "File name meets naming standards.")
@@ -177,9 +194,9 @@ make_simulation_directory <- function(project_folder = NA,
              Folder = case_when(PathFile %in% AllFiles$PathFile == FALSE ~ "FILE NOT FOUND", 
                                 .default = Folder))
    
-   if(relative_paths){
-      Directory$Folder <- R.utils::getRelativePath(Directory$Folder)
-   }
+   # Making relative paths
+   Directory$Folder <- R.utils::getRelativePath(Directory$Folder, 
+                                                relativeTo = project_folder)
    
    # Formatting per FDA/Consultancy Team requirements
    Directory <- Directory %>% 
@@ -202,36 +219,13 @@ make_simulation_directory <- function(project_folder = NA,
             left_join(existing_exp_details$MainDetails %>% 
                          select(File, ObsOverlayFile) %>% 
                          mutate(Filename = sub("\\..*$", "", basename(File))) %>% 
-                         rename("XML file used" = ObsOverlayFile) %>% 
-                         select(-File), by = "Filename")
-         
-         if(relative_paths){
-            
-            Directory$`XML file used` <- gsub("\\\\", "/", Directory$`XML file used`)
-            Directory$`XML file used` <- sub("C:/Users/.*/Certara.*Directory/", 
-                                             "", Directory$`XML file used`)
-            
-            # # Dealing with possibly different user names b/c this mucks up
-            # # getting the relative path
-            # 
-            # X <- gsub("\\\\", "/", Directory$`XML file used`)
-            # Pattern <- gsub("Users/|/Certara", "",
-            #                 str_extract(X, pattern = "Users.*Certara"))
-            # Replacement <- rep(as.character(Sys.info()["user"]), length(Pattern))
-            # # Directory$`XML file used` <- 
-            #    
-            #    str_replace(Pattern, Replacement, X)
-            # 
-            #    map()
-            #    
-            #    THIS IS COMPLETELY NOT WORKING. 
-            #    
-            # 
-            # Directory$`XML file used` <- 
-            #    R.utils::getRelativePath(Directory$`XML file used`)
-            # 
-            # Directory$`XML file used` <- gsub("../.*Working Directory/", "", Directory$`XML file used`)
-         }
+                         select(-File), by = "Filename") %>% 
+            mutate(ObsOverlayFile = R.utils::getRelativePath(ObsOverlayFile, 
+                                                             relativeTo = project_folder), 
+                   ObsOverlayFile = case_when(
+                      str_detect(ObsOverlayFile, "Working Directory/XMLs") ~ 
+                         sub(".*/XMLs", "XMLs", ObsOverlayFile))) %>% 
+            rename("XML file used" = ObsOverlayFile)
       }
    }
    
@@ -268,34 +262,38 @@ make_simulation_directory <- function(project_folder = NA,
          if("FileNameCheck" %in% names(Directory)){
             Highlighting[["FileNameCheck"]] <- 
                list("rows" = which(Directory$FileNameCheck != ""), 
-                    "columns" = which(names(Directory) == "FileNameCheck"))
+                    "columns" = which(names(Directory) %in% c("Filename", "FileNameCheck")))
          } 
          
          if(any(Directory$Folder == "FILE NOT FOUND")){
             Highlighting[["Folder"]] <- 
                list("rows" = which(Directory$Folder == "FILE NOT FOUND"), 
-                    "columns" = which(names(Directory) == "Folder"))
+                    "columns" = which(names(Directory) %in% c("Folder", "Filename")))
          } 
          
          if("DuplicateFileCheck" %in% names(Directory)){
             Highlighting[["DuplicateFileCheck"]] <- 
                list("rows" = which(Directory$DuplicateFileCheck != ""), 
-                    "columns" = which(names(Directory) == "DuplicateFileCheck"))
+                    "columns" = which(names(Directory) %in% c("Filename", "DuplicateFileCheck")))
             
             warning(paste0(wrapn("The following simulation files were found in multiple locations: "), 
-                           str_c(Directory$File[which(Directory$DuplicateFileCheck != "")], 
+                           str_c(Directory$Filename[which(Directory$DuplicateFileCheck != "")], 
                                  collapse = "\n")), 
                     call. = FALSE)
          } 
          
          Highlighting <- Highlighting[which(lapply(Highlighting, length) > 0)]
          
+         ColWidths <- guess_col_widths(DF = Directory, wrap = FALSE)
+         ColWidths[ColWidths > 85] <- 85
+         
          save_table_to_Excel(table = Directory, 
                              save_table = save_table, 
                              output_tab_name = "Simulation directory", 
                              center_top_row = FALSE, 
                              highlight_cells = list("yellow" = Highlighting), 
-                             wrap_text = wrap_text)
+                             column_widths = ColWidths, 
+                             wrap_text = FALSE)
       }
    }
    
