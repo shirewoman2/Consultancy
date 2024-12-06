@@ -168,7 +168,7 @@ tidy_input_PK <- function(PKparameters,
    FromCalcPKRatios <- any(str_detect(tolower(names(PKparameters)), "numerator")) | 
       any(str_detect(tolower(names(PKparameters)), "denominator")) |
       ("PKparameter" %in% names(PKparameters) && 
-          any(str_detect(PKparameters$PKparameter, "/"))) |
+          any(str_detect(PKparameters$PKparameter, "/"), na.rm = T)) |
       "NorD" %in% names(PKparameters)
    
    if(FromCalcPKRatios){
@@ -862,16 +862,21 @@ tidy_input_PK <- function(PKparameters,
    # metabolite and they included "withInhib" in the PKparameter, then just
    # remove the "withInhib" part. If they included "_ratio", then give a warning
    # and remove those rows.
-   PKparameters <- PKparameters %>% 
-      mutate(PKparameter = case_when(
-         CompoundID %in% AllCompounds$CompoundID[
-            AllCompounds$DDIrole == "perpetrator"] &
-            str_detect(PKparameter, "_withInhib") ~ sub("_withInhib", "", PKparameter),
-         .default = PKparameter)) %>% 
-      left_join(AllCompounds %>% select(CompoundID, DDIrole), 
-                by = "CompoundID") %>% 
-      mutate(HarmoniousDDI = (DDIrole == "perpetrator" & 
-                                 str_detect(PKparameter, "_ratio")) == FALSE)
+   if("CompoundID" %in% names(PKparameters) & 
+      any(complete.cases(PKparameters$PKparameter))){
+      PKparameters <- PKparameters %>% 
+         mutate(PKparameter = case_when(
+            CompoundID %in% AllCompounds$CompoundID[
+               AllCompounds$DDIrole == "perpetrator"] &
+               str_detect(PKparameter, "_withInhib") ~ sub("_withInhib", "", PKparameter),
+            .default = PKparameter)) %>% 
+         left_join(AllCompounds %>% select(CompoundID, DDIrole), 
+                   by = "CompoundID") %>% 
+         mutate(HarmoniousDDI = (DDIrole == "perpetrator" & 
+                                    str_detect(PKparameter, "_ratio")) == FALSE)
+   } else {
+      PKparameters$HarmoniousDDI <- TRUE
+   }
    
    if(any(PKparameters$HarmoniousDDI == FALSE)){
       warning(wrapn("You requested ratios of PK parameters (PK with a perpetrator present / PK at baseline) for a perpetrator compound (the inhibitor 1, inhibitor 2, or inhibitor 1 metabolite in the simulation), which is not sensible. We will ignore those PK parameters."), 
@@ -879,7 +884,7 @@ tidy_input_PK <- function(PKparameters,
    }
    
    PKparameters <- PKparameters %>% filter(HarmoniousDDI == TRUE) %>% 
-      select(-HarmoniousDDI, -DDIrole) %>% unique()
+      select(-any_of(c("HarmoniousDDI", "DDIrole"))) %>% unique()
    
    
    ## Tissue ---------------------------------------------------------------
