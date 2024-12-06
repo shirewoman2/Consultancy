@@ -1,0 +1,91 @@
+---
+title: "Making concentration-time plots of one thing at a time"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Making concentration-time plots of one thing at a time}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r set-options, echo=FALSE}
+
+suppressWarnings(library(knitr))
+
+knitr::opts_chunk$set(echo = TRUE, message = FALSE,  warning = FALSE, 
+                      dpi = 300, 
+                      fig.width = 6, 
+                      fig.height = 5.5)
+					  
+options(knitr.duplicate.label = "allow")
+
+
+```
+
+SimcypConsultancy package version: `r packageVersion("SimcypConsultancy")`
+
+
+# About this document 
+
+This document shows examples of how to use the SimcypConsultancy R package functions "extractConcTime" and "ct_plot" to make concentration-time plots automatically from Simcyp Simulator output Excel files. This assumes that you have already installed a recent version of the package "SimcypConsultancy". If you have not done that, please see ["How to install the SimcypConsultancy package.docx"](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/How%20to%20install%20the%20SimcypConsultancy%20package.docx?d=wc063461e8efe59ddaf2dc4467e497a4d&csf=1&web=1&e=uIg9Fj). 
+
+To run the examples described in this document, please copy everything in this script's parent folder to another folder where you can find it and then run from there.  
+
+# Getting started if you're new to R 
+
+In these examples, anything shown in a gray shaded box is something you can copy and paste directly into a script or into the console of RStudio and run. 
+
+Before running anything, though, we need to 
+
+1. tell R that we want to use the "SimcypConsultancy" and "tidyverse" packages 
+2. tell R what directory it should use. 
+
+We're going to call on our library to load those two packages, and then we're going to "get the working directory" with "getwd()". The part with "##" in front of it is *output*; you do not need to paste that into the console. 
+
+```{r}
+library(tidyverse)
+library(SimcypConsultancy)
+
+```
+
+If the working directory isn't what you want, go to the menu "Session", choose "Set Working Directory" and follow the arrow to get a side menu. Select "Choose Directory", navigate to the folder you want, and click "Open" to select that folder. The directory should *now* be the one you want. 
+
+# Getting concentration-time data ready for graphing 
+
+The first thing to do -- regardless of whether you're making graphs or tables or doing just about *anything* with the SimcypConsultancy package  -- is to get the details about how those simulations were set up. (For more information on all kinds of things you can check with this, please see **[Checking-simulation-experimental-details.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Checking%20simulation%20experimental%20details/Checking-simulation-experimental-details.docx?d=w63d17d07c1824c10ae55f18d78ecd94f&csf=1&web=1&e=lr1dTt).**) We'll get info on every simulation present in the working directory with this code. 
+
+```
+Details <- extractExpDetails_mult(sim_data_files = NA, 
+                                  existing_exp_details = Details) 
+```
+
+*A quick note on something kind of strange we did there:* It's a little odd in R to define an object (Details <- ...) and then call on that object *before we have created it* inside the function call (existing_exp_details = Details). The extractExpDetails_mult function was designed so that you can run this multiple times -- say, every now and then after you've run some more simulations -- and it will *add* to the data present in the object you create rather than overwriting it. The first time you run this code as it is shown above, it will make an object with information on all the simulations currently in the active folder. If you run some more simulations and then run this *again*, it will check what simulations it already has and only extract and add data from the new simulations. 
+
+Now that you've got a bunch of basic information about your simulations loaded into memory, the next step is to extract the concentration-time data from a Simulator output Excel file. For making standard concentration-time plots one at a time, you'll use the function "extractConcTime" to pull the concentration-time data you need. 
+
+For help on this function: 
+
+```
+?extractConcTime
+```
+
+## Example 1: Extract simulated plasma concentration-time data along with any observed data included in the Simulator output file 
+
+Here is an example of how to pull the concentration-time data you'll need. (This will give us a warning, which we'll discuss later.) 
+
+```
+
+LMVct <- extractConcTime(sim_data_file = "letermovir-md.xlsx", 
+                       existing_exp_details = Details)
+
+```
+
+We now have an object called "LMVct" that we're going to use for making graphs. 
+
+Here are the first 5 rows to get a sense of how the data are laid out:  
+
+```{r, echo = FALSE}
+LMVct[1:5, ] %>% format_table_simple(fontsize = 8)
+```
+
+***A brief but important note:*** **This Word document was made in R. If you look at the source R code for this document, you’ll see that we’re adding "%>% formatTable_Simcyp()" to the end of some function calls; this is to make a nice table in Word, but, in general, you do not need to include any of that unless you're saving something to a Word file.**
+

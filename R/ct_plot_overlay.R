@@ -147,15 +147,15 @@
 #'   change in intrinsic solubility will affect concentration-time profiles --
 #'   because the direction of the trend will be clear.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"blues"}{a set of blues fading from sky to navy. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
-#'   \item{"greens"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
@@ -610,15 +610,40 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # tictoc::tic(msg = "error catching: enz abund?")
    
-   # Checking whether this is an enzyme abundance plot
+   # Checking on what kind of plot this is
+   FmPlot <- all(c("Enzyme", "Fraction") %in% names(ct_dataframe)) & 
+      "Conc" %in% names(ct_dataframe) == FALSE
+   
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
    
-   if(EnzPlot){ct_dataframe$Simulated <- TRUE}
-   
-   # Checking whether this is a release-profile plot or a dissolution-profile plot
    ReleaseProfPlot <- all(c("Release_mean", "ReleaseSD") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
+   
+   DissolutionProfPlot <- all(c("Dissolution_mean", "Dissolution_CV") %in% 
+                                 names(ct_dataframe)) &
+      "Conc" %in% names(ct_dataframe) == FALSE
+   
+   PlotType <- case_when(EnzPlot == TRUE ~ "enzyme-abundance", 
+                         ReleaseProfPlot == TRUE ~ "release-profile",
+                         DissolutionProfPlot == TRUE ~ "dissolution-profile", 
+                         FmPlot == TRUE ~ "fm", 
+                         TRUE ~ "concentration-time")
+   
+   # hacking some columns that were set up for conc-time plots and that just
+   # need a placeholder when those columns don't apply
+   if(any(c(EnzPlot, FmPlot, ReleaseProfPlot, DissolutionProfPlot))){
+      ct_dataframe <- ct_dataframe %>% 
+         mutate(Conc_units = "ng/mL", 
+                CompoundID = "substrate", 
+                Simulated = TRUE, 
+                IndivOrAgg = "aggregate")
+   }
+   
+   if(FmPlot){
+      ct_dataframe <- ct_dataframe %>% 
+         mutate(Abundance = Fraction * 100)
+   }
    
    if(ReleaseProfPlot){
       ct_dataframe <- ct_dataframe %>% 
@@ -629,10 +654,6 @@ ct_plot_overlay <- function(ct_dataframe,
          mutate(MyMean = Conc, 
                 Simulated = TRUE)
    }
-   
-   DissolutionProfPlot <- all(c("Dissolution_mean", "Dissolution_CV") %in% 
-                                 names(ct_dataframe)) &
-      "Conc" %in% names(ct_dataframe) == FALSE
    
    if(DissolutionProfPlot){
       ct_dataframe <- ct_dataframe %>% 
@@ -815,14 +836,12 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # This will run orders of magnitude faster if we only include aggregate data.
    # Removing individual data when possible using column IndivOrAgg, which will
-   # be NA for observed data and not exist for release- or dissolution-profile
-   # data. Dealing with that and harmonizing data. 
-   if(ReleaseProfPlot | DissolutionProfPlot){
-      ct_dataframe$IndivOrAgg <- "aggregate"
-   }
-   
-   # Adding info for IndivOrAgg for data that were extracted w/older version
-   # of package. Uncomment the if statement at some point? 
+   # be NA for observed data. Dealing with that and harmonizing data. At least,
+   # that was my plan. However, need to add that info for IndivOrAgg for data
+   # that were extracted w/older version of package, and, since a single
+   # data.frame could have a mix of data that were extracted at different times,
+   # just checking that here. Happily, that doesn't take long. Uncomment the if
+   # statement at some point?
    
    # if("IndivOrAgg" %in% names(ct_dataframe) == FALSE){
    ct_dataframe <- ct_dataframe %>% 
@@ -1239,7 +1258,7 @@ ct_plot_overlay <- function(ct_dataframe,
       
    }
    
-   if(EnzPlot){ 
+   if(EnzPlot | FmPlot){ 
       
       # for enzyme abundance data
       ct_dataframe <- ct_dataframe %>%
@@ -1668,7 +1687,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # compound that the user is plotting. Using whatever is the compoundID that
    # has the base level for the factor. <--- This may not be necessary, now
    # that I think about it further...
-   if(EnzPlot | ReleaseProfPlot | DissolutionProfPlot){
+   if(EnzPlot | ReleaseProfPlot | DissolutionProfPlot | FmPlot){
       AnchorCompound <- "substrate"
    } else if(mean_type != "none"){
       AnchorCompound <- sim_dataframe %>% select(CompoundID) %>% unique() %>% 
@@ -2863,11 +2882,6 @@ ct_plot_overlay <- function(ct_dataframe,
                             length(MyTissueSubtype) == 1 & 
                             length(unique(ct_dataframe$File)) == 1, 
                          "single", "multiple")
-   
-   PlotType <- case_when(EnzPlot == TRUE ~ "enzyme-abundance", 
-                         ReleaseProfPlot == TRUE ~ "release-profile",
-                         DissolutionProfPlot == TRUE ~ "dissolution-profile", 
-                         TRUE ~ "concentration-time")
    
    if("logical" %in% class(prettify_compound_names)){
       PrettyCmpds <- prettify_compound_names
