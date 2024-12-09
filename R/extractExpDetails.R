@@ -87,8 +87,8 @@ extractExpDetails <- function(sim_data_file,
       # Using "warning" instead of "stop" here b/c I want this to be able to
       # pass through to extractExpDetails_mult and just skip any files that
       # aren't simulator output.
-      warning(paste0("The file `", sim_data_file,
-                     "` does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
+      warning(wrapn(paste0("The file '", sim_data_file,
+                           "' does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.")), 
               call. = FALSE)
       return(list())
    }
@@ -675,18 +675,20 @@ extractExpDetails <- function(sim_data_file,
                ReleaseCV <- Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "CV"))]
                if(all(is.null(ReleaseCV))){ReleaseCV <- NA}
                
-               ReleaseProfs[[i]] <- data.frame(
-                  CR_MR_input = Out[[paste0("CR_MR_Input", Suffix)]], 
-                  Time = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Time"))], 
-                  Release_mean = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Release Mean"))], 
-                  Release_CV = ReleaseCV) %>% 
-                  mutate(across(.cols = everything(), .fns = as.numeric), 
-                         Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
-                         File = sim_data_file, 
-                         CompoundID = i, 
-                         Compound = as.character(Out[AllCompounds$DetailNames[
-                            AllCompounds$CompoundID == i]])) %>% 
-                  select(File, CompoundID, Compound, Time, Release_mean, Release_CV)
+               suppressWarnings(
+                  ReleaseProfs[[i]] <- data.frame(
+                     CR_MR_input = Out[[paste0("CR_MR_Input", Suffix)]], 
+                     Time = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Time"))], 
+                     Release_mean = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Release Mean"))], 
+                     Release_CV = ReleaseCV) %>% 
+                     mutate(across(.cols = everything(), .fns = as.numeric), 
+                            Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
+                            File = sim_data_file, 
+                            CompoundID = i, 
+                            Compound = as.character(Out[AllCompounds$DetailNames[
+                               AllCompounds$CompoundID == i]])) %>% 
+                     select(File, CompoundID, Compound, Time, Release_mean, Release_CV)
+               )
                
                rm(StartRow, EndRow, Release_temp)
                
@@ -791,18 +793,20 @@ extractExpDetails <- function(sim_data_file,
                DissoCV <- Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "CV"))]
                if(all(is.null(DissoCV))){DissoCV <- NA}
                
-               DissoProfs[[i]][[tiss]] <- 
-                  data.frame(
-                     Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
-                     Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution( Mean)? \\(\\%"))], 
-                     Dissolution_CV = DissoCV) %>% 
-                  mutate(across(.cols = everything(), .fns = as.numeric), 
-                         Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
-                         File = sim_data_file, 
-                         Tissue = DissoTissues[[tiss]],
-                         CompoundID = i, 
-                         Compound = as.character(Out[AllCompounds$DetailNames[
-                            AllCompounds$CompoundID == i]]))
+               suppressWarnings(
+                  DissoProfs[[i]][[tiss]] <- 
+                     data.frame(
+                        Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
+                        Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution( Mean)? \\(\\%"))], 
+                        Dissolution_CV = DissoCV) %>% 
+                     mutate(across(.cols = everything(), .fns = as.numeric), 
+                            Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
+                            File = sim_data_file, 
+                            Tissue = DissoTissues[[tiss]],
+                            CompoundID = i, 
+                            Compound = as.character(Out[AllCompounds$DetailNames[
+                               AllCompounds$CompoundID == i]]))
+               )
                
                rm(Disso_temp, DissoCV)
                

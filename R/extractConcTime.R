@@ -324,8 +324,8 @@ extractConcTime <- function(sim_data_file,
       # Using "warning" instead of "stop" here b/c I want this to be able to
       # pass through to other functions and just skip any files that
       # aren't simulator output.
-      warning(paste("The file", sim_data_file,
-                    "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
+      warning(wrapn(paste("The file", sim_data_file,
+                          "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.")), 
               call. = FALSE)
       return(data.frame())
    }

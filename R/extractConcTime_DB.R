@@ -183,9 +183,9 @@ extractConcTime_DB <- function(sim_data_file,
    if(sim_data_file %in% c(existing_exp_details$MainDetails$File, 
                            existing_exp_details$MainDetails$DBFile) == FALSE){
       
-      warning(str_wrap(paste0("The file '",
+      warning(wrapn(paste0("The file '",
                               sim_data_file, 
-                              "' was requested but does not appear to be a Simcyp Simulator file.\n")), 
+                              "' was requested but does not appear to be a Simcyp Simulator file.")), 
               call. = FALSE)
       
       return()
