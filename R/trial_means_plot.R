@@ -48,8 +48,8 @@
 #' @param mean_type What kind of means do you want to use for the center point
 #'   on the graph? Options are "geometric" (default), "arithmetic", or "median".
 #' @param variability_type What variability statistic to you want to use for the
-#'   error bars? Options are "90\% CI", "SD", "CV", "GCV" (for geometric CV), or
-#'   "range".
+#'   error bars? Options are "percentiles" for the 5th to 95th percentiles
+#'   (default), "90\% CI", "SD", "CV", "GCV" (for geometric CV), or "range".
 #' @param observed_PK a data.frame of observed PK that you would like to
 #'   compare. This must include the columns "ObsValue" or "Value" for the center
 #'   value for the observed data and "ObsVariability" or "Variability" for the
@@ -97,6 +97,12 @@
 #'   then Brewer set 1 will be used since red and blue are still easily
 #'   distinguishable but also more aesthetically pleasing than green and
 #'   orange.}
+#'
+#'   \item{"black and white" ("BW" also works)}{black and white only. "white" 
+#'   means a black circle with a white center. If you set 
+#'   \code{color_option = "S or O"}, the simulated trials will be white and the 
+#'   observed will be black. This looks like the trial-means 
+#'   plots in the Excel outputs from the Simulator.}
 #'
 #'   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
 #'   first three colors are red, blue, and green.}
@@ -196,6 +202,18 @@
 #'   care of stringing them together appropriately. Just list them as a
 #'   character vector, e.g., \code{name_clinical_study = c("101",
 #'   "102", "103")} will become "clinical studies 101, 102, and 103."
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "My conc time graph.png" or "My conc time
+#'   graph.docx". The nice thing about saving to Word is that the figure title
+#'   and caption text will be filled in automatically. If you leave off ".png"
+#'   or ".docx", the graph will be saved as a png file, but if you specify a
+#'   different graphical file extension, it will be saved as that file format.
+#'   Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
+#'   "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
+#'   or periods in the file name. Leaving this as NA means the file will not be
+#'   saved to disk.
+#' @param fig_height figure height in inches
+#' @param fig_width figure width in inches
 #'
 #' @return a ggplot2 graph
 #' @export
@@ -209,18 +227,23 @@ trial_means_plot <- function(sim_data_file,
                              tissue = "plasma", 
                              sheet = NA, 
                              mean_type = "geometric", 
-                             variability_type = "90% CI", 
+                             variability_type = "percentiles", 
                              observed_PK = NA, 
                              lines_for_population_stats = "none", 
                              color_set = "default",
                              color_option = "by study", 
+                             point_size = NA, 
+                             bar_width = NA, 
                              y_axis_limits_lin = NA, 
                              legend_position = "right", 
                              include_dose_num = FALSE, 
                              existing_exp_details = NA, 
                              return_caption = FALSE, 
                              prettify_compound_names = TRUE,
-                             name_clinical_study = NA){
+                             name_clinical_study = NA, 
+                             save_graph = NA,
+                             fig_height = NA,
+                             fig_width = NA){
    
    # Error catching ----------------------------------------------------------
    
@@ -262,12 +285,14 @@ trial_means_plot <- function(sim_data_file,
    }
    
    variability_type <- toupper(variability_type)[1]
+   # Checking for either GCV or CV b/c people likely will only use CV and we'll
+   # straighten things out and set it as GCV when appropriate later.
    variability_type <- ifelse(str_detect(variability_type, "CV"), 
                               "CV", variability_type)
-   if(variability_type %in% c("90% CI", "SD", "CV", "RANGE") == FALSE){
-      warning(wrapn("The only possible variability types are '90% CI', 'SD', 'CV', or 'range', and you have entered something else. We'll use the default of 90% CI."), 
+   if(variability_type %in% c("90% CI", "SD", "CV", "RANGE", "PERCENTILES") == FALSE){
+      warning(wrapn("The only possible variability types are 'percentiles', '90% CI', 'SD', 'CV', or 'range', and you have entered something else. We'll use the default of percentiles."), 
               call. = FALSE)
-      variability_type <- "90% CI"
+      variability_type <- "PERCENTILES"
    }
    
    if(mean_type != "median" & str_detect(PKparameter, "tmax")){
@@ -303,11 +328,22 @@ trial_means_plot <- function(sim_data_file,
    }
    
    color_option <- tolower(color_option)[1]
-   if(color_option %in% c("by study", "by trial") == FALSE){
-      warning(wrapn("You have specified something for the argument 'color_option' that is not among the possible options. We will color the data by the study, which is the default."), 
+   color_option <- case_when(
+      color_option %in% c("s or o", "by study", "by trial") ~ color_option, 
+      str_detect(color_option, "simulated") &
+         str_detect(color_option, "observed") ~ "s or o", 
+      color_option %in% c("s vs o", "s vs. o", "s v o", "s v. o") ~ "s or o", 
+      str_detect(color_option, "study") ~ "by study", 
+      str_detect(color_option, "trial") ~ "by trial", 
+      .default = color_option)
+   
+   if(color_option %in% c("by study", "by trial", "s or o") == FALSE){
+      warning(wrapn("You have specified something for the argument 'color_option' that is not among the possible options. We will color the data by whether the data were simulated or observed, which is the default."), 
               call. = FALSE)
       color_option <- "by study"
    }
+   
+   if(all(color_set == "BW")){color_set = "black and white"}
    
    legend_position <- tolower(legend_position)[1]
    if(legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
@@ -316,6 +352,10 @@ trial_means_plot <- function(sim_data_file,
       legend_position <- "right"
    }
    
+   suppressWarnings(point_size <- as.numeric(point_size)[1])
+   point_size <- ifelse(is.na(point_size), 3, point_size)
+   suppressWarnings(bar_width <- as.numeric(bar_width)[1])
+   bar_width <- ifelse(is.na(bar_width), 0.25, bar_width)
    
    # Main body of function -----------------------------------------------------
    
@@ -338,15 +378,17 @@ trial_means_plot <- function(sim_data_file,
                 Max = max(Value, na.rm = T), 
                 Geomean = gm_mean(Value, na.rm = T), 
                 GCV = gm_CV(Value, na.rm = T), 
-                CI90_low = switch(mean_type, 
-                                  "arithmetic" = confInt(Value, CI = 0.9, distribution_type = "t")[[1]], 
-                                  "geometric" = gm_conf(Value, CI = 0.9, distribution_type = "t")[[1]], 
-                                  "median" = NA), 
-                CI90_high = switch(mean_type, 
-                                   "arithmetic" = confInt(Value, CI = 0.9, distribution_type = "t")[[2]], 
-                                   "geometric" = gm_conf(Value, CI = 0.9, distribution_type = "t")[[2]], 
-                                   "median" = NA), 
-                Median = median(Value, na.rm = T)) %>% 
+                CI90_lower = switch(mean_type, 
+                                    "arithmetic" = confInt(Value, CI = 0.9, distribution_type = "t")[[1]], 
+                                    "geometric" = gm_conf(Value, CI = 0.9, distribution_type = "t")[[1]], 
+                                    "median" = NA), 
+                CI90_upper = switch(mean_type, 
+                                    "arithmetic" = confInt(Value, CI = 0.9, distribution_type = "t")[[2]], 
+                                    "geometric" = gm_conf(Value, CI = 0.9, distribution_type = "t")[[2]], 
+                                    "median" = NA), 
+                Median = median(Value, na.rm = T), 
+                Per5 = quantile(Value, 0.05), 
+                Per95 = quantile(Value, 0.95) ) %>% 
       mutate(SorO = "simulated", 
              Study = "simulated", 
              Center = case_when(mean_type == "arithmetic" ~ Mean, 
@@ -354,24 +396,26 @@ trial_means_plot <- function(sim_data_file,
                                 mean_type == "median" ~ Median), 
              
              Lower = case_when(
+                variability_type == "PERCENTILES" ~ Per5, 
                 mean_type == "arithmetic" & 
                    variability_type %in% c("SD", "CV") ~ Mean - SD, 
                 
                 mean_type == "geometric" & 
                    variability_type == "GCV" ~ Geomean  - Geomean * GCV, 
                 
-                variability_type == "90% CI" ~ CI90_low, 
+                variability_type == "90% CI" ~ CI90_lower, 
                 
                 variability_type == "RANGE" ~ Min), 
              
              Upper = case_when(
+                variability_type == "PERCENTILES" ~ Per95, 
                 mean_type == "arithmetic" & 
                    variability_type %in% c("SD", "CV") ~ Mean + SD, 
                 
                 mean_type == "geometric" & 
                    variability_type == "GCV" ~ Geomean  + Geomean * GCV, 
                 
-                variability_type == "90% CI" ~ CI90_high, 
+                variability_type == "90% CI" ~ CI90_upper, 
                 
                 variability_type == "RANGE" ~ Max))
    
@@ -466,11 +510,13 @@ trial_means_plot <- function(sim_data_file,
          # trials are a digit or 2 and then the observed data are all, e.g.,
          # "Clinical study 101, fasted". Instead, adding a legend when coloring
          # by study and there are multiple observed data sets.
-         observed_PK <- observed_PK %>% 
-            mutate(Trial = factor(Study, 
-                                  levels = unique(Study)), 
-                   Trial = paste("study", as.numeric(Trial)), 
-                   Study = paste0(Trial, ": ", Study))
+         suppressWarnings(
+            observed_PK <- observed_PK %>% 
+               mutate(Trial = factor(Study, 
+                                     levels = unique(Study)), 
+                      Trial = paste("study", as.numeric(Trial)), 
+                      Study = paste0(Trial, ": ", Study))
+         )
          
       } else {
          observed_PK$Trial <- "observed"
@@ -502,9 +548,13 @@ trial_means_plot <- function(sim_data_file,
    
    # Setting colors
    if(color_option == "by study"){
+      if(all(color_set == "black and white")){
+         color_set <- c("black", "white")
+      }
       
       MyColors <- make_color_set(color_set = color_set, 
                                  num_colors = length(unique(PK_long$Study)))
+      MyFillColors <- MyColors
       
       if(length(unique(PK_long$Study)) == 1){
          legend_position <- "none"
@@ -514,9 +564,13 @@ trial_means_plot <- function(sim_data_file,
                                y = Center, ymin = Lower, ymax = Upper))
       
    } else if(color_option == "by trial"){
+      if(all(color_set == "black and white")){
+         color_set <- c("black", "white")
+      }
       
       MyColors <- make_color_set(color_set = color_set, 
                                  num_colors = length(unique(PK_long$Trial)))
+      MyFillColors <- MyColors
       
       if(length(unique(PK_long$Trial)) == 1){
          legend_position <- "none"
@@ -525,6 +579,22 @@ trial_means_plot <- function(sim_data_file,
       G <- ggplot(PK_long, aes(x = Trial, color = Trial, 
                                y = Center, ymin = Lower, ymax = Upper))
       
+   } else if(color_option == "s or o"){
+      
+      if(color_set == "black and white"){
+         MyColors <- c("black", "black")
+      } else {
+         MyColors <- makes_color_set(color_set = color_set, 
+                                     num_colors = 2)
+      }
+      names(MyColors) <- c("simulated", "observed")
+      
+      MyFillColors <- c("white", "black")
+      names(MyFillColors) <- c("simulated", "observed")
+      
+      G <- ggplot(PK_long, aes(x = Trial, fill = SorO, color = SorO, 
+                               y = Center, ymin = Lower, ymax = Upper)) +
+         labs(color = NULL, fill = NULL)
    }
    
    if(lines_for_population_stats != "none"){
@@ -540,10 +610,11 @@ trial_means_plot <- function(sim_data_file,
                             distribution_type = "t")
       
       AggStats <- c(AggStats, 
-                    CI90_lower_arith = CI90_arith[[1]], 
+                    CI90_lowerer_arith = CI90_arith[[1]], 
                     CI90_upper_arith = CI90_arith[[2]])
       
       G <- G + 
+         # Adding lines for population central stat
          geom_hline(yintercept = 
                        case_match(mean_type, 
                                   "arithmetic" ~ AggStats["Mean"], 
@@ -552,8 +623,11 @@ trial_means_plot <- function(sim_data_file,
                     color = LineAES[1], 
                     linetype = LineAES[2], 
                     linewidth = as.numeric(LineAES[4])) +
+         # Adding lines for population variability stats. Lower line: 
          geom_hline(yintercept = 
                        case_when(
+                          variability_type == "PERCENTILES" ~ AggStats["Per5"],
+                          
                           mean_type == "arithmetic" & 
                              variability_type ==  "SD" ~ AggStats["Mean"] + AggStats["SD"], 
                           
@@ -575,8 +649,11 @@ trial_means_plot <- function(sim_data_file,
                     color = LineAES[1], 
                     linetype = LineAES[3], 
                     linewidth = as.numeric(LineAES[4])) +
+         # Adding lines for population variability stats. Upper line: 
          geom_hline(yintercept = 
                        case_when(
+                          variability_type == "PERCENTILES" ~ AggStats["Per95"], 
+                          
                           mean_type == "arithmetic" & 
                              variability_type ==  "SD" ~ AggStats["Mean"] - AggStats["SD"], 
                           
@@ -584,14 +661,14 @@ trial_means_plot <- function(sim_data_file,
                              variability_type ==  "CV" ~ AggStats["Mean"] - AggStats["SD"], 
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "90% CI" ~ AggStats["CI90_lower_arith"], 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_lowerer_arith"], 
                           
                           mean_type == "geometric" & 
                              variability_type ==  "GCV" ~ AggStats["Geomean"] - 
                              AggStats["Geomean"] * AggStats["GCV"], 
                           
                           mean_type == "geometric" & 
-                             variability_type ==  "90% CI" ~ AggStats["CI90_lower"], 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_lowerer"], 
                           
                           variability_type == "RANGE" ~ AggStats["Minimum"]), 
                     
@@ -601,9 +678,10 @@ trial_means_plot <- function(sim_data_file,
    }
    
    G <- G +
-      geom_errorbar(width = 0.5) +
-      geom_point() +
+      geom_errorbar(width = bar_width) +
+      geom_point(shape = 21, size = point_size) +
       scale_color_manual(values = MyColors) +
+      scale_fill_manual(values = MyFillColors) +
       theme_consultancy() +
       ylab(PKexpressions[[sub("_last|_dose1", "", PKparameter)]]) + 
       theme(legend.position = legend_position)
@@ -639,6 +717,7 @@ trial_means_plot <- function(sim_data_file,
                            "median" ~ "median"), 
                 " (point) and ", 
                 case_match(variability_type, 
+                           "PERCENTILES" ~ "5^th^ to 95^th^ percentiles", 
                            "SD" ~ "standard deviation", 
                            "CV" ~ "standard deviation", 
                            "GCV" ~ "standard deviation", 
@@ -669,13 +748,14 @@ trial_means_plot <- function(sim_data_file,
                 ". ", 
                 ifelse(lines_for_population_stats == "none", 
                        "", 
-                       paste0("Horizontal lines indicated the ", 
+                       paste0("Horizontal lines indicate the ", 
                               case_match(mean_type,
                                          "arithmetic" ~ "arithmetic mean", 
                                          "geometric" ~ "geometric mean", 
                                          "median" ~ "median"), 
                               " and ", 
                               case_match(variability_type, 
+                                         "PERCENTILES" ~ "5^th^ to 95^th^ percentiles", 
                                          "SD" ~ "standard deviation", 
                                          "CV" ~ "standard deviation", 
                                          "GCV" ~ "standard deviation", 
@@ -698,6 +778,69 @@ trial_means_plot <- function(sim_data_file,
       Out[["figure_heading"]] <- Heading
       Out[["figure_caption"]]  <-  Caption
    } 
+   
+   if(length(Out) == 1){
+      Out <- Out[[1]]
+   }
+   
+   # Saving -----------------------------------------------------------------
+   
+   if(complete.cases(save_graph)){
+      
+      # Checking for NA for fig_height and width
+      if(is.na(fig_height)){
+         fig_height <- 3
+      }
+      
+      if(is.na(fig_width)){
+         fig_width <- 6
+      }
+      
+      FileName <- save_graph
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                       "png", "bmp", "svg", "jpg", "docx") == FALSE){
+            warning(wrapn(paste0("You have requested the graph's file extension be `", 
+                                 Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.")),
+                    call. = FALSE)
+         }
+         Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                  "png", "bmp", "svg", "jpg", "docx"), 
+                       Ext, "png")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".png")
+         Ext <- "png"
+      }
+      
+      if(Ext == "docx"){
+         
+         # This is when they want a Word file as output
+         OutPath <- dirname(FileName)
+         if(OutPath == "."){
+            OutPath <- getwd()
+         }
+         
+         FileName <- basename(FileName)
+         
+         rmarkdown::render(system.file("rmarkdown/templates/trialmeansplot/skeleton/skeleton.Rmd",
+                                       package="SimcypConsultancy"), 
+                           output_dir = OutPath, 
+                           output_file = FileName, 
+                           quiet = TRUE)
+         # Note: The "system.file" part of the call means "go to where the
+         # package is installed, search for the file listed, and return its
+         # full path.
+         
+      } else {
+         # This is when they want any kind of graphical file format.
+         ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
+                plot = Out$graph)
+      }
+   }
    
    if(length(Out) == 1){
       Out <- Out[[1]]

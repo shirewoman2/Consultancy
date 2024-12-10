@@ -12,18 +12,23 @@ trial_means_plot(
   tissue = "plasma",
   sheet = NA,
   mean_type = "geometric",
-  variability_type = "90\% CI",
+  variability_type = "percentiles",
   observed_PK = NA,
   lines_for_population_stats = "none",
   color_set = "default",
   color_option = "by study",
+  point_size = NA,
+  bar_width = NA,
   y_axis_limits_lin = NA,
   legend_position = "right",
   include_dose_num = FALSE,
   existing_exp_details = NA,
   return_caption = FALSE,
   prettify_compound_names = TRUE,
-  name_clinical_study = NA
+  name_clinical_study = NA,
+  save_graph = NA,
+  fig_height = NA,
+  fig_width = NA
 )
 }
 \arguments{
@@ -59,8 +64,8 @@ applies for user-defined AUC intervals.}
 on the graph? Options are "geometric" (default), "arithmetic", or "median".}
 
 \item{variability_type}{What variability statistic to you want to use for the
-error bars? Options are "90\% CI", "SD", "CV", "GCV" (for geometric CV), or
-"range".}
+error bars? Options are "percentiles" for the 5th to 95th percentiles
+(default), "90\% CI", "SD", "CV", "GCV" (for geometric CV), or "range".}
 
 \item{observed_PK}{a data.frame of observed PK that you would like to
   compare. This must include the columns "ObsValue" or "Value" for the center
@@ -110,6 +115,12 @@ which will be 0.5 by default.}
   then Brewer set 1 will be used since red and blue are still easily
   distinguishable but also more aesthetically pleasing than green and
   orange.}
+
+  \item{"black and white" ("BW" also works)}{black and white only. "white" 
+  means a black circle with a white center. If you set 
+  \code{color_option = "S or O"}, the simulated trials will be white and the 
+  observed will be black. This looks like the trial-means 
+  plots in the Excel outputs from the Simulator.}
 
   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
   first three colors are red, blue, and green.}
@@ -216,6 +227,21 @@ cohort"} will result in a figure caption that reads in part "clinical study
 care of stringing them together appropriately. Just list them as a
 character vector, e.g., \code{name_clinical_study = c("101",
 "102", "103")} will become "clinical studies 101, 102, and 103."}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My conc time graph.png" or "My conc time
+graph.docx". The nice thing about saving to Word is that the figure title
+and caption text will be filled in automatically. If you leave off ".png"
+or ".docx", the graph will be saved as a png file, but if you specify a
+different graphical file extension, it will be saved as that file format.
+Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
+"tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
+or periods in the file name. Leaving this as NA means the file will not be
+saved to disk.}
+
+\item{fig_height}{figure height in inches}
+
+\item{fig_width}{figure width in inches}
 }
 \value{
 a ggplot2 graph
