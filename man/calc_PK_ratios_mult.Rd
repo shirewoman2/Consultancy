@@ -37,87 +37,13 @@ calc_PK_ratios_mult(
 )
 }
 \arguments{
-\item{PKparameters}{the PK parameters to include. There are two main options
-  for this: 1) supply a file to read or a data.frame (R speak for "a table")
-  that lists which simulation files, compounds, tissues, and PK you want or
-  2) supply a character vector of which PK parameters you want and then also
-  specify what you need in terms of which tissue, which compound, which
-  simulation files, and which tab to get the data from with the arguments
-  \code{tissue}, \code{compoundToExtract}, \code{sim_data_file_numerator},
-  \code{sim_data_file_denominator}, and \code{sheet_PKparameters}.
-  \strong{Details on each option:} \describe{\item{\strong{Option 1: }a file to read or a data.frame}{This
-  is the most versatile option and, we think, the clearest in terms of
-  getting what you expected. Please try running \code{\link{make_example_PK_input}}
-  to see examples for how to set up a csv or Excel file or data.frame to
-  specify exactly which simulation file should get which PK parameter from
-  which tissue and, when user-specified intervals are involved, from which
-  tab in the Excel file those data should be pulled. Whatever you supply, the
-  columns that will be read are: \describe{\item{"Numerator_File"}{this is the
-  same thing as the argument \code{sim_data_file_numerator}}
-
-  \item{"Denominator_File"}{This is the same thing as the argument \code{sim_data_file_denominator})}
-
-  \item{"Numerator_Sheet" or "Denominator_Sheet"}{When it's a user-defined AUC interval you want,
-  this specifies which sheet in the Simulator output Excel file to use for
-  the corresponding PK parameter in the numerator or denominator,
-  respectively. If it's a regular first-dose or last-dose PK parameter,
-  leave this blank or as NA; we know which sheets to use for those
-  values. You can specify as many different sheets as needed with one row
-  for every new sheet.}
-
-  \item{"Numerator_Tissue" or "Denominator_Tissue"}{This is the same as the
-  argument \code{tissue} except you can specify it separately for each set of PK parameters.}
-
-  \item{"Numerator_CompoundID" or "Denominator_CompoundID"}{This is the same
-  as the argument \code{compoundToExtract} except that you can specify it
-  separately for each set of PK parameters.}
-
-  If you omit any of those columns, whatever you supply for their respective
-  arguments will be used instead. Note that the respective arguments will
-  use the \emph{same value} for both the numerator and the denominator
-  simulations. If you supply something for one of them
-  in the data.frame or file and \emph{also} something for its argument, the
-  argument will be ignored. \cr
-
-  Here is how to specify each of the possible
-  inputs for Option 1:\describe{\item{a csv file}{list the file
-  name, including the file extension ".csv" inside quotes, e.g., "PK needed.csv"}
-
-  \item{an Excel file}{list the file name, including the file extension
-  ".xlsx", inside quotes, e.g., "PK needed.xlsx". We will be looking for a
-  tab titled "PKparameters" (all one word and with the same capitalization).}
-
-  \item{a data.frame}{If you'd like to supply a data.frame with the same
-  columns you would have had in the .csv or Excel file, that works just the
-  same.}}}}
-
-  \item{\strong{Option 2: }specify just the PK parameters you want}{This is
-  a good option when you want the same information
-  from all your simulations. List the PK parameters you want here and then,
-  in the arguments
-  \code{tissue}, \code{compoundToExtract}, and
-  \code{sheet_PKparameters} specify what you want for each of those. If
-  you're going this route, here are the two options
-  you have for the argument \code{PKparameters}: \describe{
-
-  \item{NA}{If you leave this as NA, by default, if you have a single-dose
-  simulation, the parameters will
-  include AUC and Cmax for dose 1, or, if you have a multiple-dose
-  simulation, AUC and Cmax for the last dose. Also by default, if you have a
-  perpetrator present, the parameters will include the AUC and Cmax values with
-  and without the perpetrator as well as those ratios.}
-
-  \item{a character vector of any combination of specific, individual
-  parameters}{This character vector must contain SimcypConsultancy package
-  coded names for each parameter you want, e.g., \code{c("Cmax_dose1",
-  "AUCtau_last").} Be sure to encapsulate the parameters you want with
-  \code{c(...)}. Please try running \code{\link{make_example_PK_input}} to
-  see examples, or, to see the full set of all possible parameters to extract, enter
-  \code{view(PKParameterDefinitions)} into the console.}}}}
-
-  Parameters that don't make sense for your scenario -- such as asking for
-  \code{AUCinf_dose1_withInhib} when your simulation did not include a
-  perpetrator -- will be ignored.}
+\item{PKparameters}{the PK parameters to include. You will need to supply a
+csv file to read or a data.frame (R speak for "a table") that lists which
+simulation files, compounds, tissues, and PK you want. Please try running
+\code{\link{make_example_PK_input}} to see examples for how to set up a csv
+or Excel file or data.frame to specify exactly which simulation file should
+get which PK parameter from which tissue and, when user-specified intervals
+are involved, from which tab in the Excel file those data should be pulled.}
 
 \item{compoundToExtract}{For which compound do you want to extract PK data?
 Options are: \itemize{\item{"substrate" (default if left as NA),} \item{"primary

@@ -394,8 +394,9 @@ calc_PK_ratios <- function(PKparameters = NA,
    PKparameters_orig_NA <- all(is.na(PKparameters))
    
    TEMP <- tidy_input_PK(PKparameters = PKparameters,
-                         sim_data_files = unique(c(sim_data_file_numerator,
-                                                   sim_data_file_denominator)),
+                         sim_data_files = NA,
+                         sim_data_file_numerator = sim_data_file_numerator, 
+                         sim_data_file_denominator = sim_data_file_denominator, 
                          compoundsToExtract = compoundToExtract,
                          tissues = tissue,
                          sheet_PKparameters = sheet_PKparameters, 

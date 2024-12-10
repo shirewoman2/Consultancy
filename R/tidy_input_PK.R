@@ -8,7 +8,6 @@
 #' @param PKparameters whatever they have supplied for PKparameters for
 #'   pksummary_table or pksummary_mult. This can be a csv file, a character
 #'   vector, or NA.
-#' @param report_input_file probably not in use
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
@@ -16,7 +15,6 @@
 #'   time by supplying that object here, unquoted. If left as NA, this function
 #'   will run \code{extractExpDetails} behind the scenes anyway to figure out
 #'   some information about your experimental set up.
-#' @param sheet_report probably not in use
 #' @param sim_data_files a character vector of file names. This should no longer
 #'   be NA or "recursive".
 #' @param compoundsToExtract the values they supplied for compoundsToExtract in
@@ -24,21 +22,22 @@
 #' @param tissues the values they supplied for tissues in the parent function
 #' @param sheet_PKparameters the values they supplied for sheet_PKparameters in
 #'   the parent function
+#' @param FromCalcPKRatios TRUE or FALSE (default) for whether to tidy input PK
+#'   for the calc_PK_ratios functions, which have different PK format needs
 #'
 #' @return a list of: 1) "PKparameters" -- a tidy data.frame of PKparameters
 #'   with standardized column names and contents, 2) "existing_exp_details",
 #'   which will only differ from the original in that any missing sim files will
 #'   be added -- none will be removed. 3) "FilePairs" -- if this is from
 #'   calc_PK_ratios, then a tidy data.frame listing which items should be paired
-#'
-#' @examples
-#' # nope 
+#' 
 tidy_input_PK <- function(PKparameters, 
                           sim_data_files = NA, 
                           existing_exp_details = NA, 
                           compoundsToExtract = "substrate",
                           tissues = "plasma", 
-                          sheet_PKparameters = NA){
+                          sheet_PKparameters = NA, 
+                          FromCalcPKRatios = FALSE){
    
    # Reading in any observed data, tidying those data, and harmonizing all the
    # possible places they could have specified which PK parameters they want and
@@ -165,12 +164,6 @@ tidy_input_PK <- function(PKparameters,
    }
    
    # Dealing with possible input from calc_PK_ratios
-   FromCalcPKRatios <- any(str_detect(tolower(names(PKparameters)), "numerator")) | 
-      any(str_detect(tolower(names(PKparameters)), "denominator")) |
-      ("PKparameter" %in% names(PKparameters) && 
-          any(str_detect(PKparameters$PKparameter, "/"), na.rm = T)) |
-      "NorD" %in% names(PKparameters)
-   
    if(FromCalcPKRatios){
       
       # Tidying column names
@@ -194,37 +187,21 @@ tidy_input_PK <- function(PKparameters,
                     "denominator.*compoundid|compoundid.*denominator")][1] <- "Denominator_CompoundID"
       
       if("Numerator_CompoundID" %in% names(PKparameters) == FALSE){
-         if("Numerator_File" %in% names(PKparameters)){
-            PKparameters <- PKparameters %>% 
-               left_join(expand_grid(Numerator_File = unique(PKparameters$Numerator_File), 
-                                     Numerator_CompoundID = compoundsToExtract), 
-                         by = "Numerator_File") %>% 
-               mutate(Numerator_CompoundID = case_when(is.na(Numerator_CompoundID) ~ "substrate", 
-                                                       .default = Numerator_CompoundID))
-         } else {
-            # If "Numerator_File" isn't present, I'm not sure what else
-            # definitely WILL be at this point. Hoping for the best here.
-            PKparameters <- PKparameters %>% 
-               mutate(Numerator_CompoundID = case_when(is.na(Numerator_CompoundID) ~ "substrate", 
-                                                       .default = Numerator_CompoundID))
-         }
+         PKparameters <- PKparameters %>% 
+            left_join(expand_grid(Numerator_File = unique(PKparameters$Numerator_File), 
+                                  Numerator_CompoundID = compoundsToExtract), 
+                      by = "Numerator_File") %>% 
+            mutate(Numerator_CompoundID = case_when(is.na(Numerator_CompoundID) ~ "substrate", 
+                                                    .default = Numerator_CompoundID))
       }
       
       if("Denominator_CompoundID" %in% names(PKparameters) == FALSE){
-         if("Denominator_File" %in% names(PKparameters)){
-            PKparameters <- PKparameters %>% 
-               left_join(expand_grid(Denominator_File = unique(PKparameters$Denominator_File), 
-                                     Denominator_CompoundID = compoundsToExtract), 
-                         by = "Denominator_File") %>% 
-               mutate(Denominator_CompoundID = case_when(is.na(Denominator_CompoundID) ~ "substrate", 
-                                                         .default = Denominator_CompoundID))
-         } else {
-            # If "Denominator_File" isn't present, I'm not sure what else
-            # definitely WILL be at this point. Hoping for the best here.
-            PKparameters <- PKparameters %>% 
-               mutate(Denominator_CompoundID = case_when(is.na(Denominator_CompoundID) ~ "substrate", 
-                                                         .default = Denominator_CompoundID))
-         }
+         PKparameters <- PKparameters %>% 
+            left_join(expand_grid(Denominator_File = unique(PKparameters$Denominator_File), 
+                                  Denominator_CompoundID = compoundsToExtract), 
+                      by = "Denominator_File") %>% 
+            mutate(Denominator_CompoundID = case_when(is.na(Denominator_CompoundID) ~ "substrate", 
+                                                      .default = Denominator_CompoundID))
       }
       
       # Tissue

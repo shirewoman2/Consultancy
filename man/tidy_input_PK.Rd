@@ -10,7 +10,8 @@ tidy_input_PK(
   existing_exp_details = NA,
   compoundsToExtract = "substrate",
   tissues = "plasma",
-  sheet_PKparameters = NA
+  sheet_PKparameters = NA,
+  FromCalcPKRatios = FALSE
 )
 }
 \arguments{
@@ -37,9 +38,8 @@ the parent function.}
 \item{sheet_PKparameters}{the values they supplied for sheet_PKparameters in
 the parent function}
 
-\item{report_input_file}{probably not in use}
-
-\item{sheet_report}{probably not in use}
+\item{FromCalcPKRatios}{TRUE or FALSE (default) for whether to tidy input PK
+for the calc_PK_ratios functions, which have different PK format needs}
 }
 \value{
 a list of: 1) "PKparameters" -- a tidy data.frame of PKparameters
@@ -53,7 +53,4 @@ INTERNAL PACKAGE USE ONLY. Reads (as needed), harmonizes and tidies observed
 PK input. Output is a data.frame of PK parameters with columns File, Sheet,
 CompoundID, Tissue, Value, and Variability. The columns Sheet, Value, and
 Variability may contain NAs.
-}
-\examples{
-# nope 
 }
