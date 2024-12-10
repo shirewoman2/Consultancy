@@ -3,7 +3,7 @@ Type: Package
 Title: Standardized tools for using R within the Simcyp Consultancy Team
 Version: 3.7.2
 Author: Laura Sh., Mackenzie, Alenka, Ludwig, Howie, Magali, Laura Sa., Fatma, Shinji, Kahina, Anthonia 
-Maintainer: laura.shireman@certara.com
+Maintainer: <laura.shireman@certara.com>
 Description: This package is meant to be a collection of standardized reporting tools for the Simcyp Consultancy Team. 
 Imports:
       tidyverse (>= 2.0.0), 
