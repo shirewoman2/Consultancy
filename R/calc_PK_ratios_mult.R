@@ -408,12 +408,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       PKparameters <- sim_data_file_pairs
    }
    TEMP <- tidy_input_PK(PKparameters = PKparameters, 
-                         sim_data_files = NA, 
-                         compoundsToExtract = compoundToExtract, 
-                         sheet_PKparameters = sheet_PKparameters, 
-                         tissues = tissue, 
                          existing_exp_details = existing_exp_details)
-   
    PKparameters <- TEMP$PKparameters %>% unique()
    FilePairs <- TEMP$FilePairs %>% unique()
    existing_exp_details <- TEMP$existing_exp_details
