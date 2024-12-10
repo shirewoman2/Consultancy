@@ -1,24 +1,24 @@
-#' Create a plot of how fm or fe values change over time 
+#' Create a plot of how fm or fe values change over time
 #'
 #' @description \code{fm_plot} is meant to be used in conjunction with
-#'   \code{\link{extractFmFe}} to create a graph with overlaid
-#'   fm and fe data from a simulation or simulations. UNDER CONSTRUCTION. 
+#'   \code{\link{extractFmFe}} to create a graph with overlaid fm and fe data
+#'   from a simulation or simulations. UNDER CONSTRUCTION.
 #'
 #' @param fm_dataframe input data.frame of fm or fe values generated from
 #'   running \code{\link{extractFmFe}} and setting the argument
 #'   \code{returnOnlyMaxMin} to FALSE. Note that this will only give you the
 #'   kind of data you need for making a graph if these are \emph{dynamic} fm or
-#'   fe values and not static, e.g., from the tab "Time variant %fm and fe"
+#'   fe values and not static, e.g., the data must be from the tab "Time variant
+#'   \%fm and fe"
 #'
 #' @param mean_type plot "arithmetic" (default) or "geometric" mean
 #'   concentrations or "median" concentrations as the main (thickest or only)
 #'   line for each data set. If this aggregate measure is not available in the
 #'   simulator output, you'll receive a warning message and we'll plot one that
 #'   \emph{is} available.
-#' @param figure_type the type of figure to plot. \describe{
-#'
-#'   \item{"means only"}{(default) show only the mean, geometric mean, or median
-#'   (whatever you chose for "mean_type")}
+#' @param figure_type the type of figure to plot. \describe{\item{"means
+#'   only"}{(default) show only the mean, geometric mean, or median (whatever
+#'   you chose for "mean_type")}
 #'
 #'   \item{"percentiles"}{plots an opaque line for the mean data and lighter
 #'   lines for the 5th and 95th percentiles of the simulated data}
@@ -32,13 +32,12 @@
 #'   "Graphics device: backend" to "AGG". Honestly, this is a better option for
 #'   higher-quality graphics anyway!}
 #'
-#'   \item{"trial means"}{plots an opaque line for the mean data, lighter lines
-#'   for the mean of each trial of simulated data, and open circles for the
-#'   observed data. If a perpetrator were present, lighter dashed lines indicate
+#'   \item{"trial means"}{plots an opaque line for the mean data and lighter lines
+#'   for the mean of each trial of simulated data. If a perpetrator were present, lighter dashed lines indicate
 #'   the mean of each trial of simulated data in the presence of the perpetrator.}}
 #'
-#' @param linear_or_log the type of graph to be returned. Options: \describe{
-#'   \item{"semi-log"}{y axis is log transformed}
+#' @param linear_or_log the type of graph to be returned. Options:
+#'   \describe{\item{"semi-log"}{y axis is log transformed}
 #'
 #'   \item{"linear"}{no axis transformation; this is the default}
 #'
@@ -216,14 +215,7 @@
 #'
 #'   \item{a specific dose number with "dose" or "doses" as the prefix}{the time
 #'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
-#'   for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}
-#'
-#'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
-#'   range will be limited to only times when observed data are present.}
-#'
-#'   \item{"last dose to last observed" or "last obs" for short}{Time range will
-#'   be limited to the start of the last dose until the last observed data
-#'   point.} }
+#'   for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}}
 #'
 #' @param x_axis_interval set the x-axis major tick-mark interval. Acceptable
 #'   input: any number or leave as NA to accept default values, which are

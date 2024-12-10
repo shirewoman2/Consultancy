@@ -53,6 +53,8 @@ check_file_name <- function(file_name){
    
    subfun <- Vectorize(function(file_name_subfun){
       
+      if(is.na(file_name_subfun)){return(NA)}
+      
       results <- c("File name cannot")
       if(str_length(file_name_subfun) > 64) {
          results <- paste(results, "be more than 64 characters including file extension")

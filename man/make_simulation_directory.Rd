@@ -3,7 +3,7 @@
 \name{make_simulation_directory}
 \alias{make_simulation_directory}
 \title{Make a directory of simulations indicating which simulation file is located
-in which folder}
+in which subfolder}
 \usage{
 make_simulation_directory(
   project_folder = NA,
@@ -39,7 +39,8 @@ working directory is the top level of your project folders.}
 \item{existing_exp_details}{optionally supply the output from running
 \code{\link{extractExpDetails_mult}} to get only the simulation files
 included there in your simulation directory. If you supply something here,
-whatever you supply for \code{sim_data_files} will be ignored.}
+whatever you supply for \code{sim_data_files} will be ignored. This will
+also be used to figure out which XML files go with which simulations.}
 
 \item{save_table}{optionally specify an Excel file name for saving your
 simulation directory. If you don't include the file extension ".xlsx",

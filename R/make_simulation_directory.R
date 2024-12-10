@@ -1,5 +1,5 @@
 #' Make a directory of simulations indicating which simulation file is located
-#' in which folder
+#' in which subfolder
 #'
 #' @description \code{make_simulation_directory} will create a data.frame of
 #'   simulations in a given project folder, the associated XML files when
@@ -36,7 +36,8 @@
 #' @param existing_exp_details optionally supply the output from running
 #'   \code{\link{extractExpDetails_mult}} to get only the simulation files
 #'   included there in your simulation directory. If you supply something here,
-#'   whatever you supply for \code{sim_data_files} will be ignored.
+#'   whatever you supply for \code{sim_data_files} will be ignored. This will
+#'   also be used to figure out which XML files go with which simulations.
 #' @param save_table optionally specify an Excel file name for saving your
 #'   simulation directory. If you don't include the file extension ".xlsx",
 #'   we'll add it.
@@ -217,7 +218,12 @@ make_simulation_directory <- function(project_folder = NA,
                       ObsOverlayFile = case_when(
                          str_detect(ObsOverlayFile, "Working Directory/XMLs") ~ 
                             sub(".*/XMLs", "XMLs", ObsOverlayFile),
-                         .default = ObsOverlayFile)) %>% 
+                         .default = ObsOverlayFile), 
+                      XMLFileNameCheck = check_file_name(ObsOverlayFile), 
+                      XMLFileNameCheck = case_when(
+                         XMLFileNameCheck == "File name meets naming standards." ~ "", 
+                         is.na(XMLFileNameCheck) ~ "", 
+                         .default = sub("File name", "XML file name", XMLFileNameCheck))) %>% 
                rename("XML file used" = ObsOverlayFile)
             
             ObsOverlayKnown <- TRUE
@@ -231,9 +237,11 @@ make_simulation_directory <- function(project_folder = NA,
                  call. = FALSE)
          
          ObsOverlayKnown <- FALSE
+         Directory$XMLFileNameCheck <- ""
       }
    } else {
       ObsOverlayKnown <- FALSE
+      Directory$XMLFileNameCheck <- ""
    }
    
    if(ObsOverlayKnown == FALSE){
@@ -263,22 +271,32 @@ make_simulation_directory <- function(project_folder = NA,
       
       XMLs <- bind_rows(XMLs) %>% 
          mutate(Filetype = "xml", 
-                Filename = sub("\\.xml$", "", Filename)) %>% 
+                Filename = sub("\\.xml$", "", Filename), 
+                FileNameCheck = check_file_name(Filename)) %>% 
          select(Filename, Folder, Filetype)
       
       Directory <- bind_rows(Directory, 
                              tibble(Filename = c(rep(NA, 5), 
-                                                 "Possible XML files for this project:")), 
+                                                 "Possible XML files for this project that we found either in the the project folder or in the 'XMLs' folder associated with this project:")), 
                              XMLs)
       
    }
    
-   if(any(Directory$FileNameCheck != "File name meets naming standards.", na.rm = T)){
-      Directory <- Directory %>% 
-         mutate(FileNameCheck = case_when(
-            FileNameCheck == "File name meets naming standards." ~ "", 
-            .default = FileNameCheck))
-   } else {
+   # Simplifying FileNameCheck column 
+   Directory <- Directory %>% 
+      mutate(FileNameCheck = case_when(
+         FileNameCheck == "File name meets naming standards." ~ "", 
+         .default = FileNameCheck))
+   
+   # Combining main and XML file name checks into 1 column
+   Directory <- Directory %>% 
+      mutate(FileNameCheck = case_when(
+         FileNameCheck == "" & XMLFileNameCheck == "" ~ "", 
+         FileNameCheck != "" & XMLFileNameCheck == "" ~ FileNameCheck, 
+         FileNameCheck == "" & XMLFileNameCheck != "" ~ XMLFileNameCheck, 
+         FileNameCheck != "" & XMLFileNameCheck != "" ~ paste(FileNameCheck, XMLFileNameCheck))) 
+   
+   if(all(Directory$FileNameCheck == "", na.rm = T)){
       Directory <- Directory %>% select(-FileNameCheck)
    }
    
@@ -327,7 +345,7 @@ make_simulation_directory <- function(project_folder = NA,
       
       Highlighting <- Highlighting[which(lapply(Highlighting, length) > 0)]
       
-      BoldRow <- which(Directory$`File name` == "Possible XML files for this project:")[1] # there shall be only one. 
+      BoldRow <- which(Directory$`File name` == "Possible XML files for this project that we found either in the the project folder or in the 'XMLs' folder associated with this project:")[1] # there shall be only one. 
       if(any(is.na((BoldRow)))){
          Bold <- NA
       } else {
