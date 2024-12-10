@@ -49,7 +49,7 @@ insert_copyright <- function(font = "Arial"){
       # Set the font
       flextable::font(part = "all", 
                       fontname = font) %>% 
-      flextable::fontsize(i = 1, size = 16) %>% 
+      flextable::fontsize(i = 1, size = 14) %>% 
       flextable::fontsize(i = 3, size = 14) %>% 
       flextable::border_outer(border = officer::fp_border(width = 2)) %>% 
       flextable::padding(i = 1, padding.top = 12) %>% 
