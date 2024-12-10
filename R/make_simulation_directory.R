@@ -253,7 +253,7 @@ make_simulation_directory <- function(project_folder = NA,
       PossibleXMLPath <- PossibleXMLPath[str_detect(tolower(PossibleXMLPath), "xml")]
       
       XMLs <- list()
-      for(path in PossibleXMLPath){
+      for(path in c(project_folder, PossibleXMLPath)){
          XMLs[[path]] <- tibble(PathFile = list.files(path = path, 
                                                       pattern = "\\.xml$", 
                                                       recursive = TRUE)) %>% 
