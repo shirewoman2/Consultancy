@@ -263,15 +263,18 @@ make_simulation_directory <- function(project_folder = NA,
       XMLs <- list()
       for(path in c(project_folder, PossibleXMLPath)){
          XMLs[[path]] <- tibble(PathFile = list.files(path = path, 
-                                                      pattern = "\\.xml$", 
-                                                      recursive = TRUE)) %>% 
-            mutate(Filename = basename(PathFile), 
-                   Folder = dirname(PathFile))
+                                                      pattern = "\\.xml$",
+                                                      full.names = TRUE, 
+                                                      recursive = TRUE))
       }
       
       XMLs <- bind_rows(XMLs) %>% 
          mutate(Filetype = "xml", 
+                PathFile = R.utils::getRelativePath(PathFile, relativeTo = project_folder), 
+                Filename = basename(PathFile), 
                 Filename = sub("\\.xml$", "", Filename), 
+                Folder = dirname(PathFile), 
+                Folder = ifelse(Folder == ".", "", Folder), 
                 FileNameCheck = check_file_name(Filename)) %>% 
          select(Filename, Folder, Filetype)
       
