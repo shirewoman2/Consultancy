@@ -3,54 +3,54 @@
 \name{make_simulation_directory}
 \alias{make_simulation_directory}
 \title{Make a directory of simulations indicating which simulation file is located
-in which folder}
+in which subfolder}
 \usage{
 make_simulation_directory(
   project_folder = NA,
-  recursive = TRUE,
-  which_files = NA,
+  sim_data_files = "recursive",
   existing_exp_details = NA,
-  relative_paths = TRUE,
   save_table = NA,
-  wrap_text = FALSE
+  overwrite = "ask"
 )
 }
 \arguments{
 \item{project_folder}{location of the project folder to search. Please note
 that R requires forward slashes ("/") in file paths rather than the back
 slashes Microsoft uses. If left as NA (default), we'll assume your current
-working directory is the top level of your project folders. This function
-\emph{only} searches for simulation files in the project folder and any
-subfolders.}
+working directory is the top level of your project folders.}
 
-\item{recursive}{TRUE (default) or FALSE for whether to recursively check for
-simulation files in subfolders}
+\item{sim_data_files}{which files to include in the directory of simulations.
+  This only applies when you don't supply anything for the argument
+  \code{existing_exp_details}. Options are:
+  \describe{
 
-\item{which_files}{which files to include in the directory of simulations.
-  Options are:
-  \describe{\item{NA}{all xlsx or wksz files in the current folder and any
-  subfolders OR, if you supply something for \code{existing_exp_details},
-  the files included in that object}
+  \item{"recursive" (default)}{all .xlsx, .db, or .wksz files in the current folder and any
+  subfolders}
 
-  \item{a single text string such as "abc"}{only include files with that
-  specific text}
+  \item{NA}{all .xlsx, .db, or .wksz files in the current folder}
 
-  \item{a character vector of specific file names, e.g., \code{which_files =
-  c("abc.xlsx", "def.xlsx")}}{only include files listed}}}
+  \item{a single text string such as "dev"}{include any files in the current
+  folder or any folders below it that have that specific text}
 
-\item{existing_exp_details}{the output from running
-\code{\link{extractExpDetails_mult}}}
+  \item{a character vector of specific file names, e.g., \code{sim_data_files =
+  c("abc.xlsx", "def.xlsx")}}{only include the files listed. We'll figure
+  out which folder they're in.}}}
 
-\item{relative_paths}{TRUE (default) or FALSE for whether to put relative
-(rather than full) paths in the table. This means "relative to your current
-working directory", so it matters what folder you're in when you call this
-function. We recommend setting this to TRUE.}
+\item{existing_exp_details}{optionally supply the output from running
+\code{\link{extractExpDetails_mult}} to get only the simulation files
+included there in your simulation directory. If you supply something here,
+whatever you supply for \code{sim_data_files} will be ignored. This will
+also be used to figure out which XML files go with which simulations.}
 
-\item{save_table}{optionally specify either an Excel or csv file name for
-saving your simulation directory}
+\item{save_table}{optionally specify an Excel file name for saving your
+simulation directory. If you don't include the file extension ".xlsx",
+we'll add it.}
 
-\item{wrap_text}{TRUE or FALSE (default) for whether to wrap text in the
-Excel output}
+\item{overwrite}{Should we overwrite if your Excel file already exists and
+already has a tab named "Simulation directory"? Options are "yes" to always
+overwrite, "no" to never overwrite, or "ask" (default), which means that we
+will ask you whether to overwrite and give you a chance to supply a
+different file name if the one you supplied already exists.}
 }
 \value{
 a data.frame of simulation files and their respective file paths
