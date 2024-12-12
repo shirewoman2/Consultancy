@@ -114,7 +114,14 @@ tidy_input_PK <- function(PKparameters,
                openxlsx::read.xlsx(PKparameters, 
                                    sheet = "PKparameters"), 
                error = function(e) openxlsx::read.xlsx(PKparameters, 
-                                                       sheet = "observed PK")))
+                                                       sheet = "observed PK"))) %>% 
+            mutate(across(.cols = everything(), 
+                          .fns = \(x) case_when(x == " " ~ NA, 
+                                                x == "" ~ NA, 
+                                                is.null(x) ~ NA, 
+                                                .default = x))) %>% 
+            purrr::discard(\(x) all(is.na(x))) %>% 
+            filter(!if_all(everything(), is.na))
          
          # If there's anything named anything like "File", use that for the
          # "File" column. This is useful to deal with capitalization mismatches
@@ -798,6 +805,9 @@ tidy_input_PK <- function(PKparameters,
    
    
    ## PKparameter -----------------------------------------------------------
+   
+   # Harmonizing
+   PKparameters$PKparameter <- harmonize_PK_names(PKparameters$PKparameter)
    
    BadParams <- setdiff(PKparameters$PKparameter, 
                         c(AllPKParameters$PKparameter, 
