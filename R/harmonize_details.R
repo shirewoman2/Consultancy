@@ -110,6 +110,65 @@ harmonize_details <- function(existing_exp_details){
             }
          }
          
+         # Adding missing, necessary list items
+         Missing1 <- setdiff(
+            paste0(rep(c("DoseInt", "Dose", "DoseRoute", "Regimen", "NumDoses"),
+                       each = 3), 
+                   c("_sub", "_inhib", "_inhib2")), 
+            names(existing_exp_details$MainDetails))
+         
+         if(length(Missing1) > 0){
+            Missing <- as.data.frame(matrix(data = NA, 
+                                            ncol = length(Missing1), 
+                                            nrow = nrow(existing_exp_details$MainDetails), 
+                                            dimnames = list(NULL, Missing1)))
+            
+            existing_exp_details$MainDetails <- 
+               cbind(existing_exp_details$MainDetails, Missing)
+         }
+         
+         # Making DoseInt_x and Dose_x numeric all the time. We'll get custom dosing
+         # info from Regimen_x and DoseRexisting_exp_details$MainDetailse_x.
+         suppressWarnings(
+            existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+               mutate(DoseInt_sub = as.numeric(DoseInt_sub), 
+                      DoseInt_inhib = as.numeric(DoseInt_inhib), 
+                      DoseInt_inhib2 = as.numeric(DoseInt_inhib2), 
+                      
+                      Dose_sub = as.numeric(Dose_sub), 
+                      Dose_inhib = as.numeric(Dose_inhib), 
+                      Dose_inhib2 = as.numeric(Dose_inhib2), 
+                      
+                      # At this point, DoseInt_x and Dose_x will be NA if it's a
+                      # custom dosing regimen. Setting the regimen to
+                      # "multiple". We'll use that downstream for checking for
+                      # appropriate PK parameters, etc.
+                      Regimen_sub = 
+                         case_when(is.na(DoseInt_sub) & 
+                                      (complete.cases(DoseRoute_sub) &
+                                          DoseRoute_sub == "custom dosing") ~ "Multiple Dose",
+                                   .default = Regimen_sub), 
+                      
+                      Regimen_inhib = 
+                         case_when(is.na(DoseInt_inhib) & 
+                                      (complete.cases(DoseRoute_inhib) &
+                                          DoseRoute_inhib == "custom dosing") ~ "Multiple Dose",
+                                   .default = Regimen_inhib), 
+                      
+                      Regimen_inhib2 = 
+                         case_when(is.na(DoseInt_inhib2) & 
+                                      (complete.cases(DoseRoute_inhib2) &
+                                          DoseRoute_inhib2 == "custom dosing") ~ "Multiple Dose",
+                                   .default = Regimen_inhib2))
+         )
+         
+         # Harmonizing dosing. Note that this must come AFTER making sure that
+         # the list has items named MainDetails and named CustomDosing!
+         existing_exp_details <- harmonize_dosing(existing_exp_details)
+         
+         # Making sure the order is correct
+         existing_exp_details <- existing_exp_details[ExpDetailListItems]
+         
          return(existing_exp_details[ExpDetailListItems])
          
       } else {
@@ -145,6 +204,65 @@ harmonize_details <- function(existing_exp_details){
                   str_c(paste0("`", SheetNames, "`"), collapse = " ")
             }
          }
+         
+         # Adding missing, necessary list items
+         Missing1 <- setdiff(
+            paste0(rep(c("DoseInt", "Dose", "DoseRoute", "Regimen", "NumDoses"),
+                       each = 3), 
+                   c("_sub", "_inhib", "_inhib2")), 
+            names(existing_exp_details$MainDetails))
+         
+         if(length(Missing1) > 0){
+            Missing <- as.data.frame(matrix(data = NA, 
+                                            ncol = length(Missing1), 
+                                            nrow = nrow(existing_exp_details$MainDetails), 
+                                            dimnames = list(NULL, Missing1)))
+            
+            existing_exp_details$MainDetails <- 
+               cbind(existing_exp_details$MainDetails, Missing)
+         }
+         
+         # Making DoseInt_x and Dose_x numeric all the time. We'll get custom dosing
+         # info from Regimen_x and DoseRexisting_exp_details$MainDetailse_x.
+         suppressWarnings(
+            existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+               mutate(DoseInt_sub = as.numeric(DoseInt_sub), 
+                      DoseInt_inhib = as.numeric(DoseInt_inhib), 
+                      DoseInt_inhib2 = as.numeric(DoseInt_inhib2), 
+                      
+                      Dose_sub = as.numeric(Dose_sub), 
+                      Dose_inhib = as.numeric(Dose_inhib), 
+                      Dose_inhib2 = as.numeric(Dose_inhib2), 
+                      
+                      # At this point, DoseInt_x and Dose_x will be NA if it's a
+                      # custom dosing regimen. Setting the regimen to
+                      # "multiple". We'll use that downstream for checking for
+                      # appropriate PK parameters, etc.
+                      Regimen_sub = 
+                         case_when(is.na(DoseInt_sub) & 
+                                      (complete.cases(DoseRoute_sub) &
+                                          DoseRoute_sub == "custom dosing") ~ "Multiple Dose",
+                                   .default = Regimen_sub), 
+                      
+                      Regimen_inhib = 
+                         case_when(is.na(DoseInt_inhib) & 
+                                      (complete.cases(DoseRoute_inhib) &
+                                          DoseRoute_inhib == "custom dosing") ~ "Multiple Dose",
+                                   .default = Regimen_inhib), 
+                      
+                      Regimen_inhib2 = 
+                         case_when(is.na(DoseInt_inhib2) & 
+                                      (complete.cases(DoseRoute_inhib2) &
+                                          DoseRoute_inhib2 == "custom dosing") ~ "Multiple Dose",
+                                   .default = Regimen_inhib2))
+         )
+         
+         # Harmonizing dosing. Note that this must come AFTER making sure that
+         # the list has items named MainDetails and named CustomDosing!
+         existing_exp_details <- harmonize_dosing(existing_exp_details)
+         
+         # Making sure the order is correct
+         existing_exp_details <- existing_exp_details[ExpDetailListItems]
          
          return(Out)
          
@@ -195,6 +313,65 @@ harmonize_details <- function(existing_exp_details){
             
          }
       }
+      
+      # Adding missing, necessary list items
+      Missing1 <- setdiff(
+         paste0(rep(c("DoseInt", "Dose", "DoseRoute", "Regimen", "NumDoses"),
+                    each = 3), 
+                c("_sub", "_inhib", "_inhib2")), 
+         names(existing_exp_details$MainDetails))
+      
+      if(length(Missing1) > 0){
+         Missing <- as.data.frame(matrix(data = NA, 
+                                         ncol = length(Missing1), 
+                                         nrow = nrow(existing_exp_details$MainDetails), 
+                                         dimnames = list(NULL, Missing1)))
+         
+         existing_exp_details$MainDetails <- 
+            cbind(existing_exp_details$MainDetails, Missing)
+      }
+      
+      # Making DoseInt_x and Dose_x numeric all the time. We'll get custom dosing
+      # info from Regimen_x and DoseRexisting_exp_details$MainDetailse_x.
+      suppressWarnings(
+         existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+            mutate(DoseInt_sub = as.numeric(DoseInt_sub), 
+                   DoseInt_inhib = as.numeric(DoseInt_inhib), 
+                   DoseInt_inhib2 = as.numeric(DoseInt_inhib2), 
+                   
+                   Dose_sub = as.numeric(Dose_sub), 
+                   Dose_inhib = as.numeric(Dose_inhib), 
+                   Dose_inhib2 = as.numeric(Dose_inhib2), 
+                   
+                   # At this point, DoseInt_x and Dose_x will be NA if it's a
+                   # custom dosing regimen. Setting the regimen to
+                   # "multiple". We'll use that downstream for checking for
+                   # appropriate PK parameters, etc.
+                   Regimen_sub = 
+                      case_when(is.na(DoseInt_sub) & 
+                                   (complete.cases(DoseRoute_sub) &
+                                       DoseRoute_sub == "custom dosing") ~ "Multiple Dose",
+                                .default = Regimen_sub), 
+                   
+                   Regimen_inhib = 
+                      case_when(is.na(DoseInt_inhib) & 
+                                   (complete.cases(DoseRoute_inhib) &
+                                       DoseRoute_inhib == "custom dosing") ~ "Multiple Dose",
+                                .default = Regimen_inhib), 
+                   
+                   Regimen_inhib2 = 
+                      case_when(is.na(DoseInt_inhib2) & 
+                                   (complete.cases(DoseRoute_inhib2) &
+                                       DoseRoute_inhib2 == "custom dosing") ~ "Multiple Dose",
+                                .default = Regimen_inhib2))
+      )
+      
+      # Harmonizing dosing. Note that this must come AFTER making sure that
+      # the list has items named MainDetails and named CustomDosing!
+      existing_exp_details <- harmonize_dosing(existing_exp_details)
+      
+      # Making sure the order is correct
+      existing_exp_details <- existing_exp_details[ExpDetailListItems]
       
       return(existing_exp_details[ExpDetailListItems])
    }
