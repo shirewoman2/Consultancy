@@ -108,9 +108,10 @@ addObsPoints <- function(obs_dataframe,
          A <-  A +
             # making obs point outlines
             geom_point(data = obs_dataframe,
-                       aes(color = Study, shape = Study), 
+                       aes(x = Time, y = Conc, fill = Study, shape = Study), 
+                       # inherit.aes = F, 
+                       color = "black", 
                        alpha = obs_line_trans,
-                       fill = NA, 
                        size = obs_size,
                        show.legend = LegCheck)
          
