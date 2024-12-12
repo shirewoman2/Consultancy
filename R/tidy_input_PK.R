@@ -999,7 +999,7 @@ tidy_input_PK <- function(PKparameters,
    # simulation. Also check whether simulation was a DDI sim. 
    
    # First, adding any missing columns to existing_exp_details$MainDetails. 
-   MissingCols <- setdiff(paste0("DoseInt", c("_sub", "_inhib", "_inhib2")), 
+   MissingCols <- setdiff(paste0("Regimen", c("_sub", "_inhib", "_inhib2")), 
                           names(existing_exp_details$MainDetails)) 
    if(length(MissingCols) > 0){
       existing_exp_details$MainDetails <- 
@@ -1012,7 +1012,7 @@ tidy_input_PK <- function(PKparameters,
    PKparameters <- PKparameters %>% 
       left_join(existing_exp_details$MainDetails %>% 
                    select(File, any_of(AllCompounds$DetailNames), 
-                          matches("DoseInt")), 
+                          matches("Regimen")), 
                 by = "File") %>% 
       mutate(GoodCmpd = 
                 (CompoundID == "substrate" & complete.cases(Substrate)) |
@@ -1026,13 +1026,13 @@ tidy_input_PK <- function(PKparameters,
              MD = 
                 (CompoundID %in% AllCompounds$CompoundID[
                    AllCompounds$DosedCompoundID == "substrate"] & 
-                    complete.cases(DoseInt_sub)) |
+                    Regimen_sub == "Multiple Dose") |
                 (CompoundID %in% AllCompounds$CompoundID[
                    AllCompounds$DosedCompoundID == "inhibitor 1"] & 
-                    complete.cases(DoseInt_inhib)) |
+                    Regimen_inhib == "Multiple Dose") |
                 (CompoundID %in% AllCompounds$CompoundID[
                    AllCompounds$DosedCompoundID == "inhibitor 2"] & 
-                    complete.cases(DoseInt_inhib2)))
+                    Regimen_inhib2 == "Multiple Dose"))
    
    if(any(PKparameters$GoodCmpd == FALSE)){
       Problem <- PKparameters %>%
@@ -1087,27 +1087,15 @@ tidy_input_PK <- function(PKparameters,
                       select(CompoundID, DosedCompoundID, DosedCompoundSuffix),
                    by = "CompoundID") %>% 
          left_join(existing_exp_details$MainDetails %>% 
-                      select(File, matches("DoseInt")) %>% 
-                      # We just need to know whether it was multiple doses or a
-                      # single one, so putting a placeholder anywhere it lists
-                      # "custom dosing" b/c that *would be* multiple dosing.
-                      mutate(DoseInt_sub = case_when(DoseInt_sub == "custom dosing" ~ "12", 
-                                                     .default = as.character(DoseInt_sub)), 
-                             DoseInt_inhib = case_when(DoseInt_inhib == "custom dosing" ~ "12", 
-                                                       .default = as.character(DoseInt_inhib)), 
-                             DoseInt_inhib2 = case_when(DoseInt_inhib2 == "custom dosing" ~ "12", 
-                                                        .default = as.character(DoseInt_inhib2)), 
-                             across(.cols = matches("DoseInt"), .fns = as.numeric)),
-                   by = "File") %>% 
-         mutate(MyDoseInt = case_match(DosedCompoundID, 
-                                       "substrate" ~ DoseInt_sub, 
-                                       "inhibitor 1" ~ DoseInt_inhib, 
-                                       "inhibitor 2" ~ DoseInt_inhib2), 
-                Keep = (complete.cases(MyDoseInt) &
+                      select(File, matches("Regimen")), by = "File") %>% 
+         mutate(MyRegimen = case_match(DosedCompoundID, 
+                                       "substrate" ~ Regimen_sub, 
+                                       "inhibitor 1" ~ Regimen_inhib, 
+                                       "inhibitor 2" ~ Regimen_inhib2), 
+                Keep = (MyRegimen == "Multiple Dose" &
                            !str_detect(PKparameter, "_dose1")) |
-                   (is.na(MyDoseInt) & !str_detect(PKparameter, "_last"))) %>% 
+                   (MyRegimen == "Single Dose" & !str_detect(PKparameter, "_last"))) %>% 
          filter(Keep == TRUE)
-      
       
    } else {
       

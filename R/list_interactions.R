@@ -18,7 +18,7 @@
 #'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}}
 #' @param include_auto_DDI TRUE or FALSE (default) for whether to list
 #'   auto-induction or auto-inhibition.
-#' @param include_victim_fms TRUE or FALSE (default) for whether to additionally
+#' @param include_victim_fms TRUE (default) or FALSE for whether to additionally
 #'   read in any information on the substrate fm values for each pathway
 #'   included in the interactions. This requires that a sheet titled "Time
 #'   variance \%fm and fe", be included in the output.
@@ -34,7 +34,7 @@
 list_interactions <- function(sim_data_file, 
                               existing_exp_details, 
                               include_victim_fms = FALSE, 
-                              include_auto_DDI = FALSE){
+                              include_auto_DDI = TRUE){
    
    # Error catching ----------------------------------------------------------
    
