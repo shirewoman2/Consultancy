@@ -13,6 +13,7 @@ formatTable_Simcyp(
   bold_cells = list(c(0, NA), c(NA, 1)),
   center_1st_column = FALSE,
   column_widths = NA,
+  include_header = TRUE,
   add_header_for_DDI = TRUE,
   perpetrator_name = "perpetrator",
   prettify_columns = FALSE,
@@ -40,10 +41,9 @@ for when to change the shading; every time that column's value changes, the
 shading will alternate between white and light gray. For example, if you
 have a table with PK values for multiple files and you have more than one
 row per file (an example of this would be the output from the function
-\code{\link{pk_table}}), setting \code{shading_column = File} will
-cause the shading of the rows to alternate between white and light gray
-whenever the file changes. Please see the examples at the bottom of this
-help file.}
+\code{\link{pk_table}}), setting \code{shading_column = File} will cause
+the shading of the rows to alternate between white and light gray whenever
+the file changes. Please see the examples at the bottom of this help file.}
 
 \item{merge_shaded_cells}{TRUE (default) or FALSE for whether to merge the
 cells that have the same shade. This only applies when one of the columns
@@ -88,6 +88,9 @@ alignment of the first column centered}
 \item{column_widths}{optionally specify what the widths of the columns should
 be with a numeric vector of the widths in inches, e.g., \code{column_widths
 = c(1.5, 2, 0.5, 3)}}
+
+\item{include_header}{TRUE (default) or FALSE for whether to include the
+header row}
 
 \item{add_header_for_DDI}{TRUE (default) or FALSE for whether to add an extra
 header row to the top of your table denoting when the PK are for baseline,

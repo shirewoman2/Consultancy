@@ -17,10 +17,9 @@
 #'   shading will alternate between white and light gray. For example, if you
 #'   have a table with PK values for multiple files and you have more than one
 #'   row per file (an example of this would be the output from the function
-#'   \code{\link{pk_table}}), setting \code{shading_column = File} will
-#'   cause the shading of the rows to alternate between white and light gray
-#'   whenever the file changes. Please see the examples at the bottom of this
-#'   help file.
+#'   \code{\link{pk_table}}), setting \code{shading_column = File} will cause
+#'   the shading of the rows to alternate between white and light gray whenever
+#'   the file changes. Please see the examples at the bottom of this help file.
 #' @param merge_shaded_cells TRUE (default) or FALSE for whether to merge the
 #'   cells that have the same shade. This only applies when one of the columns
 #'   in the input data.frame is used for deciding when to alternate shading,
@@ -127,6 +126,8 @@
 #' @param column_widths optionally specify what the widths of the columns should
 #'   be with a numeric vector of the widths in inches, e.g., \code{column_widths
 #'   = c(1.5, 2, 0.5, 3)}
+#' @param include_header TRUE (default) or FALSE for whether to include the
+#'   header row
 #' @param save_table optionally save the output table by supplying a file name
 #'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
 #'   slashes, dollar signs, or periods in the file name. If you leave off the
@@ -231,6 +232,7 @@ formatTable_Simcyp <- function(DF,
                                bold_cells = list(c(0, NA), c(NA, 1)),
                                center_1st_column = FALSE,
                                column_widths = NA, 
+                               include_header = TRUE, 
                                add_header_for_DDI = TRUE, 
                                perpetrator_name = "perpetrator", 
                                prettify_columns = FALSE, 
@@ -853,12 +855,12 @@ formatTable_Simcyp <- function(DF,
          flextable::fix_border_issues()
    } 
    
-   # FIXME - Is it ok to include this if user sets col widths?
-   # if(all(is.na(column_widths))){
-   # making the width autofitted to contents
-   FT <- FT %>% 
-      flextable::set_table_properties(width = 1, layout = "autofit")
-   # }
+   # Do not include this if user sets col widths
+   if(all(is.na(column_widths))){
+      # making the width autofitted to contents
+      FT <- FT %>%
+         flextable::set_table_properties(width = 1, layout = "autofit")
+   }
    
    # Dealing with subscripts
    ColNames <- sub("AUCt( |$)", "AUC~t~ ", NewNames)
@@ -902,6 +904,29 @@ formatTable_Simcyp <- function(DF,
       for(col in 1:ncol(DF)){
          FT <- FT %>% 
             flextable::width(j = col, width = column_widths[col])
+      }
+   }
+   
+   if(include_header == FALSE){
+      # Border style and color changes if they have asked to include internal
+      # borders
+      if(borders){
+         FT <- FT %>% 
+            delete_part(part = "header") %>%
+            flextable::border_remove() %>% 
+            flextable::border_inner_v(part = "all", 
+                                      border = officer::fp_border(width = 0.5)) %>% 
+            flextable::border_inner_h(part = "header", 
+                                      border = officer::fp_border(width = 0.5)) %>% 
+            flextable::border_outer(border = officer::fp_border(width = 0.5)) %>% 
+            flextable::hline_bottom(part = "body", 
+                                    border = officer::fp_border(width = 0.5)) %>% 
+            flextable::fix_border_issues()
+      } else {
+         FT <- FT %>% 
+            delete_part(part = "header") %>%
+            hline_top(border = fp_border(width = 1.5, 
+                                         color = "#666666"))
       }
    }
    

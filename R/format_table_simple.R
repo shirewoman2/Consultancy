@@ -81,9 +81,22 @@
 #'   Word.
 #' @param fontsize the numeric font size for the output table. Default is 11
 #'   point.
+#' @param bold_cells optionally specify cells in the table to be in bold-face
+#'   text with a numeric vector where the 1st number is the row number and the
+#'   2nd number is the column number (just like regular row and column
+#'   specifications in R). For example, \code{bold_cells = c(1, 2)} will make
+#'   the cell in row 1 and column 2 bold face. Use "0" for the row number if you
+#'   want to use bold face for something in the header row, and use NA in place
+#'   of a row or column number to make everything in that row or column bold
+#'   face. If you want to specify multiple places to use bold face, use a list
+#'   of numeric vectors. By default, the header row will be bold. Set
+#'   \code{bold_cells = NA} to make \emph{nothing} bold. Please see the examples
+#'   at the bottom of the help file.
 #' @param column_widths optionally specify what the widths of the columns should
 #'   be with a numeric vector of the widths in inches, e.g., \code{column_widths
 #'   = c(1.5, 2, 0.5, 3)}
+#' @param include_header TRUE (default) or FALSE for whether to include the
+#'   header row
 #' @param alignment alignment of text throughout table. Options are "left"
 #'   (default), "right", "center", or "justify".
 #' @param save_table optionally save the output table by supplying a file name
@@ -111,12 +124,15 @@ format_table_simple <- function(DF,
                                 shading_column, 
                                 merge_shaded_cells = TRUE, 
                                 merge_columns = NA, 
+                                sort_column, 
+                                bold_cells = list(c(0, NA)),
                                 highlight_gmr_colors = NA, 
                                 highlight_so_cutoffs = NA, 
                                 highlight_so_colors = "yellow to red",
                                 font = "Palatino Linotype", 
                                 fontsize = 11, 
                                 column_widths = NA, 
+                                include_header = TRUE, 
                                 alignment = "left", 
                                 save_table = NA,
                                 page_orientation = "portrait", 
@@ -145,7 +161,7 @@ format_table_simple <- function(DF,
    
    # Setting things up for nonstandard evaluation ----------------------------
    shading_column <- rlang::enquo(shading_column)
-   
+   sort_column <- rlang::enquo(sort_column)
    
    # Main body of function ---------------------------------------------------
    
@@ -156,7 +172,9 @@ format_table_simple <- function(DF,
                             shading_column = !!shading_column, 
                             merge_shaded_cells = merge_shaded_cells,
                             merge_columns = merge_columns, 
-                            bold_cells = list(c(0, NA)), 
+                            bold_cells = bold_cells, 
+                            sort_column = !!sort_column,
+                            include_header = include_header, 
                             add_header_for_DDI = FALSE, 
                             prettify_columns = FALSE, 
                             borders = FALSE, 

@@ -5,10 +5,10 @@
 \title{Insert the standard Certara UK Limited copyright box that appears in compound
 summary files}
 \usage{
-insert_copyright(font = "Arial")
+insert_copyright(font = "Fourier")
 }
 \arguments{
-\item{font}{font to use. Default is "Arial" and any fonts available on your
+\item{font}{font to use. Default is "Fourier" and any fonts available on your
 machine in either Word or PowerPoint should be acceptable. If you get Times
 New Roman in your table when you asked for something else, it means that
 that font isn't available or maybe wasn't spelled the way R is expecting

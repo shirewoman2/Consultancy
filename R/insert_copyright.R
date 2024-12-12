@@ -1,7 +1,7 @@
 #' Insert the standard Certara UK Limited copyright box that appears in compound
 #' summary files
 #'
-#' @param font font to use. Default is "Arial" and any fonts available on your
+#' @param font font to use. Default is "Fourier" and any fonts available on your
 #'   machine in either Word or PowerPoint should be acceptable. If you get Times
 #'   New Roman in your table when you asked for something else, it means that
 #'   that font isn't available or maybe wasn't spelled the way R is expecting
@@ -14,7 +14,7 @@
 #' @examples
 #' insert_copyright()
 #' 
-insert_copyright <- function(font = "Arial"){
+insert_copyright <- function(font = "Fourier"){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
