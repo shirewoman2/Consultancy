@@ -58,9 +58,11 @@ pk_table_subfun <- function(sim_data_file,
             remove = FALSE) %>% 
       filter(ID %in% PKparameters$ID == FALSE)
    
-   PKparameters <- PKparameters %>% 
-      bind_rows(ToAdd) %>% 
-      select(-ID)
+   if(nrow(ToAdd) > 0){
+      PKparameters <- PKparameters %>% 
+         bind_rows(ToAdd) %>% 
+         select(-ID)
+   }
    
    if(str_detect(sim_data_file, "xlsx$")){
       MyPKResults_all <- extractPK(
