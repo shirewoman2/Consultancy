@@ -1,11 +1,11 @@
 #' Summarize a PBPK model using parameters pulled from simulations - UNDER
 #' CONSTRUCTION
 #'
-#' @description \code{make_Simcyp_inputs_table} is meant for use with writing
-#'   compound summary pdfs. For making the table, it will pull model information
-#'   from simulations and arrange and format the information neatly.
-#'   Additionally, if you supply the references for each parameter, it will
-#'   include a column listing that.
+#' @description \code{make_Simcyp_inputs_table} will make a neatly formatted,
+#'   organized, human-readable table of the main Simcyp model inputs based on
+#'   information included in your simulation(s). It was designed for use with
+#'   writing compound summary pdfs, and, if you supply the references for each
+#'   parameter, it will include that information in the table.
 #'
 #'   This function requires you to first run
 #'   \code{\link{extractExpDetails_mult}} to get information about your
@@ -13,16 +13,16 @@
 #'   in this table and to see the coded names for each of the parameters that
 #'   will be included in the table, please run something like:
 #'
-#'   \code{Details <- extractExpDetails_mult()
+#'   \code{Details <- extractExpDetails_mult()}
 #'
-#'   TableCheck <- annotateDetails(existing_exp_details = Details, compoundID =
+#'   \code{TableCheck <- annotateDetails(existing_exp_details = Details, compoundID =
 #'   "substrate", detail_set = "Simcyp inputs")}
 #'
 #'   and the object Details is what you will provide as input for
-#'   \code{make_Simcyp_inputs_table} and the object TableCheck will show you
-#'   what information will be included and how to refer to each parameter or
-#'   detail. The values listed for each parameter will come from the column
-#'   titled something like "All files have this value for this compound".
+#'   \code{existing_exp_details}. The object TableCheck will show you what
+#'   information will be included and how to refer to each parameter or detail.
+#'   The values to listed for each parameter in your table will come from the
+#'   column titled something like "All files have this value for this compound".
 #'
 #'   Notes: \itemize{\item{This rounds numeric values to the 5th digit.}
 #'   \item{There are some parameters that are included in the standard
@@ -88,8 +88,8 @@
 #' @param fontsize the numeric font size for the output table. Default is 11
 #'   point.
 #' @param column_widths optionally specify what the widths of the columns should
-#'   be with a numeric vector of the widths in inches, e.g., 
-#'   \code{column_widths = c(1, 2, 1, 1)}
+#'   be with a numeric vector of the widths in inches, e.g., \code{column_widths
+#'   = c(1, 2, 1, 1)}
 #' @param save_table optionally save the output table by supplying a file name
 #'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
 #'   slashes, dollar signs, or periods in the file name. If you leave off the

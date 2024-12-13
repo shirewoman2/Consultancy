@@ -5,7 +5,12 @@
 \title{Format common PBPK model parameters to have appropriate subscripts and
 superscripts. UNDER CONSTRUCTION.}
 \usage{
-format_scripts(DF, parameter_column, remove_compound_suffix = TRUE)
+format_scripts(
+  DF,
+  parameter_column,
+  value_column,
+  remove_compound_suffix = TRUE
+)
 }
 \arguments{
 \item{DF}{a data.frame with a column containing, e.g., "ka (h^-1)", "fu,p",
@@ -16,6 +21,9 @@ up.}
 
 \item{parameter_column}{the name of the column in DF that contains your PK
 parameters, unquoted. For example, supply \code{parameter_column = Notes}}
+
+\item{value_column}{optionally supply the name of the column in DF that
+contains values for PK parameters, unquoted.}
 
 \item{remove_compound_suffix}{TRUE (default) or FALSE to remove the suffix
 that shows up in many PBPK elimination and interaction parameters to

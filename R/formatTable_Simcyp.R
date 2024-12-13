@@ -472,8 +472,15 @@ formatTable_Simcyp <- function(DF,
       add_header_for_DDI
    OrigNames <- names(DF)
    
+   # This bit was set up specifically for the make_Simcyp_inputs_table function
+   # but will work with anything with these column names.
    if("Parameter" %in% names(DF)){
-      FT <- format_scripts(DF, parameter_column = Parameter)
+      if("Value" %in% names(DF)){
+         FT <- format_scripts(DF, parameter_column = Parameter, 
+                              value_column = Value)
+      } else {
+         FT <- format_scripts(DF, parameter_column = Parameter)
+      }
    } else {
       FT <- format_scripts(DF)
    }
@@ -901,6 +908,7 @@ formatTable_Simcyp <- function(DF,
    
    # Setting columnn widths 
    if("logical" %in% class(column_widths) == FALSE){
+      DF <- DF %>% select(-any_of("Shade"))
       for(col in 1:ncol(DF)){
          FT <- FT %>% 
             flextable::width(j = col, width = column_widths[col])
