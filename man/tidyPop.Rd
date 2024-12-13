@@ -4,7 +4,7 @@
 \alias{tidyPop}
 \title{Tidying Simcyp simulator population names for reports, etc.}
 \usage{
-tidyPop(input_pop, dialect = "British")
+tidyPop(input_pop, dialect = "British", output_type = "all")
 }
 \arguments{
 \item{input_pop}{input population to tidy up; this has been designed to work
@@ -14,6 +14,25 @@ with \code{\link{extractExpDetails}} with the output item named
 \item{dialect}{Use "British" (default) or "American" spelling when there's a
 difference. Currently only affects "paediatric" vs. "pediatric"
 populations.}
+
+\item{output_type}{Which outputs do you want? Options:
+\describe{\item{"Population"}{the population, prettified}
+
+\item{"PopulationSimple"}{the prettified and simplified version of the
+population. For example, "Healthy Volunteers" would become "healthy subjects"
+and "Cirrhosis CP-A" would become "patients".}
+
+\item{"Population1stCap"}{the prettified population with the
+  first letter capitalized, e.g., for use at the beginning of a sentence}
+
+  \item{"PopulationCap"}{the population with title-case capitalization}
+
+  \item{"PopulationSimpleLower"}{the lower-case version of the simplified
+  population, e.g., "subjects" or "patients"}
+
+  \item{"PopulationSimpleCap"}{the simplified population but capitalized}
+  
+  \item{"all" (default)}{a list of all of the above}}}
 }
 \value{
 a tidied set of names for a simulated population

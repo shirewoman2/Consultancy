@@ -8,6 +8,24 @@
 #' @param dialect Use "British" (default) or "American" spelling when there's a
 #'   difference. Currently only affects "paediatric" vs. "pediatric"
 #'   populations.
+#' @param output_type Which outputs do you want? Options:
+#' \describe{\item{"Population"}{the population, prettified}
+#'
+#' \item{"PopulationSimple"}{the prettified and simplified version of the
+#' population. For example, "Healthy Volunteers" would become "healthy subjects"
+#' and "Cirrhosis CP-A" would become "patients".}
+#'
+#' \item{"Population1stCap"}{the prettified population with the
+#'   first letter capitalized, e.g., for use at the beginning of a sentence}
+#'
+#'   \item{"PopulationCap"}{the population with title-case capitalization}
+#'
+#'   \item{"PopulationSimpleLower"}{the lower-case version of the simplified
+#'   population, e.g., "subjects" or "patients"}
+#'
+#'   \item{"PopulationSimpleCap"}{the simplified population but capitalized}
+#'   
+#'   \item{"all" (default)}{a list of all of the above}}
 #'
 #' @return a tidied set of names for a simulated population
 #' @export
@@ -15,7 +33,43 @@
 #' @examples
 #' # No examples yet
 tidyPop <- function(input_pop, 
-                    dialect = "British"){
+                    dialect = "British", 
+                    output_type = "all"){
+   
+   # Error catching ----------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   output_type <- tolower(output_type)
+   if(all(output_type == "all")){
+      output_type <- c("population", "populationsimple", 
+                       "population1stcap", "populationcap", 
+                       "populationsimplelower", "populationsimplecap")
+   }
+   BadOutputType <- setdiff(output_type, 
+                            c("population", "populationsimple", 
+                              "population1stcap", "populationcap", 
+                              "populationsimplelower", "populationsimplecap"))
+   
+   if(length(BadOutputType) > 0){
+      output_type <- intersect(output_type, 
+                               c("population", "populationsimple", 
+                                 "population1stcap", "populationcap", 
+                                 "populationsimplelower", "populationsimplecap"))
+      if(length(output_type) == 0){
+         warning(wrapn("None of the output types you requested are among the available options. We'll give you the output_type of 'Population'."), 
+                 call. = FALSE)
+         output_type <- "population"
+      } else {
+         warning(wrapn(paste0("You requested some output types that are not among the available options. Specifically, these options are not available: ", 
+                              str_comma(paste0("'", BadOutputType, "'")), ". We will ignore these.")), 
+                 call. = FALSE)
+      }
+   }
+   
+   # Main body of function -------------------------------------------------
    
    PopNiceNames <- c(
       "Healthy Volunteers" = "healthy subjects",
@@ -116,5 +170,24 @@ tidyPop <- function(input_pop,
                   PopulationCap = TidySteps$PopulationCap,
                   PopulationSimpleLower = TidySteps$PopulationSimpleLower,
                   PopulationSimpleCap = TidySteps$PopulationSimpleCap)
+   
+   # Need to change the case of output_type to match the names I want for the
+   # output.
+   output_type_goodcase <- c("population" = "Population",
+                             "populationsimple" = "PopulationSimple", 
+                             "population1stcap" = "Population1stCap",
+                             "populationcap" = "PopulationCap", 
+                             "populationsimplelower" = "PopulationSimpleLower",
+                             "populationsimplecap" = "PopulationSimpleCap")
+   
+   output_type <- as.character(output_type_goodcase[output_type])
+   
+   MyPops <- MyPops[output_type]
+   
+   if(length(MyPops) == 1){
+      MyPops <- MyPops[[1]]
+   }
+   
    return(MyPops)
 }
+
