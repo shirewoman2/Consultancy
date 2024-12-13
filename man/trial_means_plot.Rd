@@ -6,7 +6,7 @@
 trials and, optionally, against observed PK}
 \usage{
 trial_means_plot(
-  sim_data_files,
+  sim_data_file,
   PKparameter = "Cmax_dose1",
   compoundToExtract = "substrate",
   tissue = "plasma",
@@ -14,18 +14,14 @@ trial_means_plot(
   mean_type = "geometric",
   variability_type = "percentiles",
   observed_PK = NA,
-  lines_for_population_stats = "gray80 solid dotted",
+  lines_for_population_stats = "none",
   color_set = "default",
   color_option = "by study",
-  facet_direction = "vertical",
-  facet_labels = NA,
   point_size = NA,
   bar_width = NA,
   y_axis_limits_lin = NA,
   legend_position = "right",
   include_dose_num = FALSE,
-  graph_title = NA,
-  graph_title_size = 14,
   existing_exp_details = NA,
   return_caption = FALSE,
   prettify_compound_names = TRUE,
@@ -36,11 +32,8 @@ trial_means_plot(
 )
 }
 \arguments{
-\item{sim_data_files}{name of the Excel files containing the simulator
-output, in quotes. If you supply more than 1 simulation file name, we will
-break up your graphs into small multiples based on the file name. Please
-see the arguments \code{facet_direction} and \code{facet_labels} for
-options around faceting.}
+\item{sim_data_file}{name of the Excel file containing the simulator output,
+in quotes}
 
 \item{PKparameter}{PK parameter you want to extract from the simulator output
 file. To see the full set of possible parameters to extract, enter
@@ -82,7 +75,7 @@ error bars? Options are "percentiles" for the 5th to 95th percentiles
 
   \itemize{\item{If you include a column titled "File", we will only use PK
   data that have the same value in that column as what you supply for
-  \code{sim_data_files}.}
+  \code{sim_data_file}.}
 
   \item{If you include a column titled "PKparameter", we will
   only use PK data that match what you supply for \code{PKparameter}.}
@@ -102,15 +95,16 @@ error bars? Options are "percentiles" for the 5th to 95th percentiles
 
 \item{lines_for_population_stats}{optionally include horizontal lines for the
 overall simulated population statistics by specifying the desired line
-color and type. Set this as a single text string of 1) the color for the
-lines (any R-friendly color specification will work), 2) the linetype for
-the central statistic (any R-friendly linetype will work), 3) the linetype
-for the variability statistic, and, optional, 4) the linewidth to use. If
-you omit the linewidth, we'll use a linewidth of 0.5 by default. The
-default of "gray80 solid dotted" will make a light gray solid line at the
-central statistic and a light gray dotted line at whatever you choose for
-the variability statistic. If you set this to "none", no lines will be
-included.}
+color and type. If left as "none" (default), no lines will be included. If
+set to, e.g., "red solid dotted" or "gray50 dashed dashed" or even "#87A896
+solid E2", then lines will be added to the graph at whatever central
+statistic you specified for "mean_type" and whatever variability statistic
+you specified for "variability_type". The first word must be a legitimate
+color in R (hex codes are fine), the second word, separated by a space,
+must be the line type you want for the central statistic, and the third
+word must be the line type you want for the variability statistic. If you
+add another space and then a fourth value, that will set the line width,
+which will be 0.5 by default.}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
@@ -122,10 +116,10 @@ included.}
   distinguishable but also more aesthetically pleasing than green and
   orange.}
 
-  \item{"black and white" ("BW" also works)}{black and white only. "white"
-  means a black circle with a white center. If you set
-  \code{color_option = "S or O"}, the simulated trials will be white and the
-  observed will be black. This looks like the trial-means
+  \item{"black and white" ("BW" also works)}{black and white only. "white" 
+  means a black circle with a white center. If you set 
+  \code{color_option = "S or O"}, the simulated trials will be white and the 
+  observed will be black. This looks like the trial-means 
   plots in the Excel outputs from the Simulator.}
 
   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
@@ -183,21 +177,7 @@ included.}
   observed data will be a different color from that set}
 
   \item{"by trial"}{uses a different color from \code{color_set} for every
-  trial, whether simulated or observed}
-
-  \item{"simulated or observed" ("S or O" and "S vs O" will also work)}{color
-  points based on whether they were simulated or observed}}}
-
-\item{facet_direction}{When there is more than one simulation file provided,
-we will break up your graphs into small multiples by the file name. You can
-specify which direction the graphs will be broken up into by setting
-\code{facet_direction} to "horizontal" or "vertical" (default). (We may add
-more options in the future by request.)}
-
-\item{facet_labels}{optionally specify which file name should have which
-label in the facets when there is more than one simulation file. Leaving
-this as the default NA will use the simulation file names for the titles in
-the facets.}
+  trial, whether simulated or observed}}}
 
 \item{y_axis_limits_lin}{optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
@@ -208,12 +188,6 @@ currently supported.)}
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right" (default), "bottom", "top", or "none" if you don't want one
 at all.}
-
-\item{graph_title}{optionally specify a title that will be centered across
-your graph or set of graphs}
-
-\item{graph_title_size}{the font size for the graph title if it's included;
-default is 14. This also determines the font size of the graph labels.}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} to get all the details from the "Input

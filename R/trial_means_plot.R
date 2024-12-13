@@ -14,11 +14,8 @@
 #'   \code{variability_type}, you will get a misleading graph, so be careful!
 #'
 #'
-#' @param sim_data_files name of the Excel files containing the simulator
-#'   output, in quotes. If you supply more than 1 simulation file name, we will
-#'   break up your graphs into small multiples based on the file name. Please
-#'   see the arguments \code{facet_direction} and \code{facet_labels} for
-#'   options around faceting.
+#' @param sim_data_file name of the Excel file containing the simulator output,
+#'   in quotes
 #' @param sheet optionally specify the name of the sheet where you'd like to
 #'   pull the PK data, in quotes. For example, if you have a user-defined AUC
 #'   interval, specify the tab where those data are. \strong{NOTE:} If you want
@@ -61,7 +58,7 @@
 #'
 #'   \itemize{\item{If you include a column titled "File", we will only use PK
 #'   data that have the same value in that column as what you supply for
-#'   \code{sim_data_files}.}
+#'   \code{sim_data_file}.}
 #'
 #'   \item{If you include a column titled "PKparameter", we will
 #'   only use PK data that match what you supply for \code{PKparameter}.}
@@ -81,15 +78,16 @@
 #'
 #' @param lines_for_population_stats optionally include horizontal lines for the
 #'   overall simulated population statistics by specifying the desired line
-#'   color and type. Set this as a single text string of 1) the color for the
-#'   lines (any R-friendly color specification will work), 2) the linetype for
-#'   the central statistic (any R-friendly linetype will work), 3) the linetype
-#'   for the variability statistic, and, optional, 4) the linewidth to use. If
-#'   you omit the linewidth, we'll use a linewidth of 0.5 by default. The
-#'   default of "gray80 solid dotted" will make a light gray solid line at the
-#'   central statistic and a light gray dotted line at whatever you choose for
-#'   the variability statistic. If you set this to "none", no lines will be
-#'   included.
+#'   color and type. If left as "none" (default), no lines will be included. If
+#'   set to, e.g., "red solid dotted" or "gray50 dashed dashed" or even "#87A896
+#'   solid E2", then lines will be added to the graph at whatever central
+#'   statistic you specified for "mean_type" and whatever variability statistic
+#'   you specified for "variability_type". The first word must be a legitimate
+#'   color in R (hex codes are fine), the second word, separated by a space,
+#'   must be the line type you want for the central statistic, and the third
+#'   word must be the line type you want for the variability statistic. If you
+#'   add another space and then a fourth value, that will set the line width,
+#'   which will be 0.5 by default.
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -100,10 +98,10 @@
 #'   distinguishable but also more aesthetically pleasing than green and
 #'   orange.}
 #'
-#'   \item{"black and white" ("BW" also works)}{black and white only. "white"
-#'   means a black circle with a white center. If you set
-#'   \code{color_option = "S or O"}, the simulated trials will be white and the
-#'   observed will be black. This looks like the trial-means
+#'   \item{"black and white" ("BW" also works)}{black and white only. "white" 
+#'   means a black circle with a white center. If you set 
+#'   \code{color_option = "S or O"}, the simulated trials will be white and the 
+#'   observed will be black. This looks like the trial-means 
 #'   plots in the Excel outputs from the Simulator.}
 #'
 #'   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
@@ -160,31 +158,15 @@
 #'   observed data will be a different color from that set}
 #'
 #'   \item{"by trial"}{uses a different color from \code{color_set} for every
-#'   trial, whether simulated or observed}
-#'
-#'   \item{"simulated or observed" ("S or O" and "S vs O" will also work)}{color
-#'   points based on whether they were simulated or observed}}
+#'   trial, whether simulated or observed}}
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 #'   limits for the linear plot will be automatically selected. (Setting up
 #'   semi-log plot y axis intervals manually is a bit tricky and is not
 #'   currently supported.)
-#' @param facet_direction When there is more than one simulation file provided,
-#'   we will break up your graphs into small multiples by the file name. You can
-#'   specify which direction the graphs will be broken up into by setting
-#'   \code{facet_direction} to "horizontal" or "vertical" (default). (We may add
-#'   more options in the future by request.)
-#' @param facet_labels optionally specify which file name should have which
-#'   label in the facets when there is more than one simulation file. Leaving
-#'   this as the default NA will use the simulation file names for the titles in
-#'   the facets.
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right" (default), "bottom", "top", or "none" if you don't want one
 #'   at all.
-#' @param graph_title optionally specify a title that will be centered across
-#'   your graph or set of graphs
-#' @param graph_title_size the font size for the graph title if it's included;
-#'   default is 14. This also determines the font size of the graph labels.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
@@ -239,7 +221,7 @@
 #' @examples
 #' # None yet
 #' 
-trial_means_plot <- function(sim_data_files, 
+trial_means_plot <- function(sim_data_file, 
                              PKparameter = "Cmax_dose1", 
                              compoundToExtract = "substrate", 
                              tissue = "plasma", 
@@ -247,18 +229,14 @@ trial_means_plot <- function(sim_data_files,
                              mean_type = "geometric", 
                              variability_type = "percentiles", 
                              observed_PK = NA, 
-                             lines_for_population_stats = "gray80 solid dotted", 
+                             lines_for_population_stats = "none", 
                              color_set = "default",
                              color_option = "by study", 
-                             facet_direction = "vertical", 
-                             facet_labels = NA, 
                              point_size = NA, 
                              bar_width = NA, 
                              y_axis_limits_lin = NA, 
                              legend_position = "right", 
                              include_dose_num = FALSE, 
-                             graph_title = NA,
-                             graph_title_size = 14, 
                              existing_exp_details = NA, 
                              return_caption = FALSE, 
                              prettify_compound_names = TRUE,
@@ -291,6 +269,12 @@ trial_means_plot <- function(sim_data_files,
       warning(wrapn("You must supply a PK parameter to plot that is among the possible options, which you can see by running view(PKParameterDefinitions). We'll plot the default of Cmax for dose 1."), 
               call. = F)
       PKparameter <- "Cmax_dose1"
+   }
+   
+   if(length(sim_data_file) > 1){
+      warning(wrapn("You have supplied more than 1 simulation results file, and we can only plot one at a time. We'll only plot the 1st one."), 
+              call. = FALSE)
+      sim_data_file <- sim_data_file[1]
    }
    
    mean_type <- tolower(mean_type)[1]
@@ -330,7 +314,7 @@ trial_means_plot <- function(sim_data_files,
    # If user wanted lines_for_population_stats added, check that they have
    # specified argument correctly and set up the character vector of preferences.
    LineAES <- str_split(lines_for_population_stats, pattern = " ")[[1]]
-   if(length(LineAES) < 3 & lines_for_population_stats != "none"){
+   if(length(LineAES) < 3 & any(complete.cases(lines_for_population_stats))){
       warning(wrapn("You requested that lines for the overall simulated population statistics be added to the graph, but you've supplied input that doesn't work for `lines_for_population_stats`. We'll set this to `gray solid dashed` for now, but please check the help file to get what you want."), 
               call. = FALSE)
       LineAES <- c("gray", "solid", "dashed", "0.5")
@@ -373,39 +357,21 @@ trial_means_plot <- function(sim_data_files,
    suppressWarnings(bar_width <- as.numeric(bar_width)[1])
    bar_width <- ifelse(is.na(bar_width), 0.25, bar_width)
    
-   facet_direction <- tolower(facet_direction)[1]
-   if(facet_direction %in% c("horizontal", "vertical") == FALSE){
-      warning(wrapn("You have specified something for the facet_direction other than 'horizontal' or 'vertical'. We'll use the default of 'vertical'."))
-      facet_direction <- "vertical"
-   }
-   
-   # FIXME - have not added any error catching yet for files or PK parameters
-   # that are not available.
-   
-   existing_exp_details <- harmonize_details(existing_exp_details)
-   existing_exp_details <- filter_sims(existing_exp_details, sim_data_files, "include")
-   
    # Main body of function -----------------------------------------------------
    
    ## Getting simulated data --------------------------------------------------
+   PKdata <- extractPK(sim_data_file = sim_data_file, 
+                       PKparameters = PKparameter, 
+                       tissue = tissue, 
+                       compoundToExtract = compoundToExtract, 
+                       existing_exp_details = existing_exp_details, 
+                       sheet = sheet, 
+                       returnAggregateOrIndiv = "individual", 
+                       returnExpDetails = TRUE)
    
-   PKdata <- list()
-   
-   for(ff in sim_data_files){
-      
-      PKdata[[ff]] <- extractPK(sim_data_file = ff, 
-                                PKparameters = PKparameter, 
-                                tissue = tissue, 
-                                compoundToExtract = compoundToExtract, 
-                                existing_exp_details = existing_exp_details, 
-                                sheet = sheet, 
-                                returnAggregateOrIndiv = "individual", 
-                                returnExpDetails = TRUE)
-   }
-   
-   PK_long <- map(PKdata, "individual") %>% bind_rows() %>% 
+   PK_long <- PKdata$individual %>% 
       filter(PKparameter == {{PKparameter}}) %>% 
-      group_by(File, Trial) %>% 
+      group_by(Trial) %>% 
       summarize(Mean = mean(Value, na.rm = T), 
                 SD = sd(Value, na.rm = T), 
                 Min = min(Value, na.rm = T), 
@@ -469,7 +435,7 @@ trial_means_plot <- function(sim_data_files,
       if("File" %in% names(observed_PK) &&
          any(complete.cases(observed_PK$File))){
          observed_PK <- observed_PK %>% 
-            filter(basename(File) %in% basename(sim_data_files))
+            filter(basename(File) == basename(sim_data_file))
       }
       
       if("CompoundID" %in% names(observed_PK) &&
@@ -490,10 +456,6 @@ trial_means_plot <- function(sim_data_files,
             filter(PKparameter == {{PKparameter}})
       } else {
          observed_PK$PKparameter <- PKparameter
-      }
-      
-      if("ObsVariability" %in% names(observed_PK) == FALSE){
-         observed_PK$ObsVariability <- NA
       }
       
       suppressWarnings(
@@ -558,7 +520,6 @@ trial_means_plot <- function(sim_data_files,
          
       } else {
          observed_PK$Trial <- "observed"
-         observed_PK$Study <- "observed"
       }
       
       ObsTrialLevels <- unique(observed_PK$Trial)
@@ -568,12 +529,10 @@ trial_means_plot <- function(sim_data_files,
    
    if("logical" %in% class(observed_PK) == FALSE){
       PK_long <- PK_long %>% 
-         bind_rows(observed_PK %>% 
-                      select(File, Trial, Study, Center, Lower, Upper) %>% 
-                      unique()) %>% 
+         bind_rows(observed_PK) %>% 
          mutate(Trial = factor(Trial, 
                                levels = c(as.character(1:length(
-                                  unique(PKdata$Trial))), 
+                                  unique(PKdata$individual$Trial))), 
                                   ObsTrialLevels)), 
                 Study = factor(Study, 
                                levels = c("simulated", ObsStudyLevels)))
@@ -581,20 +540,11 @@ trial_means_plot <- function(sim_data_files,
       PK_long <- PK_long %>% 
          mutate(Trial = factor(Trial, 
                                levels = c(as.character(1:length(
-                                  unique(PKdata$Trial))))))
+                                  unique(PKdata$individual$Trial))))))
    }
    
    
    # Making graph -------------------------------------------------------------
-   
-   # Setting things up for faceting
-   if(length(unique(PKdata$File)) > 1){
-      if(any(complete.cases(facet_labels))){
-         PK_long$FacetFile <- facet_labels[PK_long$File]
-      } else {
-         PK_long$FacetFile <- PK_long$File
-      }
-   }
    
    # Setting colors
    if(color_option == "by study"){
@@ -649,107 +599,82 @@ trial_means_plot <- function(sim_data_files,
    
    if(lines_for_population_stats != "none"){
       
-      PK_agg <- list()
+      AggStats <- PKdata$aggregate[[1]]
+      names(AggStats) <- renameStats(names(PKdata$aggregate[[1]]))
       
-      for(ff in names(PKdata)){
-         
-         AggStats <- PKdata[[ff]]$aggregate[[1]]
-         names(AggStats) <- renameStats(names(PKdata[[ff]]$aggregate[[1]]))
-         
-         # Simulator does not output arithmetic CIs, so need to add those here.
-         CI90_arith <- confInt(PKdata[[ff]]$individual %>% 
-                                  filter(PKparameter == {{PKparameter}}) %>% 
-                                  pull(Value),
-                               CI = 0.9, 
-                               distribution_type = "t")
-         
-         AggStats <- c(AggStats, 
-                       CI90_lower_arith = CI90_arith[[1]], 
-                       CI90_upper_arith = CI90_arith[[2]])
-         
-         PK_agg[[ff]] <- as.data.frame(t(AggStats)) %>% 
-            mutate(File = ff)
-         
-         rm(AggStats, CI90_arith)
-         
-      }
+      # Simulator does not output arithmetic CIs, so need to add those here.
+      CI90_arith <- confInt(PKdata$individual %>% 
+                               filter(PKparameter == {{PKparameter}}) %>% 
+                               pull(Value),
+                            CI = 0.9, 
+                            distribution_type = "t")
       
-      PK_agg <- bind_rows(PK_agg) %>% 
-         mutate(Center = case_when(mean_type == "arithmetic" ~ Mean, 
-                                   mean_type == "geometric" ~ Geomean, 
-                                   mean_type == "median" ~ Median), 
-                Upper = case_when(
-                   variability_type == "PERCENTILES" ~ Per95,
-                   
-                   mean_type == "arithmetic" & 
-                      variability_type ==  "SD" ~ Mean + SD, 
-                   
-                   mean_type == "arithmetic" & 
-                      variability_type ==  "CV" ~ Mean + SD, 
-                   
-                   mean_type == "arithmetic" & 
-                      variability_type ==  "90% CI" ~ CI90_upper_arith, 
-                   
-                   mean_type == "geometric" & 
-                      variability_type ==  "GCV" ~ Geomean + Geomean * GCV, 
-                   
-                   mean_type == "geometric" & 
-                      variability_type ==  "90% CI" ~ CI90_upper, 
-                   
-                   variability_type == "RANGE" ~ Maximum), 
-                
-                Lower = case_when(
-                   variability_type == "PERCENTILES" ~ Per5,
-                   
-                   mean_type == "arithmetic" & 
-                      variability_type ==  "SD" ~ Mean - SD, 
-                   
-                   mean_type == "arithmetic" & 
-                      variability_type ==  "CV" ~ Mean - SD, 
-                   
-                   mean_type == "arithmetic" & 
-                      variability_type ==  "90% CI" ~ CI90_lower_arith, 
-                   
-                   mean_type == "geometric" & 
-                      variability_type ==  "GCV" ~ Geomean - Geomean * GCV, 
-                   
-                   mean_type == "geometric" & 
-                      variability_type ==  "90% CI" ~ CI90_lower, 
-                   
-                   variability_type == "RANGE" ~ Minimum))
-      
-      if(length(unique(PK_long$File)) > 1){
-         if(any(complete.cases(facet_labels))){
-            PK_agg$FacetFile <- facet_labels[PK_agg$File]
-         } else {
-            PK_agg$FacetFile <- PK_agg$File
-         }
-      }
+      AggStats <- c(AggStats, 
+                    CI90_lowerer_arith = CI90_arith[[1]], 
+                    CI90_upper_arith = CI90_arith[[2]])
       
       G <- G + 
          # Adding lines for population central stat
-         geom_hline(data = PK_agg, aes(yintercept = Center),
+         geom_hline(yintercept = 
+                       case_match(mean_type, 
+                                  "arithmetic" ~ AggStats["Mean"], 
+                                  "geometric" ~ AggStats["Geomean"], 
+                                  "median" ~ AggStats["Median"]), 
                     color = LineAES[1], 
                     linetype = LineAES[2], 
                     linewidth = as.numeric(LineAES[4])) +
          # Adding lines for population variability stats. Lower line: 
-         geom_hline(data = PK_agg, aes(yintercept = Lower),
+         geom_hline(yintercept = 
+                       case_when(
+                          variability_type == "PERCENTILES" ~ AggStats["Per5"],
+                          
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "SD" ~ AggStats["Mean"] + AggStats["SD"], 
+                          
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "CV" ~ AggStats["Mean"] + AggStats["SD"], 
+                          
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_upper_arith"], 
+                          
+                          mean_type == "geometric" & 
+                             variability_type ==  "GCV" ~ AggStats["Geomean"] + 
+                             AggStats["Geomean"] * AggStats["GCV"], 
+                          
+                          mean_type == "geometric" & 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_upper"], 
+                          
+                          variability_type == "RANGE" ~ AggStats["Maximum"]), 
+                    
                     color = LineAES[1], 
                     linetype = LineAES[3], 
                     linewidth = as.numeric(LineAES[4])) +
          # Adding lines for population variability stats. Upper line: 
-         geom_hline(data = PK_agg, aes(yintercept = Upper),
+         geom_hline(yintercept = 
+                       case_when(
+                          variability_type == "PERCENTILES" ~ AggStats["Per95"], 
+                          
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "SD" ~ AggStats["Mean"] - AggStats["SD"], 
+                          
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "CV" ~ AggStats["Mean"] - AggStats["SD"], 
+                          
+                          mean_type == "arithmetic" & 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_lowerer_arith"], 
+                          
+                          mean_type == "geometric" & 
+                             variability_type ==  "GCV" ~ AggStats["Geomean"] - 
+                             AggStats["Geomean"] * AggStats["GCV"], 
+                          
+                          mean_type == "geometric" & 
+                             variability_type ==  "90% CI" ~ AggStats["CI90_lowerer"], 
+                          
+                          variability_type == "RANGE" ~ AggStats["Minimum"]), 
+                    
                     color = LineAES[1], 
                     linetype = LineAES[3], 
                     linewidth = as.numeric(LineAES[4]))
-   }
-   
-   if(length(unique(PK_long$File)) > 1){
-      if(facet_direction == "horizontal"){
-         G <- G + facet_grid(~ FacetFile)
-      } else {
-         G <- G + facet_grid(FacetFile ~ .)
-      }
    }
    
    G <- G +
@@ -757,7 +682,7 @@ trial_means_plot <- function(sim_data_files,
       geom_point(shape = 21, size = point_size) +
       scale_color_manual(values = MyColors) +
       scale_fill_manual(values = MyFillColors) +
-      theme_consultancy(border = TRUE) +
+      theme_consultancy() +
       ylab(PKexpressions[[sub("_last|_dose1", "", PKparameter)]]) + 
       theme(legend.position = legend_position)
    
@@ -766,101 +691,89 @@ trial_means_plot <- function(sim_data_files,
          scale_y_continuous(limits = y_axis_limits_lin)
    }
    
-   if(complete.cases(graph_title)){
-      G <- G + ggtitle(graph_title) +
-         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
-               plot.title.position = "panel")
-   }
-   
    Out <- list("graph" = G)
    
    if(return_caption){
       
-      Caption <- list()
-      Heading <- list()
+      Legos <- make_text_legos(sim_data_file = basename(sim_data_file), 
+                               existing_exp_details = PKdata[["ExpDetails"]], 
+                               prettify_compound_names = prettify_compound_names)
       
-      for(ff in unique(PK_long$File)){
-         Legos <- make_text_legos(sim_data_file = basename(ff), 
-                                  existing_exp_details = existing_exp_details, 
-                                  prettify_compound_names = prettify_compound_names)
-         
-         PKparameter_rmd <- case_match(sub("_dose1|_last", "", PKparameter), 
-                                       "Cmax" ~ "C~max~", 
-                                       "tmax" ~ "t~max~", 
-                                       "AUCtau" ~ "AUC~tau~", 
-                                       "AUCinf" ~ "AUC~inf~", 
-                                       "AUCt" ~ "AUC~t~", 
-                                       "CLt" ~ "CL/F", 
-                                       "CLtau" ~ "CL/F", 
-                                       "CLinf" ~ "CL/F")
-         
-         Caption[[ff]] <- 
-            paste0("Figure shows ", 
-                   case_match(mean_type,
-                              "arithmetic" ~ "arithmetic mean", 
-                              "geometric" ~ "geometric mean", 
-                              "median" ~ "median"), 
-                   " (point) and ", 
-                   case_match(variability_type, 
-                              "PERCENTILES" ~ "5^th^ to 95^th^ percentiles", 
-                              "SD" ~ "standard deviation", 
-                              "CV" ~ "standard deviation", 
-                              "GCV" ~ "standard deviation", 
-                              "90% CI" ~ "90% confidence interval", 
-                              "RANGE" ~ "range"), 
-                   " (error bars) for ", 
-                   PKparameter_rmd, 
-                   " for ",
-                   PKdata[["ExpDetails"]]$NumTrials, 
-                   " trials of ", 
-                   PKdata[["ExpDetails"]]$NumSubjTrial, 
-                   " subjects each (", 
-                   PKdata[["ExpDetails"]]$PercFemale * 100, "% female, ages ", 
-                   PKdata[["ExpDetails"]]$Age_min, " to ", 
-                   PKdata[["ExpDetails"]]$Age_max, 
-                   ") following ", 
-                   ifelse(
-                      AllCompounds$DDIrole[AllCompounds$CompoundID == compoundToExtract] == "victim", 
-                      Legos$DosingText_sub_lower, 
-                      Legos$DosingText_inhib_lower), 
-                   ifelse(str_detect(PKparameter, "withInhib|ratio"), 
-                          paste0(" following ", Legos$DosingText_inhib_lower), ""), 
-                   ifelse("logical" %in% class(observed_PK), 
-                          "", 
-                          paste0(". Observed data from clinical study ", 
-                                 ifelse(is.na(name_clinical_study), 
-                                        "***XXX***", name_clinical_study))), 
-                   ". ", 
-                   ifelse(lines_for_population_stats == "none", 
-                          "", 
-                          paste0("Horizontal lines indicate the ", 
-                                 case_match(mean_type,
-                                            "arithmetic" ~ "arithmetic mean", 
-                                            "geometric" ~ "geometric mean", 
-                                            "median" ~ "median"), 
-                                 " and ", 
-                                 case_match(variability_type, 
-                                            "PERCENTILES" ~ "5^th^ to 95^th^ percentiles", 
-                                            "SD" ~ "standard deviation", 
-                                            "CV" ~ "standard deviation", 
-                                            "GCV" ~ "standard deviation", 
-                                            "90% CI" ~ "90% confidence interval", 
-                                            "RANGE" ~ "range"), 
-                                 " for the simulated population. ")), 
-                   "Source simulated data: ", sim_data_files, ".")
-         
-         Heading[[ff]] <- paste0("Simulated ", 
-                                 ifelse("logical" %in% class(observed_PK), 
-                                        "", "and observed "), 
-                                 "values for ", PKparameter_rmd,
-                                 " for ", 
-                                 PKdata[["ExpDetails"]] %>% 
-                                    filter(File == sim_data_files) %>% 
-                                    select(AllCompounds$DetailNames[
-                                       AllCompounds$CompoundID == compoundToExtract]), 
-                                 " comparing variability across trials.")
-         
-      }
+      PKparameter_rmd <- case_match(sub("_dose1|_last", "", PKparameter), 
+                                    "Cmax" ~ "C~max~", 
+                                    "tmax" ~ "t~max~", 
+                                    "AUCtau" ~ "AUC~tau~", 
+                                    "AUCinf" ~ "AUC~inf~", 
+                                    "AUCt" ~ "AUC~t~", 
+                                    "CLt" ~ "CL/F", 
+                                    "CLtau" ~ "CL/F", 
+                                    "CLinf" ~ "CL/F")
+      
+      Caption <- 
+         paste0("Figure shows ", 
+                case_match(mean_type,
+                           "arithmetic" ~ "arithmetic mean", 
+                           "geometric" ~ "geometric mean", 
+                           "median" ~ "median"), 
+                " (point) and ", 
+                case_match(variability_type, 
+                           "PERCENTILES" ~ "5^th^ to 95^th^ percentiles", 
+                           "SD" ~ "standard deviation", 
+                           "CV" ~ "standard deviation", 
+                           "GCV" ~ "standard deviation", 
+                           "90% CI" ~ "90% confidence interval", 
+                           "RANGE" ~ "range"), 
+                " (error bars) for ", 
+                PKparameter_rmd, 
+                " for ",
+                PKdata[["ExpDetails"]]$NumTrials, 
+                " trials of ", 
+                PKdata[["ExpDetails"]]$NumSubjTrial, 
+                " subjects each (", 
+                PKdata[["ExpDetails"]]$PercFemale * 100, "% female, ages ", 
+                PKdata[["ExpDetails"]]$Age_min, " to ", 
+                PKdata[["ExpDetails"]]$Age_max, 
+                ") following ", 
+                ifelse(
+                   AllCompounds$DDIrole[AllCompounds$CompoundID == compoundToExtract] == "victim", 
+                   Legos$DosingText_sub_lower, 
+                   Legos$DosingText_inhib_lower), 
+                ifelse(str_detect(PKparameter, "withInhib|ratio"), 
+                       paste0(" following ", Legos$DosingText_inhib_lower), ""), 
+                ifelse("logical" %in% class(observed_PK), 
+                       "", 
+                       paste0(". Observed data from clinical study ", 
+                              ifelse(is.na(name_clinical_study), 
+                                     "***XXX***", name_clinical_study))), 
+                ". ", 
+                ifelse(lines_for_population_stats == "none", 
+                       "", 
+                       paste0("Horizontal lines indicate the ", 
+                              case_match(mean_type,
+                                         "arithmetic" ~ "arithmetic mean", 
+                                         "geometric" ~ "geometric mean", 
+                                         "median" ~ "median"), 
+                              " and ", 
+                              case_match(variability_type, 
+                                         "PERCENTILES" ~ "5^th^ to 95^th^ percentiles", 
+                                         "SD" ~ "standard deviation", 
+                                         "CV" ~ "standard deviation", 
+                                         "GCV" ~ "standard deviation", 
+                                         "90% CI" ~ "90% confidence interval", 
+                                         "RANGE" ~ "range"), 
+                              " for the simulated population. ")), 
+                "Source simulated data: ", sim_data_file, ".")
+      
+      Heading <- paste0("Simulated ", 
+                        ifelse("logical" %in% class(observed_PK), 
+                               "", "and observed "), 
+                        "values for ", PKparameter_rmd,
+                        " for ", 
+                        PKdata[["ExpDetails"]] %>% 
+                           filter(File == sim_data_file) %>% 
+                           select(AllCompounds$DetailNames[
+                              AllCompounds$CompoundID == compoundToExtract]), 
+                        " comparing variability across trials.")
       
       Out[["figure_heading"]] <- Heading
       Out[["figure_caption"]]  <-  Caption
