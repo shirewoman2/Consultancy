@@ -453,7 +453,10 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          include_num_denom_columns = include_num_denom_columns, 
          conf_int = conf_int, 
          includeCV = includeCV, 
-         includeConfInt = includeConfInt, 
+         # it's easiest for the code if CI's are present even if they don't want
+         # them ultimately. Removing this lower in script if they did not ask
+         # for CIs.
+         includeConfInt = TRUE, 
          include_dose_num = include_dose_num, 
          prettify_columns = FALSE, 
          prettify_compound_names = FALSE, 
@@ -541,6 +544,10 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    MyPKResults <- MyPKResults %>% 
       relocate(CompoundID, Tissue, File, .after = last_col())
    
+   if(includeConfInt == FALSE){
+      MyPKResults <- MyPKResults %>% 
+         filter(!str_detect(Statistic, "CI|confidence"))
+   }
    
    # Setting up table caption ------------------------------------------------
    
