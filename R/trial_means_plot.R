@@ -78,16 +78,15 @@
 #'
 #' @param lines_for_population_stats optionally include horizontal lines for the
 #'   overall simulated population statistics by specifying the desired line
-#'   color and type. If left as "none" (default), no lines will be included. If
-#'   set to, e.g., "red solid dotted" or "gray50 dashed dashed" or even "#87A896
-#'   solid E2", then lines will be added to the graph at whatever central
-#'   statistic you specified for "mean_type" and whatever variability statistic
-#'   you specified for "variability_type". The first word must be a legitimate
-#'   color in R (hex codes are fine), the second word, separated by a space,
-#'   must be the line type you want for the central statistic, and the third
-#'   word must be the line type you want for the variability statistic. If you
-#'   add another space and then a fourth value, that will set the line width,
-#'   which will be 0.5 by default.
+#'   color and type. Set this as a single text string of 1) the color for the
+#'   lines (any R-friendly color specification will work), 2) the linetype for
+#'   the central statistic (any R-friendly linetype will work), 3) the linetype
+#'   for the variability statistic, and, optional, 4) the linewidth to use. If
+#'   you omit the linewidth, we'll use a linewidth of 0.5 by default. The
+#'   default of "gray80 solid dotted" will make a light gray solid line at the
+#'   central statistic and a light gray dotted line at whatever you choose for
+#'   the variability statistic. If you set this to "none", no lines will be
+#'   included.
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -98,10 +97,10 @@
 #'   distinguishable but also more aesthetically pleasing than green and
 #'   orange.}
 #'
-#'   \item{"black and white" ("BW" also works)}{black and white only. "white" 
-#'   means a black circle with a white center. If you set 
-#'   \code{color_option = "S or O"}, the simulated trials will be white and the 
-#'   observed will be black. This looks like the trial-means 
+#'   \item{"black and white" ("BW" also works)}{black and white only. "white"
+#'   means a black circle with a white center. If you set
+#'   \code{color_option = "S or O"}, the simulated trials will be white and the
+#'   observed will be black. This looks like the trial-means
 #'   plots in the Excel outputs from the Simulator.}
 #'
 #'   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
@@ -153,12 +152,17 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #' @param color_option How do you want to color information in the graph?
-#'   Options are: \describe{\item{"by study" (default)}{all simulated trials
+#'   Options are: 
+#'   
+#'   \describe{\item{"by study" (default)}{all simulated trials
 #'   will be the first color from \code{color_set} and then each set of
 #'   observed data will be a different color from that set}
 #'
 #'   \item{"by trial"}{uses a different color from \code{color_set} for every
-#'   trial, whether simulated or observed}}
+#'   trial, whether simulated or observed}
+#'   
+#'   \item{"simulated or observed" ("S or O" and "S vs O" will also work)}{color
+#'   points based on whether they were simulated or observed}}
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 #'   limits for the linear plot will be automatically selected. (Setting up
@@ -167,6 +171,10 @@
 #' @param legend_position specify where you want the legend to be. Options are
 #'   "left", "right" (default), "bottom", "top", or "none" if you don't want one
 #'   at all.
+#' @param graph_title optionally specify a title that will be centered across
+#'   your graph or set of graphs
+#' @param graph_title_size the font size for the graph title if it's included;
+#'   default is 14. This also determines the font size of the graph labels.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
@@ -229,7 +237,7 @@ trial_means_plot <- function(sim_data_file,
                              mean_type = "geometric", 
                              variability_type = "percentiles", 
                              observed_PK = NA, 
-                             lines_for_population_stats = "none", 
+                             lines_for_population_stats = "gray80 solid dotted", 
                              color_set = "default",
                              color_option = "by study", 
                              point_size = NA, 
@@ -237,6 +245,8 @@ trial_means_plot <- function(sim_data_file,
                              y_axis_limits_lin = NA, 
                              legend_position = "right", 
                              include_dose_num = FALSE, 
+                             graph_title = NA,
+                             graph_title_size = 14,
                              existing_exp_details = NA, 
                              return_caption = FALSE, 
                              prettify_compound_names = TRUE,
@@ -458,6 +468,10 @@ trial_means_plot <- function(sim_data_file,
          observed_PK$PKparameter <- PKparameter
       }
       
+      if("ObsVariability" %in% names(observed_PK) == FALSE){
+         observed_PK$ObsVariability <- NA
+      }
+      
       suppressWarnings(
          observed_PK <- observed_PK %>%
             separate(ObsVariability, into = c("Lower", "Upper"), 
@@ -675,6 +689,12 @@ trial_means_plot <- function(sim_data_file,
                     color = LineAES[1], 
                     linetype = LineAES[3], 
                     linewidth = as.numeric(LineAES[4]))
+   }
+   
+   if(complete.cases(graph_title)){
+      G <- G + ggtitle(graph_title) +
+         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+               plot.title.position = "panel")
    }
    
    G <- G +
