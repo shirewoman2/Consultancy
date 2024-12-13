@@ -30,10 +30,9 @@ harmonize_dosing <- function(existing_exp_details){
          # If it was custom dosing, then we won't be able to get any info from
          # dosing interval, etc., so skipping those. 
          if(switch(cmpd, 
-                   "substrate" = "StartHr_sub", 
-                   "inhibitor 1" = "StartHr_inhib", 
-                   "inhibitor 2" = "StartHr_inhib2") %in% 
-            names(Main[[ff]]) == FALSE){next}
+                   "substrate" = "DoseRoute_sub", 
+                   "inhibitor 1" = "DoseRoute_inhib", 
+                   "inhibitor 2" = "DoseRoute_inhib2") == "custom dosing"){next}
          
          if(is.na(switch(cmpd, 
                          "substrate" = 
@@ -59,7 +58,26 @@ harmonize_dosing <- function(existing_exp_details){
                                     "substrate" = as.numeric(Main[[ff]]$StartHr_sub), 
                                     "inhibitor 1" = as.numeric(Main[[ff]]$StartHr_inhib), 
                                     "inhibitor 2" = as.numeric(Main[[ff]]$StartHr_inhib2)), 
-                          to = as.numeric(Main[[ff]]$SimDuration), 
+                          to = ifelse(is.na(switch(cmpd, 
+                                                   "substrate" = Main[[ff]]$NumDoses_sub, 
+                                                   "inhibitor 1" = Main[[ff]]$NumDoses_inhib, 
+                                                   "inhibitor 2" = Main[[ff]]$NumDoses_inhib)), 
+                                      
+                                      as.numeric(Main[[ff]]$SimDuration), 
+                                      
+                                      (switch(cmpd, 
+                                              "substrate" = Main[[ff]]$NumDoses_sub, 
+                                              "inhibitor 1" = Main[[ff]]$NumDoses_inhib, 
+                                              "inhibitor 2" = Main[[ff]]$NumDoses_inhib) - 1) * 
+                                         switch(cmpd, 
+                                                "substrate" = 
+                                                   suppressWarnings(as.numeric(Main[[ff]]$DoseInt_sub)), 
+                                                
+                                                "inhibitor 1" = 
+                                                   suppressWarnings(as.numeric(Main[[ff]]$DoseInt_inhib)), 
+                                                
+                                                "inhibitor 2" = 
+                                                   suppressWarnings(as.numeric(Main[[ff]]$DoseInt_inhib2)))), 
                           by = 
                              switch(cmpd, 
                                     "substrate" = 

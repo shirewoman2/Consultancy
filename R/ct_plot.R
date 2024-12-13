@@ -564,12 +564,15 @@ ct_plot <- function(ct_dataframe = NA,
               call. = FALSE)
    }
    
-   if(length(sort(unique(ct_dataframe$File))) > 1){
+   if(length(sort(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))) > 1){
       stop(paste0("The ct_plot function is for graphing only one simulator file at a time, but you have ",
                   length(sort(unique(ct_dataframe$File))), 
                   " simulator files. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
            call. = FALSE)
    }
+   # NB: Allowing more than one file for observed data here so that the user
+   # doesn't need to mess with it.
+   
    
    if(length(sort(unique(ct_dataframe$Tissue))) > 1){
       stop(paste0("The ct_plot function is for graphing only one tissue at a time, but you have ",

@@ -483,19 +483,44 @@ pk_table_subfun <- function(sim_data_file,
                            into = c("Variability1", "Variability2"), 
                            sep = "-|( )?to( )?") %>% 
                   mutate(across(.cols = c(Variability1, Variability2), .fn = as.numeric), 
-                         Stat = case_when(complete.cases(Variability2) ~ "range", 
-                                          is.na(Variability2) & MeanType == "arithmetic" ~ "CV", 
-                                          is.na(Variability2) & MeanType == "geometric" ~ "GCV")) %>% 
+                         Stat = case_when(
+                            complete.cases(Variability2) & 
+                               str_detect(PKParam, "tmax") ~ "range", 
+                            complete.cases(Variability2) & 
+                               !str_detect(PKParam, "tmax") ~ "CI90", 
+                            is.na(Variability2) & MeanType == "arithmetic" ~ "CV", 
+                            is.na(Variability2) & MeanType == "geometric" ~ "GCV")) %>% 
                   pivot_longer(cols = c(Variability1, Variability2), 
                                names_to = "VariableType", 
                                values_to = "Value") %>% 
                   mutate(Stat = case_when(Stat == "range" & VariableType == "Variability1" ~ "Minimum", 
                                           Stat == "range" & VariableType == "Variability2" ~ "Maximum", 
+                                          Stat == "CI90" & VariableType == "Variability1" ~ "CI90_lower", 
+                                          Stat == "CI90" & VariableType == "Variability2" ~ "CI90_upper", 
+                                          Stat == "CV" & VariableType == "Variability1" ~ "CV", 
+                                          Stat == "GCV" & VariableType == "Variability1" ~ "GCV", 
                                           TRUE ~ Stat), 
                          SorO = "Obs") %>% 
                   filter(complete.cases(Value)) %>% 
                   select(-VariableType)
             )
+            
+            # FIXME - Need to set this up to detect what kind of variability
+            # stat is being used for the observed data b/c, currently, if they
+            # have supplied a SD, this thinks it might be a CV and multiplies it
+            # by 100 and labels it as "CV". HACK FOR NOW: I'm adding rows for SD
+            # and telling the user to select which it actually is.
+            if(any(ObsPK_var$Stat %in% c("CV")) & MeanType != "geometric"){
+               warning(wrapn(paste0(
+                  "You've included some variability for the observed data that we're including in your table, but, tbh, we have not yet set up anything to detect what *kind* of variability it is. You've given us one number per PK parameter for this variability and you've requested ", 
+                  case_match(MeanType, 
+                             "arithmetic" ~ "arithmetic means", 
+                             "median" ~ "medians"), 
+                  ", so it could be a CV or it could be a standard deviation. We're going to add rows for both in your table. Please remove whichever does not apply. Please also note that CVs will be multiplied by 100.")), 
+                  call. = FALSE)
+               ObsPK_var <- bind_rows(ObsPK_var, 
+                                      ObsPK_var %>% mutate(Stat = "SD"))
+            }
          }
       } else {
          # placeholder

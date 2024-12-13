@@ -258,7 +258,7 @@ formatTable_Simcyp <- function(DF,
    
    page_orientation <- tolower(page_orientation)[1]
    if(page_orientation %in% c("portrait", "landscape") == FALSE){
-      warning("You requested something other than `portrait` or `landscape` for the page orientation in the Word output, and those are the only options. We'll use the default of `portrait`.\n", 
+      warning(wrapn("You requested something other than `portrait` or `landscape` for the page orientation in the Word output, and those are the only options. We'll use the default of `portrait`."), 
               call. = FALSE)
       page_orientation <- "portrait"
    }
@@ -350,7 +350,7 @@ formatTable_Simcyp <- function(DF,
       }
       
       if(any(sapply(highlight_cells, length) < 2)){
-         warning("For highlighting cells, you must specify a row and a column for everything you want to be highlighted, and you have only specified one number for at least one of the items you asked to be highlighted. We don't know which rows or columns to highlight without that second number, so nothing will be highlighted.\n", 
+         warning(wrapn("For highlighting cells, you must specify a row and a column for everything you want to be highlighted, and you have only specified one number for at least one of the items you asked to be highlighted. We don't know which rows or columns to highlight without that second number, so nothing will be highlighted."), 
                  call. = FALSE)
          highlight_cells <- NA
       }
@@ -358,7 +358,7 @@ formatTable_Simcyp <- function(DF,
    
    if(any(complete.cases(highlight_so_cutoffs)) & 
       "Statistic" %in% names(DF) == FALSE){
-      warning("You requested highlighting by the S/O ratio, but we look for which row contains that ratio in a column titled `Statistic` and couldn't find that column. We thus don't know which row is for S/O ratios and thus cannot highlight by those values.\n", 
+      warning(wrapn("You requested highlighting by the S/O ratio, but we look for which row contains that ratio in a column titled `Statistic` and couldn't find that column. We thus don't know which row is for S/O ratios and thus cannot highlight by those values."), 
               call. = FALSE)
       highlight_so_cutoffs <- NA
    }
@@ -369,7 +369,7 @@ formatTable_Simcyp <- function(DF,
       }
       
       if(any(sapply(bold_cells, length) < 2)){
-         warning("For making cells bold, you must specify a row and a column for everything you want to have bold-face text, and you have only specified one number for at least one of the items you asked to be bold face. We don't know which rows or columns to make bold face without that second number, so we'll use the default settings and make the 1st column and the header row bold.\n", 
+         warning(wrapn("For making cells bold, you must specify a row and a column for everything you want to have bold-face text, and you have only specified one number for at least one of the items you asked to be bold face. We don't know which rows or columns to make bold face without that second number, so we'll use the default settings and make the 1st column and the header row bold."), 
                  call. = FALSE)
          bold_cells <- list(c(0, NA), c(NA, 1))
       }
@@ -384,12 +384,12 @@ formatTable_Simcyp <- function(DF,
    if(any(complete.cases(highlight_gmr_colors)) &&
       highlight_gmr_colors[1] %in% c("yellow to red", "green to red", "traffic") == FALSE){
       if(length(highlight_gmr_colors) != 4){
-         warning("We need 4 colors for highlighting geometric mean ratios, one each for negligible, weak, moderate, and strong interactions, and you have provided a different number of colors. We'll use yellow to red values for highlighting these.\n", 
+         warning(wrapn("We need 4 colors for highlighting geometric mean ratios, one each for negligible, weak, moderate, and strong interactions, and you have provided a different number of colors. We'll use yellow to red values for highlighting these."), 
                  call. = FALSE)
          highlight_gmr_colors <- "yellow to red"
       } else if(tryCatch(is.matrix(col2rgb(highlight_gmr_colors)),
                          error = function(x) FALSE) == FALSE){
-         warning("The values you used for highlighting geometric mean ratios are not all valid colors in R. We'll used the default colors instead.\n", 
+         warning(wrapn("The values you used for highlighting geometric mean ratios are not all valid colors in R. We'll used the default colors instead."), 
                  call. = FALSE)
          highlight_gmr_colors <- "yellow to red"
       } 
@@ -404,7 +404,7 @@ formatTable_Simcyp <- function(DF,
       highlight_so_colors[1] %in% c("yellow to red", "traffic") == FALSE &&
       tryCatch(is.matrix(col2rgb(highlight_so_colors)),
                error = function(x) FALSE) == FALSE){
-      warning("The values you used for highlighting S/O values are not all valid colors in R. We'll used the default colors instead.\n", 
+      warning(wrapn("The values you used for highlighting S/O values are not all valid colors in R. We'll used the default colors instead."), 
               call. = FALSE)
       highlight_so_colors <- "yellow to red"
    } 
@@ -412,9 +412,9 @@ formatTable_Simcyp <- function(DF,
    
    if(class(merge_columns) %in% "numeric"){
       if(all(merge_columns %in% 1:ncol(DF)) == FALSE){
-         warning(paste0("You requested that we vertically merge more columns that are present in your data. Specifically, there is/are no column(s) ", 
-                        str_comma(setdiff(merge_columns, 1:ncol(DF)), conjunction = "or"), 
-                        ". These will be ignored.\n"), 
+         warning(wrapn(paste0("You requested that we vertically merge more columns that are present in your data. Specifically, there is/are no column(s) ", 
+                              str_comma(setdiff(merge_columns, 1:ncol(DF)), conjunction = "or"), 
+                              ". These will be ignored.")), 
                  call. = FALSE)
          merge_columns <- merge_columns[merge_columns %in% 1:ncol(DF)]   
       }
@@ -425,9 +425,9 @@ formatTable_Simcyp <- function(DF,
    if(class(merge_columns) %in% "character"){
       BadCols <- setdiff(merge_columns, names(DF))
       if(length(BadCols) > 0){
-         warning(paste0("You requested that we vertically merge some columns that are not present in your data. Specifically, the column(s) ", 
-                        str_comma(paste0("`", BadCols, "`")), 
-                        " is/are not present. These will be ignored. If you believe that's an error, please carefully check that what you specified for `merge_columns` perfectly matches the spelling of each column name.\n"), 
+         warning(wrapn(paste0("You requested that we vertically merge some columns that are not present in your data. Specifically, the column(s) ", 
+                              str_comma(paste0("`", BadCols, "`")), 
+                              " is/are not present. These will be ignored. If you believe that's an error, please carefully check that what you specified for `merge_columns` perfectly matches the spelling of each column name.")), 
                  call. = FALSE)
          
          merge_columns <- merge_columns[merge_columns %in% names(DF)]
@@ -738,7 +738,7 @@ formatTable_Simcyp <- function(DF,
       
       # Tidying inputs
       if(any(highlight_so_cutoffs < 1)){
-         warning("At least one of the numbers you specified for highlight_so_cutoffs was < 1. We will automatically use both the original number you specified and its inverse for highlighting, so we'll ignore any values < 1 here.", 
+         warning(wrapn("At least one of the numbers you specified for highlight_so_cutoffs was < 1. We will automatically use both the original number you specified and its inverse for highlighting, so we'll ignore any values < 1 here."), 
                  call. = FALSE)
          highlight_so_cutoffs <- highlight_so_cutoffs[which(highlight_so_cutoffs >= 1)]
       }
@@ -750,7 +750,7 @@ formatTable_Simcyp <- function(DF,
          tolower(highlight_so_colors[1]) %in% 
          c("yellow to red", "lisa", "traffic") == FALSE){
          
-         warning("You have specified one number of colors for highlighting S/O values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting.", 
+         warning(wrapn("You have specified one number of colors for highlighting S/O values and a different number of cutoff values, so we don't know what colors you want. We'll use the default colors for highlighting."), 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
       }
@@ -760,7 +760,7 @@ formatTable_Simcyp <- function(DF,
          tryCatch(is.matrix(col2rgb(highlight_so_colors)),
                   error = function(x) FALSE) == FALSE){
          
-         warning("The values you used for highlighting problematic S/O ratios are not all valid colors in R. We'll used the default colors instead.", 
+         warning(wrapn("The values you used for highlighting problematic S/O ratios are not all valid colors in R. We'll used the default colors instead."), 
                  call. = FALSE)
          highlight_so_colors <- "yellow to red"
       } 

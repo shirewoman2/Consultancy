@@ -10,6 +10,7 @@ make_trial_design_table(
   prettify_sim_data_file = NA,
   detail_set = "default",
   prettify_compound_names = TRUE,
+  output_type = "flextable",
   include_shading = TRUE,
   font = "Palatino Linotype",
   fontsize = 11,
@@ -52,6 +53,14 @@ to the name you'd prefer to see in your table if you would like something
 different. For example, \code{prettify_compound_names = c("Ketoconazole-400 mg QD" =
 "ketoconazole PO", "StatinX with updated ka" = "superstatin")}.}
 
+\item{output_type}{specify what type of output to get. Options:
+  \describe{\item{"flextable" (default)}{a nicely formatted table that you can view or
+  insert into an Rmarkdown document}
+
+  \item{"data.frame"}{a data.frame that you can manipulate further in R} 
+  
+  \item{"both"}{both the nicely formatted flextable and the data.frame}}}
+
 \item{include_shading}{TRUE (default) or FALSE for whether to add shading to
 rows to make things easier to read. If this is set to TRUE, then the rows
 will be shaded every other row when there's no DDI or by which compound the
@@ -80,35 +89,6 @@ were included.}
 
 \item{page_orientation}{set the page orientation for the Word file output to
 "portrait" (default) or "landscape"}
-
-\item{bold_cells}{optionally specify cells in the table to be in bold-face
-text with a numeric vector where the 1st number is the row number and the
-2nd number is the column number (just like regular row and column
-specifications in R). For example, \code{bold_cells = c(1, 2)} will make
-the cell in row 1 and column 2 bold face. Use "0" for the row number if you
-want to use bold face for something in the header row, and use NA in place
-of a row or column number to make everything in that row or column bold
-face. If you want to specify multiple places to use bold face, use a list
-of numeric vectors. By default, the header row and the 1st column will be
-bold. Set \code{bold_cells = NA} to make \emph{nothing} bold. Please see
-the examples at the bottom of the help file.}
-
-\item{center_1st_column}{TRUE (default) or FALSE for whether to make the
-alignment of the first column centered}
-
-\item{highlight_cells}{optionally specify cells in the table to be
-highlighted with a numeric vector where the 1st number is the row number
-and the 2nd number is the column number (just like regular row and column
-specifications in R). For example, \code{highlight_cells = c(1, 2)} will
-make the cell in row 1 and column 2 highlighted. Use "0" for the row number
-if you want to highlight something in the header row, and use NA in place
-of a row or column number to highlight everything in that row or column. If
-you want to specify multiple places to highlight, use a list of numeric
-vectors. Please see the examples at the bottom of the help file.}
-
-\item{highlight_color}{color to use for highlighting; default is yellow.
-Color can be specified using any R-friendly color name or hex code, e.g.,
-"red" or "#D8212D".}
 }
 \value{
 a formatted table and optionally, a saved Word file with that table
