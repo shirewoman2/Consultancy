@@ -88,12 +88,55 @@ blues <- function(ncolors){
 }
 
 
+#' Create a vector of greens
+#'
+#' \code{greens} is useful for getting a set of colors from chartreuse to
+#' forest green for graphs. These are from the RColorBrewer package, color set
+#' "YlGn", just to give credit where it's due, but they can be any number in
+#' length rather than only up to 9 colors.
+#'
+#' @param ncolors number of colors desired
+#' @param shade the shade of colors to use, which can be "regular" (default),
+#'   "darker", or "lighter"
+#'
+#' @return a character vector of colors
+#' @export
+#'
+#' @examples
+#' # Create a set of 10 colors that are deepening shades of green.
+#' greens(10)
+#'
+#' # Try using scales::show_col() to visualize the colors, ex:
+#' scales::show_col(chartreuse(10))
+#' 
+greens <- function(ncolors, 
+                   shade = "regular"){
+   
+   if(shade == "darker"){
+      colGreen <- colorRampPalette(c("#78C679", "#41AB5D", 
+                                     "#238443", "#006837", "#004529", 
+                                     "#002617", "black"))
+   } else if(shade == "lighter"){
+      colGreen <- colorRampPalette(c("#FFFFE5", "#F7FCB9", "#D9F0A3", 
+                                     "#ADDD8E", "#78C679", "#41AB5D"))
+   } else {
+      # Anything else, give them "regular". 
+      colGreen <- colorRampPalette(c("#FFFFE5", "#F7FCB9", "#D9F0A3", 
+                                     "#ADDD8E", "#78C679", "#41AB5D", 
+                                     "#238443", "#006837", "#004529"))
+   }
+   
+   return(colGreen(ncolors))
+   
+}
+
+
 #' Create a vector of yellow-greens
 #'
-#' \code{chartreuse} is useful for getting a set of yellows to greens for
-#' graphs. These are from the RColorBrewer package, color set "YlGn", just to
-#' give credit where it's due, but they can be any number in length rather than
-#' only up to 9 colors.
+#' \code{chartreuse} is useful for getting a set of colors from chartreuse to
+#' forest green for graphs. These are from the RColorBrewer package, color set
+#' "YlGn", just to give credit where it's due, but they can be any number in
+#' length rather than only up to 9 colors.
 #'
 #' @param ncolors number of colors desired
 #' @param shade the shade of colors to use, which can be "regular" (default),
@@ -111,23 +154,7 @@ blues <- function(ncolors){
 #' 
 chartreuse <- function(ncolors, 
                        shade = "regular"){
-   
-   if(shade == "darker"){
-      colChartreuse <- colorRampPalette(c("#ADDD8E", "#78C679", "#41AB5D", 
-                                          "#238443", "#006837", "#004529", 
-                                          "#002617"))
-   } else if(shade == "lighter"){
-      colChartreuse <- colorRampPalette(c("#FFFFE5", "#F7FCB9", "#D9F0A3", 
-                                          "#ADDD8E", "#78C679", "#41AB5D"))
-   } else {
-      # Anything else, give them "regular". 
-      colChartreuse <- colorRampPalette(c("#FFFFE5", "#F7FCB9", "#D9F0A3", 
-                                          "#ADDD8E", "#78C679", "#41AB5D", 
-                                          "#238443", "#006837", "#004529"))
-   }
-   
-   return(colChartreuse(ncolors))
-   
+   greens(ncolors = ncolors, shade = shade)
 }
 
 
@@ -171,32 +198,32 @@ purples <- function(ncolors,
    
 }
 
-#' #' Make a vector of colors that match the "green to red" option for highlighting
-#' #' GMR values
-#' #'
-#' #' @return a named character vector
-#' #' @export
-#' #'
-#' green_to_red <- function(){
-#'    c("negligible" = "#C7FEAC", 
-#'      "weak" = "#FFFF95",
-#'      "moderate" = "#FFDA95",
-#'      "strong" = "#FF9595")   
-#' }
-#' 
-#' 
-#' #' Make a vector of colors that match the "yellow to red" option for
-#' #' highlighting GMR values
-#' #'
-#' #' @return a named character vector
-#' #' @export
-#' #' 
-#' yellow_to_red <- function(){
-#'    c("negligible" = "white", 
-#'      "weak" = "#FFFF95",
-#'      "moderate" = "#FFDA95",
-#'      "strong" = "#FF9595")
-#'    
-#' }
+#' Make a vector of colors that match the "green to red" option for highlighting
+#' GMR values
+#'
+#' @return a named character vector
+#' @export
+#'
+green_to_red <- function(){
+   c("negligible" = "#C7FEAC", # light green
+     "weak" = "#FFFF95", # light yellow
+     "moderate" = "#FFDA95", # light orange
+     "strong" = "#FF9595")   # light red
+}
+
+
+#' Make a vector of colors that match the "yellow to red" option for
+#' highlighting GMR values
+#'
+#' @return a named character vector
+#' @export
+#'
+yellow_to_red <- function(){
+   c("negligible" = "white",
+     "weak" = "#FFFF95", # light yellow
+     "moderate" = "#FFDA95", # light orange
+     "strong" = "#FF9595") # light red
+
+}
 
 
