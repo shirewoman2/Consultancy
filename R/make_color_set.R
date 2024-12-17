@@ -160,6 +160,14 @@ make_color_set <- function(color_set, num_colors){
       # or 2 colors, though, we have to add the [1:num_colors]
       # bit.
       
+      # Checking whetehr the single-length string they provided is already a
+      # color. None of the color sets actually are.
+      ColorCheck <- try(expr = col2rgb(MyColors), silent = TRUE)
+      
+      if(is.null(MyColors) & is.matrix(ColorCheck)){
+         MyColors <- color_set
+      }
+      
       if(any(is.na(MyColors))){
          warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.\n", 
                  call. = FALSE)
