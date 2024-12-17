@@ -27,6 +27,7 @@ trial_means_plot(
   existing_exp_details = NA,
   return_caption = FALSE,
   prettify_compound_names = TRUE,
+  clin_study_label_option = "observed or study number",
   name_clinical_study = NA,
   save_graph = NA,
   fig_height = NA,
@@ -173,15 +174,15 @@ included.}
   \link{colorRampPalette}.}}}
 
 \item{color_option}{How do you want to color information in the graph?
-  Options are: 
-  
+  Options are:
+
   \describe{\item{"by study" (default)}{all simulated trials
   will be the first color from \code{color_set} and then each set of
   observed data will be a different color from that set}
 
   \item{"by trial"}{uses a different color from \code{color_set} for every
   trial, whether simulated or observed}
-  
+
   \item{"simulated or observed" ("S or O" and "S vs O" will also work)}{color
   points based on whether they were simulated or observed}}}
 
@@ -230,6 +231,21 @@ character vector where the names are "substrate" and, as applicable,
 you want, e.g.,
 \code{prettify_compound_names = c("inhibitor 1" = "teeswiftavir",
 "substrate" = "superstatin")}.}
+
+\item{clin_study_label_option}{Clinical study names are generally much longer
+than the names of the simulated trial means, which will be just "1", "2",
+etc., so the labels like "Clinical Study 101, fasted healthy subjects" just
+won't fit nicely by comparison. For this reason, you can choose how
+observed data study names should be automatically shortened. Options:
+\describe{\item{"observed or study number"}{when there's only 1 clinical 
+study, we'll label that as "observed" in the graph, but when there's more 
+than one, we'll label the studies as "study 1", "study 2", etc.} 
+
+\item{"study number"}{this will make the label always be, e.g., "study 1", 
+"study 2", etc., even if there is only 1 study.}
+
+\item{"keep" or "keep original"}{this will retain the original value for 
+the study name, even if it's really long and awkward.}}}
 
 \item{name_clinical_study}{optionally specify the name(s) of the clinical
 study or studies for any observed data. This only affects the caption of

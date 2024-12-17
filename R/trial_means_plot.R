@@ -152,15 +152,15 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #' @param color_option How do you want to color information in the graph?
-#'   Options are: 
-#'   
+#'   Options are:
+#'
 #'   \describe{\item{"by study" (default)}{all simulated trials
 #'   will be the first color from \code{color_set} and then each set of
 #'   observed data will be a different color from that set}
 #'
 #'   \item{"by trial"}{uses a different color from \code{color_set} for every
 #'   trial, whether simulated or observed}
-#'   
+#'
 #'   \item{"simulated or observed" ("S or O" and "S vs O" will also work)}{color
 #'   points based on whether they were simulated or observed}}
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
@@ -202,6 +202,20 @@
 #'   you want, e.g.,
 #'   \code{prettify_compound_names = c("inhibitor 1" = "teeswiftavir",
 #'   "substrate" = "superstatin")}.
+#' @param clin_study_label_option Clinical study names are generally much longer
+#'   than the names of the simulated trial means, which will be just "1", "2",
+#'   etc., so the labels like "Clinical Study 101, fasted healthy subjects" just
+#'   won't fit nicely by comparison. For this reason, you can choose how
+#'   observed data study names should be automatically shortened. Options:
+#'   \describe{\item{"observed or study number"}{when there's only 1 clinical 
+#'   study, we'll label that as "observed" in the graph, but when there's more 
+#'   than one, we'll label the studies as "study 1", "study 2", etc.} 
+#'   
+#'   \item{"study number"}{this will make the label always be, e.g., "study 1", 
+#'   "study 2", etc., even if there is only 1 study.}
+#'   
+#'   \item{"keep" or "keep original"}{this will retain the original value for 
+#'   the study name, even if it's really long and awkward.}}
 #' @param name_clinical_study optionally specify the name(s) of the clinical
 #'   study or studies for any observed data. This only affects the caption of
 #'   the graph. For example, specifying \code{name_clinical_study = "101, fed
@@ -250,6 +264,7 @@ trial_means_plot <- function(sim_data_file,
                              existing_exp_details = NA, 
                              return_caption = FALSE, 
                              prettify_compound_names = TRUE,
+                             clin_study_label_option = "observed or study number", 
                              name_clinical_study = NA, 
                              save_graph = NA,
                              fig_height = NA,
@@ -366,6 +381,16 @@ trial_means_plot <- function(sim_data_file,
    point_size <- ifelse(is.na(point_size), 3, point_size)
    suppressWarnings(bar_width <- as.numeric(bar_width)[1])
    bar_width <- ifelse(is.na(bar_width), 0.25, bar_width)
+   
+   clin_study_label_option <- tolower(clin_study_label_option)[1]
+   clin_study_label_option <- case_when(
+      str_detect(clin_study_label_option, "study number") & 
+         str_detect(clin_study_label_option, "observed") ~ "observed or study number", 
+      
+      str_detect(clin_study_label_option, "keep") ~ "keep original", 
+      
+      .default = clin_study_label_option)
+   
    
    # Main body of function -----------------------------------------------------
    
@@ -518,19 +543,29 @@ trial_means_plot <- function(sim_data_file,
       names(observed_PK)[tolower(names(observed_PK)) == "study"] <- "Study"
       if("Study" %in% names(observed_PK)){
          
-         # We need the trial itself to be just, e.g., "study 1", "study 2"
-         # because the study labels are invariably much too long otherwise. It's
-         # just really hard to get things to look good when all of the simulated
-         # trials are a digit or 2 and then the observed data are all, e.g.,
-         # "Clinical study 101, fasted". Instead, adding a legend when coloring
-         # by study and there are multiple observed data sets.
-         suppressWarnings(
-            observed_PK <- observed_PK %>% 
-               mutate(Trial = factor(Study, 
-                                     levels = unique(Study)), 
-                      Trial = paste("study", as.numeric(Trial)), 
-                      Study = paste0(Trial, ": ", Study))
-         )
+         if(clin_study_label_option %in% c("study number", 
+                                           "observed or study number")){
+            # We need the trial itself to be just, e.g., "study 1", "study 2"
+            # because the study labels are invariably much too long otherwise. It's
+            # just really hard to get things to look good when all of the simulated
+            # trials are a digit or 2 and then the observed data are all, e.g.,
+            # "Clinical study 101, fasted". Instead, adding a legend when coloring
+            # by study and there are multiple observed data sets.
+            suppressWarnings(
+               observed_PK <- observed_PK %>% 
+                  mutate(Trial = factor(Study, 
+                                        levels = unique(Study)), 
+                         Trial = paste("study", as.numeric(Trial)), 
+                         Study = paste0(Trial, ": ", Study))
+            )
+         } else if(str_detect(clin_study_label_option, "keep")){
+            suppressWarnings(
+               observed_PK <- observed_PK %>% 
+                  mutate(Trial = factor(Study, 
+                                        levels = unique(Study)), 
+                         Trial = Study)
+            )
+         }
          
       } else {
          observed_PK$Trial <- "observed"
@@ -539,6 +574,14 @@ trial_means_plot <- function(sim_data_file,
       ObsTrialLevels <- unique(observed_PK$Trial)
       ObsStudyLevels <- unique(observed_PK$Study)
       
+      if(length(unique(observed_PK$Study)) == 1 & 
+         clin_study_label_option == "observed or study number"){
+         observed_PK$Study <- "observed" 
+         observed_PK$Trial <- "observed"
+         
+         ObsTrialLevels <- unique(observed_PK$Trial)
+         
+      }
    } 
    
    if("logical" %in% class(observed_PK) == FALSE){
@@ -760,9 +803,16 @@ trial_means_plot <- function(sim_data_file,
                    Legos$DosingText_inhib_lower), 
                 ifelse(str_detect(PKparameter, "withInhib|ratio"), 
                        paste0(" following ", Legos$DosingText_inhib_lower), ""), 
+                
                 ifelse("logical" %in% class(observed_PK), 
                        "", 
-                       paste0(". Observed data from clinical study ", 
+                       paste0(". ", 
+                              ifelse(length(unique(observed_PK$Study)) > 1, 
+                                     paste0(sub("study 1", "Study 1",
+                                                str_comma(ObsStudyLevels)), 
+                                            ". "), 
+                                     ""), 
+                              "Observed data from clinical study ", 
                               ifelse(is.na(name_clinical_study), 
                                      "***XXX***", name_clinical_study))), 
                 ". ", 
@@ -783,6 +833,9 @@ trial_means_plot <- function(sim_data_file,
                                          "RANGE" ~ "range"), 
                               " for the simulated population. ")), 
                 "Source simulated data: ", sim_data_file, ".")
+      
+      message("\nClinical studies were the following:")
+      message(str_c(paste0("     ", ObsStudyLevels), collapse = "\n"))
       
       Heading <- paste0("Simulated ", 
                         ifelse("logical" %in% class(observed_PK), 
