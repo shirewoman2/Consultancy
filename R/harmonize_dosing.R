@@ -58,6 +58,7 @@ harmonize_dosing <- function(existing_exp_details){
                                     "substrate" = as.numeric(Main[[ff]]$StartHr_sub), 
                                     "inhibitor 1" = as.numeric(Main[[ff]]$StartHr_inhib), 
                                     "inhibitor 2" = as.numeric(Main[[ff]]$StartHr_inhib2)), 
+                          
                           to = ifelse(is.na(switch(cmpd, 
                                                    "substrate" = Main[[ff]]$NumDoses_sub, 
                                                    "inhibitor 1" = Main[[ff]]$NumDoses_inhib, 
@@ -77,7 +78,12 @@ harmonize_dosing <- function(existing_exp_details){
                                                    suppressWarnings(as.numeric(Main[[ff]]$DoseInt_inhib)), 
                                                 
                                                 "inhibitor 2" = 
-                                                   suppressWarnings(as.numeric(Main[[ff]]$DoseInt_inhib2)))), 
+                                                   suppressWarnings(as.numeric(Main[[ff]]$DoseInt_inhib2))) + 
+                                         switch(cmpd, 
+                                                "substrate" = as.numeric(Main[[ff]]$StartHr_sub), 
+                                                "inhibitor 1" = as.numeric(Main[[ff]]$StartHr_inhib), 
+                                                "inhibitor 2" = as.numeric(Main[[ff]]$StartHr_inhib2))), 
+                          
                           by = 
                              switch(cmpd, 
                                     "substrate" = 
