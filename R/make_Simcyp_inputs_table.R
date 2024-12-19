@@ -369,7 +369,11 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
          # NB: We always omit the SimulatorSection of "SimulatorVersion" here,
          # which is the 1st level in the data.frame output from annotateDetails.
          mutate(OrderSS = 2:9, 
-                OrderDetail = 0) %>% 
+                OrderDetail = 0, 
+                # Hacking something other than a completely empty cell for value
+                # so that these rows won't get vertically merged with the others
+                # if there happens to be no value listed for the parameter.
+                Value = "   ") %>% 
          filter(Parameter %in% FT$`Section of model`)
       
       FT <- FT %>% 
@@ -377,7 +381,13 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                 OrderDetail = 1:nrow(.)) %>% 
          bind_rows(ADME) %>% 
          arrange(OrderSS, OrderDetail) %>% 
-         select(-`Section of model`, -OrderSS, -OrderDetail)
+         select(-`Section of model`, -OrderSS, -OrderDetail) 
+      
+      if("data.frame" %in% class(references)){
+         FT <- FT %>% 
+         mutate(Reference = case_when(Parameter %in% ADME$Parameter ~ "   ", 
+                                      .default = Reference))
+      }
       
       MakeBold <- which(FT$Parameter %in% ADME$Parameter)
       MakeBold <- map(as.list(MakeBold), \(x) c(x, 1))
@@ -386,7 +396,11 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
       FT <- FT %>% 
          format_table_simple(font = font, 
                              fontsize = fontsize, 
-                             bold_cells = MakeBold)
+                             bold_cells = MakeBold) %>% 
+         # adding horizontal lines when there is no separate column for
+         # simulator section b/c that means that there's also no shading. This
+         # makes it clearer.
+         flextable::border_inner_h(border = officer::fp_border(width = 0.5))
       
       if(length(MakeBold) > 1){
          for(cells in 2:length(MakeBold)){
