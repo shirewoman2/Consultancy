@@ -815,7 +815,7 @@ tidy_input_PK <- function(PKparameters,
       mutate(AUCinfCheck = (str_detect(PKparameter, "AUCinf") & is.na(Sheet)) |
                 !str_detect(PKparameter, "AUCinf"))
    
-   if(any(PKparameters$AUCinfCheck == FALSE)){
+   if(any(PKparameters$AUCinfCheck == FALSE, na.rm = T)){
       warning(wrapn("You requested AUCinf but then also specified what sheet to use for getting that parameter. We assume that, if you're supplying a sheet name, it's because it's a custom AUC interval, which wouldn't make sense for AUCinf, which is only a first-dose PK parameter. We will ignore the sheet you specified for AUCinf."), 
               call. = FALSE)
       PKparameters <- PKparameters %>% 
