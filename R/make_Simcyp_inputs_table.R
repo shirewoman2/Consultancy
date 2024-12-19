@@ -98,6 +98,10 @@
 #'   were included.
 #' @param page_orientation set the page orientation for the Word file output to
 #'   "portrait" (default) or "landscape"
+#' @param separate_column_for_ADME In the table, do you want a separate column
+#'   for ADME headings -- "Absoprtion", "Distribution", etc. -- or would you
+#'   like the ADME headings to be included in the "Parameter" column in the
+#'   table? Default is TRUE for having a separate column. 
 #'
 #' @return a formatted table
 #' @export
@@ -112,6 +116,7 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                                      references = NA, 
                                      parameters_to_omit = NA, 
                                      parameters_to_add = NA, 
+                                     separate_column_for_ADME = TRUE, 
                                      font = "Palatino Linotype", 
                                      fontsize = 11, 
                                      column_widths = NA, 
@@ -205,9 +210,17 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
    
    if(all(is.na(column_widths))){
       if("logical" %in% class(references) == FALSE){
-         column_widths <- c(1, 2, 1.5, 1.5)
+         if(separate_column_for_ADME){
+            column_widths <- c(1, 2, 1.5, 1.5)
+         } else {
+            column_widths <- c(2, 1.5, 2.5)
+         }
       } else {
-         column_widths <- c(2, 3, 1.5)
+         if(separate_column_for_ADME){
+            column_widths <- c(2, 3, 1.5)
+         } else {
+            column_widths <- c(3, 2)
+         }
       }
    }
    
@@ -304,19 +317,6 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
          select(-SortOrder)
    }
    
-   # 
-   # if("character" %in% class(compound)){
-   #    FT <- FT %>% 
-   #       left_join(AllExpDetails %>% select(Detail, ReportTableText) %>% unique() %>% 
-   #                    mutate(Detail = sub(str_c(AllCompounds$Suffix, 
-   #                                              collapse = "|"), "", 
-   #                                        Detail)), 
-   #                 by = "Detail")
-   # } else {
-   #    FT <- FT %>% 
-   #       left_join(AllExpDetails %>% select(Detail, ReportTableText) %>% unique(), 
-   #                 by = "Detail")
-   # }
    
    FT <- FT %>% 
       rename("Section of model" = SimulatorSection) %>% 
@@ -350,26 +350,93 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                                    Detail, ReportTableText), 
                 Value = ifelse(complete.cases(as.numeric(Value)), 
                                as.character(round(as.numeric(Value), 5)), Value)) %>% 
-         select("Section of model", Parameter, Value, any_of("Reference")) %>% 
-         format_table_simple(shading_column = "Section of model", 
-                             font = font, 
-                             fontsize = fontsize)
+         select("Section of model", Parameter, Value, any_of("Reference")) 
    )
    
-   if("data.frame" %in% class(references)){
+   
+   if(separate_column_for_ADME == FALSE){
+      # Need to insert rows for each simulator section just above the 1st row
+      # for each section. Also need them to be bold, italics, and 1 pt larger
+      # than the main font size.
+      ADME <- data.frame(Parameter = c("Phys Chem and Blood Binding", 
+                                       "Absorption", 
+                                       "Distribution", 
+                                       "Elimination", 
+                                       "Transport", 
+                                       "Interaction", 
+                                       "Trial Design", 
+                                       "Population")) %>% 
+         # NB: We always omit the SimulatorSection of "SimulatorVersion" here,
+         # which is the 1st level in the data.frame output from annotateDetails.
+         mutate(OrderSS = 2:9, 
+                OrderDetail = 0) %>% 
+         filter(Parameter %in% FT$`Section of model`)
+      
       FT <- FT %>% 
-         flextable::width(j = 1, width = column_widths[1]) %>% 
-         flextable::width(j = 2, width = column_widths[2]) %>% 
-         flextable::width(j = 3, width = column_widths[3]) %>% 
-         flextable::width(j = 4, width = column_widths[4]) %>% 
-         flextable::merge_v(j = 1) %>% 
-         flextable::merge_v(j = 4) # merge any replicated references
+         mutate(OrderSS = as.numeric(`Section of model`), 
+                OrderDetail = 1:nrow(.)) %>% 
+         bind_rows(ADME) %>% 
+         arrange(OrderSS, OrderDetail) %>% 
+         select(-`Section of model`, -OrderSS, -OrderDetail)
+      
+      MakeBold <- which(FT$Parameter %in% ADME$Parameter)
+      MakeBold <- map(as.list(MakeBold), \(x) c(x, 1))
+      MakeBold <- c(list(c(0, NA)), MakeBold)
+      
+      FT <- FT %>% 
+         format_table_simple(font = font, 
+                             fontsize = fontsize, 
+                             bold_cells = MakeBold)
+      
+      if(length(MakeBold) > 1){
+         for(cells in 2:length(MakeBold)){
+            FT <- FT %>% 
+               flextable::italic(i = MakeBold[[cells]][1], 
+                                 j = MakeBold[[cells]][2]) %>% 
+               flextable::fontsize(i = MakeBold[[cells]][1], 
+                                   j = MakeBold[[cells]][2], 
+                                   size = fontsize + 1)
+         }
+      }
+      
    } else {
+      MakeBold <- list(c(0, NA), c(NA, 1)) # default for formatTable_Simcyp
+      
       FT <- FT %>% 
-         flextable::width(j = 1, width = column_widths[1]) %>% 
-         flextable::width(j = 2, width = column_widths[2]) %>% 
-         flextable::width(j = 3, width = column_widths[3]) %>% 
-         flextable::merge_v(j = 1) 
+         format_table_simple(shading_column = "Section of model", 
+                             font = font, 
+                             fontsize = fontsize, 
+                             bold_cells = MakeBold)
+   }
+   
+   if("data.frame" %in% class(references)){
+      if(separate_column_for_ADME){
+         FT <- FT %>% 
+            flextable::width(j = 1, width = column_widths[1]) %>% 
+            flextable::width(j = 2, width = column_widths[2]) %>% 
+            flextable::width(j = 3, width = column_widths[3]) %>% 
+            flextable::width(j = 4, width = column_widths[4]) %>% 
+            flextable::merge_v(j = 1) %>% 
+            flextable::merge_v(j = 4) # merge any replicated references
+      } else {
+         FT <- FT %>% 
+            flextable::width(j = 1, width = column_widths[1]) %>% 
+            flextable::width(j = 2, width = column_widths[2]) %>% 
+            flextable::width(j = 3, width = column_widths[3]) %>% 
+            flextable::merge_v(j = 3) # merge any replicated references
+      }
+   } else {
+      if(separate_column_for_ADME){
+         FT <- FT %>% 
+            flextable::width(j = 1, width = column_widths[1]) %>% 
+            flextable::width(j = 2, width = column_widths[2]) %>% 
+            flextable::width(j = 3, width = column_widths[3]) %>% 
+            flextable::merge_v(j = 1) 
+      } else {
+         FT <- FT %>% 
+            flextable::width(j = 1, width = column_widths[1]) %>% 
+            flextable::width(j = 2, width = column_widths[2]) 
+      }
    }
    
    # Saving --------------------------------------------------------------
