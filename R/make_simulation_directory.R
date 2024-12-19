@@ -275,7 +275,10 @@ make_simulation_directory <- function(project_folder = NA,
                 Filename = sub("\\.xml$", "", Filename), 
                 Folder = dirname(PathFile), 
                 Folder = ifelse(Folder == ".", "", Folder), 
-                FileNameCheck = check_file_name(Filename)) %>% 
+                # hacking this by adding the longest of the possible extensions
+                # b/c regulators need the character length to include the
+                # extension.
+                FileNameCheck = check_file_name(paste0(Filename, ".wksz"))) %>% 
          select(Filename, Folder, Filetype)
       
       Directory <- bind_rows(Directory, 
