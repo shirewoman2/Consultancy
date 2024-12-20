@@ -1186,7 +1186,7 @@ tidy_input_PK <- function(PKparameters,
    PKparameters <- PKparameters %>% 
       mutate(Harmonious = HarmoniousDDI & HarmoniousRegimen)
    
-   if(any(PKparameters$Harmonious == FALSE) &
+   if(any(PKparameters$Harmonious == FALSE, na.rm = T) &
       all(complete.cases(PKparameters_orig)) & FromCalcPKRatios == FALSE){
       
       Problem <- PKparameters %>% filter(Harmonious == FALSE) %>% 
