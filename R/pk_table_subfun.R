@@ -545,12 +545,37 @@ pk_table_subfun <- function(sim_data_file,
          filter(complete.cases(Value)) %>% 
          rename(PKParam = PKparameter)
       
-      # Calculating S/O
+      # Calculating S/O. NB: If use_median_for_tmax is TRUE, then the stat in
+      # ObsPK for all tmax values will be the regular stat, e.g., Geomean, and
+      # NOT median. Simulated PK, though, will still contain all stats, so we
+      # need to filter simulated PK appropriately here but then retain whatever
+      # is present in ObsPK for tmax.
       suppressMessages(
          SOratios <- MyPKResults %>% 
-            filter(Stat == switch(MeanType, 
-                                  "geometric" = "Geomean",
-                                  "arithmetic" = "Mean")) %>%
+            mutate(Keep = 
+                      case_when(
+                         (use_median_for_tmax == FALSE |
+                             !str_detect(PKParam, "tmax")) & 
+                            MeanType == "geometric" & 
+                            Stat == "Geomean" ~ TRUE, 
+                         
+                         (use_median_for_tmax == FALSE |
+                             !str_detect(PKParam, "tmax")) & 
+                            MeanType == "arithmetic" & 
+                            Stat == "Mean" ~ TRUE, 
+                         
+                         MeanType == "median" & 
+                            Stat == "Median" ~ TRUE, 
+                         
+                         use_median_for_tmax == TRUE & 
+                            str_detect(PKParam, "tmax") & 
+                            Stat == "Median" ~ TRUE, 
+                         
+                         .default = FALSE)) %>% 
+            filter(Keep == TRUE) %>% 
+            mutate(Stat = case_when(MeanType == "geometric" ~ "Geomean", 
+                                    MeanType == "arithmetic" ~ "Mean", 
+                                    MeanType == "median" ~ "Median")) %>% 
             left_join(ObsPK %>% 
                          rename(Obs = Value) %>% 
                          select(Stat, PKParam, Obs)) %>%

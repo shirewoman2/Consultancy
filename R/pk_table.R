@@ -894,7 +894,7 @@ pk_table <- function(PKparameters = NA,
    
    TmaxStuff <- MyPKResults %>% 
       filter(str_detect(PKParam, "tmax") & 
-                !Stat %in% c("Geomean", "Mean", "Median")) %>% 
+                !Stat %in% c("Geomean", "Mean", "Median", "S_O")) %>% 
       mutate(Stat = case_when(Stat == "tmaxmin" &
                                  {{includeRange}} ~ "Minimum", 
                               str_detect(PKParam, "tmax") & 
@@ -918,7 +918,7 @@ pk_table <- function(PKparameters = NA,
    MyPKResults <- MyPKResults %>% 
       filter(!str_detect(PKParam, "tmax") |
                 (str_detect(PKParam, "tmax") & 
-                    Stat %in% c("Geomean", "Mean", "Median"))) %>% 
+                    Stat %in% c("Geomean", "Mean", "Median", "S_O"))) %>% 
       bind_rows(TmaxStuff) %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>%
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
