@@ -13,6 +13,12 @@ harmonize_dosing <- function(existing_exp_details){
    }
    
    Main <- existing_exp_details$MainDetails
+   
+   # Sometimes File might not be present, e.g., when hacking calc_dosenumber for
+   # use w/obs data. In those cases, it should be ok to set File to "all" as
+   # long as there's only 1 row.
+   if("File" %in% names(Main) == FALSE & nrow(Main) == 1){Main$File <- "all"}
+   
    Main <- split(Main, f = Main$File)
    Dosing <- list()
    
@@ -24,8 +30,11 @@ harmonize_dosing <- function(existing_exp_details){
       Dosing[[ff]] <- list()
       
       for(cmpd in unique(AllCompounds$DosedCompoundID)){
-         if(is.na(Main[[ff]][[AllCompounds$DetailNames[
-            AllCompounds$CompoundID == cmpd]]])){next}
+         
+         MyCompundName <- Main[[ff]][[AllCompounds$DetailNames[
+            AllCompounds$CompoundID == cmpd]]]
+         
+         if(is.null(MyCompundName) || is.na(MyCompundName)){next}
          
          # If it was custom dosing, then we won't be able to get any info from
          # dosing interval, etc., so skipping those. 
@@ -165,10 +174,18 @@ harmonize_dosing <- function(existing_exp_details){
    }
    
    existing_exp_details$Dosing <- existing_exp_details$Dosing %>% 
-      bind_rows(existing_exp_details$CustomDosing) %>% 
-      # Not including seconds here. Making, e.g., 09:00:00 be 09:00. 
-      mutate(TimeOfDay = str_extract(TimeOfDay, "[0-9]{2}:[0-9]{2}")) %>% 
-      unique()
+      bind_rows(existing_exp_details$CustomDosing)
+   
+   if("TimeOfDay" %in% names(existing_exp_details$Dosing)){
+      existing_exp_details$Dosing <- existing_exp_details$Dosing %>% 
+         # Not including seconds here. Making, e.g., 09:00:00 be 09:00. 
+         mutate(TimeOfDay = str_extract(TimeOfDay, "[0-9]{2}:[0-9]{2}")) 
+   } else {
+      existing_exp_details$Dosing <- existing_exp_details$Dosing %>% 
+         mutate(TimeOfDay = NA)
+   }
+   
+   existing_exp_details$Dosing <- existing_exp_details$Dosing %>% unique()
    
    return(existing_exp_details)
    
