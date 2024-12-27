@@ -353,6 +353,7 @@ sensitivity_plot <- function(SA_file,
                            "Kinetic Routes.*CLint" = expression(CL[int]~"("*mu*"L/min/pmol)"), 
                            "^Kp Scalar" = expression(k[p]~scalar),
                            "Lag Time" = expression("lag time (h)"),
+                           "LogP" = expression("logP"), 
                            "Peff" = expression(P[eff,human]), 
                            "slope" = expression(slope), 
                            "Tissue.plasma partition.*Additional Organ" = expression(k[p]~"scalar for additional organ"),
@@ -371,6 +372,7 @@ sensitivity_plot <- function(SA_file,
                                 "Kinetic Routes.*CLint" = "CLint", 
                                 "^Kp Scalar" = "kp scalar",
                                 "Lag Time" = "lag time (h)",
+                                "LogP" = "logP", 
                                 "Peff" = "Peff",
                                 "Tissue.plasma partition.*Additional Organ" = "kp scalar for additional organ",
                                 "Vss" = "Vss (L/kg)")
@@ -454,8 +456,6 @@ sensitivity_plot <- function(SA_file,
          labs(color = switch(color_by_which_indvar, 
                              "1st" = ind_var_label, 
                              "2nd" = ind_var_label2)) +
-         scale_x_time(pad_x_axis = FALSE, 
-                      time_range = time_range) +
          xlab("Time (h)") +
          ylab("Concentration (ng/mL)")
       
@@ -534,17 +534,85 @@ sensitivity_plot <- function(SA_file,
                   label = paste0("target = ", prettyNum(target_DV, big.mark = ",")))
    }
    
-   LogBreaks <- make_log_breaks(
+   # Setting axis limits as needed
+   LinYRange <- switch(
+      as.character(all(complete.cases(y_axis_limits_lin))), 
+      "TRUE" = y_axis_limits_lin, 
+      "FALSE" = switch(
+         as.character(str_detect(dependent_variable, "plasma|conc")), 
+         "TRUE" = range(SAdata$Conc, na.rm = T), 
+         "FALSE" = range(SAdata$DV, na.rm = T)))
+   
+   LogYBreaks <- make_log_breaks(
       data_range = switch(
          as.character(all(complete.cases(y_axis_limits_log))), 
          "TRUE" = y_axis_limits_log, 
          "FALSE" = switch(
             as.character(str_detect(dependent_variable, "plasma|conc")), 
-            "TRUE" = range(SAdata$Conc, na.rm = T), 
-            "FALSE" = range(SAdata$DV, na.rm = T))))
+            "TRUE" = range(SAdata$Conc[SAdata$Conc > 0], na.rm = T), 
+            "FALSE" = range(SAdata$DV[SAdata$DV > 0], na.rm = T))))
    
-   Glog <- G + scale_y_log10(breaks = LogBreaks$breaks, 
-                             labels = LogBreaks$labels)
+   LinXRange <- switch(
+      as.character(all(complete.cases(x_axis_limits_lin))), 
+      "TRUE" = x_axis_limits_lin, 
+      "FALSE" = switch(
+         as.character(str_detect(dependent_variable, "plasma|conc")), 
+         "TRUE" = range(SAdata$Time, na.rm = T), 
+         "FALSE" = switch(as.character(complete.cases(SensParam2)), 
+                          "TRUE" = switch(color_by_which_indvar, 
+                                          "1st" = range(SAdata$SensValue2), 
+                                          "2nd" = range(SAdata$SensValue)), 
+                          "FALSE" = range(SAdata$SensValue))))
+   
+   # LogXBreaks will only apply when they have requested log-transformed x axis,
+   # which is not among the options when the DV is plasma concentrations. For
+   # that reason, it does not matter that the range does not consider the range
+   # of time included.
+   LogXBreaks <- make_log_breaks(
+      data_range = switch(
+         as.character(all(complete.cases(x_axis_limits_log))), 
+         "TRUE" = x_axis_limits_log, 
+         "FALSE" = switch(as.character(complete.cases(SensParam2)), 
+                          "TRUE" = switch(color_by_which_indvar, 
+                                          "1st" = range(SAdata$SensValue2[SAdata$SensValue2 > 0]), 
+                                          "2nd" = range(SAdata$SensValue[SAdata$SensValue > 0])), 
+                          "FALSE" = range(SAdata$SensValue[SAdata$SensValue > 0]))))
+   
+   Glog <- G +
+      scale_y_log10(breaks = LogYBreaks$breaks, 
+                    labels = LogYBreaks$labels) 
+   
+   if(linear_or_log %in% c("both", "both vertical", "both horizontal",
+                           "semi-log", "log", "log y")){
+      
+      if(str_detect(dependent_variable, "plasma|conc")){
+         
+         G <- G + 
+            coord_cartesian(ylim = c(round_down(LinYRange[1]),
+                                     round_up_nice(LinYRange[2]))) +
+            scale_x_time(time_range = x_axis_limits_lin)
+         
+         Glog <- Glog +
+            coord_cartesian(ylim = LogYBreaks$axis_limits_log) + 
+            scale_x_time(time_range = x_axis_limits_lin)
+         
+      } else {
+         
+         G <- G + 
+            coord_cartesian(ylim = c(round_down(LinYRange[1]),
+                                     round_up_nice(LinYRange[2])), 
+                            xlim = c(round_down(LinXRange[1]),
+                                     round_up_nice(LinXRange[2])))
+         
+         Glog <- Glog +
+            coord_cartesian(ylim = c(round_down(LinYRange[1]),
+                                     round_up_nice(LinYRange[2])), 
+                            xlim = c(round_down(LinXRange[1]),
+                                     round_up_nice(LinXRange[2])))
+         
+      }
+   } 
+   # Situation where both or just x are log transformed is covered below. 
    
    if(linear_or_log %in% c("both", "both vertical")){
       G <- ggpubr::ggarrange(G, Glog, nrow = 2, align = "hv", common.legend = TRUE)
@@ -553,22 +621,18 @@ sensitivity_plot <- function(SA_file,
    } else if(linear_or_log %in% c("semi-log", "log", "log y")){
       G <- Glog
    } else if(linear_or_log %in% c("both log")){
+      G <- G + 
+         scale_x_log10(breaks = LogXBreaks$breaks, 
+                       limits = LogXBreaks$axis_limits_log, 
+                       labels = LogXBreaks$labels) +
+         scale_y_log10(breaks = LogYBreaks$breaks, 
+                       limits = LogYBreaks$axis_limits_log, 
+                       labels = LogYBreaks$labels)
       
-      LogBreaks <- make_log_breaks(
-         data_range = switch(
-            as.character(all(complete.cases(x_axis_limits_log))), 
-            "TRUE" = x_axis_limits_log, 
-            "FALSE" = switch(as.character(complete.cases(SensParam2)), 
-                             "TRUE" = switch(color_by_which_indvar, 
-                                             "1st" = range(SAdata$SensValue2), 
-                                             "2nd" = range(SAdata$SensValue)), 
-                             "FALSE" = range(SAdata$SensValue))))
-      
-      G <- Glog + scale_x_log10(breaks = LogBreaks$breaks, 
-                                labels = LogBreaks$labels)
    } else if(linear_or_log %in% c("log x")){
-      G <- G + scale_x_log10(breaks = LogBreaks$breaks, 
-                             labels = LogBreaks$labels)
+      G <- G + scale_x_log10(breaks = LogXBreaks$breaks,
+                             limits = LogXBreaks$axis_limits_log, 
+                             labels = LogXBreaks$labels)
    }
    
    if(complete.cases(save_graph)){
