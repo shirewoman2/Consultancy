@@ -1182,7 +1182,8 @@ ct_plot <- function(ct_dataframe = NA,
                                     str_detect(as.character(Trial), "obs")) 
    )
    
-   if("SD_SE" %in% names(Ylim_data)){
+   if("SD_SE" %in% names(Ylim_data) && 
+      any(complete.cases(Ylim_data$SD_SE))){
       Ylim_data <- Ylim_data %>% 
          mutate(MaxConc = Conc + ifelse(complete.cases(SD_SE), SD_SE, 0), 
                 MinConc = Conc - ifelse(complete.cases(SD_SE), SD_SE, 0))
