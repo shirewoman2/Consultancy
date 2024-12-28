@@ -17,6 +17,7 @@ sensitivity_plot(
   x_axis_limits_log = NA,
   time_range = NA,
   rounding = "significant 3",
+  color_set = "blues",
   graph_title = NA,
   save_graph = NA,
   fig_height = 4,
@@ -101,6 +102,57 @@ dependent variable requested is plasma concentrations.}
 "signif X" also works fine.} \item{"none"}{No rounding will be performed.}
 \item{"round X" where "X" is a number}{Output will be
 rounded to X digits}}}
+
+\item{color_set}{the set of colors to use. Options: \describe{
+
+  \item{"blues" (default)}{a set of blues fading from sky to navy. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"greens"}{a set of greens fading from chartreuse to forest. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"purples"}{a set of purples fading from lavender to aubergine. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"blue-green"}{a set of blues fading into greens. This palette can be
+  especially useful if you are comparing a systematic change in some
+  continuous variable -- for example, increasing dose or predicting how a
+  change in intrinsic solubility will affect concentration-time profiles --
+  because the direction of the trend will be clear.}
+
+  \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+  first three colors are red, blue, and green.}
+
+  \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+  (ggplot2 is an R package for graphing.)}
+
+  \item{"rainbow"}{colors selected from a rainbow palette. The default
+  palette is limited to something like 6 colors, so if you have more than
+  that, that's when this palette is most useful. It's \emph{not} very useful
+  when you only need a couple of colors.}
+
+  \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+  package}
+
+  \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+  colors from purple to blue to green to yellow in a manner that is
+  "printer-friendly, perceptually uniform and easy to read by those with
+  colorblindness", according to the package author}
+
+  \item{a character vector of colors}{If you'd prefer to set all the colors
+  yourself to \emph{exactly} the colors you want, you can specify those
+  colors here. An example of how the syntax should look: \code{color_set =
+  c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+  which item in \code{colorBy_column} gets which color, you can supply a
+  named vector. For example, if you're coloring the lines by the compound ID,
+  you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+  "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+  like help creating a specific gradation of colors, please talk to a member
+  of the R Working Group about how to do that using
+  \link{colorRampPalette}.}}}
 
 \item{graph_title}{(optional) a title to include on your graph in quotes}
 

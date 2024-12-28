@@ -1,7 +1,7 @@
 Package: SimcypConsultancy
 Type: Package
 Title: Standardized tools for using R within the Simcyp Consultancy Team
-Version: 3.8.1
+Version: 3.8.2
 Author: Laura Sh., Howie, Mackenzie, Alenka, Ludwig, Anthonia, Fatma, Magali, Laura Sa., Shinji, Kahina 
 Maintainer: <laura.shireman@certara.com>
 Description: This package is meant to be a collection of standardized reporting tools for the Simcyp Consultancy Team. 
