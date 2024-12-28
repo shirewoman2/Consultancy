@@ -501,15 +501,17 @@ tidy_input_PK <- function(PKparameters,
       }
       
       if("File" %in% names(PKparameters) &&
-         any(complete.cases(PKparameters$File)) &
-         any(is.na(PKparameters$File))){
+         (any(complete.cases(PKparameters$File)) &
+          any(is.na(PKparameters$File)))){
          stop(str_wrap("You have supplied a set of PK parameters to extract where you sometimes have listed the simulation file name and sometimes have not, so we don't know which simultaion files you want. Please check your input and try again."), 
               call. = FALSE)
       }
       
       # If all values for File are NA, remove this column and then re-add it in
       # the next tidying step.
-      if(all(is.na(PKparameters$File))){PKparameters$File <- NULL}
+      if("File" %in% names(PKparameters) && all(is.na(PKparameters$File))){
+         PKparameters$File <- NULL
+      }
       
       if("File" %in% names(PKparameters) == FALSE){
          
@@ -931,7 +933,8 @@ tidy_input_PK <- function(PKparameters,
    # provided or extracted inside the function.
    if("logical" %in% class(existing_exp_details)){
       # logical when user has supplied NA
-      existing_exp_details <- extractExpDetails_mult(sim_data_files = sim_data_files)
+      existing_exp_details <- extractExpDetails_mult(
+         sim_data_files = sort(unique(c(PKparameters$File, sim_data_files))))
    } else { 
       existing_exp_details <- harmonize_details(existing_exp_details)
    }
@@ -940,7 +943,7 @@ tidy_input_PK <- function(PKparameters,
    if(any(PKparameters$File %in% existing_exp_details$MainDetails$File == FALSE)){
       suppressWarnings(
          existing_exp_details <- extractExpDetails_mult(
-            sim_data_files = PKparameters$File,
+            sim_data_files = sort(unique(c(PKparameters$File, sim_data_files))),
             exp_details = "Summary and Input", 
             existing_exp_details = existing_exp_details)
       )
