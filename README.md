@@ -224,7 +224,7 @@ you’ll want to edit when you paste this into a report will be in bold.
             existing_exp_details = Details, 
             save_graph = "My conc-time graph example 2.docx")
 
-!(<https://github.com/shirewoman2/Consultancy/blob/master/inst/images/ct_plot2.png?raw=TRUE>)
+![](https://github.com/shirewoman2/Consultancy/blob/master/inst/images/ct_plot2.png?raw=TRUE)
 
 ## ct_plot example 3: Substrate data with vs. without an inhibitor
 
@@ -252,10 +252,10 @@ more detail in the example files in the folder “Concentration-time plots
             save_graph = "My conc-time graph example 3.docx", 
             fig_height = 3, fig_width = 5)
 
-!(inst/images/ct_plot1.png?raw=TRUE)
-
-*Note: We need to change this graph to MDZ with RIF instead of MDZ with
-keto. To do!*
+<figure>
+<img src="inst/images/ct_plot1.png?raw=TRUE" alt="test" />
+<figcaption aria-hidden="true">test</figcaption>
+</figure>
 
 For more options and examples, please see the help file for ct_plot
 (type `?ct_plot` into the console) and see
