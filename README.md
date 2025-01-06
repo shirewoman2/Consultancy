@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# SimcypConsultancy
+# Overview
 
 <!-- badges: start -->
 <!-- badges: end -->
@@ -24,23 +24,15 @@ You can install the SimcypConsultancy package from GitHub like this:
 
 Current version: 3.6.1
 
-# Why we made this package
-
-The Consultancy Team R Working Group goals in making this package were
-to create tools using the coding language R for easier, more accurate,
-and more versatile data analysis, reporting, and visualization of Simcyp
-Simulator output. This document is meant to highlight some of the
-functions we’ve made for the SimcypConsultancy package with brief
-demonstrations. The main functions additionally have their own,
-more-detailed examples inside the folder “Simcyp PBPKConsult R Files -
-Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
-instructions”.
+# How to use this document
 
 You do *not* need to read this document from start to finish to follow
-it. Instead, please do use the navigation pane to skip around to only
-the parts that interest you. For help on any functions, type a question
-mark followed by the name of the function. For example, here’s how to
-get help on the ct_plot function:
+it. Instead, please do skip around to only the parts that interest you.
+We’re using example files in this document, but you generally can
+substitute whatever Simcyp Simulator files you’re working with instead
+of the examples. For help on any functions, type a question mark
+followed by the name of the function. For example, here’s how to get
+help on the ct_plot function:
 
 `?ct_plot`
 
@@ -77,7 +69,7 @@ induction parameters, etc. for a bunch of workspaces and don’t want to
 spend hours tediously opening, changing, saving, and closing them all
 manually, please talk to Laura Shireman.
 
-# Check on how simulations were set up
+# Check how simulations were set up
 
 As we mentioned, one of our goals was to increase accuracy. For this
 reason, several functions in the SimcypConsultancy package are set up
