@@ -24,7 +24,488 @@ You can install the SimcypConsultancy package from GitHub like this:
 
 Current version: 3.6.1
 
-# An overview of what SimcypConsultancy functions do
+# Why we made this package
+
+The Consultancy Team R Working Group goals in making this package were
+to create tools using the coding language R for easier, more accurate,
+and more versatile data analysis, reporting, and visualization of Simcyp
+Simulator output. This document is meant to highlight some of the
+functions we’ve made for the SimcypConsultancy package with brief
+demonstrations. The main functions additionally have their own,
+more-detailed examples inside the folder “Simcyp PBPKConsult R Files -
+Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+instructions”.
+
+You do *not* need to read this document from start to finish to follow
+it. Instead, please do use the navigation pane to skip around to only
+the parts that interest you.
+
+# Getting started … and what’s a “package”, anyway?
+
+A “package” in R is a set of commands – called functions in R – all
+bundled together into one unit. To install the SimcypConsultancy
+package, please see [“How to install the SimcypConsultancy
+package.docx”](https://s08sharepoint.certara.com/sites/consult/Research/R%20working%20group/SimcypConsultancy%20function%20examples/How%20to%20install%20the%20SimcypConsultancy%20package.docx).
+This package is *not* available on CRAN (the Comprehensive R Archive
+Network), which, if you’ve worked with R in the past, is where you have
+probably gotten packages previously.
+
+To run the examples described in this document, please copy everything
+in this script’s parent folder to another folder where you can find it
+and then run from there.
+
+In these examples, text shown in a gray shaded box is generally
+something you can copy and paste directly into a script or into the
+console of RStudio and run. The exception: Anything in the gray shaded
+boxes with “\##” in front of it is *output*; you should not paste that
+into the console. You’ll often see something like “%\>%
+formatTable_Simcyp()” at the end of a command in this document. That is
+only for formatting the output nicely for a Word file and isn’t required
+for getting your results.
+
+### If you’re new to R…
+
+Before running anything, though, we need to
+
+1.  tell R that we want to use the “SimcypConsultancy” and “tidyverse”
+    packages
+2.  tell R what directory it should use.
+
+We’re going to call on our library to load those two packages, and then
+we’re going to “get the working directory” with “getwd()”.
+
+    library(tidyverse)
+    library(SimcypConsultancy)
+
+If the working directory isn’t what you want, go to the menu “Session”,
+choose “Set Working Directory” and follow the arrow to get a side menu.
+Select “Choose Directory”, navigate to the folder you want, and click
+“Open” to select that folder. The directory should now be the one you
+want.
+
+For help on any functions, type a question mark followed by the name of
+the function. For example, here’s how to get help on the ct_plot
+function:
+
+`?ct_plot`
+
+Let’s dive into some examples!
+
+# A few brief timesavers for setting up workspaces
+
+If someone else set up some workspaces that they would like you to run
+but those workspaces included observed data XML files on OneDrive, the
+Simulator won’t be able to find that file unless you change the path to
+include your user name instead of the original person’s user name.
+Here’s how to quickly change all the paths for all the workspaces in a
+folder so that the Simulator can find the observed data files with
+*your* name in the path:
+
+    make_xml_path_mine()
+
+That will permanently change the workspaces, so please make sure that’s
+what you want.
+
+If you have run some simulations using the workflow tool in the
+Simulator, it will include a date/time stamp on the output file name. To
+remove those quickly, try this to remove that stamp from all the files
+in your current folder:
+
+    remove_file_timestamp()
+
+The R Working Group has a few other tricks up our sleeves for changing
+workspace parameters quickly, but they do require some care since they
+permanently change workspace files and since only some parameters work
+well when changed in an automated fashion. If you find yourself needing
+to change something like the dose, the inhibition parameters, the
+induction parameters, etc. for a bunch of workspaces and don’t want to
+spend hours tediously opening, changing, saving, and closing them all
+manually, please talk to Laura Shireman.
+
+# Check on how simulations were set up
+
+As we mentioned, one of our goals was to increase accuracy. For this
+reason, several functions in the SimcypConsultancy package are set up
+for checking or reporting data in an automated fashion.
+
+## extractExpDetails example 1: Check on how all the simulations in a given folder were set up
+
+First, we’ll collect some simulation experimental details and then save
+that to an Excel file where we can easily compare parameters across
+multiple simulations.
+
+data.frame as a csv file. We’ll set “sim_data_files” in the code below
+to NA to run this on *all* the simulator output Excel files in this
+folder. Originally (and still by default), this function would create a
+really wide table with one column for every experimental detail. Nikunj
+had the excellent suggestion to allow for shaping the output to be a
+long table instead of a really wide one, which can be cumbersome to
+read, so let’s use that here. Setting “annotate_output = TRUE” will make
+it long *and* will provide some context about what that detail is and
+where it was found. This will take a moment to run.
+
+
+    Details <- extractExpDetails_mult(sim_data_files = NA, 
+                                      exp_details = "all")
+
+## extractExpDetails example 2: Get specific details about how the simulations were set up overall
+
+Now that we’ve got all the experimental details pulled into memory,
+let’s ask for some specific information. Say you want to know some
+details about how the experiment was set up such as the start and end
+times of the simulation, what the substrates and inhibitors were and the
+dosing regimens. You can use the function “annotateDetails” to do this
+sort of task. Here’s how you’d get the first few rows with that
+information:
+
+
+    annotateDetails(Details, simulator_section = "Trial Design") %>%
+       head() %>% formatTable_Simcyp(fontsize = 8)
+
+How about some information on what parameters were used for setting up
+absorption but only for the substrate? We’re again only going to show
+the first few rows of this, which is what “head() %\>%” does in the code
+below.
+
+<img src="man/figures/README-unnamed-chunk-3-1.png" width="50%" />
+
+To see all the possible experimental details, please see the file
+“**[All possible experimental details to use with
+extractExpDetails.csv](https://certaragbr.sharepoint.com/:x:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/All%20possible%20experimental%20details%20to%20use%20with%20extractExpDetails.csv?d=wac18447b1ef557789cb09d8487781223&csf=1&web=1&e=yu3dId)**”
+(Bold text is a link) or type this into the console:
+
+     view(ExpDetailDefinitions)
+
+For more options and examples, please see the help files for
+extractExpDetails, extractExpDetails_mult, and annotateDetails and
+please see
+“**[Checking-simulation-experimental-details.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Checking%20simulation%20experimental%20details/Checking-simulation-experimental-details.docx?d=w63d17d07c1824c10ae55f18d78ecd94f&csf=1&web=1&e=J9hnEE)**”
+(bold text is a link)
+
+# Make concentration-time plots
+
+The function “ct_plot” will allow you to automatically graph almost any
+concentration-time data present in Simulator output Excel files. While
+this function has many options, the default settings will generally
+create decent graphs that comply with Consultancy Team report templates.
+
+## ct_plot example 1: Substrate data showing simulated percentiles
+
+Let’s make a graph of substrate concentration-time data in plasma,
+including some observed data, and let’s save the output as “My conc-time
+graph 1.png”.
+
+First, extract the data from the Simulator output file and also from
+either the observed-data XML overlay file or the Excel PE template file.
+We’re using the function “extractConcTime” to extract the data and the
+function “ct_plot” to make the graphs.
+
+
+    LMV <- extractConcTime(sim_data_file = "letermovir MD.xlsx", 
+                           obs_data_file = "Observed data files/letermovir obs data.xlsx", 
+                           existing_exp_details = Details)
+
+    ct_plot(ct_dataframe = LMV, 
+            save_graph = "My conc-time graph example 1.png")
+
+<img src="man/figures/README-unnamed-chunk-4-1.png" width="50%" />
+
+## ct_plot example 2: Zoom in on the last dose
+
+Let’s zoom in on the last dose only and save this file, too, and this
+time, let’s save it as a Word file so that we can get figure heading and
+caption data already filled in and ready for copying and pasting into a
+report. If you supply the output from “extractExpDetails_mult” here,
+you’ll get a more informative figure heading and caption. Any text that
+you’ll want to edit when you paste this into a report will be in bold.
+
+
+    ct_plot(ct_dataframe = LMV, time_range = "last dose", 
+            existing_exp_details = Details, 
+            save_graph = "My conc-time graph example 2.docx")
+
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="50%" />
+
+## ct_plot example 3: Substrate data with vs. without an inhibitor
+
+Next, let’s make a graph of substrate concentration-time data in plasma
+with and without the presence of an inhibitor. Let’s change the figure
+type to show only the mean predicted concentrations.
+
+Let’s include a legend, label it for the fact that our perpetrator
+molecule is an inducer and not an inhibitor (the default), let’s only
+make the semi-log plot here, and let’s save the file so that it is 3
+inches high and 5 inches wide. (All of these options are described in
+more detail in the example files in the folder “Concentration-time plots
+1 - one sim at a time”.)
+
+
+    MDZ <- extractConcTime(sim_data_file = "QD MDZ QD RIF.xlsx", 
+                           obs_data_file = "Observed data files/QD MDZ QD RIF fake observed data.xlsx", 
+                           existing_exp_details = Details)
+
+    ct_plot(ct_dataframe = MDZ, time_range = "last dose", 
+            figure_type = "means only", 
+            linear_or_log = "log",
+            legend_position = "right",
+            legend_label = "Inducer",
+            save_graph = "My conc-time graph example 3.docx", 
+            fig_height = 3, fig_width = 5)
+
+    #> Warning: Transformation introduced infinite values in continuous y-axis
+    #> Warning: Removed 3430 rows containing missing values (`geom_line()`).
+
+<img src="man/figures/README-unnamed-chunk-6-1.png" width="50%" />
+
+*Note: We need to change this graph to MDZ with RIF instead of MDZ with
+keto. To do!*
+
+For more options and examples, please see the help file for ct_plot
+(type `?ct_plot` into the console) and see
+**[“Concentration-time-plot-examples-1.docx”](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Concentration-time%20plots%201%20-%20one%20sim%20at%20a%20time/Concentration-time-plot-examples-1.docx?d=wd31ccbfe966c4d6e938fc4be465b1602&csf=1&web=1&e=DsXp9L)**.
+
+# Make overlaid concentration-time plots
+
+You can also make concentration-time plots with multiple data sets
+overlaid for easy comparisons.
+
+## ct_plot_overlay example: Compare substrate concentrations in multiple tissues
+
+First, let’s get some data. We’re using a variation on the function
+“extractConcTime” called “extractConcTime_mult” that allows us to pull
+data for multiple files, tissues, and compounds all at once.
+
+
+    CT <- extractConcTime_mult(
+       sim_data_files = c(
+          "Example simulator output SD MDZ plus BID RTV.xlsx"), 
+       tissues = c("plasma", "blood", "unbound plasma"), 
+       ct_dataframe = "CT",
+       compoundsToExtract = c("substrate", "inhibitor 1"), 
+       existing_exp_details = Details)
+
+Next, graph those data, coloring the lines by whether the perpetrator
+was present and breaking up the graph into small multiples by the tissue
+and by what compound we’re plotting. Let’s give a sense of the
+variability of the data by showing transparent bands for the 5th to 95th
+percentiles. We’ll save this graph as “My overlaid conc-time graph
+example 1.docx”. Since we’re saving this as a Word file, we’ll again get
+some figure heading and caption text filled in.
+
+
+    ct_plot_overlay(ct_dataframe = CT, colorBy_column = Inhibitor,
+                    facet1_column = Tissue, 
+                    facet2_column = Compound, 
+                    figure_type = "percentile ribbon",
+                    color_set = "Set 1",
+                    save_graph = "My overlaid conc-time graph example 1.docx", 
+                    fig_width = 6, fig_height = 6)
+
+    #> Columns that vary in your data: Compound, CompoundID, Inhibitor, and Tissue
+    #> Graphing aesthetics you've assigned: Inhibitor (color), Tissue (facet1), and Compound (facet2)
+    #> Warning: When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.
+    #> Warning: Transformation introduced infinite values in continuous y-axis
+    #> Transformation introduced infinite values in continuous y-axis
+    #> Transformation introduced infinite values in continuous y-axis
+    #> Transformation introduced infinite values in continuous y-axis
+    #> Transformation introduced infinite values in continuous y-axis
+    #> Transformation introduced infinite values in continuous y-axis
+
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="50%" />
+
+For more options and examples, please the help file for ct_plot_overlay
+(type `?ct_plot_overlay` into the console) and see
+**[“Concentration-time-plot-examples-3.docx”](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Concentration-time%20plots%203%20-%20overlaying%20plots/Concentration-time-plot-examples-3.docx?d=w3059572742a740cf914cc28d97c15ceb&csf=1&web=1&e=2rdIei)**.
+
+# Make graphs of enzyme abundance
+
+You can apply most of the settings from the “ct_plot” function to
+another function, “enz_plot”, which will automatically make enzyme
+abundance plots for you. Just as with the ct_plot function, we’re first
+going to extract the data using a separate function, this one called
+“extractEnzAbund”.
+
+For this graph, let’s include a legend, color the lines according to
+whether the perpetrator is present using the colors we want, note in the
+legend that the perpetrator is an inducer rather than the default
+inhibitor, and let’s save the output, too.
+
+
+    CYP3A4_liver <- extractEnzAbund(sim_data_file = "Example simulator output - MD MDZ MD EFV.xlsx", 
+                                    existing_exp_details = Details)
+
+    enz_plot(CYP3A4_liver, legend_position = "right", 
+             linear_or_log = "linear",
+             legend_label = "Inducer",
+             line_type = c("solid", "solid"), 
+             line_color =  c("darkturquoise", "darkblue"), 
+             save_graph = "My enzyme abundance graph example 1.png", 
+             fig_height = 3.5, fig_width = 5)
+
+    #> Graphing enzyme abundance levels for CYP3A4 in liver.
+    #> Warning: Unknown or uninitialised column: `Conc_units`.
+
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="50%" />
+
+For more options and examples, please the help file for enz_plot (type
+`?enz_plot` into the console) and see
+**[“Enzyme-abundance-plot-examples.docx”](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Enzyme%20abundance%20plots/Enzyme-abundance-plot-examples.docx?d=w52b883659d5f460f989f6ba6bf09c990&csf=1&web=1&e=zG1dvd)**.
+
+# Make nice-looking PK summary tables automatically
+
+One of the tasks we would like to automate and make less prone to
+copy/paste errors is creating tables for reports that summarize
+simulated PK parameters. The function pk_table does that.
+
+## pk_table example 1: Create a table of standard PK parameters for a simulation of a substrate alone
+
+For this, we’ll use a file from a hands-on workshop demonstration with
+letermovir. (We’ll return to the “checkDataSource” argument you see
+inside the function call in a moment.)
+
+
+    pk_table(
+       sim_data_file = "letermovir MD.xlsx", 
+       existing_exp_details = Details, 
+       checkDataSource = FALSE) %>%
+       formatTable_Simcyp()
+
+## pk_table example 2: Adjust which summary stats are included and how they’re formatted
+
+The default setting is to list geometric means and CVs, but you can see
+arithmetic instead by specifying that with “mean_type”. Additionally,
+let’s see the range of trial means (includeTrialMeans = TRUE) but not
+the CVs (includeCV = FALSE).
+
+    pk_table(
+       sim_data_file = "letermovir MD.xlsx",
+       mean_type = "arithmetic",
+       includeTrialMeans = TRUE,
+       includeCV = FALSE, 
+       existing_exp_details = Details, 
+       checkDataSource = FALSE) %>% formatTable_Simcyp()
+
+## pk_table example 3: Create a table of standard PK parameters for a DDI simulation
+
+If a perpetrator molecule was included, the table will automatically
+pull parameters sensible for that scenario. This time, let’s do ask to
+check the data source. First, here’s the table:
+
+
+    MyTable <- pk_table(
+       sim_data_file = "QD MDZ QD RIF.xlsx", 
+       existing_exp_details = Details, 
+       checkDataSource = TRUE)
+
+    MyTable$Table %>% formatTable_Simcyp() 
+
+Now, to see where those parameters came from, let’s look at the other
+item that got included in our output when we said “checkDataSource =
+TRUE”.
+
+
+    MyTable$QC %>% formatTable_Simcyp(fontsize = 8)
+
+This is a data.frame listing the files, tabs, columns, and rows where
+the data were found for the purposes of QCing.
+
+For more options and examples, please see the help files for pk_table
+and see
+**[“PK-tables.docx”](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Making%20PK%20tables/PK-tables.docx?d=weea77b5756754f949b38a3ebccb6518b&csf=1&web=1&e=yQ6xiD)**.
+
+# Automatically extract and graph sensitivity analysis data
+
+You can make sensitivity-analysis graphs using the function
+sensitivity_plot, although one caveat is that this function does not
+include any data for a 3rd graphical axis. Why? There isn’t really a
+great way to make 3D graphs that would be interpretable here and,
+perhaps more importantly, there is not, in our humble opinions, a good R
+package for making 3D graphs.
+
+You can save the output with the same options as those for the other
+graphing functions. Let’s save this as a png file.
+
+## sensitivity_plot example 1: Make an SA graph showing the effect of your independent variable on Cmax
+
+We’ll supply the Excel file with the SA data to the argument “SA_file”,
+we’ll tell R which dependent variable we want to see, give the graph a
+title (the “\n” bit is how we can insert a manual carriage return), and
+then specify whether to save the graph by supplying a file name to
+“save_graph”.
+
+
+    sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
+                     dependent_variable = "Cmax", 
+                     graph_title = "My pretty sensitivity-analysis graph\nthat's not pink", 
+                     save_graph = "SA graph.png")
+
+Other dependent variables are also possible; please see the help file
+for all options.
+
+## sensitivity_plot example 2: Make an SA graph with CL instead and also set the x-axis title manually
+
+Here’s the same sensitivity analysis file but looking at oral clearance
+and setting something manually for the independent variable label on the
+x axis.
+
+
+    sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
+                     dependent_variable = "CLpo", 
+                     ind_var_label = "fa for the substrate")
+
+If you’re familiar with expressions in graph titles, those will work as
+well.
+
+
+    sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
+                     dependent_variable = "CLpo", 
+                     ind_var_label = expression(f["a"]~"for the substrate"))
+
+## sensitivity_plot example 3: Make an SA graph of plasma concentrations
+
+And here is an example of plotting plasma concentrations from a
+sensitivity-analysis file:
+
+
+    sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
+                     dependent_variable = "plasma", 
+                     linear_or_log = "both vertical", 
+                     time_range = c(0, 12))
+
+Please see the help file for more information by typing
+`?sensitivity_plot` into the console.
+
+# Fit induction data
+
+## inductFit example 1: Fit 4 models to induction data using the default settings
+
+Let’s fit some induction data to each of 4 possible models: Indmax,
+Indmax slope, slope, or sigmoid 3 parameter. For details on what these
+are, please see the instructions **[fitting induction
+data](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Fitting%20induction%20data/Fitting-induction-data.docx?d=wf8cf2b1886c240abafdf6c6241563b3d&csf=1&web=1&e=v3AJRV)**.
+
+For now, we’ll call on some pre-existing dummy data we made up for the
+SimcypConsultancy package called `IndData`.
+
+We’ll make an object “MyIndFits” to store the output and then look at
+that output one piece at a time.
+
+    #> Warning: For donor AAA, the model failed to fit the data for the EmaxSlope
+    #> model. No fitted line will be shown on the graph, and no fitted parameters will
+    #> be returned.
+
+Now that we have run the function, let’s see the graphs.
+
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="50%" />
+
+You can adjust the look of the graphs; please see the help file or the
+example Word document for examples.
+
+Let’s see the fitted parameters:
+
+<img src="man/figures/README-unnamed-chunk-19-1.png" width="50%" />
+
+# A list of what SimcypConsultancy functions do
 
 Below are descriptions of all the functions in the package, and the
 functions most users will want to use most frequently are in bold and
@@ -359,3 +840,9 @@ in the beta version of the package.*
   etc.
 - wrapn() - INTERNAL PACKAGE USE. Wrap warning text and add a carriage
   return at the end.
+
+# Final notes
+
+If you encounter a bug, if you would like help using any of these
+functions, or if there’s an additional feature you would like to have,
+please contact a member of the R Working Group.
