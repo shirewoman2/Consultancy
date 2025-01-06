@@ -38,60 +38,15 @@ instructions”.
 
 You do *not* need to read this document from start to finish to follow
 it. Instead, please do use the navigation pane to skip around to only
-the parts that interest you.
-
-# Getting started … and what’s a “package”, anyway?
-
-A “package” in R is a set of commands – called functions in R – all
-bundled together into one unit. To install the SimcypConsultancy
-package, please see [“How to install the SimcypConsultancy
-package.docx”](https://s08sharepoint.certara.com/sites/consult/Research/R%20working%20group/SimcypConsultancy%20function%20examples/How%20to%20install%20the%20SimcypConsultancy%20package.docx).
-This package is *not* available on CRAN (the Comprehensive R Archive
-Network), which, if you’ve worked with R in the past, is where you have
-probably gotten packages previously.
-
-To run the examples described in this document, please copy everything
-in this script’s parent folder to another folder where you can find it
-and then run from there.
-
-In these examples, text shown in a gray shaded box is generally
-something you can copy and paste directly into a script or into the
-console of RStudio and run. The exception: Anything in the gray shaded
-boxes with “\##” in front of it is *output*; you should not paste that
-into the console. You’ll often see something like “%\>%
-formatTable_Simcyp()” at the end of a command in this document. That is
-only for formatting the output nicely for a Word file and isn’t required
-for getting your results.
-
-### If you’re new to R…
-
-Before running anything, though, we need to
-
-1.  tell R that we want to use the “SimcypConsultancy” and “tidyverse”
-    packages
-2.  tell R what directory it should use.
-
-We’re going to call on our library to load those two packages, and then
-we’re going to “get the working directory” with “getwd()”.
-
-    library(tidyverse)
-    library(SimcypConsultancy)
-
-If the working directory isn’t what you want, go to the menu “Session”,
-choose “Set Working Directory” and follow the arrow to get a side menu.
-Select “Choose Directory”, navigate to the folder you want, and click
-“Open” to select that folder. The directory should now be the one you
-want.
-
-For help on any functions, type a question mark followed by the name of
-the function. For example, here’s how to get help on the ct_plot
-function:
+the parts that interest you. For help on any functions, type a question
+mark followed by the name of the function. For example, here’s how to
+get help on the ct_plot function:
 
 `?ct_plot`
 
 Let’s dive into some examples!
 
-# A few brief timesavers for setting up workspaces
+# Timesavers for setting up workspaces
 
 If someone else set up some workspaces that they would like you to run
 but those workspaces included observed data XML files on OneDrive, the
@@ -440,7 +395,7 @@ then specify whether to save the graph by supplying a file name to
 
     sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
                      dependent_variable = "Cmax", 
-                     graph_title = "My pretty sensitivity-analysis graph\nthat's not pink", 
+                     graph_title = "Sensitivity analysis:\nfa effect on Cmax", 
                      save_graph = "SA graph.png")
 
 ![](inst/images/overview_sa_ex1.png?raw=TRUE)
