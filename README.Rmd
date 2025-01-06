@@ -188,12 +188,8 @@ ct_plot(ct_dataframe = LMV, time_range = "last dose",
         save_graph = "My conc-time graph example 2.docx")
 
 ```
-```{r, echo = F}
 
-ct_plot(ct_dataframe = LMVct, time_range = "last dose")
-
-```
-
+![Concentration-time plot](https://github.com/shirewoman2/Consultancy/blob/beta/inst/images/ct_plot2.png?raw=TRUE)
 
 ## ct_plot example 3: Substrate data with vs. without an inhibitor
 

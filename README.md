@@ -224,7 +224,12 @@ you’ll want to edit when you paste this into a report will be in bold.
             existing_exp_details = Details, 
             save_graph = "My conc-time graph example 2.docx")
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="50%" />
+<figure>
+<img
+src="https://github.com/shirewoman2/Consultancy/blob/beta/inst/images/ct_plot2.png?raw=TRUE"
+alt="Concentration-time plot" />
+<figcaption aria-hidden="true">Concentration-time plot</figcaption>
+</figure>
 
 ## ct_plot example 3: Substrate data with vs. without an inhibitor
 
@@ -255,7 +260,7 @@ more detail in the example files in the folder “Concentration-time plots
     #> Warning: Transformation introduced infinite values in continuous y-axis
     #> Warning: Removed 3430 rows containing missing values (`geom_line()`).
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="50%" />
+<img src="man/figures/README-unnamed-chunk-5-1.png" width="50%" />
 
 *Note: We need to change this graph to MDZ with RIF instead of MDZ with
 keto. To do!*
@@ -311,7 +316,7 @@ some figure heading and caption text filled in.
     #> Transformation introduced infinite values in continuous y-axis
     #> Transformation introduced infinite values in continuous y-axis
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="50%" />
+<img src="man/figures/README-unnamed-chunk-6-1.png" width="50%" />
 
 For more options and examples, please the help file for ct_plot_overlay
 (type `?ct_plot_overlay` into the console) and see
@@ -345,7 +350,7 @@ inhibitor, and let’s save the output, too.
     #> Graphing enzyme abundance levels for CYP3A4 in liver.
     #> Warning: Unknown or uninitialised column: `Conc_units`.
 
-<img src="man/figures/README-unnamed-chunk-8-1.png" width="50%" />
+<img src="man/figures/README-unnamed-chunk-7-1.png" width="50%" />
 
 For more options and examples, please the help file for enz_plot (type
 `?enz_plot` into the console) and see
@@ -496,14 +501,14 @@ that output one piece at a time.
 
 Now that we have run the function, let’s see the graphs.
 
-<img src="man/figures/README-unnamed-chunk-18-1.png" width="50%" />
+<img src="man/figures/README-unnamed-chunk-17-1.png" width="50%" />
 
 You can adjust the look of the graphs; please see the help file or the
 example Word document for examples.
 
 Let’s see the fitted parameters:
 
-<img src="man/figures/README-unnamed-chunk-19-1.png" width="50%" />
+<img src="man/figures/README-unnamed-chunk-18-1.png" width="50%" />
 
 # A list of what SimcypConsultancy functions do
 
