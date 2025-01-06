@@ -24,6 +24,13 @@ You can install the SimcypConsultancy package from GitHub like this:
 
 Current version: 3.6.1
 
+**NOTE:** The SimcypConsultancy package requires that you have tidyverse
+loaded.
+
+A great place to start for getting help:
+
+    launch_package_index()
+
 # How to use this document
 
 You do *not* need to read this document from start to finish to follow

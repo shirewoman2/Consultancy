@@ -41,6 +41,14 @@ devtools::install_github(repo = "shirewoman2/Consultancy",
 
 Current version: `r packageVersion("SimcypConsultancy")`
 
+**NOTE:** The SimcypConsultancy package requires that you have tidyverse loaded. 
+
+A great place to start for getting help: 
+
+```
+launch_package_index()
+```
+
 # How to use this document 
 
 You do *not* need to read this document from start to finish to follow it. Instead, please do skip around to only the parts that interest you. We're using example files in this document, but you generally can substitute whatever Simcyp Simulator files you're working with instead of the examples. For help on any functions, type a question mark followed by the name of the function. For example, here's how to get help on the ct_plot function:  
