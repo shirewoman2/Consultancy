@@ -189,7 +189,8 @@ ct_plot(ct_dataframe = LMV, time_range = "last dose",
 
 ```
 
-![Concentration-time plot](https://github.com/shirewoman2/Consultancy/blob/beta/inst/images/ct_plot2.png?raw=TRUE)
+!(https://github.com/shirewoman2/Consultancy/blob/master/inst/images/ct_plot2.png?raw=TRUE)
+
 
 ## ct_plot example 3: Substrate data with vs. without an inhibitor
 
@@ -212,17 +213,8 @@ ct_plot(ct_dataframe = MDZ, time_range = "last dose",
         fig_height = 3, fig_width = 5)
 
 ```
-```{r, fig.height = 3, fig.width = 5, echo=FALSE}
 
-ct_plot(ct_dataframe = MDZ_Keto %>% filter(CompoundID == "substrate" & 
-                                              Tissue == "plasma"),
-        time_range = "last dose", 
-        figure_type = "means only", 
-        linear_or_log = "log",
-        legend_position = "right",
-        legend_label = "Inducer")
-
-```
+!(inst/images/ct_plot1.png?raw=TRUE)
 
 
 *Note: We need to change this graph to MDZ with RIF instead of MDZ with keto. To do!*
