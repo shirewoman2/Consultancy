@@ -129,12 +129,11 @@ annotateDetails(Details, simulator_section = "Trial Design") %>%
 
 ```
 
-How about some information on what parameters were used for setting up absorption but only for the substrate? We're again only going to show the first few rows of this, which is what "head() %>%" does in the code below. 
-```{r, echo = FALSE}
-Details <- MDZdetails
-```
+![](inst/images/overviewtable1.png?raw=TRUE)
 
-```{r}
+How about some information on what parameters were used for setting up absorption but only for the substrate? We're again only going to show the first few rows of this, which is what "head() %>%" does in the code below. 
+
+```
 
 annotateDetails(Details, 
                 simulator_section = "Absorption",
@@ -142,6 +141,8 @@ annotateDetails(Details,
    head() %>% formatTable_Simcyp(fontsize = 8)
 
 ```
+
+![](inst/images/overviewtable2.png?raw=TRUE)
 
 To see all the possible experimental details, please see the file "**[All possible experimental details to use with extractExpDetails.csv](https://certaragbr.sharepoint.com/:x:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/All%20possible%20experimental%20details%20to%20use%20with%20extractExpDetails.csv?d=wac18447b1ef557789cb09d8487781223&csf=1&web=1&e=yu3dId)**" (Bold text is a link) or type this into the console:
 
@@ -167,14 +168,12 @@ LMV <- extractConcTime(sim_data_file = "letermovir MD.xlsx",
                        existing_exp_details = Details)
 
 ct_plot(ct_dataframe = LMV, 
+        figure_type = "trial means", 
         save_graph = "My conc-time graph example 1.png")
 
 ```
-```{r, echo=FALSE}
 
-ct_plot(ct_dataframe = LMVct)
-
-```
+![](inst/images/ct_plot5.png?raw=TRUE)
 
 ## ct_plot example 2: Zoom in on the last dose 
 
@@ -189,7 +188,7 @@ ct_plot(ct_dataframe = LMV, time_range = "last dose",
 
 ```
 
-![](https://github.com/shirewoman2/Consultancy/blob/master/inst/images/ct_plot2.png?raw=TRUE)
+![](inst/images/ct_plot2.png?raw=TRUE)
 
 
 ## ct_plot example 3: Substrate data with vs. without an inhibitor
@@ -214,7 +213,7 @@ ct_plot(ct_dataframe = MDZ, time_range = "last dose",
 
 ```
 
-![test](inst/images/ct_plot1.png?raw=TRUE)
+![](inst/images/ctplot_ex3.png?raw=TRUE)
 
 
 For more options and examples, please see the help file for ct_plot (type `?ct_plot` into the console) and see **["Concentration-time-plot-examples-1.docx"](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Concentration-time%20plots%201%20-%20one%20sim%20at%20a%20time/Concentration-time-plot-examples-1.docx?d=wd31ccbfe966c4d6e938fc4be465b1602&csf=1&web=1&e=DsXp9L)**.
@@ -254,15 +253,7 @@ ct_plot_overlay(ct_dataframe = CT, colorBy_column = Inhibitor,
 
 ```
 
-```{r, echo = F}
-ct_plot_overlay(ct_dataframe = MDZ_Keto, colorBy_column = Inhibitor,
-                facet1_column = Tissue, 
-                facet2_column = Compound, 
-                figure_type = "percentile ribbon",
-                color_set = "Set 1")
-
-```
-
+![](inst/images/ctplotoverlay_ex1.png?raw=TRUE)
 
 For more options and examples, please the help file for ct_plot_overlay (type `?ct_plot_overlay` into the console) and see **["Concentration-time-plot-examples-3.docx"](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Concentration-time%20plots%203%20-%20overlaying%20plots/Concentration-time-plot-examples-3.docx?d=w3059572742a740cf914cc28d97c15ceb&csf=1&web=1&e=2rdIei)**. 
 
@@ -278,24 +269,17 @@ For this graph, let's include a legend, color the lines according to whether the
 CYP3A4_liver <- extractEnzAbund(sim_data_file = "Example simulator output - MD MDZ MD EFV.xlsx", 
                                 existing_exp_details = Details)
 
-enz_plot(CYP3A4_liver, legend_position = "right", 
-         linear_or_log = "linear",
-         legend_label = "Inducer",
-         line_type = c("solid", "solid"), 
-         line_color =  c("darkturquoise", "darkblue"), 
-         save_graph = "My enzyme abundance graph example 1.png", 
-         fig_height = 3.5, fig_width = 5)
+enz_plot(CYP3A4_liver,
+         figure_type = "percentile ribbon", 
+         line_type = "solid", 
+         legend_position = "right", legend_label = "Inducer", 
+         line_color = c("dodgerblue3", "darkorchid4"), 
+         save_graph = "Enzyme abundance graph example.png", 
+         fig_height = 3.5, fig_width = 6)
 
 ```
 
-```{r, echo=FALSE}
-enz_plot(CYP3A4_liver, legend_position = "right", 
-         linear_or_log = "linear",
-         legend_label = "Inducer",
-         line_type = c("solid", "solid"), 
-         line_color =  c("darkturquoise", "darkblue"))
-```
-
+![](inst/images/enzplot_ex9.png?raw=TRUE)
 
 For more options and examples, please the help file for enz_plot (type `?enz_plot` into the console) and see **["Enzyme-abundance-plot-examples.docx"](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Enzyme%20abundance%20plots/Enzyme-abundance-plot-examples.docx?d=w52b883659d5f460f989f6ba6bf09c990&csf=1&web=1&e=zG1dvd)**. 
 
@@ -318,10 +302,9 @@ pk_table(
 
 ```
 
-```{r, echo=FALSE}
-# FIXME: Add this.
-```
+![](inst/images/overview_pktable_ex1.png?raw=TRUE)
 
+If you save the output to a Word file, which is what we recommend, you will automatically get a table heading and caption, which will include information about which compound, tissue, and simulation was used to obtain the data, so the table will only include the columns "Statistic", "AUCtau" and "Cmax". 
 
 ## pk_table example 2: Adjust which summary stats are included and how they're formatted
 
@@ -337,10 +320,8 @@ pk_table(
    checkDataSource = FALSE) %>% formatTable_Simcyp()
 
 ```
-```{r, echo=FALSE}
-# FIXME: Add this.
-```
 
+![](inst/images/overview_pktable_ex2.png?raw=TRUE)
 
 ## pk_table example 3: Create a table of standard PK parameters for a DDI simulation  
 
@@ -356,21 +337,17 @@ MyTable <- pk_table(
 MyTable$Table %>% formatTable_Simcyp() 
 
 ```
-```{r, echo=FALSE}
-# FIXME: Add this.
-```
 
+![](inst/images/overview_pktable_ex3.png?raw=TRUE)
 
 Now, to see where those parameters came from, let's look at the other item that got included in our output when we said "checkDataSource = TRUE". 
-
 ```
 
 MyTable$QC %>% formatTable_Simcyp(fontsize = 8)
 
 ```
-```{r, echo=FALSE}
-# FIXME: Add this.
-```
+
+![](inst/images/overview_pktable_ex4.png?raw=TRUE)
 
 
 This is a data.frame listing the files, tabs, columns, and rows where the data were found for the purposes of QCing. 
@@ -398,9 +375,8 @@ sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
                  save_graph = "SA graph.png")
 
 ```
-```{r, echo=FALSE}
-# FIXME: Add this.
-```
+
+![](inst/images/overview_sa_ex1.png?raw=TRUE)
 
 
 Other dependent variables are also possible; please see the help file for all options. 
@@ -417,24 +393,8 @@ sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
                  ind_var_label = "fa for the substrate")
 
 ```
-```{r, echo=FALSE}
-# FIXME: Add this.
-```
 
-
-If you're familiar with expressions in graph titles, those will work as well. 
-
-```
-
-sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
-                 dependent_variable = "CLpo", 
-                 ind_var_label = expression(f["a"]~"for the substrate"))
-
-```
-```{r, echo=FALSE}
-# FIXME: Add this.
-```
-
+![](inst/images/overview_sa_ex2.png?raw=TRUE)
 
 
 ## sensitivity_plot example 3: Make an SA graph of plasma concentrations 
@@ -449,9 +409,8 @@ sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
                  time_range = c(0, 12))
 
 ```
-```{r, echo=FALSE}
-# FIXME: Add this.
-```
+
+![](inst/images/overview_sa_ex3.png?raw=TRUE)
 
 
 Please see the help file for more information by typing `?sensitivity_plot` into the console. 
@@ -467,7 +426,7 @@ For now, we'll call on some pre-existing dummy data we made up for the SimcypCon
 
 We'll make an object "MyIndFits" to store the output and then look at that output one piece at a time. 
 
-```{r}
+```
 MyIndFits <- inductFit(IndData, 
                        conc_column = Concentration_uM, 
                        fold_change_column = FoldInduction, 
@@ -478,21 +437,26 @@ MyIndFits <- inductFit(IndData,
 
 Now that we have run the function, let's see the graphs. 
 
-```{r}
+```
 
 MyIndFits$Graph
 
 ```
 
+![](inst/images/overview_indfit_ex1.png?raw=TRUE)
+
 You can adjust the look of the graphs; please see the help file or the example Word document for examples. 
 
 Let's see the fitted parameters: 
 
-```{r}
+```
 
 MyIndFits$Fit %>% formatTable_Simcyp()
 
 ```
+
+
+![](inst/images/overview_indfit_ex2.png?raw=TRUE)
 
 
 

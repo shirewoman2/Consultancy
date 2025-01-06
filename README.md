@@ -162,12 +162,20 @@ information:
     annotateDetails(Details, simulator_section = "Trial Design") %>%
        head() %>% formatTable_Simcyp(fontsize = 8)
 
+![](inst/images/overviewtable1.png?raw=TRUE)
+
 How about some information on what parameters were used for setting up
 absorption but only for the substrate? We’re again only going to show
 the first few rows of this, which is what “head() %\>%” does in the code
 below.
 
-<img src="man/figures/README-unnamed-chunk-3-1.png" width="50%" />
+
+    annotateDetails(Details, 
+                    simulator_section = "Absorption",
+                    compoundID = "substrate") %>% 
+       head() %>% formatTable_Simcyp(fontsize = 8)
+
+![](inst/images/overviewtable2.png?raw=TRUE)
 
 To see all the possible experimental details, please see the file
 “**[All possible experimental details to use with
@@ -206,9 +214,10 @@ function “ct_plot” to make the graphs.
                            existing_exp_details = Details)
 
     ct_plot(ct_dataframe = LMV, 
+            figure_type = "trial means", 
             save_graph = "My conc-time graph example 1.png")
 
-<img src="man/figures/README-unnamed-chunk-4-1.png" width="50%" />
+![](inst/images/ct_plot5.png?raw=TRUE)
 
 ## ct_plot example 2: Zoom in on the last dose
 
@@ -224,7 +233,7 @@ you’ll want to edit when you paste this into a report will be in bold.
             existing_exp_details = Details, 
             save_graph = "My conc-time graph example 2.docx")
 
-![](https://github.com/shirewoman2/Consultancy/blob/master/inst/images/ct_plot2.png?raw=TRUE)
+![](inst/images/ct_plot2.png?raw=TRUE)
 
 ## ct_plot example 3: Substrate data with vs. without an inhibitor
 
@@ -252,10 +261,7 @@ more detail in the example files in the folder “Concentration-time plots
             save_graph = "My conc-time graph example 3.docx", 
             fig_height = 3, fig_width = 5)
 
-<figure>
-<img src="inst/images/ct_plot1.png?raw=TRUE" alt="test" />
-<figcaption aria-hidden="true">test</figcaption>
-</figure>
+![](inst/images/ctplot_ex3.png?raw=TRUE)
 
 For more options and examples, please see the help file for ct_plot
 (type `?ct_plot` into the console) and see
@@ -298,17 +304,7 @@ some figure heading and caption text filled in.
                     save_graph = "My overlaid conc-time graph example 1.docx", 
                     fig_width = 6, fig_height = 6)
 
-    #> Columns that vary in your data: Compound, CompoundID, Inhibitor, and Tissue
-    #> Graphing aesthetics you've assigned: Inhibitor (color), Tissue (facet1), and Compound (facet2)
-    #> Warning: When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.
-    #> Warning: Transformation introduced infinite values in continuous y-axis
-    #> Transformation introduced infinite values in continuous y-axis
-    #> Transformation introduced infinite values in continuous y-axis
-    #> Transformation introduced infinite values in continuous y-axis
-    #> Transformation introduced infinite values in continuous y-axis
-    #> Transformation introduced infinite values in continuous y-axis
-
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="50%" />
+![](inst/images/ctplotoverlay_ex1.png?raw=TRUE)
 
 For more options and examples, please the help file for ct_plot_overlay
 (type `?ct_plot_overlay` into the console) and see
@@ -331,18 +327,15 @@ inhibitor, and let’s save the output, too.
     CYP3A4_liver <- extractEnzAbund(sim_data_file = "Example simulator output - MD MDZ MD EFV.xlsx", 
                                     existing_exp_details = Details)
 
-    enz_plot(CYP3A4_liver, legend_position = "right", 
-             linear_or_log = "linear",
-             legend_label = "Inducer",
-             line_type = c("solid", "solid"), 
-             line_color =  c("darkturquoise", "darkblue"), 
-             save_graph = "My enzyme abundance graph example 1.png", 
-             fig_height = 3.5, fig_width = 5)
+    enz_plot(CYP3A4_liver,
+             figure_type = "percentile ribbon", 
+             line_type = "solid", 
+             legend_position = "right", legend_label = "Inducer", 
+             line_color = c("dodgerblue3", "darkorchid4"), 
+             save_graph = "Enzyme abundance graph example.png", 
+             fig_height = 3.5, fig_width = 6)
 
-    #> Graphing enzyme abundance levels for CYP3A4 in liver.
-    #> Warning: Unknown or uninitialised column: `Conc_units`.
-
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="50%" />
+![](inst/images/enzplot_ex9.png?raw=TRUE)
 
 For more options and examples, please the help file for enz_plot (type
 `?enz_plot` into the console) and see
@@ -367,6 +360,14 @@ inside the function call in a moment.)
        checkDataSource = FALSE) %>%
        formatTable_Simcyp()
 
+![](inst/images/overview_pktable_ex1.png?raw=TRUE)
+
+If you save the output to a Word file, which is what we recommend, you
+will automatically get a table heading and caption, which will include
+information about which compound, tissue, and simulation was used to
+obtain the data, so the table will only include the columns “Statistic”,
+“AUCtau” and “Cmax”.
+
 ## pk_table example 2: Adjust which summary stats are included and how they’re formatted
 
 The default setting is to list geometric means and CVs, but you can see
@@ -382,6 +383,8 @@ the CVs (includeCV = FALSE).
        existing_exp_details = Details, 
        checkDataSource = FALSE) %>% formatTable_Simcyp()
 
+![](inst/images/overview_pktable_ex2.png?raw=TRUE)
+
 ## pk_table example 3: Create a table of standard PK parameters for a DDI simulation
 
 If a perpetrator molecule was included, the table will automatically
@@ -396,12 +399,16 @@ check the data source. First, here’s the table:
 
     MyTable$Table %>% formatTable_Simcyp() 
 
+![](inst/images/overview_pktable_ex3.png?raw=TRUE)
+
 Now, to see where those parameters came from, let’s look at the other
 item that got included in our output when we said “checkDataSource =
 TRUE”.
 
 
     MyTable$QC %>% formatTable_Simcyp(fontsize = 8)
+
+![](inst/images/overview_pktable_ex4.png?raw=TRUE)
 
 This is a data.frame listing the files, tabs, columns, and rows where
 the data were found for the purposes of QCing.
@@ -436,6 +443,8 @@ then specify whether to save the graph by supplying a file name to
                      graph_title = "My pretty sensitivity-analysis graph\nthat's not pink", 
                      save_graph = "SA graph.png")
 
+![](inst/images/overview_sa_ex1.png?raw=TRUE)
+
 Other dependent variables are also possible; please see the help file
 for all options.
 
@@ -450,13 +459,7 @@ x axis.
                      dependent_variable = "CLpo", 
                      ind_var_label = "fa for the substrate")
 
-If you’re familiar with expressions in graph titles, those will work as
-well.
-
-
-    sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
-                     dependent_variable = "CLpo", 
-                     ind_var_label = expression(f["a"]~"for the substrate"))
+![](inst/images/overview_sa_ex2.png?raw=TRUE)
 
 ## sensitivity_plot example 3: Make an SA graph of plasma concentrations
 
@@ -468,6 +471,8 @@ sensitivity-analysis file:
                      dependent_variable = "plasma", 
                      linear_or_log = "both vertical", 
                      time_range = c(0, 12))
+
+![](inst/images/overview_sa_ex3.png?raw=TRUE)
 
 Please see the help file for more information by typing
 `?sensitivity_plot` into the console.
@@ -487,20 +492,29 @@ SimcypConsultancy package called `IndData`.
 We’ll make an object “MyIndFits” to store the output and then look at
 that output one piece at a time.
 
-    #> Warning: For donor AAA, the model failed to fit the data for the EmaxSlope
-    #> model. No fitted line will be shown on the graph, and no fitted parameters will
-    #> be returned.
+    MyIndFits <- inductFit(IndData, 
+                           conc_column = Concentration_uM, 
+                           fold_change_column = FoldInduction, 
+                           model = "all", 
+                           include_fit_stats = FALSE, 
+                           rounding = "significant 3")
 
 Now that we have run the function, let’s see the graphs.
 
-<img src="man/figures/README-unnamed-chunk-16-1.png" width="50%" />
+
+    MyIndFits$Graph
+
+![](inst/images/overview_indfit_ex1.png?raw=TRUE)
 
 You can adjust the look of the graphs; please see the help file or the
 example Word document for examples.
 
 Let’s see the fitted parameters:
 
-<img src="man/figures/README-unnamed-chunk-17-1.png" width="50%" />
+
+    MyIndFits$Fit %>% formatTable_Simcyp()
+
+![](inst/images/overview_indfit_ex2.png?raw=TRUE)
 
 # A list of what SimcypConsultancy functions do
 
