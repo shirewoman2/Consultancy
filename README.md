@@ -37,10 +37,10 @@ You do *not* need to read this document from start to finish to follow
 it. Instead, please do skip around to only the parts that interest you.
 
 - [Time savers for setting up
-  workspaces](#https://github.com/shirewoman2/Consultancy/tree/beta?tab=readme-ov-file#timesavers-for-setting-up-workspaces)  
+  workspaces](https://github.com/shirewoman2/Consultancy/tree/beta?tab=readme-ov-file#timesavers-for-setting-up-workspaces)  
 - [Check how simulations were set up, e.g., for QCing](#QCing)  
 - [Make concentration-time
-  plots](#readme-ov-file#make-concentration-time-plots)  
+  plots](readme-ov-file#make-concentration-time-plots)  
 - [Make overlaid concentration-time plots](#ctplotoverlay)  
 - [Make graphs of enzyme abundance](#enzplot)  
 - [Make nice-looking PK summary tables automatically](#pktable)  
