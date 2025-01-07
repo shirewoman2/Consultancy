@@ -8,7 +8,7 @@ ontogeny_plot(
   enzyme = NA,
   enzyme_type = NA,
   ontogeny_equations_to_use = NA,
-  simulator_version = 22,
+  simulator_version = 23,
   compare_to_no_ontogeny = FALSE,
   age_range = c(0, 18),
   x_axis_interval = 3,
@@ -54,7 +54,8 @@ OntogenyEquations. If you supply something here, the arguments
 \code{enzyme} and \code{enzyme_type} will be ignored.}
 
 \item{simulator_version}{Simcyp Simulator version to display. Options are 21,
-22 (default), or 23.}
+22, 23 (default), or, once it's available on Simcyp Consultancy Team VDIs,
+24.}
 
 \item{compare_to_no_ontogeny}{TRUE or FALSE (default) for whether to show a
 line on the graph for no ontogeny, which would be a horizontal line at 1.}
@@ -119,7 +120,15 @@ unquoted, e.g., \code{colorBy_column = Tissue}.}
   change in intrinsic solubility will affect concentration-time profiles --
   because the direction of the trend will be clear.}
 
-  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  \item{"blues"}{a set of blues fading from sky to navy. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"greens"}{a set of greens fading from chartreuse to forest. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"purples"}{a set of purples fading from lavender to aubergine. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 

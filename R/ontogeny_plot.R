@@ -31,7 +31,8 @@
 #'   OntogenyEquations. If you supply something here, the arguments
 #'   \code{enzyme} and \code{enzyme_type} will be ignored.
 #' @param simulator_version Simcyp Simulator version to display. Options are 21,
-#'   22 (default), or 23.
+#'   22, 23 (default), or, once it's available on Simcyp Consultancy Team VDIs,
+#'   24.
 #' @param compare_to_no_ontogeny TRUE or FALSE (default) for whether to show a
 #'   line on the graph for no ontogeny, which would be a horizontal line at 1.
 #' @param age_range age range in years as a numeric vector. Default is
@@ -87,7 +88,15 @@
 #'   change in intrinsic solubility will affect concentration-time profiles --
 #'   because the direction of the trend will be clear.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"blues"}{a set of blues fading from sky to navy. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
@@ -110,6 +119,7 @@
 #'   like help creating a specific gradation of colors, please talk to a member
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
+#'   
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
@@ -133,7 +143,7 @@
 ontogeny_plot <- function(enzyme = NA, 
                           enzyme_type = NA, 
                           ontogeny_equations_to_use = NA, 
-                          simulator_version = 22, 
+                          simulator_version = 23, 
                           compare_to_no_ontogeny = FALSE, 
                           age_range = c(0, 18), 
                           x_axis_interval = 3, 
@@ -221,7 +231,7 @@ ontogeny_plot <- function(enzyme = NA,
                 # exponential between Age_cap1 & 2
                 (Age > Age_cap1 | is.na(Age_cap1)) & 
                    Age <= Age_cap2 & complete.cases(C2) ~
-                   C0 + C1*exp(C2*(Age - C3)), 
+                   C0 + C1*exp(C2*(Age - Age_cap1 - C3)), 
                 
                 # linear between Age_cap1 & 2
                 (Age > Age_cap1 | is.na(Age_cap1)) &
