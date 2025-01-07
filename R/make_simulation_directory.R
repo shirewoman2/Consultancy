@@ -268,24 +268,29 @@ make_simulation_directory <- function(project_folder = NA,
                                                       recursive = TRUE))
       }
       
-      XMLs <- bind_rows(XMLs) %>% 
-         mutate(Filetype = "xml", 
-                PathFile = R.utils::getRelativePath(PathFile, relativeTo = project_folder), 
-                Filename = basename(PathFile), 
-                Filename = sub("\\.xml$", "", Filename), 
-                Folder = dirname(PathFile), 
-                Folder = ifelse(Folder == ".", "", Folder), 
-                # hacking this by adding the longest of the possible extensions
-                # b/c regulators need the character length to include the
-                # extension.
-                FileNameCheck = check_file_name(paste0(Filename, ".wksz"))) %>% 
-         select(Filename, Folder, Filetype)
+      XMLs <- bind_rows(XMLs) 
       
-      Directory <- bind_rows(Directory, 
-                             tibble(Filename = c(rep(NA, 5), 
-                                                 "Possible XML files for this project that we found either in the the project folder or in the 'XMLs' folder associated with this project:")), 
-                             XMLs)
-      
+      if(nrow(XMLs) > 0){
+         
+         XMLs <- XMLs %>% 
+            mutate(Filetype = "xml", 
+                   PathFile = R.utils::getRelativePath(PathFile, relativeTo = project_folder), 
+                   Filename = basename(PathFile), 
+                   Filename = sub("\\.xml$", "", Filename), 
+                   Folder = dirname(PathFile), 
+                   Folder = ifelse(Folder == ".", "", Folder), 
+                   # hacking this by adding the longest of the possible extensions
+                   # b/c regulators need the character length to include the
+                   # extension.
+                   FileNameCheck = check_file_name(paste0(Filename, ".wksz"))) %>% 
+            select(Filename, Folder, Filetype)
+         
+         Directory <- bind_rows(Directory, 
+                                tibble(Filename = c(rep(NA, 5), 
+                                                    "Possible XML files for this project that we found either in the the project folder or in the 'XMLs' folder associated with this project:")), 
+                                XMLs)
+         
+      }
    }
    
    # Simplifying FileNameCheck column 
