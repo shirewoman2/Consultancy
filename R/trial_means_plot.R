@@ -207,23 +207,15 @@
 #'   etc., so the labels like "Clinical Study 101, fasted healthy subjects" just
 #'   won't fit nicely by comparison. For this reason, you can choose how
 #'   observed data study names should be automatically shortened. Options:
-#'   \describe{\item{"observed or study number"}{when there's only 1 clinical 
-#'   study, we'll label that as "observed" in the graph, but when there's more 
-#'   than one, we'll label the studies as "study 1", "study 2", etc.} 
-#'   
-#'   \item{"study number"}{this will make the label always be, e.g., "study 1", 
+#'   \describe{\item{"observed or study number"}{when there's only 1 clinical
+#'   study, we'll label that as "observed" in the graph, but when there's more
+#'   than one, we'll label the studies as "study 1", "study 2", etc.}
+#'
+#'   \item{"study number"}{this will make the label always be, e.g., "study 1",
 #'   "study 2", etc., even if there is only 1 study.}
-#'   
-#'   \item{"keep" or "keep original"}{this will retain the original value for 
+#'
+#'   \item{"keep" or "keep original"}{this will retain the original value for
 #'   the study name, even if it's really long and awkward.}}
-#' @param name_clinical_study optionally specify the name(s) of the clinical
-#'   study or studies for any observed data. This only affects the caption of
-#'   the graph. For example, specifying \code{name_clinical_study = "101, fed
-#'   cohort"} will result in a figure caption that reads in part "clinical study
-#'   101, fed cohort". If you have more than one study, that's fine; we'll take
-#'   care of stringing them together appropriately. Just list them as a
-#'   character vector, e.g., \code{name_clinical_study = c("101",
-#'   "102", "103")} will become "clinical studies 101, 102, and 103."
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
 #'   graph.docx". The nice thing about saving to Word is that the figure title
@@ -236,6 +228,16 @@
 #'   saved to disk.
 #' @param fig_height figure height in inches
 #' @param fig_width figure width in inches
+#' @param point_size optionally specify what point size to use. If left as NA,
+#'   the point size will be set to 3.
+#' @param point_shape optionally specify what shape to use. To see all the
+#'   possible shapes and what number corresponds to which shape, type
+#'   \code{ggpubr::show_point_shapes()} into the console. If left as NA, an open
+#'   circle will be used.
+#' @param bar_width optionally specify the error bar width. If left as NA,
+#'   the error bar width will be set to 0.25.
+#' @param include_dose_num TRUE or FALSE (default) on whether to include
+#'   the dose number when listing the PK parameter. 
 #'
 #' @return a ggplot2 graph
 #' @export
@@ -254,6 +256,7 @@ trial_means_plot <- function(sim_data_file,
                              lines_for_population_stats = "gray80 solid dotted", 
                              color_set = "default",
                              color_option = "by study", 
+                             point_shape = NA, 
                              point_size = NA, 
                              bar_width = NA, 
                              y_axis_limits_lin = NA, 
@@ -265,7 +268,6 @@ trial_means_plot <- function(sim_data_file,
                              return_caption = FALSE, 
                              prettify_compound_names = TRUE,
                              clin_study_label_option = "observed or study number", 
-                             name_clinical_study = NA, 
                              save_graph = NA,
                              fig_height = NA,
                              fig_width = NA){
@@ -377,6 +379,7 @@ trial_means_plot <- function(sim_data_file,
       legend_position <- "right"
    }
    
+   point_shape <- ifelse(is.na(point_shape[1]), 21, point_shape)
    suppressWarnings(point_size <- as.numeric(point_size)[1])
    point_size <- ifelse(is.na(point_size), 3, point_size)
    suppressWarnings(bar_width <- as.numeric(bar_width)[1])
@@ -569,6 +572,7 @@ trial_means_plot <- function(sim_data_file,
          
       } else {
          observed_PK$Trial <- "observed"
+         observed_PK$Study <- "observed"
       }
       
       ObsTrialLevels <- unique(observed_PK$Trial)
@@ -582,7 +586,13 @@ trial_means_plot <- function(sim_data_file,
          ObsTrialLevels <- unique(observed_PK$Trial)
          
       }
-   } 
+      
+   } else {
+      # When there are no observed data, we need placeholders for a couple of
+      # things for making the caption later. 
+      ObsTrialLevels <- "observed"
+      ObsStudyLevels <- "observed"
+   }
    
    if("logical" %in% class(observed_PK) == FALSE){
       PK_long <- PK_long %>% 
@@ -638,11 +648,11 @@ trial_means_plot <- function(sim_data_file,
       
    } else if(color_option == "s or o"){
       
-      if(color_set == "black and white"){
+      if(color_set[1] == "black and white"){
          MyColors <- c("black", "black")
       } else {
-         MyColors <- makes_color_set(color_set = color_set, 
-                                     num_colors = 2)
+         MyColors <- make_color_set(color_set = color_set, 
+                                    num_colors = 2)
       }
       names(MyColors) <- c("simulated", "observed")
       
@@ -742,12 +752,20 @@ trial_means_plot <- function(sim_data_file,
    
    G <- G +
       geom_errorbar(width = bar_width) +
-      geom_point(shape = 21, size = point_size) +
+      geom_point(shape = point_shape, size = point_size) +
       scale_color_manual(values = MyColors) +
       scale_fill_manual(values = MyFillColors) +
       theme_consultancy() +
       ylab(PKexpressions[[sub("_last|_dose1", "", PKparameter)]]) + 
       theme(legend.position = legend_position)
+   
+   if(legend_position == "bottom" & color_option == "by study"){
+      # If the color option is by study, that will generally have a pretty long
+      # entry for each color. Making the legend orientation vertical to
+      # accommodate that.
+      G <- G + 
+         theme(legend.direction = "vertical")
+   }
    
    if(any(complete.cases(y_axis_limits_lin))){
       G <- G +
@@ -772,7 +790,7 @@ trial_means_plot <- function(sim_data_file,
                                     "CLtau" ~ "CL/F", 
                                     "CLinf" ~ "CL/F")
       
-      Caption <- 
+      Caption1 <- 
          paste0("Figure shows ", 
                 case_match(mean_type,
                            "arithmetic" ~ "arithmetic mean", 
@@ -803,50 +821,85 @@ trial_means_plot <- function(sim_data_file,
                    Legos$DosingText_inhib_lower), 
                 ifelse(str_detect(PKparameter, "withInhib|ratio"), 
                        paste0(" following ", Legos$DosingText_inhib_lower), ""), 
-                
-                ifelse("logical" %in% class(observed_PK), 
-                       "", 
-                       paste0(". ", 
-                              ifelse(length(unique(observed_PK$Study)) > 1, 
-                                     paste0(sub("study 1", "Study 1",
-                                                str_comma(ObsStudyLevels)), 
-                                            ". "), 
-                                     ""), 
-                              "Observed data from clinical study ", 
-                              ifelse(is.na(name_clinical_study), 
-                                     "***XXX***", name_clinical_study))), 
-                ". ", 
-                ifelse(lines_for_population_stats == "none", 
-                       "", 
-                       paste0("Horizontal lines indicate the ", 
-                              case_match(mean_type,
-                                         "arithmetic" ~ "arithmetic mean", 
-                                         "geometric" ~ "geometric mean", 
-                                         "median" ~ "median"), 
-                              " and ", 
-                              case_match(variability_type, 
-                                         "PERCENTILES" ~ "5^th^ to 95^th^ percentiles", 
-                                         "SD" ~ "standard deviation", 
-                                         "CV" ~ "standard deviation", 
-                                         "GCV" ~ "standard deviation", 
-                                         "90% CI" ~ "90% confidence interval", 
-                                         "RANGE" ~ "range"), 
-                              " for the simulated population. ")), 
-                "Source simulated data: ", sim_data_file, ".")
+                ". ")
       
-      message("\nClinical studies were the following:")
-      message(str_c(paste0("     ", ObsStudyLevels), collapse = "\n"))
+      Caption2 <- 
+         ifelse(lines_for_population_stats == "none", 
+                "", 
+                paste0("Horizontal lines indicate the ", 
+                       case_match(mean_type,
+                                  "arithmetic" ~ "arithmetic mean", 
+                                  "geometric" ~ "geometric mean", 
+                                  "median" ~ "median"), 
+                       " and ", 
+                       case_match(variability_type, 
+                                  "PERCENTILES" ~ "5^th^ to 95^th^ percentiles", 
+                                  "SD" ~ "standard deviation", 
+                                  "CV" ~ "standard deviation", 
+                                  "GCV" ~ "standard deviation", 
+                                  "90% CI" ~ "90% confidence interval", 
+                                  "RANGE" ~ "range"), 
+                       " for the simulated population. "))
+      
+      Caption3 <- paste0(
+         ifelse("logical" %in% class(observed_PK), 
+                # When no observed PK provided
+                "", 
+                
+                # When user did provide observed PK
+                paste0(
+                   ifelse(length(ObsStudyLevels) > 0,
+                          # this is when there were at least some studies listed
+                          # with the observed PK
+                          
+                          ifelse(length(ObsStudyLevels) > 1, 
+                                 # if there was more than 1 study, they'll be
+                                 # listed as study 1, study 2, etc.
+                                 paste0("Source observed data: ", 
+                                        str_comma(ObsStudyLevels), ". "), 
+                                 
+                                 # if there was only 1, it will be listed as
+                                 # "observed" in the graph. Need to check
+                                 # whether they actually included a column with
+                                 # the study name in the observed PK, though,
+                                 # b/c if they did not, we won't know the name
+                                 # of the study.
+                                 ifelse(all(ObsStudyLevels == "observed"), 
+                                        # this is when they did NOT include a
+                                        # column with the study name.
+                                        paste0("Source observed data: ***XXX***. "), 
+                                        
+                                        # this is when they DID include a column
+                                        # with the study name.
+                                        paste0(sub("study 1: ", "Source observed data: ",
+                                                   ObsStudyLevels), ". ")))))))
+      
+      Caption4 <- paste0("Source simulated data: ", sim_data_file, ".")
+      
+      Caption <- paste0(Caption1, Caption2, Caption3, Caption4)
+      
+      if("logical" %in% class(observed_PK) == FALSE){
+         message("\nClinical studies were the following:")
+         message(str_c(paste0("     ", ObsStudyLevels), collapse = "\n"))
+      }
+      
+      MyCompound <- 
+         as.character(PKdata[["ExpDetails"]] %>% 
+                         filter(File == sim_data_file) %>% 
+                         select(AllCompounds$DetailNames[
+                            AllCompounds$CompoundID == compoundToExtract]))
       
       Heading <- paste0("Simulated ", 
                         ifelse("logical" %in% class(observed_PK), 
                                "", "and observed "), 
                         "values for ", PKparameter_rmd,
                         " for ", 
-                        PKdata[["ExpDetails"]] %>% 
-                           filter(File == sim_data_file) %>% 
-                           select(AllCompounds$DetailNames[
-                              AllCompounds$CompoundID == compoundToExtract]), 
-                        " comparing variability across trials.")
+                        
+                        ifelse(prettify_compound_names, 
+                               prettify_compound_name(MyCompound), 
+                               MyCompound), 
+                        
+                        ", comparing variability across trials.")
       
       Out[["figure_heading"]] <- Heading
       Out[["figure_caption"]]  <-  Caption
