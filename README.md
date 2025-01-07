@@ -37,9 +37,9 @@ You do *not* need to read this document from start to finish to follow
 it. Instead, please do skip around to only the parts that interest you.
 
 - [Time savers for setting up
-  workspaces](#time-savers-for-setting-up-workspaces)  
+  workspaces](#timesavers-for-setting-up-workspaces)  
 - [Check how simulations were set up, e.g., for
-  QCing](#check-how-simulations-were-set-up-e-g-for-qcing)  
+  QCing](#check-how-simulations-were-set-up-eg-for-qcing)  
 - [Make concentration-time plots](#make-concentration-time-plots)
 - [Make overlaid concentration-time
   plots](#make-overlaid-concentration-time-plots)  
@@ -493,22 +493,27 @@ Below are descriptions of all the functions in the package, and the
 functions most users will want to use most frequently are in bold and
 listed first in each section.
 
-- [Get help on using the SimcypConsultancy package](#gethelp)  
-- [Get information about your simulations](#getinfo)  
-- [PK tables and PK calculations](#pktablelist)  
-- [Other tables you can make](#othertables)  
-- [Concentration-time plots](#ctplots)  
-- [Forest plots](#forestplots)  
-- [Fit induction models to *in vitro* data](#inductfitlist)  
-- [Evaluating model fidelity](#sograph)  
-- [Examining variability between trials](#trialmeansplot)  
-- [Comparing demographics](#demog)  
+- [Get help on using the SimcypConsultancy
+  package](#get-help-on-using-the-simcypconsultancy-package)  
+- [Get information about your
+  simulations](#get-information-about-your-simulations)  
+- [PK tables and PK calculations](#pk-tables-and-pk-calculations)  
+- [Other tables you can make](#other-tables-you-can-make)  
+- [Concentration-time plots](#concentration-time-plots)  
+- [Forest plots](#forest-plots)  
+- [Fit induction models to *in vitro*
+  data](#fit-induction-models-to-in-vitro-data)  
+- [Evaluating model fidelity](#evaluating-model-fidelity)  
+- [Examining variability between
+  trials](#examining-variability-between-trials)  
+- [Comparing demographics](#comparing-demographics)  
 - [Other data visualizations that can help you analyze your
-  data](#otherdataviz)  
-- [Interact with the Simulator or with workspaces](#workspaces)  
+  data](#other-data-visualizations-that-can-help-you-analyze-your-data)  
+- [Interact with the Simulator or with
+  workspaces](#interact-with-the-simulator-or-with-workspaces)  
 - [Helper functions for manipulating typical SimcypConsultancy
-  objects](#packagehelpers)  
-- [Miscellany](#misc)
+  objects](#helper-functions-for-manipulating-typical-simcypconsultancy-objects)  
+- [Miscellany](#miscellany)
 
 ## Get help on using the SimcypConsultancy package
 
