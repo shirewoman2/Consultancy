@@ -10,9 +10,9 @@ The SimcypConsultancy package provides tools for analyzing and reporting
 PBPK data from the Simcyp Simulator. Our goals in making this package
 are to:
 
-1.  Increase accuracy and efficiency
+1.  Increase accuracy and efficiency overall
 2.  Easily and accurately make informative tables from Simulator output
-3.  Create informative, professional-quality graphs
+3.  Create scientifically informative, professional-quality graphs
 4.  Perform additional analyses of PBPK data
 
 ## Installation
@@ -22,7 +22,7 @@ You can install the SimcypConsultancy package from GitHub like this:
     devtools::install_github(repo = "shirewoman2/Consultancy", 
                              upgrade = "never")
 
-Current version: 3.6.1
+Current version: 3.5.8
 
 **NOTE:** The SimcypConsultancy package requires that you have tidyverse
 loaded.
@@ -35,6 +35,17 @@ A great place to start for getting help:
 
 You do *not* need to read this document from start to finish to follow
 it. Instead, please do skip around to only the parts that interest you.
+
+- [Time savers for setting up workspaces](#Timesavers)  
+- [Check how simulations were set up, e.g., for QCing](#QCing)  
+- [Make concentration-time plots](#CTplots)  
+- [Make overlaid concentration-time plots](#ctplotoverlay)  
+- [Make graphs of enzyme abundance](#enzplot)  
+- [Make nice-looking PK summary tables automatically](#pktable)  
+- [Automatically extract and graph sensitivity analysis data](#SA)  
+- [Fit induction data](#indfit)  
+- [A list of what SimcypConsultancy functions do](#listoffuns)
+
 We’re using example files in this document, but you generally can
 substitute whatever Simcyp Simulator files you’re working with instead
 of the examples. For help on any functions, type a question mark
@@ -76,7 +87,7 @@ induction parameters, etc. for a bunch of workspaces and don’t want to
 spend hours tediously opening, changing, saving, and closing them all
 manually, please talk to Laura Shireman.
 
-# Check how simulations were set up
+# Check how simulations were set up, e.g., for QCing
 
 As we mentioned, one of our goals was to increase accuracy. For this
 reason, several functions in the SimcypConsultancy package are set up
@@ -476,6 +487,23 @@ Below are descriptions of all the functions in the package, and the
 functions most users will want to use most frequently are in bold and
 listed first in each section.
 
+- [Get help on using the SimcypConsultancy package](#gethelp)  
+- [Get information about your simulations](#getinfo)  
+- [PK tables and PK calculations](#pktablelist)  
+- [Other tables you can make](#othertables)  
+- [Concentration-time plots](#ctplots)  
+- [Forest plots](#forestplots)  
+- [Fit induction models to *in vitro* data](#inductfitlist)  
+- [Evaluating model fidelity](#sograph)  
+- [Examining variability between trials](#trialmeansplot)  
+- [Comparing demographics](#demog)  
+- [Other data visualizations that can help you analyze your
+  data](#otherdataviz)  
+- [Interact with the Simulator or with workspaces](#workspaces)  
+- [Helper functions for manipulating typical SimcypConsultancy
+  objects](#packagehelpers)  
+- [Miscellany](#misc)
+
 ## Get help on using the SimcypConsultancy package
 
 - **launch_package_index()** - Launch the shiny app for showing an
@@ -529,15 +557,6 @@ listed first in each section.
 - trapRule() - Calculate the AUC using the trapezoidal rule
 - noncompAUC() - Calculate the AUC using the trapezoidal rule
 
-## Formatting and saving tables
-
-- **formatTable_Simcyp()** - Format tables according to Simcyp
-  Consultancy Team specifications, e.g.,
-- format_table_simple() - Format a table rather simply to look nice in a
-  Word file
-- save_table_to_Word() - Save a bespoke PK table to Word using the
-  pksummary_mult rmarkdown template
-
 ## Other tables you can make
 
 - **make_simulation_directory()** - Make a directory of simulations
@@ -550,7 +569,7 @@ listed first in each section.
 - make_trial_design_table() - Create a table describing a simulation
   trial design.
 
-## Data visualization
+## Concentration-time plots
 
 ### Make concentration-time plots or variations thereof
 
@@ -614,9 +633,28 @@ listed first in each section.
 - format_obs_for_XML() - Format generic observed data for making an XML
   overlay file
 
-### Other data visualizations that can help you analyze your data
+## Forest plots
 
-#### Comparing demographics
+- **forest_plot()** - Create a forest plot
+- extractForestData() - Extract pertinent data from Simulator output
+  files for creating forest plots
+
+## Fit induction models to *in vitro* data
+
+- **inductFit()** - Fit induction data to calculate EC50, Emax, and/or
+  slope
+
+## Evaluating model fidelity
+
+- **so_graph()** - Graph of simulated vs. observed PK
+
+## Examining variability between trials
+
+- **trial_means_plot()** - Make graphs comparing center statistic and
+  variability in PK across trials and, optionally, against observed PK
+  data as well
+
+## Comparing demographics
 
 - **demog_table()** - Make a table of demographics for a set of
   simulations
@@ -628,19 +666,9 @@ listed first in each section.
 - extractDemog() - Extract simulated demographic data from the
   Demographic Data tab of a Simcyp Simulator ouptut Excel file
 
-#### Forest plots
+## Other data visualizations that can help you analyze your data
 
-- **forest_plot()** - Create a forest plot
-- extractForestData() - Extract pertinent data from Simulator output
-  files for creating forest plots
-
-#### Misc. data visualization functions
-
-- **so_graph()** - Graph of simulated vs. observed PK
 - **sensitivity_plot()** - Make graphs of sensitivity analysis results
-- **trial_means_plot()** - Make graphs comparing center statistic and
-  variability in PK across trials and, optionally, against observed PK
-  data as well
 - **checkSS()** - Create a graph of simulated concentrations to check
   for whether a perpetrator drug is at steady-state when the victim drug
   is dosed
@@ -669,6 +697,27 @@ listed first in each section.
   styles to your graph
 - scale_x_time() - Automatically scale a ggplot graph x axis for time
 
+## Interact with the Simulator or with workspaces
+
+#### Read or change workspaces
+
+*NB: Most functions that actually change workspaces are only available
+in the beta version of the package.*
+
+- **make_xml_path_mine()** - Make the user name in the path of observed
+  data overlay XML files and fixed trial design XML files match that of
+  the current user
+- **remove_file_timestamp()** - Remove date/time stamps from Excel
+  results files created by the Autorunner
+- change_wksz_interactions() - Change interaction parameters in Simcyp
+  Simulator workspace files
+- change_wksz_trial_design() - Change a limited set of trial-design
+  parameters in Simcyp Simulator workspace files. UNDER CONSTRUCTION.
+- change_xml_path() - Set the user name in the path of observed data
+  overlay XML files and fixed trial design XML files
+- detect_file_timestamp() - Figure out what date/time stamps on Excel
+  results files would be removed by the function remove_file_timestamp
+
 ## Helper functions for manipulating typical SimcypConsultancy objects
 
 - add_sims() - Add simulations to an R object
@@ -678,10 +727,19 @@ listed first in each section.
 
 ## Miscellany
 
-### Fit induction models to *in vitro* data
+### Formatting and saving tables
 
-- **inductFit()** - Fit induction data to calculate EC50, Emax, and/or
-  slope
+- **formatTable_Simcyp()** - Format tables according to Simcyp
+  Consultancy Team specifications, e.g.,
+- format_table_simple() - Format a table rather simply to look nice in a
+  Word file
+- save_table_to_Word() - Save a bespoke PK table to Word using the
+  pksummary_mult rmarkdown template
+
+### Helper functions that call on the Simcyp package
+
+- check_simulator_initialized() - check whether the Simcyp Simulator has
+  been initialized
 
 ### Getting data from a pdf table
 
@@ -692,7 +750,7 @@ listed first in each section.
 - **list_interactions()** - Find all the possible drug-drug interactions
   between compounds included in a single simulation
 
-#### Tidbits for making quick calculations
+### Tidbits for making quick calculations
 
 - calcKi() - Calculate the Ki of an inhibitor with the Cheng-Prusoff
   equation
@@ -718,33 +776,7 @@ listed first in each section.
 - str_comma() - Collapse a vector of character strings into one readable
   string, separated by commas and by “and” and “or”
 
-## Interact with the Simulator or with workspaces
-
-#### Read or change workspaces
-
-*NB: Most functions that actually change workspaces are only available
-in the beta version of the package.*
-
-- **make_xml_path_mine()** - Make the user name in the path of observed
-  data overlay XML files and fixed trial design XML files match that of
-  the current user
-- **remove_file_timestamp()** - Remove date/time stamps from Excel
-  results files created by the Autorunner
-- change_wksz_interactions() - Change interaction parameters in Simcyp
-  Simulator workspace files
-- change_wksz_trial_design() - Change a limited set of trial-design
-  parameters in Simcyp Simulator workspace files. UNDER CONSTRUCTION.
-- change_xml_path() - Set the user name in the path of observed data
-  overlay XML files and fixed trial design XML files
-- detect_file_timestamp() - Figure out what date/time stamps on Excel
-  results files would be removed by the function remove_file_timestamp
-
-#### Helper functions that call on the Simcyp package
-
-- check_simulator_initialized() - check whether the Simcyp Simulator has
-  been initialized
-
-## Internal functions you’ll probably never need to use but listed just in case you’ve seen them and are curious about what they do
+### Internal functions you’ll probably never need to use but listed just in case you’ve seen them and are curious about what they do
 
 - addObsPoints() - INTERNAL PACKAGE USE: Add observed data points to a
   concentration-time plot
