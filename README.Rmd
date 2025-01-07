@@ -516,7 +516,6 @@ Below are descriptions of all the functions in the package, and the functions mo
 
 ## Other tables you can make {#othertables}
    - **make_simulation_directory()** - Make a directory of simulations indicating which simulation file is located in which folder 
-   - **make_simulation_directory()** - Make a directory of simulations indicating which simulation file is located in which folder 
    - insert_copyright() - Insert the standard Certara UK Limited copyright box that appears in compound summary files - Yes, this is actually a table, even though it just looks like a box. 
    - make_Simcyp_inputs_table() - Summarize a PBPK model using parameters pulled from simulations - UNDER CONSTRUCTION 
    - make_trial_design_table() - Create a table describing a simulation trial design. 
@@ -647,9 +646,6 @@ Below are descriptions of all the functions in the package, and the functions mo
    - str_comma() - Collapse a vector of character strings into one readable string, separated by commas and by "and" and "or" 
 
 ### Internal functions you'll probably never need to use but listed just in case you've seen them and are curious about what they do 
-
-   - **make_xml_path_mine()** - Make the user name in the path of observed data overlay XML files and fixed trial design XML files match that of the current user 
-   - **remove_file_timestamp()** - Remove date/time stamps from Excel results files created by the Autorunner 
    - addObsPoints() - INTERNAL PACKAGE USE: Add observed data points to a concentration-time plot
    - calc_dosenumber() - Calculate the dose number for each time in a set of concentration-time data given the experimental details for that simulation 
    - check_include_dose_num() - INTERNAL PACKAGE USE ONLY. Check on whether to include the dose number in the PK table headings 

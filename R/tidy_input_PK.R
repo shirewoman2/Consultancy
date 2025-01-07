@@ -811,9 +811,6 @@ tidy_input_PK <- function(PKparameters,
    # Harmonizing
    PKparameters$PKparameter <- harmonize_PK_names(PKparameters$PKparameter)
    
-   # Harmonizing
-   PKparameters$PKparameter <- harmonize_PK_names(PKparameters$PKparameter)
-   
    # Check for when they have supplied a tab for AUCinf b/c that shouldn't
    # happen.
    PKparameters <- PKparameters %>% 

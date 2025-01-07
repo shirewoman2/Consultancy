@@ -531,10 +531,6 @@ listed first in each section.
   objects](#helper-functions-for-manipulating-typical-simcypconsultancy-objects)  
 - [Miscellany](#miscellany)
 
-Below are descriptions of all the functions in the package, and the
-functions most users will want to use most frequently are in bold and
-listed first in each section.
-
 ## Get help on using the SimcypConsultancy package
 
 - **launch_package_index()** - Launch the shiny app for showing an
@@ -588,8 +584,6 @@ listed first in each section.
 - trapRule() - Calculate the AUC using the trapezoidal rule
 - noncompAUC() - Calculate the AUC using the trapezoidal rule
 
-- **formatTable_Simcyp()** - Format tables according to Simcyp
-  Consultancy Team specifications, e.g.,
 ## Other tables you can make
 
 - **make_simulation_directory()** - Make a directory of simulations
@@ -705,9 +699,6 @@ listed first in each section.
 - **checkSS()** - Create a graph of simulated concentrations to check
   for whether a perpetrator drug is at steady-state when the victim drug
   is dosed
-- **checkSS()** - Create a graph of simulated concentrations to check
-  for whether a perpetrator drug is at steady-state when the victim drug
-  is dosed
 - fm_treemap() - For comparing fm values, make a treemap as opposed to
   the standard and arguably inferior pie chart
 - dissolution_profile_plot() - Make a graph of the dissolution profiles
@@ -814,9 +805,6 @@ in the beta version of the package.*
 
 ### Internal functions you’ll probably never need to use but listed just in case you’ve seen them and are curious about what they do
 
-  overlay XML files and fixed trial design XML files
-- detect_file_timestamp() - Figure out what date/time stamps on Excel
-  results files would be removed by the function remove_file_timestamp
 - addObsPoints() - INTERNAL PACKAGE USE: Add observed data points to a
   concentration-time plot
 - calc_dosenumber() - Calculate the dose number for each time in a set
