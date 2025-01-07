@@ -4,11 +4,7 @@
 \alias{extractExpDetails}
 \title{Extract details about the experimental design}
 \usage{
-extractExpDetails(
-  sim_data_file,
-  exp_details = "Summary and Input",
-  save_output = NA
-)
+extractExpDetails(sim_data_file, exp_details = "Summary and Input")
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulator output,
@@ -53,12 +49,6 @@ the autorunner adds as long as that stamp is in a format like this: "myfile
   etc. Same thing with requesting interaction parameters (ex:
   "Interaction_inhib" to get all the interaction parameters for inhibitor 1)
   and transporter parameters (ex: "Transport_sub").}}}
-
-\item{save_output}{optionally save the output by supplying a csv or Excel
-file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-details.xlsx".  Do not include any slashes, dollar signs, or periods in the
-file name. If you leave off the file extension, it will be saved as a csv
-file.}
 }
 \value{
 Returns a named list of the experimental details

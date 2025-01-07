@@ -8,10 +8,13 @@ save_table_to_Excel(
   table,
   save_table,
   output_tab_name = "Sheet1",
+  overwrite = "yes",
   freeze_top_row = TRUE,
   center_top_row = TRUE,
   wrap_text = TRUE,
-  highlight_cells = NA
+  column_widths = NA,
+  highlight_cells = NA,
+  bold_cells = NA
 )
 }
 \arguments{
@@ -26,6 +29,12 @@ the file extension.} Good: \code{save_table = "my file 1.xlsx"} Bad:
 \item{output_tab_name}{name of the tab to save your table to; defaults to
 "Sheet1".}
 
+\item{overwrite}{Should we overwrite if your Excel file already exists and
+has a tab of the same name that you're trying to save? Options are "yes"
+(default) to always overwrite, "no" to never overwrite, or "ask", which
+means that we will ask you whether to overwrite and give you a chance to
+supply a different file name.}
+
 \item{freeze_top_row}{TRUE (default) or FALSE for whether to freeze the view
 in Excel so that the top row will always be visible}
 
@@ -33,6 +42,14 @@ in Excel so that the top row will always be visible}
 in the top row}
 
 \item{wrap_text}{TRUE (default) or FALSE for whether to wrap text}
+
+\item{column_widths}{optionally specify a numeric vector for the column
+widths. If left as NA, we will guess at reasonable column widths. If you
+specify anything, though, you'll need to specify ALL of the column widths.
+We'll repeat whatever number or numbers you use until we have enough for
+all the columns in your data, so if you want all your columns to be, e.g.,
+20 units wide in whatever units it is that Excel uses, just specify
+\code{column_widths = 20}.}
 
 \item{highlight_cells}{a named list of cells to highlight where the names are
 the colors to use for highlighting and the values are the cells to
@@ -51,8 +68,8 @@ highlighted. If you want multiple, noncontiguous cells to be highlighted
 the same color, use multiple lists. For example, this will highlight two
 patches of cells yellow:
 \code{highlight_cells = list("yellow" = list(list("rows" = c(1:2), "columns" = c(3:4)),
-list("rows" = c(18:20), "columns" = 6)))}. Try it out and see what we mean. 
-Since this is focused on the \emph{input} to the function, we have set 
+list("rows" = c(18:20), "columns" = 6)))}. Try it out and see what we mean.
+Since this is focused on the \emph{input} to the function, we have set
 this up so that row 1 here is
 row 1 in your input data.frame, which is different from how we set it up
 if you use Excel cell names to specify which thing should be highlighted.
@@ -60,6 +77,32 @@ Please note that distinction. If you want to add highlighting to something
 in the header, refer to that as row 0. If you want to highlight all the
 rows or all the columns, set the rows or columns to NA, e.g.,
 \code{highlight_cells = list("yellow" = list(list("rows" = 1, "columns" = NA))} will
+make everything in row 1 highlighted yellow.}}}
+
+\item{bold_cells}{a list of cells to make bold. Default is NA for nothing but
+the first row being bold (which it will be automatically). There are two
+possible ways
+to specify which cells to make bold: \enumerate{\item{Use Excel-style cell
+names, e.g., \code{bold_cells = list("A2", "B5:C10")}. Please note that the 1st row in the output is
+\emph{not} the 1st row in your data.frame but the \emph{header} of your
+data.frame. Keep that in mind when specifying which row should be
+bold. }
+\item{Specify the cells in your data.frame as items in a list. Admittedly,
+this can be a little confusing because it requires nested lists. The first
+item will be a numeric vector of the rows and the second item will be a
+numeric vector of the columns for everything that is contiguously
+highlighted. If you want multiple, noncontiguous cells to be highlighted
+the same color, use multiple lists. For example, this will make two
+patches of cells bold:
+\code{bold_cells = list(list("rows" = c(1:2), "columns" = c(3:4)),
+list("rows" = c(18:20), "columns" = 6))}. Try it out and see what we mean.
+Since this is focused on the \emph{input} to the function, we have set
+this up so that row 1 here is
+row 1 in your input data.frame, which is different from how we set it up
+if you use Excel cell names to specify which thing should be highlighted.
+Please note that distinction. The header is row 0. If you want to make bold all the
+rows or all the columns, set the rows or columns to NA, e.g.,
+\code{bold_cells = list(list("rows" = 1, "columns" = NA))} will
 make everything in row 1 highlighted yellow.}}}
 }
 \value{

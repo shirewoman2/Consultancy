@@ -215,15 +215,15 @@
 #'   change in intrinsic solubility will affect concentration-time profiles --
 #'   because the direction of the trend will be clear.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"blues"}{a set of blues fading from sky to navy. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
-#'   \item{"greens"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
@@ -246,6 +246,7 @@
 #'   like help creating a specific gradation of colors, please talk to a member
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
+#'   
 #' @param obs_shape optionally specify what shapes are used to depict observed
 #'   data for 1. the substrate drug alone and 2. the substrate drug in the
 #'   presence of a perpetrator. Input should look like this, for example:
@@ -564,12 +565,15 @@ ct_plot <- function(ct_dataframe = NA,
               call. = FALSE)
    }
    
-   if(length(sort(unique(ct_dataframe$File))) > 1){
+   if(length(sort(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))) > 1){
       stop(paste0("The ct_plot function is for graphing only one simulator file at a time, but you have ",
                   length(sort(unique(ct_dataframe$File))), 
                   " simulator files. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
            call. = FALSE)
    }
+   # NB: Allowing more than one file for observed data here so that the user
+   # doesn't need to mess with it.
+   
    
    if(length(sort(unique(ct_dataframe$Tissue))) > 1){
       stop(paste0("The ct_plot function is for graphing only one tissue at a time, but you have ",
@@ -803,6 +807,30 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Main body of function --------------------------------------------------
    
+   # This will run orders of magnitude faster if we only include aggregate data.
+   # Removing individual data when possible using column IndivOrAgg, which will
+   # be NA for observed data and not exist for release- or dissolution-profile
+   # data. Dealing with that and harmonizing data. 
+   
+   # Adding info for IndivOrAgg for data that were extracted w/older version
+   # of package. Uncomment the if statement at some point? 
+   
+   # if("IndivOrAgg" %in% names(ct_dataframe) == FALSE){
+   ct_dataframe <- ct_dataframe %>% 
+      mutate(IndivOrAgg = case_when(Simulated == FALSE ~ NA, 
+                                    Simulated == TRUE & Trial %in% 
+                                       c("mean", "median",
+                                         "geomean", 
+                                         "per5", "per95", "per10", "per90", 
+                                         "trial mean", "trial geomean", 
+                                         "trial median") ~ "aggregate", 
+                                    .default = "individual"))
+   # }
+   
+   ct_dataframe <- ct_dataframe %>% 
+      filter(Simulated == FALSE |
+                (Simulated == TRUE & IndivOrAgg == "aggregate"))
+   
    # Noting user's original preferences for a few things
    obs_line_trans_user <- obs_line_trans
    obs_fill_trans_user <- obs_fill_trans
@@ -865,10 +893,11 @@ ct_plot <- function(ct_dataframe = NA,
    MyCompoundID <- ifelse(EnzPlot, unique(Data$Enzyme), 
                           unique(Data$CompoundID))
    if(EnzPlot){
-      Data <- Data %>% mutate(CompoundID = Enzyme) %>%
+      Data <- Data %>% 
          rename(Conc = Abundance) %>%
-         mutate(Simulated = TRUE,
+         mutate(CompoundID = Enzyme, 
                 Compound = Enzyme, 
+                Conc_units = "ng/mL", # placeholder only
                 Tissue_subtype = NA, # This avoids some annoying warnings later, and it's easiest to just add it here. 
                 # putting "conc" into decimal format b/c it works better with
                 # using percents on y axis labels
@@ -1154,7 +1183,8 @@ ct_plot <- function(ct_dataframe = NA,
                                     str_detect(as.character(Trial), "obs")) 
    )
    
-   if("SD_SE" %in% names(Ylim_data)){
+   if("SD_SE" %in% names(Ylim_data) && 
+      any(complete.cases(Ylim_data$SD_SE))){
       Ylim_data <- Ylim_data %>% 
          mutate(MaxConc = Conc + ifelse(complete.cases(SD_SE), SD_SE, 0), 
                 MinConc = Conc - ifelse(complete.cases(SD_SE), SD_SE, 0))

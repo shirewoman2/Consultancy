@@ -39,35 +39,17 @@
 #' @param column_widths optionally specify what the widths of the columns should
 #'   be with a numeric vector of the widths in inches, e.g., \code{column_widths
 #'   = c(1.5, 2, 0.5, 3)}
+#' @param output_type specify what type of output to get. Options:
+#'   \describe{\item{"flextable" (default)}{a nicely formatted table that you can view or
+#'   insert into an Rmarkdown document}
+#'
+#'   \item{"data.frame"}{a data.frame that you can manipulate further in R} 
+#'   
+#'   \item{"both"}{both the nicely formatted flextable and the data.frame}}
 #' @param include_shading TRUE (default) or FALSE for whether to add shading to
 #'   rows to make things easier to read. If this is set to TRUE, then the rows
 #'   will be shaded every other row when there's no DDI or by which compound the
 #'   parameters apply to if there is.
-#' @param bold_cells optionally specify cells in the table to be in bold-face
-#'   text with a numeric vector where the 1st number is the row number and the
-#'   2nd number is the column number (just like regular row and column
-#'   specifications in R). For example, \code{bold_cells = c(1, 2)} will make
-#'   the cell in row 1 and column 2 bold face. Use "0" for the row number if you
-#'   want to use bold face for something in the header row, and use NA in place
-#'   of a row or column number to make everything in that row or column bold
-#'   face. If you want to specify multiple places to use bold face, use a list
-#'   of numeric vectors. By default, the header row and the 1st column will be
-#'   bold. Set \code{bold_cells = NA} to make \emph{nothing} bold. Please see
-#'   the examples at the bottom of the help file.
-#' @param center_1st_column TRUE (default) or FALSE for whether to make the
-#'   alignment of the first column centered
-#' @param highlight_cells optionally specify cells in the table to be
-#'   highlighted with a numeric vector where the 1st number is the row number
-#'   and the 2nd number is the column number (just like regular row and column
-#'   specifications in R). For example, \code{highlight_cells = c(1, 2)} will
-#'   make the cell in row 1 and column 2 highlighted. Use "0" for the row number
-#'   if you want to highlight something in the header row, and use NA in place
-#'   of a row or column number to highlight everything in that row or column. If
-#'   you want to specify multiple places to highlight, use a list of numeric
-#'   vectors. Please see the examples at the bottom of the help file.
-#' @param highlight_color color to use for highlighting; default is yellow.
-#'   Color can be specified using any R-friendly color name or hex code, e.g.,
-#'   "red" or "#D8212D".
 #' @param save_table optionally save the output table by supplying a file name
 #'   in quotes here, e.g., "My nicely formatted table.docx".  Do not include any
 #'   slashes, dollar signs, or periods in the file name. If you leave off the
@@ -89,6 +71,7 @@ make_trial_design_table <- function(existing_exp_details,
                                     prettify_sim_data_file = NA, 
                                     detail_set = "default", 
                                     prettify_compound_names = TRUE, 
+                                    output_type = "flextable", 
                                     include_shading = TRUE, 
                                     font = "Palatino Linotype", 
                                     fontsize = 11, 
@@ -131,6 +114,13 @@ make_trial_design_table <- function(existing_exp_details,
       prettify_compound_names <- FALSE
    }
    
+   output_type <- tolower(output_type)
+   if(output_type %in% c("flextable", "data.frame", "both") == FALSE){
+      warning(wrapn("You requested something for the output type other than a flextable, a data.frame, or both, so we'll give you the default, a flextable."), 
+              call. = FALSE)
+      output_type <- "flextable"
+   }
+   
    
    # Main function ------------------------------------------------------------
    
@@ -163,7 +153,7 @@ make_trial_design_table <- function(existing_exp_details,
    }
    
    if(detail_set == "default"){
-      MyDetails <- c("File", "Age_min", "Age_max", "PercFemale", 
+      MyDetails <- c("File", "Population", "Age_min", "Age_max", "PercFemale", 
                      "Substrate", "Inhibitor1", "Inhibitor2",
                      paste0(rep(c("DoseRoute", "Dose", "DoseInt",
                                   "StartDayTime"), 
@@ -172,7 +162,8 @@ make_trial_design_table <- function(existing_exp_details,
                      "SimDuration", "NumSubjTrial", "NumTrials", 
                      "SimStartDayTime", "SimEndDayTime") 
    } else {
-      MyDetails <- AllExpDetails$Detail[AllExpDetails$SimulatorSection == "Trial Design"]
+      MyDetails <- c(AllExpDetails$Detail[
+         AllExpDetails$SimulatorSection == "Trial Design"], "Population")
       MyDetails <- setdiff(MyDetails, c("SimulatorVersion"))
    }
    
@@ -290,7 +281,7 @@ make_trial_design_table <- function(existing_exp_details,
    }
    
    
-   # Saving --------------------------------------------------------------
+   # Saving and returning -----------------------------------------------------
    if(complete.cases(save_table)){
       
       formatTable_Simcyp(DF = FT, 
@@ -300,7 +291,14 @@ make_trial_design_table <- function(existing_exp_details,
                          table_caption = table_caption)
    }
    
-   return(FT)
+   if(output_type == "flextable"){
+      return(FT)
+   } else if(output_type == "data.frame"){
+      return(DF)
+   } else if(output_type == "both"){
+      return(list("flextable" = FT, 
+                  "data.frame" = DF))
+   }
    
 }
 

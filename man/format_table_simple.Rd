@@ -9,12 +9,15 @@ format_table_simple(
   shading_column,
   merge_shaded_cells = TRUE,
   merge_columns = NA,
+  sort_column,
+  bold_cells = list(c(0, NA)),
   highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
   font = "Palatino Linotype",
   fontsize = 11,
   column_widths = NA,
+  include_header = TRUE,
   alignment = "left",
   save_table = NA,
   page_orientation = "portrait",
@@ -52,6 +55,18 @@ in the SimcypConsultancy package, which require unquoted column names.
 Honestly, we just don't know how code things for you to supply a variable
 number of unquoted column names for a single argument; we've just hit a
 coding knowledge limitation here!}
+
+\item{bold_cells}{optionally specify cells in the table to be in bold-face
+text with a numeric vector where the 1st number is the row number and the
+2nd number is the column number (just like regular row and column
+specifications in R). For example, \code{bold_cells = c(1, 2)} will make
+the cell in row 1 and column 2 bold face. Use "0" for the row number if you
+want to use bold face for something in the header row, and use NA in place
+of a row or column number to make everything in that row or column bold
+face. If you want to specify multiple places to use bold face, use a list
+of numeric vectors. By default, the header row will be bold. Set
+\code{bold_cells = NA} to make \emph{nothing} bold. Please see the examples
+at the bottom of the help file.}
 
 \item{highlight_gmr_colors}{optionally specify a set of colors to use for
 highlighting geometric mean ratios for DDIs. Options are "yellow to red",
@@ -112,6 +127,9 @@ point.}
 \item{column_widths}{optionally specify what the widths of the columns should
 be with a numeric vector of the widths in inches, e.g., \code{column_widths
 = c(1.5, 2, 0.5, 3)}}
+
+\item{include_header}{TRUE (default) or FALSE for whether to include the
+header row}
 
 \item{alignment}{alignment of text throughout table. Options are "left"
 (default), "right", "center", or "justify".}

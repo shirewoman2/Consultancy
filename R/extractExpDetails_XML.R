@@ -485,7 +485,13 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                            FileName))
    }
    
-   Out <- harmonize_details(Deets)
+   # Temporarily calling "Workspace" "File" so that we can harmonize... 
+   Out <- harmonize_details(Deets %>% rename(File = Workspace))
+   
+   # ...and then changing it back.
+   Out <- map(Out, 
+              .f = \(x) if(is.null(nrow(x)) == FALSE){
+                 x %>% rename(Workspace = "File")})
    
    return(Out)
    

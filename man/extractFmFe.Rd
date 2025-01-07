@@ -40,9 +40,12 @@ about your experimental set up.}
 a data.frame
 }
 \description{
-\code{extractFmFe} extracts time-dependent fm and fe data from a simulator
-output Excel file. A tab named something like "Time variant \%fm and fe" must
-be present.
+\code{extractFmFe} extracts fm and fe data from a simulator output Excel
+file. A tab named something like "Time variant \%fm and fe" must be present
+to get dynamic fm and fe values, but you can get the static values if the tab
+"% fm and fe SS" is present. Dynamic fm and fe data are required if you want
+to use these data with the function \code{\link{fm_plot}} to make a graph of
+how the fm values change over time.
 }
 \examples{
 # None yet

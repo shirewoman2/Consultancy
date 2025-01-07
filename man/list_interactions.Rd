@@ -9,7 +9,7 @@ list_interactions(
   sim_data_file,
   existing_exp_details,
   include_victim_fms = FALSE,
-  include_auto_DDI = FALSE
+  include_auto_DDI = TRUE
 )
 }
 \arguments{
@@ -20,7 +20,7 @@ simulator}
 \item{existing_exp_details}{the output from running
 \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}}}
 
-\item{include_victim_fms}{TRUE or FALSE (default) for whether to additionally
+\item{include_victim_fms}{TRUE (default) or FALSE for whether to additionally
 read in any information on the substrate fm values for each pathway
 included in the interactions. This requires that a sheet titled "Time
 variance \%fm and fe", be included in the output.}

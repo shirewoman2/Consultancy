@@ -84,6 +84,56 @@
 #'   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
 #'   }
 #'
+#' @param color_set the set of colors to use. Options: \describe{
+#'
+#'   \item{"blues" (default)}{a set of blues fading from sky to navy. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"blue-green"}{a set of blues fading into greens. This palette can be
+#'   especially useful if you are comparing a systematic change in some
+#'   continuous variable -- for example, increasing dose or predicting how a
+#'   change in intrinsic solubility will affect concentration-time profiles --
+#'   because the direction of the trend will be clear.}
+#'
+#'   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+#'   first three colors are red, blue, and green.}
+#'
+#'   \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+#'   (ggplot2 is an R package for graphing.)}
+#'
+#'   \item{"rainbow"}{colors selected from a rainbow palette. The default
+#'   palette is limited to something like 6 colors, so if you have more than
+#'   that, that's when this palette is most useful. It's \emph{not} very useful
+#'   when you only need a couple of colors.}
+#'
+#'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+#'   package}
+#'
+#'   \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+#'   colors from purple to blue to green to yellow in a manner that is
+#'   "printer-friendly, perceptually uniform and easy to read by those with
+#'   colorblindness", according to the package author}
+#'
+#'   \item{a character vector of colors}{If you'd prefer to set all the colors
+#'   yourself to \emph{exactly} the colors you want, you can specify those
+#'   colors here. An example of how the syntax should look: \code{color_set =
+#'   c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+#'   which item in \code{colorBy_column} gets which color, you can supply a
+#'   named vector. For example, if you're coloring the lines by the compound ID,
+#'   you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+#'   "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+#'   like help creating a specific gradation of colors, please talk to a member
+#'   of the R Working Group about how to do that using
+#'   \link{colorRampPalette}.}}
 #' @param graph_title (optional) a title to include on your graph in quotes
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -121,6 +171,7 @@ sensitivity_plot <- function(SA_file,
                              x_axis_limits_log = NA,
                              time_range = NA,
                              rounding = "significant 3", 
+                             color_set = "blues", 
                              graph_title = NA,
                              save_graph = NA,
                              fig_height = 4,
@@ -353,6 +404,7 @@ sensitivity_plot <- function(SA_file,
                            "Kinetic Routes.*CLint" = expression(CL[int]~"("*mu*"L/min/pmol)"), 
                            "^Kp Scalar" = expression(k[p]~scalar),
                            "Lag Time" = expression("lag time (h)"),
+                           "LogP" = expression("logP"), 
                            "Peff" = expression(P[eff,human]), 
                            "slope" = expression(slope), 
                            "Tissue.plasma partition.*Additional Organ" = expression(k[p]~"scalar for additional organ"),
@@ -371,6 +423,7 @@ sensitivity_plot <- function(SA_file,
                                 "Kinetic Routes.*CLint" = "CLint", 
                                 "^Kp Scalar" = "kp scalar",
                                 "Lag Time" = "lag time (h)",
+                                "LogP" = "logP", 
                                 "Peff" = "Peff",
                                 "Tissue.plasma partition.*Additional Organ" = "kp scalar for additional organ",
                                 "Vss" = "Vss (L/kg)")
@@ -415,14 +468,26 @@ sensitivity_plot <- function(SA_file,
    if(str_detect(dependent_variable, "plasma|conc")){
       
       if(color_by_which_indvar == "1st"){
+         
+         # Setting up colors
+         MyColors <- make_color_set(color_set = color_set, 
+                                    num_colors = length(unique(SAdata$SensValue)))
+         
          G <- ggplot(SAdata, aes(x = Time, y = Conc, color = as.factor(SensValue), 
                                  group = SensValue)) +
-            scale_color_manual(values = blues(ncolors = length(unique(SAdata$SensValue)))) +
+            scale_color_manual(values = MyColors) +
             geom_line()
+         
       } else {
-         G <- ggplot(SAdata, aes(x = Time, y = Conc, color = as.factor(SensValue2), 
+         
+         # Setting up colors
+         MyColors <- make_color_set(color_set = color_set, 
+                                    num_colors = length(unique(SAdata$SensValue2)))
+         
+         G <- ggplot(SAdata, aes(x = Time, y = Conc, 
+                                 color = as.factor(SensValue2), 
                                  group = SensValue2)) +
-            scale_color_manual(values = blues(ncolors = length(unique(SAdata$SensValue2)))) +
+            scale_color_manual(values = MyColors) +
             geom_line()
          
       }
@@ -454,8 +519,6 @@ sensitivity_plot <- function(SA_file,
          labs(color = switch(color_by_which_indvar, 
                              "1st" = ind_var_label, 
                              "2nd" = ind_var_label2)) +
-         scale_x_time(pad_x_axis = FALSE, 
-                      time_range = time_range) +
          xlab("Time (h)") +
          ylab("Concentration (ng/mL)")
       
@@ -470,24 +533,36 @@ sensitivity_plot <- function(SA_file,
       
       if(color_by_which_indvar == "1st"){
          if(complete.cases(SensParam2)){
+            
+            # Setting up colors
+            MyColors <- make_color_set(color_set = color_set, 
+                                       num_colors = length(unique(SAdata$SensValue)))
+            
             G <- ggplot(SAdata, aes(x = SensValue2, y = DV, 
                                     color = as.factor(SensValue), 
                                     group = SensValue)) +
-               scale_color_manual(values = blues(ncolors = length(unique(SAdata$SensValue)))) +
+               scale_color_manual(values = MyColors) +
                geom_point() + geom_line() +
                xlab(ind_var_label2) 
          } else {
+            
             G <- ggplot(SAdata, aes(x = SensValue, y = DV)) +
                geom_point() + geom_line() +
                xlab(ind_var_label)
          }
+         
       } else {
          # This is when they're coloring by the 2nd ind var, which only happens
          # when there are 2 of them.
+         
+         # Setting up colors
+         MyColors <- make_color_set(color_set = color_set, 
+                                    num_colors = length(unique(SAdata$SensValue2)))
+         
          G <- ggplot(SAdata, aes(x = SensValue, y = DV, 
                                  color = as.factor(SensValue2), 
                                  group = SensValue2)) +
-            scale_color_manual(values = blues(ncolors = length(unique(SAdata$SensValue2)))) +
+            scale_color_manual(values = MyColors) +
             geom_point() + geom_line() +
             xlab(ind_var_label)
       }
@@ -534,17 +609,85 @@ sensitivity_plot <- function(SA_file,
                   label = paste0("target = ", prettyNum(target_DV, big.mark = ",")))
    }
    
-   LogBreaks <- make_log_breaks(
+   # Setting axis limits as needed
+   LinYRange <- switch(
+      as.character(all(complete.cases(y_axis_limits_lin))), 
+      "TRUE" = y_axis_limits_lin, 
+      "FALSE" = switch(
+         as.character(str_detect(dependent_variable, "plasma|conc")), 
+         "TRUE" = range(SAdata$Conc, na.rm = T), 
+         "FALSE" = range(SAdata$DV, na.rm = T)))
+   
+   LogYBreaks <- make_log_breaks(
       data_range = switch(
          as.character(all(complete.cases(y_axis_limits_log))), 
          "TRUE" = y_axis_limits_log, 
          "FALSE" = switch(
             as.character(str_detect(dependent_variable, "plasma|conc")), 
-            "TRUE" = range(SAdata$Conc, na.rm = T), 
-            "FALSE" = range(SAdata$DV, na.rm = T))))
+            "TRUE" = range(SAdata$Conc[SAdata$Conc > 0], na.rm = T), 
+            "FALSE" = range(SAdata$DV[SAdata$DV > 0], na.rm = T))))
    
-   Glog <- G + scale_y_log10(breaks = LogBreaks$breaks, 
-                             labels = LogBreaks$labels)
+   LinXRange <- switch(
+      as.character(all(complete.cases(x_axis_limits_lin))), 
+      "TRUE" = x_axis_limits_lin, 
+      "FALSE" = switch(
+         as.character(str_detect(dependent_variable, "plasma|conc")), 
+         "TRUE" = range(SAdata$Time, na.rm = T), 
+         "FALSE" = switch(as.character(complete.cases(SensParam2)), 
+                          "TRUE" = switch(color_by_which_indvar, 
+                                          "1st" = range(SAdata$SensValue2), 
+                                          "2nd" = range(SAdata$SensValue)), 
+                          "FALSE" = range(SAdata$SensValue))))
+   
+   # LogXBreaks will only apply when they have requested log-transformed x axis,
+   # which is not among the options when the DV is plasma concentrations. For
+   # that reason, it does not matter that the range does not consider the range
+   # of time included.
+   LogXBreaks <- make_log_breaks(
+      data_range = switch(
+         as.character(all(complete.cases(x_axis_limits_log))), 
+         "TRUE" = x_axis_limits_log, 
+         "FALSE" = switch(as.character(complete.cases(SensParam2)), 
+                          "TRUE" = switch(color_by_which_indvar, 
+                                          "1st" = range(SAdata$SensValue2[SAdata$SensValue2 > 0]), 
+                                          "2nd" = range(SAdata$SensValue[SAdata$SensValue > 0])), 
+                          "FALSE" = range(SAdata$SensValue[SAdata$SensValue > 0]))))
+   
+   Glog <- G +
+      scale_y_log10(breaks = LogYBreaks$breaks, 
+                    labels = LogYBreaks$labels) 
+   
+   if(linear_or_log %in% c("both", "both vertical", "both horizontal",
+                           "semi-log", "log", "log y")){
+      
+      if(str_detect(dependent_variable, "plasma|conc")){
+         
+         G <- G + 
+            coord_cartesian(ylim = c(round_down(LinYRange[1]),
+                                     round_up_nice(LinYRange[2]))) +
+            scale_x_time(time_range = x_axis_limits_lin)
+         
+         Glog <- Glog +
+            coord_cartesian(ylim = LogYBreaks$axis_limits_log) + 
+            scale_x_time(time_range = x_axis_limits_lin)
+         
+      } else {
+         
+         G <- G + 
+            coord_cartesian(ylim = c(round_down(LinYRange[1]),
+                                     round_up_nice(LinYRange[2])), 
+                            xlim = c(round_down(LinXRange[1]),
+                                     round_up_nice(LinXRange[2])))
+         
+         Glog <- Glog +
+            coord_cartesian(ylim = c(round_down(LinYRange[1]),
+                                     round_up_nice(LinYRange[2])), 
+                            xlim = c(round_down(LinXRange[1]),
+                                     round_up_nice(LinXRange[2])))
+         
+      }
+   } 
+   # Situation where both or just x are log transformed is covered below. 
    
    if(linear_or_log %in% c("both", "both vertical")){
       G <- ggpubr::ggarrange(G, Glog, nrow = 2, align = "hv", common.legend = TRUE)
@@ -553,22 +696,18 @@ sensitivity_plot <- function(SA_file,
    } else if(linear_or_log %in% c("semi-log", "log", "log y")){
       G <- Glog
    } else if(linear_or_log %in% c("both log")){
+      G <- G + 
+         scale_x_log10(breaks = LogXBreaks$breaks, 
+                       limits = LogXBreaks$axis_limits_log, 
+                       labels = LogXBreaks$labels) +
+         scale_y_log10(breaks = LogYBreaks$breaks, 
+                       limits = LogYBreaks$axis_limits_log, 
+                       labels = LogYBreaks$labels)
       
-      LogBreaks <- make_log_breaks(
-         data_range = switch(
-            as.character(all(complete.cases(x_axis_limits_log))), 
-            "TRUE" = x_axis_limits_log, 
-            "FALSE" = switch(as.character(complete.cases(SensParam2)), 
-                             "TRUE" = switch(color_by_which_indvar, 
-                                             "1st" = range(SAdata$SensValue2), 
-                                             "2nd" = range(SAdata$SensValue)), 
-                             "FALSE" = range(SAdata$SensValue))))
-      
-      G <- Glog + scale_x_log10(breaks = LogBreaks$breaks, 
-                                labels = LogBreaks$labels)
    } else if(linear_or_log %in% c("log x")){
-      G <- G + scale_x_log10(breaks = LogBreaks$breaks, 
-                             labels = LogBreaks$labels)
+      G <- G + scale_x_log10(breaks = LogXBreaks$breaks,
+                             limits = LogXBreaks$axis_limits_log, 
+                             labels = LogXBreaks$labels)
    }
    
    if(complete.cases(save_graph)){

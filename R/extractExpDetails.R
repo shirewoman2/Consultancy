@@ -49,12 +49,6 @@
 #'   etc. Same thing with requesting interaction parameters (ex:
 #'   "Interaction_inhib" to get all the interaction parameters for inhibitor 1)
 #'   and transporter parameters (ex: "Transport_sub").}}
-#' @param save_output optionally save the output by supplying a csv or Excel
-#'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-#'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the
-#'   file name. If you leave off the file extension, it will be saved as a csv
-#'   file.
-#'
 #' @return Returns a named list of the experimental details
 #' @export
 #'
@@ -68,8 +62,7 @@
 #'
 #' 
 extractExpDetails <- function(sim_data_file,
-                              exp_details = "Summary and Input", 
-                              save_output = NA){
+                              exp_details = "Summary and Input"){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -87,8 +80,8 @@ extractExpDetails <- function(sim_data_file,
       # Using "warning" instead of "stop" here b/c I want this to be able to
       # pass through to extractExpDetails_mult and just skip any files that
       # aren't simulator output.
-      warning(paste0("The file `", sim_data_file,
-                     "` does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
+      warning(wrapn(paste0("The file '", sim_data_file,
+                           "' does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.")), 
               call. = FALSE)
       return(list())
    }
@@ -395,33 +388,6 @@ extractExpDetails <- function(sim_data_file,
          is.na(Out$SecondaryMetabolite) & any(str_detect(names(Out), "secmet$"))){
          Out <- Out[-which(str_detect(names(Out), "_secmet$"))]
       }
-      
-      # Fixing an issue that trips up other code down the line: Sometimes, the
-      # user might specify a "multiple dose" regimen but then only administer
-      # a single dose. That messes up, e.g., extractPK b/c it looks on the
-      # wrong tab for the info it needs. When that happens, set the regimen to
-      # "Single Dose".
-      if(is.null(Out$Regimen_sub) == FALSE && 
-         (complete.cases(Out$Regimen_sub) &
-          Out$Regimen_sub == "Multiple Dose" & Out$NumDoses_sub == 1)){
-         Out$Regimen_sub <- "Single Dose"
-      }
-      
-      if(is.null(Out$Regimen_inhib) == FALSE && 
-         (complete.cases(Out$Inhibitor1) & 
-          complete.cases(Out$Regimen_inhib)) && 
-         (Out$Regimen_inhib == "Multiple Dose" & 
-          Out$NumDoses_inhib == 1)){
-         Out$Regimen_inhib <- "Single Dose" 
-      }
-      
-      if(is.null(Out$Regimen_inhib2) == FALSE && 
-         (complete.cases(Out$Inhibitor2) & 
-          complete.cases(Out$Regimen_inhib2)) && 
-         (Out$Regimen_inhib2 == "Multiple Dose" &
-          Out$NumDoses_inhib2 == 1)){
-         Out$Regimen_inhib2 <- "Single Dose" 
-      }
    }
    
    # Pulling details from the Input Sheet tab ------------------------------
@@ -675,18 +641,20 @@ extractExpDetails <- function(sim_data_file,
                ReleaseCV <- Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "CV"))]
                if(all(is.null(ReleaseCV))){ReleaseCV <- NA}
                
-               ReleaseProfs[[i]] <- data.frame(
-                  CR_MR_input = Out[[paste0("CR_MR_Input", Suffix)]], 
-                  Time = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Time"))], 
-                  Release_mean = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Release Mean"))], 
-                  Release_CV = ReleaseCV) %>% 
-                  mutate(across(.cols = everything(), .fns = as.numeric), 
-                         Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
-                         File = sim_data_file, 
-                         CompoundID = i, 
-                         Compound = as.character(Out[AllCompounds$DetailNames[
-                            AllCompounds$CompoundID == i]])) %>% 
-                  select(File, CompoundID, Compound, Time, Release_mean, Release_CV)
+               suppressWarnings(
+                  ReleaseProfs[[i]] <- data.frame(
+                     CR_MR_input = Out[[paste0("CR_MR_Input", Suffix)]], 
+                     Time = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Time"))], 
+                     Release_mean = Release_temp$ValCol[which(str_detect(Release_temp$NameCol, "Release Mean"))], 
+                     Release_CV = ReleaseCV) %>% 
+                     mutate(across(.cols = everything(), .fns = as.numeric), 
+                            Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
+                            File = sim_data_file, 
+                            CompoundID = i, 
+                            Compound = as.character(Out[AllCompounds$DetailNames[
+                               AllCompounds$CompoundID == i]])) %>% 
+                     select(File, CompoundID, Compound, Time, Release_mean, Release_CV)
+               )
                
                rm(StartRow, EndRow, Release_temp)
                
@@ -791,18 +759,20 @@ extractExpDetails <- function(sim_data_file,
                DissoCV <- Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "CV"))]
                if(all(is.null(DissoCV))){DissoCV <- NA}
                
-               DissoProfs[[i]][[tiss]] <- 
-                  data.frame(
-                     Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
-                     Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution( Mean)? \\(\\%"))], 
-                     Dissolution_CV = DissoCV) %>% 
-                  mutate(across(.cols = everything(), .fns = as.numeric), 
-                         Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
-                         File = sim_data_file, 
-                         Tissue = DissoTissues[[tiss]],
-                         CompoundID = i, 
-                         Compound = as.character(Out[AllCompounds$DetailNames[
-                            AllCompounds$CompoundID == i]]))
+               suppressWarnings(
+                  DissoProfs[[i]][[tiss]] <- 
+                     data.frame(
+                        Time = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Time"))], 
+                        Dissolution_mean = Disso_temp$ValCol[which(str_detect(Disso_temp$NameCol, "Dissolution( Mean)? \\(\\%"))], 
+                        Dissolution_CV = DissoCV) %>% 
+                     mutate(across(.cols = everything(), .fns = as.numeric), 
+                            Dissolution_CV = Dissolution_CV / 100, # Making this a fraction instead of a number up to 100
+                            File = sim_data_file, 
+                            Tissue = DissoTissues[[tiss]],
+                            CompoundID = i, 
+                            Compound = as.character(Out[AllCompounds$DetailNames[
+                               AllCompounds$CompoundID == i]]))
+               )
                
                rm(Disso_temp, DissoCV)
                
@@ -1663,7 +1633,7 @@ extractExpDetails <- function(sim_data_file,
       any(CustomDosing, na.rm = TRUE)){
       
       # When there's custom dosing for any of the substrate or inhibitors,
-      # then the dosing start time should be pulled from a "Custom Dosing"
+      # then the dosing start time should be pulled from a "Custom CustomDosing"
       # tab. Pulling any custom dosing sheets here.
       
       CustomDoseSheets <- SheetNames[str_detect(SheetNames, "Custom Dosing")]
@@ -1675,27 +1645,28 @@ extractExpDetails <- function(sim_data_file,
                           "Inh 2" = "_inhib2", 
                           "Sub" = "_sub")
          
-         Dose_xl <- suppressMessages(tryCatch(
+         CustomDose_xl <- suppressMessages(tryCatch(
             readxl::read_excel(path = sim_data_file, sheet = j,
                                col_names = FALSE),
             error = openxlsx::read.xlsx(sim_data_file, sheet = j,
                                         colNames = FALSE)))
          
-         Dosing <- Dose_xl[4:nrow(Dose_xl), ]
-         names(Dosing) <- make.names(Dose_xl[3,])
-         Dosing <- Dosing %>% 
+         CustomDosing <- CustomDose_xl[4:nrow(CustomDose_xl), ]
+         names(CustomDosing) <- make.names(CustomDose_xl[3,])
+         CustomDosing <- CustomDosing %>% 
             rename(DoseNum = Dose.Number, 
                    Time1 = Time,
                    Dose_units = Dose.Units, 
-                   DoseRoute = Route.of.Administration)
+                   DoseRoute = Route.of.Administration) %>% 
+            mutate(Day = as.numeric(Day))
          
-         TimeUnits <- names(Dosing)[str_detect(names(Dosing), "Offset")]
-         names(Dosing)[str_detect(names(Dosing), "Offset")] <- "Time"
+         TimeUnits <- names(CustomDosing)[str_detect(names(CustomDosing), "Offset")]
+         names(CustomDosing)[str_detect(names(CustomDosing), "Offset")] <- "Time"
          
          MyCompoundID <- AllCompounds$CompoundID[AllCompounds$Suffix == Suffix]
          MyCompound <- as.character(Out[AllCompounds$DetailNames[AllCompounds$Suffix == Suffix]])
          
-         Dosing <- Dosing %>% 
+         CustomDosing <- CustomDosing %>% 
             mutate(Time_units = ifelse(str_detect(TimeUnits, "\\.h\\.$"), 
                                        "h", "min"), 
                    File = sim_data_file, 
@@ -1704,21 +1675,21 @@ extractExpDetails <- function(sim_data_file,
                    TimeOfDay = sub("1899-12-30 ", "", TimeOfDay), 
                    CompoundID = MyCompoundID, 
                    Compound = MyCompound) %>% 
-            mutate(across(.cols = matches("DoseNum|Time$|Dose$"), 
+            mutate(across(.cols = matches("DoseNum|Time$|Dose$|^Day$"), 
                           .fns = as.numeric)) %>% 
             select(File, CompoundID, Compound, Day, TimeOfDay, 
                    Time, Time_units, DoseNum, 
                    Dose, Dose_units, DoseRoute)
          
-         Out[[paste0("CustomDosing", Suffix)]] <- Dosing
+         Out[[paste0("CustomDosing", Suffix)]] <- CustomDosing
          Out[[paste0("Dose", Suffix)]] <- "custom dosing"
          Out[[paste0("StartDayTime", Suffix)]] <- "custom dosing"
-         Out[[paste0("StartHr", Suffix)]] <- Dosing$Time[Dosing$DoseNum == 1]
+         Out[[paste0("StartHr", Suffix)]] <- CustomDosing$Time[CustomDosing$DoseNum == 1]
          Out[[paste0("DoseRoute", Suffix)]] <- "custom dosing"
          Out[[paste0("DoseInt", Suffix)]] <- "custom dosing"
-         Out[[paste0("Regimen", Suffix)]] <- "custom dosing"
+         Out[[paste0("Regimen", Suffix)]] <- "Multiple Dose"
          
-         rm(Dosing, Suffix, Dose_xl, MyCompoundID, MyCompound, TimeUnits)
+         rm(CustomDosing, Suffix, CustomDose_xl, MyCompoundID, MyCompound, TimeUnits)
          
       }
    }
@@ -1886,37 +1857,6 @@ extractExpDetails <- function(sim_data_file,
                                               time2 = Out$StartDayTime_inhib2)
    }
    
-   if("StartHr_inhib" %in% exp_details & 
-      all(c("StartDayTime_inhib", "SimStartDayTime") %in% names(Out)) &&
-      complete.cases(Out$StartDayTime_inhib) &&
-      Out$StartDayTime_inhib != "custom dosing"){
-      Out[["StartHr_inhib"]] <- difftime_sim(time1 = Out$SimStartDayTime,
-                                             time2 = Out$StartDayTime_inhib)
-   }
-   
-   if("StartHr_inhib2" %in% exp_details & 
-      all(c("SimStartDayTime", "StartDayTime_inhib2") %in% names(Out)) &&
-      complete.cases(Out$StartDayTime_inhib2) &&
-      Out$StartDayTime_inhib2 != "custom dosing"){
-      Out[["StartHr_inhib2"]] <- difftime_sim(time1 = Out$SimStartDayTime,
-                                              time2 = Out$StartDayTime_inhib2)
-   }
-   
-   # Removing StartDayTime_sub and SimStartDayTime if the user
-   # did not request them.
-   if("StartDayTime_sub" %in% exp_details_orig == FALSE){
-      Out[["StartDayTime_sub"]] <- NULL
-   }
-   if("StartDayTime_inhib" %in% exp_details_orig == FALSE){
-      Out[["StartDayTime_inhib"]] <- NULL
-   }
-   if("StartDayTime_inhib2" %in% exp_details_orig == FALSE){
-      Out[["StartDayTime_inhib2"]] <- NULL
-   }
-   if("SimStartDayTime" %in% exp_details_orig == FALSE){
-      Out[["SimStartDayTime"]] <- NULL
-   }
-   
    # Other functions call on "Inhibitor1", etc., so we need those objects to
    # exist, even if they were not used in this simulation. Setting them to NA if
    # they don't exist.
@@ -1960,113 +1900,87 @@ extractExpDetails <- function(sim_data_file,
    
    Out <- Out[sort(names(Out))]
    
+   # Adding missing, necessary list items
+   Missing1 <- setdiff(
+      paste0(rep(c("DoseInt", "DoseRoute", "Regimen", "NumDoses"), each = 3), 
+             c("_sub", "_inhib", "_inhib2")), 
+      names(Out))
+   
+   if(length(Missing1) > 0){
+      Missing <- as.list(matrix(data = NA, ncol = length(Missing1),
+                                dimnames = list(NULL, Missing1)))
+      names(Missing) <- Missing1
+      
+      Out <- c(Out, Missing)
+   }
+   
    # Fixing an issue that trips up other code down the line: Sometimes, the
    # user might specify a "multiple dose" regimen but then only administer
    # a single dose. That messes up, e.g., extractPK b/c it looks on the
    # wrong tab for the info it needs. When that happens, set the regimen to
    # "Single Dose".
    if(is.null(Out$Regimen_sub) == FALSE && 
-      complete.cases(Out$Regimen_sub) &&
-      Out$Regimen_sub == "Multiple Dose" && Out$NumDoses_sub == 1){
+      (complete.cases(Out$Regimen_sub) && Out$Regimen_sub == "Multiple Dose") &
+      (complete.cases(Out$NumDoses_sub) && Out$NumDoses_sub == 1)){
       Out$Regimen_sub <- "Single Dose"
    }
    
-   if(is.null(Out$Regimen_inhib1) == FALSE && 
-      (complete.cases(Out$Inhibitor1) & 
-       complete.cases(Out$Regimen_inhib1) && 
-       (Out$Regimen_inhib1 == "Multiple Dose" & Out$NumDoses_inhib1 == 1))){
+   if(is.null(Out$Regimen_inhib) == FALSE && 
+      (complete.cases(Out$Regimen_inhib) && Out$Regimen_inhib == "Multiple Dose") &
+      (complete.cases(Out$NumDoses_inhib) && Out$NumDoses_inhib == 1)){
       Out$Regimen_inhib1 <- "Single Dose" 
    }
    
    if(is.null(Out$Regimen_inhib2) == FALSE && 
-      (complete.cases(Out$Inhibitor2) & 
-       complete.cases(Out$Regimen_inhib2) && 
-       (Out$Regimen_inhib2 == "Multiple Dose" & Out$NumDoses_inhib2 == 1))){
+      (complete.cases(Out$Regimen_inhib2) && Out$Regimen_inhib2 == "Multiple Dose") &
+      (complete.cases(Out$NumDoses_inhib2) && Out$NumDoses_inhib2 == 1)){
       Out$Regimen_inhib2 <- "Single Dose" 
    }
+   
+   # Making DoseInt_x and Dose_x numeric all the time. We'll get custom dosing
+   # info from Regimen_x and DoseRoute_x.
+   suppressWarnings(Out$DoseInt_sub <- as.numeric(Out$DoseInt_sub))
+   suppressWarnings(Out$DoseInt_inhib <- as.numeric(Out$DoseInt_inhib))
+   suppressWarnings(Out$DoseInt_inhib2 <- as.numeric(Out$DoseInt_inhib2))
+   
+   suppressWarnings(Out$Dose_sub <- as.numeric(Out$Dose_sub))
+   suppressWarnings(Out$Dose_inhib <- as.numeric(Out$Dose_inhib))
+   suppressWarnings(Out$Dose_inhib2 <- as.numeric(Out$Dose_inhib2))
+   
+   # At this point, DoseInt_x and Dose_x will be NA if it's a custom dosing
+   # regimen. Setting the regimen to "multiple". We'll use that downstream for
+   # checking for appropriate PK parameters, etc.
+   
+   Out$Regimen_sub <- ifelse(is.na(Out$DoseInt_sub) & 
+                                (complete.cases(Out$DoseRoute_sub) && 
+                                    Out$DoseRoute_sub == "custom dosing"), 
+                             "Multiple Dose", Out$Regimen_sub)
+   Out$Regimen_inhib <- ifelse(is.na(Out$DoseInt_inhib) & 
+                                  (complete.cases(Out$DoseInt_inhib) && 
+                                      Out$DoseRoute_inhib == "custom dosing"), 
+                               "Multiple Dose", Out$Regimen_inhib)
+   Out$Regimen_inhib2 <- ifelse(is.na(Out$DoseInt_inhib2) & 
+                                   (complete.cases(Out$DoseInt_inhib2) && 
+                                       Out$DoseRoute_inhib2 == "custom dosing"), 
+                                "Multiple Dose", Out$Regimen_inhib2)
    
    # Splitting this up into main details -- a data.frame -- and then,
    # separately, whatever items need to be lists, e.g., custom dosing regimens
    # and dissolution profiles. 
    Main <- as.data.frame(Out[which(sapply(Out, length) == 1)])
    
+   # Making absoultely sure that File included in Main. When we run
+   # harmonize_details, it will add it to the other items whenever there is at
+   # least 1 row, but we need it in Main to do that.
+   Main$File <- sim_data_file 
+   
+   ## Dosing -----------------------------------------------------------------
    # Setting up Dosing data.frame to include ALL dosing info, so custom dosing
    # when appropriate and, for compounds and/or simulations w/out custom dosing,
    # then a data.frame of all dosing events filled in based on interval, amount,
    # etc.
-   Dosing <- list()
-   
-   for(cmpd in unique(AllCompounds$DosedCompoundID)){
-      if(is.na(Main[[AllCompounds$DetailNames[
-         AllCompounds$CompoundID == cmpd]]])){next}
-      
-      if(is.na(switch(cmpd, 
-                      "substrate" = 
-                      suppressWarnings(as.numeric(Main$DoseInt_sub)), 
-                      
-                      "inhibitor 1" = 
-                      suppressWarnings(as.numeric(Main$DoseInt_inhib)), 
-                      
-                      "inhibitor 2" = 
-                      suppressWarnings(as.numeric(Main$DoseInt_inhib2))))){
-         
-         Dosing[[cmpd]] <- data.frame(
-            Time = switch(cmpd, 
-                          "substrate" = as.numeric(Main$StartHr_sub), 
-                          "inhibitor 1" = as.numeric(Main$StartHr_inhib), 
-                          "inhibitor 2" = as.numeric(Main$StartHr_inhib2)))
-         
-      } else {
-         
-         Dosing[[cmpd]] <- data.frame(
-            Time = seq(from = 
-                          switch(cmpd, 
-                                 "substrate" = as.numeric(Main$StartHr_sub), 
-                                 "inhibitor 1" = as.numeric(Main$StartHr_inhib), 
-                                 "inhibitor 2" = as.numeric(Main$StartHr_inhib2)), 
-                       to = as.numeric(Main$SimDuration), 
-                       by = 
-                          switch(cmpd, 
-                                 "substrate" = 
-                                    suppressWarnings(as.numeric(Main$DoseInt_sub)), 
-                                 
-                                 "inhibitor 1" = 
-                                    suppressWarnings(as.numeric(Main$DoseInt_inhib)), 
-                                 
-                                 "inhibitor 2" = 
-                                    suppressWarnings(as.numeric(Main$DoseInt_inhib2))))) 
-         
-      }
-      
-      suppressWarnings(
-         Dosing[[cmpd]] <- Dosing[[cmpd]] %>% 
-            mutate(File = sim_data_file, 
-                   CompoundID = cmpd, 
-                   Compound = Main[[AllCompounds$DetailNames[
-                      AllCompounds$CompoundID == cmpd]]], 
-                   Time_units = Main$Units_tmax, 
-                   Dose = switch(cmpd, 
-                                 "substrate" = as.numeric(Main$Dose_sub), 
-                                 "inhibitor 1" = as.numeric(Main$Dose_inhib), 
-                                 "inhibitor 2" = as.numeric(Main$Dose_inhib2)), 
-                   Dose_units = switch(cmpd, 
-                                       "substrate" = Main$Units_dose_sub, 
-                                       "inhibitor 1" = Main$Units_dose_inhib, 
-                                       "inhibitor 2" = Main$Units_dose_inhib2), 
-                   DoseRoute = switch(cmpd, 
-                                      "substrate" = Main$DoseRoute_sub, 
-                                      "inhibitor 1" = Main$DoseRoute_inhib, 
-                                      "inhibitor 2" = Main$DoseRoute_inhib2)) %>% 
-            mutate(DoseNum = 1:nrow(.)) %>% 
-            select(File, CompoundID, Compound, Time, Time_units, DoseNum,
-                   Dose, Dose_units, DoseRoute)
-      )
-      
-   }
-   
    
    Out <- list(MainDetails = Main, 
-               Dosing = bind_rows(Dosing), 
                CustomDosing = bind_rows(Out$CustomDosing_sub, 
                                         Out$CustomDosing_inhib, 
                                         Out$CustomDosing_inhib2), 
@@ -2076,16 +1990,15 @@ extractExpDetails <- function(sim_data_file,
                ConcDependent_BP = CDBPProfs, 
                pH_dependent_solubility = pHSol)
    
-   Out <- Out[ExpDetailListItems]
+   Out <- harmonize_details(Out)
+   
+   
+   # Returning --------------------------------------------------------------
    
    for(j in names(Out)[unlist(lapply(Out, is.null)) == FALSE]){
       Out[[j]] <- Out[[j]] %>% 
          mutate(File = sim_data_file) %>% 
          select(File, everything())
-   }
-   
-   if(complete.cases(save_output)){
-      write.csv(Main, FileName, row.names = F)
    }
    
    return(Out)

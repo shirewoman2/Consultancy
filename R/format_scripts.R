@@ -8,17 +8,17 @@
 #'   up.
 #' @param parameter_column the name of the column in DF that contains your PK
 #'   parameters, unquoted. For example, supply \code{parameter_column = Notes}
+#' @param value_column optionally supply the name of the column in DF that
+#'   contains values for PK parameters, unquoted.
 #' @param remove_compound_suffix TRUE (default) or FALSE to remove the suffix
 #'   that shows up in many PBPK elimination and interaction parameters to
 #'   indicate which compound ID the parameter refers to. For example, "Vsac_sub"
 #'   will be just "Vsac" and "Peff_human_inhib" will become "Peff,human" with
 #'   the "eff,human" as a subscript. You should ONLY do this if your whole table
 #'   refers to the same compound; otherwise, it will be completely unclear
-#'   what's what. 
+#'   what's what.
 #'
 #' @return a flextable
-#' @export
-#'
 #' @examples
 #' DF <- data.frame(Parameter = c("MW", "ka (h^-1)",
 #'                                "fu,p", "fu,gut", "fu,mic CYP3A4"),
@@ -28,6 +28,7 @@
 #' 
 format_scripts <- function(DF, 
                            parameter_column, 
+                           value_column, 
                            remove_compound_suffix = TRUE){
    
    # Error catching ---------------------------------------------------------
@@ -42,12 +43,29 @@ format_scripts <- function(DF,
    
    # Setting up for nonstandard evaluation
    parameter_column <- rlang::enquo(parameter_column)
+   value_column <- rlang::enquo(value_column)
    
    OrigColNames <- names(DF)
    
    if("Parameter" %in% names(DF) & 
       as_label(parameter_column) != "Parameter"){
       DF <- DF %>% rename(Parameter_orig = Parameter)
+   }
+   
+   if(as_label(value_column) != "<empty>"){
+      
+      if(as_label(value_column) %in% names(DF) == FALSE){
+         warning(wrapn(paste0("You specified the value column name to be `", 
+                              as_label(value_column), 
+                              "`, but that column is not present in DF, so we will skip this.")), 
+                 call. = FALSE)
+         ValueColIncluded <- FALSE
+      } else {
+         ValueColIncluded <- TRUE
+         DF <- DF %>% mutate(Value = {{value_column}})
+      }
+   } else {
+      ValueColIncluded <- FALSE
    }
    
    if(as_label(parameter_column) != "<empty>"){
@@ -88,7 +106,7 @@ format_scripts <- function(DF,
                                       .default = Parameter), 
                 Parameter = str_replace(Parameter, "rUGTScalar", "scalar for"), # This line must come after the one checking for both CLint and rUGTScalar!
                 Parameter = case_match(Parameter, 
-                                       "CLint AddHLM" ~ "CLint,additional HLM", 
+                                       "CLint AddHLM" ~ "CLint,additional hepatic", 
                                        "CLint biliary" ~ "CLint,biliary", 
                                        .default = Parameter))
       
@@ -105,73 +123,86 @@ format_scripts <- function(DF,
          # value, so, even if there were more than one place with, e.g., "ka
          # (h^-1)", ALL of those places would be replaced with the same thing.
          flextable::compose(i = which(DF$Parameter == "ka (h^-1)"), 
-                 j = which(names(DF) == "Parameter"), 
-                 part = "body", 
-                 value = flextable::as_paragraph(
-                    "k", flextable::as_sub("a"), " (h", flextable::as_sup("-1"), ")")) %>% 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "k", flextable::as_sub("a"), " (h", flextable::as_sup("-1"), ")")) %>% 
          
          flextable::compose(i = which(DF$Parameter == "fu,p"), 
-                 j = which(names(DF) == "Parameter"), 
-                 part = "body", 
-                 value = flextable::as_paragraph(
-                    "fu", flextable::as_sub("p"))) %>% 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "fu", flextable::as_sub("p"))) %>% 
          
          flextable::compose(i = which(DF$Parameter == "fu,gut"), 
-                 j = which(names(DF) == "Parameter"), 
-                 part = "body", 
-                 value = flextable::as_paragraph(
-                    "fu", flextable::as_sub("gut"))) %>% 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "fu", flextable::as_sub("gut"))) %>% 
          
          flextable::compose(i = which(DF$Parameter == "CLint,biliary"), 
-                 j = which(names(DF) == "Parameter"), 
-                 part = "body", 
-                 value = flextable::as_paragraph(
-                    "CLint", flextable::as_sub("biliary"))) %>% 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "CLint", flextable::as_sub("biliary"))) %>% 
          
          flextable::compose(i = which(DF$Parameter == "CLint,additional HLM"), 
-                 j = which(names(DF) == "Parameter"), 
-                 part = "body", 
-                 value = flextable::as_paragraph(
-                    "CLint", flextable::as_sub("additional HLM"))) %>% 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "CLint", flextable::as_sub("additional HLM"))) %>% 
          
          flextable::compose(i = which(DF$Parameter == "tlag (h)"), 
-                 j = which(names(DF) == "Parameter"), 
-                 part = "body", 
-                 value = flextable::as_paragraph(
-                    "t", flextable::as_sub("lag"), " (h)")) %>% 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "t", flextable::as_sub("lag"), " (h)")) %>% 
          
          flextable::compose(i = which(DF$Parameter == "Peff,human (10-4 cm/s)"),
-                 j = which(names(DF) == "Parameter"), 
-                 part = "body", 
-                 value = flextable::as_paragraph(
-                    "P", flextable::as_sub("eff,human"), 
-                    " (10", flextable::as_sup("-4"), 
-                    " cm/s)")) %>% 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "P", flextable::as_sub("eff,human"), 
+                               " (10", flextable::as_sup("-4"), 
+                               " cm/s)")) %>% 
          
          flextable::compose(i = which(DF$Parameter == "Papp determined in Caco-2 cells (10^-6 cm/s)"),
-                 j = which(names(DF) == "Parameter"), 
-                 part = "body", 
-                 value = flextable::as_paragraph(
-                    "P", flextable::as_sub("app"), 
-                    " determined in Caco-2 cells (10",
-                    flextable::as_sup("-6"), 
-                    " cm/s)")) %>% 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "P", flextable::as_sub("app"), 
+                               " determined in Caco-2 cells (10",
+                               flextable::as_sup("-6"), 
+                               " cm/s)")) %>% 
          
          flextable::compose(i = which(DF$Parameter == "Papp for the reference compound (10^-6 cm/s)"),
-                 j = which(names(DF) == "Parameter"), 
-                 part = "body", 
-                 value = flextable::as_paragraph(
-                    "P", flextable::as_sub("app"), 
-                    " for the reference compound (10", 
-                    flextable::as_sup("-6"), 
-                    " cm/s)")) %>% 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "P", flextable::as_sub("app"), 
+                               " for the reference compound (10", 
+                               flextable::as_sup("-6"), 
+                               " cm/s)")) %>% 
          
          flextable::compose(i = which(DF$Parameter == "Calibrator compound used for calculating Papp"),
-                 j = which(names(DF) == "Parameter"), 
-                 part = "body", 
-                 value = flextable::as_paragraph(
-                    "Calibrator compound used for calculating P",
-                    flextable::as_sub("app"))) 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "Calibrator compound used for calculating P",
+                               flextable::as_sub("app")))
+      
+      # Value column formatting
+      if(ValueColIncluded){
+         
+         FT <- FT %>% 
+            flextable::compose(i = which(DF$Value == "1st order"), 
+                               j = which(names(DF) == "Value"), 
+                               part = "body", 
+                               value = flextable::as_paragraph(
+                                  "1", flextable::as_sup("st"), 
+                                  " order")) 
+         
+      }
       
       # Next, all the places where there might be multiple matches b/c we're only
       # matching, e.g., the 1st part of the string and then need to fill in the
@@ -187,84 +218,84 @@ format_scripts <- function(DF,
          for(r in rows){
             FT <- FT %>% 
                flextable::compose(i = r, 
-                       j = which(names(DF) == "Parameter"), 
-                       part = "body", 
-                       value = switch(
-                          mpv,
-                          
-                          "^fu,mic" = 
-                             flextable::as_paragraph(
-                                "fu", flextable::as_sub("mic"), 
-                                sub(mpv, "", 
-                                    DF[r, which(names(DF) == "Parameter")])), 
-                          
-                          "^fu,inc" = 
-                             flextable::as_paragraph(
-                                "fu", flextable::as_sub("inc"), 
-                                sub(mpv, "", 
-                                    DF[r, which(names(DF) == "Parameter")])), 
-                          
-                          "^Ki fu,mic" = 
-                             flextable::as_paragraph(
-                                "fu", flextable::as_sub("mic"), 
-                                gsub(mpv, "", 
-                                     DF[r, which(names(DF) == "Parameter")]), 
-                                "(K", flextable::as_sub("i"), ")"), 
-                          
-                          "^Ind fu,inc" = 
-                             flextable::as_paragraph(
-                                "fu", flextable::as_sub("inc"), 
-                                gsub("^Ind fu,inc", "", 
-                                     DF[r, which(names(DF) == "Parameter")]), 
-                                " (induction)"), 
-                          
-                          "^IndC50" = 
-                             flextable::as_paragraph(
-                                "IndC", flextable::as_sub("50"), 
-                                sub(mpv, "", 
-                                    DF[r, which(names(DF) == "Parameter")])), 
-                          
-                          "^IndMax" = 
-                             flextable::as_paragraph(
-                                "Ind", flextable::as_sub("max"), 
-                                sub(mpv, "", 
-                                    DF[r, which(names(DF) == "Parameter")])), 
-                          
-                          "^Ind gamma" = 
-                             flextable::as_paragraph(
-                                "\u03B3 (induction)", 
-                                sub(mpv, "", 
-                                    DF[r, which(names(DF) == "Parameter")])), 
-                          
-                          "^Ki" = 
-                             flextable::as_paragraph(
-                                "K", flextable::as_sub("i"), 
-                                sub(mpv, "", 
-                                    DF[r, which(names(DF) == "Parameter")])), 
-                          
-                          "^Km" = 
-                             flextable::as_paragraph(
-                                "K", flextable::as_sub("M"), 
-                                sub(mpv, "", 
-                                    DF[r, which(names(DF) == "Parameter")])), 
-                          
-                          "Qgut" = 
-                             flextable::as_paragraph(
-                                "Q", flextable::as_sub("gut"), 
-                                sub(mpv, "", 
-                                    DF[r, which(names(DF) == "Parameter")])), 
-                          
-                          "^Vmax" = 
-                             flextable::as_paragraph(
-                                "V", flextable::as_sub("max"), 
-                                sub(mpv, "", 
-                                    DF[r, which(names(DF) == "Parameter")])), 
-                          
-                          # Special characters
-                          "uL" = flextable::as_paragraph(
-                             sub("uL", "\u03BCL", 
-                                 DF[r, which(names(DF) == "Parameter")]))
-                       ))
+                                  j = which(names(DF) == "Parameter"), 
+                                  part = "body", 
+                                  value = switch(
+                                     mpv,
+                                     
+                                     "^fu,mic" = 
+                                        flextable::as_paragraph(
+                                           "fu", flextable::as_sub("mic"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "^fu,inc" = 
+                                        flextable::as_paragraph(
+                                           "fu", flextable::as_sub("inc"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "^Ki fu,mic" = 
+                                        flextable::as_paragraph(
+                                           "fu", flextable::as_sub("mic"), 
+                                           gsub(mpv, "", 
+                                                DF[r, which(names(DF) == "Parameter")]), 
+                                           "(K", flextable::as_sub("i"), ")"), 
+                                     
+                                     "^Ind fu,inc" = 
+                                        flextable::as_paragraph(
+                                           "fu", flextable::as_sub("inc"), 
+                                           gsub("^Ind fu,inc", "", 
+                                                DF[r, which(names(DF) == "Parameter")]), 
+                                           " (induction)"), 
+                                     
+                                     "^IndC50" = 
+                                        flextable::as_paragraph(
+                                           "IndC", flextable::as_sub("50"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "^IndMax" = 
+                                        flextable::as_paragraph(
+                                           "Ind", flextable::as_sub("max"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "^Ind gamma" = 
+                                        flextable::as_paragraph(
+                                           "\u03B3 (induction)", 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "^Ki" = 
+                                        flextable::as_paragraph(
+                                           "K", flextable::as_sub("i"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "^Km" = 
+                                        flextable::as_paragraph(
+                                           "K", flextable::as_sub("M"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "Qgut" = 
+                                        flextable::as_paragraph(
+                                           "Q", flextable::as_sub("gut"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "^Vmax" = 
+                                        flextable::as_paragraph(
+                                           "V", flextable::as_sub("max"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     # Special characters
+                                     "uL" = flextable::as_paragraph(
+                                        sub("uL", "\u03BCL", 
+                                            DF[r, which(names(DF) == "Parameter")]))
+                                  ))
          }
       }
       
@@ -272,14 +303,16 @@ format_scripts <- function(DF,
       FT <- flextable::flextable(DF)
    }
    
-   
    # Dealing with subscripts for PK parameters in column names
    ColNames <- sub("AUCt( |$)", "AUC~t~ ", names(DF))
    ColNames <- sub("AUCinf( |$)", "AUC~inf~ ", ColNames)
    ColNames <- sub("AUCt$", "AUC~t~", ColNames)
    ColNames <- sub("AUCtau", "AUC~tau~", ColNames)
+   ColNames <- sub("AUC24h,ss", "AUC~24h,ss~", ColNames)
+   ColNames <- sub("Cmax,ss", "C~max,ss~", ColNames)
    ColNames <- sub("Cmax", "C~max~", ColNames)
    ColNames <- sub("Cmin", "C~min~", ColNames)
+   ColNames <- sub("Cavg,u,ss", "C~avg,u,ss~", ColNames)
    ColNames <- sub("tmax", "t~max~", ColNames)
    ColNames <- sub("tlag", "t~lag~", ColNames)
    ColNames <- sub(" ka ", " k~a~ ", ColNames)

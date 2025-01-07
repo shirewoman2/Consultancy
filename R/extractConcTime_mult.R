@@ -393,9 +393,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
    }
    
    # Making sure that all the files exist before attempting to pull data
-   if(any(file.exists(sim_data_files_topull) == FALSE)){
-      MissingSimFiles <- sim_data_files_topull[
-         which(file.exists(sim_data_files_topull) == FALSE)]
+   MissingSimFiles <- sim_data_files_topull[
+      which(file.exists(sim_data_files_topull) == FALSE)]
+   
+   if(length(MissingSimFiles) > 0){
+      
       warning(paste0("The file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
                      " is/are not present and thus will not be extracted.\n"), 
@@ -565,11 +567,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
                ObsAssign$Exists_xml <- FALSE
             } 
             
-            if(any(is.na(ObsAssign$ObsFileToUse))){
+            MyObsFileToUse <- ObsAssign %>% 
+               filter(complete.cases(ObsFile) & is.na(ObsFileToUse)) %>% 
+               pull(ObsFileToUse) %>% unique()
+            
+            if(length(MyObsFileToUse) > 0){
                warning(wrapn(paste0(
                   "The file(s) ", str_comma(
-                     paste0("'", unique(ObsAssign$ObsFile[
-                        which(is.na(ObsAssign$ObsFileToUse))]), "'")), 
+                     paste0("'", MyObsFileToUse, "'")), 
                   " is/are not present and will be skipped.")), 
                   call. = FALSE)
             }
@@ -583,7 +588,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             # Checking whether we can find any obs files 
             if(nrow(ObsAssign) == 0){
-               warning(wrapn("We couldn't find any of your observed data files."), 
+               warning(wrapn("You requested that we use what you provided for 'existing_exp_details' to match observed data to simulated, but either you didn't include any observed data with your workspace(s) or we couldn't find any of your observed data files. We will not be able to extract any observed data."), 
                        call. = FALSE)
                ObsAssign <- data.frame()
                obs_to_sim_assignment <- NA
@@ -694,18 +699,21 @@ extractConcTime_mult <- function(sim_data_files = NA,
             }
             
             # Making sure obs files exist before trying to pull data from them
-            if(any(file.exists(ObsAssign$ObsFile) == FALSE)){
+            MissingObsFiles <- ObsAssign %>% 
+               mutate(Exists = file.exists(ObsFile)) %>% 
+               filter(complete.cases(ObsFile) & 
+                         Exists == FALSE) %>% 
+               pull(ObsFile) %>% unique()
+            
+            if(length(MissingObsFiles) > 0){
                
-               MissingObsFiles <- ObsAssign$ObsFile[
-                  which(file.exists(ObsAssign$ObsFile) == FALSE)]
                warning(wrapn(paste0(
                   "The file(s) ", 
-                  str_comma(paste0("`", unique(MissingObsFiles), "`")), 
+                  str_comma(paste0("`", MissingObsFiles, "`")), 
                   " is/are not present and thus will not be extracted.")), 
                   call. = FALSE)
                ObsAssign <- ObsAssign %>% filter(!ObsFile %in% MissingObsFiles)
             }
-            
          }
       } 
    }
@@ -737,8 +745,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
          # Using "warning" instead of "stop" here b/c I want this to be able to
          # pass through to other functions and just skip any files that
          # aren't simulator output.
-         warning(paste("The file", ff,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
+         warning(wrapn(paste0("The file '", ff,
+                              "' does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.")), 
                  call. = FALSE)
          next()
       }
@@ -1112,7 +1120,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                               "Individual", "Trial", "Time")))) %>%
       select(any_of(c("Compound", "CompoundID", "Inhibitor", "Simulated",
                       "Species", "Tissue", "Individual", "Trial",
-                      "Simulated", "Time", "Conc", "SD_SE",
+                      "Simulated", "IndivOrAgg", 
+                      "Time", "Conc", "SD_SE",
                       "Time_units", "Conc_units", "Tissue_subtype", "DoseNum",
                       "DoseInt", "Dose_sub", "Dose_inhib", "Dose_inhib2", 
                       "File", "ObsFile", "subsection_ADAM"))) %>% 

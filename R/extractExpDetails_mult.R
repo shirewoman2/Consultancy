@@ -74,10 +74,6 @@
 #'   changed input parameters for simulations and re-run them OR when you have
 #'   extracted only some of the possible experimental details and you now would
 #'   like more experimental details from each simulator output file.
-#' @param save_output optionally save the output by supplying a csv or Excel
-#'   file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-#'   details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
-#'   csv file.
 #'
 #' @return Returns a data.frame of experimental details for simulator files
 #'
@@ -91,14 +87,12 @@
 #'           "Example simulator output - MDZ + metabolites.xlsx",
 #'           "Example simulator output - met1 met2 sec met1 inhib1.xlsx",
 #'           "Example simulator output - met1 met2 sec met1.xlsx"),
-#'     exp_details = "all",
-#'     save_output = "My experimental details.csv")
+#'     exp_details = "all")
 #'  
 extractExpDetails_mult <- function(sim_data_files = NA, 
                                    exp_details = "all", 
                                    existing_exp_details = NA, 
                                    overwrite = FALSE,
-                                   save_output = NA, 
                                    ...){
    
    # Error catching ---------------------------------------------------------
@@ -271,26 +265,6 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    
    # Sorting to help organize output
    Out$MainDetails <- Out$MainDetails %>% select(File, everything())
-   
-   if(complete.cases(save_output)){
-      FileName <- save_output
-      if(str_detect(FileName, "\\.")){
-         # Making sure they've got a good extension
-         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
-         FileName <- sub(paste0(".", Ext), "", FileName)
-         Ext <- ifelse(Ext %in% c("csv", "xlsx"), 
-                       Ext, "csv")
-         FileName <- paste0(FileName, ".", Ext)
-      } else {
-         FileName <- paste0(FileName, ".csv")
-         Ext <- "csv"
-      }
-      
-      switch(Ext, 
-             "csv" = write.csv(as.data.frame(Out$MainDetails), FileName, row.names = F), 
-             "xlsx" = openxlsx::write.xlsx(as.data.frame(Out$MainDetails), 
-                                           FileName))
-   }
    
    return(Out)
 }

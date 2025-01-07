@@ -147,15 +147,15 @@
 #'   change in intrinsic solubility will affect concentration-time profiles --
 #'   because the direction of the trend will be clear.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"blues"}{a set of blues fading from sky to navy. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
-#'   \item{"greens"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
@@ -606,24 +606,44 @@ ct_plot_overlay <- function(ct_dataframe,
    # for setting aesthetics.
    ct_dataframe <- ungroup(ct_dataframe) %>% droplevels()
    
-   if(assume_unique == FALSE){
-      # Making sure the data.frame contains unique observations and no unnecessary levels.
-      ct_dataframe <- unique(ct_dataframe)
-   }
-   
    # tictoc::toc(log = TRUE)
    
    # tictoc::tic(msg = "error catching: enz abund?")
    
-   # Checking whether this is an enzyme abundance plot
+   # Checking on what kind of plot this is
+   FmPlot <- all(c("Enzyme", "Fraction") %in% names(ct_dataframe)) & 
+      "Conc" %in% names(ct_dataframe) == FALSE
+   
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
    
-   if(EnzPlot){ct_dataframe$Simulated <- TRUE}
-   
-   # Checking whether this is a release-profile plot or a dissolution-profile plot
    ReleaseProfPlot <- all(c("Release_mean", "ReleaseSD") %in% names(ct_dataframe)) &
       "Conc" %in% names(ct_dataframe) == FALSE
+   
+   DissolutionProfPlot <- all(c("Dissolution_mean", "Dissolution_CV") %in% 
+                                 names(ct_dataframe)) &
+      "Conc" %in% names(ct_dataframe) == FALSE
+   
+   PlotType <- case_when(EnzPlot == TRUE ~ "enzyme-abundance", 
+                         ReleaseProfPlot == TRUE ~ "release-profile",
+                         DissolutionProfPlot == TRUE ~ "dissolution-profile", 
+                         FmPlot == TRUE ~ "fm", 
+                         TRUE ~ "concentration-time")
+   
+   # hacking some columns that were set up for conc-time plots and that just
+   # need a placeholder when those columns don't apply
+   if(any(c(EnzPlot, FmPlot, ReleaseProfPlot, DissolutionProfPlot))){
+      ct_dataframe <- ct_dataframe %>% 
+         mutate(Conc_units = "ng/mL", 
+                CompoundID = "substrate", 
+                Simulated = TRUE, 
+                IndivOrAgg = "aggregate")
+   }
+   
+   if(FmPlot){
+      ct_dataframe <- ct_dataframe %>% 
+         mutate(Abundance = Fraction * 100)
+   }
    
    if(ReleaseProfPlot){
       ct_dataframe <- ct_dataframe %>% 
@@ -634,10 +654,6 @@ ct_plot_overlay <- function(ct_dataframe,
          mutate(MyMean = Conc, 
                 Simulated = TRUE)
    }
-   
-   DissolutionProfPlot <- all(c("Dissolution_mean", "Dissolution_CV") %in% 
-                                 names(ct_dataframe)) &
-      "Conc" %in% names(ct_dataframe) == FALSE
    
    if(DissolutionProfPlot){
       ct_dataframe <- ct_dataframe %>% 
@@ -812,12 +828,42 @@ ct_plot_overlay <- function(ct_dataframe,
       floating_facet_scale <- FALSE
    }
    
-   
    # tictoc::toc(log = TRUE)
    
    # Main body of function -------------------------------------------------
    
    # tictoc::tic(msg = "main body of function")
+   
+   # This will run orders of magnitude faster if we only include aggregate data.
+   # Removing individual data when possible using column IndivOrAgg, which will
+   # be NA for observed data. Dealing with that and harmonizing data. At least,
+   # that was my plan. However, need to add that info for IndivOrAgg for data
+   # that were extracted w/older version of package, and, since a single
+   # data.frame could have a mix of data that were extracted at different times,
+   # just checking that here. Happily, that doesn't take long. Uncomment the if
+   # statement at some point?
+   
+   # if("IndivOrAgg" %in% names(ct_dataframe) == FALSE){
+   ct_dataframe <- ct_dataframe %>% 
+      mutate(IndivOrAgg = case_when(Simulated == FALSE ~ NA, 
+                                    Simulated == TRUE & Trial %in% 
+                                       c("mean", "median",
+                                         "geomean", 
+                                         "per5", "per95", "per10", "per90", 
+                                         "trial mean", "trial geomean", 
+                                         "trial median") ~ "aggregate", 
+                                    .default = "individual"))
+   # }
+   
+   ct_dataframe <- ct_dataframe %>% 
+      filter(Simulated == FALSE |
+                (Simulated == TRUE & IndivOrAgg == "aggregate"))
+   
+   if(assume_unique == FALSE){
+      # Making sure the data.frame contains unique observations and no
+      # unnecessary levels.
+      ct_dataframe <- unique(ct_dataframe)
+   }
    
    # Noting whether the tissue was from an ADAM model
    ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
@@ -1212,7 +1258,7 @@ ct_plot_overlay <- function(ct_dataframe,
       
    }
    
-   if(EnzPlot){ 
+   if(EnzPlot | FmPlot){ 
       
       # for enzyme abundance data
       ct_dataframe <- ct_dataframe %>%
@@ -1539,7 +1585,7 @@ ct_plot_overlay <- function(ct_dataframe,
             pivot_wider(names_from = Tissue, values_from = Conc)
       )
       
-      if(class(Check$colon) == "list"){
+      if("colon" %in% names(Check) && class(Check$colon) == "list"){
          warning(paste0(wrapn("You have some replicates in your data, which can cause some unexpected effects or make the enz_plot_overlay function break. Here are two things you can do to fix this:"), 
                         "   1. Add this when you call on enz_plot_overlay:\n        assume_unique = FALSE\n      This will make graphing run more slowly, though. Please see the help file.\n", 
                         "\n   2. Before running enz_plot_overlay, run this to permanently fix this problem:\n", 
@@ -1641,7 +1687,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # compound that the user is plotting. Using whatever is the compoundID that
    # has the base level for the factor. <--- This may not be necessary, now
    # that I think about it further...
-   if(EnzPlot | ReleaseProfPlot | DissolutionProfPlot){
+   if(EnzPlot | ReleaseProfPlot | DissolutionProfPlot | FmPlot){
       AnchorCompound <- "substrate"
    } else if(mean_type != "none"){
       AnchorCompound <- sim_dataframe %>% select(CompoundID) %>% unique() %>% 
@@ -1741,8 +1787,11 @@ ct_plot_overlay <- function(ct_dataframe,
    # Setting figure types and general aesthetics ------------------------------
    
    MyPerpetrator <- unique(sim_dataframe$Inhibitor)
-   MyPerpetrator <- fct_relevel(MyPerpetrator, "none")
+   if("none" %in% MyPerpetrator){
+      MyPerpetrator <- fct_relevel(MyPerpetrator, "none")
+   }
    MyPerpetrator <- sort(MyPerpetrator)
+   MyPerpetrator <- factor(MyPerpetrator, levels = MyPerpetrator)
    
    # Making linetype_column and colorBy_column factor data. This will
    # prevent errors w/mapping to color b/c ggplot expects only categorical data
@@ -2833,11 +2882,6 @@ ct_plot_overlay <- function(ct_dataframe,
                             length(MyTissueSubtype) == 1 & 
                             length(unique(ct_dataframe$File)) == 1, 
                          "single", "multiple")
-   
-   PlotType <- case_when(EnzPlot == TRUE ~ "enzyme-abundance", 
-                         ReleaseProfPlot == TRUE ~ "release-profile",
-                         DissolutionProfPlot == TRUE ~ "dissolution-profile", 
-                         TRUE ~ "concentration-time")
    
    if("logical" %in% class(prettify_compound_names)){
       PrettyCmpds <- prettify_compound_names

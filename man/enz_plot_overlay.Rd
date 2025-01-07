@@ -141,7 +141,15 @@ label for this legend item, set this to "none".}
   change in intrinsic solubility will affect concentration-time profiles --
   because the direction of the trend will be clear.}
 
-  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  \item{"blues"}{a set of blues fading from sky to navy. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"greens"}{a set of greens fading from chartreuse to forest. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"purples"}{a set of purples fading from lavender to aubergine. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 

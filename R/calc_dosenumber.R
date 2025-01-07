@@ -23,11 +23,12 @@
 #'   hours} \item{StartHr_sub}{(numeric) the start time for the substrate;
 #'   probably 0} \item{NumDoses_sub}{(numeric) the number of doses overall}
 #'   \item{Regimen_sub}{(character) presumably "Multiple Dose" but "Single Dose"
-#'   is also acceptable}} If you want the dose number for other compound IDs, 
-#'   then replace "_sub" with, e.g., "_inhib". Please run 
+#'   is also acceptable}} If you want the dose number for other compound IDs,
+#'   then replace "_sub" with, e.g., "_inhib". Please run
 #'   \code{view(AllCompounds)} to see acceptable suffixes for each compound ID.
 #'
-#' @return Output is a data.frame of concentration-time data with
+#' @return Output is a data.frame of concentration-time data with the calculated
+#'   dose number included
 #' @export
 #'
 #' @examples
@@ -46,10 +47,21 @@ calc_dosenumber <- function(ct_dataframe,
    Deets <- harmonize_details(existing_exp_details)[["MainDetails"]]
    
    if(all(Deets$File == "all", na.rm = T)){
+      
+      # Since the "if" statement can be T when "File" is not present in the
+      # data.frame, making SURE that it is "all" here.
+      Deets$File <- "all"
+      
       if(nrow(Deets) > 1){
          stop("You have set the file names in `Deets` to `all`, but `Deets` has more than one row, so we don't know which files should have which dosing regimen. We cannot assign any dose numbers.", 
               call. = FALSE)
       } 
+      
+      if("File" %in% names(ct_dataframe) == FALSE){
+         # This can happen if you're hacking function to get obs data dose
+         # numbers.
+         ct_dataframe$File <- "all"
+      }
       
       Deets <- Deets %>% 
          select(-File) %>% 
@@ -57,7 +69,8 @@ calc_dosenumber <- function(ct_dataframe,
          left_join(data.frame(File = unique(ct_dataframe$File), 
                               Placeholder = "A"), 
                    by = "Placeholder") %>% 
-         select(-Placeholder)
+         select(-Placeholder) %>% 
+         mutate(File = "all")
    }
    
    # Checking that all files are present in Deets and giving

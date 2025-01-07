@@ -314,7 +314,8 @@ enz_plot <- function(sim_enz_dataframe,
    
    # main body of function -----------------------------------------------
    
-   Data <- sim_enz_dataframe
+   Data <- sim_enz_dataframe %>% 
+      mutate(Simulated = TRUE)
    
    if(all(c("colon", "small intestine") %in% unique(Data$Tissue))){
       if(hasArg("gut_tissue")){

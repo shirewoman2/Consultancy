@@ -325,7 +325,7 @@ extractEnzAbund <- function(sim_data_file,
                sim_data_mean[[i]] <- bind_rows(sim_data_mean[[i]],
                                                sim_data_mean_inhib) %>%
                   mutate(PerpPresent = ifelse(is.na(PerpPresent),
-                                                  FALSE, PerpPresent))
+                                              FALSE, PerpPresent))
                rm(NamesToCheck, RowsToUse, sim_data_mean_inhib)
             }
          }
@@ -334,7 +334,7 @@ extractEnzAbund <- function(sim_data_file,
          
       } else {
          
-         # Substrate or substrate metabolites
+         # non-gut tissue
          TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
          TimeRow <- TimeRow[TimeRow > which(sim_data_xl$...1 == "Population Statistics")][1]
          
@@ -441,7 +441,7 @@ extractEnzAbund <- function(sim_data_file,
             sim_data_mean <- bind_rows(sim_data_mean,
                                        sim_data_mean_inhib) %>%
                mutate(PerpPresent = ifelse(is.na(PerpPresent),
-                                               FALSE, PerpPresent))
+                                           FALSE, PerpPresent))
             rm(RowsToUse)
          }
          rm(TimeRow)
@@ -565,7 +565,7 @@ extractEnzAbund <- function(sim_data_file,
                sim_data_ind[[i]] <- bind_rows(sim_data_ind[[i]],
                                               sim_data_ind_inhib) %>%
                   mutate(PerpPresent = ifelse(is.na(PerpPresent),
-                                                  FALSE, PerpPresent))
+                                              FALSE, PerpPresent))
                rm(RowsToUse, sim_data_ind_inhib)
             }
          }
@@ -646,7 +646,7 @@ extractEnzAbund <- function(sim_data_file,
             sim_data_ind <- bind_rows(sim_data_ind,
                                       sim_data_ind_inhib) %>%
                mutate(PerpPresent = ifelse(is.na(PerpPresent),
-                                               FALSE, PerpPresent))
+                                           FALSE, PerpPresent))
             
             rm(RowsToUse)
          }
@@ -663,13 +663,17 @@ extractEnzAbund <- function(sim_data_file,
    
    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
       Data[["agg"]] <- sim_data_mean %>%
-         arrange(Trial, Time)
+         arrange(Trial, Time) %>% 
+         mutate(IndivOrAgg = "aggregate", 
+                Simulated = TRUE)
    }
    
    if(any(c("individual", "both") %in% returnAggregateOrIndiv)){
       Data[["indiv"]] <- sim_data_ind %>%
          mutate(Individual = as.character(Individual),
-                Trial = as.character(Trial)) %>%
+                Trial = as.character(Trial), 
+                Simulated = TRUE, 
+                IndivOrAgg = "individual") %>%
          arrange(Individual, Time)
    }
    
@@ -866,7 +870,7 @@ extractEnzAbund <- function(sim_data_file,
    
    # Noting exactly what the perpetrators were
    AllPerpetrators <- c(Deets$Inhibitor1, Deets$Inhibitor2,
-                     Deets$Inhibitor1Metabolite)
+                        Deets$Inhibitor1Metabolite)
    AllPerpetrators <- AllPerpetrators[complete.cases(AllPerpetrators)]
    
    # Finalizing, tidying, selecting only useful columns
@@ -875,10 +879,14 @@ extractEnzAbund <- function(sim_data_file,
              File = sim_data_file,
              Inhibitor = ifelse(PerpPresent,
                                 str_comma(AllPerpetrators), "none"), 
-             Substrate = Deets$Substrate) %>%
-      arrange(across(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor",
+             Substrate = Deets$Substrate, 
+             # Adding a little bit more info
+             Species = Deets$Species) %>%
+      arrange(across(any_of(c("File", "Enzyme", "Tissue",
+                              "Substrate", "Inhibitor",
                               "Individual", "Trial", "Time")))) %>%
-      select(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor",
+      select(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor", 
+                      "Simulated", "IndivOrAgg", "Species", 
                       "Individual", "Trial", "Time", "Abundance",
                       "Time_units", 
                       "DoseNum_sub", "Dose_int_sub", "TimeSinceDose1_sub",

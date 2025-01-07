@@ -279,8 +279,8 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
          # Using "warning" instead of "stop" here b/c I want this to be able to
          # pass through to other functions and just skip any files that
          # aren't simulator output.
-         warning(paste("The file", ff,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.\n"), 
+         warning(wrapn(paste0("The file '", ff,
+                              "' does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.")), 
                  call. = FALSE)
          next()
       }
@@ -333,10 +333,14 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
    sim_enz_dataframe <- bind_rows(sim_enz_dataframe, MultData) %>% 
       arrange(across(any_of(c("File", "Enzyme", "Inhibitor",
                               "Individual", "Trial", "Time")))) %>%
-      select(any_of(c("Enzyme", "Tissue", "Inhibitor", "Species",
+      select(any_of(c("Enzyme", "Tissue", "Substrate", "Inhibitor", 
+                      "Simulated", "IndivOrAgg", "Species",
                       "Individual", "Trial", "Time", "Abundance",
-                      "Time_units", "DoseNum_sub", "DoseNum_inhib1", 
-                      "DoseNum_inhib2", "File")))
+                      "Time_units", 
+                      "DoseNum_sub", "Dose_int_sub", "TimeSinceDose1_sub",
+                      "DoseNum_inhib1", "Dose_int_inhib1", "TimeSinceDose1_inhib1",
+                      "DoseNum_inhib2", "Dose_int_inhib2", "TimeSinceDose1_inhib2", 
+                      "File")))
    
    if("DoseNum_inhib1" %in% names(sim_enz_dataframe) && 
       all(is.na(sim_enz_dataframe$DoseNum_inhib1))){

@@ -2,8 +2,8 @@
 % Please edit documentation in R/trial_means_plot.R
 \name{trial_means_plot}
 \alias{trial_means_plot}
-\title{Make graphs comparing center statistic and variability in PK across trials
-and, optionally, against observed PK data as well}
+\title{Make graphs comparing the center statistic and variability in PK across
+trials and, optionally, against observed PK}
 \usage{
 trial_means_plot(
   sim_data_file,
@@ -12,18 +12,26 @@ trial_means_plot(
   tissue = "plasma",
   sheet = NA,
   mean_type = "geometric",
-  variability_type = "90\% CI",
+  variability_type = "percentiles",
   observed_PK = NA,
-  lines_for_population_stats = "none",
+  lines_for_population_stats = "gray80 solid dotted",
   color_set = "default",
   color_option = "by study",
+  point_size = NA,
+  bar_width = NA,
   y_axis_limits_lin = NA,
   legend_position = "right",
   include_dose_num = FALSE,
+  graph_title = NA,
+  graph_title_size = 14,
   existing_exp_details = NA,
   return_caption = FALSE,
   prettify_compound_names = TRUE,
-  name_clinical_study = NA
+  clin_study_label_option = "observed or study number",
+  name_clinical_study = NA,
+  save_graph = NA,
+  fig_height = NA,
+  fig_width = NA
 )
 }
 \arguments{
@@ -32,8 +40,7 @@ in quotes}
 
 \item{PKparameter}{PK parameter you want to extract from the simulator output
 file. To see the full set of possible parameters to extract, enter
-\code{view(PKParameterDefinitions)} into the console. Not case sensitive.
-If you use "_first" instead of "_dose1", that will also work.}
+\code{view(PKParameterDefinitions)} into the console. Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
 PK data? Options are: \itemize{\item{"substrate"
@@ -51,26 +58,24 @@ sampling is not as well tested as for other tissues and is only set up for
 V21+. Please check your results carefully.}}
 
 \item{sheet}{optionally specify the name of the sheet where you'd like to
-pull the PK data, in quotes; for example, specify the tab where you have a
-user-defined AUC integration. \emph{Note:} Unless you want a very specific
-Excel sheet that's not what the usual sheet name would be for a first or
-last dose, this function will work best if this is left as NA. Also, since
-we don't know which dose these data were for, you'll see that the output
-parameter names do not include the suffixes "_last" or "_dose1".}
+pull the PK data, in quotes. For example, if you have a user-defined AUC
+interval, specify the tab where those data are. \strong{NOTE:} If you want
+typical first- or last-dose PK, this should be left as NA. This \emph{only}
+applies for user-defined AUC intervals.}
 
 \item{mean_type}{What kind of means do you want to use for the center point
 on the graph? Options are "geometric" (default), "arithmetic", or "median".}
 
 \item{variability_type}{What variability statistic to you want to use for the
-error bars? Options are "90% CI", "SD", "CV", "GCV" (for geometric CV), or
-"range".}
+error bars? Options are "percentiles" for the 5th to 95th percentiles
+(default), "90\% CI", "SD", "CV", "GCV" (for geometric CV), or "range".}
 
 \item{observed_PK}{a data.frame of observed PK that you would like to
   compare. This must include the columns "ObsValue" or "Value" for the center
   value for the observed data and "ObsVariability" or "Variability" for the
   error bars for the observed data. Some filtering this will do
-  automatically: 
-  
+  automatically:
+
   \itemize{\item{If you include a column titled "File", we will only use PK
   data that have the same value in that column as what you supply for
   \code{sim_data_file}.}
@@ -81,29 +86,27 @@ error bars? Options are "90% CI", "SD", "CV", "GCV" (for geometric CV), or
   \item{If you want to include comparisons to more than one clinical study, add a column
   titled "Study" to your data. The value listed in that column will be used
   for labeling the study on your graph. If there is not a column titled
-  "Study" in your observed PK, we will label the data "observed" in the
-  graph.}
-  
-  \item{If you include a column titled "CompoundID", we will only include PK 
+  "Study" in your observed PK, we will label the data in the graph as "observed".}
+
+  \item{If you include a column titled "CompoundID", we will only include PK
   data that match what you supplied for \code{compoundToExtract}.}
-  
-  \item{If you include a column titled "Tissue", we will only include PK 
+
+  \item{If you include a column titled "Tissue", we will only include PK
   data that match what you supplied for \code{tissue}.}
-  
+
   }}
 
 \item{lines_for_population_stats}{optionally include horizontal lines for the
-overall simulated population by specifying the desired line color and type.
-If left as "none" (default), no lines will be included. If set to, e.g.,
-"red solid dotted" or "gray50 dashed dashed" or even "#87A896 solid E2",
-then lines will be added to the graph at whatever centeral statistic you
-specified for "mean_type" and whatever variability statistic you specified
-for "variability_type". The first word must be a legitimate color in R (hex
-codes are fine), the second word, separated by a space, must be the line
-type you want for the central statistic, and the third word must be the
-line type you want for the variability statistic. If you add another space
-and then a fourth number, that will set the line width, which will be 0.5
-by default.}
+overall simulated population statistics by specifying the desired line
+color and type. Set this as a single text string of 1) the color for the
+lines (any R-friendly color specification will work), 2) the linetype for
+the central statistic (any R-friendly linetype will work), 3) the linetype
+for the variability statistic, and, optional, 4) the linewidth to use. If
+you omit the linewidth, we'll use a linewidth of 0.5 by default. The
+default of "gray80 solid dotted" will make a light gray solid line at the
+central statistic and a light gray dotted line at whatever you choose for
+the variability statistic. If you set this to "none", no lines will be
+included.}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
@@ -114,6 +117,12 @@ by default.}
   then Brewer set 1 will be used since red and blue are still easily
   distinguishable but also more aesthetically pleasing than green and
   orange.}
+
+  \item{"black and white" ("BW" also works)}{black and white only. "white"
+  means a black circle with a white center. If you set
+  \code{color_option = "S or O"}, the simulated trials will be white and the
+  observed will be black. This looks like the trial-means
+  plots in the Excel outputs from the Simulator.}
 
   \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
   first three colors are red, blue, and green.}
@@ -132,15 +141,15 @@ by default.}
   change in intrinsic solubility will affect concentration-time profiles --
   because the direction of the trend will be clear.}
 
-  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  \item{"blues"}{a set of blues fading from sky to navy. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
-  \item{"greens"}{a set of blues fading light blue to dark blue. Like
+  \item{"greens"}{a set of greens fading from chartreuse to forest. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
-  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  \item{"purples"}{a set of purples fading from lavender to aubergine. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
@@ -165,12 +174,17 @@ by default.}
   \link{colorRampPalette}.}}}
 
 \item{color_option}{How do you want to color information in the graph?
-  Options are: \describe{\item{"by study" (default)}{all simulated trials
+  Options are:
+
+  \describe{\item{"by study" (default)}{all simulated trials
   will be the first color from \code{color_set} and then each set of
   observed data will be a different color from that set}
 
   \item{"by trial"}{uses a different color from \code{color_set} for every
-  trial, whether simulated or observed}}}
+  trial, whether simulated or observed}
+
+  \item{"simulated or observed" ("S or O" and "S vs O" will also work)}{color
+  points based on whether they were simulated or observed}}}
 
 \item{y_axis_limits_lin}{optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
@@ -181,6 +195,12 @@ currently supported.)}
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right" (default), "bottom", "top", or "none" if you don't want one
 at all.}
+
+\item{graph_title}{optionally specify a title that will be centered across
+your graph or set of graphs}
+
+\item{graph_title_size}{the font size for the graph title if it's included;
+default is 14. This also determines the font size of the graph labels.}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} to get all the details from the "Input
@@ -212,6 +232,21 @@ you want, e.g.,
 \code{prettify_compound_names = c("inhibitor 1" = "teeswiftavir",
 "substrate" = "superstatin")}.}
 
+\item{clin_study_label_option}{Clinical study names are generally much longer
+than the names of the simulated trial means, which will be just "1", "2",
+etc., so the labels like "Clinical Study 101, fasted healthy subjects" just
+won't fit nicely by comparison. For this reason, you can choose how
+observed data study names should be automatically shortened. Options:
+\describe{\item{"observed or study number"}{when there's only 1 clinical 
+study, we'll label that as "observed" in the graph, but when there's more 
+than one, we'll label the studies as "study 1", "study 2", etc.} 
+
+\item{"study number"}{this will make the label always be, e.g., "study 1", 
+"study 2", etc., even if there is only 1 study.}
+
+\item{"keep" or "keep original"}{this will retain the original value for 
+the study name, even if it's really long and awkward.}}}
+
 \item{name_clinical_study}{optionally specify the name(s) of the clinical
 study or studies for any observed data. This only affects the caption of
 the graph. For example, specifying \code{name_clinical_study = "101, fed
@@ -220,16 +255,33 @@ cohort"} will result in a figure caption that reads in part "clinical study
 care of stringing them together appropriately. Just list them as a
 character vector, e.g., \code{name_clinical_study = c("101",
 "102", "103")} will become "clinical studies 101, 102, and 103."}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "My conc time graph.png" or "My conc time
+graph.docx". The nice thing about saving to Word is that the figure title
+and caption text will be filled in automatically. If you leave off ".png"
+or ".docx", the graph will be saved as a png file, but if you specify a
+different graphical file extension, it will be saved as that file format.
+Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
+"tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
+or periods in the file name. Leaving this as NA means the file will not be
+saved to disk.}
+
+\item{fig_height}{figure height in inches}
+
+\item{fig_width}{figure width in inches}
 }
 \value{
 a ggplot2 graph
 }
 \description{
-\code{trial_means_plot} creates a graph of the PK parameter
-  selected showing the central statistic chosen as a dot and the variability
-  statistic chosen as error bars for each of the trials included in a
-  simulation. The simulated trials may be compared to variability in the
-  corresponding observed PK when provided. UNDER CONSTRUCTION.
+\code{trial_means_plot} creates a graph comparing variability
+  across simulated trials and, when supplied, across observed trials as well
+  for a given PK parameter. The central statistic is shown as a dot and the
+  variability statistic is shown as error bars for each of the trials, and
+  you can choose which statistics you want for each, e.g., geometric means
+  for the central statistic and the geometric 90\% confidence interval for
+  the variability statistic. UNDER CONSTRUCTION.
 
   \strong{IMPORTANT:} If the summary statistics used for your observed data
   don't match the summary statistics you choose for \code{mean_type} and

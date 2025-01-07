@@ -1,0 +1,24 @@
+---
+title: "Trial-means plot"
+author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+
+```{r setupctplot, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600)
+
+```
+
+`r paste0("***Figure XXX***. *", move_asterisks(Out$figure_heading), "*")`
+
+```{r ctplot, fig.width = fig_width, fig.height = fig_height}
+
+Out[["graph"]]
+
+```
+
+`r paste0("*", move_asterisks(Out$figure_caption), "*")`
+

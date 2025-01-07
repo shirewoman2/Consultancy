@@ -39,7 +39,8 @@ the variability? Options are: \describe{\item{"90\% CI" (default)}{90\% confiden
 interval; this will be geometric or arithmetic based on your choice for
 \code{mean_type}} \item{"CV"}{coefficient of variation; this will be
 geometric or arithmetic based on your choice for \code{mean_type}}
-\item{"SD"}{arithmetic standard deviation}}}
+\item{"SD"}{arithmetic standard deviation} \item{"none"}{to get no 
+variability stats included in the table}}}
 
 \item{variability_format}{formatting used to indicate the variability When
 the variability is concatenated. Options are "to" (default) to get output

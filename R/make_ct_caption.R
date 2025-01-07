@@ -53,10 +53,10 @@ make_ct_caption <- function(ct_dataframe,
    
    InhibPresent <- any(ct_dataframe$Inhibitor != "none")
    
-   CmpdRoles <- case_when(plot_type == "enzyme-abundance" &
+   CmpdRoles <- case_when(plot_type %in% c("enzyme-abundance", "fm") &
                              InhibPresent == TRUE ~ "perpetrator", 
                           
-                          plot_type == "enzyme-abundance" &
+                          plot_type %in% c("enzyme-abundance", "fm") &
                              InhibPresent == FALSE ~ "victim", 
                           
                           .default = str_c(sort(unique(AllCompounds$DDIrole[
@@ -71,7 +71,7 @@ make_ct_caption <- function(ct_dataframe,
       plot_type <- "mass-time"
    }
    
-   if(plot_type == "enzyme-abundance"){
+   if(plot_type  %in% c("enzyme-abundance", "fm")){
       MyCompound <- str_comma(sort(unique(ct_dataframe$Enzyme)))
    } else {
       MyCompound <- case_when(
@@ -224,7 +224,7 @@ make_ct_caption <- function(ct_dataframe,
       
       ## Getting general info and setting up heading ------------------------------
       
-      Text1 <- switch(linear_or_log, 
+      Text1a <- switch(linear_or_log, 
                       "both" = "Linear (A) and log-linear (B)",
                       "both horizontal" ="Linear (A) and log-linear (B)",
                       "both vertical" = "Linear (A) and log-linear (B)",
@@ -232,6 +232,9 @@ make_ct_caption <- function(ct_dataframe,
                       "log" = "Log-linear",
                       "semi-log" = "Log-linear", 
                       "horizontal and vertical" = "Linear (A) and log-linear (B)")
+      
+      Text1 <- case_when(plot_type == "fm" ~ "", 
+                         .default = paste0(Text1a, " simulated ", Tissue))
       
       DDI <- MyPerpetrator != "none"
       # If the plot is of a perpetrator, we actually want DDI to be FALSE b/c we
@@ -244,9 +247,10 @@ make_ct_caption <- function(ct_dataframe,
                          paste0("co-administered with ", MyPerpetrator, " "), 
                          "")
       
-      Heading <- paste0(Text1, " simulated ", Tissue, 
+      Heading <- paste0(Text1, 
                         switch(plot_type, 
                                "enzyme-abundance" = " enzyme-abundance profiles of ",
+                               "fm" = "Time-dependent fm values for ", 
                                "release-profile" = " release profiles of ",
                                "dissolution-profile" = " dissolution profiles of ",
                                "concentration-time" = " concentration-time profiles of ", 
@@ -271,9 +275,12 @@ make_ct_caption <- function(ct_dataframe,
          }
          
          CapText1 <- paste0(
-            "Depicted are ", Tissue,
+            "Depicted are ", 
+            case_when(plot_type == "fm" ~ "", 
+                      .default = Tissue),
             switch(plot_type, 
                    "enzyme-abundance" = " enzyme-abundance profiles of ",
+                   "fm" = "time-dependent fm values for ", 
                    "release-profile" = " release profiles of ",
                    "dissolution-profile" = " dissolution profiles of ",
                    "concentration-time" = " concentration-time profiles of "), 
@@ -304,19 +311,22 @@ make_ct_caption <- function(ct_dataframe,
          
          CapText1 <- paste0(
             "Depicted are ", 
-            ifelse(ObsIncluded, 
-                   paste0("simulated (lines) and observed (circles;",  
-                          ifelse(ObsShowsMean, 
-                                 paste0(mean_type, 
-                                        " mean of n = ", N_subjpertrial, 
-                                        " individuals; "), 
-                                 paste0(" n = ", N_subjpertrial, 
-                                        " individuals; ")),
-                          MyClinStudies, ") "),
-                   "simulated "), 
-            Tissue, 
+            case_when(ObsIncluded ~ 
+                         paste0("simulated (lines) and observed (circles;",  
+                                ifelse(ObsShowsMean, 
+                                       paste0(mean_type, 
+                                              " mean of n = ", N_subjpertrial, 
+                                              " individuals; "), 
+                                       paste0(" n = ", N_subjpertrial, 
+                                              " individuals; ")),
+                                MyClinStudies, ") "),
+                      plot_type == "fm" ~ "", 
+                      .default = "simulated "), 
+            case_when(plot_type == "fm" ~ "", 
+                      .default = Tissue), 
             switch(plot_type, 
                    "enzyme-abundance" = " enzyme-abundance profiles of ",
+                   "fm" = "time-dependent fm values for ", 
                    "release-profile" = " release profiles of ",
                    "dissolution-profile" = " dissolution profiles of ",
                    "concentration-time" = " concentration-time profiles of "), 
@@ -410,20 +420,26 @@ make_ct_caption <- function(ct_dataframe,
                       "linear" = "Linear", 
                       "log" = "Log-linear",
                       "semi-log" = "Log-linear")
+      Text1 <- case_when(plot_type == "fm" ~ "", 
+                         .default = Text1)
       
       Text2 <- switch(plot_type, 
-                      "enzyme-abundance" = paste0("simulated enzyme-abundance profiles of ",
+                      "enzyme-abundance" = paste0(" simulated enzyme-abundance profiles of ",
                                                   str_comma(unique(ct_dataframe$Enzyme)), 
                                                   " in ", str_comma(unique(ct_dataframe$Tissue)), "."),
-                      "release-profile" = paste0("release profiles of ",
+                      "fm" = paste0("Time-dependent fm profiles for ",
+                                    str_comma(unique(ct_dataframe$Enzyme)), 
+                                    " in ", str_comma(unique(ct_dataframe$Tissue)), "."), 
+                      "release-profile" = paste0(" release profiles of ",
                                                  MyCompound, "."),
-                      "dissolution-profile" = paste0("dissolution profiles of ",
+                      "dissolution-profile" = paste0(" dissolution profiles of ",
                                                      MyCompound, "."),
-                      "concentration-time" = paste0(str_comma(unique(ct_dataframe$Tissue)), 
+                      "concentration-time" = paste0(" ", 
+                                                    str_comma(unique(ct_dataframe$Tissue)), 
                                                     " simulated concentration-time profiles of ", # keep 1st and last spaces here
                                                     MyCompound, "."))
       
-      Heading <- paste(Text1, Text2)
+      Heading <- paste0(Text1, Text2)
       
       ## Caption --------------------------------------------------------------
       

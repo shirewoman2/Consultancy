@@ -1,9 +1,12 @@
 #' Extract fm and fe valuesthat change with time from a Simulator output Excel
 #' file
 #'
-#' \code{extractFmFe} extracts time-dependent fm and fe data from a simulator
-#' output Excel file. A tab named something like "Time variant \%fm and fe" must
-#' be present.
+#' \code{extractFmFe} extracts fm and fe data from a simulator output Excel
+#' file. A tab named something like "Time variant \%fm and fe" must be present
+#' to get dynamic fm and fe values, but you can get the static values if the tab
+#' "% fm and fe SS" is present. Dynamic fm and fe data are required if you want
+#' to use these data with the function \code{\link{fm_plot}} to make a graph of
+#' how the fm values change over time.
 #'
 #' @param sim_data_file name of the Excel file containing the simulated dynamic
 #'   fm and fe data, in quotes
@@ -94,9 +97,9 @@ extractFmFe <- function(sim_data_file,
    }
    
    if(Deets$PopRepSim == "Yes"){
-      warning(paste0("The simulator file supplied, `", 
-                     sim_data_file, 
-                     "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
+      warning(wrapn(paste0("The simulator file supplied, `", 
+                           sim_data_file, 
+                           "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.")),
               call. = FALSE)
    }
    
@@ -111,7 +114,7 @@ extractFmFe <- function(sim_data_file,
       length(SheetNames_static) == 0){
       warning(wrapn(paste0("The simulator output file provided, '", 
                            sim_data_file, 
-                           "', does not appear to have a sheet titled 'Time variance %fm and fe', which is what we need for extracting dynamic fm and fe values, nor a sheet titled '% fm and fe SS', which is what we need for static fm and fe values. We cannot return any fm data.")),
+                           "', does not appear to have a sheet titled 'Time variant %fm and fe', which is what we need for extracting dynamic fm and fe values, nor a sheet titled '% fm and fe SS', which is what we need for static fm and fe values. We cannot return any fm data.")),
               call. = FALSE)
       return(data.frame())
    }

@@ -501,15 +501,17 @@ tidy_input_PK <- function(PKparameters,
       }
       
       if("File" %in% names(PKparameters) &&
-         any(complete.cases(PKparameters$File)) &
-         any(is.na(PKparameters$File))){
+         (any(complete.cases(PKparameters$File)) &
+          any(is.na(PKparameters$File)))){
          stop(str_wrap("You have supplied a set of PK parameters to extract where you sometimes have listed the simulation file name and sometimes have not, so we don't know which simultaion files you want. Please check your input and try again."), 
               call. = FALSE)
       }
       
       # If all values for File are NA, remove this column and then re-add it in
       # the next tidying step.
-      if(all(is.na(PKparameters$File))){PKparameters$File <- NULL}
+      if("File" %in% names(PKparameters) && all(is.na(PKparameters$File))){
+         PKparameters$File <- NULL
+      }
       
       if("File" %in% names(PKparameters) == FALSE){
          
@@ -809,6 +811,27 @@ tidy_input_PK <- function(PKparameters,
    # Harmonizing
    PKparameters$PKparameter <- harmonize_PK_names(PKparameters$PKparameter)
    
+   # Harmonizing
+   PKparameters$PKparameter <- harmonize_PK_names(PKparameters$PKparameter)
+   
+   # Check for when they have supplied a tab for AUCinf b/c that shouldn't
+   # happen.
+   PKparameters <- PKparameters %>% 
+      mutate(AUCinfCheck = (str_detect(PKparameter, "AUCinf") & is.na(Sheet)) |
+                !str_detect(PKparameter, "AUCinf"))
+   
+   if(any(PKparameters$AUCinfCheck == FALSE, na.rm = T)){
+      warning(wrapn("You requested AUCinf but then also specified what sheet to use for getting that parameter. We assume that, if you're supplying a sheet name, it's because it's a custom AUC interval, which wouldn't make sense for AUCinf, which is only a first-dose PK parameter. We will ignore the sheet you specified for AUCinf."), 
+              call. = FALSE)
+      PKparameters <- PKparameters %>% 
+         mutate(Sheet = case_when(str_detect(PKparameter, "AUCinf") ~ NA, 
+                                  .default = Sheet), 
+                PKparameter = case_when(str_detect(PKparameter, "AUCinf") ~ "AUCinf_dose1", 
+                                        .default = PKparameter)) %>% 
+         unique()
+      
+   }
+   
    BadParams <- setdiff(PKparameters$PKparameter, 
                         c(AllPKParameters$PKparameter, 
                           AllPKParameters$PKparameter_nodosenum))
@@ -913,7 +936,8 @@ tidy_input_PK <- function(PKparameters,
    # provided or extracted inside the function.
    if("logical" %in% class(existing_exp_details)){
       # logical when user has supplied NA
-      existing_exp_details <- extractExpDetails_mult(sim_data_files = sim_data_files)
+      existing_exp_details <- extractExpDetails_mult(
+         sim_data_files = sort(unique(c(PKparameters$File, sim_data_files))))
    } else { 
       existing_exp_details <- harmonize_details(existing_exp_details)
    }
@@ -922,7 +946,7 @@ tidy_input_PK <- function(PKparameters,
    if(any(PKparameters$File %in% existing_exp_details$MainDetails$File == FALSE)){
       suppressWarnings(
          existing_exp_details <- extractExpDetails_mult(
-            sim_data_files = PKparameters$File,
+            sim_data_files = sort(unique(c(PKparameters$File, sim_data_files))),
             exp_details = "Summary and Input", 
             existing_exp_details = existing_exp_details)
       )
@@ -1009,7 +1033,7 @@ tidy_input_PK <- function(PKparameters,
    # simulation. Also check whether simulation was a DDI sim. 
    
    # First, adding any missing columns to existing_exp_details$MainDetails. 
-   MissingCols <- setdiff(paste0("DoseInt", c("_sub", "_inhib", "_inhib2")), 
+   MissingCols <- setdiff(paste0("Regimen", c("_sub", "_inhib", "_inhib2")), 
                           names(existing_exp_details$MainDetails)) 
    if(length(MissingCols) > 0){
       existing_exp_details$MainDetails <- 
@@ -1022,7 +1046,7 @@ tidy_input_PK <- function(PKparameters,
    PKparameters <- PKparameters %>% 
       left_join(existing_exp_details$MainDetails %>% 
                    select(File, any_of(AllCompounds$DetailNames), 
-                          matches("DoseInt")), 
+                          matches("Regimen")), 
                 by = "File") %>% 
       mutate(GoodCmpd = 
                 (CompoundID == "substrate" & complete.cases(Substrate)) |
@@ -1036,13 +1060,13 @@ tidy_input_PK <- function(PKparameters,
              MD = 
                 (CompoundID %in% AllCompounds$CompoundID[
                    AllCompounds$DosedCompoundID == "substrate"] & 
-                    complete.cases(DoseInt_sub)) |
+                    Regimen_sub == "Multiple Dose") |
                 (CompoundID %in% AllCompounds$CompoundID[
                    AllCompounds$DosedCompoundID == "inhibitor 1"] & 
-                    complete.cases(DoseInt_inhib)) |
+                    Regimen_inhib == "Multiple Dose") |
                 (CompoundID %in% AllCompounds$CompoundID[
                    AllCompounds$DosedCompoundID == "inhibitor 2"] & 
-                    complete.cases(DoseInt_inhib2)))
+                    Regimen_inhib2 == "Multiple Dose"))
    
    if(any(PKparameters$GoodCmpd == FALSE)){
       Problem <- PKparameters %>%
@@ -1097,27 +1121,15 @@ tidy_input_PK <- function(PKparameters,
                       select(CompoundID, DosedCompoundID, DosedCompoundSuffix),
                    by = "CompoundID") %>% 
          left_join(existing_exp_details$MainDetails %>% 
-                      select(File, matches("DoseInt")) %>% 
-                      # We just need to know whether it was multiple doses or a
-                      # single one, so putting a placeholder anywhere it lists
-                      # "custom dosing" b/c that *would be* multiple dosing.
-                      mutate(DoseInt_sub = case_when(DoseInt_sub == "custom dosing" ~ "12", 
-                                                     .default = as.character(DoseInt_sub)), 
-                             DoseInt_inhib = case_when(DoseInt_inhib == "custom dosing" ~ "12", 
-                                                       .default = as.character(DoseInt_inhib)), 
-                             DoseInt_inhib2 = case_when(DoseInt_inhib2 == "custom dosing" ~ "12", 
-                                                        .default = as.character(DoseInt_inhib2)), 
-                             across(.cols = matches("DoseInt"), .fns = as.numeric)),
-                   by = "File") %>% 
-         mutate(MyDoseInt = case_match(DosedCompoundID, 
-                                       "substrate" ~ DoseInt_sub, 
-                                       "inhibitor 1" ~ DoseInt_inhib, 
-                                       "inhibitor 2" ~ DoseInt_inhib2), 
-                Keep = (complete.cases(MyDoseInt) &
+                      select(File, matches("Regimen")), by = "File") %>% 
+         mutate(MyRegimen = case_match(DosedCompoundID, 
+                                       "substrate" ~ Regimen_sub, 
+                                       "inhibitor 1" ~ Regimen_inhib, 
+                                       "inhibitor 2" ~ Regimen_inhib2), 
+                Keep = (MyRegimen == "Multiple Dose" &
                            !str_detect(PKparameter, "_dose1")) |
-                   (is.na(MyDoseInt) & !str_detect(PKparameter, "_last"))) %>% 
+                   (MyRegimen == "Single Dose" & !str_detect(PKparameter, "_last"))) %>% 
          filter(Keep == TRUE)
-      
       
    } else {
       
@@ -1180,7 +1192,7 @@ tidy_input_PK <- function(PKparameters,
    PKparameters <- PKparameters %>% 
       mutate(Harmonious = HarmoniousDDI & HarmoniousRegimen)
    
-   if(any(PKparameters$Harmonious == FALSE) &
+   if(any(PKparameters$Harmonious == FALSE, na.rm = T) &
       all(complete.cases(PKparameters_orig)) & FromCalcPKRatios == FALSE){
       
       Problem <- PKparameters %>% filter(Harmonious == FALSE) %>% 

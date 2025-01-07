@@ -53,17 +53,17 @@ make_text_legos <- function(sim_data_file,
                                                    "Multiple Dose"),
                           "multiple", "single")
    
-   DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
-                          "12" = "BID",
-                          "24" = "QD",
-                          "8" = "three times per day",
-                          "6" = "four times per day",
-                          "48" = "every other day",
-                          "NA" = "single dose")
-   DoseFreq_sub <- ifelse(is.null(DoseFreq_sub),
-                          # paste("Q", DoseFreq_sub, "H"),
-                          "**CUSTOM DOSING - FILL IN MANUALLY**",
-                          DoseFreq_sub)
+   if(Deets$DoseRoute_sub == "custom dosing"){
+      DoseFreq_sub <- "**CUSTOM DOSING - FILL IN MANUALLY**"
+   } else {
+      DoseFreq_sub <- switch(as.character(Deets$DoseInt_sub),
+                             "12" = "BID",
+                             "24" = "QD",
+                             "8" = "three times per day",
+                             "6" = "four times per day",
+                             "48" = "every other day",
+                             "NA" = "single dose")
+   }
    
    DosingText_sub_lower <- 
       paste0(ifelse(SingMult_sub == "single", "a single ", "multiple "),

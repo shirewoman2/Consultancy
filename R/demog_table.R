@@ -20,7 +20,8 @@
 #'   interval; this will be geometric or arithmetic based on your choice for
 #'   \code{mean_type}} \item{"CV"}{coefficient of variation; this will be
 #'   geometric or arithmetic based on your choice for \code{mean_type}}
-#'   \item{"SD"}{arithmetic standard deviation}}
+#'   \item{"SD"}{arithmetic standard deviation} \item{"none"}{to get no 
+#'   variability stats included in the table}}
 #' @param variability_format formatting used to indicate the variability When
 #'   the variability is concatenated. Options are "to" (default) to get output
 #'   like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
@@ -122,18 +123,20 @@ demog_table <- function(demog_dataframe,
    }
    
    # Checking mean type input syntax
+   mean_type <- tolower(mean_type)[1]
    if(complete.cases(mean_type)){
-      if(mean_type %in% c("geometric", "arithmetic") == FALSE){
+      if(mean_type %in% c("geometric", "arithmetic", "median") == FALSE){
          if(mean_type == "mean"){
             warning(paste0(str_wrap("Technically, the input for mean_type should be `geometric` (default) or `arithmetic`. You specified a mean type of `mean`, so we think you want arithmetic means. If that's incorrect, please set mean_type to `geometric`."),
                            "\n"), call. = FALSE)
          }
          
-         mean_type <- case_when(str_detect(tolower(mean_type), "geo") ~ "geometric", 
-                                str_detect(tolower(mean_type), "arith") ~ "arithmetic")
+         mean_type <- case_when(str_detect(mean_type, "geo") ~ "geometric", 
+                                str_detect(mean_type, "arith") ~ "arithmetic", 
+                                str_detect(mean_type, "med") ~ "median")
          
-         if(mean_type %in% c("geometric", "arithmetic") == FALSE){
-            warning("You specified something other than `geometric` (default) or `arithmetic` for the mean type, so we're not sure what you would like. We'll use the default of geometric means.\n", 
+         if(mean_type %in% c("geometric", "arithmetic", "median") == FALSE){
+            warning("You specified something other than `geometric` (default), `arithmetic`, or `median` for the mean type, so we're not sure what you would like. We'll use the default of geometric means.\n", 
                     call. = FALSE)
             
             mean_type <- "geometric"
@@ -192,8 +195,8 @@ demog_table <- function(demog_dataframe,
    
    FT <- 
       suppressWarnings(suppressMessages(
-         Demog %>% 
-            select(-Population, -AllometricScalar, -SimDuration) %>% 
+         demog_dataframe %>% 
+            select(-Population, -AllometricScalar) %>% 
             pivot_longer(cols = PossDemogParams, 
                          names_to = "Parameter", 
                          values_to = "Value") %>% 
@@ -201,17 +204,21 @@ demog_table <- function(demog_dataframe,
             group_by(File, Simulated, Sex, Parameter) %>% 
             summarize(Mean = mean(Value, na.rm = T), 
                       SD = sd(Value, na.rm = T), 
-                      # Median = median(Value, na.rm = T), 
+                      Median = median(Value, na.rm = T),
                       Geomean = gm_mean(Value), 
                       CI90_l = switch(mean_type, 
                                       "geometric" = gm_conf(Value, CI = 0.9)[1], 
-                                      "arithmetic" = confInt(Value, CI = 0.9)[1]), 
+                                      "arithmetic" = confInt(Value, CI = 0.9)[1], 
+                                      "median" = gm_conf(Value, CI = 0.9)[1]), 
                       CI90_u = switch(mean_type, 
                                       "geometric" = gm_conf(Value, CI = 0.9)[2], 
-                                      "arithmetic" = confInt(Value, CI = 0.9)[2]), 
+                                      "arithmetic" = confInt(Value, CI = 0.9)[2],
+                                      "median" = gm_conf(Value, CI = 0.9)[2]), 
                       CV = switch(mean_type, 
                                   "geometric" = gm_CV(Value), 
                                   "arithmetic" = sd(Value, na.rm = T) / 
+                                     mean(Value, na.rm = T),
+                                  "median" = sd(Value, na.rm = T) / 
                                      mean(Value, na.rm = T)))
       ))
    
@@ -225,7 +232,9 @@ demog_table <- function(demog_dataframe,
                                             "brackets" = paste0("[", CI90_l, ", ", CI90_u, "]"),
                                             "parentheses" = paste0("(", CI90_l, ", ", CI90_u, ")")), 
                           "CV" = CV, 
-                          "SD" = SD), 
+                          "SD" = SD, 
+                          # placeholder
+                          "none" = SD), 
              Var = ifelse(Var == "NA to NA", NA, Var), 
              Value = switch(mean_type, 
                             "geometric" = Geomean, 
@@ -240,12 +249,16 @@ demog_table <- function(demog_dataframe,
                                       {{mean_type}} == "geometric" ~ "geometric mean", 
                                    Statistic == "Value" & 
                                       {{mean_type}} == "arithmetic" ~ "mean", 
+                                   Statistic == "Value" & 
+                                      {{mean_type}} == "median" ~ "median", 
                                    Statistic == "Var" & 
                                       {{variability_type}} == "90% CI" ~ "90% confidence interval", 
                                    Statistic == "Var" & 
                                       {{variability_type}} == "CV" ~ "coefficient of variation", 
                                    Statistic == "Var" & 
-                                      {{variability_type}} == "SD" ~ "standard deviation"), 
+                                      {{variability_type}} == "SD" ~ "standard deviation", 
+                                   Statistic == "Var" & 
+                                      {{variability_type}} == "none" ~ "REMOVE THIS ROW"), 
              SorO = ifelse(SorO == TRUE, "simulated", "observed"), 
              Parameter = case_match(Parameter, 
                                     "Weight_kg" ~ "Weight (kg)", 
@@ -265,6 +278,10 @@ demog_table <- function(demog_dataframe,
                                     "GFR_mLminm2" ~ "GFR (mL/min/m^2^)", 
                                     .default = Parameter)) %>% 
       pivot_wider(names_from = Parameter, values_from = Val)
+   
+   if(variability_type == "none"){
+      FT <- FT %>% filter(!Statistic == "REMOVE THIS ROW")
+   }
 
    
    # Saving --------------------------------------------------------------

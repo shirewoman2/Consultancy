@@ -247,8 +247,8 @@ extractPK <- function(sim_data_file,
          # Using "warning" instead of "stop" here b/c I want this to be able to
          # pass through to other functions and just skip any files that
          # aren't simulator output.
-         warning(paste("The file", sim_data_file,
-                       "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file."), 
+         warning(wrapn(paste0("The file '", sim_data_file,
+                              "' does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.")), 
                  call. = FALSE)
          return(list())
       }
@@ -408,7 +408,7 @@ extractPK <- function(sim_data_file,
             }
             
             Tab_first <- names(TissueCheck)[TissueCheck == TRUE][1]
-         }
+         } 
       }
       
       Tab_last <- SheetNames[
@@ -1850,16 +1850,16 @@ extractPK <- function(sim_data_file,
    
    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv) & 
       length(Out_agg) == 0){
-      warning(paste0("For the file ", sim_data_file, 
-                     ", no PK parameters were found. Did you include PK info as part of your simulation output?"), 
+      warning(wrapn(paste0("For the file ", sim_data_file, 
+                           ", no PK parameters were found. Did you include PK info as part of your simulation output?")), 
               call. = FALSE)
       return(list())
    }
    
    if(any(c("individual", "both") %in% returnAggregateOrIndiv) &
       length(Out_ind) == 0){
-      warning(paste0("For the file ", sim_data_file, 
-                     ", no PK parameters were found. Did you include PK info as part of your simulation output?"), 
+      warning(wrapn(paste0("For the file ", sim_data_file, 
+                           ", no PK parameters were found. Did you include PK info as part of your simulation output?")), 
               call. = FALSE)
       return(list())
    }
@@ -1907,8 +1907,8 @@ extractPK <- function(sim_data_file,
             select(File, CompoundID, Compound, Inhibitor, Tissue, Simulated,
                    Dose, # DoseNum, 
                    PKparameter, # N, 
-                   Geomean, GCV, CI90_lower, CI90_upper, 
-                   Mean, SD, Median, Minimum, Maximum)
+                   any_of(c("Geomean", "GCV", "CI90_lower", "CI90_upper", 
+                            "Mean", "SD", "Median", "Minimum", "Maximum")))
       )
       
    }

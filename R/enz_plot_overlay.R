@@ -88,7 +88,15 @@
 #'   change in intrinsic solubility will affect concentration-time profiles --
 #'   because the direction of the trend will be clear.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"blues"}{a set of blues fading from sky to navy. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
@@ -382,6 +390,17 @@ enz_plot_overlay <- function(sim_enz_dataframe,
                              fig_height = 6,
                              fig_width = 5, 
                              assume_unique = TRUE){
+   
+   # NB: This is a pass-through function for ct_plot_overlay. 
+   
+   # Error catching ---------------------------------------------------------
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+           call. = FALSE)
+   }
+   
+   # Main function ----------------------------------------------------------
    
    facet1_column <- rlang::enquo(facet1_column)
    facet2_column <- rlang::enquo(facet2_column)

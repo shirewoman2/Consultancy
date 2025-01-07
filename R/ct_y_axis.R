@@ -163,12 +163,10 @@ ct_y_axis <- function(ADAMorAdvBrain,
    AdjustGraphBorder <- "expression" %in% class(ylab1) == FALSE &&
       complete.cases(ylab1) && str_detect(ylab1, "\\\n")
    
-   # Per Hannah: If there are observed data included in the simulation, set the
-   # y axis limits to show those data well. 
-   
-   # To do this, when observed data are present, filtering Ylim_data to only
-   # include concentrations >= 0.8*min(observed conc). t0 point isn't included
-   # in this calculation. 
+   # If there are observed data included in the simulation, setting the y axis
+   # limits to show those data well. To do this, when observed data are present,
+   # filtering Ylim_data to only include concentrations >= 0.8*min(observed
+   # conc). t0 point isn't included in this calculation.
    if(EnzPlot == FALSE && nrow(Ylim_data %>% filter(Simulated == FALSE)) > 0){
       ObsMin <- Ylim_data %>% filter(Simulated == FALSE & Conc > 0) %>% 
          pull(Conc) %>% min(na.rm = TRUE) 

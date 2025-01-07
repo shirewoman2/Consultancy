@@ -31,6 +31,10 @@ harmonize_PK_names <- function(PKparameters){
    PKparameters <- sub("AUCt_ratio_last", "AUCtau_ratio_last", PKparameters)
    PKparameters <- sub("_[iI]nhib", "_withInhib", PKparameters)
    PKparameters <- sub("withinhib", "withInhib", PKparameters)
+   PKparameters <- case_match(PKparameters, 
+                              "AUCtau" ~ "AUCt", 
+                              "AUCtau_withInhib" ~ "AUCt_withInhib", 
+                              .default = PKparameters)
    
    # If the user switched the order of "ratio" and "last" or "dose1", fix that.
    PKparameters <- sub("dose1_ratio", "ratio_dose1", PKparameters)

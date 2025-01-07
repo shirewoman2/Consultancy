@@ -9,7 +9,6 @@ extractExpDetails_mult(
   exp_details = "all",
   existing_exp_details = NA,
   overwrite = FALSE,
-  save_output = NA,
   ...
 )
 }
@@ -80,11 +79,6 @@ situation where you might want to set this to TRUE would be when you have
 changed input parameters for simulations and re-run them OR when you have
 extracted only some of the possible experimental details and you now would
 like more experimental details from each simulator output file.}
-
-\item{save_output}{optionally save the output by supplying a csv or Excel
-file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-details.xlsx".  Do not include any slashes, dollar signs, or periods in the file name. If you leave off the file extension, it will be saved as a
-csv file.}
 }
 \value{
 Returns a data.frame of experimental details for simulator files
@@ -108,7 +102,6 @@ extractExpDetails_mult(
           "Example simulator output - MDZ + metabolites.xlsx",
           "Example simulator output - met1 met2 sec met1 inhib1.xlsx",
           "Example simulator output - met1 met2 sec met1.xlsx"),
-    exp_details = "all",
-    save_output = "My experimental details.csv")
+    exp_details = "all")
  
 }

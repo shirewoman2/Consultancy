@@ -482,8 +482,10 @@ pk_table <- function(PKparameters = NA,
       filter(N > 1)
    
    if(nrow(DupCheck) > 0){
-      warning(wrapn(paste0("There are some duplicate observed PK data included in your input for PKparameters. We can only manage one observed value for each PK parameter, tissue, and compound, so we will have to ignore any duplicates. Specifically, we will ignore the following observed PK:")))
-      print(DupCheck)
+      message(wrapn(paste0("Warning: There are some duplicate observed PK data included in your input for PKparameters. We can only manage one observed value for each PK parameter, tissue, and compound, so we will have to ignore any duplicates. Specifically, we will ignore the following observed PK:")))
+      
+      message(paste(paste(capture.output(as.data.frame(DupCheck)), collapse = "\n"), 
+                    "\n"))
       
       DupCheck <- DupCheck %>% 
          mutate(ID = paste(File, Sheet, CompoundID, Tissue, PKparameter))
@@ -763,7 +765,8 @@ pk_table <- function(PKparameters = NA,
                    " in ", unique(PKparameters[[i]]$Tissue), 
                    " for the simulation `", i,
                    "` on the ", 
-                   ifelse(is.na(unique(PKparameters[[i]]$Sheet)), 
+                   ifelse(is.na(unique(PKparameters[[i]]$Sheet)) || 
+                             unique(PKparameters[[i]]$Sheet) == "default", 
                           "regular sheet for the 1st or last-dose PK", 
                           paste0("sheet `", unique(PKparameters[[i]]$Sheet), "`")), 
                    ". Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")),
@@ -891,7 +894,7 @@ pk_table <- function(PKparameters = NA,
    
    TmaxStuff <- MyPKResults %>% 
       filter(str_detect(PKParam, "tmax") & 
-                !Stat %in% c("Geomean", "Mean", "Median")) %>% 
+                !Stat %in% c("Geomean", "Mean", "Median", "S_O")) %>% 
       mutate(Stat = case_when(Stat == "tmaxmin" &
                                  {{includeRange}} ~ "Minimum", 
                               str_detect(PKParam, "tmax") & 
@@ -915,8 +918,8 @@ pk_table <- function(PKparameters = NA,
    MyPKResults <- MyPKResults %>% 
       filter(!str_detect(PKParam, "tmax") |
                 (str_detect(PKParam, "tmax") & 
-                    Stat %in% c("Geomean", "Mean", "Median"))) %>% 
-   bind_rows(TmaxStuff) %>% 
+                    Stat %in% c("Geomean", "Mean", "Median", "S_O"))) %>% 
+      bind_rows(TmaxStuff) %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>%
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
              Stat = factor(Stat, levels = unique(
