@@ -93,6 +93,8 @@ induction parameters, etc. for a bunch of workspaces and don’t want to
 spend hours tediously opening, changing, saving, and closing them all
 manually, please talk to Laura Shireman.
 
+[Return to TOC](#how-to-use-this-document)
+
 # Check how simulations were set up, e.g., for QCing
 
 As we mentioned, one of our goals was to increase accuracy. For this
@@ -160,6 +162,8 @@ extractExpDetails, extractExpDetails_mult, and annotateDetails and
 please see
 “**[Checking-simulation-experimental-details.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Checking%20simulation%20experimental%20details/Checking-simulation-experimental-details.docx?d=w63d17d07c1824c10ae55f18d78ecd94f&csf=1&web=1&e=J9hnEE)**”
 (bold text is a link)
+
+[Return to TOC](#how-to-use-this-document)
 
 # Make concentration-time plots
 
@@ -238,6 +242,8 @@ For more options and examples, please see the help file for ct_plot
 (type `?ct_plot` into the console) and see
 **[“Concentration-time-plot-examples-1.docx”](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Concentration-time%20plots%201%20-%20one%20sim%20at%20a%20time/Concentration-time-plot-examples-1.docx?d=wd31ccbfe966c4d6e938fc4be465b1602&csf=1&web=1&e=DsXp9L)**.
 
+[Return to TOC](#how-to-use-this-document)
+
 # Make overlaid concentration-time plots
 
 You can also make concentration-time plots with multiple data sets
@@ -281,6 +287,8 @@ For more options and examples, please the help file for ct_plot_overlay
 (type `?ct_plot_overlay` into the console) and see
 **[“Concentration-time-plot-examples-3.docx”](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Concentration-time%20plots%203%20-%20overlaying%20plots/Concentration-time-plot-examples-3.docx?d=w3059572742a740cf914cc28d97c15ceb&csf=1&web=1&e=2rdIei)**.
 
+[Return to TOC](#how-to-use-this-document)
+
 # Make graphs of enzyme abundance
 
 You can apply most of the settings from the “ct_plot” function to
@@ -311,6 +319,8 @@ inhibitor, and let’s save the output, too.
 For more options and examples, please the help file for enz_plot (type
 `?enz_plot` into the console) and see
 **[“Enzyme-abundance-plot-examples.docx”](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Enzyme%20abundance%20plots/Enzyme-abundance-plot-examples.docx?d=w52b883659d5f460f989f6ba6bf09c990&csf=1&web=1&e=zG1dvd)**.
+
+[Return to TOC](#how-to-use-this-document)
 
 # Make nice-looking PK summary tables automatically
 
@@ -388,6 +398,8 @@ For more options and examples, please see the help files for pk_table
 and see
 **[“PK-tables.docx”](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Making%20PK%20tables/PK-tables.docx?d=weea77b5756754f949b38a3ebccb6518b&csf=1&web=1&e=yQ6xiD)**.
 
+[Return to TOC](#how-to-use-this-document)
+
 # Automatically extract and graph sensitivity analysis data
 
 You can make sensitivity-analysis graphs using the function
@@ -448,6 +460,8 @@ sensitivity-analysis file:
 Please see the help file for more information by typing
 `?sensitivity_plot` into the console.
 
+[Return to TOC](#how-to-use-this-document)
+
 # Fit induction data
 
 ## inductFit example 1: Fit 4 models to induction data using the default settings
@@ -486,6 +500,8 @@ Let’s see the fitted parameters:
     MyIndFits$Fit %>% formatTable_Simcyp()
 
 ![](inst/images/overview_indfit_ex2.png?raw=TRUE)
+
+[Return to TOC](#how-to-use-this-document)
 
 # A list of what SimcypConsultancy functions do
 
