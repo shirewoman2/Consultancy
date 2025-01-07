@@ -37,15 +37,16 @@ You do *not* need to read this document from start to finish to follow
 it. Instead, please do skip around to only the parts that interest you.
 
 - [Time savers for setting up
-  workspaces](#time-savers-for-setting-up-workspaces)  
+  workspaces](#-time-savers-for-setting-up-workspaces)  
 - [Check how simulations were set up, e.g., for
-  QCing](#check-how-simulations-were-set-up--e-g---for-qcing)  
-- [Make concentration-time plots](#make-concentration-time-plots)  
+  QCing](#-check-how-simulations-were-set-up--e-g---for-qcing)  
+- [Make concentration-time plots](#-make-concentration-time-plots)  
 - [Make overlaid concentration-time
-  plots](#make-overlaid-concentration-time-plots)  
-- [Make graphs of enzyme abundance](#make-graphs-of-enzyme-abundance)  
+  plots](#%20make-overlaid-concentration-time-plots)  
+- [Make graphs of enzyme
+  abundance](#%20make-graphs-of-enzyme-abundance)  
 - [Make nice-looking PK summary tables
-  automatically](#make-nice-looking-pk-summary-tables-automatically)  
+  automatically](#%20make-nice-looking-pk-summary-tables-automatically)  
 - [Automatically extract and graph sensitivity analysis
   data](#automatically-extract-and-graph-sensitivity-analysis-data)  
 - [Fit induction data](#fit-induction-data)  
