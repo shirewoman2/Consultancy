@@ -17,6 +17,7 @@ trial_means_plot(
   lines_for_population_stats = "gray80 solid dotted",
   color_set = "default",
   color_option = "by study",
+  point_shape = NA,
   point_size = NA,
   bar_width = NA,
   y_axis_limits_lin = NA,
@@ -28,7 +29,6 @@ trial_means_plot(
   return_caption = FALSE,
   prettify_compound_names = TRUE,
   clin_study_label_option = "observed or study number",
-  name_clinical_study = NA,
   save_graph = NA,
   fig_height = NA,
   fig_width = NA
@@ -186,6 +186,17 @@ included.}
   \item{"simulated or observed" ("S or O" and "S vs O" will also work)}{color
   points based on whether they were simulated or observed}}}
 
+\item{point_shape}{optionally specify what shape to use. To see all the
+possible shapes and what number corresponds to which shape, type
+\code{ggpubr::show_point_shapes()} into the console. If left as NA, an open
+circle will be used.}
+
+\item{point_size}{optionally specify what point size to use. If left as NA,
+the point size will be set to 3.}
+
+\item{bar_width}{optionally specify the error bar width. If left as NA,
+the error bar width will be set to 0.25.}
+
 \item{y_axis_limits_lin}{optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 limits for the linear plot will be automatically selected. (Setting up
@@ -195,6 +206,9 @@ currently supported.)}
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right" (default), "bottom", "top", or "none" if you don't want one
 at all.}
+
+\item{include_dose_num}{TRUE or FALSE (default) on whether to include
+the dose number when listing the PK parameter.}
 
 \item{graph_title}{optionally specify a title that will be centered across
 your graph or set of graphs}
@@ -233,28 +247,19 @@ you want, e.g.,
 "substrate" = "superstatin")}.}
 
 \item{clin_study_label_option}{Clinical study names are generally much longer
-than the names of the simulated trial means, which will be just "1", "2",
-etc., so the labels like "Clinical Study 101, fasted healthy subjects" just
-won't fit nicely by comparison. For this reason, you can choose how
-observed data study names should be automatically shortened. Options:
-\describe{\item{"observed or study number"}{when there's only 1 clinical 
-study, we'll label that as "observed" in the graph, but when there's more 
-than one, we'll label the studies as "study 1", "study 2", etc.} 
+  than the names of the simulated trial means, which will be just "1", "2",
+  etc., so the labels like "Clinical Study 101, fasted healthy subjects" just
+  won't fit nicely by comparison. For this reason, you can choose how
+  observed data study names should be automatically shortened. Options:
+  \describe{\item{"observed or study number"}{when there's only 1 clinical
+  study, we'll label that as "observed" in the graph, but when there's more
+  than one, we'll label the studies as "study 1", "study 2", etc.}
 
-\item{"study number"}{this will make the label always be, e.g., "study 1", 
-"study 2", etc., even if there is only 1 study.}
+  \item{"study number"}{this will make the label always be, e.g., "study 1",
+  "study 2", etc., even if there is only 1 study.}
 
-\item{"keep" or "keep original"}{this will retain the original value for 
-the study name, even if it's really long and awkward.}}}
-
-\item{name_clinical_study}{optionally specify the name(s) of the clinical
-study or studies for any observed data. This only affects the caption of
-the graph. For example, specifying \code{name_clinical_study = "101, fed
-cohort"} will result in a figure caption that reads in part "clinical study
-101, fed cohort". If you have more than one study, that's fine; we'll take
-care of stringing them together appropriately. Just list them as a
-character vector, e.g., \code{name_clinical_study = c("101",
-"102", "103")} will become "clinical studies 101, 102, and 103."}
+  \item{"keep" or "keep original"}{this will retain the original value for
+  the study name, even if it's really long and awkward.}}}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My conc time graph.png" or "My conc time
