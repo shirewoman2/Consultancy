@@ -141,12 +141,24 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    CapText1 <- case_when(
       any(str_detect(names(MyPKResults), "tmax")) & 
-         mean_type %in% c("arithmetic", "geometric") ~ 
-         paste("the", mean_type, "means, except for t~max~, which is median, minimum, and maximum"),
+         mean_type %in% c("arithmetic", "geometric") & 
+         any(str_detect(MyPKResults$Statistic, "range|min|max|CI|centile")) ~ 
+         paste("the", mean_type, "means, except for t~max~ values, which are medians and ranges"),
       
       any(str_detect(names(MyPKResults), "tmax")) & 
-         mean_type %in% c("arithmetic for most, geometric for ratios") ~ 
-         "the arithmetic means, except for t~max~, which is median, minimum, and maximum, and the ratios, which are geometric", 
+         mean_type %in% c("arithmetic", "geometric") & 
+         any(str_detect(MyPKResults$Statistic, "range|min|max|CI|centile")) == FALSE ~ 
+         paste("the", mean_type, "means, except for t~max~ values, which are medians"),
+      
+      any(str_detect(names(MyPKResults), "tmax")) & 
+         mean_type %in% c("arithmetic for most, geometric for ratios") & 
+         any(str_detect(MyPKResults$Statistic, "range|min|max|CI|centile")) ~ 
+         "the arithmetic means, except for t~max~ values, which are medians and ranges, and the ratios, which are geometric", 
+      
+      any(str_detect(names(MyPKResults), "tmax")) & 
+         mean_type %in% c("arithmetic for most, geometric for ratios") & 
+         any(str_detect(MyPKResults$Statistic, "range|min|max|CI|centile")) == FALSE ~ 
+         "the arithmetic means, except for t~max~ values, which are medians, and the ratios, which are geometric", 
       
       any(str_detect(names(MyPKResults), "tmax")) == FALSE & 
          mean_type %in% c("arithmetic", "geometric") ~ 
@@ -265,6 +277,15 @@ make_table_annotations <- function(MyPKResults, # only PK table
    MyDoseInt <- paste0("DoseInt", AllCompounds$Suffix[
       AllCompounds$CompoundID == MyCompoundID])
    
+   MyDoseUnits <- switch(MyCompoundID, 
+                         "substrate" = existing_exp_details$Units_dose_sub,
+                         "primary metabolite 1" = existing_exp_details$Units_dose_sub,
+                         "primary metabolite 2" = existing_exp_details$Units_dose_sub,
+                         "secondary metabolite" = existing_exp_details$Units_dose_sub,
+                         "inhibitor 1" = existing_exp_details$Units_dose_inhib,
+                         "inhibitor 2" = existing_exp_details$Units_dose_inhib2,
+                         "inhibitor 1 metabolite" = existing_exp_details$Units_dose_inhib)
+   
    if(MyDoseInt %in% names(existing_exp_details)){
       MyDoseFreq <- switch(as.character(existing_exp_details[MyDoseInt]),
                            "12" = "BID", 
@@ -350,10 +371,11 @@ make_table_annotations <- function(MyPKResults, # only PK table
       
       DoseDay_sub <- str_split_fixed(existing_exp_details$StartDayTime_sub, "Day |, ", 3)[2]
       LastDig <- as.numeric(str_sub(DoseDay_sub, start = -1, end = -1))
-      DoseDay_sub <- paste0(DoseDay_sub, ifelse(LastDig %in% c(0, 4:9), 
-                                                "th", 
-                                                ifelse(LastDig == 1, "st", 
-                                                       ifelse(LastDig == 2, "nd", "rd"))))
+      DoseDay_sub <- paste0(DoseDay_sub, 
+                            case_when(LastDig %in% c(0, 4:9) ~ "th", 
+                                      LastDig == 1 ~ "st", 
+                                      LastDig == 2 ~ "nd",
+                                      LastDig == 3 ~ "rd"))
       
    } else {
       SingMult_inhib <- NA
@@ -397,10 +419,10 @@ make_table_annotations <- function(MyPKResults, # only PK table
             ifelse(DoseFreq_inhib == "single dose", 
                    paste("a single dose of", 
                          sub("custom dosing", "**CUSTOM DOSING**", existing_exp_details$Dose_inhib), 
-                         "mg",
+                         MyDoseUnits,
                          MyPerpetrator), 
                    paste(sub("custom dosing", "**CUSTOM DOSING**", existing_exp_details$Dose_inhib), 
-                         "mg",
+                         MyDoseUnits,
                          MyPerpetrator, DoseFreq_inhib))),
       "")
    
@@ -414,7 +436,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                      str_comma(tissue), " PK parameters for ",
                      MyCompound, " after ", FigText2, " of ",
                      paste(sub("custom dosing", "**CUSTOM DOSING**", existing_exp_details[[MyDose]]), 
-                           "mg", MyDosedCompound), 
+                           MyDoseUnits, MyDosedCompound), 
                      FigText3, " in ", 
                      tidyPop(existing_exp_details$Population)$Population, ".")
    
