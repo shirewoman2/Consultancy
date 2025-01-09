@@ -905,9 +905,6 @@ trial_means_plot <- function(sim_data_file,
       Out[["figure_caption"]]  <-  Caption
    } 
    
-   if(length(Out) == 1){
-      Out <- Out[[1]]
-   }
    
    # Saving -----------------------------------------------------------------
    
