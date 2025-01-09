@@ -100,7 +100,7 @@ extractObsConcTime <- function(obs_data_file,
              xmlFile = sub("\\.xlsx", ".xml", obs_data_file), 
              SimcypInstalled = length(find.package("Simcyp", quiet = TRUE)) > 0,
              SimcypV23plus = SimcypInstalled == TRUE & 
-                packageVersion("Simcyp") >= 23, 
+                packageVersion("Simcyp") >= "23", 
              xlsxExists = file.exists(xlsxFile), 
              xmlExists = file.exists(xmlFile), 
              # Preferentially using xlsx since that doesn't require Simcyp

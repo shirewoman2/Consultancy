@@ -453,6 +453,10 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
       }
    }
    
+   FT <- FT %>% 
+      flextable::fix_border_issues()
+   
+   
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
       

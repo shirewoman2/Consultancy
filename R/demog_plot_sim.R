@@ -127,7 +127,15 @@
 #'   change in intrinsic solubility will affect concentration-time profiles --
 #'   because the direction of the trend will be clear.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"blues"}{a set of blues fading from sky to navy. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Like
+#'   "blue-green", this palette can be especially useful if you are comparing a
+#'   systematic change in some continuous variable.}
+#'
+#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
@@ -150,6 +158,15 @@
 #'   like help creating a specific gradation of colors, please talk to a member
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
+#'
+#' @param save_graph optionally save the output graph by supplying a file name
+#'   in quotes here, e.g., "Demographics comparisons.png". Acceptable graphical
+#'   file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or
+#'   "svg". Do not include any slashes, dollar signs, or periods in the file
+#'   name. Leaving this as NA means the file will not be automatically saved to
+#'   disk.
+#' @param fig_height figure height in inches; default is 8
+#' @param fig_width figure width in inches; default is 6
 #'
 #'
 #' @return a set of graphs. This does not yet save the graphs for you, so you'll
@@ -174,7 +191,10 @@ demog_plot_sim <- function(demog_dataframe,
                            facet_by_sex = TRUE, 
                            facet_column_additional, 
                            border_facets = TRUE, 
-                           graph_labels = TRUE){
+                           graph_labels = TRUE, 
+                           save_graph = NA,
+                           fig_height = 8,
+                           fig_width = 6){
    
    # Error catching ----------------------------------------------------------
    
@@ -773,7 +793,10 @@ demog_plot_sim <- function(demog_dataframe,
       }
    }
    
-   patchwork::wrap_plots(MyGraphs) +
+   
+   # Printing collected graphs -----------------------------------------------
+   
+   G <- patchwork::wrap_plots(MyGraphs) +
       patchwork::plot_layout(guides = "collect",
                              ncol = ncol,
                              nrow = nrow) +
@@ -784,9 +807,10 @@ demog_plot_sim <- function(demog_dataframe,
       theme(plot.title = element_text(size = 12,
                                       hjust = 0.5,
                                       face = "bold"),
-            legend.position = legend_position)
+            legend.position = legend_position, 
+            legend.box = "vertical")
    
-
+   
    # # This does not work. ggpubr only keeps the 1st legend. 
    # G <- ggpubr::ggarrange(plotlist = MyGraphs, 
    #                   ncol = ncol, 
@@ -799,6 +823,38 @@ demog_plot_sim <- function(demog_dataframe,
    #                                                 size = 12, 
    #                                                 hjust = 0.5, 
    #                                                 face = "bold"))   
+   
+   
+   # Saving ----------------------------------------------------------------
+   
+   if(complete.cases(save_graph)){
+      FileName <- save_graph
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                       "png", "bmp", "svg", "jpg") == FALSE){
+            warning(paste0("You have requested the graph's file extension be `", 
+                           Ext, "`, but we haven't set up that option. We'll save your graph as a `png` file instead.\n"),
+                    call. = FALSE)
+         }
+         Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
+                                  "png", "bmp", "svg", "jpg"), 
+                       Ext, "png")
+         FileName <- paste0(FileName, ".", Ext)
+      } else {
+         FileName <- paste0(FileName, ".png")
+         Ext <- "png"
+      }
+      
+      # This is when they want any kind of graphical file format.
+      ggsave(FileName, height = fig_height, width = fig_width, dpi = 600, 
+             plot = G)
+      
+   }
+   
+   return(G)
    
 }
 

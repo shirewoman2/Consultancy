@@ -88,12 +88,17 @@ format_scripts <- function(DF,
       
       DF <- DF %>%
          mutate(Parameter = str_replace_all(Parameter, "_", " "), 
+                Parameter = str_replace_all(Parameter, "ABCB1 P(-| )gp MDR1", "P-gp"), 
                 Parameter = str_replace_all(Parameter, "\\.\\.1", ""), # sometimes shows up for Km and Vmax
                 Parameter = str_replace_all(Parameter, "Pathway[0-9]( )?", ""), 
+                Parameter = str_replace_all(Parameter, "star1", "*1"), 
                 Parameter = str_replace_all(Parameter, "fu mic", "fu,mic"), 
                 Parameter = str_replace_all(Parameter, "fu inc", "fu,inc"), 
                 Parameter = str_replace(Parameter, "uL min mg protein", "(uL/min/mg protein)"), 
                 Parameter = str_replace(Parameter, "uL min pmol", "(uL/min/pmol)"), 
+                Parameter = str_replace(Parameter, "Gut", "gut"), 
+                Parameter = str_replace(Parameter, "Kidney", "kidney"), 
+                Parameter = str_replace(Parameter, "Liver", "liver"), 
                 Parameter = str_replace_all(Parameter, "CYP2B6\\.1", "CYP2B6"), # not sure why this looks like this
                 Parameter = case_when(str_detect(Parameter, "Ki fu,mic") ~ 
                                          paste0(str_replace(Parameter, "Ki ", ""), 

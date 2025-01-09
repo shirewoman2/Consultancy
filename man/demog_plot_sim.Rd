@@ -21,7 +21,10 @@ demog_plot_sim(
   facet_by_sex = TRUE,
   facet_column_additional,
   border_facets = TRUE,
-  graph_labels = TRUE
+  graph_labels = TRUE,
+  save_graph = NA,
+  fig_height = 8,
+  fig_width = 6
 )
 }
 \arguments{
@@ -122,7 +125,15 @@ color by the simulation file name.}
   change in intrinsic solubility will affect concentration-time profiles --
   because the direction of the trend will be clear.}
 
-  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  \item{"blues"}{a set of blues fading from sky to navy. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"greens"}{a set of greens fading from chartreuse to forest. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"purples"}{a set of purples fading from lavender to aubergine. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
@@ -189,6 +200,17 @@ around the facets if the graphs are broken up by the sex of the subjects}
 
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs.}
+
+\item{save_graph}{optionally save the output graph by supplying a file name
+in quotes here, e.g., "Demographics comparisons.png". Acceptable graphical
+file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or
+"svg". Do not include any slashes, dollar signs, or periods in the file
+name. Leaving this as NA means the file will not be automatically saved to
+disk.}
+
+\item{fig_height}{figure height in inches; default is 8}
+
+\item{fig_width}{figure width in inches; default is 6}
 }
 \value{
 a set of graphs. This does not yet save the graphs for you, so you'll

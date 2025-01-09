@@ -53,14 +53,21 @@ launch_package_index()
 
 You do *not* need to read this document from start to finish to follow it. Instead, please do skip around to only the parts that interest you. 
 
-- [Time savers for setting up workspaces](#timesavers-for-setting-up-workspaces)  
 - [Check how simulations were set up, e.g., for QCing](#check-how-simulations-were-set-up-eg-for-qcing)  
+- [Time savers for setting up workspaces](#timesavers-for-setting-up-workspaces)  
 - [Make concentration-time plots](#make-concentration-time-plots) 
 - [Make overlaid concentration-time plots](#make-overlaid-concentration-time-plots)  
 - [Make graphs of enzyme abundance](#make-graphs-of-enzyme-abundance)  
 - [Make nice-looking PK summary tables automatically](#make-nice-looking-pk-summary-tables-automatically)   
-- [Automatically extract and graph sensitivity analysis data](#automatically-extract-and-graph-sensitivity-analysis-data)  
+- [Compare the results of two simulations](#compare-the-results-of-two-simulations)  
+- [Forest plots](#forest-plots)  
+- [Checking simulation fidelity with simulated vs. observed graphs](#checking-simulation-fidelity-with-simulated-vs-observed-graphs)  
 - [Fit induction data](#fit-induction-data)  
+- [Compare demographics](#compare-demographics)  
+- [Create a table of model inputs](#create-a-table-of-model-inputs)  
+- [Trial-means plots](#trial-means-plots)  
+- [Make a simulation directory](#make-a-simulation-direcotry)  
+- [Automatically extract and graph sensitivity analysis data](#automatically-extract-and-graph-sensitivity-analysis-data)  
 - [A list of what SimcypConsultancy functions do](#a-list-of-what-simcypconsultancy-functions-do)  
 
 
@@ -70,26 +77,6 @@ We're using example files in this document, but you generally can substitute wha
 
 Let's dive into some examples! 
 
-
-# Timesavers for setting up workspaces 
-
-If someone else set up some workspaces that they would like you to run but those workspaces included observed data XML files on OneDrive, the Simulator won't be able to find that file unless you change the path to include your user name instead of the original person's user name. Here's how to quickly change all the paths for all the workspaces in a folder so that the Simulator can find the observed data files with *your* name in the path: 
-
-```
-make_xml_path_mine()
-```
-
-That will permanently change the workspaces, so please make sure that's what you want. 
-
-If you have run some simulations using the workflow tool in the Simulator, it will include a date/time stamp on the output file name. To remove those quickly, try this to remove that stamp from all the files in your current folder:
-
-```
-remove_file_timestamp()
-```
-
-The R Working Group has a few other tricks up our sleeves for changing workspace parameters quickly, but they do require some care since they permanently change workspace files and since only some parameters work well when changed in an automated fashion. If you find yourself needing to change something like the dose, the inhibition parameters, the induction parameters, etc. for a bunch of workspaces and don't want to spend hours tediously opening, changing, saving, and closing them all manually, please talk to Laura Shireman. 
-
-[Return to TOC](#how-to-use-this-document)
 
 # Check how simulations were set up, e.g., for QCing 
 
@@ -134,11 +121,31 @@ annotateDetails(Details,
 
 ![](inst/images/overviewtable2.png?raw=TRUE)
 
-To see all the possible experimental details, please see the file "**[All possible experimental details to use with extractExpDetails.csv](https://certaragbr.sharepoint.com/:x:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/All%20possible%20experimental%20details%20to%20use%20with%20extractExpDetails.csv?d=wac18447b1ef557789cb09d8487781223&csf=1&web=1&e=yu3dId)**" (Bold text is a link) or type this into the console:
+To see all the possible experimental details, please see the file **"[All possible experimental details to use with extractExpDetails.csv](https://certaragbr.sharepoint.com/:x:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/All%20possible%20experimental%20details%20to%20use%20with%20extractExpDetails.csv?d=wac18447b1ef557789cb09d8487781223&csf=1&web=1&e=yu3dId)"** (Bold text is a link) or type this into the console:
 
      view(ExpDetailDefinitions)
 
-For more options and examples, please see the help files for extractExpDetails, extractExpDetails_mult, and annotateDetails and please see "**[Checking-simulation-experimental-details.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Checking%20simulation%20experimental%20details/Checking-simulation-experimental-details.docx?d=w63d17d07c1824c10ae55f18d78ecd94f&csf=1&web=1&e=J9hnEE)**" (bold text is a link)
+For more options and examples, please see the help files for extractExpDetails, extractExpDetails_mult, and annotateDetails and please see **"[Checking-simulation-experimental-details.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Checking%20simulation%20experimental%20details/Checking-simulation-experimental-details.docx?d=w63d17d07c1824c10ae55f18d78ecd94f&csf=1&web=1&e=J9hnEE)"** (bold text is a link)
+
+[Return to TOC](#how-to-use-this-document)
+
+# Timesavers for setting up workspaces 
+
+If someone else set up some workspaces that they would like you to run but those workspaces included observed data XML files on OneDrive, the Simulator won't be able to find that file unless you change the path to include your user name instead of the original person's user name. Here's how to quickly change all the paths for all the workspaces in a folder so that the Simulator can find the observed data files with *your* name in the path: 
+
+```
+make_xml_path_mine()
+```
+
+That will permanently change the workspaces, so please make sure that's what you want. 
+
+If you have run some simulations using the workflow tool in the Simulator, it will include a date/time stamp on the output file name. To remove those quickly, try this to remove that stamp from all the files in your current folder:
+
+```
+remove_file_timestamp()
+```
+
+The R Working Group has a few other tricks up our sleeves for changing workspace parameters quickly, but they do require some care since they permanently change workspace files and since only some parameters work well when changed in an automated fashion. If you find yourself needing to change something like the dose, the inhibition parameters, the induction parameters, etc. for a bunch of workspaces and don't want to spend hours tediously opening, changing, saving, and closing them all manually, please talk to Laura Shireman. 
 
 [Return to TOC](#how-to-use-this-document)
 
@@ -353,6 +360,163 @@ For more options and examples, please see the help files for pk_table and see **
 
 [Return to TOC](#how-to-use-this-document)
 
+# Compare the results of two simulations
+
+If you are interested in comparing the results from two simulations, e.g., comparing fasted vs. fed or healthy subjects vs. subjects with hepatic impairment, please see the instruction file **"[Calculating-PK-ratios.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Calculating%20PK%20ratios%20from%20separate%20simulations/Calculating-PK-ratios.docx?d=w479cbc3846da52869d41591b70130eb8&csf=1&web=1&e=QlKd0g)"** 
+
+*This section under construction. We'll add examples here soon.*
+
+[Return to TOC](#how-to-use-this-document)
+
+# Forest plots
+
+There are several options for setting up forest plots; here is one example. 
+
+```
+forest_plot(forest_dataframe = BufForestData_20mg,
+            y_axis_labels = Inhibitor1,
+            y_axis_title = "Perpetrator",
+            graph_title = "Effects of various DDI perpetrator\ndrugs on bufuralol PK", 
+            show_numbers_on_right = TRUE, 
+            rel_widths = c(3, 1), 
+            save_graph = "Bufuralol forest plot.png", 
+            fig_height = 6, fig_width = 7.25)
+
+```
+
+![](inst/images/buf-forest-plot.png?raw=TRUE)
+
+For more information, please see the instruction file **"[Examples-for-making-forest-plots.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Forest%20plots/Examples-for-making-forest-plots.docx?d=wc923caadc52b4db1aa310030186917cc&csf=1&web=1&e=tJkzwe)"** 
+
+
+[Return to TOC](#how-to-use-this-document)
+
+
+# Checking simulation fidelity with simulated vs. observed graphs 
+
+One quick way to check how well your model is capturing observed data is to visually compare simulated PK values to observed. The function `so_graph` will use input from making PK tables (from the function `pk_table`) to create these graphs, including making Guest-style graphs when the PK parameter in question is a ratio for a drug-drug interaction. 
+
+```
+so_graph(PKtable = SOdata, 
+         axis_title_y = "Predicted", 
+         axis_title_x = "Observed")
+
+```
+
+![](inst/images/so_axis.png?raw=TRUE)
+
+For more information, please see the instruction file **"[Examples-for-simulated-vs-observed-graphs.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Simulated%20vs%20observed%20graphs/Examples-for-making-simulated-vs-observed-graphs.docx?d=w95eda8f9fa604102847df91e6542c36f&csf=1&web=1&e=cVhdKa)"** 
+
+[Return to TOC](#how-to-use-this-document)
+
+# Fit induction data 
+
+## inductFit example 1: Fit 4 models to induction data using the default settings 
+
+Let's fit some induction data to each of 4 possible models: Indmax, Indmax slope, slope, or sigmoid 3 parameter. For details on what these are, please see the instructions **[fitting induction data](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Fitting%20induction%20data/Fitting-induction-data.docx?d=wf8cf2b1886c240abafdf6c6241563b3d&csf=1&web=1&e=v3AJRV)**. 
+
+For now, we'll call on some pre-existing dummy data we made up for the SimcypConsultancy package called `IndData`.  
+
+We'll make an object "MyIndFits" to store the output and then look at that output one piece at a time. 
+
+```
+MyIndFits <- inductFit(IndData, 
+                       conc_column = Concentration_uM, 
+                       fold_change_column = FoldInduction, 
+                       model = "all", 
+                       include_fit_stats = FALSE, 
+                       rounding = "significant 3")
+```
+
+Now that we have run the function, let's see the graphs. 
+
+```
+
+MyIndFits$Graph
+
+```
+
+![](inst/images/overview_indfit_ex1.png?raw=TRUE)
+
+You can adjust the look of the graphs; please see the help file or the example Word document for examples. 
+
+Let's see the fitted parameters: 
+
+```
+
+MyIndFits$Fit %>% formatTable_Simcyp()
+
+```
+
+
+![](inst/images/overview_indfit_ex2.png?raw=TRUE)
+
+
+[Return to TOC](#how-to-use-this-document)
+
+# Compare demographics 
+
+If you're interested in seeing how the demographics of a population vary -- either for comparing multiple simulated populations or a simulated population to an observed population -- there are a couple of data visualization tools in the package to help you do that. We'll focus here on the one for comparing multiple simulated populations and compare healthy subjects to subjects with varying degrees of liver disease. 
+
+First, we'll extract demographic data from our simulations. All of these included the "Demographic Data" tab in the results, which is where R is looking for demographic information. If you don't include that in your results, this will not work. 
+
+```
+
+Demog <- extractDemog(sim_data_files = c("mdz-5mg-sd-hv.xlsx", 
+                                         "mdz-5mg-sd-cpa.xlsx", 
+                                         "mdz-5mg-sd-cpb.xlsx", 
+                                         "mdz-5mg-sd-cpc.xlsx"), 
+                      demog_dataframe = Demog)
+
+```
+
+Here's an example of the kind of visual comparisons we can make, focusing on just two parameters: liver weight and a scatter plot of height vs. overall body weight. 
+
+```
+
+demog_plot_sim(demog_dataframe = Demog, 
+               colorBy_column = File, 
+               color_labels = c("mdz-5mg-sd-hv.xlsx" = "healthy", 
+                                "mdz-5mg-sd-cpa.xlsx" = "Child-Pugh A",
+                                "mdz-5mg-sd-cpb.xlsx" = "Child-Pugh B",
+                                "mdz-5mg-sd-cpc.xlsx" = "Child-Pugh C"), 
+               color_set = "greens", 
+               demog_parameters = c("LiverWt_g", 
+                                    "Height vs weight"), 
+               variability_display = "boxplot", 
+               ncol = 1, 
+               save_graph = "Demographics - hepatic impairment.png", 
+               fig_height = 6, fig_width = 5)
+
+```
+
+![](inst/images/demogplot_hi.png?raw=TRUE)
+
+*Note: We're working on the legend but having some trouble with it repeating things at the moment.*
+
+For more information and examples, please see **[Examples-for-checking-subject-demographics.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Demographics%20plots/Examples-for-checking-subject-demographics.docx?d=wd07adeb48d7a4ee199b99d1e2ee083ec&csf=1&web=1&e=asP4FD)**
+
+[Return to TOC](#how-to-use-this-document)
+
+
+# Create a table of model inputs
+
+*Under constructions. See the help file for `make_Simcyp_inputs_table`.*
+
+[Return to TOC](#how-to-use-this-document)
+
+# Trial-means plots
+
+*Under constructions. See the help file for `trial_means_plot`.*
+
+[Return to TOC](#how-to-use-this-document)
+
+# Make a simulation directory 
+
+*Under constructions. See the help file for `make_simulation_directory`.*
+
+[Return to TOC](#how-to-use-this-document)
+
 # Automatically extract and graph sensitivity analysis data 
 
 You can make sensitivity-analysis graphs using the function sensitivity_plot, although one caveat is that this function does not include any data for a 3rd graphical axis. Why? There isn't really a great way to make 3D graphs that would be interpretable here and, perhaps more importantly, there is not, in our humble opinions, a good R package for making 3D graphs. 
@@ -414,50 +578,6 @@ Please see the help file for more information by typing `?sensitivity_plot` into
 
 [Return to TOC](#how-to-use-this-document)
 
-# Fit induction data 
-
-## inductFit example 1: Fit 4 models to induction data using the default settings 
-
-Let's fit some induction data to each of 4 possible models: Indmax, Indmax slope, slope, or sigmoid 3 parameter. For details on what these are, please see the instructions **[fitting induction data](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Fitting%20induction%20data/Fitting-induction-data.docx?d=wf8cf2b1886c240abafdf6c6241563b3d&csf=1&web=1&e=v3AJRV)**. 
-
-For now, we'll call on some pre-existing dummy data we made up for the SimcypConsultancy package called `IndData`.  
-
-We'll make an object "MyIndFits" to store the output and then look at that output one piece at a time. 
-
-```
-MyIndFits <- inductFit(IndData, 
-                       conc_column = Concentration_uM, 
-                       fold_change_column = FoldInduction, 
-                       model = "all", 
-                       include_fit_stats = FALSE, 
-                       rounding = "significant 3")
-```
-
-Now that we have run the function, let's see the graphs. 
-
-```
-
-MyIndFits$Graph
-
-```
-
-![](inst/images/overview_indfit_ex1.png?raw=TRUE)
-
-You can adjust the look of the graphs; please see the help file or the example Word document for examples. 
-
-Let's see the fitted parameters: 
-
-```
-
-MyIndFits$Fit %>% formatTable_Simcyp()
-
-```
-
-
-![](inst/images/overview_indfit_ex2.png?raw=TRUE)
-
-
-[Return to TOC](#how-to-use-this-document)
 
 # A list of what SimcypConsultancy functions do 
 
