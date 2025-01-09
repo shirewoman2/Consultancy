@@ -546,7 +546,7 @@ for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
 output a list of the graph, the figure heading, and the figure caption.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
-in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
+in quotes here, e.g., "My conc time graph.png" or "My conc time graph.docx".
 The nice thing about saving to Word is that the figure title and caption
 text will be partly filled in automatically, although you should check that
 the text makes sense in light of your exact graph. If you leave off ".png"
