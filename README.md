@@ -554,20 +554,47 @@ For more information and examples, please see
 
 # Create a table of model inputs
 
-*Under constructions. See the help file for `make_Simcyp_inputs_table`.*
+*Under construction. See the help file for `make_Simcyp_inputs_table`.*
 
 [Return to TOC](#how-to-use-this-document)
 
 # Trial-means plots
 
-*Under constructions. See the help file for `trial_means_plot`.*
+*Under construction. See the help file for `trial_means_plot`.*
+
+Example:
+
+    ObservedCmax <- data.frame(PKparameter = "Cmax_dose1", 
+                               ObsValue = c(20, 22.5, 16), 
+                               ObsVariability = c("10 to 29", "18-25", "12-30"), 
+                               Study = c("Kolev et al., 2025", 
+                                         "Dinh et al., 2023", 
+                                         "Thakur et al., 2020"))
+
+    trial_means_plot(sim_data_file = "mdz-5mg-sd.xlsx", 
+                     color_option = "by study", 
+                     color_set = "viridis", 
+                     point_shape = 16, 
+                     y_axis_limits_lin = c(0, 60), 
+                     observed_PK = ObservedCmax,
+                     legend_position = "bottom",
+                     save_graph = "Cmax trial means plot.png", 
+                     fig_height = 5, fig_width = 6)
+
+![](inst/images/Cmax_trial_means_plot.png?raw=TRUE)
 
 [Return to TOC](#how-to-use-this-document)
 
 # Make a simulation directory
 
-*Under constructions. See the help file for
-`make_simulation_directory`.*
+*Under construction. See the help file for `make_simulation_directory`.*
+
+Example:
+
+    make_simulation_directory(existing_exp_details = Details, 
+                              save_table = "simulation directory.xlsx")
+
+![](inst/images/simdir.png?raw=TRUE)
 
 [Return to TOC](#how-to-use-this-document)
 
