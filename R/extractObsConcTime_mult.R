@@ -131,7 +131,7 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
    
    if(any(is.na(FileCheck$FileToUse))){
       warning(wrapn(paste0(
-         "The file(s) ", str_comma(
+         "The observed data file(s) ", str_comma(
             paste0("'", FileCheck$OrigFile[which(is.na(FileCheck$FileToUse))], "'")), 
          " is/are not present and will be skipped.")), 
          call. = FALSE)

@@ -708,6 +708,23 @@ ct_plot <- function(ct_dataframe = NA,
    figure_type <- ifelse(str_detect(figure_type, "ribbon"), 
                          "percentile ribbon", figure_type)
    
+   # Checking that data include Study column if the figure_type is "compound
+   # summary" b/c otherwise won't know how to color obs points.
+   if(figure_type == "compound summary" & 
+      "Study" %in% names(ct_dataframe) == FALSE){
+      warning(wrapn("You have requested a figure type of 'compound summary' but have not included a column named 'Study' in your source data. We need that column to determine how to color the observed data points, so we'll have to make all the observed data points the same color."), 
+              call. = FALSE)
+      figure_type <- "freddy"
+   }
+   
+   # Now that figure type is set, adjusting the number of observed data colors
+   # and shapes to 1 if the figure type is anything other than "compound
+   # summary".
+   if(figure_type != "compound summary"){
+      obs_color <- obs_color[1]
+      obs_shape  <- obs_shape[1]
+   }
+   
    if(("Compound" %in% names(ct_dataframe) && length(unique(ct_dataframe$Compound)) > 1) | 
       ("CompoundID" %in% names(ct_dataframe) && length(unique(ct_dataframe$CompoundID)) > 1)){
       stop("It looks like you have more than one kind of data here because you have multiple compounds. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
@@ -785,15 +802,6 @@ ct_plot <- function(ct_dataframe = NA,
                  call. = FALSE)
          conc_units_to_use <- "ng/mL"
       }
-   }
-   
-   # Checking that data include Study column if the figure_type is "compound
-   # summary" b/c otherwise won't know how to color obs points.
-   if(figure_type == "compound summary" & 
-      "Study" %in% names(ct_dataframe) == FALSE){
-      warning(wrapn("You have requested a figure type of 'compound summary' but have not included a column named 'Study' in your source data. We need that column to determine how to color the observed data points, so we'll have to make all the observed data points the same color."), 
-              call. = FALSE)
-      figure_type <- "freddy"
    }
    
    legend_position <- tolower(legend_position)[1]

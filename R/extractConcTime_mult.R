@@ -398,7 +398,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    if(length(MissingSimFiles) > 0){
       
-      warning(paste0("The file(s) ", 
+      warning(paste0("The simulation file(s) ", 
                      str_comma(paste0("`", MissingSimFiles, "`")), 
                      " is/are not present and thus will not be extracted.\n"), 
               call. = FALSE)
@@ -573,7 +573,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             if(length(MyObsFileToUse) > 0){
                warning(wrapn(paste0(
-                  "The file(s) ", str_comma(
+                  "The observed data file(s) ", str_comma(
                      paste0("'", MyObsFileToUse, "'")), 
                   " is/are not present and will be skipped.")), 
                   call. = FALSE)
@@ -708,7 +708,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
             if(length(MissingObsFiles) > 0){
                
                warning(wrapn(paste0(
-                  "The file(s) ", 
+                  "The observed data file(s) ", 
                   str_comma(paste0("`", MissingObsFiles, "`")), 
                   " is/are not present and thus will not be extracted.")), 
                   call. = FALSE)
