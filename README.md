@@ -6,9 +6,9 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The SimcypConsultancy package provides tools for analyzing and reporting
-PBPK data from the Simcyp Simulator. Our goals in making this package
-are to:
+The SimcypConsultancy R package provides tools for analyzing and
+reporting PBPK data from the Simcyp Simulator. Our goals in making this
+package are to:
 
 1.  Increase accuracy and efficiency overall
 2.  Easily and accurately make informative tables from Simulator output
@@ -36,13 +36,16 @@ A great place to start for getting help:
 You do *not* need to read this document from start to finish to follow
 it. Instead, please do skip around to only the parts that interest you.
 
+**TABLE OF CONTENTS**
+
 - [Check how simulations were set up, e.g., for
   QCing](#check-how-simulations-were-set-up-eg-for-qcing)  
 - [Time savers for setting up
   workspaces](#timesavers-for-setting-up-workspaces)  
-- [Make concentration-time plots](#make-concentration-time-plots)
-- [Make overlaid concentration-time
-  plots](#make-overlaid-concentration-time-plots)  
+- [Make concentration-time plots for one simulation at a
+  time](#make-concentration-time-plots-for-one-simulation-at-a-time)
+- [Make concentration-time plots comparing multiple data
+  sets](#make-concentration-time-plots-comparing-multiple-data-sets)  
 - [Make graphs of enzyme abundance](#make-graphs-of-enzyme-abundance)  
 - [Make nice-looking PK summary tables
   automatically](#make-nice-looking-pk-summary-tables-automatically)  
@@ -79,39 +82,28 @@ for checking or reporting data in an automated fashion.
 
 ## extractExpDetails example 1: Check on how all the simulations in a given folder were set up
 
-First, we’ll collect some simulation experimental details and then save
-that to an Excel file where we can easily compare parameters across
-multiple simulations.
-
-data.frame as a csv file. We’ll set “sim_data_files” in the code below
-to NA to run this on *all* the simulator output Excel files in this
-folder. Originally (and still by default), this function would create a
-really wide table with one column for every experimental detail. Nikunj
-had the excellent suggestion to allow for shaping the output to be a
-long table instead of a really wide one, which can be cumbersome to
-read, so let’s use that here. Setting “annotate_output = TRUE” will make
-it long *and* will provide some context about what that detail is and
-where it was found. This will take a moment to run.
+First, we’ll extract data about how the simulations were set up from the
+simulation Excel results files and from the workspaces themselves.
 
 
     Details <- extractExpDetails_mult(sim_data_files = NA, 
                                       exp_details = "all")
 
-## extractExpDetails example 2: Get specific details about how the simulations were set up overall
-
-Now that we’ve got all the experimental details pulled into memory,
-let’s ask for some specific information. Say you want to know some
-details about how the experiment was set up such as the start and end
-times of the simulation, what the substrates and inhibitors were and the
-dosing regimens. You can use the function “annotateDetails” to do this
-sort of task. Here’s how you’d get the first few rows with that
-information:
+Now that we’ve got that information pulled into memory, we can save the
+data in an Excel file to allow for easy comparisons between simulations.
+Say you want to know some details about how the experiment was set up
+such as the start and end times of the simulation, what the substrates
+and inhibitors were and the dosing regimens. You can use the function
+“annotateDetails” to do this sort of task. Here’s how you’d get the
+first few rows with information on the trial design:
 
 
     annotateDetails(Details, simulator_section = "Trial Design") %>%
        head() %>% formatTable_Simcyp(fontsize = 8)
 
 ![](inst/images/overviewtable1.png?raw=TRUE)
+
+## extractExpDetails example 2: Narrow down the data to focus on one aspect of ADME, one particular compound, etc.
 
 How about some information on what parameters were used for setting up
 absorption but only for the substrate? We’re again only going to show
@@ -174,14 +166,14 @@ manually, please talk to Laura Shireman.
 
 [Return to TOC](#how-to-use-this-document)
 
-# Make concentration-time plots
+# Make concentration-time plots for one simulation at a time
 
 The function “ct_plot” will allow you to automatically graph almost any
 concentration-time data present in Simulator output Excel files. While
 this function has many options, the default settings will generally
 create decent graphs that comply with Consultancy Team report templates.
 
-## ct_plot example 1: Substrate data showing simulated percentiles
+## ct_plot example 1: Substrate data showing the arithmetic means for each simulated trial
 
 Let’s make a graph of substrate concentration-time data in plasma,
 including some observed data, and let’s save the output as “My conc-time
@@ -194,8 +186,7 @@ function “ct_plot” to make the graphs.
 
 
     LMV <- extractConcTime(sim_data_file = "letermovir MD.xlsx", 
-                           obs_data_file = "Observed data files/letermovir obs data.xlsx", 
-                           existing_exp_details = Details)
+                           obs_data_file = "Observed data files/letermovir obs data.xlsx")
 
     ct_plot(ct_dataframe = LMV, 
             figure_type = "trial means", 
@@ -203,34 +194,44 @@ function “ct_plot” to make the graphs.
 
 ![](inst/images/ct_plot5.png?raw=TRUE)
 
-## ct_plot example 2: Zoom in on the last dose
+## ct_plot example 2: Zoom in on the last two doses
 
-Let’s zoom in on the last dose only and save this file, too, and this
-time, let’s save it as a Word file so that we can get figure heading and
-caption data already filled in and ready for copying and pasting into a
-report. If you supply the output from “extractExpDetails_mult” here,
-you’ll get a more informative figure heading and caption. Any text that
-you’ll want to edit when you paste this into a report will be in bold.
+Let’s zoom in on the last two doses – doses 7 and 8 here – and change
+the figure type to get percentiles instead of trial means. We’ll save
+this file, too, and this time, let’s save it as a Word file so that we
+can get figure heading and caption data already filled in and ready for
+copying and pasting into a report. If you supply the output from the
+function
+[“extractExpDetails_mult”](#check-how-simulations-were-set-up-eg-for-qcing)
+here, you’ll get a more informative figure heading and caption. Any text
+that you’ll want to edit when you paste this into a report will be in
+bold.
 
 
-    ct_plot(ct_dataframe = LMV, time_range = "last dose", 
+    ct_plot(ct_dataframe = LMV, 
+            time_range = "doses 7 to 8", 
+            figure_type = "percentiles", 
             existing_exp_details = Details, 
             save_graph = "My conc-time graph example 2.docx")
 
-![](inst/images/ct_plot2.png?raw=TRUE)
+![](inst/images/ct_plot17.png?raw=TRUE)
 
-## ct_plot example 3: Substrate data with vs. without an inhibitor
+## ct_plot example 3: Substrate data with vs. without a perpetrator drug
 
 Next, let’s make a graph of substrate concentration-time data in plasma
-with and without the presence of an inhibitor. Let’s change the figure
-type to show only the mean predicted concentrations.
+with and without the presence of a compound in the Inhibitor 1 position
+in the simulation. First, just like with the other graph, we’ll extract
+the data from our simulation Excel results file and then we’ll actually
+make the graph.
 
-Let’s include a legend, label it for the fact that our perpetrator
-molecule is an inducer and not an inhibitor (the default), let’s only
-make the semi-log plot here, and let’s save the file so that it is 3
-inches high and 5 inches wide. (All of these options are described in
-more detail in the example files in the folder “Concentration-time plots
-1 - one sim at a time”.)
+Let’s change the figure type to show only the mean predicted
+concentrations. Let’s include a legend, label it for the fact that our
+perpetrator molecule is an inducer and not an inhibitor (the default),
+and let’s only make the semi-log plot here. We’ll save the file so that
+it is 3 inches high and 5 inches wide. (All of these options are
+described in more detail in the example files in the folder
+[“Concentration-time plots 1 - one sim at a
+time”](https://certaragbr.sharepoint.com/:f:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Concentration-time%20plots%201%20-%20one%20sim%20at%20a%20time?csf=1&web=1&e=QqC2qo).
 
 
     MDZ <- extractConcTime(sim_data_file = "QD MDZ QD RIF.xlsx", 
@@ -253,7 +254,7 @@ For more options and examples, please see the help file for ct_plot
 
 [Return to TOC](#how-to-use-this-document)
 
-# Make overlaid concentration-time plots
+# Make concentration-time plots comparing multiple data sets
 
 You can also make concentration-time plots with multiple data sets
 overlaid for easy comparisons.
@@ -276,10 +277,11 @@ data for multiple files, tissues, and compounds all at once.
 Next, graph those data, coloring the lines by whether the perpetrator
 was present and breaking up the graph into small multiples by the tissue
 and by what compound we’re plotting. Let’s give a sense of the
-variability of the data by showing transparent bands for the 5th to 95th
-percentiles. We’ll save this graph as “My overlaid conc-time graph
-example 1.docx”. Since we’re saving this as a Word file, we’ll again get
-some figure heading and caption text filled in.
+variability of the data by showing transparent bands for the
+5<sup>th</sup> to 95<sup>th</sup> percentiles. We’ll save this graph as
+“My overlaid conc-time graph example 1.docx”. Since we’re saving this as
+a Word file, we’ll again get some figure heading and caption text filled
+in.
 
 
     ct_plot_overlay(ct_dataframe = CT, colorBy_column = Inhibitor,
@@ -340,14 +342,12 @@ simulated PK parameters. The function pk_table does that.
 ## pk_table example 1: Create a table of standard PK parameters for a simulation of a substrate alone
 
 For this, we’ll use a file from a hands-on workshop demonstration with
-letermovir. (We’ll return to the “checkDataSource” argument you see
-inside the function call in a moment.)
+letermovir.
 
 
     pk_table(
        sim_data_file = "letermovir MD.xlsx", 
-       existing_exp_details = Details, 
-       checkDataSource = FALSE) %>%
+       existing_exp_details = Details) %>%
        formatTable_Simcyp()
 
 ![](inst/images/overview_pktable_ex1.png?raw=TRUE)
@@ -378,8 +378,10 @@ the CVs (includeCV = FALSE).
 ## pk_table example 3: Create a table of standard PK parameters for a DDI simulation
 
 If a perpetrator molecule was included, the table will automatically
-pull parameters sensible for that scenario. This time, let’s do ask to
-check the data source. First, here’s the table:
+pull parameters sensible for that scenario. This time, let’s
+additionally ask to check the data source to check where in the
+simulation Excel results file the data are from. First, here’s the
+table:
 
 
     MyTable <- pk_table(
@@ -423,7 +425,7 @@ hepatic impairment, please see the instruction file
 # Forest plots
 
 There are several options for setting up forest plots; here is one
-example.
+example using example data included in the package: BufForestData_20mg.
 
     forest_plot(forest_dataframe = BufForestData_20mg,
                 y_axis_labels = Inhibitor1,
@@ -462,6 +464,56 @@ For more information, please see the instruction file
 [Return to TOC](#how-to-use-this-document)
 
 # Fit induction data
+
+The SimcypConsultancy package function `inductFit` can fit four possible
+induction models to *in vitro* induction data:
+
+*Equation 1. E<sub>max</sub> model*
+
+$$ \text{fold induction} = 1 + \frac{E_{max} \times I}{EC_{50} + I} $$
+
+where I is the concentration of the inducer, E<sub>max</sub> is the
+maximum change in fold induction, and EC<sub>50</sub> is the
+concentration of the inducer that elicits half the maximum fold-change
+in induction.
+
+Use `model = "Emax"` in the `inductFit` call to fit this model to your
+data.
+
+*Equation 2. E<sub>max</sub> slope model*
+
+$$ \text{fold induction} = 1 + E_{max} \times \frac{I^\gamma}{EC_{50}^\gamma + I^\gamma} $$
+
+where I is the concentration of the inducer, E<sub>max</sub> is the
+maximum change in fold induction, EC<sub>50</sub> is the concentration
+of the inducer that elicits half the maximum fold-change in induction,
+and gamma is the Hill equation coefficient describing the slope.
+
+Syntax for function: `model = "EmaxSlope"`
+
+*Equation 3. Slope model*
+
+$$ \text{fold induction} = 1 + I \times n $$
+
+where I is the concentration of the inducer and n is the slope.
+
+Syntax for function: `model = "slope"`
+
+*Equation 4. Sigmoidal three-parameter model*
+
+$$ \text{fold induction} = \frac{Ind_{max}}{1 + e^{ \frac{IndC_{50}-I}{\gamma}}} $$
+
+where I is the concentration of the inducer, Ind<sub>max</sub> is the
+maximum fold induction, IndC<sub>50</sub> is the concentration of the
+inducer that elicits half the maximum fold induction, and gamma is the
+Hill equation coefficient describing the slope.
+
+Syntax for function: `model = "Sig3Param"`
+
+***Important note:*** **The sigmoidal three-parameter model is the ONLY
+model that determines Ind<sub>max</sub> rather than E<sub>max</sub>. The
+Simcyp Simulator uses Ind<sub>max</sub>, so please note that
+Ind<sub>max</sub> = E<sub>max</sub> + 1**
 
 ## inductFit example 1: Fit 4 models to induction data using the default settings
 
@@ -508,8 +560,9 @@ If you’re interested in seeing how the demographics of a population vary
 – either for comparing multiple simulated populations or a simulated
 population to an observed population – there are a couple of data
 visualization tools in the package to help you do that. We’ll focus here
-on the one for comparing multiple simulated populations and compare
-healthy subjects to subjects with varying degrees of liver disease.
+on the one for comparing multiple simulated populations, and we’ll
+compare healthy subjects to subjects with varying degrees of liver
+disease.
 
 First, we’ll extract demographic data from our simulations. All of these
 included the “Demographic Data” tab in the results, which is where R is
@@ -524,8 +577,8 @@ results, this will not work.
                           demog_dataframe = Demog)
 
 Here’s an example of the kind of visual comparisons we can make,
-focusing on just two parameters: liver weight and a scatter plot of
-height vs. overall body weight.
+focusing on just two parameters: a boxplot comparing liver weights and a
+scatter plot of height vs. overall body weight.
 
 
     demog_plot_sim(demog_dataframe = Demog, 
@@ -560,7 +613,9 @@ For more information and examples, please see
 
 # Trial-means plots
 
-*Under construction. See the help file for `trial_means_plot`.*
+*Under construction. See the help file for `trial_means_plot` and see
+the instruction file \[“Trial-means
+plots.docx”\](<https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Trial-means%20plots/Trial-means-plots.docx?d=wb51863295fd74261b79d7ea955cd81da&csf=1&web=1&e=Ug3IwD>.*
 
 Example:
 
@@ -600,23 +655,13 @@ Example:
 
 # Automatically extract and graph sensitivity analysis data
 
-You can make sensitivity-analysis graphs using the function
-sensitivity_plot, although one caveat is that this function does not
-include any data for a 3rd graphical axis. Why? There isn’t really a
-great way to make 3D graphs that would be interpretable here and,
-perhaps more importantly, there is not, in our humble opinions, a good R
-package for making 3D graphs.
-
-You can save the output with the same options as those for the other
-graphing functions. Let’s save this as a png file.
-
 ## sensitivity_plot example 1: Make an SA graph showing the effect of your independent variable on Cmax
 
 We’ll supply the Excel file with the SA data to the argument “SA_file”,
-we’ll tell R which dependent variable we want to see, give the graph a
-title (the “\n” bit is how we can insert a manual carriage return), and
-then specify whether to save the graph by supplying a file name to
-“save_graph”.
+we’ll tell R which dependent variable we want to see (Cmax), give the
+graph a title (the “\n” bit is how we can insert a manual carriage
+return), and then specify whether to save the graph by supplying a file
+name to “save_graph”.
 
 
     sensitivity_plot(SA_file = "SA on fa - mdz 5mg sd.xlsx",
