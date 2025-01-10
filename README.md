@@ -15,6 +15,11 @@ package are to:
 3.  Create scientifically informative, professional-quality graphs
 4.  Perform additional analyses of PBPK data
 
+**Important:** The SimcypConsultancy R package is *separate* from the
+Simcyp R package and serves a different purpose. The SimcypConsultancy
+package does *not* interact with the simulator and instead is focused on
+report-writing tasks.
+
 ## Installation
 
 You can install the SimcypConsultancy package from GitHub like this:
@@ -614,8 +619,8 @@ For more information and examples, please see
 # Trial-means plots
 
 *Under construction. See the help file for `trial_means_plot` and see
-the instruction file \[“Trial-means
-plots.docx”\](<https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Trial-means%20plots/Trial-means-plots.docx?d=wb51863295fd74261b79d7ea955cd81da&csf=1&web=1&e=Ug3IwD>.*
+the instruction file [“Trial-means
+plots.docx”](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Trial-means%20plots/Trial-means-plots.docx?d=wb51863295fd74261b79d7ea955cd81da&csf=1&web=1&e=Ug3IwD).*
 
 Example:
 
