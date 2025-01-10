@@ -76,8 +76,14 @@ make_simulation_directory <- function(project_folder = NA,
    # Main body of function ---------------------------------------------------
    
    if(is.na(project_folder)){
-      project_folder <- getwd()
+      project_folder <- paste0(getwd(), "/")
    }
+   
+   # Making sure project folder ends with / so that we can paste the file to
+   # that correctly.
+   project_folder <- ifelse(str_detect(project_folder, "/$"), 
+                            project_folder, 
+                            paste0(project_folder, "/"))
    
    # Harmonizing input. This will be of class "NULL" if input for argument was
    # NA.
@@ -89,9 +95,11 @@ make_simulation_directory <- function(project_folder = NA,
          warning(wrapn("You supplied something for the argument 'existing_exp_details', but it's not in a format we expected. We'll look at all the files in the project folder and any subfolders and return those instead."), 
                  call. = FALSE)
          
-         Directory <- tibble(PathFile = list.files(path = project_folder, 
-                                                   pattern = "\\.xlsx|\\.wksz|\\.db", 
-                                                   recursive = TRUE)) 
+         Directory <- tibble(
+            PathFile = paste0(project_folder, 
+                              list.files(path = project_folder, 
+                                         pattern = "\\.xlsx|\\.wksz|\\.db", 
+                                         recursive = TRUE))) 
          
       } else {
          
@@ -101,27 +109,35 @@ make_simulation_directory <- function(project_folder = NA,
          
          Directory <- tibble(File = AllPossFiles) %>% 
             # adding path 
-            left_join(tibble(PathFile = list.files(path = project_folder, 
-                                                   recursive = TRUE), 
-                             File = basename(PathFile)), 
-                      by = "File")
+            left_join(tibble(
+               PathFile = paste0(project_folder, 
+                                 list.files(path = project_folder, 
+                                            recursive = TRUE)), 
+               File = basename(PathFile)), 
+               by = "File")
       }
    } else if(length(sim_data_files) == 1){
       if(is.na(sim_data_files)){
-         Directory <- tibble(PathFile = list.files(path = project_folder, 
-                                                   pattern = "\\.xlsx|\\.wksz|\\.db", 
-                                                   recursive = FALSE))
+         Directory <- tibble(
+            PathFile = paste0(project_folder, 
+                              list.files(path = project_folder, 
+                                         pattern = "\\.xlsx|\\.wksz|\\.db", 
+                                         recursive = TRUE)))
          
       } else if(tolower(sim_data_files) == "recursive"){
-         Directory <- tibble(PathFile = list.files(path = project_folder, 
-                                                   pattern = "\\.xlsx|\\.wksz|\\.db", 
-                                                   recursive = TRUE))
+         Directory <- tibble(
+            PathFile = paste0(project_folder, 
+                              list.files(path = project_folder, 
+                                         pattern = "\\.xlsx|\\.wksz|\\.db", 
+                                         recursive = TRUE)))
          
       } else {
          # This is when they have supplied a character string to match
-         Directory <- tibble(PathFile = list.files(path = project_folder, 
-                                                   pattern = sim_data_files, 
-                                                   recursive = recursive)) 
+         Directory <- tibble(
+            PathFile = paste0(project_folder, 
+                              list.files(path = project_folder, 
+                                         pattern = sim_data_files, 
+                                         recursive = recursive))) 
       }
       
    } else {
@@ -133,21 +149,35 @@ make_simulation_directory <- function(project_folder = NA,
                                 paste0(File, ".xlsx"), 
                              .default = File)) %>% 
          # adding path 
-         left_join(tibble(PathFile = list.files(path = project_folder, 
-                                                recursive = TRUE), 
-                          File = basename(PathFile)), 
-                   by = "File")
+         left_join(tibble(
+            PathFile = paste0(project_folder, 
+                              list.files(path = project_folder, 
+                                         recursive = TRUE), 
+                              File = basename(PathFile)), 
+            by = "File"))
    } 
    
    # Removing temporary files and making sure that all File values are basename. 
    Directory <- Directory %>% 
-      mutate(File = basename(PathFile)) %>% 
-      filter(!str_detect(PathFile, "^~")) %>% 
+      mutate(File = case_when(complete.cases(PathFile) ~ basename(PathFile), 
+                              .default = File)) %>% 
+      filter(is.na(PathFile) | 
+                (complete.cases(PathFile) & !str_detect(PathFile, "^~"))) %>% 
       mutate(Folder = dirname(PathFile), 
              Folder = ifelse(Folder == ".", getwd(), Folder), 
              Folder = if_else(file.exists(PathFile), Folder, "FILE NOT FOUND"),  
              Filename = sub("\\.xlsx|\\.db|\\.wksz", "", File),
              Filetype = str_extract(File, "xlsx$|wksz$|db$"))
+   
+   # Removing from consideration any files that were not included in
+   # existing_exp_details, if that was supplied, if the folder is now "FILE NOT
+   # FOUND" and if the Filetype is NOT xlsx. Removing these b/c we're the ones
+   # who added them: They are just variations on the simulation file names that
+   # we're checking to see if they exist, e.g., workspaces or database files.
+   if("logical" %in% class(existing_exp_details) == FALSE){
+      Directory <- Directory %>% 
+         filter(!(Folder == "FILE NOT FOUND" & Filetype != "xlsx"))
+   }
    
    if(length(Directory$Filename[Directory$Folder != "FILE NOT FOUND"]) == 0){
       # This will happen if they have supplied something for
