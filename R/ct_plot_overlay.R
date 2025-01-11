@@ -710,6 +710,18 @@ ct_plot_overlay <- function(ct_dataframe,
       prettify_compound_names <- TRUE
    }
    
+   if(length(legend_label_color) != 1){
+      warning(wrapn("You have supplied more than 1 value for the argument 'legend_label_color'. Did you instead mean to supply something for 'color_labels' maybe? For now, we will only use the 1st item in 'legend_label_color' and ignore the others."), 
+              call. = FALSE)
+      legend_label_color <- legend_label_color[1]
+   }
+   
+   if(length(legend_label_linetype) != 1){
+      warning(wrapn("You have supplied more than 1 value for the argument 'legend_label_linetype'. Did you instead mean to supply something for 'linetype_labels' maybe? For now, we will only use the 1st item in 'legend_label_linetype' and ignore the others."), 
+              call. = FALSE)
+      legend_label_linetype <- legend_label_linetype[1]
+   }
+   
    # Checking whether user tried to include obs data directly from simulator
    # output for a simulation that included anything other than substrate in
    # plasma.
