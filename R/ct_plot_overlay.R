@@ -1208,7 +1208,7 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    if(length(time_range) == 1 && complete.cases(time_range[1]) &&
-      !str_detect(time_range, "dose|last obs|all obs")){
+      !str_detect(time_range, "^dose|^day|last obs|all obs")){
       if(complete.cases(time_range)){
          warning(wrapn("You have specified only 1 value for the time range and you don't appear to be specifying a time range by dose number, so we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used."),
                  call. = FALSE)
@@ -1222,7 +1222,7 @@ ct_plot_overlay <- function(ct_dataframe,
       } 
       
       if(class(time_range) != "numeric" && complete.cases(time_range[1]) &&
-         !str_detect(time_range, "dose|last obs|all obs")){
+         !str_detect(time_range, "^dose|^day|last obs|all obs")){
          warning(wrapn("You don't appear to be specifying a time range by dose number, and you have not specified numeric data for the start and end of your time range, which is the input required for this function if you're not supplying a dose number. The full time range will be used."),
                  call. = FALSE)
          time_range <- NA

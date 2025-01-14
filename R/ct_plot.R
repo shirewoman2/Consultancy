@@ -118,6 +118,11 @@
 #'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
 #'   for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}
 #'
+#'   \item{a specific day number with "day" or "days" as the prefix}{the time
+#'   range encompassing the requested days, e.g., \code{time_range = "day 2"}
+#'   for the 24-hour period starting on day 2, e.g., 24-48 hours, or 
+#'   \code{time_range = "days 1 to 4"} for the 4-day period from 0 to 96 hours}
+#'
 #'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
 #'   range will be limited to only times when observed data are present.}
 #'
@@ -246,7 +251,7 @@
 #'   like help creating a specific gradation of colors, please talk to a member
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
-#'   
+#'
 #' @param obs_shape optionally specify what shapes are used to depict observed
 #'   data for 1. the substrate drug alone and 2. the substrate drug in the
 #'   presence of a perpetrator. Input should look like this, for example:
