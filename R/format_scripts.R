@@ -214,7 +214,8 @@ format_scripts <- function(DF,
       # rest of the string with variable text.
       MultPieceVars <- c("^fu,mic", "^fu,inc", "^Ki fu,mic", "^Ki",
                          "^Km", "^Vmax", "^IndC50", "^IndMax", "^Ind gamma", 
-                         "^Ind fu,inc", "uL", "Qgut")
+                         "^Ind fu,inc", "uL", "Qgut", 
+                         "^MBI Kapp", "^MBI kinact")
       
       for(mpv in MultPieceVars){
          
@@ -281,6 +282,18 @@ format_scripts <- function(DF,
                                      "^Km" = 
                                         flextable::as_paragraph(
                                            "K", flextable::as_sub("M"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "^MBI Kapp" = 
+                                        flextable::as_paragraph(
+                                           "MBI K", flextable::as_sub("app"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "^MBI kinact" = 
+                                        flextable::as_paragraph(
+                                           "MBI k", flextable::as_sub("inact"), 
                                            sub(mpv, "", 
                                                DF[r, which(names(DF) == "Parameter")])), 
                                      

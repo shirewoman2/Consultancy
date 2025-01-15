@@ -366,9 +366,7 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                                        "Interaction", 
                                        "Trial Design", 
                                        "Population")) %>% 
-         # NB: We always omit the SimulatorSection of "SimulatorVersion" here,
-         # which is the 1st level in the data.frame output from annotateDetails.
-         mutate(OrderSS = 2:9, 
+         mutate(OrderSS = 1:8, 
                 OrderDetail = 0, 
                 # Hacking something other than a completely empty cell for value
                 # so that these rows won't get vertically merged with the others
@@ -377,7 +375,16 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
          filter(Parameter %in% FT$`Section of model`)
       
       FT <- FT %>% 
-         mutate(OrderSS = as.numeric(`Section of model`), 
+         mutate(OrderSS = factor(`Section of model`, 
+                                 levels = c("Phys Chem and Blood Binding", 
+                                            "Absorption", 
+                                            "Distribution", 
+                                            "Elimination", 
+                                            "Transport", 
+                                            "Interaction", 
+                                            "Trial Design", 
+                                            "Population")), 
+                OrderSS = as.numeric(OrderSS), 
                 OrderDetail = 1:nrow(.)) %>% 
          bind_rows(ADME) %>% 
          arrange(OrderSS, OrderDetail) %>% 
