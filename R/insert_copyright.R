@@ -34,7 +34,7 @@ insert_copyright <- function(font = "Fourier"){
    # Main body of function ----------------------------------------------------
    
    flextable::flextable(data.frame(
-      Copyright = c(paste0("©Certara Predictive Technologies 2001 - ", 
+      Copyright = c(paste0("©Certara Predictive Technologies 2001-", 
                            lubridate::year(Sys.Date())), 
                     "Copyright in this document belongs to Certara Predictive Technologies. Contents of this document may not be used, sold, licensed, transferred, copied or reproduced in whole or in any part or in any manner or form", 
                     "without the prior written consent of Certara Predictive Technologies.", 

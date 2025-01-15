@@ -214,14 +214,17 @@ format_scripts <- function(DF,
       # rest of the string with variable text.
       MultPieceVars <- c("^fu,mic", "^fu,inc", "^Ki fu,mic", "^Ki",
                          "^Km", "^Vmax", "^IndC50", "^IndMax", "^Ind gamma", 
-                         "^Ind fu,inc", "uL", "Qgut", 
-                         "^MBI Kapp", "^MBI kinact")
+                         "^Ind fu,inc", "uL", "uM", "Qgut", 
+                         "^Kapp", "^kinact", "10^6")
       
       for(mpv in MultPieceVars){
          
          rows <- which(str_detect(DF$Parameter, mpv))
          
          for(r in rows){
+            
+            Snips <- str_split_1(DF$Parameter[r], pattern = mpv)
+            
             FT <- FT %>% 
                flextable::compose(i = r, 
                                   j = which(names(DF) == "Parameter"), 
@@ -285,15 +288,15 @@ format_scripts <- function(DF,
                                            sub(mpv, "", 
                                                DF[r, which(names(DF) == "Parameter")])), 
                                      
-                                     "^MBI Kapp" = 
+                                     "^Kapp" = 
                                         flextable::as_paragraph(
-                                           "MBI K", flextable::as_sub("app"), 
+                                           "K", flextable::as_sub("app"), 
                                            sub(mpv, "", 
                                                DF[r, which(names(DF) == "Parameter")])), 
                                      
-                                     "^MBI kinact" = 
+                                     "^kinact" = 
                                         flextable::as_paragraph(
-                                           "MBI k", flextable::as_sub("inact"), 
+                                           "k", flextable::as_sub("inact"), 
                                            sub(mpv, "", 
                                                DF[r, which(names(DF) == "Parameter")])), 
                                      
@@ -309,9 +312,19 @@ format_scripts <- function(DF,
                                            sub(mpv, "", 
                                                DF[r, which(names(DF) == "Parameter")])), 
                                      
+                                     "10^6" = 
+                                        flextable::as_paragraph(
+                                           "V", flextable::as_sub("max"), 
+                                           sub(mpv, "", 
+                                               DF[r, which(names(DF) == "Parameter")])), 
+                                     
                                      # Special characters
                                      "uL" = flextable::as_paragraph(
                                         sub("uL", "\u03BCL", 
+                                            DF[r, which(names(DF) == "Parameter")])), 
+                                     
+                                     "uM" = flextable::as_paragraph(
+                                        sub("uM", "\u03BCM", 
                                             DF[r, which(names(DF) == "Parameter")]))
                                   ))
          }
