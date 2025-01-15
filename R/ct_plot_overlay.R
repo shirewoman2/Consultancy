@@ -268,6 +268,10 @@
 #'   "Inhibitor". The default is to use whatever the column name is for
 #'   \code{linetype_column}. If you don't want a label for this legend item, set
 #'   this to "none".
+#' @param legend_orientation optionally specify how the legend entries should be
+#'   oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+#'   legend entries will be "vertical" when the legend is on the  left or right
+#'   and "horizontal" when it's on the top or bottom.
 #' @param facet1_column optionally break up the graph into small multiples; this
 #'   specifies the first of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet1_column =
@@ -572,6 +576,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             graph_title = NA,
                             graph_title_size = 14, 
                             legend_position = NA,
+                            legend_orientation = NA, 
                             border = TRUE, 
                             prettify_compound_names = TRUE,
                             qc_graph = FALSE,
@@ -744,6 +749,25 @@ ct_plot_overlay <- function(ct_dataframe,
       warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'right'."), 
               call. = FALSE)
       legend_position <- "right"
+   }
+   
+   legend_orientation <- tolower(legend_orientation)[1]
+   
+   if((complete.cases(legend_orientation) & legend_position != "none") && 
+      legend_orientation %in% c("horizontal", "vertical") == FALSE){
+      
+      legend_orientation <- case_when(legend_position %in% c("left", "right", "none") ~ "vertical", 
+                                      .default = "horizontal")
+      
+      warning(wrapn(paste0("You have specified something for the legend orientation that is not among the possible options. Since you requested that the legend position be on the ", 
+                           legend_position, ", we will set the legend orientation to be ", 
+                           legend_orientation, ". ")), 
+              call. = FALSE)
+   }
+   
+   if(is.na(legend_orientation)){
+      legend_orientation <- case_when(legend_position %in% c("left", "right", "none") ~ "vertical", 
+                                      .default = "horizontal")
    }
    
    # If user wanted hline or vline added, check that they have specified
@@ -2803,6 +2827,12 @@ ct_plot_overlay <- function(ct_dataframe,
               call. = FALSE)
    }
    
+   if(complete.cases(legend_position)){
+      A <- A + theme(legend.position = legend_position)  
+   } 
+   
+   A <- A + theme(legend.direction = legend_orientation)
+   
    if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
       B <- suppressMessages(suppressWarnings(
          A + scale_y_log10(labels = scales::label_percent(big.mark = ","), 
@@ -2829,11 +2859,6 @@ ct_plot_overlay <- function(ct_dataframe,
                                          xlim = time_range_relative))
       ))
    }
-   
-   if(complete.cases(legend_position)){
-      A <- A + theme(legend.position = legend_position)  
-      B <- B + theme(legend.position = legend_position)
-   }    
    
    if(graph_labels){
       labels <- "AUTO"

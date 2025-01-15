@@ -56,6 +56,7 @@ ct_plot_1stlast(
   graph_labels = TRUE,
   graph_title_size = 14,
   legend_position = NA,
+  legend_orientation = NA,
   prettify_compound_names = TRUE,
   name_clinical_study = NA,
   existing_exp_details = NA,
@@ -439,6 +440,11 @@ This also determines the font size of the graph labels.}
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
+
+\item{legend_orientation}{optionally specify how the legend entries should be
+oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+legend entries will be "vertical" when the legend is on the  left or right
+and "horizontal" when it's on the top or bottom.}
 
 \item{prettify_compound_names}{set this to a) TRUE (default) or FALSE for
 whether to make the compound names in the legend prettier or b) supply a

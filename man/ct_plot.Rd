@@ -41,6 +41,7 @@ ct_plot(
   vline_position = NA,
   vline_style = "red dotted",
   legend_position = "none",
+  legend_orientation = NA,
   legend_label = NA,
   prettify_compound_names = TRUE,
   linear_or_log = "both vertical",
@@ -146,7 +147,7 @@ output, you'll get a warning and the graph will include one that was.}
 
   \item{a specific day number with "day" or "days" as the prefix}{the time
   range encompassing the requested days, e.g., \code{time_range = "day 2"}
-  for the 24-hour period starting on day 2, e.g., 24-48 hours, or 
+  for the 24-hour period starting on day 2, e.g., 24-48 hours, or
   \code{time_range = "days 1 to 4"} for the 4-day period from 0 to 96 hours}
 
   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
@@ -410,6 +411,11 @@ into the console.}
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right", "bottom", "top", or "none" (default) if you don't want one
 at all.}
+
+\item{legend_orientation}{optionally specify how the legend entries should be
+oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+legend entries will be "vertical" when the legend is on the  left or right
+and "horizontal" when it's on the top or bottom.}
 
 \item{legend_label}{optionally indicate on the legend whether the perpetrator
 is an inhibitor, inducer, activator, or suppressor. Input will be used as

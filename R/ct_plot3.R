@@ -144,6 +144,10 @@
 #'   some graphs do not (e.g., some have perpetrators and some do not so there's
 #'   nothing to put in a legend), the alignment between sets of graphs will be a
 #'   bit off.
+#' @param legend_orientation optionally specify how the legend entries should be
+#'   oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+#'   legend entries will be "vertical" when the legend is on the  left or right
+#'   and "horizontal" when it's on the top or bottom.
 #' @param qc_graph TRUE or FALSE (default) on whether to create a second copy of
 #'   the graph where the left panel shows the original graph and the right panel
 #'   shows information about the simulation trial design. This works MUCH faster
@@ -264,6 +268,7 @@ ct_plot3 <- function(ct_dataframe,
                      time_range_LR = "last dose",
                      x_axis_interval_LR = NA,
                      legend_position = "none",
+                     legend_orientation = NA, 
                      graph_labels = TRUE, 
                      conc_units_to_use = NA, 
                      hline_position = NA, 
@@ -366,6 +371,7 @@ ct_plot3 <- function(ct_dataframe,
                            qc_graph = FALSE,
                            graph_labels = FALSE, 
                            legend_position = legend_position, 
+                           legend_orientation = legend_orientation, 
                            ..., 
                            save_graph = NA)
       
@@ -383,6 +389,7 @@ ct_plot3 <- function(ct_dataframe,
                               qc_graph = FALSE,
                               graph_labels = FALSE, 
                               legend_position = "none", 
+                              legend_orientation = legend_orientation, 
                               ..., 
                               save_graph = NA)))
       
@@ -399,20 +406,23 @@ ct_plot3 <- function(ct_dataframe,
                               qc_graph = FALSE,
                               graph_labels = FALSE, 
                               legend_position = "none", 
+                              legend_orientation = legend_orientation, 
                               ..., 
                               save_graph = NA)))
       
-      Out <- ggpubr::ggarrange(A, 
-                               ggpubr::ggarrange(
-                                  B, C, 
-                                  labels = switch(as.character(graph_labels), 
-                                                  "TRUE" = list("", "C"), 
-                                                  "FALSE" = NULL), 
-                                  legend = "none"), 
-                               
-                               nrow = 2, 
-                               labels = labels, 
-                               common.legend = TRUE, legend = "bottom")
+      suppressWarnings(
+         Out <- ggpubr::ggarrange(A, 
+                                  ggpubr::ggarrange(
+                                     B, C, 
+                                     labels = switch(as.character(graph_labels), 
+                                                     "TRUE" = list("", "C"), 
+                                                     "FALSE" = NULL), 
+                                     legend = "none"), 
+                                  
+                                  nrow = 2, 
+                                  labels = labels, 
+                                  common.legend = TRUE, legend = legend_position)
+      )
       
    } else {
       
@@ -426,6 +436,7 @@ ct_plot3 <- function(ct_dataframe,
                    mean_type = mean_type, 
                    linear_or_log = linear_or_log,
                    legend_position = legend_position,
+                   legend_orientation = legend_orientation, 
                    time_range = NA, 
                    x_axis_interval = x_axis_interval_U,
                    graph_title = graph_title_U,
@@ -442,6 +453,7 @@ ct_plot3 <- function(ct_dataframe,
                       mean_type = mean_type, 
                       linear_or_log = linear_or_log,
                       legend_position = "none",
+                      legend_orientation = legend_orientation, 
                       ..., 
                       time_range = time_range_LL, 
                       x_axis_interval = x_axis_interval_LL,
@@ -458,6 +470,7 @@ ct_plot3 <- function(ct_dataframe,
                       mean_type = mean_type, 
                       linear_or_log = linear_or_log,
                       legend_position = "none",
+                      legend_orientation = legend_orientation, 
                       qc_graph = FALSE,
                       ..., 
                       time_range = time_range_LR, 

@@ -362,6 +362,10 @@
 #' @param indiv_on_top TRUE (default) or FALSE for whether to show the
 #'   individual observed data on top of the mean observed data. If FALSE, the
 #'   mean data will be on top.
+#' @param legend_orientation optionally specify how the legend entries should be
+#'   oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+#'   legend entries will be "vertical" when the legend is on the  left or right
+#'   and "horizontal" when it's on the top or bottom.
 #'
 #' @return returns a ggplot2 graph
 #' @export
@@ -419,6 +423,7 @@ ct_plot_obs <- function(ct_dataframe,
                         graph_title = NA,
                         graph_title_size = 14, 
                         legend_position = NA,
+                        legend_orientation = NA, 
                         prettify_compound_names = TRUE,
                         save_graph = NA,
                         fig_height = NA,
@@ -561,6 +566,7 @@ ct_plot_obs <- function(ct_dataframe,
                    graph_title = graph_title,
                    graph_title_size = graph_title_size, 
                    legend_position = legend_position,
+                   legend_orientation = legend_orientation, 
                    prettify_compound_names = prettify_compound_names,
                    qc_graph = FALSE,
                    existing_exp_details = NA,

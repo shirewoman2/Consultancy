@@ -19,6 +19,7 @@ ct_plot3(
   time_range_LR = "last dose",
   x_axis_interval_LR = NA,
   legend_position = "none",
+  legend_orientation = NA,
   graph_labels = TRUE,
   conc_units_to_use = NA,
   hline_position = NA,
@@ -152,6 +153,11 @@ at all. If you include the legend but then some graphs do have a legend and
 some graphs do not (e.g., some have perpetrators and some do not so there's
 nothing to put in a legend), the alignment between sets of graphs will be a
 bit off.}
+
+\item{legend_orientation}{optionally specify how the legend entries should be
+oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+legend entries will be "vertical" when the legend is on the  left or right
+and "horizontal" when it's on the top or bottom.}
 
 \item{graph_labels}{TRUE (default) or FALSE for whether to include labels (A,
 B, C) for each of the small graphs.}
