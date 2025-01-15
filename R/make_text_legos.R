@@ -145,20 +145,27 @@ make_text_legos <- function(sim_data_file,
                        paste0(" ", DoseFreq_inhib), ""))
       
       NumDaysInhib <- suppressWarnings(
-         Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
+         # Rounding the day down so that this will be, e.g., "20 days of dosing"
+         # rather than "20.5 days of dosing".
+         round_down_unit(
+            Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24, 1))
       NumDaysInhib <- ifelse(is.na(NumDaysInhib) & 
                                 DoseFreq_inhib != "single dose",
                              "**CUSTOM DOSING - FILL IN MANUALLY**",
                              NumDaysInhib)
       
       DoseDay_ordinal <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
+      # Need to round down to get that day as an integer or the rest of the
+      # string manipulation doesn't work correctly.
+      DoseDay_ordinal <- as.character(
+         round_down_unit(as.numeric(DoseDay_ordinal), 1))
       LastDig <- as.numeric(str_sub(DoseDay_ordinal, start = -1, end = -1))
       PenultDig <- as.numeric(str_sub(DoseDay_ordinal, start = -2, end = -2))
       DoseDay_ordinal <- paste0(
          DoseDay_ordinal,
-         case_when(LastDig == 1 & PenultDig != "1" ~ "^st^",
-                   LastDig == 2 & PenultDig != "1" ~ "^nd^",
-                   LastDig == 3 & PenultDig != "1" ~ "^rd^", 
+         case_when(LastDig == 1 & (PenultDig != "1" | is.na(PenultDig)) ~ "^st^",
+                   LastDig == 2 & (PenultDig != "1" | is.na(PenultDig)) ~ "^nd^",
+                   LastDig == 3 & (PenultDig != "1" | is.na(PenultDig)) ~ "^rd^", 
                    .default = "^th^"))
       
    } else {

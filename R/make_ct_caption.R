@@ -47,6 +47,13 @@ make_ct_caption <- function(ct_dataframe,
    
    # Determining appropriate names to use for compounds -----------------------
    
+   # For a "compound summary" figure type, you could conceivably have more than
+   # one simulation file present for ct_plot, which would mess things up here.
+   # To avoid that, this will assume that the figure caption info should come
+   # from the simulated file only. 
+   SimFile <- sort(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))
+   ct_dataframe$File <- SimFile
+   
    Tissue <- str_comma(as.character(sort(unique(ct_dataframe$Tissue))),
                        conjunction = "or")
    CompoundID <- as.character(sort(unique(ct_dataframe$CompoundID)))
@@ -225,13 +232,13 @@ make_ct_caption <- function(ct_dataframe,
       ## Getting general info and setting up heading ------------------------------
       
       Text1a <- switch(linear_or_log, 
-                      "both" = "Linear (A) and log-linear (B)",
-                      "both horizontal" ="Linear (A) and log-linear (B)",
-                      "both vertical" = "Linear (A) and log-linear (B)",
-                      "linear" = "Linear", 
-                      "log" = "Log-linear",
-                      "semi-log" = "Log-linear", 
-                      "horizontal and vertical" = "Linear (A) and log-linear (B)")
+                       "both" = "Linear (A) and log-linear (B)",
+                       "both horizontal" ="Linear (A) and log-linear (B)",
+                       "both vertical" = "Linear (A) and log-linear (B)",
+                       "linear" = "Linear", 
+                       "log" = "Log-linear",
+                       "semi-log" = "Log-linear", 
+                       "horizontal and vertical" = "Linear (A) and log-linear (B)")
       
       Text1 <- case_when(plot_type == "fm" ~ "", 
                          .default = paste0(Text1a, " simulated ", Tissue))
@@ -292,19 +299,25 @@ make_ct_caption <- function(ct_dataframe,
                    
                    "victim" = paste0(DosingText_sub_lower, 
                                      " at baseline (solid line) and ", 
-                                     ifelse(DoseFreq_inhib == "single dose", 
-                                            # single dose of perp 
-                                            paste0("following ", 
-                                                   DosingText_inhib_lower, 
-                                                   " (dashed line)."), 
-                                            
-                                            # multiple doses of perp
-                                            paste0("on the ", 
-                                                   DoseDay_ordinal, " day of ",
-                                                   NumDaysInhib, " days of dosing of ",
-                                                   MyPerpetrator, " ", Dose_inhib, " ",
-                                                   Units_dose_inhib, " ",
-                                                   DoseFreq_inhib, " (dashed line).")))
+                                     
+                                     # FIXME: I think the below was incorrect, so I've commented out
+                                     # for now the bits I think were wrong. Need to check that we
+                                     # don't need this!!!
+                                     
+                                     # ifelse(DoseFreq_inhib == "single dose", 
+                                     # single dose of perp 
+                                     paste0("with ", 
+                                            DosingText_inhib_lower, 
+                                            " (dashed line).")#, 
+                                     
+                                     # # multiple doses of perp
+                                     # paste0("on the ", 
+                                     #        DoseDay_ordinal, " day of ",
+                                     #        NumDaysInhib, " days of dosing of ",
+                                     #        MyPerpetrator, " ", Dose_inhib, " ",
+                                     #        Units_dose_inhib, " ",
+                                     #        DoseFreq_inhib, " (dashed line)."))
+                   )
             ))
          
       } else {
@@ -337,8 +350,15 @@ make_ct_caption <- function(ct_dataframe,
             ".") 
       }
       
+      # Hack to deal w/"compound summary" and "Freddy" figure types looking like
+      # "percentiles" figure type when it's a DDI sim.
+      figure_type_mod <- case_when(figure_type %in% c("compound summary", 
+                                                      "Freddy") &
+                                      DDI == TRUE ~ "percentiles", 
+                                   .default = figure_type)
+      
       CapText2 <- switch(
-         figure_type, 
+         figure_type_mod, 
          "trial means" = 
             paste0("The lighter lines represent ",
                    mean_type, 
@@ -483,11 +503,15 @@ make_ct_caption <- function(ct_dataframe,
                MyCompound, " following ", DosingText_sub_lower, 
                " (solid line) and ",
                
-               ifelse(DoseFreq_inhib == "single dose", 
-                      DosingText_inhib_lower, 
-                      paste0("on the ", DoseDay_ordinal, 
-                             " day of ", NumDaysInhib, " days of dosing ", 
-                             MyPerpetrator)), 
+               # FIXME: I think the below was incorrect, so I've commented out
+               # for now the bits I think were wrong. Need to check that we
+               # don't need this!!!
+               
+               # ifelse(DoseFreq_inhib == "single dose", 
+               DosingText_inhib_lower, 
+               # paste0("on the ", DoseDay_ordinal, 
+               #        " day of ", NumDaysInhib, " days of dosing ", 
+               #        MyPerpetrator)), 
                " (dashed line)"), 
             
             "InhibPresent perpetrator-victim concentration-time" = paste0(
