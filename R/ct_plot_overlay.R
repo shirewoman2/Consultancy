@@ -2917,7 +2917,8 @@ ct_plot_overlay <- function(ct_dataframe,
    
    NumProfiles <- ifelse(length(MyTissue) == 1 & length(MyCompoundID) == 1 &
                             length(MyTissueSubtype) == 1 & 
-                            length(unique(ct_dataframe$File)) == 1, 
+                            length(unique(ct_dataframe$File[
+                               ct_dataframe$Simulated == TRUE])) == 1, 
                          "single", "multiple")
    
    if("logical" %in% class(prettify_compound_names)){
