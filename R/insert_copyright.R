@@ -34,12 +34,12 @@ insert_copyright <- function(font = "Fourier"){
    # Main body of function ----------------------------------------------------
    
    flextable::flextable(data.frame(
-      Copyright = c(paste0("©Certara UK Limited 2001 - ", 
+      Copyright = c(paste0("©Certara Predictive Technologies 2001 - ", 
                            lubridate::year(Sys.Date())), 
-                    "Copyright in this document belongs to Certara UK limited. Contents of this document may not be used, sold, licensed, transferred, copied or reproduced in whole or in any part or in any manner or form", 
-                    "without the prior written consent of Certara UK Limited.", 
+                    "Copyright in this document belongs to Certara Predictive Technologies. Contents of this document may not be used, sold, licensed, transferred, copied or reproduced in whole or in any part or in any manner or form", 
+                    "without the prior written consent of Certara Predictive Technologies.", 
                     "The recipient of this material shall undertake to respect and preserve the confidentiality of such information.", 
-                    "Certara UK (Simcyp Division),", 
+                    "Certara Predictive Technologies,", 
                     "Level 2 - Acero, 1 Concourse Way,", 
                     "Sheffield, S1 2BJ, United Kingdom"))) %>% 
       flextable::bold(i = c(1, 3)) %>% 
