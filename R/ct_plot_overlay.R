@@ -2957,7 +2957,7 @@ ct_plot_overlay <- function(ct_dataframe,
       PrettyCmpds2 <- ct_dataframe %>% filter(Inhibitor != "none") %>% 
          pull(Inhibitor) %>% unique() %>% as.character() %>% str_comma()
       
-      if(length(PrettyCmpds2) > 0){
+      if(length(PrettyCmpds2[PrettyCmpds2 != ""]) > 0){
          PrettyCmpds <- c(as.character(PrettyCmpds1$Compound), PrettyCmpds2)
          names(PrettyCmpds) <- c(as.character(PrettyCmpds1$CompoundID), 
                                  # Note that the name of the perpetrator has
@@ -2967,10 +2967,12 @@ ct_plot_overlay <- function(ct_dataframe,
                                  "inhibitor 1")
          
          # Also need to hack Inhibitor1 in existing_exp_details. 
-         existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
-            mutate(Inhibitor1 = PrettyCmpds["inhibitor 1"], 
-                   Inhibitor2 = NA, 
-                   Inhibitor1Metabolite = NA)
+         if("logical" %in% class(existing_exp_details) == FALSE){
+            existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+               mutate(Inhibitor1 = PrettyCmpds["inhibitor 1"], 
+                      Inhibitor2 = NA, 
+                      Inhibitor1Metabolite = NA)
+         }
          
       } else {
          PrettyCmpds <- as.character(PrettyCmpds1$Compound)
