@@ -139,31 +139,13 @@ format_scripts <- function(DF,
                             value = flextable::as_paragraph(
                                "fu", flextable::as_sub("p"))) %>% 
          
-         flextable::compose(i = which(DF$Parameter == "fu,gut"), 
-                            j = which(names(DF) == "Parameter"), 
-                            part = "body", 
-                            value = flextable::as_paragraph(
-                               "fu", flextable::as_sub("gut"))) %>% 
-         
-         flextable::compose(i = which(DF$Parameter == "CLint,biliary"), 
-                            j = which(names(DF) == "Parameter"), 
-                            part = "body", 
-                            value = flextable::as_paragraph(
-                               "CLint", flextable::as_sub("biliary"))) %>% 
-         
-         flextable::compose(i = which(DF$Parameter == "CLint,additional HLM"), 
-                            j = which(names(DF) == "Parameter"), 
-                            part = "body", 
-                            value = flextable::as_paragraph(
-                               "CLint", flextable::as_sub("additional HLM"))) %>% 
-         
          flextable::compose(i = which(DF$Parameter == "tlag (h)"), 
                             j = which(names(DF) == "Parameter"), 
                             part = "body", 
                             value = flextable::as_paragraph(
                                "t", flextable::as_sub("lag"), " (h)")) %>% 
          
-         flextable::compose(i = which(DF$Parameter == "Peff,human (10-4 cm/s)"),
+         flextable::compose(i = which(DF$Parameter == "Peff,human (10^-4 cm/s)"),
                             j = which(names(DF) == "Parameter"), 
                             part = "body", 
                             value = flextable::as_paragraph(
@@ -196,6 +178,7 @@ format_scripts <- function(DF,
                                "Calibrator compound used for calculating P",
                                flextable::as_sub("app")))
       
+      
       # Value column formatting
       if(ValueColIncluded){
          
@@ -212,10 +195,11 @@ format_scripts <- function(DF,
       # Next, all the places where there might be multiple matches b/c we're only
       # matching, e.g., the 1st part of the string and then need to fill in the
       # rest of the string with variable text.
-      MultPieceVars <- c("^fu,mic", "^fu,inc", "^Ki fu,mic", "^Ki",
+      MultPieceVars <- c("Additional HLM CLint (uL/min/mg protein)", 
+                         "fu,gut", "^fu,mic", "^fu,inc", "^Ki fu,mic", "^Ki",
                          "^Km", "^Vmax", "^IndC50", "^IndMax", "^Ind gamma", 
                          "^Ind fu,inc", "uL", "uM", "Qgut", 
-                         "^Kapp", "^kinact", "10^6")
+                         "^Kapp", "^kinact", "uL/min/10\\^6")
       
       for(mpv in MultPieceVars){
          
@@ -231,6 +215,12 @@ format_scripts <- function(DF,
                                   part = "body", 
                                   value = switch(
                                      mpv,
+                                     
+                                     "fu,gut" = 
+                                        flextable::as_paragraph(
+                                           Snips[1], 
+                                           "fu", flextable::as_sub("gut"), 
+                                           Snips[2]), 
                                      
                                      "^fu,mic" = 
                                         flextable::as_paragraph(
@@ -291,14 +281,14 @@ format_scripts <- function(DF,
                                      "^Kapp" = 
                                         flextable::as_paragraph(
                                            "K", flextable::as_sub("app"), 
-                                           sub(mpv, "", 
-                                               DF[r, which(names(DF) == "Parameter")])), 
+                                           Snips[2], " (\u03BCM)"), 
                                      
                                      "^kinact" = 
                                         flextable::as_paragraph(
                                            "k", flextable::as_sub("inact"), 
-                                           sub(mpv, "", 
-                                               DF[r, which(names(DF) == "Parameter")])), 
+                                           Snips[2], " (h", 
+                                           flextable::as_sup("-1"), 
+                                           ")"), 
                                      
                                      "Qgut" = 
                                         flextable::as_paragraph(
@@ -312,11 +302,11 @@ format_scripts <- function(DF,
                                            sub(mpv, "", 
                                                DF[r, which(names(DF) == "Parameter")])), 
                                      
-                                     "10^6" = 
+                                     "uL/min/10\\^6" = 
                                         flextable::as_paragraph(
-                                           "V", flextable::as_sub("max"), 
-                                           sub(mpv, "", 
-                                               DF[r, which(names(DF) == "Parameter")])), 
+                                           Snips[1], 
+                                           "\u03BCL/min/10", flextable::as_sup("6"), 
+                                           Snips[2]), 
                                      
                                      # Special characters
                                      "uL" = flextable::as_paragraph(
@@ -373,7 +363,6 @@ format_scripts <- function(DF,
                                   ColNames[cols, 3]))
       }
    }
-   
    
    
    return(FT)
