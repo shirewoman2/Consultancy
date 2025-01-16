@@ -57,6 +57,7 @@ ct_plot_overlay(
   graph_title = NA,
   graph_title_size = 14,
   legend_position = NA,
+  legend_orientation = NA,
   border = TRUE,
   prettify_compound_names = TRUE,
   qc_graph = FALSE,
@@ -498,6 +499,11 @@ default is 14. This also determines the font size of the graph labels.}
 \item{legend_position}{Specify where you want the legend to be. Options are
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
+
+\item{legend_orientation}{optionally specify how the legend entries should be
+oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+legend entries will be "vertical" when the legend is on the  left or right
+and "horizontal" when it's on the top or bottom.}
 
 \item{border}{TRUE (default) or FALSE for whether to include a border around
 each graph.}

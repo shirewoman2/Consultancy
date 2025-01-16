@@ -27,6 +27,7 @@ ct_plot_mult(
   vline_position = NA,
   vline_style = "red dotted",
   legend_position = "none",
+  legend_orientation = NA,
   legend_label = NA,
   graph_titles = "none",
   graph_title_size = 14,
@@ -246,6 +247,11 @@ at all. If you include the legend but then some graphs do have a legend and
 some graphs do not (e.g., some have perpetrators and some do not so there's
 nothing to put in a legend), the alignment between sets of graphs will be a
 bit off.}
+
+\item{legend_orientation}{optionally specify how the legend entries should be
+oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+legend entries will be "vertical" when the legend is on the  left or right
+and "horizontal" when it's on the top or bottom.}
 
 \item{legend_label}{optionally indicate on the legend whether the perpetrator
 is an inhibitor, inducer, activator, or suppressor. Input will be used as

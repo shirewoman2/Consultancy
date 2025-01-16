@@ -18,7 +18,7 @@ ct_x_axis <- function(Data, time_range, t0,
    
    if(all(complete.cases(time_range)) && class(time_range) == "numeric" &
       length(time_range) != 2){
-      warning("You must enter a start and stop time for 'time_range', e.g., 'time_range = c(0, 24)' or enter which dose you want. Please see the help file. For now, we'll use the full time range.",
+      warning(wrapn("You must enter a start and stop time for 'time_range', e.g., 'time_range = c(0, 24)' or enter which dose you want. Please see the help file. For now, we'll use the full time range."),
               call. = FALSE)
       time_range <- NA
    }
@@ -34,8 +34,8 @@ ct_x_axis <- function(Data, time_range, t0,
                              "last observed", "last to last obs", 
                              "last dose to last observed", 
                              "last to end", "last dose to end")) &
-      !any(str_detect(tolower(time_range), "^dose"))){
-      warning("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), 'all observed', 'last observed', 'last dose to end', or a numeric time range, e.g., c(12, 24). FOr now, we'll use the full time range.",
+      !any(str_detect(tolower(time_range), "^dose|^day"))){
+      warning(wrapn("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), day number(s) (this option must start with 'day'), 'all observed', 'last observed', 'last dose to end', or a numeric time range, e.g., c(12, 24). For now, we'll use the full time range."),
               call. = FALSE)
       time_range <- NA
    }
@@ -233,6 +233,13 @@ ct_x_axis <- function(Data, time_range, t0,
                             Max = ceiling(max(Time))) %>% 
                   t() %>% as.numeric()
             }
+         }
+         
+         if(all(complete.cases(time_range_input)) && 
+            str_detect(tolower(time_range_input), "^day")){
+            
+            time_range <- convert_days_to_hours(time_range_input)
+            
          }
          
          if(all(complete.cases(time_range_input)) &&

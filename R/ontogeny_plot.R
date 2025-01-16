@@ -1,9 +1,8 @@
 #' Graph the ontogenies of drug-metabolizing enzymes and transporters
 #'
-#' \code{ontogeny_plot} uses the betas from the Simcyp Simulator to make graphs
-#' of the ontogenies of all the enzymes and transporters included in the
-#' Simulator. \strong{Note:} Only the beta version of the package includes the
-#' object OntogenyEquations, which is required for this function to work.
+#' @description \code{ontogeny_plot} uses the betas from the Simcyp Simulator to
+#'   make graphs of the ontogenies of all the enzymes and transporters included
+#'   in the Simulator.
 #'
 #' @param enzyme drug-metabolizing enzymes and transporters to plot, which
 #'   should be supplied as either a single string, in quotes, that we'll try to
@@ -119,7 +118,7 @@
 #'   like help creating a specific gradation of colors, please talk to a member
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
-#'   
+#'
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
@@ -427,96 +426,13 @@ ontogeny_plot <- function(enzyme = NA,
       NumColorsNeeded <- Ontogenies %>% 
          pull(colorBy_column) %>% unique() %>% sort() %>% length()
       
-      # If there's only one unique value in the colorBy_column, then make that
-      # item black.
-      if(NumColorsNeeded == 1){
-         A <- A + scale_color_manual(values = "black") +
-            scale_fill_manual(values = "black")
-         
-      } else {
-         
-         # This is when the user wants specific user-specified colors rather
-         # that one of the pre-made sets.
-         if(length(color_set) > 1){
-            
-            # If they supply a named character vector whose values are not
-            # present in the data, convert it to an unnamed character vector.
-            if(is.null(names(color_set)) == FALSE && 
-               all(unique(Ontogenies$colorBy_column) %in% names(color_set) == FALSE)){
-               warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
-                              as_label(colorBy_column),
-                              " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
-                              as_label(colorBy_column), ".\n"), 
-                       call. = FALSE)
-               
-               MyColors <- as.character(color_set)
-            } else if(length(color_set) < NumColorsNeeded){
-               warning(paste("There are", NumColorsNeeded,
-                             "unique values in the column you have specified for the colors, but you have only specified", 
-                             length(color_set), 
-                             "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph.\n"), 
-                       call. = FALSE)
-               
-               MyColors <- rep(color_set, 100)[1:NumColorsNeeded]
-            } else {
-               MyColors <- color_set
-            }
-            
-         } else {
-            
-            # NOTE: For no reason I can discern, if the user has observed
-            # data that should be all one color but then uses scale_color_X
-            # where x is anything except "manual", the observed points
-            # DISAPPEAR. That's why, below, whenever it's scale_color_x, I'm
-            # setting the colors needed and then using scale_color_manual
-            # instead of scale_color_x. -LSh
-            
-            color_set <- ifelse(color_set == "default" & 
-                                   NumColorsNeeded == 2, 
-                                "set1", "set2")
-            color_set <- ifelse(str_detect(tolower(color_set), 
-                                           "default|brewer.*2|set.*2"), 
-                                "set2", color_set)
-            color_set <- ifelse(str_detect(tolower(color_set),
-                                           "brewer.*1|set.*1"), 
-                                "set1", color_set)
-            
-            suppressWarnings(
-               MyColors <- 
-                  switch(
-                     color_set,
-                     # Using "Dark2" b/c "Set2" is just really,
-                     # really light.
-                     "set2" = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")[
-                        1:NumColorsNeeded], 
-                     "blue-green" = blueGreens(NumColorsNeeded),
-                     "blues" = blues(NumColorsNeeded),
-                     "rainbow" = rainbow(NumColorsNeeded),
-                     "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
-                        1:NumColorsNeeded],
-                     "Tableau" = ggthemes::tableau_color_pal(
-                        palette = "Tableau 10")(NumColorsNeeded),
-                     "viridis" = viridis::viridis_pal()(NumColorsNeeded))
-            )
-            # NB: For the RColorBrewer palettes, the minimum number of
-            # colors you can get is 3. Since sometimes we might only want 1
-            # or 2 colors, though, we have to add the [1:NumColorsNeeded]
-            # bit.
-            
-            if(any(is.na(MyColors))){
-               warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.\n", 
-                       call. = FALSE)
-               
-               MyColors <- rainbow(NumColorsNeeded)
-            }
-         }
-         
-         suppressWarnings(
-            A <-  A + scale_color_manual(values = MyColors, drop = FALSE) +
-               scale_fill_manual(values = MyColors, drop = FALSE)
-         )
-         
-      }
+      MyColors <- make_color_set(color_set = color_set, 
+                                 num_colors = NumColorsNeeded)
+      
+      suppressWarnings(
+         A <-  A + scale_color_manual(values = MyColors, drop = FALSE) +
+            scale_fill_manual(values = MyColors, drop = FALSE)
+      )
    }
    
    A <- A +

@@ -294,6 +294,14 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
          bind_rows(parameters_to_add %>% 
                       mutate(across(.cols = everything(), 
                                     .fns = as.character))) %>% 
+         mutate(Enzyme = str_extract(Detail, 
+                                     "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+                
+                DetailType = case_when(str_detect(Detail, "^CL|Vmax|Km|Jmax|HalfLife") ~ "CL", 
+                                       str_detect(Detail, "MBI") ~ "MBI", 
+                                       str_detect(Detail, "Ind") ~ "Induction", 
+                                       str_detect(Detail, "Ki") ~ "Inhibition", 
+                                       .default = "other")) %>% 
          # Need to re-order things we add rows
          left_join(AllExpDetails %>% 
                       select(Detail, SimulatorSection, SortOrder) %>% 
@@ -312,9 +320,9 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                                                      "Trial Design", 
                                                      "Population", 
                                                      "Other"))) %>% 
-         arrange(SimulatorSection, SortOrder, Detail) %>% 
+         arrange(SimulatorSection, SortOrder, DetailType, Enzyme, Detail) %>% 
          mutate(SimulatorSection = as.character(SimulatorSection)) %>% 
-         select(-SortOrder)
+         select(-SortOrder, -Enzyme, -DetailType)
    }
    
    
@@ -346,10 +354,21 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                                                 collapse = "|"), "", 
                                           Detail)) %>% unique(), 
                    by = "Detail")  %>% 
-         mutate(Parameter = ifelse(is.na(ReportTableText), 
-                                   Detail, ReportTableText), 
-                Value = ifelse(complete.cases(as.numeric(Value)), 
-                               as.character(round(as.numeric(Value), 5)), Value)) %>% 
+         mutate(Parameter = 
+                   case_when(
+                      is.na(Notes) ~ Detail,
+                      
+                      complete.cases(ReportTableText) & 
+                         Notes != ReportTableText ~ ReportTableText, 
+                      
+                      .default = Notes), 
+                
+                Val_num = as.numeric(Value),  
+                Val_num = if_else(Val_num > 100, 
+                                  round(Val_num, 1), 
+                                  signif(Val_num, 4)), 
+                Value = ifelse(complete.cases(Val_num), 
+                               as.character(Val_num), Value)) %>% 
          select("Section of model", Parameter, Value, any_of("Reference")) 
    )
    
@@ -366,9 +385,7 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                                        "Interaction", 
                                        "Trial Design", 
                                        "Population")) %>% 
-         # NB: We always omit the SimulatorSection of "SimulatorVersion" here,
-         # which is the 1st level in the data.frame output from annotateDetails.
-         mutate(OrderSS = 2:9, 
+         mutate(OrderSS = 1:8, 
                 OrderDetail = 0, 
                 # Hacking something other than a completely empty cell for value
                 # so that these rows won't get vertically merged with the others
@@ -377,7 +394,16 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
          filter(Parameter %in% FT$`Section of model`)
       
       FT <- FT %>% 
-         mutate(OrderSS = as.numeric(`Section of model`), 
+         mutate(OrderSS = factor(`Section of model`, 
+                                 levels = c("Phys Chem and Blood Binding", 
+                                            "Absorption", 
+                                            "Distribution", 
+                                            "Elimination", 
+                                            "Transport", 
+                                            "Interaction", 
+                                            "Trial Design", 
+                                            "Population")), 
+                OrderSS = as.numeric(OrderSS), 
                 OrderDetail = 1:nrow(.)) %>% 
          bind_rows(ADME) %>% 
          arrange(OrderSS, OrderDetail) %>% 
@@ -385,8 +411,8 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
       
       if("data.frame" %in% class(references)){
          FT <- FT %>% 
-         mutate(Reference = case_when(Parameter %in% ADME$Parameter ~ "   ", 
-                                      .default = Reference))
+            mutate(Reference = case_when(Parameter %in% ADME$Parameter ~ "   ", 
+                                         .default = Reference))
       }
       
       MakeBold <- which(FT$Parameter %in% ADME$Parameter)

@@ -268,6 +268,10 @@
 #'   "Inhibitor". The default is to use whatever the column name is for
 #'   \code{linetype_column}. If you don't want a label for this legend item, set
 #'   this to "none".
+#' @param legend_orientation optionally specify how the legend entries should be
+#'   oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+#'   legend entries will be "vertical" when the legend is on the  left or right
+#'   and "horizontal" when it's on the top or bottom.
 #' @param facet1_column optionally break up the graph into small multiples; this
 #'   specifies the first of up to two columns to break up the data by, and the
 #'   designated column name should be unquoted, e.g., \code{facet1_column =
@@ -572,6 +576,7 @@ ct_plot_overlay <- function(ct_dataframe,
                             graph_title = NA,
                             graph_title_size = 14, 
                             legend_position = NA,
+                            legend_orientation = NA, 
                             border = TRUE, 
                             prettify_compound_names = TRUE,
                             qc_graph = FALSE,
@@ -710,6 +715,18 @@ ct_plot_overlay <- function(ct_dataframe,
       prettify_compound_names <- TRUE
    }
    
+   if(length(legend_label_color) != 1){
+      warning(wrapn("You have supplied more than 1 value for the argument 'legend_label_color'. Did you instead mean to supply something for 'color_labels' maybe? For now, we will only use the 1st item in 'legend_label_color' and ignore the others."), 
+              call. = FALSE)
+      legend_label_color <- legend_label_color[1]
+   }
+   
+   if(length(legend_label_linetype) != 1){
+      warning(wrapn("You have supplied more than 1 value for the argument 'legend_label_linetype'. Did you instead mean to supply something for 'linetype_labels' maybe? For now, we will only use the 1st item in 'legend_label_linetype' and ignore the others."), 
+              call. = FALSE)
+      legend_label_linetype <- legend_label_linetype[1]
+   }
+   
    # Checking whether user tried to include obs data directly from simulator
    # output for a simulation that included anything other than substrate in
    # plasma.
@@ -732,6 +749,25 @@ ct_plot_overlay <- function(ct_dataframe,
       warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'right'."), 
               call. = FALSE)
       legend_position <- "right"
+   }
+   
+   legend_orientation <- tolower(legend_orientation)[1]
+   
+   if((complete.cases(legend_orientation) & legend_position != "none") && 
+      legend_orientation %in% c("horizontal", "vertical") == FALSE){
+      
+      legend_orientation <- case_when(legend_position %in% c("left", "right", "none") ~ "vertical", 
+                                      .default = "horizontal")
+      
+      warning(wrapn(paste0("You have specified something for the legend orientation that is not among the possible options. Since you requested that the legend position be on the ", 
+                           legend_position, ", we will set the legend orientation to be ", 
+                           legend_orientation, ". ")), 
+              call. = FALSE)
+   }
+   
+   if(is.na(legend_orientation)){
+      legend_orientation <- case_when(legend_position %in% c("left", "right", "none") ~ "vertical", 
+                                      .default = "horizontal")
    }
    
    # If user wanted hline or vline added, check that they have specified
@@ -1196,7 +1232,7 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    if(length(time_range) == 1 && complete.cases(time_range[1]) &&
-      !str_detect(time_range, "dose|last obs|all obs")){
+      !str_detect(time_range, "^dose|^day|last obs|all obs")){
       if(complete.cases(time_range)){
          warning(wrapn("You have specified only 1 value for the time range and you don't appear to be specifying a time range by dose number, so we're not sure whether you want that to be the start or the end time. The full time range of all simulations will be used."),
                  call. = FALSE)
@@ -1210,7 +1246,7 @@ ct_plot_overlay <- function(ct_dataframe,
       } 
       
       if(class(time_range) != "numeric" && complete.cases(time_range[1]) &&
-         !str_detect(time_range, "dose|last obs|all obs")){
+         !str_detect(time_range, "^dose|^day|last obs|all obs")){
          warning(wrapn("You don't appear to be specifying a time range by dose number, and you have not specified numeric data for the start and end of your time range, which is the input required for this function if you're not supplying a dose number. The full time range will be used."),
                  call. = FALSE)
          time_range <- NA
@@ -2791,6 +2827,12 @@ ct_plot_overlay <- function(ct_dataframe,
               call. = FALSE)
    }
    
+   if(complete.cases(legend_position)){
+      A <- A + theme(legend.position = legend_position)  
+   } 
+   
+   A <- A + theme(legend.direction = legend_orientation)
+   
    if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
       B <- suppressMessages(suppressWarnings(
          A + scale_y_log10(labels = scales::label_percent(big.mark = ","), 
@@ -2817,11 +2859,6 @@ ct_plot_overlay <- function(ct_dataframe,
                                          xlim = time_range_relative))
       ))
    }
-   
-   if(complete.cases(legend_position)){
-      A <- A + theme(legend.position = legend_position)  
-      B <- B + theme(legend.position = legend_position)
-   }    
    
    if(graph_labels){
       labels <- "AUTO"
@@ -2880,7 +2917,8 @@ ct_plot_overlay <- function(ct_dataframe,
    
    NumProfiles <- ifelse(length(MyTissue) == 1 & length(MyCompoundID) == 1 &
                             length(MyTissueSubtype) == 1 & 
-                            length(unique(ct_dataframe$File)) == 1, 
+                            length(unique(ct_dataframe$File[
+                               ct_dataframe$Simulated == TRUE])) == 1, 
                          "single", "multiple")
    
    if("logical" %in% class(prettify_compound_names)){

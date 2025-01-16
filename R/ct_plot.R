@@ -118,6 +118,11 @@
 #'   range encompassing the requested doses, e.g., \code{time_range = "dose 3"}
 #'   for the 3rd dose or \code{time_range = "doses 1 to 4"} for doses 1 to 4}
 #'
+#'   \item{a specific day number with "day" or "days" as the prefix}{the time
+#'   range encompassing the requested days, e.g., \code{time_range = "day 2"}
+#'   for the 24-hour period starting on day 2, e.g., 24-48 hours, or
+#'   \code{time_range = "days 1 to 4"} for the 4-day period from 0 to 96 hours}
+#'
 #'   \item{"all obs" or "all observed" if you feel like spelling it out}{Time
 #'   range will be limited to only times when observed data are present.}
 #'
@@ -246,7 +251,7 @@
 #'   like help creating a specific gradation of colors, please talk to a member
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
-#'   
+#'
 #' @param obs_shape optionally specify what shapes are used to depict observed
 #'   data for 1. the substrate drug alone and 2. the substrate drug in the
 #'   presence of a perpetrator. Input should look like this, for example:
@@ -350,6 +355,10 @@
 #'   the label in the legend for the line style and the shape. If left as the
 #'   default NA when a legend is included and a perpetrator is present, the
 #'   label in the legend will be "Inhibitor".
+#' @param legend_orientation optionally specify how the legend entries should be
+#'   oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+#'   legend entries will be "vertical" when the legend is on the  left or right
+#'   and "horizontal" when it's on the top or bottom.
 #' @param prettify_compound_names TRUE (default), FALSE or a character vector:
 #'   This is asking whether to make compound names prettier in legend entries
 #'   and in any Word output files. This was designed for simulations where the
@@ -525,6 +534,7 @@ ct_plot <- function(ct_dataframe = NA,
                     vline_position = NA, 
                     vline_style = "red dotted",
                     legend_position = "none", 
+                    legend_orientation = NA, 
                     legend_label = NA,
                     prettify_compound_names = TRUE,
                     linear_or_log = "both vertical",
@@ -812,6 +822,24 @@ ct_plot <- function(ct_dataframe = NA,
       legend_position <- "right"
    }
    
+   legend_orientation <- tolower(legend_orientation)[1]
+   
+   if((complete.cases(legend_orientation) & legend_position != "none") && 
+      legend_orientation %in% c("horizontal", "vertical") == FALSE){
+      
+      legend_orientation <- case_when(legend_position %in% c("left", "right", "none") ~ "vertical", 
+                                      .default = "horizontal")
+      
+      warning(wrapn(paste0("You have specified something for the legend orientation that is not among the possible options. Since you requested that the legend position be on the ", 
+                           legend_position, ", we will set the legend orientation to be ", 
+                           legend_orientation, ". ")), 
+              call. = FALSE)
+   }
+   
+   if(is.na(legend_orientation)){
+      legend_orientation <- case_when(legend_position %in% c("left", "right", "none") ~ "vertical", 
+                                      .default = "horizontal")
+   }
    
    # Main body of function --------------------------------------------------
    
@@ -1658,7 +1686,8 @@ ct_plot <- function(ct_dataframe = NA,
    } else {
       # Otherwise, make the legend a little wider to actually show any dashes
       A <- A + theme(legend.position = legend_position, 
-                     legend.key.width = unit(2, "lines"))
+                     legend.key.width = unit(2, "lines"), 
+                     legend.direction = legend_orientation)
    }
    
    # When the y label is an expression, it tends to be a little too small. Make

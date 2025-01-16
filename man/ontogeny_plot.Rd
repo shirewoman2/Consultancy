@@ -173,10 +173,9 @@ saved to disk.}
 a ggplot2 graph
 }
 \description{
-\code{ontogeny_plot} uses the betas from the Simcyp Simulator to make graphs
-of the ontogenies of all the enzymes and transporters included in the
-Simulator. \strong{Note:} Only the beta version of the package includes the
-object OntogenyEquations, which is required for this function to work.
+\code{ontogeny_plot} uses the betas from the Simcyp Simulator to
+  make graphs of the ontogenies of all the enzymes and transporters included
+  in the Simulator.
 }
 \examples{
 # none yet

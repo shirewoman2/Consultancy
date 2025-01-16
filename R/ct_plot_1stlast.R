@@ -366,6 +366,10 @@
 #'   \code{\link{extractExpDetails_mult}} to be used for creating figure
 #'   headings and captions tailored to the specific simulation when saving to a
 #'   Word file
+#' @param legend_orientation optionally specify how the legend entries should be
+#'   oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+#'   legend entries will be "vertical" when the legend is on the  left or right
+#'   and "horizontal" when it's on the top or bottom.
 #'
 #' @return a ggplot2 graphs or a set of arranged ggplot2 graphs
 #' @export
@@ -425,6 +429,7 @@ ct_plot_1stlast <- function(ct_dataframe,
                             graph_labels = TRUE,
                             graph_title_size = 14, 
                             legend_position = NA,
+                            legend_orientation = NA, 
                             prettify_compound_names = TRUE,
                             name_clinical_study = NA, 
                             existing_exp_details = NA, 
@@ -502,6 +507,7 @@ ct_plot_1stlast <- function(ct_dataframe,
                       linear_or_log = linear_or_log,
                       color_labels = color_labels, 
                       legend_label_color = legend_label_color,
+                      legend_orientation = legend_orientation, 
                       color_set = color_set,
                       obs_shape = obs_shape,
                       obs_color = obs_color,

@@ -184,6 +184,10 @@
 #'   limits for the semi-log plot will be automatically selected.
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
+#' @param legend_orientation optionally specify how the legend entries should be
+#'   oriented. Options are "vertical" or "horizontal", and, if left as NA, the
+#'   legend entries will be "vertical" when the legend is on the  left or right
+#'   and "horizontal" when it's on the top or bottom.
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
 #'   at all. If you include the legend but then some graphs do have a legend and
@@ -339,6 +343,7 @@ ct_plot_mult <- function(ct_dataframe,
                          vline_position = NA, 
                          vline_style = "red dotted",
                          legend_position = "none",
+                         legend_orientation = NA, 
                          legend_label = NA, 
                          graph_titles = "none",
                          graph_title_size = 14,
@@ -605,6 +610,7 @@ ct_plot_mult <- function(ct_dataframe,
                  y_axis_limits_log = y_axis_limits_log, 
                  y_axis_label = y_axis_label,
                  legend_position = legend_position,
+                 legend_orientation = legend_orientation, 
                  legend_label = legend_label, 
                  graph_labels = ifelse(graph_arrangement == "separate files", 
                                        graph_labels, FALSE), 
