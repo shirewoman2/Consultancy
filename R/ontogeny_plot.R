@@ -123,13 +123,12 @@
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
 #' @param save_graph optionally save the output graph by supplying a file name
-#'   in quotes here, e.g., "My ontogeny graph.png"If you leave off ".png" or
-#'   ".docx", the graph will be saved as a png file, but if you specify a
-#'   different graphical file extension, it will be saved as that file format.
-#'   Acceptable graphical file extensions are "eps", "ps", "jpeg", "jpg",
-#'   "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar signs,
-#'   or periods in the file name. Leaving this as NA means the file will not be
-#'   saved to disk.
+#'   in quotes here, e.g., "My ontogeny graph.png"If you leave off ".png", the
+#'   graph will be saved as a png file, but if you specify a different graphical
+#'   file extension, it will be saved as that file format. Acceptable graphical
+#'   file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or
+#'   "svg". Do not include any slashes, dollar signs, or periods in the file
+#'   name. Leaving this as NA means the file will not be saved to disk.
 #' @param fig_height figure height in inches
 #' @param fig_width figure width in inches
 #'
@@ -423,6 +422,20 @@ ontogeny_plot <- function(enzyme = NA,
    
    if(as_label(colorBy_column) != "<empty>"){
       
+      if(is.null(names(color_set)) == FALSE){
+         # Checking that all names of colors are present in the data. 
+         Missing <- setdiff(names(color_set), 
+                            unique(Ontogenies$colorBy_column))
+         
+         if(length(Missing) > 0){
+            warning(wrapn(paste0("You have supplied a named character vector for the colors to use in your graph, but the following value(s) is/are not present in your data: ", 
+                                 str_comma(paste0("'", Missing, "'")), ". These data will be omitted from your graph.")), 
+                    call. = FALSE)
+            
+            color_set <- color_set[setdiff(names(color_set), Missing)]
+         }
+      }
+      
       NumColorsNeeded <- Ontogenies %>% 
          pull(colorBy_column) %>% unique() %>% sort() %>% length()
       
@@ -462,7 +475,7 @@ ontogeny_plot <- function(enzyme = NA,
                     call. = FALSE)
          }
          Ext <- ifelse(Ext %in% c("eps", "ps", "jpeg", "tiff",
-                                  "png", "bmp", "svg", "jpg", "docx"), 
+                                  "png", "bmp", "svg", "jpg"), 
                        Ext, "png")
          FileName <- paste0(FileName, ".", Ext)
       } else {

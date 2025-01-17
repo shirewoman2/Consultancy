@@ -743,6 +743,18 @@ ct_plot_overlay <- function(ct_dataframe,
       )
    }
    
+   linear_or_log <- tolower(linear_or_log)[1]
+   linear_or_log <- case_match(linear_or_log, 
+                               "log" ~ "semi-log", 
+                               "both" ~ "both vertical", 
+                               .default = linear_or_log)
+   if(linear_or_log %in% c("linear", "semi-log", 
+                           "both vertical", "both horizontal") == FALSE){
+      warning(wrapn("You have specified something for the argument 'linear_or_log' that is not among the possible options, so we'll set this to the default of 'both vertical'."), 
+              call. = FALSE)
+      linear_or_log <- "both vertical"
+   }
+   
    legend_position <- tolower(legend_position)[1]
    if(complete.cases(legend_position) && 
       legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
@@ -750,6 +762,11 @@ ct_plot_overlay <- function(ct_dataframe,
               call. = FALSE)
       legend_position <- "right"
    }
+   
+   legend_position <- case_when(
+      is.na(legend_position) & linear_or_log == "both horizontal" ~ "bottom",
+      is.na(legend_position) & linear_or_log != "both horizontal" ~ "right",
+      .default = legend_position)
    
    legend_orientation <- tolower(legend_orientation)[1]
    
@@ -2822,16 +2839,13 @@ ct_plot_overlay <- function(ct_dataframe,
       pull(Conc)
    
    if(length(LowConc) > 0 & str_detect(figure_type, "ribbon") & 
-      linear_or_log %in% c("both", "both vertical", "both horizontal", "semi-log", "log")){
+      linear_or_log %in% c("both vertical", "both horizontal", "semi-log")){
       warning("When plotting a `percentile ribbon` graph with low concentrations, if the ribbon looks disjointed or even not present at all, please try setting the graphics backend to `AGG`. See the help file for details.\n",
               call. = FALSE)
    }
    
-   if(complete.cases(legend_position)){
-      A <- A + theme(legend.position = legend_position)  
-   } 
-   
-   A <- A + theme(legend.direction = legend_orientation)
+   A <- A + theme(legend.position = legend_position, 
+                  legend.direction = legend_orientation)
    
    if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
       B <- suppressMessages(suppressWarnings(
@@ -2872,8 +2886,7 @@ ct_plot_overlay <- function(ct_dataframe,
                         labels = labels, 
                         font.label = list(size = graph_title_size),
                         common.legend = TRUE, align = "hv", 
-                        legend = ifelse(is.na(legend_position), 
-                                        "right", legend_position))
+                        legend = legend_position)
    )
    
    # both plots together, aligned horizontally
@@ -2882,8 +2895,7 @@ ct_plot_overlay <- function(ct_dataframe,
                         labels = labels, 
                         font.label = list(size = graph_title_size),
                         common.legend = TRUE, align = "hv", 
-                        legend = ifelse(is.na(legend_position), 
-                                        "bottom", legend_position))
+                        legend = legend_position)
    )
    
    if(complete.cases(graph_title)){
@@ -2945,7 +2957,7 @@ ct_plot_overlay <- function(ct_dataframe,
       PrettyCmpds2 <- ct_dataframe %>% filter(Inhibitor != "none") %>% 
          pull(Inhibitor) %>% unique() %>% as.character() %>% str_comma()
       
-      if(length(PrettyCmpds2) > 0){
+      if(length(PrettyCmpds2[PrettyCmpds2 != ""]) > 0){
          PrettyCmpds <- c(as.character(PrettyCmpds1$Compound), PrettyCmpds2)
          names(PrettyCmpds) <- c(as.character(PrettyCmpds1$CompoundID), 
                                  # Note that the name of the perpetrator has
@@ -2955,10 +2967,12 @@ ct_plot_overlay <- function(ct_dataframe,
                                  "inhibitor 1")
          
          # Also need to hack Inhibitor1 in existing_exp_details. 
-         existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
-            mutate(Inhibitor1 = PrettyCmpds["inhibitor 1"], 
-                   Inhibitor2 = NA, 
-                   Inhibitor1Metabolite = NA)
+         if("logical" %in% class(existing_exp_details) == FALSE){
+            existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+               mutate(Inhibitor1 = PrettyCmpds["inhibitor 1"], 
+                      Inhibitor2 = NA, 
+                      Inhibitor1Metabolite = NA)
+         }
          
       } else {
          PrettyCmpds <- as.character(PrettyCmpds1$Compound)
@@ -2998,8 +3012,6 @@ ct_plot_overlay <- function(ct_dataframe,
    Out <- list("graph" = switch(linear_or_log, 
                                 "linear" = A,
                                 "semi-log" = B,
-                                "log" = B,
-                                "both" = AB, 
                                 "both vertical" = AB,
                                 "both horizontal" = ABhoriz))
    

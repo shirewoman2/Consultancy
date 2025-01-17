@@ -50,9 +50,19 @@ make_ct_caption <- function(ct_dataframe,
    # For a "compound summary" figure type, you could conceivably have more than
    # one simulation file present for ct_plot, which would mess things up here.
    # To avoid that, this will assume that the figure caption info should come
-   # from the simulated file only. 
+   # from the simulated file only. If this is only observed data, though, then
+   # set File to the only observed file.
    SimFile <- sort(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))
-   ct_dataframe$File <- SimFile
+   
+   if(length(SimFile) == 1){
+      ct_dataframe$File <- SimFile
+   } else {
+      ObsFile <- sort(unique(ct_dataframe$File[ct_dataframe$Simulated == FALSE]))
+      
+      if(length(ObsFile) == 1){
+         ct_dataframe$File <- ObsFile
+      }
+   }
    
    Tissue <- str_comma(as.character(sort(unique(ct_dataframe$Tissue))),
                        conjunction = "or")
