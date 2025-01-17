@@ -50,12 +50,12 @@ forest_plot(
 }
 \arguments{
 \item{forest_dataframe}{a data.frame with extracted forest-plot data,
-  generated from running \code{\link{pk_table}} or
-  \code{\link{pksummary_mult}} with the argument \code{extract_forest_data}
-  set to TRUE on Simulator output files. This can also included observed PK
-  data. Alternatively, if you already have some saved forest-plot data,
-  supply a csv or Excel file with the same data. (If it's an Excel file, it
-  must have only one tab.) The following columns are required:
+  generated from running \code{\link{pk_table}} with the argument
+  \code{extract_forest_data} set to TRUE on Simulator output files. This can
+  also included observed PK data. Alternatively, if you already have some
+  saved forest-plot data, supply a csv or Excel file with the same data. (If
+  it's an Excel file, it must have only one tab.) The following columns are
+  required:
 
   \describe{\item{File}{Simulation file name. You can hack this and set the values to
   whatever you want rather than simulation file names, but this column is
@@ -66,12 +66,13 @@ forest_plot(
   running \code{view(PKParameterDefinitions)} and looking in the column
   "PKparameter".}
 
-  \item{at least one of mean, median, or geomean (not case sensitive)}{This
+  \item{at least one of "mean", "median", or "geomean" (not case sensitive)}{This
   column will be used for the center statistic.}
 
-  \item{at least one pair of CI90_low and CI90_high, per5 and
-  per95, min and max, or at least one of GCV, CV, or SD (not
-  case sensitive)}{These columns will be used for the whiskers.}
+  \item{at least one pair of "CI90_lower" and "CI90_upper", "Per5" and
+  "Per95", "Minimum" and "Maximum", or at least one of "GCV" (geometric
+  coefficient of variation), "CV" (arithmetic CV), or "SD" (standard
+  deviation)}{These columns will be used for the whiskers. Not case sensitive.}
 
   \item{any column you want to facet by}{If you want to break up your graphs
   along the x axis, you must include the column you want to use to do that.}}}
@@ -139,35 +140,34 @@ e.g., \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")}}
   observed data without matching simulated data, just use one dummy file
   name for each.}
 
-  \item{PKparameter}{the specific PK parameters to graph. Acceptable values
-  are: "AUCinf_ratio_dose1", "AUCt_ratio_dose1", "AUCtau_ratio_last",
-  "AUCinf_ratio", "AUCt_ratio", "AUC_ratio" (for when you don't want to
-  specify which AUC it is at all),  "AUCtau_ratio",
-  "Cmax_ratio_dose1", "Cmax_ratio_last", or "Cmax_ratio". Whatever you use
-  must match what was listed in the simulated data to be included in the
-  graph. Sorry, we get that it's annoying that these must be set up with
+  \item{PKparameter}{the specific PK parameter being compared. This
+  \emph{must} be one of the standardized, coded options that you can see by
+  running \code{view(PKParameterDefinitions)} and looking in the column
+  "PKparameter". These MUST EXACTLY match what was used for the simulated 
+  data. We get that it's annoying that these must be set up with
   these coded names, but they have to match exactly to get displayed nicely
   in the final graph.}
 
-  \item{at least one column named "mean", "geomean", or "median"}{Must be
-  specified depending on your choice for \code{mean_type}, this column will
-  be used for determining where to place the point. Whatever statistic you
+  \item{at least one of "mean", "median", or "geomean" (not case sensitive)}{This
+  column will be used for the center statistic. Whatever statistic you
   use \strong{must} be the same for both observed and simulated data.}
 
-  \item{whatever column you specified for \code{y_axis_labels}}{If you're making
-  a forest plot of perpetrators, for example, and you labeled the y axis
+  \item{at least one pair of "CI90_lower" and "CI90_upper", "Per5" and
+  "Per95", "Minimum" and "Maximum", or at least one of "GCV" (geometric
+  coefficient of variation), "CV" (arithmetic CV), or "SD" (standard
+  deviation)}{Optional for observed data. These columns will be used for the 
+  whiskers. Not case sensitive.}
+  
+  \item{whatever column you specified for \code{y_axis_labels} for the 
+  simulated data}{If you're making a forest plot of perpetrators, for 
+  example, and you labeled the y axis
   according to the values in the column "Inhibitor1", make sure that
   "Inhibitor1" is included in your observed PK.}
-
-  \item{(optional) at least one column or set of columns named "CI90_low",
-  "CI90_high", "per5", "per95", "GCV", "CV", "min", "max", "SD"}{these will 
-  be used for the error bars and are optional.}
-
-  \item{whatever column you used for \code{facet_column_x}}{If you broke up the
-  main graphs into two smaller graphs along the x axis, then whatever column you used for that
-  must be present in the observed data, too.}
-
-  }}
+  
+  \item{any column you want to facet by}{If you want to break up your graphs
+  along the x axis, you must include the column you want to use to do that. 
+  If you included it for your simulated data, you must include it for your 
+  observed.}}}
 
 \item{use_AUCt_when_AUCinf_NA}{TRUE or FALSE (default) for whether to swap
 out AUCt for dose 1 when the Simulator failed to extrapolate to infinity.
@@ -214,8 +214,9 @@ assume you want arithmetic means.}
 
 \item{variability_type}{type of variability to show as whiskers; options are
 "90\% CI" (default, geometric), "5th to 95th percentiles", "range",
-"geometric CV" ("geoCV" or "GCV" are fine), "arithmetic CV" ("CV" is fine), 
-or "standard deviation" ("sd" is also ok for that last one, and it's arithmetic).}
+"geometric CV" ("geoCV" or "GCV" are fine), "arithmetic CV" ("CV" is fine),
+or "standard deviation" ("sd" is also ok for that last one, and it's
+arithmetic).}
 
 \item{x_axis_limits}{the x axis limits to use; default is 0.06 to 12.}
 
@@ -374,9 +375,9 @@ prettify if you supply a column name for \code{y_axis_labels} and we
 \item{PK_labels}{optionally specify what you would like to have appear on the
 y axis for labels for each PK parameter with a named list of expressions,
 e.g., \code{PK_labels = list("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
-"Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}. Please 
-particularly note that it must be a \strong{list} rather than a vector. 
-To see examples of PK parameters set up as expressions for use in graph
+"Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}. Please
+particularly note that it must be a \strong{list} rather than a vector. To
+see examples of PK parameters set up as expressions for use in graph
 labels, try running \code{PKexpressions}.}
 
 \item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
@@ -445,23 +446,22 @@ at describing what this argument does.}
 Output is a graph.
 }
 \description{
-\code{forest_plot} creates a forest plot of AUC and Cmax ratios. Please use
-the function \code{\link{extractForestData}} or \code{\link{pksummary_mult}}
-(set the argument "extract_forest_data" to TRUE) to generate the simulated
-input data for \code{forest_dataframe}. This function will also work with
-observed data; please see notes for the argument "\code{observed_PK}" for how
-to include observed data. In the graph, data will be broken up on the y axis
-by the simulation file name and, optionally, along the x axis by anything you
-specify for \code{facet_column_x}. Since file names do not generally make the
-most lovely of y axis labels, please use the argument \code{y_axis_labels} to
-specify how you'd like your y axis to look. \strong{If you're a little confused here or you're just the
-kind of person who prefers to wing it rather than reading the instructions
-when assembling furniture, we recommend skipping to the end of this help file
-and trying out the examples to see what we mean.} For detailed
-instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
-R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
-instructions/Forest plots/Examples-for-making-forest-plots.docx". (Sorry, we
-are unable to include a link to it here.)
+\code{forest_plot} creates a forest plot of AUC and Cmax ratios
+  from Simcyp Simulator results. Please use the function
+  \code{\link{pk_table}} with the argument "extract_forest_data" set to TRUE
+  to generate the simulated input data for \code{forest_dataframe}. This
+  function will also work with observed data; please see notes for the
+  argument "\code{observed_PK}" for how to include observed data.
+
+  In the graph, data will be broken up on the y axis by the simulation file
+  name and, optionally, along the x axis by anything you specify for
+  \code{facet_column_x}. Since file names do not generally make the most
+  lovely of y axis labels, please use the argument \code{y_axis_labels} to
+  specify how you'd like your y axis to look. \emph{If you're a little
+  confused here or you're just the kind of person who prefers to wing it
+  rather than, say, reading the instructions when assembling furniture, we
+  recommend skipping to the end of this help file and trying out the examples
+  to see what we mean.}
 }
 \examples{
 
@@ -560,8 +560,8 @@ AddnlObsPK <- bind_rows(BufObsForestData_20mg,
                                    PKparameter = c("AUCt_ratio_dose1",
                                                    "Cmax_ratio_dose1"),
                                    geomean = c(0.4, 0.5),
-                                   CI_Lower = c(0.35, 0.42),
-                                   CI_Upper = c(0.45, 0.6)))
+                                   CI90_lower = c(0.35, 0.42),
+                                   CI90_upper = c(0.45, 0.6)))
 
 forest_plot(forest_dataframe = BufForestData_20mg,
             observed_PK = AddnlObsPK,
