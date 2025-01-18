@@ -52,6 +52,9 @@ format_scripts <- function(DF,
       DF <- DF %>% rename(Parameter_orig = Parameter)
    }
    
+   
+   ## Preliminary text tidying for value column --------------------------------
+   
    if(as_label(value_column) != "<empty>"){
       
       if(as_label(value_column) %in% names(DF) == FALSE){
@@ -67,6 +70,9 @@ format_scripts <- function(DF,
    } else {
       ValueColIncluded <- FALSE
    }
+   
+   
+   ## Preliminary text tidying for parameter column ---------------------------
    
    if(as_label(parameter_column) != "<empty>"){
       
@@ -120,6 +126,11 @@ format_scripts <- function(DF,
       DFtemp <- DF
       names(DFtemp)[which(names(DFtemp) == "Parameter")] <- as_label(parameter_column)
       names(DFtemp)[which(names(DFtemp) == "Parameter_orig")] <- "Parameter"
+      
+      
+      ## Converting to flextable --------------------------------------------
+      
+      ### Formatting parameter column -----------------------------------------
       
       FT <- flextable::flextable(DFtemp) %>% 
          
@@ -177,20 +188,6 @@ format_scripts <- function(DF,
                             value = flextable::as_paragraph(
                                "Calibrator compound used for calculating P",
                                flextable::as_sub("app")))
-      
-      
-      # Value column formatting
-      if(ValueColIncluded){
-         
-         FT <- FT %>% 
-            flextable::compose(i = which(DF$Value == "1st order"), 
-                               j = which(names(DF) == "Value"), 
-                               part = "body", 
-                               value = flextable::as_paragraph(
-                                  "1", flextable::as_sup("st"), 
-                                  " order")) 
-         
-      }
       
       # Next, all the places where there might be multiple matches b/c we're only
       # matching, e.g., the 1st part of the string and then need to fill in the
@@ -320,12 +317,52 @@ format_scripts <- function(DF,
          }
       }
       
+      ### Formatting value column -----------------------------------------
+      
+      if(ValueColIncluded){
+         
+         FT <- FT %>% 
+            flextable::compose(i = which(DF$Value == "1st order"), 
+                               j = which(names(DF) == "Value"), 
+                               part = "body", 
+                               value = flextable::as_paragraph(
+                                  "1", flextable::as_sup("st"), 
+                                  " order")) 
+         
+      }
+      
    } else {
       FT <- flextable::flextable(DF)
    }
    
-   # Dealing with subscripts for PK parameters in column names
-   ColNames <- sub("AUCt( |$)", "AUC~t~ ", names(DF))
+   
+   ## Column name formatting -----------------------------------------------
+   
+   ColNames <- names(DF)
+   
+   ### Special characters for column names ---------------------------------
+   
+   for(char in c("uL", "umol", "uM")){
+      for(cols in which(str_detect(ColNames, char))){
+         
+         FT <- FT %>% 
+            flextable::compose(part = "header",
+                               i = 1,
+                               j = cols,
+                               value = flextable::as_paragraph(
+                                  sub(char, 
+                                      switch(char, 
+                                             "uL" = "\u03BCL", 
+                                             "umol" = "\u03BCmol", 
+                                             "uM" = "\u03BCM"), 
+                                      ColNames[cols])))
+         
+      }
+   }
+   
+   ### subscripts for column names ------------------------------------------
+   
+   ColNames <- sub("AUCt( |$)", "AUC~t~ ", ColNames)
    ColNames <- sub("AUCinf( |$)", "AUC~inf~ ", ColNames)
    ColNames <- sub("AUCt$", "AUC~t~", ColNames)
    ColNames <- sub("AUCtau", "AUC~tau~", ColNames)
@@ -349,23 +386,44 @@ format_scripts <- function(DF,
    ColNames <- sub("IndC50", "IndC~50~", ColNames)
    ColNames <- sub("EC50", "EC~50~", ColNames)
    
-   ColNames <- str_split(ColNames, pattern = "~", simplify = T)
+   ColNames_sub <- str_split(ColNames, pattern = "~", simplify = T)
    
-   if(ncol(ColNames) == 3){
-      for(cols in which(ColNames[,2] != "")){
+   if(ncol(ColNames_sub) == 3){
+      for(cols in which(ColNames_sub[,2] != "")){
          FT <- FT %>% 
             flextable::compose(part = "header",
                                i = 1,
                                j = cols,
                                value = flextable::as_paragraph(
-                                  ColNames[cols, 1],
-                                  flextable::as_sub(ColNames[cols, 2]), 
-                                  ColNames[cols, 3]))
+                                  ColNames_sub[cols, 1],
+                                  flextable::as_sub(ColNames_sub[cols, 2]), 
+                                  ColNames_sub[cols, 3]))
+      }
+   }
+   
+   ### superscripts for column names --------------------------------------
+   
+   # These should generally already have x^2^ in the column name to work. 
+   ColNames_sup <- str_split(ColNames, pattern = "\\^", simplify = T)
+   
+   if(ncol(ColNames_sup) == 3){
+      for(cols in which(ColNames_sup[,2] != "")){
+         FT <- FT %>% 
+            flextable::compose(part = "header",
+                               i = 1,
+                               j = cols,
+                               value = flextable::as_paragraph(
+                                  ColNames_sup[cols, 1],
+                                  flextable::as_sup(ColNames_sup[cols, 2]), 
+                                  ColNames_sup[cols, 3]))
       }
    }
    
    
+   # Return -----------------------------------------------------------------
+   
    return(FT)
+   
 }
 
 
