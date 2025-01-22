@@ -81,7 +81,7 @@ if(single_table){
       "TRUE" = # from calc_PK_ratios_mult
          str_comma(unique(unlist(str_split(MyPKResults$File, " / ")))),
       
-      "FALSE" = # from pksummary_mult
+      "FALSE" = # from pk_table
          str_comma(basename(unique(MyPKResults$File))))
    
    Annotations <- list(

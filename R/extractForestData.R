@@ -76,11 +76,11 @@ extractForestData <- function(sim_data_files = NA,
            call. = FALSE)
    }
    
-   # Most error catching done within pksummary_mult function. 
+   # Most error catching done within pk_table function. 
    
    # Main body of function ------------------------------------------------
    
-   Out <- pksummary_mult(sim_data_files = sim_data_files, 
+   Out <- pk_table(sim_data_files = sim_data_files, 
                         PKparameters = PKparameters, 
                         compoundsToExtract = compoundToExtract, 
                         tissues = tissue, 

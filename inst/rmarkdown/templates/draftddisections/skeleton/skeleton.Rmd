@@ -117,7 +117,7 @@ Mean simulated plasma `r MySubstrate` concentrations following `r SDMD_sub_txt` 
 
 ```{r pullPK}
 
-PKsum <- pksummary_table(sim_data_file = paste0(OutPath, "/", sim_data_file), 
+PKsum <- pk_table(sim_data_file = paste0(OutPath, "/", sim_data_file), 
                          PKparameters = PKparameters, 
                          observed_PK = observed_PK,
                          mean_type = mean_type_PK, 

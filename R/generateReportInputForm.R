@@ -1,7 +1,7 @@
 #' Generate a form for entering data for a report
 #'
 #' Creates an Excel file with forms to fill out about observed data. Those forms
-#' can be fed into \code{\link{pksummary_table}} to automate some of the
+#' can be fed into \code{\link{pk_table}} to automate some of the
 #' calculations for writing a report.
 #'
 #' The tabs in the Excel file this function creates are: \describe{
