@@ -155,8 +155,7 @@
 #'   the substrate when the compound of interest is a perpetrator. This notes
 #'   what the regex changes to in that situation.}
 #'
-#'   \item{SortOrder}{the order to arrange columns for
-#'   pksummary_table and pksummary_table}
+#'   \item{SortOrder}{the order to arrange columns for pk_table}
 #'   
 #'   \item{PrettifiedNames}{Pretty names to use in tables, etc.}
 #'   
@@ -266,7 +265,7 @@
 
 
 #' Report input forms to be used in conjunction with
-#' \code{\link{getSectionInfo}} and \code{\link{pksummary_table}}
+#' \code{\link{getSectionInfo}} and \code{\link{pk_table}}
 #'
 #' @format A named list of the data that fill the tabs for
 #'   "generateReportInputForm"
@@ -285,8 +284,8 @@
 #'   \item{AppliesToSingleDose}{TRUE or FALSE for whether this item applies only
 #'   to single-dose data} \item{AppliesOnlyWhenPerpPresent}{TRUE or FALSE
 #'   for whether this item only applies when a perpetrator is present in the
-#'   simulation} \item{SortOrder}{the order to arrange columns for pksummary_table and
-#'   pksummary_table} \item{Notes}{an explanation of what the parameter is}}
+#'   simulation} \item{SortOrder}{the order to arrange columns for pk_table and
+#'   pk_table} \item{Notes}{an explanation of what the parameter is}}
 "PKParameterDefinitions"
 
 

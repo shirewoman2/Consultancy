@@ -48,8 +48,7 @@ A data.frame with 6 columns: \describe{\item{PKparameter}{the PK
   the substrate when the compound of interest is a perpetrator. This notes
   what the regex changes to in that situation.}
 
-  \item{SortOrder}{the order to arrange columns for
-  pksummary_table and pksummary_table}
+  \item{SortOrder}{the order to arrange columns for pk_table}
   
   \item{PrettifiedNames}{Pretty names to use in tables, etc.}
   

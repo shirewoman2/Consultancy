@@ -2,7 +2,7 @@
 #'
 #' \code{formatTable_Simcyp} makes a nicely formatted table from a data.frame or
 #' tibble. It was primarily designed to work with output from
-#' \code{\link{pksummary_table}} and \code{\link{pksummary_mult}}, so, by
+#' \code{\link{pk_table}} and \code{\link{pk_table}}, so, by
 #' default, it formats tables so that the column headings and the first column
 #' are bold, and the second through the last columns are centered. Column
 #' headings with, e.g., "AUCinf" or "Cmax" will have the "inf" or the "max"
@@ -10,7 +10,7 @@
 #' can save the output to a Word file with the argument \code{save_table}.
 #'
 #' @param DF a data.frame or a flextable, usually output from
-#'   \code{\link{pksummary_table}} or \code{\link{pksummary_mult}}
+#'   \code{\link{pk_table}} or \code{\link{pk_table}}
 #' @param shading_column If you would like to alternate the shading of the rows
 #'   in the output table, supply here the unquoted name of the column to check
 #'   for when to change the shading; every time that column's value changes, the

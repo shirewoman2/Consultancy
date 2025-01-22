@@ -1,7 +1,7 @@
-#' Save a bespoke PK table to Word using the pksummary_mult rmarkdown template
+#' Save a bespoke PK table to Word using the pk_table rmarkdown template
 #'
 #' \code{save_table_to_Word} will save a DIY PK table to Word using the same
-#' template file as is used for the function pksummary_mult. UNDER CONSTRUCTION.
+#' template file as is used for the function pk_table. UNDER CONSTRUCTION.
 #' I haven't done almost any error catching here yet. -LSh
 #'
 #' @param PKtable PK table (really, a data.frame or tibble) that includes the

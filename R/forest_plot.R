@@ -605,7 +605,7 @@ forest_plot <- function(forest_dataframe,
       }
    } else if("list" %in% class(forest_dataframe)){
       # this is when they've just supplied the output from running pk_table or
-      # pksummary_mult where they've requested forest data. That will be a list.
+      # pk_table where they've requested forest data. That will be a list.
       if("ForestData" %in% names(forest_dataframe)){
          forest_dataframe <- forest_dataframe$ForestData
       } else {
