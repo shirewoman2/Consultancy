@@ -17,7 +17,7 @@ This does not return an R object; it saves an Excel file that serves
 }
 \description{
 Creates an Excel file with forms to fill out about observed data. Those forms
-can be fed into \code{\link{pksummary_table}} to automate some of the
+can be fed into \code{\link{pk_table}} to automate some of the
 calculations for writing a report.
 }
 \details{

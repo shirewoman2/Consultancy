@@ -157,6 +157,8 @@ make_simulation_directory <- function(project_folder = NA,
             by = "File"))
    } 
    
+   if("File" %in% names(Directory) == FALSE){Directory$File <- Directory$PathFile}
+   
    # Removing temporary files and making sure that all File values are basename. 
    Directory <- Directory %>% 
       mutate(File = case_when(complete.cases(PathFile) ~ basename(PathFile), 

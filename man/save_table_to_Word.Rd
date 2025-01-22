@@ -2,7 +2,7 @@
 % Please edit documentation in R/save_table_to_Word.R
 \name{save_table_to_Word}
 \alias{save_table_to_Word}
-\title{Save a bespoke PK table to Word using the pksummary_mult rmarkdown template}
+\title{Save a bespoke PK table to Word using the pk_table rmarkdown template}
 \usage{
 save_table_to_Word(
   PKtable,
@@ -121,7 +121,7 @@ saves a table to a Word file
 }
 \description{
 \code{save_table_to_Word} will save a DIY PK table to Word using the same
-template file as is used for the function pksummary_mult. UNDER CONSTRUCTION.
+template file as is used for the function pk_table. UNDER CONSTRUCTION.
 I haven't done almost any error catching here yet. -LSh
 }
 \examples{

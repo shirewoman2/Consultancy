@@ -50,7 +50,7 @@ data.frame PKParameterDefinitions, in the column "PKparameter". To see
 that, please enter \code{view(PKParameterDefinitions)} into the console.}
 
 \item{PKparameters}{any of the AUC, Cmax, tmax, CL, or half-life PK
-parameters included in the output from \code{\link{pksummary_table}}; if
+parameters included in the output from \code{\link{pk_table}}; if
 left as NA, this will make graphs for each parameter included in
 \code{PKtable}. To see the full set of possible parameters, enter
 \code{view(PKParameterDefinitions)} into the console.}
