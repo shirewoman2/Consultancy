@@ -11,7 +11,7 @@
 #'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
 #'   function examples and instructions/Concentration-time plots 1 - one sim at
 #'   a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
-#'   include a link to it here.)
+#'   include a link to it here.) 
 #'
 #' \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 #' inhibitors, or inhibitor metabolites are available in all tissues. If it's

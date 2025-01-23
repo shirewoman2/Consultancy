@@ -9,6 +9,7 @@ make_simulation_directory(
   project_folder = NA,
   sim_data_files = "recursive",
   existing_exp_details = NA,
+  search_workspaces_for_obsfile = FALSE,
   save_table = NA,
   overwrite = "ask"
 )
@@ -42,6 +43,13 @@ included there in your simulation directory. If you supply something here,
 whatever you supply for \code{sim_data_files} will be ignored. This will
 also be used to figure out which XML files go with which simulations.}
 
+\item{search_workspaces_for_obsfile}{TRUE or FALSE (default) for whether to
+search through any workspace files and check for possible XML overlay
+files. This runs considerably slower when set to TRUE and will take about
+an additional 2 seconds per simulation. If you have supplied something for
+'existing_exp_details', you don't need this and we'll ignore it if you set
+this to TRUE.}
+
 \item{save_table}{optionally specify an Excel file name for saving your
 simulation directory. If you don't include the file extension ".xlsx",
 we'll add it.}
@@ -56,17 +64,19 @@ different file name if the one you supplied already exists.}
 a data.frame of simulation files and their respective file paths
 }
 \description{
-\code{make_simulation_directory} will create a data.frame of
-  simulations in a given project folder, the associated XML files when
-  applicable (you'll have to provide that information with the argument
-  \code{existing_exp_details}), and, optionally, save that data.frame to an
-  Excel file. It will also check whether the file names comply with USFDA and
-  Consultancy Team standards and check whether the same simulation is saved
-  in more than one place.
+The function \code{make_simulation_directory} will create a
+  data.frame of simulations in a given project folder, the associated XML
+  files when applicable (you'll have to provide that information with the
+  argument \code{existing_exp_details}), and, optionally, save that
+  data.frame to an Excel file. It will also check whether the file names
+  comply with USFDA and Consultancy Team standards and check whether the same
+  simulation is saved in more than one place.
 
-  This is wicked fast.
+  This is wicked fast.*
+
+  * Caveat: Unless you search all the workspaces for XML observed overlay data files. Then it
+  takes about 2 seconds per simulation.
 }
 \examples{
 # none yet
-
 }

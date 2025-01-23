@@ -1,16 +1,18 @@
 #' Make a directory of simulations indicating which simulation file is located
 #' in which subfolder
 #'
-#' @description \code{make_simulation_directory} will create a data.frame of
-#'   simulations in a given project folder, the associated XML files when
-#'   applicable (you'll have to provide that information with the argument
-#'   \code{existing_exp_details}), and, optionally, save that data.frame to an
-#'   Excel file. It will also check whether the file names comply with USFDA and
-#'   Consultancy Team standards and check whether the same simulation is saved
-#'   in more than one place.
+#' @description The function \code{make_simulation_directory} will create a
+#'   data.frame of simulations in a given project folder, the associated XML
+#'   files when applicable (you'll have to provide that information with the
+#'   argument \code{existing_exp_details}), and, optionally, save that
+#'   data.frame to an Excel file. It will also check whether the file names
+#'   comply with USFDA and Consultancy Team standards and check whether the same
+#'   simulation is saved in more than one place.
 #'
-#'   This is wicked fast.
+#'   This is wicked fast.*
 #'
+#'   * Caveat: Unless you search all the workspaces for XML observed overlay data files. Then it
+#'   takes about 2 seconds per simulation.
 #'
 #' @param project_folder location of the project folder to search. Please note
 #'   that R requires forward slashes ("/") in file paths rather than the back
@@ -38,6 +40,12 @@
 #'   included there in your simulation directory. If you supply something here,
 #'   whatever you supply for \code{sim_data_files} will be ignored. This will
 #'   also be used to figure out which XML files go with which simulations.
+#' @param search_workspaces_for_obsfile TRUE or FALSE (default) for whether to
+#'   search through any workspace files and check for possible XML overlay
+#'   files. This runs considerably slower when set to TRUE and will take about
+#'   an additional 2 seconds per simulation. If you have supplied something for
+#'   'existing_exp_details', you don't need this and we'll ignore it if you set
+#'   this to TRUE.
 #' @param save_table optionally specify an Excel file name for saving your
 #'   simulation directory. If you don't include the file extension ".xlsx",
 #'   we'll add it.
@@ -52,10 +60,11 @@
 #'
 #' @examples
 #' # none yet
-#' 
+
 make_simulation_directory <- function(project_folder = NA, 
                                       sim_data_files = "recursive", 
                                       existing_exp_details = NA, 
+                                      search_workspaces_for_obsfile = FALSE, 
                                       save_table = NA, 
                                       overwrite = "ask"){
    
@@ -70,6 +79,47 @@ make_simulation_directory <- function(project_folder = NA,
    if(length(project_folder) > 1){
       stop("You can only search one project folder at a time. Please check your input for `project_folder`.", 
            call. = FALSE)
+   }
+   
+   if("logical" %in% class(existing_exp_details) == FALSE & 
+      search_workspaces_for_obsfile == TRUE){
+      warning(wrapn("You requested that we search through workspaces to look for XML observed data overlay file names, but you also supplied something for 'existing_exp_details', which should already have that infomation. We will save you some time and *not* search through your workspaces for the XML observed data overlay file name."), 
+              call. = F)
+      search_workspaces_for_obsfile <- FALSE
+   }
+   
+   # subfuns -----------------------------------------------------------------
+   # subfun for V23+ data extraction 
+   
+   # For some reason, you have to unzip the workspaces 1st if they're V23 or
+   # later. Not sure what changed.
+   unzip1st_fun <- function(workspace){
+      R.utils::gunzip(workspace, destname = "TEMP.wks", remove = FALSE)
+      workspace_xml <- XML::xmlTreeParse("TEMP.wks", useInternal = TRUE)
+      file.remove("TEMP.wks")
+      return(workspace_xml)
+   }
+   
+   get_obs_file <- function(workspace){
+      
+      if(file.exists(workspace) == FALSE){
+         return(NA)
+      }
+      
+      workspace_xml <- tryCatch(XML::xmlTreeParse(workspace, useInternal = TRUE), 
+                                error = unzip1st_fun(workspace))
+      
+      RootNode <- XML::xmlRoot(workspace_xml)
+      
+      UseObs <- as.logical(XML::xmlValue(RootNode[["GraphsData"]][["UseObservedData"]]))
+      
+      if(UseObs){
+         Out <- XML::xmlValue(RootNode[["GraphsData"]][["ObservedDataPath"]])
+      } else {
+         Out <- NA
+      }
+      
+      return(Out)
    }
    
    
@@ -287,6 +337,44 @@ make_simulation_directory <- function(project_folder = NA,
    } else {
       ObsOverlayKnown <- FALSE
       Directory$XMLFileNameCheck <- ""
+   }
+   
+   if(search_workspaces_for_obsfile){
+      
+      Directory$ObsOverlayFile <- as.character(NA)
+      
+      for(ff in 1:nrow(Directory)){
+         
+         if(Directory$Folder[ff] %in% c("check file name - no folder found", 
+                                        "FILE PATH TOO LONG", 
+                                        "FILE NOT FOUND")){
+            next
+         }
+         
+         Directory$ObsOverlayFile[ff] <- 
+            get_obs_file(workspace = paste0(Directory$Folder[ff], "/",
+                                            Directory$Filename[ff], ".wksz"))
+      }
+      
+      Directory$ObsOverlayFile <- gsub("\\\\", "/", Directory$ObsOverlayFile)
+      Directory$ObsOverlayFile <- sub("C:/Users.*Certara/Simcyp PBPKConsult BMG BMG43A - Model(l)?ing Working Directory/", 
+                                      "", Directory$ObsOverlayFile)
+      
+      Directory <- Directory %>% 
+         mutate(ObsOverlayFile = R.utils::getRelativePath(ObsOverlayFile, 
+                                                          relativeTo = project_folder), 
+                ObsOverlayFile = case_when(
+                   str_detect(ObsOverlayFile, "Working Directory/XMLs") ~ 
+                      sub(".*/XMLs", "XMLs", ObsOverlayFile),
+                   .default = ObsOverlayFile), 
+                XMLFileNameCheck = check_file_name(ObsOverlayFile), 
+                XMLFileNameCheck = case_when(
+                   XMLFileNameCheck == "File name meets naming standards." ~ "", 
+                   is.na(XMLFileNameCheck) ~ "", 
+                   .default = sub("File name", "XML file name", XMLFileNameCheck))) %>% 
+         rename("XML file used" = ObsOverlayFile)
+      
+      ObsOverlayKnown <- TRUE
    }
    
    if(ObsOverlayKnown == FALSE){
