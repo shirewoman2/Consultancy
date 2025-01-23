@@ -168,15 +168,22 @@ make_simulation_directory <- function(project_folder = NA,
       mutate(Folder = dirname(PathFile), 
              Folder = ifelse(Folder == ".", getwd(), Folder), 
              Folder = if_else(file.exists(PathFile), Folder, "FILE NOT FOUND"),  
+             Folder = case_when(Folder == "FILE NOT FOUND" & nchar(PathFile) > 260 ~ 
+                                   "FILE PATH TOO LONG",
+                                .default = Folder), 
              Filename = sub("\\.xlsx|\\.db|\\.wksz", "", File),
              Filetype = str_extract(File, "xlsx$|wksz$|db$"))
    
    # Removing from consideration any files that were not included in
-   # existing_exp_details, if that was supplied, if the folder is now "FILE NOT
-   # FOUND" and if the Filetype is NOT xlsx. Removing these b/c we're the ones
-   # who added them: They are just variations on the simulation file names that
-   # we're checking to see if they exist, e.g., workspaces or database files.
-   if("logical" %in% class(existing_exp_details) == FALSE){
+   # existing_exp_details, if that was supplied, or if sim_data_files was
+   # "recursive" or NA if the folder is now "FILE NOT FOUND" and if the Filetype
+   # is NOT xlsx. Removing these b/c we're the ones who added them: They are
+   # just variations on the simulation file names that we're checking to see if
+   # they exist, e.g., workspaces or database files.
+   if((any(c("logical", "NULL") %in% class(existing_exp_details)) == FALSE) | 
+      (length(sim_data_files) == 1 && 
+       (is.na(sim_data_files) || sim_data_files == "recursive" | 
+        !str_detect(sim_data_files, "[^\\.]|\\.xlsx")))){
       Directory <- Directory %>% 
          filter(!(Folder == "FILE NOT FOUND" & Filetype != "xlsx"))
    }
@@ -369,9 +376,11 @@ make_simulation_directory <- function(project_folder = NA,
                  "columns" = which(names(Directory) %in% c("File name", "FileNameCheck")))
       } 
       
-      if(any(Directory$Folder == "FILE NOT FOUND", na.rm = T)){
+      if(any(Directory$Folder %in% c("FILE NOT FOUND", 
+                                     "FILE PATH TOO LONG"), na.rm = T)){
          Highlighting[["Folder"]] <- 
-            list("rows" = which(Directory$Folder == "FILE NOT FOUND"), 
+            list("rows" = which(Directory$Folder %in% c("FILE NOT FOUND", 
+                                                        "FILE PATH TOO LONG")), 
                  "columns" = which(names(Directory) %in% c("File name", "Folder")))
       } 
       
