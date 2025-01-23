@@ -137,24 +137,25 @@ make_simulation_directory <- function(project_folder = NA,
             PathFile = paste0(project_folder, 
                               list.files(path = project_folder, 
                                          pattern = sim_data_files, 
-                                         recursive = recursive))) 
+                                         recursive = TRUE))) 
       }
       
    } else {
       # If length(sim_data_files) > 1, then they have supplied a character
       # vector of files. If they didn't include ".xlsx" at the end, add that.
-      Directory <- tibble(File = basename(sim_data_files)) %>% 
-         mutate(
-            File = case_when(str_detect(File, "\\.xlsx|\\.db|\\.wksz") == FALSE ~ 
-                                paste0(File, ".xlsx"), 
-                             .default = File)) %>% 
+      Directory <- 
+         tibble(File = sim_data_files) %>% 
+         mutate(File = case_when(str_detect(File, "\\.xlsx|\\.db|\\.wksz") == FALSE ~ 
+                                    paste0(File, ".xlsx"), 
+                                 .default = File), 
+                File = basename(File)) %>% 
          # adding path 
          left_join(tibble(
             PathFile = paste0(project_folder, 
                               list.files(path = project_folder, 
-                                         recursive = TRUE), 
-                              File = basename(PathFile)), 
-            by = "File"))
+                                         recursive = TRUE)), 
+            File = basename(PathFile)), 
+            by = "File")
    } 
    
    if("File" %in% names(Directory) == FALSE){Directory$File <- Directory$PathFile}
@@ -165,6 +166,7 @@ make_simulation_directory <- function(project_folder = NA,
                               .default = File)) %>% 
       filter(is.na(PathFile) | 
                 (complete.cases(PathFile) & !str_detect(PathFile, "^~"))) %>% 
+      filter(str_detect(File, "xlsx$|wksz$|db$")) %>% 
       mutate(Folder = dirname(PathFile), 
              Folder = ifelse(Folder == ".", getwd(), Folder), 
              Folder = if_else(file.exists(PathFile), Folder, "FILE NOT FOUND"),  
