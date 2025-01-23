@@ -268,7 +268,11 @@ make_simulation_directory <- function(project_folder = NA,
                rename("XML file used" = ObsOverlayFile)
             
             ObsOverlayKnown <- TRUE
+         } else {
+            ObsOverlayKnown <- FALSE
+            Directory$XMLFileNameCheck <- ""
          }
+         
       } else {
          # This is when they have existing_exp_details but they must not have
          # had the workspaces available when they ran extractExpDetails_mult
