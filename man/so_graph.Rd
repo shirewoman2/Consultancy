@@ -31,6 +31,7 @@ so_graph(
   title_adjustments = c(),
   all_intervals_together = FALSE,
   all_AUCs_together = FALSE,
+  grid_color = NA,
   ncol = NULL,
   nrow = NULL,
   save_graph = NA,
@@ -41,18 +42,18 @@ so_graph(
 }
 \arguments{
 \item{PKtable}{a table in the same format as output from the function
-\code{\link{pk_table}}. This should include a column titled
-"Statistic" and columns for each of the PK parameters you want to graph.
-The column statistic should have values of "Simulated" and "Observed" for
-the simulated and observed PK, respectively; anything else will be ignored.
-The columns for each PK parameter should be named like the values in the
+\code{\link{pk_table}}. This should include a column titled "Statistic" and
+columns for each of the PK parameters you want to graph. The column
+statistic should have values of "Simulated" and "Observed" for the
+simulated and observed PK, respectively; anything else will be ignored. The
+columns for each PK parameter should be named like the values in the
 data.frame PKParameterDefinitions, in the column "PKparameter". To see
 that, please enter \code{view(PKParameterDefinitions)} into the console.}
 
 \item{PKparameters}{any of the AUC, Cmax, tmax, CL, or half-life PK
-parameters included in the output from \code{\link{pk_table}}; if
-left as NA, this will make graphs for each parameter included in
-\code{PKtable}. To see the full set of possible parameters, enter
+parameters included in the output from \code{\link{pk_table}}; if left as
+NA, this will make graphs for each parameter included in \code{PKtable}. To
+see the full set of possible parameters, enter
 \code{view(PKParameterDefinitions)} into the console.}
 
 \item{PKorder}{optionally specify the order of the graphs. Leaving this as
@@ -279,6 +280,11 @@ Try this out if you're uncertain what we mean.}
 e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
 with this because if you have points for both AUCinf and AUCt for a
 simulation, then BOTH of those points will show up on the graph.}
+
+\item{grid_color}{optionally specify the color of the major and minor grid
+lines on your graph. Default is "grey92", which is the standard grey for
+theme_bw() in ggplot2. Set this to "none" if you want no grid lines under
+your graph.}
 
 \item{ncol}{number of columns of graphs to show. If left as NULL (default), R
 will make a reasonable guess for the number.}

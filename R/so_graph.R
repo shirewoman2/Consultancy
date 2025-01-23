@@ -4,17 +4,17 @@
 #' indicating where the predicted parameters fell within X fold of the observed.
 #'
 #' @param PKtable a table in the same format as output from the function
-#'   \code{\link{pk_table}}. This should include a column titled
-#'   "Statistic" and columns for each of the PK parameters you want to graph.
-#'   The column statistic should have values of "Simulated" and "Observed" for
-#'   the simulated and observed PK, respectively; anything else will be ignored.
-#'   The columns for each PK parameter should be named like the values in the
+#'   \code{\link{pk_table}}. This should include a column titled "Statistic" and
+#'   columns for each of the PK parameters you want to graph. The column
+#'   statistic should have values of "Simulated" and "Observed" for the
+#'   simulated and observed PK, respectively; anything else will be ignored. The
+#'   columns for each PK parameter should be named like the values in the
 #'   data.frame PKParameterDefinitions, in the column "PKparameter". To see
 #'   that, please enter \code{view(PKParameterDefinitions)} into the console.
 #' @param PKparameters any of the AUC, Cmax, tmax, CL, or half-life PK
-#'   parameters included in the output from \code{\link{pk_table}}; if
-#'   left as NA, this will make graphs for each parameter included in
-#'   \code{PKtable}. To see the full set of possible parameters, enter
+#'   parameters included in the output from \code{\link{pk_table}}; if left as
+#'   NA, this will make graphs for each parameter included in \code{PKtable}. To
+#'   see the full set of possible parameters, enter
 #'   \code{view(PKParameterDefinitions)} into the console.
 #' @param PKorder optionally specify the order of the graphs. Leaving this as
 #'   "default" puts the graphs in the same order as the columns in the Simcyp
@@ -201,6 +201,10 @@
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
+#' @param grid_color optionally specify the color of the major and minor grid
+#'   lines on your graph. Default is "grey92", which is the standard grey for
+#'   theme_bw() in ggplot2. Set this to "none" if you want no grid lines under
+#'   your graph.
 #' @param ncol number of columns of graphs to show. If left as NULL (default), R
 #'   will make a reasonable guess for the number.
 #' @param nrow number of rows of graphs to show. If left as NULL (default), R
@@ -279,6 +283,7 @@ so_graph <- function(PKtable,
                      title_adjustments = c(), 
                      all_intervals_together = FALSE, 
                      all_AUCs_together = FALSE, 
+                     grid_color = NA, 
                      ncol = NULL, 
                      nrow = NULL,
                      save_graph = NA, 
@@ -419,6 +424,18 @@ so_graph <- function(PKtable,
       warning("You said that you wanted to specify the order of the graphs by PK parameter but did not list any specific PK parameters with the argument `PKparameters`, so we don't know what order you would like. We'll set the order to the default, which is alphabetical by PK parameter name.\n", 
               call. = FALSE)
       PKorder <- "default"
+   }
+   
+   grid_color_gg <- ifelse(is.na(grid_color[1]), "grey92", grid_color[1])
+   if(grid_color_gg == "none"){
+      grid_color_gg <- NA
+   } else {
+      ColorCheck <- try(expr = col2rgb(grid_color), silent = TRUE)
+      if(is.matrix(ColorCheck) == FALSE){
+         warning(wrapn("You have supplied something that is not an acceptable color in R for the argument 'grid_color', so we'll use the default value of 'grey92'."), 
+                 call. = FALSE)
+         grid_color_gg <- "grey92"
+      }
    }
    
    
@@ -829,83 +846,15 @@ so_graph <- function(PKtable,
             mutate(point_color_column = factor(point_color_column, levels = Levels))
       } 
       
-      # If nothing was set for point_color_column, then set the color to
-      # "black". If there are only 2 groups for the point_color_column and
-      # point_color_set was set to "default", use Brewer set 1 instead of
-      # Brewer set 2 b/c it's more aethetically pleasing.
       NumColorsNeeded <- length(sort(unique(SO$point_color_column)))
-      
-      if(length(point_color_set) == 1 &&
-         point_color_set %in% c("default", "set2", "blue-green", "blues", 
-                                "rainbow", "set1", "Tableau", "viridis")){
-         
-         if(NumColorsNeeded == 1){
-            point_color_set <- switch(as.character(point_color_set == "default"),
-                                      "TRUE" = "black",
-                                      "FALSE" = point_color_set)
-         } else if(NumColorsNeeded == 2){
-            point_color_set <- switch(as.character(point_color_set == "default"),
-                                      "TRUE" = "set1", 
-                                      "FALSE" = point_color_set)
-         } else {
-            point_color_set <- switch(as.character(point_color_set == "default"),
-                                      "TRUE" = "set2",
-                                      "FALSE" = point_color_set)
-            # There are limits to the number of colors available for Brewer
-            # palettes. Checking that and setting to "rainbow" if needed.
-            if((point_color_set == "set1" & NumColorsNeeded > 9) |
-               (point_color_set == "set2" & NumColorsNeeded > 8) |
-               (point_color_set == "Tableau" & NumColorsNeeded > 10)){
-               
-               warning(paste("There are", NumColorsNeeded,
-                             "unique values in the column you have specified for the colors, but the color set you requested doesn't have as many possible colors as that. We'll change the color set to `rainbow` for now."), 
-                       call. = FALSE)
-               point_color_set <- "rainbow"
-            }
-         }
-         
-         suppressWarnings(
-            MyPointColors <- 
-               switch(
-                  point_color_set,
-                  # Using "Dark2" b/c "Set2" is just really,
-                  # really light.
-                  "set2" = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")[
-                     1:NumColorsNeeded], 
-                  "blue-green" = blueGreens(NumColorsNeeded),
-                  "blues" = blues(NumColorsNeeded),
-                  "rainbow" = rainbow(NumColorsNeeded),
-                  "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
-                     1:NumColorsNeeded],
-                  "Tableau" = ggthemes::tableau_color_pal(
-                     palette = "Tableau 10")(NumColorsNeeded),
-                  "viridis" = viridis::viridis_pal()(NumColorsNeeded))
-         )   
-         
-         if(is.null(MyPointColors)){MyPointColors <- "black"}
-         
-         # NB: For the RColorBrewer palettes, the minimum number of
-         # colors you can get is 3. Since sometimes we might only want 1
-         # or 2 colors, though, we have to add the [1:NumColorsNeeded]
-         # bit.
-         
-      } else {
-         MyPointColors <- point_color_set
-         
-         if(length(MyPointColors) < NumColorsNeeded){
-            warning(paste("There are", NumColorsNeeded,
-                          "unique values in the column you have specified for the point colors, but you have only specified", 
-                          length(MyPointColors), 
-                          "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph."), 
-                    call. = FALSE)
-            
-            MyPointColors <- rep(point_color_set, 100)[1:NumColorsNeeded]
-         }
-      }
+      point_color_set <- make_color_set(color_set = point_color_set, 
+                                        num_colors = NumColorsNeeded)
+      MyPointColors <- point_color_set
       
    } else {
       # Setting color to black if point_color_column unspecified
-      point_color_set <- "black"
+      point_color_set <- make_color_set(color_set = point_color_set, 
+                                        num_colors = 1)
       MyPointColors <- point_color_set
       SO$point_color_column <- "A" # placeholder
    }
@@ -1198,6 +1147,7 @@ so_graph <- function(PKtable,
          ggtitle(Gtitle) +
          theme_bw() +
          theme(aspect.ratio = 1, 
+               panel.grid = element_line(color = grid_color_gg), 
                plot.title = element_text(hjust = 0.5, 
                                          size = ifelse(is.na(facet_title_size), 
                                                        12, facet_title_size)),

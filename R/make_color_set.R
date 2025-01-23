@@ -118,7 +118,7 @@ make_color_set <- function(color_set, num_colors){
       if(color_set == "default" & num_colors == 1){
          return("black")
       }
-         
+      
       if(color_set == "default" & num_colors == 2){
          color_set <- "set1"
       }
@@ -174,6 +174,10 @@ make_color_set <- function(color_set, num_colors){
          
          MyColors <- rainbow(num_colors)
       }
+   }
+   
+   if(length(MyColors) < num_colors){
+      MyColors <- rep(MyColors, num_colors)
    }
    
    return(MyColors[1:num_colors])
