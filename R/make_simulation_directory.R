@@ -1,17 +1,19 @@
-#' Make a directory of simulations indicating which simulation file is located
-#' in which subfolder
+#' Make a directory of simulations indicating which simulation files are present
+#' in a given folder and which XML observed overlay files were associated with
+#' those simulation files
 #'
 #' @description The function \code{make_simulation_directory} will create a
 #'   data.frame of simulations in a given project folder, the associated XML
 #'   files when applicable (you'll have to provide that information with the
-#'   argument \code{existing_exp_details}), and, optionally, save that
-#'   data.frame to an Excel file. It will also check whether the file names
-#'   comply with USFDA and Consultancy Team standards and check whether the same
-#'   simulation is saved in more than one place.
+#'   argument \code{existing_exp_details} or else ask this function to read all
+#'   the workspace files to find them), and, optionally, save that data.frame to
+#'   an Excel file. It will also check whether the file names comply with USFDA
+#'   and Consultancy Team standards and check whether the same simulation is
+#'   saved in more than one place.
 #'
 #'   This is wicked fast.*
 #'
-#'   * Caveat: Unless you search all the workspaces for XML observed overlay data files. Then it
+#'   *Caveat: Unless you search all the workspaces for XML observed overlay data files. Then it
 #'   takes about 2 seconds per simulation.
 #'
 #' @param project_folder location of the project folder to search. Please note
@@ -46,6 +48,15 @@
 #'   an additional 2 seconds per simulation. If you have supplied something for
 #'   'existing_exp_details', you don't need this and we'll ignore it if you set
 #'   this to TRUE.
+#' @param use_basename_for_obsfile TRUE or FALSE (default) for whether to remove
+#'   the folder name from the observed overlay XML file name. By default, we'll
+#'   list the XML file where it was located when the workspace was saved.
+#'   However, if you set this to TRUE, we'll only list the file name without the
+#'   path. Why would you want this? Say you've moved all your XML observed
+#'   overlay files from their original locations when you ran the simulations
+#'   into a new folder that you'll be sharing with the client at the end of the
+#'   project. This way, you can show which simulation had which XML observed
+#'   overlay file without the confusion of including the original path.
 #' @param save_table optionally specify an Excel file name for saving your
 #'   simulation directory. If you don't include the file extension ".xlsx",
 #'   we'll add it.
@@ -65,6 +76,7 @@ make_simulation_directory <- function(project_folder = NA,
                                       sim_data_files = "recursive", 
                                       existing_exp_details = NA, 
                                       search_workspaces_for_obsfile = FALSE, 
+                                      use_basename_for_obsfile = FALSE, 
                                       save_table = NA, 
                                       overwrite = "ask"){
    
@@ -252,6 +264,13 @@ make_simulation_directory <- function(project_folder = NA,
            call. = FALSE)
    }
    
+   # We don't need the simulation directory file name to show up in the
+   # simulation directory b/c that's just way too meta.
+   if(complete.cases(save_table)){
+      Directory <- Directory %>% 
+         filter(Filename != save_table)
+   }
+   
    Directory <- Directory %>% 
       group_by(Filename, Folder) %>% 
       summarize(Filetype = str_c(Filetype, collapse = ", ")) %>% 
@@ -352,8 +371,11 @@ make_simulation_directory <- function(project_folder = NA,
          }
          
          Directory$ObsOverlayFile[ff] <- 
-            get_obs_file(workspace = paste0(Directory$Folder[ff], "/",
-                                            Directory$Filename[ff], ".wksz"))
+            get_obs_file(workspace = 
+                            paste0(
+                               case_when(Directory$Folder[ff] == "" ~ "", 
+                                         .default = paste0(Directory$Folder[ff], "/")),
+                               Directory$Filename[ff], ".wksz"))
       }
       
       Directory$ObsOverlayFile <- gsub("\\\\", "/", Directory$ObsOverlayFile)
@@ -456,6 +478,12 @@ make_simulation_directory <- function(project_folder = NA,
                       "Comments", "FileNameCheck", "DuplicateFileCheck"))) %>% 
       rename("File type" = Filetype, 
              "File name" = Filename)
+   
+   if(use_basename_for_obsfile == TRUE & "XML file used" %in% names(Directory)){
+      
+      Directory$`XML file used` <- basename(Directory$`XML file used`)
+      
+   }
    
    
    # Saving -----------------------------------------------------------------
