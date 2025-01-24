@@ -905,7 +905,11 @@ ct_plot_overlay <- function(ct_dataframe,
                                          "per5", "per95", "per10", "per90", 
                                          "trial mean", "trial geomean", 
                                          "trial median") ~ "aggregate", 
-                                    .default = "individual"))
+                                    .default = "individual")) %>% 
+      # We've discovered that, sometimes, an ADAM model can return negative
+      # concentrations, which causes this function to essentially freeze.
+      # Removing negative concs.
+      filter(Conc >= 0)
    # }
    
    ct_dataframe <- ct_dataframe %>% 
