@@ -11,7 +11,7 @@
 #'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
 #'   function examples and instructions/Concentration-time plots 1 - one sim at
 #'   a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
-#'   include a link to it here.)
+#'   include a link to it here.) 
 #'
 #' \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 #' inhibitors, or inhibitor metabolites are available in all tissues. If it's
@@ -860,7 +860,11 @@ ct_plot <- function(ct_dataframe = NA,
                                          "per5", "per95", "per10", "per90", 
                                          "trial mean", "trial geomean", 
                                          "trial median") ~ "aggregate", 
-                                    .default = "individual"))
+                                    .default = "individual")) %>% 
+      # We've discovered that, sometimes, an ADAM model can return negative
+      # concentrations, which causes this function to essentially freeze.
+      # Removing negative concs.
+      filter(Conc >= 0)
    # }
    
    ct_dataframe <- ct_dataframe %>% 
