@@ -38,10 +38,10 @@ harmonize_dosing <- function(existing_exp_details){
          
          # If it was custom dosing, then we won't be able to get any info from
          # dosing interval, etc., so skipping those. 
-         if(switch(cmpd, 
-                   "substrate" = "DoseRoute_sub", 
-                   "inhibitor 1" = "DoseRoute_inhib", 
-                   "inhibitor 2" = "DoseRoute_inhib2") == "custom dosing"){next}
+         if(Main[[ff]][switch(cmpd, 
+                              "substrate" = "DoseRoute_sub", 
+                              "inhibitor 1" = "DoseRoute_inhib", 
+                              "inhibitor 2" = "DoseRoute_inhib2")] == "custom dosing"){next}
          
          if(is.na(switch(cmpd, 
                          "substrate" = 

@@ -1324,6 +1324,8 @@ annotateDetails <- function(existing_exp_details,
                   Diffs = Diffs))
    } 
    
+   # subfunction ends here ---------------------------------------------------
+   
    Out <- list()
    
    # FIXME - Need to set things up for Dosing data.frame!

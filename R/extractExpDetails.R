@@ -1651,8 +1651,16 @@ extractExpDetails <- function(sim_data_file,
             error = openxlsx::read.xlsx(sim_data_file, sheet = j,
                                         colNames = FALSE)))
          
-         CustomDosing <- CustomDose_xl[4:nrow(CustomDose_xl), ]
-         names(CustomDosing) <- make.names(CustomDose_xl[3,])
+         # If people have added anything to the sheet, that can mess up data
+         # extraction. Here, we're at least checking for any columns that would
+         # have NA values for the names b/c those are probably places where
+         # people have added something extra off to the side of the data we
+         # actually want.
+         GoodCols <- t(CustomDose_xl[3, ]) %>% as.character()
+         GoodCols <- which(complete.cases(GoodCols))
+         
+         CustomDosing <- CustomDose_xl[4:nrow(CustomDose_xl), GoodCols]
+         names(CustomDosing) <- make.names(CustomDose_xl[3, GoodCols])
          CustomDosing <- CustomDosing %>% 
             rename(DoseNum = Dose.Number, 
                    Time1 = Time,
@@ -1667,6 +1675,10 @@ extractExpDetails <- function(sim_data_file,
          MyCompound <- as.character(Out[AllCompounds$DetailNames[AllCompounds$Suffix == Suffix]])
          
          CustomDosing <- CustomDosing %>% 
+            # Removing any rows where Time is NA b/c those are likely places
+            # where people have added some comments, etc. and not the main data
+            # we want. The NA values mess up things downstream.
+            filter(complete.cases(Time)) %>% 
             mutate(Time_units = ifelse(str_detect(TimeUnits, "\\.h\\.$"), 
                                        "h", "min"), 
                    File = sim_data_file, 
