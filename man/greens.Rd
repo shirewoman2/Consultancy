@@ -26,6 +26,7 @@ length rather than only up to 9 colors.
 greens(10)
 
 # Try using scales::show_col() to visualize the colors, ex:
-scales::show_col(chartreuse(10))
+scales::show_col(greens(ncolors = 10))
+scales::show_col(greens(ncolors = 10, shade = "darker"))
 
 }

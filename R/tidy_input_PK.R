@@ -459,9 +459,9 @@ tidy_input_PK <- function(PKparameters,
                               c("pkparameter", "pkparameters", "pkparam", "param", 
                                 "parameter"))[1]
          
-         warning(paste0("We were looking for a column named `PKparameter` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                        names(PKparameters)[ColToUse],
-                        "`, which we think is what you might want. We'll use the data in that column for the PK parameter name.\n"), 
+         warning(wrapn(paste0("We were looking for a column named `PKparameter` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                              names(PKparameters)[ColToUse],
+                              "`, which we think is what you might want. We'll use the data in that column for the PK parameter name.")), 
                  call. = FALSE)
          
          names(PKparameters)[ColToUse] <- "PKparameter"
@@ -491,9 +491,9 @@ tidy_input_PK <- function(PKparameters,
                        which(tolower(names(PKparameters)) == "workspace"), 
                        which(tolower(names(PKparameters)) == "sim"))[1]
          
-         warning(paste0("We were looking for a column named `File` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                        names(PKparameters)[ColToUse],
-                        "`, which we think is what you might want. We'll use the data that column for the file names.\n"), 
+         warning(wrapn(paste0("We were looking for a column named `File` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                              names(PKparameters)[ColToUse],
+                              "`, which we think is what you might want. We'll use the data that column for the file names.")), 
                  call. = FALSE)
          
          names(PKparameters)[ColToUse] <- "File"
@@ -540,9 +540,9 @@ tidy_input_PK <- function(PKparameters,
                        which(tolower(names(PKparameters)) == "gmean"), 
                        which(tolower(names(PKparameters)) == "mean"))[1]
          
-         warning(paste0("We were looking for a column named `ObsValue` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                        names(PKparameters)[ColToUse],
-                        "`, which we think is what you might want. We'll use the data in that column for any observed values.\n"), 
+         warning(wrapn(paste0("We were looking for a column named `ObsValue` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                              names(PKparameters)[ColToUse],
+                              "`, which we think is what you might want. We'll use the data in that column for any observed values.")), 
                  call. = FALSE)
          
          names(PKparameters)[ColToUse] <- "ObsValue"
@@ -571,9 +571,9 @@ tidy_input_PK <- function(PKparameters,
                        which(tolower(names(PKparameters)) == "min"), 
                        which(str_detect(tolower(names(PKparameters)), "conf")))[1]
          
-         warning(paste0("We were looking for a column named `ObsVariability` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                        names(PKparameters)[ColToUse],
-                        "`, which we think is what you might want. We'll use the data in that column for any observed variability.\n"), 
+         warning(wrapn(paste0("We were looking for a column named `ObsVariability` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                              names(PKparameters)[ColToUse],
+                              "`, which we think is what you might want. We'll use the data in that column for any observed variability.")), 
                  call. = FALSE)
          
          names(PKparameters)[ColToUse] <- "ObsVariability"
@@ -604,9 +604,9 @@ tidy_input_PK <- function(PKparameters,
                        which(tolower(names(PKparameters)) == "sheet_pkparameter"), 
                        which(tolower(names(PKparameters)) == "sheet_pkparameters"))[1]
          
-         warning(paste0("We were looking for a column named `Sheet` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                        names(PKparameters)[ColToUse],
-                        "`, which we think is what you might want. We'll use the data that column for the sheet names for any user-defined intervals.\n"), 
+         warning(wrapn(paste0("We were looking for a column named `Sheet` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                              names(PKparameters)[ColToUse],
+                              "`, which we think is what you might want. We'll use the data that column for the sheet names for any user-defined intervals.")), 
                  call. = FALSE)
          
          names(PKparameters)[ColToUse] <- "Sheet"
@@ -633,9 +633,9 @@ tidy_input_PK <- function(PKparameters,
                        which(tolower(names(PKparameters)) == "cmpd"), 
                        which(tolower(names(PKparameters)) == "drug"))[1]
          
-         warning(paste0("We were looking for a column named `CompoundID` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                        names(PKparameters)[ColToUse],
-                        "`, which we think is what you might want. We'll use the data in that column for specifying which compound it is.\n"), 
+         warning(wrapn(paste0("We were looking for a column named `CompoundID` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                              names(PKparameters)[ColToUse],
+                              "`, which we think is what you might want. We'll use the data in that column for specifying which compound it is.")), 
                  call. = FALSE)
          
          names(PKparameters)[ColToUse] <- "CompoundID"
@@ -675,9 +675,9 @@ tidy_input_PK <- function(PKparameters,
          ColToUse <- c(which(tolower(names(PKparameters)) == "tissues"), 
                        which(tolower(names(PKparameters)) == "matrix"))[1]
          
-         warning(paste0("We were looking for a column named `Tissue` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
-                        names(PKparameters)[ColToUse],
-                        "`, which we think is what you might want. We'll use the data in that column for specifying which tissue it is.\n"), 
+         warning(wrapn(paste0("We were looking for a column named `Tissue` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+                              names(PKparameters)[ColToUse],
+                              "`, which we think is what you might want. We'll use the data in that column for specifying which tissue it is.")), 
                  call. = FALSE)
          
          names(PKparameters)[ColToUse] <- "Tissue"
