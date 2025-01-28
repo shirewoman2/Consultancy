@@ -896,7 +896,6 @@ ct_plot_overlay <- function(ct_dataframe,
    # just checking that here. Happily, that doesn't take long. Uncomment the if
    # statement at some point?
    
-   # if("IndivOrAgg" %in% names(ct_dataframe) == FALSE){
    ct_dataframe <- ct_dataframe %>% 
       mutate(IndivOrAgg = case_when(Simulated == FALSE ~ NA, 
                                     Simulated == TRUE & Trial %in% 
@@ -905,12 +904,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                          "per5", "per95", "per10", "per90", 
                                          "trial mean", "trial geomean", 
                                          "trial median") ~ "aggregate", 
-                                    .default = "individual")) %>% 
-      # We've discovered that, sometimes, an ADAM model can return negative
-      # concentrations, which causes this function to essentially freeze.
-      # Removing negative concs.
-      filter(Conc >= 0)
-   # }
+                                    .default = "individual"))
    
    ct_dataframe <- ct_dataframe %>% 
       filter(Simulated == FALSE |
@@ -1000,6 +994,7 @@ ct_plot_overlay <- function(ct_dataframe,
          normalize_by_dose <- FALSE
       }
    }
+   
    
    # Setting things up for nonstandard evaluation ----------------------------
    
@@ -1369,6 +1364,11 @@ ct_plot_overlay <- function(ct_dataframe,
       obs_dataframe <- ct_dataframe %>% filter(Simulated == FALSE) %>% 
          mutate(Trial = {MyMeanType})
    }
+   
+   # We've discovered that, sometimes, an ADAM model can return negative
+   # concentrations, which causes this function to essentially freeze.
+   # Removing negative concs.
+   ct_dataframe <- ct_dataframe %>% filter(Conc >= 0)
    
    # If the user set obs_color to "none", then they must not want to include
    # observed data in the graph. Set nrow to 0 in that case.

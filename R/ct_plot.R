@@ -860,11 +860,7 @@ ct_plot <- function(ct_dataframe = NA,
                                          "per5", "per95", "per10", "per90", 
                                          "trial mean", "trial geomean", 
                                          "trial median") ~ "aggregate", 
-                                    .default = "individual")) %>% 
-      # We've discovered that, sometimes, an ADAM model can return negative
-      # concentrations, which causes this function to essentially freeze.
-      # Removing negative concs.
-      filter(Conc >= 0)
+                                    .default = "individual"))
    # }
    
    ct_dataframe <- ct_dataframe %>% 
@@ -950,6 +946,11 @@ ct_plot <- function(ct_dataframe = NA,
       hline_position <- hline_position / 100
       
    }
+   
+   # We've discovered that, sometimes, an ADAM model can return negative
+   # concentrations, which causes this function to essentially freeze.
+   # Removing negative concs.
+   Data <- Data %>% filter(Conc >= 0)
    
    # Noting whether the tissue was from an ADAM model
    ADAM <- unique(Data$Tissue) %in% c("stomach", "duodenum", "jejunum I",
