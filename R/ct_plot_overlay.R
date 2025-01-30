@@ -151,13 +151,14 @@
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
-#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Like
-#'   "blue-green", this palette can be especially useful if you are comparing a
-#'   systematic change in some continuous variable.}
+#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Great for showing
+#'   systematic changes in a continuous variable.}
 #'
-#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Like
-#'   "blue-green", this palette can be especially useful if you are comparing a
-#'   systematic change in some continuous variable.}
+#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Great for showing
+#'   systematic changes in a continuous variable.}
+#'
+#'   \item{"reds"}{a set of reds from pink to brick. Great for showing
+#'   systematic changes in a continuous variable.}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
@@ -475,16 +476,16 @@
 #'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
 #'   output a list of the graph, the figure heading, and the figure caption.
 #' @param save_graph optionally save the output graph by supplying a file name
-#'   in quotes here, e.g., "My conc time graph.png" or "My conc time graph.docx".
-#'   The nice thing about saving to Word is that the figure title and caption
-#'   text will be partly filled in automatically, although you should check that
-#'   the text makes sense in light of your exact graph. If you leave off ".png"
-#'   or ".docx", it will be saved as a png file, but if you specify a different
-#'   graphical file extension, it will be saved as that file format. Acceptable
-#'   graphical file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png",
-#'   "bmp", or "svg". Do not include any slashes, dollar signs, or periods in
-#'   the file name. Leaving this as NA means the file will not be automatically
-#'   saved to disk.
+#'   in quotes here, e.g., "My conc time graph.png" or "My conc time
+#'   graph.docx". The nice thing about saving to Word is that the figure title
+#'   and caption text will be partly filled in automatically, although you
+#'   should check that the text makes sense in light of your exact graph. If you
+#'   leave off ".png" or ".docx", it will be saved as a png file, but if you
+#'   specify a different graphical file extension, it will be saved as that file
+#'   format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
+#'   "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar
+#'   signs, or periods in the file name. Leaving this as NA means the file will
+#'   not be automatically saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param y_axis_interval set the linear y-axis major tick-mark interval.

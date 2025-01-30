@@ -272,13 +272,14 @@ versa, you'll need to provide something for the argument
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
-  \item{"greens"}{a set of greens fading from chartreuse to forest. Like
-  "blue-green", this palette can be especially useful if you are comparing a
-  systematic change in some continuous variable.}
+  \item{"greens"}{a set of greens fading from chartreuse to forest. Great for showing
+  systematic changes in a continuous variable.}
 
-  \item{"purples"}{a set of purples fading from lavender to aubergine. Like
-  "blue-green", this palette can be especially useful if you are comparing a
-  systematic change in some continuous variable.}
+  \item{"purples"}{a set of purples fading from lavender to aubergine. Great for showing
+  systematic changes in a continuous variable.}
+
+  \item{"reds"}{a set of reds from pink to brick. Great for showing
+  systematic changes in a continuous variable.}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
