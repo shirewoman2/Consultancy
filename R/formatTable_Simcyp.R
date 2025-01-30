@@ -803,8 +803,8 @@ formatTable_Simcyp <- function(DF,
          for(j in 1:length(highlight_so_cutoffs)){
             suppressWarnings(
                SO_col <- which(
-                  as.numeric(t(DF[i, ])) >= highlight_so_cutoffs[j] | 
-                     as.numeric(t(DF[i, ])) <= 1/highlight_so_cutoffs[j])
+                  as.numeric(t(DF[i, ])) > highlight_so_cutoffs[j] | 
+                     as.numeric(t(DF[i, ])) < 1/highlight_so_cutoffs[j])
             )
             SO_col <- intersect(SO_col, PKCols)
             
