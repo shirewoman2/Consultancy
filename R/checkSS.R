@@ -172,7 +172,9 @@ call. = FALSE)
    
    # suppressMessages(
    SScheck <- ct_dataframe %>% 
-      filter(Trial == MyMeanType & DoseNum > 0) %>%  
+      filter(Trial == MyMeanType & 
+                DoseNum > 0 & 
+                CompoundID == accum_compoundID) %>%  
       group_by(CompoundID, DoseNum, Inhibitor) %>% 
       # switch doesn't seem to work with summarize. Calculating each value.
       summarize(t0 = min(Time),
@@ -291,9 +293,10 @@ call. = FALSE)
                                 max(OverlayCT$Conc, na.rm = T))
       
       if(complete.cases(ScaleChallenges) && ScaleChallenges > 100){
+         ScaleFactor <- round_up(max(SScheck$Conc, na.rm = T) /
+                                    max(OverlayCT$Conc, na.rm = T))
          OverlayCT <- OverlayCT %>% 
-            mutate(Conc = Conc * round_up(max(SScheck$Conc, na.rm = T) /
-                                             max(OverlayCT$Conc, na.rm = T)))
+            mutate(Conc = Conc * ScaleFactor)
       } 
       
       if(length(MyPerpetrator) > 0){
@@ -320,7 +323,11 @@ call. = FALSE)
                             "Cmax" = "Cmax (ng/mL)", 
                             "C0" = "C0 (ng/mL)",
                             "Clast" = "Clast (ng/mL)")), 
-               sec.axis = sec_axis(~ . / round_down(ScaleChallenges),
+               # FIXME - I've got something screwed up here. I don't remember
+               # why I set this up to have a label of "ng/mL" here w/out noting
+               # what the concentration was adjusted by, but the numbers on the
+               # 2ndary axis are complete fiction.
+               sec.axis = sec_axis(~ . * ScaleFactor,
                                    name = paste(str_to_title(overlay_compoundID),
                                                 "concentration (ng/mL)"))) +
             theme(axis.line.y.right = element_line(color = "black"))
@@ -352,7 +359,8 @@ call. = FALSE)
       
    } else {
       G <- G + 
-         scale_y_continuous(limits = c(0, max(SScheck$Conc))) +
+         scale_y_continuous(limits = c(0, max(SScheck$Conc[
+            SScheck$CompoundID == accum_compoundID]))) +
          ylab(switch(conc_point, 
                      "Cmin" = expression(C[min]~"(ng/mL)"), 
                      "Cmax" = expression(C[max]~"(ng/mL)"), 
