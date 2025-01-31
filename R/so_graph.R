@@ -895,8 +895,10 @@ so_graph <- function(PKtable,
          MyPointShapes <- c(16:18, 15, 8, 3:7, 9:14)[1:NumShapesNeeded]
       }
    } else {
-      # If they haven't specified a point shape column, then make the shape be 16. 
-      MyPointShapes <- 16
+      # If they haven't specified a point shape column, then make the shape be
+      # the 1st number in point_shape
+      MyPointShapes <- point_shape[1]
+      MyPointShapes <- ifelse(is.na(MyPointShapes), 16, MyPointShapes)
    }
    
    names(MyPointShapes) <- unique(SO$point_shape_column)
@@ -908,6 +910,11 @@ so_graph <- function(PKtable,
              Fill = Color, 
              Color = case_when(Shape %in% c(21:25) ~ "black", 
                                .default = Color))
+   
+   # Establishing names for colors and shapes
+   MyColors <- setNames(SO$Color, SO$point_color_column)
+   MyFillColors <- setNames(SO$Fill, SO$point_color_column)
+   MyShapes <- setNames(SO$Shape, SO$point_shape_column)
    
    ## Making graphs ---------------------------------------------------------
    G <- list()
@@ -1063,14 +1070,12 @@ so_graph <- function(PKtable,
                            shape = point_color_column),
                        size = ifelse(is.na(point_size), 2, point_size), 
                        show.legend = TRUE) +
-            scale_color_manual(values = setNames(SO[[i]]$Color, 
-                                                 SO[[i]]$point_color_column), drop = FALSE) +
-            scale_fill_manual(values = setNames(SO[[i]]$Fill, 
-                                                SO[[i]]$point_color_column), drop = FALSE) +
-            scale_shape_manual(values = setNames(SO[[i]]$Shape, 
-                                                 SO[[i]]$point_shape_column), drop = FALSE)
+            scale_color_manual(values = MyColors, drop = FALSE) +
+            scale_fill_manual(values = MyFillColors, drop = FALSE) +
+            scale_shape_manual(values = MyShapes, drop = FALSE)
          
-         if(length(unique(SO[[i]]$point_color_column)) > 3){
+         if(length(unique(SO[[i]]$point_color_column)) > 3 & 
+            legend_position %in% c("bottom", "top")){
             G[[i]] <- G[[i]] +
                guides(
                   color = guide_legend(ncol = 2), 
@@ -1087,21 +1092,20 @@ so_graph <- function(PKtable,
                            shape = point_shape_column),
                        size = ifelse(is.na(point_size), 2, point_size), 
                        show.legend = TRUE) +
-            scale_color_manual(values = setNames(SO[[i]]$Color, 
-                                                 SO[[i]]$point_color_column), drop = FALSE) +
-            scale_fill_manual(values = setNames(SO[[i]]$Fill, 
-                                                SO[[i]]$point_color_column), drop = FALSE) +
-            scale_shape_manual(values = setNames(SO[[i]]$Shape, 
-                                                 SO[[i]]$point_shape_column), drop = FALSE)
+            scale_color_manual(values = MyColors, drop = FALSE) +
+            scale_fill_manual(values = MyFillColors, drop = FALSE) +
+            scale_shape_manual(values = MyShapes, drop = FALSE)
          
          if(length(MyPointColors) > 3){
             if(any(MyPointShapes %in% c(21:25))){
                G[[i]] <- G[[i]] + 
                   guides(color = guide_legend(override.aes = list(shape = 21), 
-                                              ncol = 2))
+                                              ncol = ifelse(legend_position %in% c("bottom", "top"), 
+                                                            2, 1)))
             } else {
                G[[i]] <- G[[i]] + 
-                  guides(color = guide_legend(ncol = 2))
+                  guides(color = guide_legend(ncol = ifelse(legend_position %in% c("bottom", "top"), 
+                                                            2, 1)))
             }
          } else if(any(MyPointShapes %in% c(21:25))){
             G[[i]] <- G[[i]] + 
@@ -1110,7 +1114,8 @@ so_graph <- function(PKtable,
          
          if(length(MyPointShapes) > 3){
             G[[i]] <- G[[i]] + 
-               guides(shape = guide_legend(ncol = 2))
+               guides(shape = guide_legend(ncol = ifelse(legend_position %in% c("bottom", "top"), 
+                                                         2, 1)))
          }
       }
       
@@ -1225,6 +1230,15 @@ so_graph <- function(PKtable,
             G[[i]] <- G[[i]] + labs(shape = as_label(point_shape_column))
          } 
       }
+      
+      if(length(unique(SO[[i]]$Shape)) == 1){
+         G[[i]] <- G[[i]] + guides(shape = "none")
+      }
+      
+      if(length(unique(paste(SO[[i]]$Color, SO[[i]]$Fill))) == 1){
+         G[[i]] <- G[[i]] + guides(color = "none", fill = "none")
+      }
+      
    }
    
    if(length(G) == 1){
