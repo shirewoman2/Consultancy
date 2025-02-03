@@ -62,6 +62,7 @@ extractExpDetails_DB <- function(sim_data_file){
                            verbose = FALSE))
    
    conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
+   on.exit(expr = RSQLite::dbDisconnect(conn))
    
    # Figure out which compound positions were active. 
    ActiveCompounds <- 
@@ -202,19 +203,23 @@ extractExpDetails_DB <- function(sim_data_file){
    # up the subcategory correctly.
    GenParam <- setdiff(GenParam, c("NumTimeSamples"))
    
-   # Have to deal w/NumDoses, StartHr specially b/c they're not set up not as a
-   # compound parameter but as a general parameter.
-   Remove <- setdiff(
-      # All possible NumDoses_x
-      paste0(rep(c("NumDoses", "StartHr"), each = 3), 
-             c("_sub", "_inhib", "_inhib2")), 
-      # Only the NumDoses_x that are active               
-      paste0(rep(c("NumDoses", "StartHr"), each = length(ActiveCompounds)), 
-             AllCompounds$DosedCompoundSuffix[
-                AllCompounds$DetailNames %in% ActiveCompounds]))
+   # Have to deal w/NumDoses, StartHr, etc. specially b/c they're set up not as
+   # a compound parameter but as a general parameter.
+   
+   # All possible parameters
+   X <- ParameterConversion %>% 
+      filter(SimcypParameterType == "general" & 
+                str_detect(Detail, "_sub|_inhib")) %>% 
+      pull(Detail)
+   
+   # Only the ones that apply to active compounds
+   Y <- X[str_detect(X, AllCompounds$DosedCompoundSuffix[
+      AllCompounds$DetailNames %in% ActiveCompounds])]
+   
+   Remove <- setdiff(X, Y)
    
    GenParam <- setdiff(GenParam, Remove)
-   rm(Remove)
+   rm(Remove, X, Y)
    
    for(k in GenParam){
       
@@ -226,6 +231,10 @@ extractExpDetails_DB <- function(sim_data_file){
          Category = Simcyp::CategoryID$SimulationData, 
          SubCategory = ifelse(is.na(ParamConv_subset$SimcypTag),
                               0, ParamConv_subset$SimcypSubcategory))
+      
+      if(is.null(Details_toadd)){
+         next
+      }
       
       names(Details_toadd) <- k
       Details <- c(Details, Details_toadd)
@@ -373,7 +382,7 @@ extractExpDetails_DB <- function(sim_data_file){
    
    # Finishing up --------------------------------------------------------
    
-   RSQLite::dbDisconnect(conn)
+   # RSQLite::dbDisconnect(conn)
    
    Details <- as.data.frame(Details) %>% 
       mutate(File = sim_data_file)
