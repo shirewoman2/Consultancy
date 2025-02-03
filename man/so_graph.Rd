@@ -22,6 +22,7 @@ so_graph(
   point_shape_column,
   point_shape = NA,
   point_size = NA,
+  point_transparency = 1,
   legend_label_point_shape = NA,
   legend_position = "none",
   axis_title_x = "Observed",
@@ -37,6 +38,7 @@ so_graph(
   save_graph = NA,
   fig_width = 8,
   fig_height = 6,
+  return_list_of_graphs = FALSE,
   axis_titles = NA
 )
 }
@@ -177,7 +179,8 @@ they came from, you would use: \code{point_color_column = Study}.}
 
   \item{"blues"}{a set of blues fading light blue to dark blue. Like
   "blue-green", this palette can be especially useful if you are comparing a
-  systematic change in some continuous variable.}
+  systematic change in some continuous variable. Other similar continuous
+  color sets to try out: "purples", "greens", or "reds".}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
@@ -226,6 +229,10 @@ all points will be filled circles.}
 \item{point_size}{optionally specify the size of the points to use for the
 observed data. If left as NA, the size will be 2.}
 
+\item{point_transparency}{optionally specify how transparent to make the
+points. The default of 1 will make completely opaque points, and 0 would be
+completely transparent (invisible).}
+
 \item{legend_label_point_shape}{optionally indicate on the legend something
 explanatory about what the colors represent. For example, if
 \code{point_color_column = Study} and \code{legend_label_point_color =
@@ -253,13 +260,20 @@ will be included if you have a mix of dosing intervals.}
 \item{facet_title_size}{optionally specify what font size to use for the
 facet titles. If left as NA, a reasonable guess will be used.}
 
-\item{title_adjustments}{a character vector of text adjustments for the
-  title. Possible options:
+\item{title_adjustments}{a character vector or list of text adjustments for
+  the graph titles. Possible options:
 
   \describe{\item{"sub steady-state for last"}{Instead of the
   default PK parameters for the last dose being labeled as, e.g.,
   "Last dose Cmax", this will use "steady-state" instead, e.g.,
   "Steady-state Cmax"}
+
+  \item{"use my expressions"}{If you'd like to use your own specific R
+  expressions rather than the defaults included in the package, you can do
+  that. You will need to supply a list here, and all of your PK parameters 
+  must be included or things will not work well. Here is an example of how 
+  to use this: title_adjustments = list("AUCtau_last" = expression(AUC[t]), 
+  "Cmax_last" = expression(C[max]), "Cmin_last" = expression(C[trough]))}
 
   \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other
   substitutions people might want. Instead of the using AUCinf, graph titles will
@@ -298,6 +312,9 @@ in quotes here, e.g., "My conc time graph.png"}
 \item{fig_width}{figure width in inches; default is 6}
 
 \item{fig_height}{figure height in inches; default is 8}
+
+\item{return_list_of_graphs}{TRUE or FALSE (default) for whether to return a
+list of each individual graph as its own separate ggplot2 object.}
 
 \item{axis_titles}{SOON TO BE DEPRECATED in favor of \code{axis_title_x} and
 \code{axis_title_x}. Optionally specify what you'd like for the x and y
