@@ -1253,6 +1253,10 @@ pk_table <- function(PKparameters = NA,
                                 names(MyPKResults))
    }
    
+   # Not including N column. No need, at least for now. It shows up with
+   # database sims.
+   MyPKResults <- MyPKResults %>% select(-any_of("N"))
+   
    if(checkDataSource){
       
       ColsToInclude <- c("PKparam", "File", "Tab", 
