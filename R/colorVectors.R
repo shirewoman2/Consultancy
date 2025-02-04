@@ -107,7 +107,8 @@ blues <- function(ncolors){
 #' greens(10)
 #'
 #' # Try using scales::show_col() to visualize the colors, ex:
-#' scales::show_col(chartreuse(10))
+#' scales::show_col(greens(ncolors = 10))
+#' scales::show_col(greens(ncolors = 10, shade = "darker"))
 #' 
 greens <- function(ncolors, 
                    shade = "regular"){
@@ -198,6 +199,45 @@ purples <- function(ncolors,
    
 }
 
+
+#' Create a vector of reds
+#'
+#' \code{reds} is useful for getting a set of reds from pink to
+#' brick for graphs.
+#'
+#' @param ncolors number of colors desired
+#' @param shade the shade of colors to use, which can be "regular" (default),
+#'   "darker", or "lighter"
+#'
+#' @return a character vector of colors
+#' @export
+#'
+#' @examples
+#' # Create a set of 10 reds. 
+#' reds(10)
+#'
+#' # Try using scales::show_col() to visualize the colors, ex:
+#' scales::show_col(reds(10))
+#' scales::show_col(reds(10, shade = "lighter"))
+#' 
+reds <- function(ncolors, 
+                 shade = "regular"){
+   
+   if(shade == "darker"){
+      colRed <- colorRampPalette(c("#E41A1C", "#480808"))
+   } else if(shade == "lighter"){
+      colRed <- colorRampPalette(c("#FEE8E8", "#E41A1C"))
+   } else {
+      # Anything else, give them "regular". 
+      colRed <- colorRampPalette(c("#FDC3C3", "#E41A1C", "#480808"))
+   }
+   
+   return(colRed(ncolors))
+   
+}
+
+
+
 #' Make a vector of colors that match the "green to red" option for highlighting
 #' GMR values
 #'
@@ -223,7 +263,7 @@ yellow_to_red <- function(){
      "weak" = "#FFFF95", # light yellow
      "moderate" = "#FFDA95", # light orange
      "strong" = "#FF9595") # light red
-
+   
 }
 
 

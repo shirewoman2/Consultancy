@@ -192,6 +192,7 @@ ct_plot(ct_dataframe = LMV,
 ![](inst/images/ct_plot17.png?raw=TRUE)
 
 
+
 ## ct_plot example 3: Substrate data with vs. without a perpetrator drug 
 
 Next, let's make a graph of substrate concentration-time data in plasma with and without the presence of a compound in the Inhibitor 1 position in the simulation. First, just like with the other graph, we'll extract the data from our simulation Excel results file and then we'll actually make the graph. 

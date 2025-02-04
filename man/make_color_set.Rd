@@ -34,17 +34,18 @@ make_color_set(color_set, num_colors)
   change in intrinsic solubility will affect concentration-time profiles --
   because the direction of the trend will be clear.}
 
-  \item{"blues"}{a set of blues fading light blue to dark blue. Like
+  \item{"blues"}{a set of blues fading from baby to navy. Like
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
-  \item{"greens"}{a set of blues fading light blue to dark blue. Like
-  "blue-green", this palette can be especially useful if you are comparing a
-  systematic change in some continuous variable.}
+  \item{"greens"}{a set of greens from chartreuse to forest. Great for showing
+  systematic changes in a continuous variable.}
 
-  \item{"blues"}{a set of blues fading light blue to dark blue. Like
-  "blue-green", this palette can be especially useful if you are comparing a
-  systematic change in some continuous variable.}
+  \item{"purples"}{a set of purples from lavender to aubergine. Great for showing
+  systematic changes in a continuous variable.}
+
+  \item{"reds"}{a set of reds from pink to brick. Great for showing
+  systematic changes in a continuous variable.}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}

@@ -279,46 +279,52 @@ formatTable_Simcyp <- function(DF,
                           "portrait" = system.file("Word/report_template.dotx",
                                                    package="SimcypConsultancy"))
    
+   ## Pass-through for if DF is already a flextable ---------------------------
    if("flextable" %in% class(DF)){
       
       FT <- DF
       
-      # May need to change the working directory temporarily, so
-      # determining what it is now
-      CurrDir <- getwd()
-      
-      # Format the file name appropriately, including making the extension be
-      # docx, even if they specified something else.
-      save_table <- ifelse(str_detect(save_table, "\\..*$"), 
-                           sub("\\..*", ".docx", save_table), 
-                           paste0(save_table, ".docx"))
-      
-      # Now that the file should have an appropriate extension, check what
-      # the path and basename should be.
-      OutPath <- dirname(save_table)
-      
-      if(OutPath == "."){
-         OutPath <- getwd()
+      if(complete.cases(save_table)){
+         # May need to change the working directory temporarily, so
+         # determining what it is now
+         CurrDir <- getwd()
+         
+         # Format the file name appropriately, including making the extension be
+         # docx, even if they specified something else.
+         save_table <- as.character(save_table)
+         save_table <- ifelse(str_detect(save_table, "\\..*$"), 
+                              sub("\\..*", ".docx", save_table), 
+                              paste0(save_table, ".docx"))
+         
+         # Now that the file should have an appropriate extension, check what
+         # the path and basename should be.
+         OutPath <- dirname(save_table)
+         
+         if(OutPath == "."){
+            OutPath <- getwd()
+         }
+         
+         save_table <- basename(save_table)
+         setwd(OutPath)
+         
+         rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
+                                       package="SimcypConsultancy"), 
+                           output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
+                           output_dir = OutPath, 
+                           output_file = save_table, 
+                           quiet = TRUE)
+         # Note: The "system.file" part of the call means "go to where the
+         # package is installed, search for the file listed, and return its
+         # full path.
+         
+         setwd(CurrDir)
       }
-      
-      save_table <- basename(save_table)
-      setwd(OutPath)
-      
-      rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
-                                    package="SimcypConsultancy"), 
-                        output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
-                        output_dir = OutPath, 
-                        output_file = save_table, 
-                        quiet = TRUE)
-      # Note: The "system.file" part of the call means "go to where the
-      # package is installed, search for the file listed, and return its
-      # full path.
-      
-      setwd(CurrDir)
       
       return(FT)
       
    }
+   
+   ## Making DF into a flextable ----------------------------------------------
    
    if("data.frame" %in% class(DF) == FALSE){
       stop("Please check your input. The `formatTable_Simcyp` function only works with data.frames or flextables, and it looks like you have supplied some other type of data.", 
@@ -435,7 +441,7 @@ formatTable_Simcyp <- function(DF,
    }
    
    
-   # Setting things up for nonstandard evaluation ----------------------------
+   ### Setting things up for nonstandard evaluation ----------------------------
    shading_column <- rlang::enquo(shading_column)
    sort_column <- rlang::enquo(sort_column)
    
@@ -444,7 +450,7 @@ formatTable_Simcyp <- function(DF,
          arrange(!!sort_column)
    }
    
-   # Main body of function -------------------------------------------------
+   ### Figuring out formatting -------------------------------------------------
    
    # Figuring out which columns contain PK data
    PKRegex <- c(AllPKParameters$PrettifiedNames, 
@@ -486,7 +492,7 @@ formatTable_Simcyp <- function(DF,
    }
    
    
-   ## Adding DDI header row --------------------------------------------------
+   ### Adding DDI header row --------------------------------------------------
    
    if(AnyDDI){
       
@@ -545,7 +551,7 @@ formatTable_Simcyp <- function(DF,
       NewNames <- OrigNames
    }
    
-   ## Optionally making things bold face ---------------------------------------
+   ### Optionally making things bold face ---------------------------------------
    if(any(sapply(bold_cells, complete.cases))){
       for(cells in 1:length(bold_cells)){
          
@@ -579,7 +585,7 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
-   ## center the header row, bg white -----------------------------------------
+   ### center the header row, bg white -----------------------------------------
    FT <- FT %>% 
       flextable::align(align = "center", part = "header") %>% 
       
@@ -599,7 +605,7 @@ formatTable_Simcyp <- function(DF,
                                      "FALSE TRUE" = 2:ncol(DF)))
    }
    
-   ## Optionally including shading whenever the shading column changes ------------
+   ### Optionally including shading whenever the shading column changes ------------
    if(as_label(shading_column) != "<empty>"){
       
       ShadeCol <- DF %>% pull(!!shading_column)
@@ -639,7 +645,7 @@ formatTable_Simcyp <- function(DF,
       ShadeChange <- c()
    }
    
-   ## Merge other columns, too -----------------------------------------------
+   ### Merge other columns, too -----------------------------------------------
    
    if(any(complete.cases(merge_columns))){
       for(mc in merge_columns){
@@ -648,7 +654,7 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
-   ## Highlight GMRs ---------------------------------------------------------
+   ### Highlight GMRs ---------------------------------------------------------
    
    if(any(complete.cases(highlight_gmr_colors))){
       if(tolower(highlight_gmr_colors[1]) %in% 
@@ -739,7 +745,7 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
-   ## Optionally highlighting poor fidelity S/O values -----------------------
+   ### Optionally highlighting poor fidelity S/O values -----------------------
    
    if(any(complete.cases(highlight_so_cutoffs))){
       
@@ -797,8 +803,8 @@ formatTable_Simcyp <- function(DF,
          for(j in 1:length(highlight_so_cutoffs)){
             suppressWarnings(
                SO_col <- which(
-                  as.numeric(t(DF[i, ])) >= highlight_so_cutoffs[j] | 
-                     as.numeric(t(DF[i, ])) <= 1/highlight_so_cutoffs[j])
+                  as.numeric(t(DF[i, ])) > highlight_so_cutoffs[j] | 
+                     as.numeric(t(DF[i, ])) < 1/highlight_so_cutoffs[j])
             )
             SO_col <- intersect(SO_col, PKCols)
             
@@ -815,7 +821,7 @@ formatTable_Simcyp <- function(DF,
    }
    
    
-   ## Optionally highlight specific cells -----------------------------------
+   ### Optionally highlight specific cells -----------------------------------
    if(any(sapply(highlight_cells, complete.cases))){
       for(i in 1:length(highlight_cells)){
          
@@ -836,7 +842,7 @@ formatTable_Simcyp <- function(DF,
    }
    
    
-   ## Applying other aesthetics -------------------------------------------
+   ### Applying other aesthetics -------------------------------------------
    
    FT <- FT %>% 
       
@@ -941,10 +947,6 @@ formatTable_Simcyp <- function(DF,
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
       
-      # May need to change the working directory temporarily, so
-      # determining what it is now
-      CurrDir <- getwd()
-      
       # Format the file name appropriately, including making the extension be
       # docx, even if they specified something else.
       save_table <- ifelse(str_detect(save_table, "\\..*$"), 
@@ -960,7 +962,6 @@ formatTable_Simcyp <- function(DF,
       }
       
       save_table <- basename(save_table)
-      setwd(OutPath)
       
       rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
                                     package="SimcypConsultancy"), 
@@ -972,7 +973,6 @@ formatTable_Simcyp <- function(DF,
       # package is installed, search for the file listed, and return its
       # full path.
       
-      setwd(CurrDir)
    }
    
    return(FT)

@@ -272,13 +272,14 @@ versa, you'll need to provide something for the argument
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
-  \item{"greens"}{a set of greens fading from chartreuse to forest. Like
-  "blue-green", this palette can be especially useful if you are comparing a
-  systematic change in some continuous variable.}
+  \item{"greens"}{a set of greens fading from chartreuse to forest. Great for showing
+  systematic changes in a continuous variable.}
 
-  \item{"purples"}{a set of purples fading from lavender to aubergine. Like
-  "blue-green", this palette can be especially useful if you are comparing a
-  systematic change in some continuous variable.}
+  \item{"purples"}{a set of purples fading from lavender to aubergine. Great for showing
+  systematic changes in a continuous variable.}
+
+  \item{"reds"}{a set of reds from pink to brick. Great for showing
+  systematic changes in a continuous variable.}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
@@ -547,7 +548,7 @@ Using observed and simulated concentration-time data generated
   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
   function examples and instructions/Concentration-time plots 1 - one sim at
   a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
-  include a link to it here.)
+  include a link to it here.) 
 
 \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 inhibitors, or inhibitor metabolites are available in all tissues. If it's

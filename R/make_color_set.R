@@ -1,4 +1,4 @@
-#' Create a set of colors for use in graphs 
+#' Create a set of colors for use in graphs
 #'
 #' @param color_set the set of colors to use. Options: \describe{
 #'
@@ -27,17 +27,18 @@
 #'   change in intrinsic solubility will affect concentration-time profiles --
 #'   because the direction of the trend will be clear.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
+#'   \item{"blues"}{a set of blues fading from baby to navy. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
-#'   \item{"greens"}{a set of blues fading light blue to dark blue. Like
-#'   "blue-green", this palette can be especially useful if you are comparing a
-#'   systematic change in some continuous variable.}
+#'   \item{"greens"}{a set of greens from chartreuse to forest. Great for showing
+#'   systematic changes in a continuous variable.}
 #'
-#'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
-#'   "blue-green", this palette can be especially useful if you are comparing a
-#'   systematic change in some continuous variable.}
+#'   \item{"purples"}{a set of purples from lavender to aubergine. Great for showing
+#'   systematic changes in a continuous variable.}
+#'
+#'   \item{"reds"}{a set of reds from pink to brick. Great for showing
+#'   systematic changes in a continuous variable.}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
@@ -59,19 +60,19 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #'
-#' @param num_colors the number of colors needed 
+#' @param num_colors the number of colors needed
 #'
-#' @return a character vector of color names 
+#' @return a character vector of color names
 #' @export
 #'
-#' @examples 
+#' @examples
 #' make_color_set("blues", 10)
 #' make_color_set("Tableau", 3)
-#' 
+#'
 #' # You can see the colors with show_col from the scales package.
 #' make_color_set("viridis", 5) %>% scales::show_col()
 #' make_color_set("Brewer set 1", 4) %>% scales::show_col()
-#' 
+#'
 #' 
 make_color_set <- function(color_set, num_colors){
    
@@ -148,6 +149,7 @@ make_color_set <- function(color_set, num_colors){
                "blues" = blues(num_colors),
                "greens" = chartreuse(num_colors, shade = "darker"), 
                "purples" = purples(num_colors, shade = "darker"), 
+               "reds" = reds(num_colors), 
                "rainbow" = rainbow(num_colors),
                "set1" = RColorBrewer::brewer.pal(num_colors, "Set1")[
                   1:num_colors],

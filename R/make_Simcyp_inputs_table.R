@@ -345,6 +345,8 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                      wrapn("Model summary tables will *only* include values present in the column titled something like 'All files have...', so if that column contains only NA's, you'll get a table with 0 rows here. We recommend checking which simulations are included and maybe limiting that with the argument 'sims_to_include`.")), 
               call. = FALSE)
       
+      return()
+      
    }
    
    suppressWarnings(

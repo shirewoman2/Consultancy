@@ -168,17 +168,13 @@ eCT_harmonize <- function(sim_data_xl,
       if(any(is.na(CmpdMatches$CompoundID))){
          CmpdMatches <- CmpdMatches %>% 
             mutate(CompoundID = case_when(
-               is.na(CompoundID) & CompoundCode == "CPlasma" ~ ShouldBeButNotInhib, 
-               
-               is.na(CompoundID) & CompoundCode == "CPlasma interaction" ~ ShouldBeButNotInhib, 
-               
-               is.na(CompoundID) & CompoundCode == "CSys" ~ ShouldBeButNotInhib,
-               
-               is.na(CompoundID) & CompoundCode == "CSys interaction" ~ ShouldBeButNotInhib,
-               
-               is.na(CompoundID) & CompoundCode == "CTissue" ~ ShouldBeButNotInhib,
-               
-               is.na(CompoundID) & CompoundCode == "CTissue interaction" ~ ShouldBeButNotInhib,
+               is.na(CompoundID) & CompoundCode %in% c("CPlasma", 
+                                                       "CPlasma interaction", 
+                                                       "CSys", 
+                                                       "CSys interaction", 
+                                                       "CTissue", 
+                                                       "CTissue Sub", 
+                                                       "CTissue interaction") ~ ShouldBeButNotInhib,
                
                is.na(CompoundID) & CompoundCode == "ITissue" ~ "inhibitor 1", 
                is.na(CompoundID) & CompoundCode == "IPlasma" ~ "inhibitor 1", 

@@ -627,7 +627,8 @@ extractConcTime <- function(sim_data_file,
                                          "Conc_arith" ~ "trial mean", 
                                          "Conc_gm" ~ "trial geomean", 
                                          "Conc_med" ~ "trial median"), 
-                      Individual = paste(Trial, TrialOrig)) %>% 
+                      Individual = paste(Trial, TrialOrig), 
+                      IndivOrAgg = "aggregate") %>% 
                select(-TrialOrig, -MeanType)
          )
          

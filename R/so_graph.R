@@ -147,7 +147,8 @@
 #'
 #'   \item{"blues"}{a set of blues fading light blue to dark blue. Like
 #'   "blue-green", this palette can be especially useful if you are comparing a
-#'   systematic change in some continuous variable.}
+#'   systematic change in some continuous variable. Other similar continuous
+#'   color sets to try out: "purples", "greens", or "reds".}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
@@ -191,6 +192,9 @@
 #'   all points will be filled circles.
 #' @param point_size optionally specify the size of the points to use for the
 #'   observed data. If left as NA, the size will be 2.
+#' @param point_transparency optionally specify how transparent to make the
+#'   points. The default of 1 will make completely opaque points, and 0 would be
+#'   completely transparent (invisible).
 #' @param legend_label_point_shape optionally indicate on the legend something
 #'   explanatory about what the colors represent. For example, if
 #'   \code{point_color_column = Study} and \code{legend_label_point_color =
@@ -213,6 +217,8 @@
 #'   in quotes here, e.g., "My conc time graph.png"
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 6
+#' @param return_list_of_graphs TRUE or FALSE (default) for whether to return a
+#'   list of each individual graph as its own separate ggplot2 object.
 #' @param include_dose_num Should the dose number be included? If set to TRUE,
 #'   then the dose number part of the graph title, e.g., the "Dose 1" or "Last
 #'   dose" part of "Dose 1 AUCinf" or "Last dose Cmax", will be included. If set
@@ -222,13 +228,20 @@
 #'   will be included if you have a mix of dosing intervals.
 #' @param facet_title_size optionally specify what font size to use for the
 #'   facet titles. If left as NA, a reasonable guess will be used.
-#' @param title_adjustments a character vector of text adjustments for the
-#'   title. Possible options:
+#' @param title_adjustments a character vector or list of text adjustments for
+#'   the graph titles. Possible options:
 #'
 #'   \describe{\item{"sub steady-state for last"}{Instead of the
 #'   default PK parameters for the last dose being labeled as, e.g.,
 #'   "Last dose Cmax", this will use "steady-state" instead, e.g.,
 #'   "Steady-state Cmax"}
+#'
+#'   \item{"use my expressions"}{If you'd like to use your own specific R
+#'   expressions rather than the defaults included in the package, you can do
+#'   that. You will need to supply a list here, and all of your PK parameters 
+#'   must be included or things will not work well. Here is an example of how 
+#'   to use this: title_adjustments = list("AUCtau_last" = expression(AUC[t]), 
+#'   "Cmax_last" = expression(C[max]), "Cmin_last" = expression(C[trough]))}
 #'
 #'   \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other
 #'   substitutions people might want. Instead of the using AUCinf, graph titles will
@@ -274,6 +287,7 @@ so_graph <- function(PKtable,
                      point_shape_column, 
                      point_shape = NA,
                      point_size = NA,
+                     point_transparency = 1, 
                      legend_label_point_shape = NA, 
                      legend_position = "none",
                      axis_title_x = "Observed",
@@ -289,6 +303,7 @@ so_graph <- function(PKtable,
                      save_graph = NA, 
                      fig_width = 8, 
                      fig_height = 6, 
+                     return_list_of_graphs = FALSE, 
                      axis_titles = NA){
    
    # Error catching ----------------------------------------------------------
@@ -438,6 +453,7 @@ so_graph <- function(PKtable,
       }
    }
    
+   suppressWarnings(point_transparency <- as.numeric(point_transparency[1]))
    
    # Main body of function --------------------------------------------------
    
@@ -784,6 +800,11 @@ so_graph <- function(PKtable,
                           PKparameters)
       SO$PKparameter <- sub("_dose1|_last", "", SO$PKparameter)
       PKCols$PKparameter <- sub("_dose1|_last", "", PKCols$PKparameter)
+      
+      if("list" %in% class(title_adjustments)){
+         names(title_adjustments) <- 
+            sub("_last|_dose1", "", names(title_adjustments))
+      }
    }
    
    if(all_intervals_together){
@@ -825,7 +846,8 @@ so_graph <- function(PKtable,
    }
    
    # Checking for other graph title substitutions they want
-   if(length(title_adjustments) > 0){
+   if(length(title_adjustments) > 0 & 
+      "character" %in% class(title_adjustments)){
       if("sub steady-state for last" %in% tolower(title_adjustments) |
          "sub steady state for last" %in% tolower(title_adjustments)){
          
@@ -888,8 +910,17 @@ so_graph <- function(PKtable,
       } else {
          MyPointShapes <- c(16:18, 15, 8, 3:7, 9:14)[1:NumShapesNeeded]
       }
+      # If they haven't specified a point shape column, then make the shape be
+      # the 1st number in point_shape
+      MyPointShapes <- point_shape[1]
+      MyPointShapes <- ifelse(is.na(MyPointShapes), 16, MyPointShapes)
    }
    
+   
+   # Establishing names for colors and shapes
+   MyColors <- setNames(SO$Color, SO$point_color_column)
+   MyFillColors <- setNames(SO$Fill, SO$point_color_column)
+   MyShapes <- setNames(SO$Shape, SO$point_shape_column)
    
    ## Making graphs ---------------------------------------------------------
    G <- list()
@@ -1039,8 +1070,13 @@ so_graph <- function(PKtable,
                           aes(x = Observed, y = Simulated, 
                               color = point_color_column),
                           size = ifelse(is.na(point_size), 2, point_size), 
+                       alpha = ifelse(is.na(point_transparency), 1, point_transparency), 
                           show.legend = TRUE) + 
-               scale_color_manual(values = MyPointColors, drop = FALSE), 
+            scale_color_manual(values = MyColors, drop = FALSE) +
+            scale_fill_manual(values = MyFillColors, drop = FALSE) +
+            scale_shape_manual(values = MyShapes, drop = FALSE)
+         if(length(unique(SO[[i]]$point_color_column)) > 3 & 
+            legend_position %in% c("bottom", "top")){
             
             # User has specified a column for point shape
             "FALSE TRUE" = 
@@ -1049,30 +1085,39 @@ so_graph <- function(PKtable,
                           aes(x = Observed, y = Simulated, 
                               shape = point_shape_column),
                           size = ifelse(is.na(point_size), 2, point_size), 
+                       alpha = ifelse(is.na(point_transparency), 1, point_transparency), 
                           show.legend = TRUE) +
-               scale_shape_manual(values = MyPointShapes, drop = FALSE),
+            scale_color_manual(values = MyColors, drop = FALSE) +
+            scale_fill_manual(values = MyFillColors, drop = FALSE) +
+            scale_shape_manual(values = MyShapes, drop = FALSE)
             
             # User has specified both color and point shape columns
             "TRUE TRUE" = 
                G[[i]] + 
                geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
-                                              color = point_color_column, 
-                                              shape = point_shape_column),
+                                              ncol = ifelse(legend_position %in% c("bottom", "top"), 
+                                                            2, 1)))
                           size = ifelse(is.na(point_size), 2, point_size), 
                           show.legend = TRUE) +
-               scale_color_manual(values = MyPointColors, drop = FALSE) +
-               scale_shape_manual(values = MyPointShapes, drop = FALSE))
+                  guides(color = guide_legend(ncol = ifelse(legend_position %in% c("bottom", "top"), 
+                                                            2, 1)))
       
+               guides(shape = guide_legend(ncol = ifelse(legend_position %in% c("bottom", "top"), 
+                                                         2, 1)))
       
-      if(str_detect(i, "_withInhib")){
-         Gtitle <- PKexpressions[[paste0(i, switch(ConcType, 
-                                                   "molar" = "_molar", 
-                                                   "mass per volume" = ""), 
-                                         "_2")]]
+      if("list" %in% class(title_adjustments)){
+         Gtitle <- title_adjustments[[i]]
       } else {
-         Gtitle <- PKexpressions[[paste0(i, switch(ConcType, 
-                                                   "molar" = "_molar", 
-                                                   "mass per volume" = ""))]]
+         if(str_detect(i, "_withInhib")){
+            Gtitle <- PKexpressions[[paste0(i, switch(ConcType, 
+                                                      "molar" = "_molar", 
+                                                      "mass per volume" = ""), 
+                                            "_2")]]
+         } else {
+            Gtitle <- PKexpressions[[paste0(i, switch(ConcType, 
+                                                      "molar" = "_molar", 
+                                                      "mass per volume" = ""))]]
+         }
       }
       
       CheckRange <- ifelse(round_up(max(c(SO[[i]]$Simulated, 
@@ -1161,6 +1206,15 @@ so_graph <- function(PKtable,
             G[[i]] <- G[[i]] + labs(shape = as_label(point_shape_column))
          } 
       }
+      
+      if(length(unique(SO[[i]]$Shape)) == 1){
+         G[[i]] <- G[[i]] + guides(shape = "none")
+      }
+      
+      if(length(unique(paste(SO[[i]]$Color, SO[[i]]$Fill))) == 1){
+         G[[i]] <- G[[i]] + guides(color = "none", fill = "none")
+      }
+      
    }
    
    if(length(G) == 1){
@@ -1217,6 +1271,10 @@ so_graph <- function(PKtable,
          GoodOrder <- GoodOrder[GoodOrder %in% names(G)]
          
          G <- G[GoodOrder]
+      }
+      
+      if(return_list_of_graphs){
+         PlotList <- G
       }
       
       G <-  ggpubr::ggarrange(
@@ -1301,7 +1359,11 @@ so_graph <- function(PKtable,
       }
    }
    
-   return(G)
+   if(return_list_of_graphs){
+      return(PlotList)
+   } else {
+      return(G)
+   }
    
 }
 
