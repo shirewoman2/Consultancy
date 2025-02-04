@@ -198,10 +198,12 @@ extractObsConcTime <- function(obs_data_file,
          j <- paste(ParentDrug, i_split[2], sep = ".")
          
          if(j %in% names(DoseInts) && nrow(DoseInts[[j]]) > 0){
+            
             DoseInts[[j]] <- DoseInts[[j]] %>% 
                mutate(Interval = cut(DoseTime, 
                                      breaks = c(unique(DoseInts[[j]]$DoseTime), Inf), 
-                                     include.lowest = TRUE, right = FALSE))
+                                     include.lowest = TRUE, right = FALSE), 
+                      DoseNum = 1:nrow(.))
             
             obs_data[[i]] <- obs_data[[i]] %>% 
                mutate(Interval = cut(Time, 
@@ -209,7 +211,13 @@ extractObsConcTime <- function(obs_data_file,
                                      include.lowest = TRUE, right = FALSE)) %>% 
                left_join(DoseInts[[j]] %>% mutate(CompoundID = i_split[1]), 
                          by = join_by(CompoundID, Individual, Interval)) %>% 
-               mutate(DoseNum = as.numeric(Interval))
+               mutate(DoseNum = as.numeric(Interval), 
+                      Dose_sub = ifelse("substrate" %in% DoseInts[[j]]$CompoundID, 
+                                           DoseInts[[j]]$DoseAmount, NA), 
+                      Dose_inhib = ifelse("inhibitor 1" %in% DoseInts[[j]]$CompoundID, 
+                                          DoseInts[[j]]$DoseAmount, NA), 
+                      Dose_inhib2 = ifelse("inhibitor 2" %in% DoseInts[[j]]$CompoundID, 
+                                           DoseInts[[j]]$DoseAmount, NA))
          }
          
          rm(i_split, ParentDrug, j)
@@ -230,7 +238,8 @@ extractObsConcTime <- function(obs_data_file,
                     .fns = as.numeric)) %>% 
       select(any_of(c(NonDoseCols, "Species", 
                       "Inhibitor", "Simulated", "Trial", "Tissue", "ObsFile", 
-                      "Time_units", "Conc_units"))) 
+                      "Time_units", "Conc_units", "Dose_sub", "Dose_inhib", 
+                      "Dose_inhib2", "DoseNum"))) 
    
    if(add_t0){
       ToAdd <- obs_data %>% 
