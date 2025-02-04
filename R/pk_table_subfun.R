@@ -179,6 +179,15 @@ pk_table_subfun <- function(sim_data_file,
             split(MyPKResults_all$aggregate,
                   f = MyPKResults_all$aggregate$PKparameter)
          
+         if("data.frame" %in% class(MyPKResults_all$individual)){
+            IndivWasDF <- TRUE
+            MyPKResults_all$individual <- 
+               split(MyPKResults_all$individual,
+                     f = MyPKResults_all$individual$PKparameter)
+         } else {
+            IndivWasDF <- FALSE
+         }
+         
          for(param in names(MyPKResults_all$aggregate)[
             str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax|Cmin")]){
             MyPKResults_all$aggregate[[param]] <- 
@@ -186,8 +195,8 @@ pk_table_subfun <- function(sim_data_file,
                pivot_longer(cols = -any_of(c(
                   "File", "CompoundID", "Compound", "Inhibitor", "Tissue",
                   "Simulated", "Dose", "N", "PKparameter")), 
-                            names_to = "Stat", 
-                            values_to = "Conc") %>% 
+                  names_to = "Stat", 
+                  values_to = "Conc") %>% 
                mutate(Conc_units = Deets$Units_Cmax)
             
             MyPKResults_all$aggregate[[param]] <- 
@@ -199,16 +208,31 @@ pk_table_subfun <- function(sim_data_file,
                            values_from = Conc)
             
             if("individual" %in% names(MyPKResults_all)){
-               MyPKResults_all$individual[[param]] <- 
-                  tibble(Conc = MyPKResults_all$individual[[param]], 
-                         Conc_units = Deets$Units_Cmax) %>% 
-                  convert_conc_units(conc_units = conc_units, 
-                                     MW = MolWts) %>% 
-                  pull(Conc)
+               if(IndivWasDF){
+                  MyPKResults_all$individual[[param]] <- 
+                     MyPKResults_all$individual[[param]] %>% 
+                     rename(Conc = Value) %>% 
+                     mutate(Conc_units = Deets$Units_Cmax)
+                  
+                  MyPKResults_all$individual[[param]] <- 
+                     convert_conc_units(DF_to_convert = MyPKResults_all$individual[[param]],
+                                        conc_units = conc_units,
+                                        MW = MolWts) %>%
+                     select(-Conc_units) %>% 
+                     rename(Value = Conc)
+               } else {
+                  MyPKResults_all$individual[[param]] <- 
+                     tibble(Conc = MyPKResults_all$individual[[param]], 
+                            Conc_units = Deets$Units_Cmax) %>% 
+                     convert_conc_units(conc_units = conc_units, 
+                                        MW = MolWts) %>% 
+                     pull(Conc)
+               }
             }
          }
          
          MyPKResults_all$aggregate <- bind_rows(MyPKResults_all$aggregate)
+         MyPKResults_all$individual <- bind_rows(MyPKResults_all$individual)
          
          # Need to change units in Deets now to match.
          Deets$Units_AUC <- sub(Deets$Units_Cmax, conc_units, Deets$Units_AUC)
