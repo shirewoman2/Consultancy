@@ -353,19 +353,25 @@ recalc_PK <- function(ct_dataframe,
    }
    
    # Checking that they have all the columns necessary
-   if(all(c("CompoundID", "Inhibitor", "Tissue", "Individual", "Trial", 
-            "Simulated", "DoseNum") %in% names(ct_dataframe)) == FALSE){
+   
+   PossDoseCols <- c("substrate" = "Dose_sub", 
+                     "inhibitor 1" = "Dose_inhib", 
+                     "inhibitor 2" = "Dose_inhib2")
+   
+   ColsNeeded <- c("CompoundID", "Inhibitor", "Tissue", "Individual", "Trial", 
+                   "Simulated", "DoseNum", 
+                   PossDoseCols[unique(ct_dataframe$CompoundID)])
+   
+   if(all(ColsNeeded %in% names(ct_dataframe)) == FALSE){
       
-      MissingCols <- setdiff(c("CompoundID", "Inhibitor", "Tissue", "Individual", "Trial", 
-                               "Simulated", "DoseNum"), 
-                             names(ct_dataframe))
+      MissingCols <- setdiff(ColsNeeded, names(ct_dataframe))
       
       if("Individual" %in% MissingCols){
-         warning("It looks like you might not have requested individual data when you ran the function `extractConcTime`. We need individual concentration-time profiles here.\n", 
+         warning(wrapn("It looks like you might not have requested individual data when you ran the function `extractConcTime`. We need individual concentration-time profiles here."), 
                  call. = FALSE)
       } 
-      stop(paste0("The data supplied for ct_dataframe is missing a column or columns called ", 
-                  str_comma(paste0("`", MissingCols, "`")), ", so we cannot proceed. Please ensure that your data match the format you'd get from running the functions extractConcTime or extractObsConcTime."), 
+      stop(wrapn(paste0("The data supplied for ct_dataframe is missing a column or columns called ", 
+                        str_comma(paste0("`", MissingCols, "`")), ", so we cannot proceed. Please ensure that your data match the format you'd get from running the functions extractConcTime or extractObsConcTime.")), 
            call. = FALSE)
    }
    
@@ -656,11 +662,11 @@ recalc_PK <- function(ct_dataframe,
                                    "FALSE" = MaxTime)) %>%
                   filter(complete.cases(File) | complete.cases(ObsFile))
             ))
-
+            
             if(complete.cases(first_dose_time)){
                FirstDoseInfo$t0 <- first_dose_time
             }
-
+            
             if(complete.cases(dosing_interval)){
                FirstDoseInfo$MaxTime <- FirstDoseInfo$t0 + dosing_interval
             }
@@ -680,7 +686,8 @@ recalc_PK <- function(ct_dataframe,
                              "secondary metabolite" = NA,
                              "inhibitor 1" = unique(CTsubset[["1"]][[j]]$Dose_inhib), 
                              "inhibitor 2" = unique(CTsubset[["1"]][[j]]$Dose_inhib2),
-                             "inhibitor 1 metabolite" = NA)
+                             "inhibitor 1 metabolite" = NA) %>% 
+               as.numeric()
             
             suppressMessages(
                CT_temp <- CTsubset[["1"]][[j]] %>% 
