@@ -36,8 +36,8 @@
 #'   the PK summary table would also be its own graph here. \emph{NOTE:} If you
 #'   do set this to TRUE, the shape of the points will be mapped to which
 #'   interval it is, which means that you can't \emph{also} specify something
-#'   for the argument \code{point_shape_column}. If you do, it will be
-#'   ignored. Try this out if you're uncertain what we mean.
+#'   for the argument \code{point_shape_column}. If you do, it will be ignored.
+#'   Try this out if you're uncertain what we mean.
 #' @param all_AUCs_together TRUE or FALSE (default) for whether to combine,
 #'   e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
 #'   with this because if you have points for both AUCinf and AUCt for a
@@ -252,7 +252,7 @@
 #' @export
 #'
 #' @examples
-#' # Assuming you have run pksummary_mult on a few files with observed data
+#' # Assuming you have run pk_table on a few files with observed data
 #' # to generate an object called MyPKOutput, then:
 #' so_graph(PKtable = SOdata)
 #' so_graph(PKtable = SOdata, boundary_indicator = "fill")
@@ -771,11 +771,11 @@ so_graph <- function(PKtable,
                      str_c(sort(unique(SO$CompoundID)), collapse = "\n"), "\n"), 
               call. = FALSE)
    }
-
+   
    DupCheck <- SO %>% select(any_of(
       c("File", "CompoundID", "Tissue", "Sheet", "Statistic", "PKparameter")))
    DupCheck <- DupCheck[which(duplicated(DupCheck)), ] %>% as.data.frame()
-      
+   
    if(nrow(DupCheck) > 0){
       message(wrapn("You have some duplicates present in your data, which makes it unclear which simulated value matches which observed. Specifically, here are the places where you have more than one value for the same thing:"))
       Problem <- capture.output(print(DupCheck, row.names = FALSE))
@@ -877,12 +877,18 @@ so_graph <- function(PKtable,
       # Setting color to black if point_color_column unspecified
       point_color_set <- make_color_set(color_set = point_color_set, 
                                         num_colors = 1)
+      MyPointColors <- point_color_set
+      SO$point_color_column <- "A" # placeholder
    }
    
    if(as_label(point_shape_column) != "<empty>"){
       SO <- SO %>% mutate(point_shape_column = {{point_shape_column}}) %>% 
          droplevels()
-   } 
+   } else if(all_intervals_together){
+      SO$point_shape_column <- SO$Interval
+   } else {
+      SO$point_shape_column <- "A" # placeholder
+   }
    
    if(as_label(point_shape_column) != "<empty>" | 
       all_intervals_together){
@@ -910,12 +916,22 @@ so_graph <- function(PKtable,
       } else {
          MyPointShapes <- c(16:18, 15, 8, 3:7, 9:14)[1:NumShapesNeeded]
       }
+   } else {
       # If they haven't specified a point shape column, then make the shape be
       # the 1st number in point_shape
       MyPointShapes <- point_shape[1]
       MyPointShapes <- ifelse(is.na(MyPointShapes), 16, MyPointShapes)
    }
    
+   names(MyPointShapes) <- unique(SO$point_shape_column)
+   names(MyPointColors) <- unique(SO$point_color_column)
+   
+   SO <- SO %>% 
+      mutate(Shape = MyPointShapes[point_shape_column], 
+             Color = MyPointColors[point_color_column], 
+             Fill = Color, 
+             Color = case_when(Shape %in% c(21:25) ~ "black", 
+                               .default = Color))
    
    # Establishing names for colors and shapes
    MyColors <- setNames(SO$Color, SO$point_color_column)
@@ -1051,59 +1067,81 @@ so_graph <- function(PKtable,
          MinBreaks <- rep(1:9)*rep(10^(-3:9), each = 9)
       }
       
-      G[[i]] <- 
-         switch(paste(
-            as_label(point_color_column) != "<empty>",
-            (as_label(point_shape_column) != "<empty>") |
-               all_intervals_together),
-            
-            # User has NOT specified anything for point shape or color
-            "FALSE FALSE" = G[[i]] + 
-               geom_point(data = SO[[i]],
-                          aes(x = Observed, y = Simulated), 
-                          size = ifelse(is.na(point_size), 2, point_size), 
-                          show.legend = TRUE), 
-            
-            # User has specified a column for point color
-            "TRUE FALSE" = G[[i]] +
-               geom_point(data = SO[[i]],
-                          aes(x = Observed, y = Simulated, 
-                              color = point_color_column),
-                          size = ifelse(is.na(point_size), 2, point_size), 
+      # Aesthetics for points are determined by:
+      
+      # 1) whether they've specified anything for point shape column. Note that,
+      # if they specified that they wanted all intervals together, that means
+      # that the point shape column will be the interval. 
+      
+      # 2) whether they've specified anything for point color column, 
+      
+      # 3) whether what they've specified for point shape and point color is the
+      # same, and 
+      
+      # 4) whether the specific point shape they have requested is one of the
+      # ones with both fill and outline.
+      
+      if(as_label(point_color_column) == as_label(point_shape_column) & 
+         all_intervals_together == FALSE){
+         
+         G[[i]] <- G[[i]] +
+            geom_point(data = SO[[i]], 
+                       aes(x = Observed, y = Simulated, 
+                           color = point_color_column, 
+                           fill = point_color_column, 
+                           shape = point_color_column),
+                       size = ifelse(is.na(point_size), 2, point_size), 
                        alpha = ifelse(is.na(point_transparency), 1, point_transparency), 
-                          show.legend = TRUE) + 
+                       show.legend = TRUE) +
             scale_color_manual(values = MyColors, drop = FALSE) +
             scale_fill_manual(values = MyFillColors, drop = FALSE) +
             scale_shape_manual(values = MyShapes, drop = FALSE)
+         
          if(length(unique(SO[[i]]$point_color_column)) > 3 & 
             legend_position %in% c("bottom", "top")){
-            
-            # User has specified a column for point shape
-            "FALSE TRUE" = 
-               G[[i]] +
-               geom_point(data = SO[[i]],
-                          aes(x = Observed, y = Simulated, 
-                              shape = point_shape_column),
-                          size = ifelse(is.na(point_size), 2, point_size), 
+            G[[i]] <- G[[i]] +
+               guides(
+                  color = guide_legend(ncol = 2), 
+                  shape = guide_legend(ncol = 2))
+         }
+         
+      } else {
+         
+         G[[i]] <- G[[i]] +
+            geom_point(data = SO[[i]], 
+                       aes(x = Observed, y = Simulated, 
+                           color = point_color_column, 
+                           fill = point_color_column, 
+                           shape = point_shape_column),
+                       size = ifelse(is.na(point_size), 2, point_size), 
                        alpha = ifelse(is.na(point_transparency), 1, point_transparency), 
-                          show.legend = TRUE) +
+                       show.legend = TRUE) +
             scale_color_manual(values = MyColors, drop = FALSE) +
             scale_fill_manual(values = MyFillColors, drop = FALSE) +
             scale_shape_manual(values = MyShapes, drop = FALSE)
-            
-            # User has specified both color and point shape columns
-            "TRUE TRUE" = 
-               G[[i]] + 
-               geom_point(data = SO[[i]], aes(x = Observed, y = Simulated, 
+         
+         if(length(MyPointColors) > 3){
+            if(any(MyPointShapes %in% c(21:25))){
+               G[[i]] <- G[[i]] + 
+                  guides(color = guide_legend(override.aes = list(shape = 21), 
                                               ncol = ifelse(legend_position %in% c("bottom", "top"), 
                                                             2, 1)))
-                          size = ifelse(is.na(point_size), 2, point_size), 
-                          show.legend = TRUE) +
+            } else {
+               G[[i]] <- G[[i]] + 
                   guides(color = guide_legend(ncol = ifelse(legend_position %in% c("bottom", "top"), 
                                                             2, 1)))
-      
+            }
+         } else if(any(MyPointShapes %in% c(21:25))){
+            G[[i]] <- G[[i]] + 
+               guides(color = guide_legend(override.aes = list(shape = 21)))
+         }
+         
+         if(length(MyPointShapes) > 3){
+            G[[i]] <- G[[i]] + 
                guides(shape = guide_legend(ncol = ifelse(legend_position %in% c("bottom", "top"), 
                                                          2, 1)))
+         }
+      }
       
       if("list" %in% class(title_adjustments)){
          Gtitle <- title_adjustments[[i]]
@@ -1165,36 +1203,50 @@ so_graph <- function(PKtable,
                      legend.spacing.y = unit(0, units = "lines"))
          }
          
-         if("point_shape_column" %in% names(SO[[i]]) &&
-            length(unique(SO[[i]]$point_shape_column)) > 3){
-            G[[i]] <- G[[i]] + guides(shape = guide_legend(ncol = 2))
-         }
-         
-         if("point_color_column" %in% names(SO[[i]]) &&
-            length(unique(SO[[i]]$point_color_column)) > 3){
-            G[[i]] <- G[[i]] + guides(color = guide_legend(ncol = 2))
-         }
-         
       } else {
          G[[i]] <- G[[i]] + theme(legend.spacing.y = unit(0.5, units = "lines"))
       }
       
       # Adding legend label for color and shape as appropriate
       if(as_label(point_color_column) != "<empty>"){
-         if(complete.cases(legend_label_point_color)){
-            if(legend_label_point_color == "none"){    
-               G[[i]] <- G[[i]] + labs(color = NULL)
+         
+         if(as_label(point_color_column) == as_label(point_shape_column)){
+            if(complete.cases(legend_label_point_color)){
+               if(legend_label_point_color == "none"){    
+                  G[[i]] <- G[[i]] + labs(color = NULL, 
+                                          fill = NULL, 
+                                          shape = NULL)
+               } else {
+                  G[[i]] <- G[[i]] + labs(color = legend_label_point_color, 
+                                          fill = legend_label_point_color, 
+                                          shape = legend_label_point_color)
+               }
             } else {
-               G[[i]] <- G[[i]] + labs(color = legend_label_point_color)
+               # This is when no legend_label_point_color has been specified.
+               G[[i]] <- G[[i]] + labs(color = as_label(point_color_column), 
+                                       fill = as_label(point_color_column), 
+                                       shape = as_label(point_color_column))
             }
          } else {
-            # This is when no legend_label_point_color has been specified.
-            G[[i]] <- G[[i]] + labs(color = as_label(point_color_column))
+            if(complete.cases(legend_label_point_color)){
+               if(legend_label_point_color == "none"){    
+                  G[[i]] <- G[[i]] + labs(color = NULL, 
+                                          fill = NULL)
+               } else {
+                  G[[i]] <- G[[i]] + labs(color = legend_label_point_color, 
+                                          fill = legend_label_point_color)
+               }
+            } else {
+               # This is when no legend_label_point_color has been specified.
+               G[[i]] <- G[[i]] + labs(color = as_label(point_color_column), 
+                                       fill = as_label(point_color_column))
+            }
          }
       }
       
-      if(as_label(point_shape_column) != "<empty>" | 
-         all_intervals_together){
+      if(as_label(point_color_column) != as_label(point_shape_column) &
+         (as_label(point_shape_column) != "<empty>" | 
+          all_intervals_together)){
          if(complete.cases(legend_label_point_shape)){
             if(legend_label_point_shape == "none"){    
                G[[i]] <- G[[i]] + labs(shape = NULL)

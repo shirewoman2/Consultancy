@@ -287,8 +287,8 @@ graph. The default, FALSE, means that anything that was its own column in
 the PK summary table would also be its own graph here. \emph{NOTE:} If you
 do set this to TRUE, the shape of the points will be mapped to which
 interval it is, which means that you can't \emph{also} specify something
-for the argument \code{point_shape_column}. If you do, it will be
-ignored. Try this out if you're uncertain what we mean.}
+for the argument \code{point_shape_column}. If you do, it will be ignored.
+Try this out if you're uncertain what we mean.}
 
 \item{all_AUCs_together}{TRUE or FALSE (default) for whether to combine,
 e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
@@ -329,7 +329,7 @@ a set of arranged ggplot2 graphs
 indicating where the predicted parameters fell within X fold of the observed.
 }
 \examples{
-# Assuming you have run pksummary_mult on a few files with observed data
+# Assuming you have run pk_table on a few files with observed data
 # to generate an object called MyPKOutput, then:
 so_graph(PKtable = SOdata)
 so_graph(PKtable = SOdata, boundary_indicator = "fill")
