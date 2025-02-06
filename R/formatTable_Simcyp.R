@@ -453,22 +453,17 @@ formatTable_Simcyp <- function(DF,
    ### Figuring out formatting -------------------------------------------------
    
    # Figuring out which columns contain PK data
-   PKRegex <- c(AllPKParameters$PrettifiedNames, 
-                AllPKParameters$PrettifiedNames_nodosenum, 
-                # Also sometimes just need AUC instead of AUCt, AUCinf, etc.
-                "AUC")
-   PKRegex <- unique(str_trim(sub("\\(.*\\)", "", PKRegex)))
-   PKRegex <- str_c(PKRegex, collapse = "|")
-   PKCols <- which(sapply(names(DF), 
-                          FUN = function(x){str_detect(x, PKRegex)}))
+   PKCols <- prettify_column_names(DF, return_which_are_PK = TRUE)
+   
+   # Noting whether any columns are pretty
+   PrettyCols <- any(PKCols$ColName[PKCols$IsPKParam] == 
+                        PKCols$PrettifiedNames[PKCols$IsPKParam])
+   PKCols <- which(PKCols$IsPKParam)
    
    if(prettify_columns){
       DF <- prettify_column_names(DF)
       PrettyCols <- TRUE # noting whether columns are pretty
-   } else {
-      # Only prettified columns have spaces.
-      PrettyCols <- any(str_detect(names(DF), " "))
-   }
+   } 
    
    # Check for whether there are any DDI columns b/c will add extra header row
    # if so later. I have not set this up to replace a specific drug w/that
