@@ -1602,20 +1602,24 @@ ct_plot_overlay <- function(ct_dataframe,
       # column for individual observed data and will have to set the levels to
       # the obs individuals plus whatever the mean type was to get things to be
       # colored correctly and show up in the legend correctly.
+      
+      if(mean_type == "none"){
+         ObsLevels <- levels(obs_dataframe$Individual)
+      } else {
+         ObsLevels <- c(levels(obs_dataframe$Individual), MyMeanType)
+      }
+      
       ct_dataframe <- ct_dataframe %>% 
          mutate(SubjectID = ifelse(Simulated, MyMeanType, as.character(Individual)),
-                SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                         MyMeanType)),
+                SubjectID = factor(SubjectID, levels = ObsLevels),
                 colorBy_column = SubjectID)
       sim_dataframe <- sim_dataframe %>% 
          mutate(SubjectID = ifelse(Simulated, MyMeanType, as.character(Individual)),
-                SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                         MyMeanType)),
+                SubjectID = factor(SubjectID, levels = ObsLevels),
                 colorBy_column = SubjectID)
       obs_dataframe <- obs_dataframe %>% 
          mutate(SubjectID = ifelse(Simulated, MyMeanType, as.character(Individual)),
-                SubjectID = factor(SubjectID, levels = c(levels(obs_dataframe$Individual), 
-                                                         MyMeanType)),
+                SubjectID = factor(SubjectID, levels = ObsLevels),
                 colorBy_column = SubjectID)
    }
    
@@ -2262,7 +2266,7 @@ ct_plot_overlay <- function(ct_dataframe,
       if(length(LegCheck) == 0){
          LegCheck <- FALSE 
       } else if(length(LegCheck) == 1){
-         LegCheck <- length(unique(obs_dataframe[, LegCheck])) > 1
+         LegCheck <- length(unique(obs_dataframe %>% pull(LegCheck))) > 1
       } else {
          LegCheck <- any(sapply(unique(obs_dataframe[, LegCheck]), length) > 1)
       }
@@ -2618,16 +2622,23 @@ ct_plot_overlay <- function(ct_dataframe,
       # the aggregate simulated data to be the usual colors (black or gray).
       # NumColorsNeeded should only include the obs data in that scenario.
       if(AESCols["color"] == "Individual"){
-         NumColorsNeeded <- obs_dataframe %>% 
-            pull(colorBy_column) %>% unique() %>% length()
+         # If user has omitted aggregate data here, then the length will be 1
+         # short, so that's why double checking whether data are factor (I think
+         # they always will be) or character and adding accordingly.
+         if("factor" %in% class(obs_dataframe$colorBy_column)){
+            NumColorsNeeded <- length(levels(obs_dataframe$colorBy_column))
+            if(length(color_set) != 1 & 
+               length(NumColorsNeeded) != length(color_set)){
+               color_set <- rep(color_set, 2)[1:NumColorsNeeded]
+            }
+         } else {
+            NumColorsNeeded <- obs_dataframe %>% 
+               pull(colorBy_column) %>% unique() %>% length() 
+         }
       } else {
          NumColorsNeeded <-
-            #    ifelse(MapObsData,
             bind_rows(sim_dataframe, obs_dataframe) %>%
-            pull(colorBy_column) %>% unique() %>% length()#,
-         # sim_dataframe %>% 
-         #    pull(colorBy_column) %>% unique() %>% length())
-         
+            pull(colorBy_column) %>% unique() %>% length()
       }
       
       # If they supply a named character vector whose values are not
