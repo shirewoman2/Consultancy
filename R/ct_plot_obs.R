@@ -509,10 +509,18 @@ ct_plot_obs <- function(ct_dataframe,
       ct_dataframe$DoseNum <- NA
    }
    
+   # Compound column might not be present. Setting to "UNKNOWN COMPOUND" in that
+   # case.
+   if("Compound" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$Compound <- "UNKNOWN COMPOUND"
+   }
+   
+   # Need no NA values here
+   ct_dataframe$Compound[is.na(ct_dataframe$Compound)] <- "UNKNOWN COMPOUND"
+   
    # Including hacks to make this work
    ct_plot_overlay(ct_dataframe %>% 
                       mutate(Tissue_subtype = NA, 
-                             Compound = "UNKNOWN COMPOUND", 
                              File = ObsFile, 
                              Simulated = ifelse(
                                 Trial %in% c("mean", "geomean", "median"), TRUE, FALSE)), 

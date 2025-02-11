@@ -122,7 +122,7 @@
 #'   \item{PKparameter}{the specific PK parameter being compared. This
 #'   \emph{must} be one of the standardized, coded options that you can see by
 #'   running \code{view(PKParameterDefinitions)} and looking in the column
-#'   "PKparameter". These MUST EXACTLY match what was used for the simulated 
+#'   "PKparameter". These MUST EXACTLY match what was used for the simulated
 #'   data. We get that it's annoying that these must be set up with
 #'   these coded names, but they have to match exactly to get displayed nicely
 #'   in the final graph.}
@@ -134,18 +134,18 @@
 #'   \item{at least one pair of "CI90_lower" and "CI90_upper", "Per5" and
 #'   "Per95", "Minimum" and "Maximum", or at least one of "GCV" (geometric
 #'   coefficient of variation), "CV" (arithmetic CV), or "SD" (standard
-#'   deviation)}{Optional for observed data. These columns will be used for the 
+#'   deviation)}{Optional for observed data. These columns will be used for the
 #'   whiskers. Not case sensitive.}
-#'   
-#'   \item{whatever column you specified for \code{y_axis_labels} for the 
-#'   simulated data}{If you're making a forest plot of perpetrators, for 
+#'
+#'   \item{whatever column you specified for \code{y_axis_labels} for the
+#'   simulated data}{If you're making a forest plot of perpetrators, for
 #'   example, and you labeled the y axis
 #'   according to the values in the column "Inhibitor1", make sure that
 #'   "Inhibitor1" is included in your observed PK.}
-#'   
+#'
 #'   \item{any column you want to facet by}{If you want to break up your graphs
-#'   along the x axis, you must include the column you want to use to do that. 
-#'   If you included it for your simulated data, you must include it for your 
+#'   along the x axis, you must include the column you want to use to do that.
+#'   If you included it for your simulated data, you must include it for your
 #'   observed.}}
 #'
 #' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
@@ -262,7 +262,7 @@
 #'   \item{"none"}{no shading at all}
 #'
 #'   \item{a named character vector of the colors you want for each interaction
-#'   level}{e.g., \code{color_set = c("insignificant" = "white",
+#'   level}{e.g., \code{color_set = c("negligible" = "white",
 #'   "weak" = "gray90", "moderate" = "gray75", strong = "gray50")}}} The cutoff
 #'   values (1.25, 2, or 5 fold) match those in "Clinical Drug Interaction
 #'   Studies -- Cytochrome P450 Enzyme- and Transporter-Mediated Drug
