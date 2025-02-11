@@ -877,8 +877,8 @@ pk_table <- function(PKparameters = NA,
    # w/writing to Word.
    MyPKResults <- MyPKResults %>%
       mutate(Value = if_else(str_detect(Stat, "CV"), 
-                             round_opt(100*Value, rounding),
-                             round_opt(Value, rounding)))
+                             round_opt(100 * as.numeric(Value), rounding),
+                             round_opt(as.numeric(Value), rounding)))
    
    # Checking for any PK parameters where there are no simulated data.
    GoodPKParam <- MyPKResults %>% 

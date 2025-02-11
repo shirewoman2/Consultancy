@@ -61,14 +61,8 @@
 #'   that object here, unquoted. If left as NA, this function will run
 #'   \code{extractExpDetails} behind the scenes to figure out some information
 #'   about your experimental set up.
-#' @param returnAggregateOrIndiv return aggregate (default) and/or individual PK
-#'   parameters? Options are "aggregate", "individual", or "both". For aggregate
-#'   data, values are pulled from simulator output -- not calculated -- and the
-#'   output will be a data.frame with the PK parameters in columns and the
-#'   statistics reported exactly as in the simulator output file.
 #' @param includeTrialInfo TRUE or FALSE (default) for whether to include which
-#'   individual and trial the data describe. This only applies when
-#'   \code{returnAggregateOrIndiv} is "individual" or "both".
+#'   individual and trial the data describe. 
 #' @param returnExpDetails TRUE or FALSE: Since, behind the scenes, this
 #'   function extracts experimental details from the "Summary" tab of the
 #'   simulator output file, would you like those details to be returned here? If
@@ -100,7 +94,6 @@ extractPK <- function(sim_data_file,
                       compoundToExtract = "substrate",
                       tissue = "plasma",
                       existing_exp_details = NA, 
-                      returnAggregateOrIndiv = "aggregate",
                       includeTrialInfo = TRUE,
                       returnExpDetails = FALSE, 
                       checkDataSource = TRUE){
@@ -168,12 +161,6 @@ extractPK <- function(sim_data_file,
    sim_data_file <- ifelse(str_detect(sim_data_file, "xlsx$"), 
                            sim_data_file, paste0(sim_data_file, ".xlsx"))
    
-   if(length(returnAggregateOrIndiv) > 2 | length(returnAggregateOrIndiv) < 1 |
-      all(returnAggregateOrIndiv %in% c("aggregate", "both", "individual")) == FALSE){
-      stop("Options for 'returnAggregateOrIndiv' are 'aggregate', 'individual', or 'both'.",
-           call. = FALSE)
-   }
-   
    tissue <- tolower(tissue)
    if(tissue %in% c("plasma", "unbound plasma", "blood", "unbound blood", 
                     "peripheral plasma", "peripheral blood") == FALSE){
@@ -212,10 +199,6 @@ extractPK <- function(sim_data_file,
    # *should* be able to find them. At least, that's how I've tried to design
    # it to work! -LSh
    
-   
-   if(returnAggregateOrIndiv[1] == "both"){
-      returnAggregateOrIndiv <- c("aggregate", "individual")
-   }
    
    ## Checking exp details --------------------------------------------------
    
@@ -1087,6 +1070,15 @@ extractPK <- function(sim_data_file,
          mutate(Interval = sub("\\.00 ", " ", Interval), 
                 PKparameter = i)
       
+      # The AUC tab should have included AUCinf if it were a 1st dose PK
+      # parameeter, I think, so, if there was no AUCinf column at the end of all
+      # the data extraction, that would be because the AUCinf col included NA
+      # values. We WOULD want to warn the user of that in that case, so setting
+      # things up to yes, get warnings, if the AUCinf column is not present in
+      # the final data. There's a slight chance that this will result in
+      # redundant warnings, but I think that's OK.
+      Warn_if_noAUCinf_col <- TRUE
+      
    }
    
    TimeInterval <- bind_rows(TimeInterval)
@@ -1134,6 +1126,8 @@ extractPK <- function(sim_data_file,
          Out_ind <- c(Out_ind, Out_AUC0$Out_ind)
          TimeInterval <- TimeInterval %>% 
             bind_rows(Out_AUC0$TimeInterval)
+         
+         Warn_if_noAUCinf_col <- Out_AUC0$WarnAUCinf
       }
    }
    
@@ -1811,107 +1805,83 @@ extractPK <- function(sim_data_file,
    
    # Putting all data together ---------------------------------------------- 
    
-   if(length(Out_ind) > 0){
-      
-      # Putting objects in alphabetical order
-      Out_ind <- Out_ind[order(names(Out_ind))]
-      
-      if(includeTrialInfo & "individual" %in% returnAggregateOrIndiv){
-         Out_ind <- Out_ind[names(Out_ind)[str_detect(names(Out_ind), "tab$")]]
-         Out_ind <- bind_rows(Out_ind) %>%
-            pivot_longer(cols = -(c(Individual, Trial)),
-                         names_to = "PKparameter",
-                         values_to = "Value") %>%
-            filter(complete.cases(Value)) %>%
-            arrange(PKparameter, as.numeric(Trial),
-                    as.numeric(Individual)) 
-      } else {
-         Out_ind <- Out_ind[names(Out_ind)[!str_detect(names(Out_ind), "tab$")]] %>%
-            as.data.frame()
-      }
-      
-      suppressWarnings(
-         Out_ind <- Out_ind %>% 
-            mutate(File = sim_data_file, 
-                   Tissue = tissue, 
-                   CompoundID = compoundToExtract, 
-                   Compound = as.character(Deets[
-                      AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
-                   Simulated = TRUE,
-                   # FIXME - Add DoseNum
-                   Dose = as.numeric(
-                      Deets %>%
-                         pull(any_of(paste0("Dose",
-                                            AllCompounds$DosedCompoundSuffix[
-                                               AllCompounds$CompoundID == compoundToExtract])))))
-      )
-      
-   }
-   
-   if(any(c("aggregate", "both") %in% returnAggregateOrIndiv) & 
-      length(Out_agg) == 0){
+   if(length(Out_agg) == 0){
       warning(wrapn(paste0("For the file ", sim_data_file, 
                            ", no PK parameters were found. Did you include PK info as part of your simulation output?")), 
               call. = FALSE)
       return(list())
    }
    
-   if(any(c("individual", "both") %in% returnAggregateOrIndiv) &
-      length(Out_ind) == 0){
-      warning(wrapn(paste0("For the file ", sim_data_file, 
-                           ", no PK parameters were found. Did you include PK info as part of your simulation output?")), 
-              call. = FALSE)
-      return(list())
+   Out_ind <- Out_ind[names(Out_ind)[str_detect(names(Out_ind), "tab$")]]
+   
+   Out_ind <- bind_rows(Out_ind) %>%
+      pivot_longer(cols = -(c(Individual, Trial)),
+                   names_to = "PKparameter",
+                   values_to = "Value") %>%
+      filter(complete.cases(Value)) %>%
+      arrange(PKparameter, as.numeric(Trial),
+              as.numeric(Individual)) 
+   
+   suppressWarnings(
+      Out_ind <- Out_ind %>% 
+         mutate(File = sim_data_file, 
+                Tissue = tissue, 
+                CompoundID = compoundToExtract, 
+                Compound = as.character(Deets[
+                   AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
+                Simulated = TRUE,
+                # FIXME - Add DoseNum
+                Dose = as.numeric(
+                   Deets %>%
+                      pull(any_of(paste0("Dose",
+                                         AllCompounds$DosedCompoundSuffix[
+                                            AllCompounds$CompoundID == compoundToExtract])))))
+   )
+   
+   for(i in names(Out_agg)){
+      Statistic_char <- tolower(names(Out_agg[[i]]))
+      Out_agg[[i]] <- as.data.frame(Out_agg[[i]]) %>%
+         mutate(Statistic = Statistic_char,
+                PKparameter = i)
+      names(Out_agg[[i]])[1] <- "Value"
    }
    
-   if("aggregate" %in% returnAggregateOrIndiv){
-      
-      for(i in names(Out_agg)){
-         Statistic_char <- tolower(names(Out_agg[[i]]))
-         Out_agg[[i]] <- as.data.frame(Out_agg[[i]]) %>%
-            mutate(Statistic = Statistic_char,
-                   PKparameter = i)
-         names(Out_agg[[i]])[1] <- "Value"
-      }
-      
-      suppressWarnings(
-         Out_agg <- bind_rows(Out_agg) %>%
-            select(PKparameter, Statistic, Value) %>%
-            mutate(Statistic = renameStats(OrigStat = Statistic, 
-                                           use = "simulator to r"), 
-                   File = sim_data_file, 
-                   Inhibitor = 
-                      case_when(
-                         str_detect(PKparameter, "_withInhib|_ratio") ~ 
-                            determine_myperpetrator(Deets, 
-                                                    prettify_compound_names = F), 
-                         .default = "none"),
-                   Tissue = tissue, 
-                   CompoundID = compoundToExtract, 
-                   Compound = as.character(Deets[
-                      AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
-                   Simulated = TRUE,
-                   # FIXME - Add DoseNum
-                   Dose = as.numeric(
-                      Deets %>%
-                         pull(any_of(paste0("Dose",
-                                            AllCompounds$DosedCompoundSuffix[
-                                               AllCompounds$CompoundID == compoundToExtract])))), 
-                   # Units are always these for db files
-                   Units = case_when(str_detect(PKparameter, "AUC") ~ Deets$Units_AUC, 
-                                     str_detect(PKparameter, "CL") ~ Deets$Units_CL, 
-                                     str_detect(PKparameter, "Cmax") ~ Deets$Units_Cmax, 
-                                     str_detect(PKparameter, "tmax") ~ Deets$Units_tmax)) %>% 
-            pivot_wider(names_from = Statistic, 
-                        values_from = Value) %>% 
-            select(File, CompoundID, Compound, Inhibitor, Tissue, Simulated,
-                   Dose, # DoseNum, 
-                   PKparameter, # N, 
-                   any_of(c("Geomean", "GCV", "CI90_lower", "CI90_upper", 
-                            "Mean", "SD", "Median", "Minimum", "Maximum")))
-      )
-      
-   }
+   suppressWarnings(
+      Out_agg <- bind_rows(Out_agg) %>%
+         select(PKparameter, Statistic, Value) %>%
+         mutate(Statistic = renameStats(OrigStat = Statistic, 
+                                        use = "simulator to r"), 
+                File = sim_data_file, 
+                Inhibitor = 
+                   case_when(
+                      str_detect(PKparameter, "_withInhib|_ratio") ~ 
+                         determine_myperpetrator(Deets, 
+                                                 prettify_compound_names = F), 
+                      .default = "none"),
+                Tissue = tissue, 
+                CompoundID = compoundToExtract, 
+                Compound = as.character(Deets[
+                   AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
+                Simulated = TRUE,
+                # FIXME - Add DoseNum
+                Dose = as.numeric(
+                   Deets %>%
+                      pull(any_of(paste0("Dose",
+                                         AllCompounds$DosedCompoundSuffix[
+                                            AllCompounds$CompoundID == compoundToExtract])))), 
+                # Units are always these for db files
+                Units = case_when(str_detect(PKparameter, "AUC") ~ Deets$Units_AUC, 
+                                  str_detect(PKparameter, "CL") ~ Deets$Units_CL, 
+                                  str_detect(PKparameter, "Cmax") ~ Deets$Units_Cmax, 
+                                  str_detect(PKparameter, "tmax") ~ Deets$Units_tmax)) %>% 
+         pivot_wider(names_from = Statistic, 
+                     values_from = Value) %>% 
+         select(File, CompoundID, Compound, Inhibitor, Tissue, Simulated,
+                Dose, # DoseNum, 
+                PKparameter, # N, 
+                any_of(c("Geomean", "GCV", "CI90_lower", "CI90_upper", 
+                         "Mean", "SD", "Median", "Minimum", "Maximum")))
+   )
    
    Out <- list("individual" = Out_ind,
                "aggregate" = Out_agg, 
@@ -1927,30 +1897,27 @@ extractPK <- function(sim_data_file,
                 Individual = ifelse(is.na(StartRow_ind), NA, Individual)) %>% 
          filter(complete.cases(PKparam)) %>% unique()
       
-      if(any(returnAggregateOrIndiv %in% c("both", "aggregate"))){
-         
-         StatNames <- c("Geomean", "GCV", "CI90_lower", "CI90_upper", 
-                        "Mean", "SD", "Median", "Minimum", "Maximum")
-         StatNum <- 1:length(StatNames)
-         names(StatNum) <- StatNames
-         
-         suppressMessages(
-            DataCheck_agg <- DataCheck %>% 
-               select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
-               left_join(data.frame(File = unique(DataCheck$File), 
-                                    Stat = StatNames)) %>% 
-               filter(complete.cases(StartRow_agg)) %>% 
-               mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
-                      Cell = paste0(Column, Row_agg), 
-                      Cell = ifelse(is.na(Row_agg), NA, Cell)) %>% 
-               select(File, PKparam, Tab, Column, Cell, Stat) %>% 
-               pivot_wider(names_from = Stat, values_from = Cell)
-         )
-         
-         suppressMessages(
-            DataCheck <- DataCheck %>% left_join(DataCheck_agg)
-         )
-      }
+      StatNames <- c("Geomean", "GCV", "CI90_lower", "CI90_upper", 
+                     "Mean", "SD", "Median", "Minimum", "Maximum")
+      StatNum <- 1:length(StatNames)
+      names(StatNum) <- StatNames
+      
+      suppressMessages(
+         DataCheck_agg <- DataCheck %>% 
+            select(File, PKparam, Tab, Column, StartRow_agg, EndRow_agg) %>% 
+            left_join(data.frame(File = unique(DataCheck$File), 
+                                 Stat = StatNames)) %>% 
+            filter(complete.cases(StartRow_agg)) %>% 
+            mutate(Row_agg = StatNum[Stat] + StartRow_agg - 1, 
+                   Cell = paste0(Column, Row_agg), 
+                   Cell = ifelse(is.na(Row_agg), NA, Cell)) %>% 
+            select(File, PKparam, Tab, Column, Cell, Stat) %>% 
+            pivot_wider(names_from = Stat, values_from = Cell)
+      )
+      
+      suppressMessages(
+         DataCheck <- DataCheck %>% left_join(DataCheck_agg)
+      )
       
       DataCheck <- DataCheck %>% 
          select(-c(Column, StartRow_ind, EndRow_ind, StartRow_agg, EndRow_agg,
@@ -1961,14 +1928,14 @@ extractPK <- function(sim_data_file,
       
       if(class(Out)[1] == "list"){
          Out[["QC"]] <- unique(DataCheck)
-      } else {
-         # If Out is not a list, it is a single data.frame of whichever
-         # the user wanted -- aggregate or individual information. Name
-         # the items in Out accordingly.
-         Out <- list(Out, DataCheck)
-         names(Out) <- c(returnAggregateOrIndiv, "QC")
-      }
+      } 
    }
+   
+   if(exists("Warn_if_noAUCinf_col", inherits = FALSE) == FALSE){
+      Warn_if_noAUCinf_col <- TRUE
+   }
+   
+   Out[["WarnAUCinf"]] <- Warn_if_noAUCinf_col
    
    if(returnExpDetails){
       Out[["ExpDetails"]] <- Deets

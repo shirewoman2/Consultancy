@@ -69,6 +69,9 @@ extractAUCXtab <- function(PKparameters,
       PKparameters <- unique(sub("_dose1|_last", "", PKparameters))
    }
    
+   # Storing whether to include AUCinf extrapolation warnings
+   Warn_if_noAUCinf_col <- as.logical(c())
+   
    # Looping through parameters and extracting values
    for(i in PKparameters){
       
@@ -122,11 +125,18 @@ extractAUCXtab <- function(PKparameters,
                            " on the tab '", Sheet, "' cannot be found in the file '", 
                            sim_data_file, "'.")), 
                     call. = FALSE)
+            
+            Warn_if_noAUCinf_col[i] <- FALSE
+         } else {
+            Warn_if_noAUCinf_col[i] <- TRUE
          }
+         
          suppressMessages(rm(ToDetect, ColNum))
          PKparameters <- setdiff(PKparameters, i)
          
          next
+      } else {
+         Warn_if_noAUCinf_col[i] <- TRUE
       }
       
       suppressWarnings(
@@ -178,7 +188,8 @@ extractAUCXtab <- function(PKparameters,
    Out <- list("Out_ind" = Out_ind,
                "Out_agg" = Out_agg, 
                "DataCheck" = DataCheck, 
-               "TimeInterval" = TimeInterval)
+               "TimeInterval" = TimeInterval,
+               "WarnAUCinf" = all(Warn_if_noAUCinf_col))
    
    return(Out)
    

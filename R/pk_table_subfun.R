@@ -72,11 +72,7 @@ pk_table_subfun <- function(sim_data_file,
          compoundToExtract = unique(PKparameters$CompoundID),
          sheet = ifelse(unique(PKparameters$Sheet) == "default", 
                         NA, unique(PKparameters$Sheet)), 
-         existing_exp_details = existing_exp_details,
-         returnAggregateOrIndiv =
-            switch(as.character(includeTrialMeans),
-                   "TRUE" = c("aggregate", "individual"),
-                   "FALSE" = "aggregate"))
+         existing_exp_details = existing_exp_details)
       
    } else if(str_detect(sim_data_file, "db$")){
       MyPKResults_all <- extractPK_DB(
@@ -84,21 +80,17 @@ pk_table_subfun <- function(sim_data_file,
          PKparameters = PKparameters$PKparameter,
          tissue = unique(PKparameters$Tissue),
          compoundToExtract = unique(PKparameters$CompoundID),
-         existing_exp_details = existing_exp_details,
-         returnAggregateOrIndiv =
-            switch(as.character(includeTrialMeans),
-                   "TRUE" = c("aggregate", "individual"),
-                   "FALSE" = "aggregate"))
+         existing_exp_details = existing_exp_details)
    }
    
    
-   # If there were no PK parameters to be pulled, MyPKResults_all will have
-   # length 0 and we can't proceed.
-   if(length(MyPKResults_all) == 0){
-      # warning(paste0("No PK results were found in the file `",
-      #                sim_data_file, "` for ", unique(PKparameters$CompoundID), " in ", tissue,
-      #                "."), 
-      #         call. = FALSE)
+   # If there were no PK parameters to be pulled, MyPKResults_all$aggregate will
+   # have length 0 and we can't proceed.
+   if(length(MyPKResults_all$aggregate) == 0){
+      warning(paste0("No PK results were found in the file `",
+                     sim_data_file, "` for ", unique(PKparameters$CompoundID), " in ", tissue,
+                     "."),
+              call. = FALSE)
       return()
    }
    
@@ -247,7 +239,8 @@ pk_table_subfun <- function(sim_data_file,
    # AUCinf won't be present in the data but AUCt will be. Check for that and
    # change PKpulled to reflect that change.
    if(any(str_detect(PKrequested, "AUCinf")) & 
-      any(str_detect(PKpulled, "AUCinf")) == FALSE){
+      any(str_detect(PKpulled, "AUCinf")) == FALSE & 
+      MyPKResults_all$WarnAUCinf == TRUE){
       warning(wrapn(paste0("AUCinf included NA values in the file `", 
                            sim_data_file, 
                            "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt instead.")),
