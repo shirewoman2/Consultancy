@@ -1118,6 +1118,22 @@ ct_plot <- function(ct_dataframe = NA,
    t0 <- XStuff$t0
    TimeUnits <- XStuff$TimeUnits
    
+   # Checking whether there are data in the time range requested and warning if
+   # not.
+   if(any(Data$Time >= time_range_relative[1] & 
+          Data$Time <= time_range_relative[2]) == FALSE){
+      warning(wrapn(paste0(
+         "You requested a time range of ", 
+         time_range_relative[1], " to ", time_range_relative[2], 
+         " h, but your data are in the range of ",
+         min(Data$Time), " to ", max(Data$Time), " h. ",
+         "Since none of your data are in the time range requested, the full time range will be returned.")), 
+         call. = FALSE)
+      
+      time_range <- c(min(Data$Time), max(Data$Time))
+      time_range_relative <- time_range
+   }
+   
    # Separating the data by type and calculating trial means
    sim_data_trial <- Data %>%
       filter(Simulated == TRUE &

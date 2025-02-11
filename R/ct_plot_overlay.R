@@ -1724,10 +1724,11 @@ ct_plot_overlay <- function(ct_dataframe,
    UniqueGroups <- ifelse(length(UniqueGroups) == 0, 
                           "none other than time and concentration", str_comma(sort(UniqueGroups)))
    message(paste("Columns that vary in your data:", UniqueGroups))
-   message(paste("Graphing aesthetics you've assigned:", 
-                 ifelse(length(UniqueAES) == 0, 
-                        "none", 
-                        str_comma(paste0(UniqueAES, " (", names(UniqueAES), ")")))))
+   message(wrapn(paste(
+      "Graphing aesthetics you've assigned:", 
+      ifelse(length(UniqueAES) == 0, 
+             "none", 
+             str_comma(paste0(UniqueAES, " (", names(UniqueAES), ")"))))))
    
    # If there are multiple values in linetype_column but user has only listed
    # the default "solid" for linetypes, then warn the user that they might want
@@ -1816,6 +1817,25 @@ ct_plot_overlay <- function(ct_dataframe,
    time_range_relative <- XStuff$time_range_relative
    t0 <- XStuff$t0
    TimeUnits <- XStuff$TimeUnits
+   
+   # Checking whether there are data in the time range requested and warning if
+   # not.
+   if(any(bind_rows(sim_dataframe, obs_dataframe)$Time >= time_range_relative[1] & 
+          bind_rows(sim_dataframe, obs_dataframe)$Time <= time_range_relative[2]) == FALSE){
+      warning(wrapn(paste0(
+         "You requested a time range of ", 
+         time_range_relative[1], " to ", time_range_relative[2], 
+         " h, but your data are in the range of ",
+         min(bind_rows(sim_dataframe, obs_dataframe)$Time), " to ", 
+         max(bind_rows(sim_dataframe, obs_dataframe)$Time), " h. ",
+         "Since none of your data are in the time range requested, the full time range will be returned.")), 
+         call. = FALSE)
+      
+      time_range <- c(min(bind_rows(sim_dataframe, obs_dataframe)$Time),
+                      max(bind_rows(sim_dataframe, obs_dataframe)$Time))
+      time_range_relative <- time_range
+   }
+   
    # When you bind_rows, it drops factors that aren't present in both
    # data.frames, apparently. Adding them back in and assuming that the factors
    # and levels in sim_dataframe are the ones we want.
