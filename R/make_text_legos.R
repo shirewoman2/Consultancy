@@ -147,8 +147,9 @@ make_text_legos <- function(sim_data_file,
       NumDaysInhib <- suppressWarnings(
          # Rounding the day down so that this will be, e.g., "20 days of dosing"
          # rather than "20.5 days of dosing".
-         round_down_unit(
-            Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24, 1))
+         tryCatch(round_down_unit(
+            Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24, 1), 
+            error = \(x) NA))
       NumDaysInhib <- ifelse(is.na(NumDaysInhib) & 
                                 DoseFreq_inhib != "single dose",
                              "**CUSTOM DOSING - FILL IN MANUALLY**",
