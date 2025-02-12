@@ -474,6 +474,14 @@ pk_table <- function(PKparameters = NA,
                                    tissues = tissues, 
                                    existing_exp_details = existing_exp_details)
    
+   if((length(setdiff(compoundsToExtract, 
+                     unique(PKparam_tidied$PKparameters$CompoundID))) == 0 &
+      length(setdiff(unique(PKparam_tidied$PKparameters$CompoundID), 
+                     compoundsToExtract)) == 0) == FALSE){
+      warning(wrapn("You requested one set of compounds for which to get PK  with the argument 'compoundsToExtract' but then a different set of compounds inside the data you supplied for the argument 'PKparameters'. We will use what's in 'PKparameters' preferentially."), 
+              call. = FALSE)
+   }
+   
    # Check for any duplicate observed values b/c that messes up things
    # downstream.
    DupCheck <- PKparam_tidied$PKparameters %>% 

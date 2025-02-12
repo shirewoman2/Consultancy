@@ -87,9 +87,11 @@ pk_table_subfun <- function(sim_data_file,
    # If there were no PK parameters to be pulled, MyPKResults_all$aggregate will
    # have length 0 and we can't proceed.
    if(length(MyPKResults_all$aggregate) == 0){
-      warning(paste0("No PK results were found in the file `",
-                     sim_data_file, "` for ", unique(PKparameters$CompoundID), " in ", tissue,
-                     "."),
+      warning(wrapn(paste0("No PK results were found in the file `",
+                           sim_data_file, "` for the ", 
+                           unique(PKparameters$CompoundID), " in ", 
+                           unique(PKparameters$Tissue),
+                           ".")),
               call. = FALSE)
       return()
    }
