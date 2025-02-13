@@ -362,8 +362,8 @@
 #' 
 pk_table <- function(PKparameters = NA,
                      sim_data_files = NA, 
-                     compoundsToExtract = "substrate",
-                     tissues = "plasma", 
+                     compoundsToExtract = NA,
+                     tissues = NA, 
                      sheet_PKparameters = NA, 
                      existing_exp_details = NA, 
                      mean_type = NA, 
@@ -464,6 +464,15 @@ pk_table <- function(PKparameters = NA,
       add_header_for_DDI <- FALSE
    }
    
+   tissues_user <- tissues
+   if(all(is.na(tissues))){
+      tissues <- "plasma"
+   }
+   
+   compoundsToExtract_user <- compoundsToExtract
+   if(all(is.na(compoundsToExtract))){
+      compoundsToExtract <- "substrate"
+   }
    
    ## Harmonizing PKparameters -------------------------------------------------
    
@@ -474,10 +483,11 @@ pk_table <- function(PKparameters = NA,
                                    tissues = tissues, 
                                    existing_exp_details = existing_exp_details)
    
-   if((length(setdiff(compoundsToExtract, 
-                     unique(PKparam_tidied$PKparameters$CompoundID))) == 0 &
-      length(setdiff(unique(PKparam_tidied$PKparameters$CompoundID), 
-                     compoundsToExtract)) == 0) == FALSE){
+   if(any(complete.cases(compoundsToExtract_user)) && 
+      (length(setdiff(compoundsToExtract, 
+                      unique(PKparam_tidied$PKparameters$CompoundID))) == 0 &
+       length(setdiff(unique(PKparam_tidied$PKparameters$CompoundID), 
+                      compoundsToExtract)) == 0) == FALSE){
       warning(wrapn("You requested one set of compounds for which to get PK  with the argument 'compoundsToExtract' but then a different set of compounds inside the data you supplied for the argument 'PKparameters'. We will use what's in 'PKparameters' preferentially."), 
               call. = FALSE)
    }
