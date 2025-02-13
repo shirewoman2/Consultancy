@@ -1880,7 +1880,9 @@ extractPK <- function(sim_data_file,
                 Dose, # DoseNum, 
                 PKparameter, # N, 
                 any_of(c("Geomean", "GCV", "CI90_lower", "CI90_upper", 
-                         "Mean", "SD", "CV", "Median", "Minimum", "Maximum")))
+                         "Per5", "Per95", 
+                         "Mean", "SD", "CV", 
+                         "Median", "Minimum", "Maximum")))
    )
    
    Out <- list("individual" = Out_ind,
