@@ -796,6 +796,7 @@ pk_table <- function(PKparameters = NA,
       # range if they have requested any variability stats at all.
       temp$PK <- temp$PK %>% 
          mutate(Stat = case_when(str_detect(PKParam, "tmax") & 
+                                    use_median_for_tmax == TRUE &
                                     Stat == "Minimum" & 
                                     any(c({{includeConfInt}}, 
                                           {{includeCV}}, 
@@ -804,6 +805,7 @@ pk_table <- function(PKparameters = NA,
                                           {{includeSD}})) ~ "tmaxmin", 
                                  
                                  str_detect(PKParam, "tmax") & 
+                                    use_median_for_tmax == TRUE &
                                     Stat == "Maximum" & 
                                     any(c({{includeConfInt}}, 
                                           {{includeCV}}, 
@@ -910,40 +912,45 @@ pk_table <- function(PKparameters = NA,
       filter(PKParam %in% GoodPKParam &
                 complete.cases(Value)) %>% unique() 
    
-   TmaxStuff <- MyPKResults %>% 
-      filter(str_detect(PKParam, "tmax") & 
-                !Stat %in% c("Geomean", "Mean", "Median", "S_O")) %>% 
-      mutate(Stat = case_when(Stat == "tmaxmin" &
-                                 {{includeRange}} ~ "Minimum", 
-                              str_detect(PKParam, "tmax") & 
+   if(use_median_for_tmax){
+      TmaxStuff <- MyPKResults %>% 
+         filter(str_detect(PKParam, "tmax") & 
+                   !Stat %in% c("Geomean", "Mean", "Median", "S_O")) %>% 
+         mutate(Stat = case_when(Stat == "tmaxmin" &
+                                    {{includeRange}} ~ "Minimum", 
+                                 str_detect(PKParam, "tmax") & 
+                                    Stat == "tmaxmax" &
+                                    {{includeRange}} ~ "Maximum", 
+                                 
+                                 Stat == "tmaxmin" &
+                                    {{includeConfInt}} ~ "CI90_lower", 
+                                 
                                  Stat == "tmaxmax" &
-                                 {{includeRange}} ~ "Maximum", 
-                              
-                              Stat == "tmaxmin" &
-                                 {{includeConfInt}} ~ "CI90_lower", 
-                              
-                              Stat == "tmaxmax" &
-                                 {{includeConfInt}} ~ "CI90_upper", 
-                              
-                              Stat == "tmaxmin" &
-                                 {{includePerc}} ~ "Per5", 
-                              
-                              Stat == "tmaxmax" &
-                                 {{includePerc}} ~ "Per95")) %>% 
-      filter(complete.cases(Stat)) %>% 
-      unique()
+                                    {{includeConfInt}} ~ "CI90_upper", 
+                                 
+                                 Stat == "tmaxmin" &
+                                    {{includePerc}} ~ "Per5", 
+                                 
+                                 Stat == "tmaxmax" &
+                                    {{includePerc}} ~ "Per95")) %>% 
+         filter(complete.cases(Stat)) %>% 
+         unique()
+      
+      MyPKResults <- MyPKResults %>% 
+         filter(!str_detect(PKParam, "tmax") |
+                   (str_detect(PKParam, "tmax") & 
+                       Stat %in% c("Geomean", "Mean", "Median", "S_O"))) %>% 
+         bind_rows(TmaxStuff)
+      
+   }
    
    MyPKResults <- MyPKResults %>% 
-      filter(!str_detect(PKParam, "tmax") |
-                (str_detect(PKParam, "tmax") & 
-                    Stat %in% c("Geomean", "Mean", "Median", "S_O"))) %>% 
-      bind_rows(TmaxStuff) %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>%
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
              Stat = factor(Stat, levels = unique(
                 AllStats$InternalColNames[
                    which(complete.cases(AllStats$InternalColNames))]))) %>% 
-      arrange(File, SorO, Stat) %>% 
+      arrange(File, CompoundID, SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) 
    
