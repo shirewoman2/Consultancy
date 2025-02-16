@@ -73,6 +73,7 @@
 #' @param checkDataSource TRUE (default) or FALSE for whether to include in the
 #'   output a data.frame that lists exactly where the data were pulled from the
 #'   simulator output file. Useful for QCing.
+#' @param ... other arguments passed through 
 #'
 #' @return Depending on the options selected, returns a list of numerical
 #'   vectors or a list of data.frames: "individual" and "aggregate". If
@@ -96,12 +97,18 @@ extractPK <- function(sim_data_file,
                       existing_exp_details = NA, 
                       includeTrialInfo = TRUE,
                       returnExpDetails = FALSE, 
-                      checkDataSource = TRUE){
+                      checkDataSource = TRUE, 
+                      ...){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   if("returnAggregateOrIndiv" %in% names(match.call())){
+      warning(wrapn("You specified something for the soon-to-be-deprecated argument 'returnAggregateOrIndiv', which we will ignore and instead give you both individual and aggregate results. Please adjust your code to omit that argument going forward."), 
+              call. = FALSE)
    }
    
    # Checking on any user-specified sheets b/c that also implies which PK

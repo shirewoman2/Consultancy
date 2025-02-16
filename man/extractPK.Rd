@@ -13,7 +13,8 @@ extractPK(
   existing_exp_details = NA,
   includeTrialInfo = TRUE,
   returnExpDetails = FALSE,
-  checkDataSource = TRUE
+  checkDataSource = TRUE,
+  ...
 )
 }
 \arguments{
@@ -93,6 +94,8 @@ checkDataSource to TRUE, 3. info for checking the data. (See
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
+
+\item{...}{other arguments passed through}
 }
 \value{
 Depending on the options selected, returns a list of numerical
