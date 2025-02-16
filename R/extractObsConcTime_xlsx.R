@@ -85,7 +85,7 @@ extractObsConcTime_xlsx <- function(obs_data_file){
                       ObsColNames[[SimVersion]]$ColName[
                          ObsColNames[[SimVersion]]$DosingInfo == TRUE]))) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
-      pivot_longer(cols = -c(Individual, ObsFile, CompoundID, DoseAmount, Time), 
+      pivot_longer(cols = -c(Individual, ObsFile, CompoundID, Time), 
                    names_to = "Parameter", 
                    values_to = "Value") %>% 
       mutate(ParameterCmpd = case_when(
