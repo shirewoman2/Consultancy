@@ -99,6 +99,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                      str_comma(paste0("`", MissingSimFiles, "`")), 
                      " is/are not present and thus will not be extracted.\n"), 
               call. = FALSE)
+      return()
    }
    
    sim_workspace_files <- WkspFile
