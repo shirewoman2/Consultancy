@@ -4,10 +4,13 @@
 \alias{blues}
 \title{Create a vector of blues}
 \usage{
-blues(ncolors)
+blues(ncolors, shade = "regular")
 }
 \arguments{
 \item{ncolors}{number of colors desired}
+
+\item{shade}{the shade of colors to use, which can be "regular" (default),
+"darker", or "lighter"}
 }
 \value{
 a character vector of colors

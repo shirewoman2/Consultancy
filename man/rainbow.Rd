@@ -4,10 +4,13 @@
 \alias{rainbow}
 \title{Create a vector of a rainbow of colors}
 \usage{
-rainbow(ncolors)
+rainbow(ncolors, shade = "regular")
 }
 \arguments{
 \item{ncolors}{number of colors desired}
+
+\item{shade}{the shade of colors to use, which can be "regular" (default),
+"darker", or "lighter"}
 }
 \value{
 a character vector of colors
