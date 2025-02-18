@@ -356,7 +356,7 @@ ct_plot_mult <- function(ct_dataframe,
                          fig_height = 8,
                          fig_width = 8,
                          ...){
-  
+   
    # error catching -------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
@@ -617,6 +617,8 @@ ct_plot_mult <- function(ct_dataframe,
                  graph_title = Title_i,
                  hline_position = hline_position, 
                  hline_style = hline_style, 
+                 vline_position = vline_position, 
+                 vline_style = vline_style, 
                  ..., # comment this when developing
                  graph_title_size = graph_title_size)
       
