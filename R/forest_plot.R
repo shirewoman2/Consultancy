@@ -1110,8 +1110,7 @@ forest_plot <- function(forest_dataframe,
    )
    
    if(length(VarStat) == 0){
-      VarStat <- FDnames[which(FDnames %in% c("CI90_lower", "CI90_upper", 
-                                              "CI95_lower", "CI95_upper", 
+      VarStat <- FDnames[which(FDnames %in% c("CI90_lower", "CI95_lower", # NB: This SHOULD be only lower right here
                                               "Per5","Per95", 
                                               "Minimum", "Maximum", "SD", "GCV", "ArithCV"))][1]
       
@@ -1132,6 +1131,17 @@ forest_plot <- function(forest_dataframe,
                                      "standard deviation" = "SD"), 
                               " will be used.")), 
                  call. = FALSE)
+         
+         VarStat <- switch(as.character(VarStat[1]), 
+                           "CI90_lower" = c("CI90_lower", "CI90_upper"), 
+                           "CI95_lower" = c("CI95_lower", "CI95_upper"), 
+                           "Per5" = c("Per5", "Per95"), 
+                           "Minimum" = c("Minimum", "Maximum"), 
+                           "ArithCV" = "ArithCV", 
+                           "GCV" = "GCV", 
+                           "sd" = "SD",
+                           "SD" = "SD", 
+                           "standard deviation" = "SD")
       }
    }
    
