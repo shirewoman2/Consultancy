@@ -740,9 +740,18 @@ forest_plot <- function(forest_dataframe,
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "^cv$"))][1] <- "ArithCV"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "ci(90|95)?_low(er)?"))][1] <- "CI90_lower"
+                                            "ci95_low(er)?"))][1] <- "CI95_lower"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
-                                            "ci(90|95)?_up(per)?|ci(90|95)?_high"))][1] <- "CI90_upper"
+                                            "ci95_up(per)?|ci95_high"))][1] <- "CI95_upper"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "ci90_low(er)?"))][1] <- "CI90_lower"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "ci90_up(per)?|ci90_high"))][1] <- "CI90_upper"
+   # If the col name doesn't include 90 and it appears to be a CI, then make it be 90 by default. 
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "ci_low(er)?"))][1] <- "CI90_lower"
+   names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
+                                            "ci_up(per)?|ci_high"))][1] <- "CI90_upper"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
                                             "centile_lower|per5$"))][1] <- "Per5"
    names(forest_dataframe)[which(str_detect(tolower(names(forest_dataframe)), 
@@ -769,17 +778,26 @@ forest_plot <- function(forest_dataframe,
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "^cv$"))] <- "ArithCV"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "ci(90|95)?_lower"))] <- "CI90_lower"
+                                          "ci95_lower"))] <- "CI95_lower"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                          "ci(90|95)?_upper"))] <- "CI90_upper"
+                                          "ci95_upper"))] <- "CI95_upper"
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "ci90_lower"))] <- "CI90_lower"
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "ci90_upper"))] <- "CI90_upper"
+      # If the col name doesn't include 90 and it appears to be a CI, then make it be 90 by default. 
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "ci_lower"))] <- "CI90_lower"
+      names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
+                                          "ci_upper"))] <- "CI90_upper"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "centile_lower|per5$"))] <- "Per5"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "centile_upper|per95"))] <- "Per95"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                               "^min(imum)?$"))][1] <- "Minimum"
+                                          "^min(imum)?$"))][1] <- "Minimum"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
-                                               "^max(imum)?$"))][1] <- "Maximum"
+                                          "^max(imum)?$"))][1] <- "Maximum"
       names(observed_PK)[which(str_detect(tolower(names(observed_PK)), 
                                           "pkparameter"))] <- "PKparameter"
       
@@ -866,6 +884,9 @@ forest_plot <- function(forest_dataframe,
                Statistic == "90% CI - Lower" ~ "CI90_lower",
                Statistic == "90% CI - Upper" ~ "CI90_upper", 
                Statistic == "90% CI" ~ "CI90concat", 
+               Statistic == "95% CI - Lower" ~ "CI95_lower",
+               Statistic == "95% CI - Upper" ~ "CI95_upper", 
+               Statistic == "95% CI" ~ "CI95concat", 
                
                Statistic == "Standard deviation" ~ "SD",
                Statistic == "5th Percentile" ~ "Per5", 
@@ -903,6 +924,8 @@ forest_plot <- function(forest_dataframe,
                                           "GMR" ~ "Geomean", 
                                           "CI90_lo"~ "CI90_lower",
                                           "CI90_hi" ~ "CI90_upper", 
+                                          "CI95_lo"~ "CI95_lower",
+                                          "CI95_hi" ~ "CI95_upper", 
                                           .default = Statistic)) %>% 
             pivot_wider(names_from = "Statistic", values_from = "Value")
          
@@ -919,6 +942,8 @@ forest_plot <- function(forest_dataframe,
                                                 "GMR" ~ "Geomean", 
                                                 "CI90_lo"~ "CI90_lower",
                                                 "CI90_hi" ~ "CI90_upper", 
+                                                "CI95_lo"~ "CI95_lower",
+                                                "CI95_hi" ~ "CI95_upper", 
                                                 .default = Statistic)) %>% 
                   pivot_wider(names_from = "Statistic", values_from = "Value")
             }
@@ -931,6 +956,8 @@ forest_plot <- function(forest_dataframe,
       observed_PK <- observed_PK %>% 
          rename_with(.fn = ~ gsub("CI90_lo$|CI90_Lower|CI_lower", "CI90_lower", .x)) %>% 
          rename_with(.fn = ~ gsub("CI90_hi$|CI90_Upper|CI_upper", "CI90_upper", .x)) %>% 
+         rename_with(.fn = ~ gsub("CI95_lo$|CI95_Lower|CI_lower", "CI95_lower", .x)) %>% 
+         rename_with(.fn = ~ gsub("CI95_hi$|CI95_Upper|CI_upper", "CI95_upper", .x)) %>% 
          rename_with(.fn = ~ gsub("Centile_Upper", "Per95", .x)) %>% 
          rename_with(.fn = ~ gsub("Centile_Lower", "Per5", .x))
    }
@@ -967,7 +994,7 @@ forest_plot <- function(forest_dataframe,
    if(include_dose_num == FALSE){
       names(forest_dataframe) <- sub("Dose 1 |Last dose ", "",
                                      names(forest_dataframe))
-   
+      
       PKparameters <- sub("_dose1|_last", "", PKparameters)
       names(PK_labels) <- sub("_dose1|_last", "", names(PK_labels))
       
@@ -1037,6 +1064,7 @@ forest_plot <- function(forest_dataframe,
    FDnames <- factor(names(forest_dataframe), 
                      levels = c("Geomean", "Mean", "Median", 
                                 "CI90_lower", "CI90_upper", 
+                                "CI95_lower", "CI95_upper", 
                                 "Per5","Per95", 
                                 "Minimum", "Maximum",
                                 "SD", "GCV", "ArithCV"))
@@ -1071,7 +1099,7 @@ forest_plot <- function(forest_dataframe,
       FDnames[which(FDnames %in% switch(
          variability_type, 
          "90% CI" = c("CI90_lower", "CI90_upper"), 
-         "95% CI" = c("CI90_lower", "CI90_upper"), 
+         "95% CI" = c("CI95_lower", "CI95_upper"), 
          "5th to 95th percentiles" = c("Per5", "Per95"), 
          "range" = c("Minimum", "Maximum"), 
          "arithmetic CV" = "ArithCV", 
@@ -1083,7 +1111,7 @@ forest_plot <- function(forest_dataframe,
    
    if(length(VarStat) == 0){
       VarStat <- FDnames[which(FDnames %in% c("CI90_lower", "CI90_upper", 
-                                              "CI90_lower", "CI90_upper", 
+                                              "CI95_lower", "CI95_upper", 
                                               "Per5","Per95", 
                                               "Minimum", "Maximum", "SD", "GCV", "ArithCV"))][1]
       
@@ -1093,8 +1121,9 @@ forest_plot <- function(forest_dataframe,
       } else {
          warning(wrapn(paste0("You requested a variability_type of ", 
                               variability_type, ", but that was not available in your data. Instead, ", 
-                              switch(VarStat[1], 
-                                     "CI90_lower" = "the geometric X% confidence interval", 
+                              switch(as.character(VarStat[1]), 
+                                     "CI90_lower" = "the geometric 90% confidence interval", 
+                                     "CI95_lower" = "the geometric 95% confidence interval", 
                                      "Per5" = "5th to 95th percentiles",
                                      "range" = "the range",
                                      "ArithCV" = "the arithmetic CV",
@@ -1157,7 +1186,7 @@ forest_plot <- function(forest_dataframe,
       CenterStat_obs <- names(observed_PK)[
          which(names(observed_PK) %in% c("Geomean", "Mean", "Median"))]
       VarStat_obs <- names(observed_PK)[
-         which(names(observed_PK) %in% c("CI90_lower", "CI90_lower", "SD_Lower",
+         which(names(observed_PK) %in% c("CI90_lower", "CI95_lower", "SD_Lower",
                                          "Per5", "Minimum"))]
       
       if(any(CenterStat_obs %in% CenterStat) == FALSE){
@@ -1703,7 +1732,7 @@ forest_plot <- function(forest_dataframe,
                           "Median" = "Ratio of Medians"), 
                    switch(VarStat[1], 
                           "CI90_lower" = "(90% Confidence Interval)", 
-                          "CI90_lower" = "(95% Confidence Interval)", 
+                          "CI95_lower" = "(95% Confidence Interval)", 
                           "Per5" = "(5th to 95th Percentiles)", 
                           "Minimum" = "(Range)",
                           "SD_Lower" = "(Standard Deviation)", 
