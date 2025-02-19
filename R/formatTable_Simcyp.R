@@ -546,7 +546,7 @@ formatTable_Simcyp <- function(DF,
       NewNames <- OrigNames
    }
    
-   ### Optionally making things bold face ---------------------------------------
+   ### Bold face --------------------------------------------------------------
    if(any(sapply(bold_cells, complete.cases))){
       for(cells in 1:length(bold_cells)){
          
@@ -580,7 +580,7 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
-   ### center the header row, bg white -----------------------------------------
+   ### Center the header row, bg white -----------------------------------------
    FT <- FT %>% 
       flextable::align(align = "center", part = "header") %>% 
       
@@ -600,7 +600,8 @@ formatTable_Simcyp <- function(DF,
                                      "FALSE TRUE" = 2:ncol(DF)))
    }
    
-   ### Optionally including shading whenever the shading column changes ------------
+   ### Shading columns -------------------------------------------------------
+   
    if(as_label(shading_column) != "<empty>"){
       
       ShadeCol <- DF %>% pull(!!shading_column)
@@ -740,7 +741,7 @@ formatTable_Simcyp <- function(DF,
       }
    }
    
-   ### Optionally highlighting poor fidelity S/O values -----------------------
+   ### Highlight S/O values --------------------------------------------------
    
    if(any(complete.cases(highlight_so_cutoffs))){
       
@@ -801,6 +802,13 @@ formatTable_Simcyp <- function(DF,
                   as.numeric(t(DF[i, ])) > highlight_so_cutoffs[j] | 
                      as.numeric(t(DF[i, ])) < 1/highlight_so_cutoffs[j])
             )
+            
+            if(highlight_so_cutoffs[j] == 1){
+               suppressWarnings(
+                  SO_col <- c(SO_col, 
+                              which(as.numeric(t(DF[i, ])) == 1)))
+            }
+            
             SO_col <- intersect(SO_col, PKCols)
             
             if(length(SO_col) > 0){
