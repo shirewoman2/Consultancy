@@ -960,39 +960,26 @@ pk_table <- function(PKparameters = NA,
    if(includeTrialMeans){
       TM <- MyPKResults %>% 
          filter(Stat %in% c("MinMean", "MaxMean")) %>%
-         summarize(across(.cols = -c(Stat, SorO, Sheet, CompoundID, 
-                                     Tissue, File),
-                          .fns = function(x) {paste(x[1], "to", x[2])})) 
+         group_by(SorO, File, Sheet, CompoundID, Tissue) %>% 
+         summarize(across(.cols = -Stat,
+                          .fns = function(x) {paste(x[1], "to", x[2])})) %>% 
+         mutate(Stat = "TrialMeanRange")
       
       MyPKResults <- MyPKResults %>%
-         filter(Stat != "MaxMean")
-      
-      for(col in names(TM)){
-         MyPKResults[which(MyPKResults$Stat == "MinMean"), col] <- 
-            TM[1, col]
-      }
-      
-      MyPKResults$Stat[which(MyPKResults$Stat == "MinMean")] <- "TrialMeanRange"
+         filter(!Stat %in% c("MaxMean", "MinMean")) %>% 
+         bind_rows(TM)
       
       TM_SO <- MyPKResults %>% 
          filter(Stat %in% c("S_O_TM_MinMean", "S_O_TM_MaxMean")) %>%
-         summarize(across(.cols = -c(Stat, SorO, Sheet, CompoundID, 
-                                     Tissue, File),
+         group_by(SorO, File, Sheet, CompoundID, Tissue) %>% 
+         summarize(across(.cols = -Stat,
                           .fns = function(x) {paste(x[1], "to", x[2])})) %>% 
-         mutate(across(.cols = everything(), 
-                       .fns = function(x) ifelse(x == "NA to NA",
-                                                 as.character(NA), x)))
+         mutate(Stat = "S_O_TM_Range")
       
       if(nrow(TM_SO) > 0){
          MyPKResults <- MyPKResults %>%
-            filter(Stat != "S_O_TM_MaxMean")
-         
-         for(col in names(TM_SO)){
-            MyPKResults[which(MyPKResults$Stat == "S_O_TM_MinMean"), col] <- 
-               TM_SO[1, col]
-         }
-         
-         MyPKResults$Stat[which(MyPKResults$Stat == "S_O_TM_MinMean")] <- "S_O_TM_Range"
+            filter(!Stat %in% c("S_O_TM_MaxMean", "S_O_TM_MinMean")) %>% 
+            bind_rows(TM_SO)
       }
    }
    
@@ -1033,22 +1020,22 @@ pk_table <- function(PKparameters = NA,
             }
             
             temp <- temp %>%
-               mutate(across(.cols = !any_of(c("Stat", "SorO", "Statistic",
-                                               "File", "Sheet", 
-                                               "CompoundID", "Tissue")),
-                             .fns = function(x) {
-                                ifelse(all(complete.cases(c(x[1], x[2]))),
-                                       switch(variability_format, 
-                                              "to" = paste(x[1], "to", x[2]),
-                                              "hyphen" = paste(x[1], "-", x[2]),
-                                              "brackets" = paste0("[", x[1], ", ", x[2], "]"), 
-                                              "parentheses" = paste0("(", x[1], ", ", x[2], ")")),
-                                       NA)}),
-                      Stat = j)
+               group_by(SorO, File, Sheet, CompoundID, Tissue) %>% 
+               summarize(across(.cols = -Stat,
+                                .fns = function(x) {
+                                   ifelse(all(complete.cases(c(x[1], x[2]))),
+                                          switch(variability_format, 
+                                                 "to" = paste(x[1], "to", x[2]),
+                                                 "hyphen" = paste(x[1], "-", x[2]),
+                                                 "brackets" = paste0("[", x[1], ", ", x[2], "]"), 
+                                                 "parentheses" = paste0("(", x[1], ", ", x[2], ")")),
+                                          NA)})) %>% 
+               mutate(Stat = j)
             
-            MyPKResults[[i]][which(MyPKResults[[i]]$Stat == VarRows[[j]][1]), ] <-
-               temp[1, ]
-            MyPKResults[[i]] <- MyPKResults[[i]] %>% filter(Stat != VarRows[[j]][2])
+            MyPKResults[[i]] <- MyPKResults[[i]] %>% 
+               filter(!Stat %in% VarRows[[j]]) %>% 
+               bind_rows(temp)
+            
             rm(temp)
          }
       }
@@ -1070,40 +1057,11 @@ pk_table <- function(PKparameters = NA,
       }
    }
    
-   # StatNames <- c("Geomean" = "Simulated",
-   #                "Mean" = "Simulated",
-   #                "GCV" = "CV%",
-   #                "CV" = "CV%",
-   #                "SD" = "Standard deviation",
-   #                "CI90_lower" = "90% CI - Lower",
-   #                "CI90_upper" = "90% CI - Upper",
-   #                "CI90concat" = "90% CI",
-   #                "CI95_lower" = "95% CI - Lower",
-   #                "CI95_upper" = "95% CI - Upper",
-   #                "CI95concat" = "95% CI",
-   #                "Per5" = "5th Percentile",
-   #                "Per95" = "95th Percentile",
-   #                "Per95concat" = "5th to 95th Percentile",
-   #                "Minimum" = "Minimum", 
-   #                "Maximum" = "Maximum",
-   #                "Median" = "Median",
-   #                "Rangeconcat" = "Range",
-   #                
-   #                "geomean_obs" = "Observed",
-   #                "mean_obs" = "Observed", 
-   #                "CV_obs" = "Observed CV%",
-   #                "GCV_obs" = "Observed CV%", 
-   #                "CIL_obs" = "observed CI - Lower",
-   #                "CIU_obs" = "observed CI - Upper",
-   #                "CIconcat_obs" = "Observed CI",
-   #                "Rangeconcat_obs" = "Observed range", 
-   #                
-   #                "S_O" = "S/O",
-   #                "S_O_TM_MinMean" = "S/O range for trial means",
-   #                "MinMean" = "Range of trial means")
-   
    MyPKResults <- MyPKResults %>%
-      mutate(Statistic = ifelse(SorO == "Obs", 
+      mutate(across(.cols = everything(), 
+                    .fns = function(x) ifelse(x == "NA to NA",
+                                              as.character(NA), x)), 
+             Statistic = ifelse(SorO == "Obs", 
                                 paste0(Stat, "_obs"), Stat),
              Statistic = renameStats(Statistic, use = "report"), 
              Statistic = ifelse(SorO == "Obs" & Statistic == "Simulated", 
