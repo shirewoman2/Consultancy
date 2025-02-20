@@ -2698,7 +2698,7 @@ ct_plot_overlay <- function(ct_dataframe,
             AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
                                 pull(colorBy_column))
             
-            MyColors <- c(MyColors, "black")
+            MyColors[which(AllCBC %in% c("mean", "geomean", "median"))] <- "black"
             names(MyColors) <- levels(ct_dataframe$colorBy_column)
             
          } else {
