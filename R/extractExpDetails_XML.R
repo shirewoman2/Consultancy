@@ -234,7 +234,11 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                DeetInfo <- XMLDeets %>% 
                   filter(DataSource == "workspace or database" & Detail == k)
                DeetLevels <- t(DeetInfo[, paste0("Level", 1:5)])
-               DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
+               if(all(complete.cases(DeetLevels))){
+                  DeetLevels <- "5"
+               } else {
+                  DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
+               }
                
                # Check for a switch b/c that will change what tag we extract
                if(complete.cases(DeetInfo$XMLswitch)){
@@ -270,8 +274,10 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                             DeetInfo$Level3]]), 
                          "4" = XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
                             DeetInfo$Level3]][[DeetInfo$Level4]]), 
+                         # All the level 5 details I've seen all have a number
+                         # for level 4, and this fails if that's character data.
                          "5" = XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                            DeetInfo$Level3]][[DeetInfo$Level4]][[
+                            DeetInfo$Level3]][[as.numeric(DeetInfo$Level4)]][[
                                DeetInfo$Level5]]))
                
                # Decoding as necessary. Add to the options for k as needed.
