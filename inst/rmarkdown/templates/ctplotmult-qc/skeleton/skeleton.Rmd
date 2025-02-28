@@ -6,7 +6,9 @@
 formatTable_Simcyp(annotateDetails(as.data.frame(Deets) %>% 
                                       filter(File %in% unique(ct_dataframe$File)), 
                                    detail_set = "Methods") %>% 
-                      select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)), 
+                      select(-any_of(c("SimulatorSection", "Sheet", "Notes",
+                                       "CompoundID", "Compound", 
+                                       "DataSource"))), 
                    shading_column = Detail)
 
 ```
