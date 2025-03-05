@@ -281,7 +281,7 @@ ct_y_axis <- function(ADAMorAdvBrain,
          
       } else {
          if(pad_y_axis){
-            pad_y_num <-  c(0.02, 0)
+            pad_y_num <-  c(0.02, 0.05)
          } else {
             pad_y_num <- c(0, 0)
          }
