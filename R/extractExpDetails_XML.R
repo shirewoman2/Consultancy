@@ -294,8 +294,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                   
                   str_detect(k, "Permeability_reference_lock") ~
                      case_match(DeetValue, 
-                                "true" ~ "unlocked", 
-                                "false" ~ "locked"), 
+                                "true" ~ "locked", 
+                                "false" ~ "unlocked"), 
                   
                   TRUE ~ DeetValue)
                
