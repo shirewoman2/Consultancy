@@ -10,8 +10,7 @@ extractPK_DB(
   PKparameters = NA,
   which_doses = NA,
   tissue = "plasma",
-  existing_exp_details,
-  returnAggregateOrIndiv = "aggregate"
+  existing_exp_details
 )
 }
 \arguments{
@@ -69,12 +68,6 @@ extractExpDetails you said \code{exp_details = "Input Sheet"} or
 that object here, unquoted. If left as NA, this function will run
 \code{extractExpDetails} behind the scenes to figure out some information
 about your experimental set up.}
-
-\item{returnAggregateOrIndiv}{return aggregate (default) and/or individual PK
-parameters? Options are "aggregate", "individual", or "both". For aggregate
-data, values are pulled from simulator output -- not calculated -- and the
-output will be a data.frame with the PK parameters in columns and the
-statistics reported exactly as in the simulator output file.}
 }
 \value{
 a list: "individual" = individual PK data, "aggregate" = aggregate PK

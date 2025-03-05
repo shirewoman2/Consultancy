@@ -11,10 +11,10 @@ extractPK(
   compoundToExtract = "substrate",
   tissue = "plasma",
   existing_exp_details = NA,
-  returnAggregateOrIndiv = "aggregate",
   includeTrialInfo = TRUE,
   returnExpDetails = FALSE,
-  checkDataSource = TRUE
+  checkDataSource = TRUE,
+  ...
 )
 }
 \arguments{
@@ -80,15 +80,8 @@ that object here, unquoted. If left as NA, this function will run
 \code{extractExpDetails} behind the scenes to figure out some information
 about your experimental set up.}
 
-\item{returnAggregateOrIndiv}{return aggregate (default) and/or individual PK
-parameters? Options are "aggregate", "individual", or "both". For aggregate
-data, values are pulled from simulator output -- not calculated -- and the
-output will be a data.frame with the PK parameters in columns and the
-statistics reported exactly as in the simulator output file.}
-
 \item{includeTrialInfo}{TRUE or FALSE (default) for whether to include which
-individual and trial the data describe. This only applies when
-\code{returnAggregateOrIndiv} is "individual" or "both".}
+individual and trial the data describe.}
 
 \item{returnExpDetails}{TRUE or FALSE: Since, behind the scenes, this
 function extracts experimental details from the "Summary" tab of the
@@ -101,6 +94,8 @@ checkDataSource to TRUE, 3. info for checking the data. (See
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
+
+\item{...}{other arguments passed through}
 }
 \value{
 Depending on the options selected, returns a list of numerical

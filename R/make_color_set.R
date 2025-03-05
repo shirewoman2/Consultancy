@@ -61,6 +61,10 @@
 #'   \link{colorRampPalette}.}}
 #'
 #' @param num_colors the number of colors needed
+#' @param shade for the color_sets "blues", "blue-green", "greens", "purples",
+#'   "reds", and "rainbow", the shade of colors to use, which can be "regular"
+#'   "darker", or "lighter". This will be ignored for other supplied values for
+#'   color_set.
 #'
 #' @return a character vector of color names
 #' @export
@@ -74,7 +78,9 @@
 #' make_color_set("Brewer set 1", 4) %>% scales::show_col()
 #'
 #' 
-make_color_set <- function(color_set, num_colors){
+make_color_set <- function(color_set, 
+                           num_colors, 
+                           shade = NA){
    
    # error catching -------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -137,6 +143,15 @@ make_color_set <- function(color_set, num_colors){
                                      "brewer.*1|set.*1"), 
                           "set1", color_set)
       
+      shade <- case_when(is.na(shade) & 
+                            color_set %in% c("greens", "purples") ~ "darker", 
+                         
+                         is.na(shade) & 
+                            color_set %in% c("blues", "blue-green", "reds", 
+                                             "rainbow") ~ "regular", 
+                         
+                         .default = shade)
+      
       suppressWarnings(
          MyColors <- 
             switch(
@@ -145,12 +160,12 @@ make_color_set <- function(color_set, num_colors){
                # really light.
                "set2" = RColorBrewer::brewer.pal(num_colors, "Dark2")[
                   1:num_colors], 
-               "blue-green" = blueGreens(num_colors),
-               "blues" = blues(num_colors),
-               "greens" = chartreuse(num_colors, shade = "darker"), 
-               "purples" = purples(num_colors, shade = "darker"), 
-               "reds" = reds(num_colors), 
-               "rainbow" = rainbow(num_colors),
+               "blue-green" = blueGreens(num_colors, shade = shade),
+               "blues" = blues(num_colors, shade = shade),
+               "greens" = greens(num_colors, shade = shade), 
+               "purples" = purples(num_colors, shade = shade), 
+               "reds" = reds(num_colors, shade = shade), 
+               "rainbow" = rainbow(num_colors, shade = shade),
                "set1" = RColorBrewer::brewer.pal(num_colors, "Set1")[
                   1:num_colors],
                "tableau" = ggthemes::tableau_color_pal(

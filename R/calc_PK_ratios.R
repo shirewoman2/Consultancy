@@ -544,7 +544,6 @@ calc_PK_ratios <- function(PKparameters = NA,
          PKparameters = unique(PKparameters$PKparameter[PKparameters$NorD == "Numerator"]), 
          sheet = unique(PKparameters$Sheet[PKparameters$NorD == "Numerator"]),
          existing_exp_details = existing_exp_details,
-         returnAggregateOrIndiv = "both",
          returnExpDetails = FALSE) 
    )
    
@@ -562,8 +561,7 @@ calc_PK_ratios <- function(PKparameters = NA,
          PKparameters = unique(PKparameters$PKparameter[PKparameters$NorD == "Denominator"]), 
          sheet = unique(PKparameters$Sheet[PKparameters$NorD == "Denominator"]),
          existing_exp_details = existing_exp_details,
-         returnExpDetails = FALSE,
-         returnAggregateOrIndiv = "both")
+         returnExpDetails = FALSE)
    )
    
    if(length(PKdenominator) == 0){

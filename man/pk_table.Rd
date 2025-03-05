@@ -7,8 +7,8 @@
 pk_table(
   PKparameters = NA,
   sim_data_files = NA,
-  compoundsToExtract = "substrate",
-  tissues = "plasma",
+  compoundsToExtract = NA,
+  tissues = NA,
   sheet_PKparameters = NA,
   existing_exp_details = NA,
   mean_type = NA,

@@ -53,11 +53,6 @@
 #'   NA (default), only the first- and last-dose PK will be included. An example
 #'   of good input: \code{which_doses = 1} or \code{which_doses = c(1:3, 7)} or
 #'   \code{which_doses = "first"} or \code{which_doses = "last"}
-#' @param returnAggregateOrIndiv return aggregate (default) and/or individual PK
-#'   parameters? Options are "aggregate", "individual", or "both". For aggregate
-#'   data, values are pulled from simulator output -- not calculated -- and the
-#'   output will be a data.frame with the PK parameters in columns and the
-#'   statistics reported exactly as in the simulator output file.
 #'   
 #'
 #' @return a list: "individual" = individual PK data, "aggregate" = aggregate PK
@@ -71,8 +66,7 @@ extractPK_DB <- function(sim_data_file,
                          PKparameters = NA, 
                          which_doses = NA, 
                          tissue = "plasma", 
-                         existing_exp_details, 
-                         returnAggregateOrIndiv = "aggregate"){
+                         existing_exp_details){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -101,13 +95,6 @@ extractPK_DB <- function(sim_data_file,
    
    # If they didn't include ".db" at the end, add that.
    sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$|\\.db", "", sim_data_file), ".db")
-   
-   returnAggregateOrIndiv <- tolower(returnAggregateOrIndiv)
-   if(any(c("individual", "aggregate", "both") %in% returnAggregateOrIndiv) == FALSE){
-      warning(wrapn("The only possibly values for the argument 'returnAggregateOrIndiv' are 'aggregate', 'individual', or 'both', and you have supplied something else. We'll return both."), 
-              call. = FALSE)
-      returnAggregateOrIndiv <- "both"
-   }
    
    
    # Figuring out which data to pull --------------------------------------------------
@@ -186,6 +173,7 @@ extractPK_DB <- function(sim_data_file,
                                          verbose = FALSE))
    
    conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
+   on.exit(expr = RSQLite::dbDisconnect(conn))
    
    # # Comment this out for actual function, but here is how to see all possible
    # # profiles. 
@@ -369,19 +357,9 @@ extractPK_DB <- function(sim_data_file,
    
    # Returning -------------------------------------------------------------
    
-   RSQLite::dbDisconnect(conn)
-   
-   Out <- list()
-   
-   if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
-      Out[["aggregate"]] <- PK_agg
-   }
-   
-   if(any(c("individual", "both") %in% returnAggregateOrIndiv)){
-      Out[["individual"]] <- PK_indiv
-   }
-   
-   Out[["TimeInterval"]] <- Intervals
+   Out <- list("aggregate" = PK_agg, 
+               "individual" = PK_indiv,
+               "TimeInterval" = Intervals)
    
    return(Out)
    

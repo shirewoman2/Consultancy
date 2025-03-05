@@ -809,8 +809,8 @@ ct_plot_overlay <- function(ct_dataframe,
    # tictoc::toc(log = TRUE)
    
    # tictoc::tic(msg = "error catching: Checking exp details")
-   # Getting experimental details if they didn't supply them and want to have a
-   # QC graph
+   # Harmonizing details if they'd supplied them and also getting experimental
+   # details if they didn't supply them and want to have a QC graph.
    if(qc_graph == TRUE | "logical" %in% class(existing_exp_details) == FALSE){
       
       if("logical" %in% class(existing_exp_details)){ 
@@ -820,21 +820,37 @@ ct_plot_overlay <- function(ct_dataframe,
             error = function(x) "missing file")
          
       } else {
+         # Possible inputs that will work: existing_exp_details is a named list
+         # that includes an item titled "MainDetails" (ideal) or
+         # existing_exp_details is a data.frame with, at a minimum, the columns
+         # File and SimulatorVersion. If existing_exp_details does not meet one
+         # of those criteria, ignore it.
+         IsDetails <- "list" %in% class(existing_exp_details) |
+            ("data.frame" %in% class(existing_exp_details) &&
+                all(c("File", "SimulatorVersion") %in%
+                       names(existing_exp_details)))
          
-         Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
-            filter(File %in% unique(ct_dataframe$File))
+         if(IsDetails){
+            Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
+               filter(File %in% unique(ct_dataframe$File))
+         } else {
+            warning(wrapn("The object you supplied for the argument 'existing_exp_details' does not appear to be output from running 'extractExpDetails', so we cannot use it for getting information about how your simulation was set up."), 
+                    call. = FALSE)
+            Deets <- data.frame()
+            existing_exp_details <- as.logical(NA)
+         }
          
-         if(nrow(Deets) == 0 | all(unique(ct_dataframe$File) %in% Deets$File) == FALSE){
+         if(nrow(Deets) == 0 & qc_graph){
             Deets <- tryCatch(
-               extractExpDetails_mult(sim_data_files = unique(ct_dataframe$File), 
-                                      exp_details = "Summary and Input")[["MainDetails"]], 
+               extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
+                                 exp_details = "Summary and Input")[["MainDetails"]], 
                error = function(x) "missing file")
          }
       }
       
       if(qc_graph == TRUE & 
          (class(Deets)[1] == "character" || nrow(Deets) == 0)){
-         warning(wrapn("We couldn't find the source Excel files for this graph, so we can't QC it."), 
+         warning(wrapn("The object you supplied for the argument 'existing_exp_details' does not include information on the simulation file in what you supplied for 'ct_dataframe' and we weren't able to find that simulation file to figure out how that simulation was set up, so we cannot create a QC graph."), 
                  call. = FALSE)
          qc_graph <- FALSE
       }
@@ -2698,7 +2714,7 @@ ct_plot_overlay <- function(ct_dataframe,
             AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
                                 pull(colorBy_column))
             
-            MyColors <- c(MyColors, "black")
+            MyColors[which(AllCBC %in% c("mean", "geomean", "median"))] <- "black"
             names(MyColors) <- levels(ct_dataframe$colorBy_column)
             
          } else {
@@ -2866,6 +2882,19 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # Making semi-log graph ----------------------------------------------------
    
+   # NOTE TO CODERS: I have tried *everything* I can think of to muffle the
+   # @#$%ing warning from ggplot2 when you log transform the y axis that the
+   # transformation introduced infinite values and NOTHING will remove it as
+   # long as the object is a ggplot2 object. The bits of code with
+   # suppressWarnings(suppressMessages(withCallingHandlers({ are all my various 
+   # attempts at this. The ONLY thing that seems to work is converting the
+   # output from a ggplot2 object (class will be "gg" and "ggplot") to a
+   # ggpubr::ggarrange object (class will be "gg", "ggplot", and "ggarrange").
+   # However, this means that you cannot do any postprocessing adjustments to
+   # the graph s/a adding a title or a different theme, etc., and I want users
+   # to be able to do that whenever possible. For that reason, I have left the
+   # log plot alone as a ggplot object rather than a ggarrange object.
+   
    # tictoc::tic(msg = "semi-log graph")
    
    LowConc <- bind_rows(sim_dataframe, obs_dataframe) %>%
@@ -2884,30 +2913,41 @@ ct_plot_overlay <- function(ct_dataframe,
                   legend.direction = legend_orientation)
    
    if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
-      B <- suppressMessages(suppressWarnings(
-         A + scale_y_log10(labels = scales::label_percent(big.mark = ","), 
-                           expand = expansion(mult = pad_y_num)) +
-            switch(as.character(floating_facet_scale), 
-                   "TRUE" = coord_cartesian(ylim = Ylim_log), 
-                   "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                             xlim = time_range_relative), 
-                   "x" = coord_cartesian(ylim = Ylim_log), 
-                   "y" = coord_cartesian(ylim = Ylim_log, 
-                                         xlim = time_range_relative))
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            B <- A + scale_y_log10(labels = scales::label_percent(big.mark = ","), 
+                                   expand = expansion(mult = pad_y_num)) +
+               switch(as.character(floating_facet_scale), 
+                      "TRUE" = coord_cartesian(ylim = Ylim_log), 
+                      "FALSE" = coord_cartesian(ylim = Ylim_log, 
+                                                xlim = time_range_relative), 
+                      "x" = coord_cartesian(ylim = Ylim_log), 
+                      "y" = coord_cartesian(ylim = Ylim_log, 
+                                            xlim = time_range_relative))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
       ))
       
    } else {
-      B <- suppressMessages(suppressWarnings(
-         A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
-                           expand = expansion(mult = pad_y_num)) +
-            switch(as.character(floating_facet_scale), 
-                   "TRUE" = coord_cartesian(ylim = Ylim_log), 
-                   "FALSE" = coord_cartesian(ylim = Ylim_log, 
-                                             xlim = time_range_relative), 
-                   "x" = coord_cartesian(ylim = Ylim_log), 
-                   "y" = coord_cartesian(ylim = Ylim_log, 
-                                         xlim = time_range_relative))
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            B <- A + scale_y_log10(labels = YLogLabels, breaks = YLogBreaks,
+                                   expand = expansion(mult = pad_y_num)) +
+               switch(as.character(floating_facet_scale), 
+                      "TRUE" = coord_cartesian(ylim = Ylim_log), 
+                      "FALSE" = coord_cartesian(ylim = Ylim_log, 
+                                                xlim = time_range_relative), 
+                      "x" = coord_cartesian(ylim = Ylim_log), 
+                      "y" = coord_cartesian(ylim = Ylim_log, 
+                                            xlim = time_range_relative))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
       ))
+      
    }
    
    if(graph_labels){
@@ -2938,15 +2978,39 @@ ct_plot_overlay <- function(ct_dataframe,
       A <- A + ggtitle(graph_title) +
          theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
                plot.title.position = "panel")
-      B <- B + ggtitle(graph_title) +
-         theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
-               plot.title.position = "panel")
-      AB <- ggpubr::annotate_figure(
-         AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
-                                     face = "bold", size = graph_title_size))
-      ABhoriz <- ggpubr::annotate_figure(
-         ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
-                                          face = "bold", size = graph_title_size))
+      
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            B <- B + ggtitle(graph_title) +
+               theme(plot.title = element_text(hjust = 0.5, size = graph_title_size), 
+                     plot.title.position = "panel")
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+      ))
+      
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            AB <- ggpubr::annotate_figure(
+               AB, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
+                                           face = "bold", size = graph_title_size))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+      ))
+      
+      suppressWarnings(suppressMessages(
+         withCallingHandlers({
+            ABhoriz <- ggpubr::annotate_figure(
+               ABhoriz, top = ggpubr::text_grob(graph_title, hjust = 0.5, 
+                                                face = "bold", size = graph_title_size))
+         }, warning = function(w){
+            if(startsWith(conditionMessage(w), "In scale_y_log10(breaks = YLogBreaks"))
+               invokeRestart("muffleWarning")
+         })
+      ))
    }
    
    # tictoc::toc(log = TRUE)
@@ -3057,14 +3121,16 @@ ct_plot_overlay <- function(ct_dataframe,
          annotateDetails(as.data.frame(Deets) %>%
                             filter(File %in% unique(ct_dataframe$File)), 
                          detail_set = "Methods") %>% 
-            select(-c(SimulatorSection, matches("All files"), Sheet, 
-                      Notes, CompoundID, Compound)), 
+            select(-c(matches("All files"), 
+                      any_of(c("SimulatorSection", 
+                               "Sheet", "DataSource", 
+                               "Notes", "CompoundID", "Compound")))), 
          shading_column = Detail)
       
       # Out would have been just the graph or just the two arranged graphs at
       # this point, so need to convert it to a list here.
       Out[["QCgraph"]] <- ggpubr::ggarrange(
-         plotlist = list(Out, flextable::gen_grob(QCTable)),
+         plotlist = list(Out$graph, flextable::gen_grob(QCTable)), 
          nrow = 1,
          font.label = list(size = graph_title_size))
    } 

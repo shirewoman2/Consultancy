@@ -5,6 +5,8 @@
 #' if you only have a couple of comparisons.
 #'
 #' @param ncolors number of colors desired
+#' @param shade the shade of colors to use, which can be "regular" (default),
+#'   "darker", or "lighter"
 #'
 #' @return a character vector of colors
 #' @export
@@ -16,7 +18,8 @@
 #' # Try using scales::show_col() to visualize the colors, ex:
 #' scales::show_col(rainbow(10))
 #' 
-rainbow <- function(ncolors){
+rainbow <- function(ncolors, 
+                    shade = "regular"){
    
    if(ncolors <= 7){
       colRainbow <- colorRampPalette(c("#B91E02FF", "#F66D19FF", "#B8F735FF",
@@ -30,7 +33,15 @@ rainbow <- function(ncolors){
       
    }
    
-   return(colRainbow(ncolors))
+   MyColors <- colRainbow(ncolors)
+   
+   if(shade == "darker"){
+      MyColors <- scales::muted(MyColors, l = 30, c = 70)
+   } else if(shade == "lighter"){
+      MyColors <- scales::muted(MyColors, l = 90, c = 100)
+   }
+   
+   return(MyColors)
 }
 
 
@@ -41,6 +52,8 @@ rainbow <- function(ncolors){
 #' greens for graphs.
 #'
 #' @param ncolors number of colors desired
+#' @param shade the shade of colors to use, which can be "regular" (default),
+#'   "darker", or "lighter"
 #'
 #' @return a character vector of colors
 #' @export
@@ -52,11 +65,25 @@ rainbow <- function(ncolors){
 #' # Try using scales::show_col() to visualize the colors, ex:
 #' scales::show_col(blueGreens(10))
 #' 
-blueGreens <- function(ncolors){
+blueGreens <- function(ncolors, 
+                       shade = "regular"){
    
-   colblueGreens <- colorRampPalette(c("royalblue4", "dodgerblue3",
-                                       "cadetblue", "seagreen3", "green3"))
-   return(colblueGreens(ncolors))
+   if(shade == "darker"){
+      colblueGreens <- colorRampPalette(c("#0D3053", "#2171B5", "#024E4E", "#083E22"))
+      
+   } else if(shade == "lighter"){
+      colblueGreens <- colorRampPalette(c("#6ED1FE", "#D5F2FF", "#78FE78"))
+      
+   } else {
+      # regular
+      colblueGreens <- colorRampPalette(c("royalblue4", "dodgerblue3",
+                                          "cadetblue", "seagreen3", "green3"))
+   }
+   
+   MyColors <- colblueGreens(ncolors)
+   
+   return(MyColors)
+   
 }
 
 
@@ -67,6 +94,8 @@ blueGreens <- function(ncolors){
 #' give credit where it's due. 
 #'
 #' @param ncolors number of colors desired
+#' @param shade the shade of colors to use, which can be "regular" (default),
+#'   "darker", or "lighter"
 #'
 #' @return a character vector of colors
 #' @export
@@ -78,12 +107,23 @@ blueGreens <- function(ncolors){
 #' # Try using scales::show_col() to visualize the colors, ex:
 #' scales::show_col(blues(10))
 #' 
-blues <- function(ncolors){
+blues <- function(ncolors, 
+                  shade = "regular"){
    
-   colBlues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
-                                  "#08519C", "#08306B"))
+   if(shade == "darker"){
+      colBlues <- colorRampPalette(c("#2171B5", "#031023"))
+   } else if(shade == "lighter"){
+      colBlues <- colorRampPalette(c("#D5F2FF", "#6ED1FE", "#0B86F5"))
+   } else {
+      # regular
+      colBlues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
+                                     "#08519C", "#08306B"))
+      
+   }
    
-   return(colBlues(ncolors))
+   MyColors <- colBlues(ncolors)
+   
+   return(MyColors)
    
 }
 

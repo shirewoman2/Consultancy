@@ -4,7 +4,7 @@
 \alias{make_color_set}
 \title{Create a set of colors for use in graphs}
 \usage{
-make_color_set(color_set, num_colors)
+make_color_set(color_set, num_colors, shade = NA)
 }
 \arguments{
 \item{color_set}{the set of colors to use. Options: \describe{
@@ -68,6 +68,11 @@ make_color_set(color_set, num_colors)
   \link{colorRampPalette}.}}}
 
 \item{num_colors}{the number of colors needed}
+
+\item{shade}{for the color_sets "blues", "blue-green", "greens", "purples",
+"reds", and "rainbow", the shade of colors to use, which can be "regular"
+"darker", or "lighter". This will be ignored for other supplied values for
+color_set.}
 }
 \value{
 a character vector of color names

@@ -763,8 +763,8 @@ ct_plot <- function(ct_dataframe = NA,
    # This doesn't check that they've specified legit colors or linetypes, but
    # I'm hoping that ggplot2 errors will cover that.
    
-   # Getting experimental details if they didn't supply them and want to have a
-   # QC graph
+   # Harmonizing details if they'd supplied them and also getting experimental
+   # details if they didn't supply them and want to have a QC graph.
    if(qc_graph == TRUE | "logical" %in% class(existing_exp_details) == FALSE){
       if("logical" %in% class(existing_exp_details)){ 
          Deets <- tryCatch(
@@ -772,10 +772,27 @@ ct_plot <- function(ct_dataframe = NA,
                               exp_details = "Summary and Input")[["MainDetails"]], 
             error = function(x) "missing file")
       } else {
-         Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
-            filter(File %in% unique(ct_dataframe$File))
+         # Possible inputs that will work: existing_exp_details is a named list
+         # that includes an item titled "MainDetails" (ideal) or
+         # existing_exp_details is a data.frame with, at a minimum, the columns
+         # File and SimulatorVersion. If existing_exp_details does not meet one
+         # of those criteria, ignore it.
+         IsDetails <- "list" %in% class(existing_exp_details) |
+            ("data.frame" %in% class(existing_exp_details) &&
+                all(c("File", "SimulatorVersion") %in%
+                       names(existing_exp_details)))
          
-         if(nrow(Deets) == 0){
+         if(IsDetails){
+            Deets <- harmonize_details(existing_exp_details)[["MainDetails"]] %>%
+               filter(File %in% unique(ct_dataframe$File))
+         } else {
+            warning(wrapn("The object you supplied for the argument 'existing_exp_details' does not appear to be output from running 'extractExpDetails', so we cannot use it for getting information about how your simulation was set up."), 
+                    call. = FALSE)
+            Deets <- data.frame()
+            existing_exp_details <- as.logical(NA)
+         }
+         
+         if(nrow(Deets) == 0 & qc_graph){
             Deets <- tryCatch(
                extractExpDetails(sim_data_file = unique(ct_dataframe$File), 
                                  exp_details = "Summary and Input")[["MainDetails"]], 
@@ -785,7 +802,7 @@ ct_plot <- function(ct_dataframe = NA,
       
       if(qc_graph == TRUE & 
          (class(Deets)[1] == "character" || nrow(Deets) == 0)){
-         warning(wrapn("We couldn't find the source Excel file for this graph, so we can't QC it."), 
+         warning(wrapn("The object you supplied for the argument 'existing_exp_details' does not include information on the simulation file in what you supplied for 'ct_dataframe' and we weren't able to find that simulation file to figure out how that simulation was set up, so we cannot create a QC graph."), 
                  call. = FALSE)
          qc_graph <- FALSE
       }
@@ -1600,8 +1617,7 @@ ct_plot <- function(ct_dataframe = NA,
                         LegCheck = TRUE)
    }
    
-   # Applying aesthetics ------------------------------------------------
-   ## Making linear graph -------------------------------------------------
+   # Making linear graph -------------------------------------------------
    
    if(nrow(obs_dataframe) == 0){
       A <- A + guides(shape = "none")
@@ -1720,7 +1736,7 @@ ct_plot <- function(ct_dataframe = NA,
                      axis.title.x = element_text(face = "plain"))
    }
    
-   ## Making semi-log graph ------------------------------------------------
+   # Making semi-log graph ------------------------------------------------
    
    if(EnzPlot){
       LowConc <- ct_dataframe %>% filter(Trial %in% c("mean", "per5", "per95") &
@@ -1888,17 +1904,26 @@ ct_plot <- function(ct_dataframe = NA,
                                 "both horizontal" = ABhoriz, 
                                 "horizontal and vertical" = AB))
    
+   # QC graph ---------------------------------------------------------------
+   
    if(qc_graph){
+      
+      # NB: In terms of prioritizing things, deprioritize qc_graph option. I had
+      # an error in this code for MONTHS that should have broken it, but no one
+      # reported a problem. It must not be getting used much.
       
       QCTable <- formatTable_Simcyp(
          annotateDetails(Deets, detail_set = "Methods") %>% 
-            select(-c(SimulatorSection, Sheet, Notes, CompoundID, Compound)), 
+            select(-any_of(c("SimulatorSection", "DataSource", "Notes",
+                             "CompoundID", "Compound"))), 
          shading_column = Detail)
+      
+      # FIXME: This is NOT working. 
       
       # Out would have been just the graph or just the two arranged graphs at
       # this point, so need to convert it to a list here.
       Out[["QCgraph"]] <- ggpubr::ggarrange(
-         plotlist = list(Out, flextable::gen_grob(QCTable)),
+         plotlist = list(Out$graph, flextable::gen_grob(QCTable)),
          font.label = list(size = graph_title_size))
    }
    

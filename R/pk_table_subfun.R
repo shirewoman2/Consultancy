@@ -72,11 +72,7 @@ pk_table_subfun <- function(sim_data_file,
          compoundToExtract = unique(PKparameters$CompoundID),
          sheet = ifelse(unique(PKparameters$Sheet) == "default", 
                         NA, unique(PKparameters$Sheet)), 
-         existing_exp_details = existing_exp_details,
-         returnAggregateOrIndiv =
-            switch(as.character(includeTrialMeans),
-                   "TRUE" = c("aggregate", "individual"),
-                   "FALSE" = "aggregate"))
+         existing_exp_details = existing_exp_details)
       
    } else if(str_detect(sim_data_file, "db$")){
       MyPKResults_all <- extractPK_DB(
@@ -84,21 +80,19 @@ pk_table_subfun <- function(sim_data_file,
          PKparameters = PKparameters$PKparameter,
          tissue = unique(PKparameters$Tissue),
          compoundToExtract = unique(PKparameters$CompoundID),
-         existing_exp_details = existing_exp_details,
-         returnAggregateOrIndiv =
-            switch(as.character(includeTrialMeans),
-                   "TRUE" = c("aggregate", "individual"),
-                   "FALSE" = "aggregate"))
+         existing_exp_details = existing_exp_details)
    }
    
    
-   # If there were no PK parameters to be pulled, MyPKResults_all will have
-   # length 0 and we can't proceed.
-   if(length(MyPKResults_all) == 0){
-      # warning(paste0("No PK results were found in the file `",
-      #                sim_data_file, "` for ", unique(PKparameters$CompoundID), " in ", tissue,
-      #                "."), 
-      #         call. = FALSE)
+   # If there were no PK parameters to be pulled, MyPKResults_all$aggregate will
+   # have length 0 and we can't proceed.
+   if(length(MyPKResults_all$aggregate) == 0){
+      warning(wrapn(paste0("No PK results were found in the file `",
+                           sim_data_file, "` for the ", 
+                           unique(PKparameters$CompoundID), " in ", 
+                           unique(PKparameters$Tissue),
+                           ".")),
+              call. = FALSE)
       return()
    }
    
@@ -118,24 +112,31 @@ pk_table_subfun <- function(sim_data_file,
               call. = FALSE)
    } 
    
-   if(CheckDoseInt$message == "custom dosing"){
-      # This is just a pass-through when it's a custom dosing interval. It's OK
-      # that there could be more than one interval.
-      CheckDoseInt$interval$Interval <- 
-         MyPKResults_all$TimeInterval$Interval %>% unique() %>%
-         str_comma(conjunction = "or")
+   # Addressing parameters s/a fa, Fg, that don't apply to specific intervals
+   if(all(PKparameters$PKparameter %in% 
+          AllPKParameters$PKparameter[
+             AllPKParameters$AppliesToAllDoses == TRUE]) == FALSE){
       
-      CheckDoseInt$interval$Sheet <- 
-         MyPKResults_all$TimeInterval$Sheet %>% unique() %>% 
-         str_comma(conjunction = "or")
+      if(CheckDoseInt$message == "custom dosing"){
+         # This is just a pass-through when it's a custom dosing interval. It's OK
+         # that there could be more than one interval.
+         CheckDoseInt$interval$Interval <- 
+            MyPKResults_all$TimeInterval$Interval %>% unique() %>%
+            str_comma(conjunction = "or")
+         
+         CheckDoseInt$interval$Sheet <- 
+            MyPKResults_all$TimeInterval$Sheet %>% unique() %>% 
+            str_comma(conjunction = "or")
+         
+      } else {
+         CheckDoseInt$interval <- CheckDoseInt$interval %>% 
+            left_join(MyPKResults_all$TimeInterval %>% 
+                         select(any_of(c("Interval", "Sheet"))) %>% unique(), 
+                      by = "Interval")
+      }
+      CheckDoseInt$interval$Tissue <- unique(PKparameters$Tissue)
       
-   } else {
-      CheckDoseInt$interval <- CheckDoseInt$interval %>% 
-         left_join(MyPKResults_all$TimeInterval %>% 
-                      select(any_of(c("Interval", "Sheet"))) %>% unique(), 
-                   by = "Interval")
    }
-   CheckDoseInt$interval$Tissue <- unique(PKparameters$Tissue)
    
    # Sometimes missing problems with extrapolation to infinity. Checking for
    # that here. I thought that there wouldn't be any values for AUCinf, but
@@ -247,7 +248,8 @@ pk_table_subfun <- function(sim_data_file,
    # AUCinf won't be present in the data but AUCt will be. Check for that and
    # change PKpulled to reflect that change.
    if(any(str_detect(PKrequested, "AUCinf")) & 
-      any(str_detect(PKpulled, "AUCinf")) == FALSE){
+      any(str_detect(PKpulled, "AUCinf")) == FALSE & 
+      MyPKResults_all$WarnAUCinf == TRUE){
       warning(wrapn(paste0("AUCinf included NA values in the file `", 
                            sim_data_file, 
                            "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt instead.")),

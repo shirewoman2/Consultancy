@@ -447,6 +447,13 @@ ct_plot_obs <- function(ct_dataframe,
       ct_dataframe$Simulated <- FALSE
    }
    
+   # Make sure that Individual column is character so that it can be combined
+   # with other data
+   if("Individual" %in% names(ct_dataframe) && 
+      any(c("character", "factor") %in% class(ct_dataframe$Individual)) == FALSE){
+      ct_dataframe$Individual <- as.character(ct_dataframe$Individual)
+   }
+   
    # Main body of function -------------------------------------------------
    
    # Setting things up for nonstandard evaluation
@@ -485,7 +492,8 @@ ct_plot_obs <- function(ct_dataframe,
                         "Dose_sub", "Dose_inhib", "Dose_inhib2", 
                         "InfDuration_sub", "InfDuration_inhib", 
                         "InfDuration_inhib2", "Dose_units", "DoseNum", 
-                        "ObsFile", "Period", "Species", NSEcols)
+                        "ObsFile", "Period", "Species", 
+                        setdiff(NSEcols, "Individual"))
       
       suppressMessages(
          CTagg <- ct_dataframe %>% 
@@ -497,7 +505,9 @@ ct_plot_obs <- function(ct_dataframe,
             mutate(Trial = switch(mean_type, 
                                   "arithmetic" = "mean", 
                                   "geometric" = "geomean", 
-                                  "median" = "median"))
+                                  "median" = "median"), 
+                   IndivOrAgg = "aggregate", 
+                   Individual = "obs mean")
       )
       
       ct_dataframe <- bind_rows(ct_dataframe, CTagg)

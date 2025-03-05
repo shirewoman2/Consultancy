@@ -44,7 +44,8 @@ calc_dosenumber <- function(ct_dataframe,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   Deets <- harmonize_details(existing_exp_details)[["MainDetails"]]
+   suppressWarnings(
+      Deets <- harmonize_details(existing_exp_details)[["MainDetails"]])
    
    if(all(Deets$File == "all", na.rm = T)){
       
@@ -187,7 +188,8 @@ calc_dosenumber <- function(ct_dataframe,
                 Dose_inhib2 = MyDose["inhibitor 2"])
       
       # Checking for any custom dosing
-      if(is.null(existing_exp_details$CustomDosing) == FALSE &&
+      if("list" %in% class(existing_exp_details) &&
+         is.null(existing_exp_details$CustomDosing) == FALSE &&
          nrow(existing_exp_details$CustomDosing) > 0){
          
          # Need match the conc-time compound ID with the CustomDosing data.frame

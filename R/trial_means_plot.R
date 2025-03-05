@@ -404,7 +404,6 @@ trial_means_plot <- function(sim_data_file,
                        compoundToExtract = compoundToExtract, 
                        existing_exp_details = existing_exp_details, 
                        sheet = sheet, 
-                       returnAggregateOrIndiv = "individual", 
                        returnExpDetails = TRUE)
    
    PK_long <- PKdata$individual %>% 
@@ -666,9 +665,6 @@ trial_means_plot <- function(sim_data_file,
    
    if(lines_for_population_stats != "none"){
       
-      AggStats <- PKdata$aggregate[[1]]
-      names(AggStats) <- renameStats(names(PKdata$aggregate[[1]]))
-      
       # Simulator does not output arithmetic CIs, so need to add those here.
       CI90_arith <- confInt(PKdata$individual %>% 
                                filter(PKparameter == {{PKparameter}}) %>% 
@@ -676,42 +672,42 @@ trial_means_plot <- function(sim_data_file,
                             CI = 0.9, 
                             distribution_type = "t")
       
-      AggStats <- c(AggStats, 
-                    CI90_lowerer_arith = CI90_arith[[1]], 
-                    CI90_upper_arith = CI90_arith[[2]])
+      PKdata$aggregate <- PKdata$aggregate %>% 
+         mutate(CI90_lower_arith = CI90_arith[1], 
+                CI90_upper_arith = CI90_arith[2])
       
       G <- G + 
          # Adding lines for population central stat
          geom_hline(yintercept = 
                        case_match(mean_type, 
-                                  "arithmetic" ~ AggStats["Mean"], 
-                                  "geometric" ~ AggStats["Geomean"], 
-                                  "median" ~ AggStats["Median"]), 
+                                  "arithmetic" ~ PKdata$aggregate[["Mean"]], 
+                                  "geometric" ~ PKdata$aggregate[["Geomean"]], 
+                                  "median" ~ PKdata$aggregate[["Median"]]), 
                     color = LineAES[1], 
                     linetype = LineAES[2], 
                     linewidth = as.numeric(LineAES[4])) +
          # Adding lines for population variability stats. Lower line: 
          geom_hline(yintercept = 
                        case_when(
-                          variability_type == "PERCENTILES" ~ AggStats["Per5"],
+                          variability_type == "PERCENTILES" ~ PKdata$aggregate[["Per5"]],
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "SD" ~ AggStats["Mean"] + AggStats["SD"], 
+                             variability_type ==  "SD" ~ PKdata$aggregate[["Mean"]] + PKdata$aggregate[["SD"]], 
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "CV" ~ AggStats["Mean"] + AggStats["SD"], 
+                             variability_type ==  "CV" ~ PKdata$aggregate[["Mean"]] + PKdata$aggregate[["SD"]], 
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "90% CI" ~ AggStats["CI90_upper_arith"], 
+                             variability_type ==  "90% CI" ~ PKdata$aggregate[["CI90_upper_arith"]], 
                           
                           mean_type == "geometric" & 
-                             variability_type ==  "GCV" ~ AggStats["Geomean"] + 
-                             AggStats["Geomean"] * AggStats["GCV"], 
+                             variability_type ==  "GCV" ~ PKdata$aggregate[["Geomean"]] + 
+                             PKdata$aggregate[["Geomean"]] * PKdata$aggregate[["GCV"]], 
                           
                           mean_type == "geometric" & 
-                             variability_type ==  "90% CI" ~ AggStats["CI90_upper"], 
+                             variability_type ==  "90% CI" ~ PKdata$aggregate[["CI90_upper"]], 
                           
-                          variability_type == "RANGE" ~ AggStats["Maximum"]), 
+                          variability_type == "RANGE" ~ PKdata$aggregate[["Maximum"]]), 
                     
                     color = LineAES[1], 
                     linetype = LineAES[3], 
@@ -719,25 +715,25 @@ trial_means_plot <- function(sim_data_file,
          # Adding lines for population variability stats. Upper line: 
          geom_hline(yintercept = 
                        case_when(
-                          variability_type == "PERCENTILES" ~ AggStats["Per95"], 
+                          variability_type == "PERCENTILES" ~ PKdata$aggregate[["Per95"]], 
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "SD" ~ AggStats["Mean"] - AggStats["SD"], 
+                             variability_type ==  "SD" ~ PKdata$aggregate[["Mean"]] - PKdata$aggregate[["SD"]], 
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "CV" ~ AggStats["Mean"] - AggStats["SD"], 
+                             variability_type ==  "CV" ~ PKdata$aggregate[["Mean"]] - PKdata$aggregate[["SD"]], 
                           
                           mean_type == "arithmetic" & 
-                             variability_type ==  "90% CI" ~ AggStats["CI90_lowerer_arith"], 
+                             variability_type ==  "90% CI" ~ PKdata$aggregate[["CI90_lower_arith"]], 
                           
                           mean_type == "geometric" & 
-                             variability_type ==  "GCV" ~ AggStats["Geomean"] - 
-                             AggStats["Geomean"] * AggStats["GCV"], 
+                             variability_type ==  "GCV" ~ PKdata$aggregate[["Geomean"]] - 
+                             PKdata$aggregate[["Geomean"]] * PKdata$aggregate[["GCV"]], 
                           
                           mean_type == "geometric" & 
-                             variability_type ==  "90% CI" ~ AggStats["CI90_lowerer"], 
+                             variability_type ==  "90% CI" ~ PKdata$aggregate[["CI90_lower"]], 
                           
-                          variability_type == "RANGE" ~ AggStats["Minimum"]), 
+                          variability_type == "RANGE" ~ PKdata$aggregate[["Minimum"]]), 
                     
                     color = LineAES[1], 
                     linetype = LineAES[3], 

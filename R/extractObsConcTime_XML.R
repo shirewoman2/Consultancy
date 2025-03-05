@@ -7,6 +7,16 @@
 
 extractObsConcTime_XML <- function(obs_data_file){
    
+   SimcypInstalled <- length(find.package("Simcyp", quiet = TRUE)) > 0
+   SimcypV23plus <- SimcypInstalled == TRUE && packageVersion("Simcyp") >= "23"
+   
+   if(SimcypV23plus == FALSE){
+      warning(wrapn("We're trying to extract observed data from an XML file, but doing so requires that you have the version 23 or above Simcyp R package installed, which you do not. We cannot return any observed data from your XML file."), 
+              call. = FALSE)
+      
+      return()
+   }
+   
    obs_data_xml <- Simcyp::ReadPEData(path = obs_data_file)
    
    obs_data <- obs_data_xml$Observations

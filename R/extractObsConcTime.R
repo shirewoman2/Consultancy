@@ -162,6 +162,8 @@ extractObsConcTime <- function(obs_data_file,
       select(PEColName, ColName, DosingInfo) %>% 
       filter(DosingInfo == TRUE) %>% 
       pull(ColName) %>% unique()
+   DoseCols <- paste0(rep(DoseCols, each = 3), 
+                      c("_sub", "_inhib", "_inhib2"))
    
    NonDoseCols <- ObsColNames %>% bind_rows() %>% 
       select(PEColName, ColName, DosingInfo) %>% 
@@ -205,7 +207,8 @@ extractObsConcTime <- function(obs_data_file,
                                      include.lowest = TRUE, right = FALSE), 
                       DoseNum = 1:nrow(.))
             
-            obs_data[[i]] <- obs_data[[i]] %>% 
+            obs_data[[i]] <- 
+               obs_data[[i]] %>% 
                mutate(Interval = cut(Time, 
                                      breaks = c(unique(DoseInts[[j]]$DoseTime), Inf), 
                                      include.lowest = TRUE, right = FALSE)) %>% 
@@ -213,11 +216,11 @@ extractObsConcTime <- function(obs_data_file,
                          by = join_by(CompoundID, Individual, Interval)) %>% 
                mutate(DoseNum = as.numeric(Interval), 
                       Dose_sub = ifelse("substrate" %in% DoseInts[[j]]$CompoundID, 
-                                           DoseInts[[j]]$DoseAmount, NA), 
+                                           DoseInts[[j]]$DoseAmount_sub, NA), 
                       Dose_inhib = ifelse("inhibitor 1" %in% DoseInts[[j]]$CompoundID, 
-                                          DoseInts[[j]]$DoseAmount, NA), 
+                                          DoseInts[[j]]$DoseAmount_inhib, NA), 
                       Dose_inhib2 = ifelse("inhibitor 2" %in% DoseInts[[j]]$CompoundID, 
-                                           DoseInts[[j]]$DoseAmount, NA))
+                                           DoseInts[[j]]$DoseAmount_inhib2, NA))
          }
          
          rm(i_split, ParentDrug, j)
