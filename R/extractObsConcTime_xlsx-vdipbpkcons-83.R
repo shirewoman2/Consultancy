@@ -64,12 +64,12 @@ extractObsConcTime_xlsx <- function(obs_data_file){
       
    } else {
       
-      ObsNames <- tibble(PEColName = MainColNames) %>% 
-         # This should have no duplicates. Things will break if there are, but I
-         # don't see how there could be.
-         left_join(ObsColNames, by = "PEColName")
+      SimVersion <- map(.x = ObsColNames, 
+                        .f = \(x) all(MainColNames %in% x$PEColName))
+      SimVersion <- SimVersion[which(SimVersion == TRUE)]
+      SimVersion <- names(SimVersion)[1]
       
-      names(obs_data) <- ObsNames$ColName
+      names(obs_data) <- ObsColNames[[SimVersion]]$ColName
       obs_data$Species <- "human"
    }
    
@@ -82,7 +82,8 @@ extractObsConcTime_xlsx <- function(obs_data_file){
              ObsFile = obs_data_file, 
              CompoundID = tolower(CompoundID)) %>% 
       select(any_of(c("Individual", "ObsFile", "CompoundID", "Time", 
-                      ObsColNames$ColName[ObsColNames$DosingInfo == TRUE]))) %>% 
+                      ObsColNames[[SimVersion]]$ColName[
+                         ObsColNames[[SimVersion]]$DosingInfo == TRUE]))) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
       pivot_longer(cols = -c(Individual, ObsFile, CompoundID, Time), 
                    names_to = "Parameter", 
@@ -122,7 +123,8 @@ extractObsConcTime_xlsx <- function(obs_data_file){
       mutate(Simulated = FALSE) %>% 
       # Removing data that should ONLY be in dose_data so that they don't
       # mess up joining later
-      select(-any_of(ObsColNames$ColName[ObsColNames$DosingInfo == TRUE]))
+      select(-any_of(ObsColNames[[SimVersion]]$ColName[
+         ObsColNames[[SimVersion]]$DosingInfo == TRUE]))
    
    
    return(list("obs_data" = obs_data, 
