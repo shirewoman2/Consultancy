@@ -236,14 +236,22 @@
 #'   "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
 #'   you didn't think you specified, please double check that you have specified
 #'   the file names \emph{exactly} as they appear in \code{ct_dataframe}.
+#'
 #'   \strong{CAVEAT:} If you have more than one dataset per file, this is
-#'   trickier. However, you can specify titles using the name of the simulator
-#'   output file, the compound ID, the tissue, and then the ADAM-model
-#'   subsection (use "none" if that doesn't apply here), each separated with a
-#'   ".". An example: \code{graph_titles = c("my sim
-#'   file.xlsx.substrate.plasma.none" = "Midazolam", "my sim file.xlsx.inhibitor
-#'   1.plasma.none" = "Ketoconazole")} Please see the "Examples" section for an
-#'   example with the dataset MDZ_Keto.
+#'   trickier. The name of each dataset will be compound ID, "__", tissue, "__",
+#'   what kind of tissue subtype it is (often "none"), "__", and then the file
+#'   name, e.g., "substrate__plasma__none__my-file-a.xlsx". Still not quite sure
+#'   what each dataset will be called? Try running this once with
+#'   \code{graph_titles = NA} and with \code{report_progress = TRUE}. As the
+#'   graphs are created, you'll get a message saying which dataset is being
+#'   graphed. At the end, since you set \code{graph_titles = NA}, the title on
+#'   each graph will be its dataset name.
+#'
+#'   Once you've got the dataset names figured out, you can assign each dataset
+#'   name to have a graph title with a named character vector.
+#'   An example: \code{graph_titles = c("substrate__plasma__none__my sim
+#'   file.xlsx" = "Midazolam", "inhibitor 1__plasma__none__my sim file.xlsx" = "Ketoconazole")}
+#'   Please see the "Examples" section for an example with the dataset MDZ_Keto.
 #' @param graph_title_size the font size for the graph title if it's included;
 #'   default is 14. This also determines the font size of the graph labels.
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
@@ -313,11 +321,11 @@
 #' # Graph titles when you have the tricky situation of more than one
 #' # dataset per file
 #' ct_plot_mult(
-#'     ct_dataframe = MDZ_Keto,
-#'     graph_titles = c("mdz-qd-keto-qd.xlsx.substrate.plasma.none" = "Midazolam in plasma",
-#'                      "mdz-qd-keto-qd.xlsx.substrate.blood.none" = "Midazolam in blood",
-#'                      "mdz-qd-keto-qd.xlsx.inhibitor 1.plasma.none" = "Ketoconazole in plasma",
-#'                      "mdz-qd-keto-qd.xlsx.inhibitor 1.blood.none" = "Ketoconazole in blood"))
+#'    ct_dataframe = MDZ_Keto,
+#'    graph_titles = c("substrate__plasma__none__mdz-qd-keto-qd.xlsx" = "Midazolam in plasma",
+#'                     "substrate__blood__none__mdz-qd-keto-qd.xlsx" = "Midazolam in blood",
+#'                     "inhibitor 1__plasma__none__mdz-qd-keto-qd.xlsx" = "Ketoconazole in plasma",
+#'                     "inhibitor 1__blood__none__mdz-qd-keto-qd.xlsx" = "Ketoconazole in blood"))
 #' 
 
 
@@ -534,11 +542,11 @@ ct_plot_mult <- function(ct_dataframe,
       
       if(any(duplicated(DatasetCheck$File))){
          
-         Order <- expand_grid("File" = getOrder(ct_dataframe$File), 
-                              "CompoundID" = getOrder(ct_dataframe$CompoundID), 
+         Order <- expand_grid("CompoundID" = getOrder(ct_dataframe$CompoundID), 
                               "Tissue" = getOrder(ct_dataframe$Tissue), 
-                              "Tissue_subtype" = getOrder(ct_dataframe$Tissue_subtype)) %>% 
-            mutate(Order = paste(File, CompoundID, Tissue, Tissue_subtype, sep = ".")) %>% 
+                              "Tissue_subtype" = getOrder(ct_dataframe$Tissue_subtype), 
+                              "File" = getOrder(ct_dataframe$File)) %>% 
+            mutate(Order = paste(CompoundID, Tissue, Tissue_subtype, File, sep = "__")) %>% 
             pull(Order)
       } else {
          Order <- getOrder(ct_dataframe$File)
@@ -549,11 +557,15 @@ ct_plot_mult <- function(ct_dataframe,
    }    
    
    if(any(duplicated(DatasetCheck$File))){
+      # Making the names here match the names in Order
       ct_dataframe <- split(ct_dataframe, 
-                            f = list(as.character(ct_dataframe$File),
-                                     as.character(ct_dataframe$CompoundID), 
+                            f = list(as.character(ct_dataframe$CompoundID), 
                                      as.character(ct_dataframe$Tissue), 
-                                     as.character(ct_dataframe$Tissue_subtype)))
+                                     as.character(ct_dataframe$Tissue_subtype),
+                                     as.character(ct_dataframe$File)))
+      names(ct_dataframe) <- gsub("\\.", "__", names(ct_dataframe))
+      names(ct_dataframe) <- sub("__xlsx", ".xlsx", names(ct_dataframe))
+      
    } else {
       ct_dataframe <- split(ct_dataframe, f = as.character(ct_dataframe$File))
    }
@@ -574,11 +586,7 @@ ct_plot_mult <- function(ct_dataframe,
          if(any(names(graph_titles_all) != graph_titles_all)){
             Title_i <- graph_titles_all[i]
          } else {
-            y <- str_split(i, pattern = "\\.")[[1]]
-            Title_i <- paste(str_trim(
-               paste(paste(y[1], y[2], sep = "."), 
-                     y[3], y[4], 
-                     ifelse(y[5] == "none", "", y[5]))))
+            Title_i <- sub("\\.xlsx|\\.wksz|\\.db", "", i)
          }
       } else {
          Title_i <- graph_titles_all[i]
@@ -592,7 +600,7 @@ ct_plot_mult <- function(ct_dataframe,
       # print(i)
       # print(head(ct_dataframe[[i]]))
       
-      if(report_progress){message(paste0("Creating graph ID ", i))}
+      if(report_progress){message(paste0("Creating graph ID '", i, "'"))}
       
       AllGraphs[[i]] <- 
          ct_plot(ct_dataframe = ct_dataframe[[i]], 
@@ -697,17 +705,13 @@ ct_plot_mult <- function(ct_dataframe,
                                    paste0(" - ", file_suffix), ""), ".png")
          
          if(any(duplicated(DatasetCheck$File))){
-            Split_i <- str_split(sub("\\.xlsx", "", basename(i)), pattern = "\\.")[[1]]
-            FileName <- paste0(Split_i[3], " ",
-                               Split_i[2], " ",
-                               Split_i[4], " ",
-                               ifelse(is.na(Split_i[5]) | Split_i[5] == "none",
-                                      "", 
-                                      paste0(" subsection ADAM ", Split_i[5])),
-                               FileName)
+            FileName <- sub("\\.xlsx|\\.wksz|\\.db", 
+                            ifelse(complete.cases(file_suffix),
+                                   paste0(" - ", file_suffix, ".png"), 
+                                   ".png"), i)
          } 
          
-         if(report_progress){message(paste0("Saving graph ID ", i))}
+         if(report_progress){message(paste0("Saving graph ID '", i, "'"))}
          
          ggsave(FileName, 
                 height = fig_height, width = fig_width, dpi = 600, 
