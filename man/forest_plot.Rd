@@ -38,6 +38,7 @@ forest_plot(
   include_dose_num = NA,
   include_ratio_in_labels = TRUE,
   error_bar_height = NA,
+  error_bars_on_top = FALSE,
   show_borders = TRUE,
   vline_at_1 = "gray dashed",
   dose_units = "mg",
@@ -396,6 +397,9 @@ the default behavior and get exactly what you want.}
 line at the end of the error bar. If left as NA, it will be set to 0.3. If
 set to 0, the error bars will be just lines. Try it and you'll see what we
 mean.}
+
+\item{error_bars_on_top}{TRUE or FALSE (default) for whether to put the error
+bars on top of the points}
 
 \item{show_borders}{TRUE (default) or FALSE for whether to show a light gray
 line between the files on the y axis. Note: This works best when

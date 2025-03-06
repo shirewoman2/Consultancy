@@ -208,6 +208,8 @@
 #'   line at the end of the error bar. If left as NA, it will be set to 0.3. If
 #'   set to 0, the error bars will be just lines. Try it and you'll see what we
 #'   mean.
+#' @param error_bars_on_top TRUE or FALSE (default) for whether to put the error
+#'   bars on top of the points
 #' @param show_borders TRUE (default) or FALSE for whether to show a light gray
 #'   line between the files on the y axis. Note: This works best when
 #'   \code{color_set = "none"}. Otherwise, you'll be able to see what looks like
@@ -568,6 +570,7 @@ forest_plot <- function(forest_dataframe,
                         include_dose_num = NA,
                         include_ratio_in_labels = TRUE, 
                         error_bar_height = NA,
+                        error_bars_on_top = FALSE, 
                         show_borders = TRUE, 
                         vline_at_1 = "gray dashed",
                         dose_units = "mg",
@@ -667,6 +670,11 @@ forest_plot <- function(forest_dataframe,
       rel_widths <- c(5, 1)
    }
    
+   if(class(error_bars_on_top) %in% "logical" == FALSE){
+      warning(wrapn("You supplied something other than TRUE or FALSE for the argument 'error_bars_on_top'. We will use the default of FALSE."), 
+              call. = FALSE)
+   }
+   
    # Checking input validity. These should all have length 1.
    LenCheck <- list("show_numbers_on_right" = show_numbers_on_right, 
                     "mean_type" = mean_type, 
@@ -678,6 +686,7 @@ forest_plot <- function(forest_dataframe,
                     "x_axis_title" = x_axis_title,
                     "x_axis_number_type" = x_axis_number_type,
                     "error_bar_height" = error_bar_height,
+                    "error_bars_on_top" = error_bars_on_top,
                     "show_borders" = show_borders,
                     "vline_at_1" = vline_at_1,
                     "dose_units" = dose_units,
@@ -1947,9 +1956,11 @@ forest_plot <- function(forest_dataframe,
                        linewidth = VlineParams$linewidth)
       }
       
-      G <- G +
-         geom_errorbar(width = ifelse(is.na(error_bar_height), 
-                                      0.3, error_bar_height))
+      if(error_bars_on_top == FALSE){
+         G <- G +
+            geom_errorbar(width = ifelse(is.na(error_bar_height), 
+                                         0.3, error_bar_height))
+      }
       
       if(as_label(point_color_column) == "<empty>"){
          G <- G + geom_point(size = 2.5, fill = "white") +
@@ -1959,6 +1970,12 @@ forest_plot <- function(forest_dataframe,
          G <- G + geom_point(size = 2.5) + 
             labs(fill = "Interaction level",
                  shape = NULL, color = NULL)
+      }
+      
+      if(error_bars_on_top){
+         G <- G +
+            geom_errorbar(width = ifelse(is.na(error_bar_height), 
+                                         0.3, error_bar_height))
       }
       
       G <- G +
@@ -2031,8 +2048,10 @@ forest_plot <- function(forest_dataframe,
                              linewidth = VlineParams$linewidth)
       }
       
-      G <- G + geom_errorbar(width = ifelse(is.na(error_bar_height), 
-                                            0.3, error_bar_height))
+      if(error_bars_on_top == FALSE){
+         G <- G + geom_errorbar(width = ifelse(is.na(error_bar_height), 
+                                               0.3, error_bar_height))
+      }
       
       if(as_label(point_color_column) == "<empty>"){
          G <- G + geom_point(size = 2.5, fill = "white") +
@@ -2042,6 +2061,11 @@ forest_plot <- function(forest_dataframe,
          G <- G + geom_point(size = 2.5) + 
             labs(fill = "Interaction level",
                  shape = NULL, color = NULL)
+      }
+      
+      if(error_bars_on_top == TRUE){
+         G <- G + geom_errorbar(width = ifelse(is.na(error_bar_height), 
+                                               0.3, error_bar_height))
       }
       
       G <- G +
