@@ -75,7 +75,7 @@ extractExpDetails_VBE <- function(sim_data_file){
          
          Val <- tab[Row,
                     VBEDeets$ValueCol[
-                         which(VBEDeets$Deet == deet)]] %>% pull()
+                       which(VBEDeets$Deet == deet)]] %>% pull()
       }
       
       suppressWarnings(
@@ -128,6 +128,22 @@ extractExpDetails_VBE <- function(sim_data_file){
    TxSheets <- SheetNames[str_detect(SheetNames, "^Treatment [0-9]")]
    TxInfo <- VBEDeets %>% filter(ColsChangeWithCmpd == TRUE)
    
+   # Reading sheets
+   TxTabs <- list()
+   for(tx in TxSheets){
+      TxTabs[[tx]] <- 
+         suppressMessages(tryCatch(
+            readxl::read_excel(path = sim_data_file, sheet = tx,
+                               col_names = FALSE),
+            error = openxlsx::read.xlsx(sim_data_file, sheet = tx,
+                                        colNames = FALSE)))
+      
+      # If openxlsx read the file, the names are different. Fixing.
+      if(names(TxTabs[[tx]])[1] == "X1"){
+         names(TxTabs[[tx]]) <- paste0("...", 1:ncol(TxTabs[[tx]]))
+      }
+   }
+   
    Out$Treatments <- list()
    
    for(tx in TxSheets){
@@ -139,16 +155,20 @@ extractExpDetails_VBE <- function(sim_data_file){
       if(is.na(EndRow)){EndRow <- nrow(Input)}
       
       for(i in TxInfo$Deet){
-         Out[[i]] <- pullValue(i, tab = Input[StartRow:EndRow, ])
+         Out$Treatments[[tx]][[i]] <- pullValue(i, tab = Input[StartRow:EndRow, ])
       }
       
+      rm(StartRow, EndRow)
       
-      Out$Treatments[[tx]]
+      ### Info on treatment tab ----------------------------------------------
+      
+      
       
       
       
    }
-
+   
+   
    
    
 }

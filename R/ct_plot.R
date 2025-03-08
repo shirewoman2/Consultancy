@@ -1918,8 +1918,6 @@ ct_plot <- function(ct_dataframe = NA,
                              "CompoundID", "Compound"))), 
          shading_column = Detail)
       
-      # FIXME: This is NOT working. 
-      
       # Out would have been just the graph or just the two arranged graphs at
       # this point, so need to convert it to a list here.
       Out[["QCgraph"]] <- ggpubr::ggarrange(
