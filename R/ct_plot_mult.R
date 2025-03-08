@@ -280,7 +280,7 @@
 #'   care of stringing them together appropriately. Just list them as a
 #'   character vector, e.g., \code{name_clinical_study = c("101",
 #'   "102", "103")} will become "clinical studies 101, 102, and 103."
-#' @param report_progress TRUE or FALSE (default) for whether show a progress
+#' @param report_progress TRUE (default) or FALSE for whether show a progress
 #'   message on creating and saving graphs
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
@@ -358,7 +358,7 @@ ct_plot_mult <- function(ct_dataframe,
                          graph_labels = TRUE,
                          prettify_compound_names = TRUE,
                          name_clinical_study = NA, 
-                         report_progress = FALSE, 
+                         report_progress = TRUE, 
                          save_graph = NA,
                          file_suffix = NA,
                          fig_height = 8,

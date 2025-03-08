@@ -524,7 +524,7 @@ recalc_PK <- function(ct_dataframe,
       
       if("first" %in% which_dose){
          
-         if(report_progress %in% c("yes", "some")){message("Calculating 1st-dose PK")}
+         if(report_progress %in% c("yes", "some")){message("Calculating first-dose PK")}
          
          if("logical" %in% class(existing_exp_details) == FALSE){
             

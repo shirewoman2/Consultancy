@@ -34,7 +34,7 @@ ct_plot_mult(
   graph_labels = TRUE,
   prettify_compound_names = TRUE,
   name_clinical_study = NA,
-  report_progress = FALSE,
+  report_progress = TRUE,
   save_graph = NA,
   file_suffix = NA,
   fig_height = 8,
@@ -260,23 +260,31 @@ default NA when a legend is included and a perpetrator is present, the
 label in the legend will be "Inhibitor".}
 
 \item{graph_titles}{optionally specify titles to be used in the graphs and
-specify the order in which the files are graphed or use "none" (default) to
-have no titles on your graphs. Input should be a named character vector of
-the files in the order you would like and what you want to use for the
-title. The file name must \emph{perfectly} match the file name listed in
-ct_dataframe or it won't be used. An example of how this might be
-specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
-"My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
-you didn't think you specified, please double check that you have specified
-the file names \emph{exactly} as they appear in \code{ct_dataframe}.
-\strong{CAVEAT:} If you have more than one dataset per file, this is
-trickier. However, you can specify titles using the name of the simulator
-output file, the compound ID, the tissue, and then the ADAM-model
-subsection (use "none" if that doesn't apply here), each separated with a
-".". An example: \code{graph_titles = c("my sim
-file.xlsx.substrate.plasma.none" = "Midazolam", "my sim file.xlsx.inhibitor
-1.plasma.none" = "Ketoconazole")} Please see the "Examples" section for an
-example with the dataset MDZ_Keto.}
+  specify the order in which the files are graphed or use "none" (default) to
+  have no titles on your graphs. Input should be a named character vector of
+  the files in the order you would like and what you want to use for the
+  title. The file name must \emph{perfectly} match the file name listed in
+  ct_dataframe or it won't be used. An example of how this might be
+  specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
+  "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
+  you didn't think you specified, please double check that you have specified
+  the file names \emph{exactly} as they appear in \code{ct_dataframe}.
+
+  \strong{CAVEAT:} If you have more than one dataset per file, this is
+  trickier. The name of each dataset will be compound ID, "__", tissue, "__",
+  what kind of tissue subtype it is (often "none"), "__", and then the file
+  name, e.g., "substrate__plasma__none__my-file-a.xlsx". Still not quite sure
+  what each dataset will be called? Try running this once with
+  \code{graph_titles = NA} and with \code{report_progress = TRUE}. As the
+  graphs are created, you'll get a message saying which dataset is being
+  graphed. At the end, since you set \code{graph_titles = NA}, the title on
+  each graph will be its dataset name.
+
+  Once you've got the dataset names figured out, you can assign each dataset
+  name to have a graph title with a named character vector.
+  An example: \code{graph_titles = c("substrate__plasma__none__my sim
+  file.xlsx" = "Midazolam", "inhibitor 1__plasma__none__my sim file.xlsx" = "Ketoconazole")}
+  Please see the "Examples" section for an example with the dataset MDZ_Keto.}
 
 \item{graph_title_size}{the font size for the graph title if it's included;
 default is 14. This also determines the font size of the graph labels.}
@@ -309,7 +317,7 @@ care of stringing them together appropriately. Just list them as a
 character vector, e.g., \code{name_clinical_study = c("101",
 "102", "103")} will become "clinical studies 101, 102, and 103."}
 
-\item{report_progress}{TRUE or FALSE (default) for whether show a progress
+\item{report_progress}{TRUE (default) or FALSE for whether show a progress
 message on creating and saving graphs}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
@@ -388,10 +396,10 @@ ct_plot_mult(ct_dataframe = MDZct,
 # Graph titles when you have the tricky situation of more than one
 # dataset per file
 ct_plot_mult(
-    ct_dataframe = MDZ_Keto,
-    graph_titles = c("mdz-qd-keto-qd.xlsx.substrate.plasma.none" = "Midazolam in plasma",
-                     "mdz-qd-keto-qd.xlsx.substrate.blood.none" = "Midazolam in blood",
-                     "mdz-qd-keto-qd.xlsx.inhibitor 1.plasma.none" = "Ketoconazole in plasma",
-                     "mdz-qd-keto-qd.xlsx.inhibitor 1.blood.none" = "Ketoconazole in blood"))
+   ct_dataframe = MDZ_Keto,
+   graph_titles = c("substrate__plasma__none__mdz-qd-keto-qd.xlsx" = "Midazolam in plasma",
+                    "substrate__blood__none__mdz-qd-keto-qd.xlsx" = "Midazolam in blood",
+                    "inhibitor 1__plasma__none__mdz-qd-keto-qd.xlsx" = "Ketoconazole in plasma",
+                    "inhibitor 1__blood__none__mdz-qd-keto-qd.xlsx" = "Ketoconazole in blood"))
 
 }
