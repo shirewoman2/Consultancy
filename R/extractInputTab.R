@@ -89,7 +89,8 @@ extractInputTab <- function(deets = "all",
    if(VBE){
       # I don't think there would be more than one compound in a VBE sim, so
       # setting the compound ID to "substrate".
-      InputDeets_DF <- InputDeets_DF %>% filter(CompoundID == "substrate")
+      InputDeets_DF <- InputDeets_DF %>% 
+         filter(CompoundID %in% c("substrate", "Trial Design"))
    } 
    
    ColLocations <- c("substrate" = 1,
@@ -101,8 +102,13 @@ extractInputTab <- function(deets = "all",
                      "secondary metabolite" = which(t(InputTab[5, ]) == "Sub Sec Metabolite"),
                      "inhibitor 1 metabolite" = which(t(InputTab[5, ]) == "Inh 1 Metabolite"))
    
-   InputDeets_DF$NameCol <- ColLocations[InputDeets_DF$CompoundID]
-   InputDeets_DF$ValueCol <- InputDeets_DF$NameCol + 1
+   InputDeets_DF <- InputDeets_DF %>% 
+      mutate(NameCol = ColLocations[CompoundID], 
+             ValueCol = NameCol + 1) %>% 
+      # If the NameCol is empty, it's b/c that compound ID or else a column with
+      # "Trial Design" wasn't found on that tab, so remove any empty NameCol
+      # rows.
+      filter(complete.cases(NameCol))
    
    ## Main set of parameters -----------------------------------------
    
@@ -231,6 +237,7 @@ extractInputTab <- function(deets = "all",
    
    if(length(MyInputDeets1) > 0){
       for(i in MyInputDeets1){
+         # print(i)
          Out[[i]] <- pullValue(i)
       }
    }

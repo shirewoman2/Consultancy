@@ -1,4 +1,4 @@
-#' Extract experimental details for multiple files at once
+#' Extract simulation experimental details for multiple files at once
 #'
 #' \code{extractExpDetails_mult} takes a character vector of Simcyp Simulator
 #' output files -- or all the Excel files in the current directory if no files
@@ -75,7 +75,8 @@
 #'   extracted only some of the possible experimental details and you now would
 #'   like more experimental details from each simulator output file.
 #'
-#' @return Returns a data.frame of experimental details for simulator files
+#' @return Returns a named list of simulation experimental details for simulator
+#'   files
 #'
 #' @export
 #'
@@ -98,7 +99,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), "\n     library(tidyverse)\n\nand then try again."), call. = FALSE)
    }
    
    # Checking whether they've supplied extractExpDetails args instead of
@@ -136,9 +137,9 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       MissingSimFiles <- setdiff(MissingSimFiles, TooLong)
       
       if(length(TooLong) > 0){
-         warning(paste0("The file(s) ", 
-                        str_comma(paste0("`", TooLong, "`")), 
-                        " has/have a file path that is too long, so we cannot extract any information about the simulation experimental details.\n"), 
+         warning(wrapn(paste0("The file(s) ", 
+                              str_comma(paste0("`", TooLong, "`")), 
+                              " has/have a file path that is too long, so we cannot extract any information about the simulation.")), 
                  call. = FALSE)
          sim_data_files <- setdiff(sim_data_files, TooLong)   
       }

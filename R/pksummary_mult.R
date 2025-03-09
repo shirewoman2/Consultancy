@@ -397,7 +397,7 @@ pksummary_mult <- function(sim_data_files = NA,
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), "\n     library(tidyverse)\n\nand then try again."), call. = FALSE)
    }
    
    warning(wrapn("We are working toward deprecating the pksummary_mult function in favor of the more versatile pk_table function. Please consider using pk_table going forward."), 

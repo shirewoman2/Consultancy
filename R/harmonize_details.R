@@ -93,7 +93,7 @@ harmonize_details <- function(existing_exp_details){
          # functions now.
          if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
              (any(is.na(existing_exp_details$MainDetails$SheetNames)) |
-             any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T))) | 
+              any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T))) | 
             "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
             
             for(i in existing_exp_details$MainDetails$File){
@@ -164,12 +164,10 @@ harmonize_details <- function(existing_exp_details){
          
          # Harmonizing dosing. Note that this must come AFTER making sure that
          # the list has items named MainDetails and named CustomDosing!
-         existing_exp_details <- harmonize_dosing(existing_exp_details)
+         Out <- harmonize_dosing(existing_exp_details)
          
          # Making sure the order is correct
-         existing_exp_details <- existing_exp_details[ExpDetailListItems]
-         
-         return(existing_exp_details[ExpDetailListItems])
+         Out <- Out[ExpDetailListItems]
          
       } else {
          
@@ -259,12 +257,10 @@ harmonize_details <- function(existing_exp_details){
          
          # Harmonizing dosing. Note that this must come AFTER making sure that
          # the list has items named MainDetails and named CustomDosing!
-         existing_exp_details <- harmonize_dosing(existing_exp_details)
+         Out <- harmonize_dosing(existing_exp_details)
          
          # Making sure the order is correct
-         existing_exp_details <- existing_exp_details[ExpDetailListItems]
-         
-         return(Out)
+         Out <- Out[ExpDetailListItems]
          
       }
       
@@ -373,17 +369,24 @@ harmonize_details <- function(existing_exp_details){
       # Making sure the order is correct
       Out <- Out[ExpDetailListItems]
       
-      # Making the simulation file name the 1st column for all items in the list
-      ItemsToCheck <- setdiff(names(Out), "VBE")
-      ItemsToCheck <- unlist(lapply(Out[ItemsToCheck], is.null)) == FALSE
-      
-      for(j in ItemsToCheck){
-         Out[[j]] <- Out[[j]] %>% 
-            mutate(File = sim_data_file) %>% 
-            select(File, everything())
-      }
-      
-      return(Out)
    }
+   
+   # Sorting MainDetails
+   Out$MainDetails <- Out$MainDetails[, sort(names(Out$MainDetails))]
+   
+   # Making the simulation file name the 1st column for all items in the list
+   ItemsToCheck <- setdiff(names(Out), "VBE")
+   ItemsToCheck <- map(Out[ItemsToCheck], 
+                       \(x) is.null(x) |
+                          ("data.frame" %in% class(x) && nrow(x) == 0)) %>% 
+      unlist()
+   ItemsToCheck <- names(ItemsToCheck)[ItemsToCheck == FALSE]
+   
+   for(j in ItemsToCheck){
+      Out[[j]] <- Out[[j]] %>% select(File, everything())
+   }
+   
+   return(Out)
+
 }
 
