@@ -92,8 +92,8 @@ harmonize_details <- function(existing_exp_details){
          # Check whether MainDetails includes SheetNames b/c need it for other
          # functions now.
          if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-             any(is.na(existing_exp_details$MainDetails$SheetNames)) |
-             any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
+             (any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+             any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T))) | 
             "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
             
             for(i in existing_exp_details$MainDetails$File){
@@ -368,12 +368,22 @@ harmonize_details <- function(existing_exp_details){
       
       # Harmonizing dosing. Note that this must come AFTER making sure that
       # the list has items named MainDetails and named CustomDosing!
-      existing_exp_details <- harmonize_dosing(existing_exp_details)
+      Out <- harmonize_dosing(existing_exp_details)
       
       # Making sure the order is correct
-      existing_exp_details <- existing_exp_details[ExpDetailListItems]
+      Out <- Out[ExpDetailListItems]
       
-      return(existing_exp_details[ExpDetailListItems])
+      # Making the simulation file name the 1st column for all items in the list
+      ItemsToCheck <- setdiff(names(Out), "VBE")
+      ItemsToCheck <- unlist(lapply(Out[ItemsToCheck], is.null)) == FALSE
+      
+      for(j in ItemsToCheck){
+         Out[[j]] <- Out[[j]] %>% 
+            mutate(File = sim_data_file) %>% 
+            select(File, everything())
+      }
+      
+      return(Out)
    }
 }
 

@@ -100,6 +100,11 @@ extractExpDetails_VBE <- function(sim_data_file){
    
    Out <- list()
    
+   # Noting all sheet names. This saves time for later data extraction and
+   # also helps with debugging and coding in general. 
+   Out[["SheetNames"]] <- str_c(paste0("`", SheetNames, "`"), collapse = " ")
+   
+   
    ## Trial-design info -------------------------------------------------------
    
    TDinfo <- VBEDeets %>% filter(ColsChangeWithCmpd == FALSE)
@@ -162,14 +167,75 @@ extractExpDetails_VBE <- function(sim_data_file){
       
       ### Info on treatment tab ----------------------------------------------
       
+      InputInfo <- extractInputTab(deets = MyInputDeets,
+                                   sim_data_file = sim_data_file, 
+                                   sheet = tx, 
+                                   CustomDosing = CustomDosing)
       
-      
-      
+      Out$Treatments[[tx]] <- c(Out$Treatments[[tx]], InputInfo)
       
    }
    
    
+   ## Adding general sim info -------------------------------------------------
+   if("StartDayTime_sub" %in% names(Out) &&
+      complete.cases(Out$StartDayTime_sub)){
+      Out[["StartHr_sub"]] <- difftime_sim(time1 = Out$SimStartDayTime,
+                                           time2 = Out$StartDayTime_sub)
+   }
    
+   # Noting when workspace, if there is a matching one, was last changed.
+   WorkspaceFile <- sub("xlsx", "cvbe", sim_data_file)
+   # Removing the file timestamp if there was one b/c that won't be part of the
+   # workspace file name.
+   WorkspaceFile <- sub(" - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}", 
+                        "", WorkspaceFile)
+   
+   Out$Workspace_TimeLastModified <- 
+      ifelse(file.exists(WorkspaceFile), 
+             as.character(file.info(WorkspaceFile)$mtime), NA)
+   
+   # Noting when this was run. 
+   Out$expDetails_TimeStamp <- Sys.time()
+   
+   
+   ## Returning ---------------------------------------------------------------
+   
+   # Splitting this up into main details -- a data.frame -- and then,
+   # separately, whatever items need to be lists, e.g., custom dosing regimens
+   # and dissolution profiles. 
+   suppressMessages(
+      Main <- as_tibble(Out[which(sapply(Out, length) == 1)])
+   )
+   
+   # Making absolutely sure that File included in Main. When we run
+   # harmonize_details, it will add it to the other items whenever there is at
+   # least 1 row, but we need it in Main to do that.
+   Main$File <- sim_data_file 
+   
+   Out <- list(MainDetails = Main, 
+               DissolutionProfiles = DissoProfs,
+               ReleaseProfiles = ReleaseProfs, 
+               ConcDependent_fup = CDfupProfs, 
+               ConcDependent_BP = CDBPProfs, 
+               pH_dependent_solubility = pHSol, 
+               VBE = Out[["Treatments"]])
+   
+   Out <- harmonize_details(Out)
+   
+   
+   # Returning --------------------------------------------------------------
+   
+   ItemsToCheck <- setdiff(names(Out), "VBE")
+   ItemsToCheck <- unlist(lapply(Out[ItemsToCheck], is.null)) == FALSE
+   
+   for(j in ItemsToCheck){
+      Out[[j]] <- Out[[j]] %>% 
+         mutate(File = sim_data_file) %>% 
+         select(File, everything())
+   }
+   
+   return(Out)
    
 }
 
