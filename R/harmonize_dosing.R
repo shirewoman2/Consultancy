@@ -19,7 +19,19 @@ harmonize_dosing <- function(existing_exp_details){
    # long as there's only 1 row.
    if("File" %in% names(Main) == FALSE & nrow(Main) == 1){Main$File <- "all"}
    
-   Main <- split(Main, f = Main$File)
+   # Noting when things include VBE sims
+   VBE <- any(str_detect(names(Main), "Treatment"))
+   
+   if(VBE){
+      Main <- Main %>% 
+         mutate(Treatment = ifelse(is.na(Treatment), 
+                                   "all treatments", Treatment))
+      
+      Main <- split(Main, f = list(Main$File, Main$Treatment))
+   } else {
+      Main <- split(Main, f = Main$File)
+   }
+   
    Dosing <- list()
    
    for(ff in names(Main)){
@@ -160,6 +172,15 @@ harmonize_dosing <- function(existing_exp_details){
    }
    
    existing_exp_details$Dosing <- bind_rows(Dosing)
+   
+   if(VBE){
+      existing_exp_details$Dosing <- existing_exp_details$Dosing %>% 
+         separate_wider_delim(cols = File, 
+                              delim = "xlsx", 
+                              names = c("File", "Treatment")) %>% 
+         mutate(File = paste0(File, "xlsx"), 
+                Treatment = sub("\\.", "", Treatment))
+   }
    
    if("DoseRoute" %in% names(existing_exp_details$Dosing)){
       existing_exp_details$Dosing <- existing_exp_details$Dosing %>% 

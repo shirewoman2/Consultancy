@@ -316,7 +316,8 @@ extractExpDetails_VBE <- function(sim_data_files,
                nrow(InputInfo[[i]]) > 0){
                InputInfo[[i]] <- InputInfo[[i]] %>% 
                   mutate(File = sim_data_file, 
-                         Treatment = tx)
+                         Treatment = tx) %>% 
+                  select(File, Treatment, everything())
                
                Out[[sim_data_file]][[i]] <- 
                   bind_rows(Out[[sim_data_file]][[i]], InputInfo[[i]])

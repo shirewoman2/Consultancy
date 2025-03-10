@@ -459,7 +459,7 @@ annotateDetails <- function(existing_exp_details,
             nrow(existing_exp_details[[i]]) == 0){next}
          
          existing_exp_details[[i]] <- existing_exp_details[[i]] %>% 
-            mutate(File = paste(File, Treatment)) 
+            mutate(File = paste(File, Treatment)) %>% select(-Treatment)
       }
    }
    
@@ -1511,7 +1511,7 @@ annotateDetails <- function(existing_exp_details,
                         Out[[item]][["Diffs"]][[cc]] <- 
                            list(columns = cc, 
                                 rows = which(Out[[item]]$DF[, ColTx1] != 
-                                                Out[[item]]$Df[, cc]))
+                                                Out[[item]]$DF[, cc]))
                      }
                   }
                   
@@ -1525,6 +1525,20 @@ annotateDetails <- function(existing_exp_details,
                                            cols = Out[[item]][["Diffs"]][[i]]$columns)
                      }
                   }
+                  
+                  openxlsx::addStyle(wb = WB, 
+                                     sheet = output_tab_name, 
+                                     style = BlueColumn, 
+                                     rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
+                                     cols = which(str_detect(names(Out[[item]][["DF"]]),
+                                                             "All files have this")))
+                  
+                  openxlsx::addStyle(wb = WB, 
+                                     sheet = output_tab_name, 
+                                     style = BlueColumnHeader, 
+                                     rows = 1, 
+                                     cols = which(str_detect(names(Out[[item]][["DF"]]),
+                                                             "All files have this")))
                   
                   
                } else {
