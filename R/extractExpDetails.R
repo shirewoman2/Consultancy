@@ -406,6 +406,8 @@ extractExpDetails <- function(sim_data_file,
    
    if(length(MyInputDeets) > 0){
       
+      MyInputDeets <- unique(c(MyInputDeets, AllCompounds$DetailNames))
+      
       InputInfo <- extractInputTab(deets = MyInputDeets,
                                    sim_data_file = sim_data_file, 
                                    sheet = "Input Sheet", 
@@ -787,11 +789,36 @@ extractExpDetails <- function(sim_data_file,
                CustomDosing = bind_rows(Out$CustomDosing_sub, 
                                         Out$CustomDosing_inhib, 
                                         Out$CustomDosing_inhib2), 
-               DissolutionProfiles = DissoProfs,
-               ReleaseProfiles = ReleaseProfs, 
-               ConcDependent_fup = CDfupProfs, 
-               ConcDependent_BP = CDBPProfs, 
-               pH_dependent_solubility = pHSol)
+               
+               DissolutionProfiles = 
+                  switch(as.character("DissolutionProfiles") %in% 
+                            names(InputInfo), 
+                         "TRUE" = InputInfo$DissolutionProfiles,
+                         "FALSE" = list()), 
+               
+               ReleaseProfiles = 
+                  switch(as.character("ReleaseProfiles") %in% 
+                            names(InputInfo), 
+                         "TRUE" = InputInfo$ReleaseProfiles,
+                         "FALSE" = list()), 
+               
+               ConcDependent_fup =
+                  switch(as.character("ConcDependent_fup") %in% 
+                            names(InputInfo), 
+                         "TRUE" = InputInfo$ConcDependent_fup,
+                         "FALSE" = list()), 
+               
+               ConcDependent_BP = 
+                  switch(as.character("ConcDependent_BP") %in% 
+                            names(InputInfo), 
+                         "TRUE" = InputInfo$ConcDependent_BP,
+                         "FALSE" = list()), 
+               
+               pH_dependent_solubility = 
+                  switch(as.character("pH_dependent_solubility") %in% 
+                            names(InputInfo), 
+                         "TRUE" = InputInfo$pH_dependent_solubility,
+                         "FALSE" = list()))
    
    Out <- harmonize_details(Out)
    

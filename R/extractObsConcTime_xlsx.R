@@ -94,7 +94,7 @@ extractObsConcTime_xlsx <- function(obs_data_file){
             AllCompounds$DosedCompoundID == "inhibitor 1"] ~ paste0(Parameter, "_inhib"), 
          CompoundID %in% AllCompounds$CompoundID[
             AllCompounds$DosedCompoundID == "inhibitor 2"] ~ paste0(Parameter, "_inhib2"))) %>% 
-      select(-Parameter) %>% 
+      select(-Parameter) %>% unique() %>% 
       pivot_wider(names_from = ParameterCmpd, 
                   values_from = Value) %>% 
       mutate(across(.cols = any_of(c(paste0(rep(c("DoseAmount", "InfDuration", 

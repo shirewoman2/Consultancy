@@ -333,6 +333,9 @@ extractInputTab <- function(deets = "all",
       }
       
       ReleaseProfs <- bind_rows(ReleaseProfs)
+      
+      if(nrow(ReleaseProfs) == 0){ReleaseProfs <- NULL}
+      
    }
    
    ### Checking on dissolution profiles ------------------------------------
