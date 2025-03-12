@@ -374,6 +374,8 @@
 #'   like help creating a specific gradation of colors, please talk to a member
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
+#' @param y_axis_label_position position of y axis title. Options are "left"
+#'   (default) or "right".
 #'
 #' @return Output is a graph.
 #' @export
@@ -554,6 +556,7 @@ forest_plot <- function(forest_dataframe,
                         x_axis_number_type = "ratios",
                         x_order = NA,
                         y_axis_title = "none", 
+                        y_axis_label_position = "left", 
                         pad_y_axis = TRUE, 
                         legend_position = "none", 
                         color_set = "grays",
@@ -682,6 +685,7 @@ forest_plot <- function(forest_dataframe,
                     "include_dose_num" = include_dose_num,
                     "include_ratio_in_labels" = include_ratio_in_labels,
                     "y_axis_title" = y_axis_title, 
+                    "y_axis_label_position" = y_axis_label_position, 
                     "prettify_ylabel" = prettify_ylabel, 
                     "x_axis_title" = x_axis_title,
                     "x_axis_number_type" = x_axis_number_type,
@@ -704,6 +708,14 @@ forest_plot <- function(forest_dataframe,
                   names(LenCheck)[which(LenCheck != 1)][1], 
                   "`` must have only one item. Please check your input and the help file and try again."), 
            call. = FALSE)
+   }
+   
+   # Catching issues w/y axis title position 
+   y_axis_label_position <- tolower(y_axis_label_position)
+   if(y_axis_label_position %in% c("left", "right") == FALSE){
+      warning(wrapn("You have specified something other than 'left' or 'right' for the y axis title position, and those are the only options. We'll set y_axis_label_position = 'left'."), 
+              call. = FALSE)
+      y_axis_label_position <- "left"
    }
    
    # Making some guesses about how user might mis-specify variability type.
@@ -1981,14 +1993,34 @@ forest_plot <- function(forest_dataframe,
       G <- G +
          facet_grid(. ~ PKparameter_exp, 
                     labeller = label_parsed, 
-                    switch = "y") +
+                    switch(y_axis_label_position, 
+                           "left" = "y", 
+                           "right" = NULL)) +
          scale_shape_manual(values = MyShapes) +
-         scale_y_reverse(limits = c(max(as.numeric(forest_dataframe$YCol)) + 0.5, 
-                                    0.5), 
-                         breaks = sort(unique(as.numeric(forest_dataframe$YCol))),
-                         labels = levels(forest_dataframe$YCol),
-                         expand = expansion(mult = pad_y_num)) + 
          labs(fill = "Interaction level", shape = NULL)
+      
+      if(y_axis_label_position == "left"){
+         G <- G +
+            scale_y_reverse(limits = c(max(as.numeric(forest_dataframe$YCol)) + 0.5, 
+                                       0.5), 
+                            breaks = sort(unique(as.numeric(forest_dataframe$YCol))),
+                            labels = levels(forest_dataframe$YCol),
+                            expand = expansion(mult = pad_y_num)) 
+      } else {
+         G <- G +
+            scale_y_reverse(
+               limits = c(max(as.numeric(forest_dataframe$YCol)) + 0.5, 
+                          0.5), 
+               breaks = sort(unique(as.numeric(forest_dataframe$YCol))),
+               labels = levels(forest_dataframe$YCol),
+               expand = expansion(mult = pad_y_num), 
+               dup_axis(breaks = NULL, 
+                        name = switch(paste(y_axis_title == "none", y_axis_label_position), 
+                                      "TRUE left" = NULL, 
+                                      "TRUE right" = NULL, 
+                                      "FALSE left" = y_axis_title, 
+                                      "FALSE right" = NULL)))
+      }
       
       if(show_borders){
          G <- G +
@@ -2069,13 +2101,33 @@ forest_plot <- function(forest_dataframe,
       }
       
       G <- G +
-         scale_shape_manual(values = MyShapes) +
-         scale_y_continuous(
-            breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
-            labels = switch(as.character(length(Param_exp) == 1), 
-                            "TRUE" = Param_exp[[1]], 
-                            "FALSE" = sapply(Param_exp[levels(forest_dataframe$PKparameter)], FUN = `[`)), 
-            expand = expansion(mult = pad_y_num)) 
+         scale_shape_manual(values = MyShapes)
+      
+      if(y_axis_label_position == "left"){
+         G <- G +
+            scale_y_continuous(
+               breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
+               labels = switch(as.character(length(Param_exp) == 1), 
+                               "TRUE" = Param_exp[[1]], 
+                               "FALSE" = sapply(Param_exp[levels(forest_dataframe$PKparameter)], FUN = `[`)), 
+               expand = expansion(mult = pad_y_num)) 
+         
+      } else {
+         
+         G <- G +
+            scale_y_continuous(
+               breaks = as.numeric(sort(unique(forest_dataframe$PKparameter))) * 1.5,
+               labels = switch(as.character(length(Param_exp) == 1),
+                               "TRUE" = Param_exp[[1]],
+                               "FALSE" = sapply(Param_exp[levels(forest_dataframe$PKparameter)], FUN = `[`)),
+               expand = expansion(mult = pad_y_num),
+               sec.axis = dup_axis(breaks = NULL, 
+                                   name = switch(paste(y_axis_title == "none", y_axis_label_position),
+                                                 "TRUE left" = NULL,
+                                                 "TRUE right" = NULL,
+                                                 "FALSE left" = NULL,
+                                                 "FALSE right" = y_axis_title)))
+      }
       
       if(as_label(facet_column_x) != "<empty>"){
          
@@ -2095,14 +2147,20 @@ forest_plot <- function(forest_dataframe,
                   size = calc_element("strip.text.x", theme_consultancy())$size), 
                by_layer_y = TRUE)
             
-            G <- G + ggh4x::facet_nested(YCol ~ FacetTitleX + FCX, 
-                                         strip = FacetTitleTheme_X, 
-                                         switch = "y")
+            G <- G + ggh4x::facet_nested(
+               YCol ~ FacetTitleX + FCX, 
+               strip = FacetTitleTheme_X, 
+               switch = switch(y_axis_label_position, 
+                               "left" = "y", 
+                               "right" = NULL))
             
          }
          
       } else {
-         G <- G + facet_grid(YCol ~ ., switch = "y") 
+         G <- G + facet_grid(YCol ~ ., 
+                             switch = switch(y_axis_label_position, 
+                                             "left" = "y", 
+                                             "right" = NULL)) 
       }
    }
    
@@ -2120,9 +2178,11 @@ forest_plot <- function(forest_dataframe,
                                          "percents" = scales::label_percent())) + 
       coord_cartesian(xlim = x_axis_limits) +
       xlab(ifelse(is.na(x_axis_title), XTitle, x_axis_title)) + 
-      ylab(switch(as.character(y_axis_title == "none"), 
-                  "TRUE" = NULL, 
-                  "FALSE" = y_axis_title)) +
+      ylab(switch(paste(y_axis_title == "none", y_axis_label_position), 
+                  "TRUE left" = NULL, 
+                  "TRUE right" = NULL, 
+                  "FALSE left" = y_axis_title, 
+                  "FALSE right" = NULL)) +
       guides(fill = guide_legend(override.aes = list(colour = "black",
                                                      linewidth = 0.1))) + # <-- This adds a box around all the glyphs in the legend and works better than using legend.key within the theme call.
       theme_consultancy() +
@@ -2149,6 +2209,7 @@ forest_plot <- function(forest_dataframe,
          legend.margin = margin(0, 0, 0, 0), 
          strip.text = element_text(face = "bold", hjust = 0.5),
          strip.text.y.left = element_text(angle = 0),
+         strip.text.y.right = element_text(angle = 0), 
          strip.placement = "outside",
          panel.border = switch(as.character(show_borders), 
                                "TRUE" = element_rect(colour = "grey70", fill = NA),
