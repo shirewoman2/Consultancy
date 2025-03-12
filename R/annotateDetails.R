@@ -717,9 +717,11 @@ annotateDetails <- function(existing_exp_details,
       
       item_char <- switch(item, 
                           "MainDetails" = "main set of simulation details", 
+                          "Dosing" = "dosing information", 
                           "CustomDosing" = "custom-dosing information", 
-                          "ConcDependent_fup" = "concentration-dependent fup information", 
                           "ConcDependent_BP" = "concentration-dependent B/P information", 
+                          "ConcDependent_fup" = "concentration-dependent fup information", 
+                          "pH_dependent_LuminalDegradation" = "pH-dependent luminal degradation", 
                           "pH_dependent_solubility" = "pH-dependent solubility information")
       
       if(item == "MainDetails"){
@@ -1658,9 +1660,9 @@ annotateDetails <- function(existing_exp_details,
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
                PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 6
+                  length(unique(existing_exp_details[[item]]$Compound)) * 5
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
@@ -1693,9 +1695,9 @@ annotateDetails <- function(existing_exp_details,
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
                PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 6
+                  length(unique(existing_exp_details[[item]]$Compound)) * 5
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
@@ -1779,9 +1781,9 @@ annotateDetails <- function(existing_exp_details,
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
                PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 6
+                  length(unique(existing_exp_details[[item]]$Compound)) * 5
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
@@ -1808,9 +1810,9 @@ annotateDetails <- function(existing_exp_details,
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
                PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 6
+                  length(unique(existing_exp_details[[item]]$Compound)) * 5
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
@@ -1822,6 +1824,41 @@ annotateDetails <- function(existing_exp_details,
                                     startCol = 1)
                
                rm(NumFiles, PlotWidth)
+               
+            } else if(i == "pH_dependent_LuminalDegradation"){
+               
+               ## pH_dependent_LuminalDegradation tab ------------------------
+               
+               suppressMessages(
+                  plot(ggplot(existing_exp_details[[item]], 
+                              aes(x = pH, y = DegradationRateConstant,
+                                  color = File)) +
+                          geom_point() + 
+                          geom_line() +
+                          facet_grid(Compound ~ ., switch = "y") +
+                          scale_color_manual(values = rainbow(length(unique(existing_exp_details[[item]]$File)))) +
+                          ylab("Degradation rate constant (1/h)") +
+                          ggtitle("pH-dependent luminal degradation", 
+                                  subtitle = "Points will overlap perfectly when all simulations have the same values.") +
+                          theme_consultancy(border = TRUE) +
+                          theme(strip.placement = "outside")
+                  ))
+               
+               # Seems like ggplot makes not more than 20 items in the legend
+               # before going over a column. Will need to consider that when
+               # adjusting width.
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
+               PlotHeight <- 0.5 + 
+                  length(unique(existing_exp_details[[item]]$Compound)) * 5
+               
+               openxlsx::insertPlot(wb = WB, 
+                                    sheet = output_tab_name, 
+                                    width = PlotWidth,  
+                                    height = PlotHeight,
+                                    fileType = "png", 
+                                    units = "in", 
+                                    startRow = nrow(Out[[item]][["DF"]]) + 5, 
+                                    startCol = 1)
                
             } else if(i == "pH_dependent_solubility"){
                
@@ -1844,9 +1881,9 @@ annotateDetails <- function(existing_exp_details,
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
                PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 6
+                  length(unique(existing_exp_details[[item]]$Compound)) * 5
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 

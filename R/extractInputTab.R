@@ -527,6 +527,51 @@ extractInputTab <- function(deets = "all",
    }
    
    
+   ### pH-dependent luminal degradation -----------------------------------------
+   if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
+      exists("InputTab", inherits = FALSE) &&
+      any(str_detect(unlist(c(InputTab[, ColLocations])), 
+                     "Degradation rate constant"), na.rm = TRUE)){
+      
+      pHLumDeg <- list()
+      
+      for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
+         StartRow <- which(str_detect(t(InputTab[, ColLocations[i]]), 
+                                      "Degradation rate constant"))[1] - 1
+         EndRow <- which(str_detect(t(InputTab[, ColLocations[i]]), 
+                                    "Degradation rate constant [0-9]{1,} 1.h"))
+         EndRow <- EndRow[which.max(EndRow)]
+         
+         # It could be that one compound has pH-dependent fu,p profiles and
+         # another compound does not. Checking that here since I did not check it
+         # in the original if statement at the top of this section.
+         if(length(StartRow) == 0 || is.na(StartRow)){
+            next
+         }
+         
+         pHLumDeg_temp <- InputTab[StartRow:EndRow, ColLocations[i]:(ColLocations[i]+1)]
+         names(pHLumDeg_temp) <- c("NameCol", "ValCol")
+         
+         pHLumDeg[[i]] <- data.frame(
+            pH = pHLumDeg_temp$ValCol[which(str_detect(pHLumDeg_temp$NameCol, "pH"))], 
+            DegradationRateConstant = pHLumDeg_temp$ValCol[which(str_detect(pHLumDeg_temp$NameCol, "Degradation rate constant [0-9]{1,} 1.h"))]) %>%  
+            mutate(across(.cols = everything(), .fns = as.numeric), 
+                   File = sim_data_file, 
+                   CompoundID = i, 
+                   Compound = as.character(Out[AllCompounds$DetailNames[
+                      AllCompounds$CompoundID == i]])) %>% 
+            select(File, CompoundID, Compound, pH, DegradationRateConstant)
+         
+         rm(StartRow, EndRow, pHLumDeg_temp)
+         
+      }
+      
+      pHLumDeg <- bind_rows(pHLumDeg)
+   } else {
+      pHLumDeg <- NULL
+   }
+   
+   
    ### pH-dependent solubility -----------------------------------------
    if(Out[["SimulatorUsed"]] != "Simcyp Discovery" &&
       exists("InputTab", inherits = FALSE) &&
@@ -1278,6 +1323,7 @@ extractInputTab <- function(deets = "all",
    Out[["ConcDependent_fup"]] <- CDfupProfs 
    Out[["ConcDependent_BP"]] <- CDBPProfs
    Out[["pH_dependent_solubility"]] <- pHSol
+   Out[["pH_dependent_LumindalDegradation"]] <- pHLumDeg
    
    
    # Returning --------------------------------------------------------------
