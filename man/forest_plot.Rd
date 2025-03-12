@@ -22,6 +22,7 @@ forest_plot(
   x_axis_number_type = "ratios",
   x_order = NA,
   y_axis_title = "none",
+  y_axis_label_position = "left",
   pad_y_axis = TRUE,
   legend_position = "none",
   color_set = "grays",
@@ -239,6 +240,9 @@ order with \code{x_order = c("QD", "BID")}}
 \item{y_axis_title}{optionally specify a vertical title to be displayed to
 the left of the y axis. Example: \code{y_axis_title = "Perpetrator
 co-administered with Drug X"}. Default ("none") leaves off any y-axis title.}
+
+\item{y_axis_label_position}{position of y axis title. Options are "left"
+(default) or "right".}
 
 \item{pad_y_axis}{optionally add a smidge of padding to the y axis (default
 is TRUE, which includes some generally reasonable padding). If set to

@@ -1,18 +1,22 @@
-#' Extract fm and fe valuesthat change with time from a Simulator output Excel
+#' Extract fm and fe values that change with time from a Simulator output Excel
 #' file
 #'
 #' \code{extractFmFe} extracts fm and fe data from a simulator output Excel
-#' file. A tab named something like "Time variant \%fm and fe" must be present
-#' to get dynamic fm and fe values, but you can get the static values if the tab
-#' "% fm and fe SS" is present. Dynamic fm and fe data are required if you want
-#' to use these data with the function \code{\link{fm_plot}} to make a graph of
-#' how the fm values change over time.
+#' file. A tab named "Time variant \%fm and fe" must be present to get dynamic
+#' fm and fe values, and a tab named "\% fm and fe SS" must be present to get
+#' static values. Dynamic fm and fe data are required if you want to use these
+#' data with the function \code{\link{fm_plot}} to make a graph of how the fm
+#' values change over time.
 #'
 #' @param sim_data_file name of the Excel file containing the simulated dynamic
 #'   fm and fe data, in quotes
 #' @param returnOnlyMaxMin TRUE (default) or FALSE for whether to return only
-#'   maximum and minimum fm values -- basically, return the table in the upper
-#'   left corner of the "Time variant \%fm and fe" tab.
+#'   maximum and minimum fm values for dynamic fm values -- basically, return
+#'   the table in the upper left corner of the "Time variant \%fm and fe" tab.
+#' @param static_or_dynamic get "static" or "dynamic" (default) fm values.
+#'   "static" will retrieve information from the "\% fm and fe SS" tab, if
+#'   present, and "dynamic" will retrieve it from the "Time variant \%fm and fe"
+#'   tab.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated fm
 #'   and fe data? This currently only applies to the dynamic fms and has not yet
 #'   been developed for the static fms, which will only return aggregate data at
@@ -37,6 +41,7 @@
 
 
 extractFmFe <- function(sim_data_file,
+                        static_or_dynamic = "dynamic", 
                         returnOnlyMaxMin = TRUE, 
                         returnAggregateOrIndiv = "both", 
                         existing_exp_details = NA){
@@ -49,6 +54,13 @@ extractFmFe <- function(sim_data_file,
    
    # If they didn't include ".xlsx" at the end, add that.
    sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_file), ".xlsx")
+   
+   static_or_dynamic <- tolower(static_or_dynamic)[1]
+   if(static_or_dynamic %in% c("static", "dynamic") == FALSE){
+      warning(wrapn("You have supplied something other than 'static' or 'dynamic' for the argument 'static_or_dynamic', and those are the only options. We'll use the default of 'dynamic'."), 
+              call. = FALSE)
+      static_or_dynamic <- "dynamic"
+   }
    
    # Checking for file name issues
    CheckFileNames <- check_file_name(sim_data_file)
@@ -119,11 +131,28 @@ extractFmFe <- function(sim_data_file,
       return(data.frame())
    }
    
+   if(length(SheetNames_static) == 0 & 
+      static_or_dynamic == "static"){
+      warning(wrapn(paste0("The simulator output file provided, '", 
+                           sim_data_file, 
+                           "', does not appear to have a sheet titled '% fm and fe SS', which is what we need for extracting static fm and fe values. We cannot return any dynamic fm data.")),
+              call. = FALSE)
+      return(data.frame())
+   }
+   
+   if(length(SheetNames_dynamic) == 0 & 
+      static_or_dynamic == "dynamic"){
+      warning(wrapn(paste0("The simulator output file provided, '", 
+                           sim_data_file, 
+                           "', does not appear to have a sheet titled 'Time variant %fm and fe', which is what we need for extracting dynamic fm and fe values. We cannot return any fm data.")),
+              call. = FALSE)
+      return(data.frame())
+   }
    
    # Dynamic fm data extraction -----------------------------------------------
    
-   # Preferentially getting dynamic fm data
-   if(length(SheetNames_dynamic) == 1){
+   # dynamic fm data
+   if(static_or_dynamic == "dynamic"){
       # Reading in simulated abundance-time profile data
       sim_data_xl <- suppressMessages(
          readxl::read_excel(path = sim_data_file,
@@ -151,8 +180,12 @@ extractFmFe <- function(sim_data_file,
                       Parameter = str_extract(...1, "fm|fe"), 
                       across(.cols = c(Max, tmax, Min, tmin), 
                              .fns = as.numeric), 
-                      File = sim_data_file) %>% 
-               select(Parameter, Tissue, Enzyme, PerpPresent, Max, tmax, Min, tmin, File)
+                      File = sim_data_file, 
+                      Pathway = case_when(
+                         is.na(Enzyme) ~ Tissue,
+                         .default = paste(Tissue, Enzyme))) %>% 
+               select(Parameter, Tissue, Enzyme, Pathway, PerpPresent, 
+                      Max, tmax, Min, tmin, File)
          )
          
          return(Out)
@@ -427,16 +460,17 @@ extractFmFe <- function(sim_data_file,
                 Inhibitor = ifelse(PerpPresent,
                                    str_comma(AllPerpetrators), "none"), 
                 Substrate = Deets$Substrate, 
-                Compound = AllCompounds[CompoundID]) %>%
+                Compound = AllCompounds[CompoundID], 
+                Pathway = case_when(
+                   is.na(Enzyme) ~ Tissue,
+                   .default = paste(Tissue, Enzyme))) %>%
          arrange(across(any_of(c("Parameter", "Tissue", "Enzyme",
                                  "Substrate", "Inhibitor",
                                  "Individual", "Trial", "Time")))) %>%
-         select(any_of(c("Compound", "CompoundID", "Inhibitor", 
-                         "Parameter", "Enzyme", "Tissue", 
-                         "Individual", "Trial", "Time", "Fraction",
-                         "Time_units", 
-                         "DoseNum_sub", "DoseNum_inhib1", "DoseNum_inhib2", 
-                         "File"))) %>% 
+         select(any_of(c("File", "Compound", "CompoundID", "Inhibitor", 
+                         "Enzyme", "Tissue", "Pathway", "Individual", "Trial", 
+                         "Parameter", "Time", "Fraction", "Time_units", 
+                         "DoseNum_sub", "DoseNum_inhib1", "DoseNum_inhib2"))) %>% 
          purrr::discard(~all(is.na(.)))
       
       return(Data)
@@ -503,6 +537,31 @@ extractFmFe <- function(sim_data_file,
             select(File, Statistic, everything())
          
       }
+      
+      # Formatting to make output better match dynamic output and get better
+      # column names
+      Out <- Out %>% 
+         pivot_longer(cols = -c(Statistic, DDI, File), 
+                      names_to = "Parameter", 
+                      values_to = "Fraction") %>% 
+         mutate(Compound = existing_exp_details$MainDetails$Substrate, 
+                CompoundID = "substrate", 
+                Inhibitor = case_when(DDI == TRUE ~ existing_exp_details$MainDetails$Inhibitor1, 
+                                      DDI == FALSE ~ "none")) %>% 
+         separate_wider_delim(cols = Parameter, delim = " ", 
+                              names = c("Enzyme", "Tissue"), 
+                              too_few = "align_end") %>% 
+         mutate(Tissue = tolower(Tissue), 
+                Parameter = case_when(Tissue == "renal" ~ "fe", 
+                                      .default = "fm"), 
+                # Fraction must be divided by 100 to match the dynamic output
+                # format
+                Fraction = Fraction / 100,
+                Pathway = case_when(
+                   is.na(Enzyme) ~ Tissue,
+                   .default = paste(Tissue, Enzyme))) %>% 
+         select(File, Compound, CompoundID, Inhibitor, 
+                Enzyme, Tissue, Pathway, Statistic, Parameter, Fraction)
       
       return(Out)
       

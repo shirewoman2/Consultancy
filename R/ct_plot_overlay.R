@@ -2588,7 +2588,7 @@ ct_plot_overlay <- function(ct_dataframe,
    } 
    
    # Setting axis limits and breaks
-   if(EnzPlot | DissolutionProfPlot | ReleaseProfPlot){
+   if(EnzPlot | FmPlot | DissolutionProfPlot | ReleaseProfPlot){
       A <- suppressWarnings(suppressMessages(
          A + scale_y_continuous(labels = scales::label_percent(big.mark = ","),
                                 breaks = switch(FacetOptions$Scales, 
