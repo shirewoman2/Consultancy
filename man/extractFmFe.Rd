@@ -2,11 +2,12 @@
 % Please edit documentation in R/extractFmFe.R
 \name{extractFmFe}
 \alias{extractFmFe}
-\title{Extract fm and fe valuesthat change with time from a Simulator output Excel
+\title{Extract fm and fe values that change with time from a Simulator output Excel
 file}
 \usage{
 extractFmFe(
   sim_data_file,
+  static_or_dynamic = "dynamic",
   returnOnlyMaxMin = TRUE,
   returnAggregateOrIndiv = "both",
   existing_exp_details = NA
@@ -16,9 +17,14 @@ extractFmFe(
 \item{sim_data_file}{name of the Excel file containing the simulated dynamic
 fm and fe data, in quotes}
 
+\item{static_or_dynamic}{get "static" or "dynamic" (default) fm values.
+"static" will retrieve information from the "\% fm and fe SS" tab, if
+present, and "dynamic" will retrieve it from the "Time variant \%fm and fe"
+tab.}
+
 \item{returnOnlyMaxMin}{TRUE (default) or FALSE for whether to return only
-maximum and minimum fm values -- basically, return the table in the upper
-left corner of the "Time variant \%fm and fe" tab.}
+maximum and minimum fm values for dynamic fm values -- basically, return
+the table in the upper left corner of the "Time variant \%fm and fe" tab.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated fm
 and fe data? This currently only applies to the dynamic fms and has not yet
@@ -41,11 +47,11 @@ a data.frame
 }
 \description{
 \code{extractFmFe} extracts fm and fe data from a simulator output Excel
-file. A tab named something like "Time variant \%fm and fe" must be present
-to get dynamic fm and fe values, but you can get the static values if the tab
-"% fm and fe SS" is present. Dynamic fm and fe data are required if you want
-to use these data with the function \code{\link{fm_plot}} to make a graph of
-how the fm values change over time.
+file. A tab named "Time variant \%fm and fe" must be present to get dynamic
+fm and fe values, and a tab named "\% fm and fe SS" must be present to get
+static values. Dynamic fm and fe data are required if you want to use these
+data with the function \code{\link{fm_plot}} to make a graph of how the fm
+values change over time.
 }
 \examples{
 # None yet

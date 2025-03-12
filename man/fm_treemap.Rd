@@ -9,6 +9,7 @@ fm_treemap(
   fm_dataframe,
   pathway_column,
   fm_column,
+  mean_type = NA,
   DDI_option = "baseline only",
   show_numbers_on_graph = TRUE,
   rounding = NA,
@@ -42,6 +43,10 @@ this should be the values as decimals, e.g., 0.8 for 80\%. The total area
 occupied by boxes in your treemap will sum to 100\%, even if these numbers
 do not, so pay attention to what data you're graphing and make sure things
 sum to 1.}
+
+\item{mean_type}{If there is a column called "statistic" in your data, which
+mean type would you like to display? Acceptable values are any statistics
+present in that column, but you can only show one.}
 
 \item{DDI_option}{If the fm_dataframe included fm and fe values for when any
 DDI perpetrator drugs are present, then you've got some options for how to
@@ -107,30 +112,32 @@ Leaving this as NA means the file will not be automatically saved to disk.}
 a ggplot2 graph
 }
 \description{
-Create a treemap -- filled rectangles -- to indicate the fraction of
-metabolism due to various pathways. Rectangles are proportional in size to
-the fm values and include labels for the drug-metabolizing enzyme involved
-and the percentage that enzyme is responsible for. Any rectangles that would
-be smaller than some user-specified cutoff (see argument "label_fm_cutoff")
-will be pulled out underneath the graph for readability. Why bother with a
-treemap as opposed to a pie chart? Rectangles are easier to compare visually
-than the sizes of pie slices, making a treemap easier to understand and
-interpret (reference: "The Visual Display of Quantitative Information" by
-Edward Tufte, Professor Emeritus of Political Science, Statistics, and
-Computer Science at Yale University).
+Create a treemap -- filled rectangles -- to indicate the
+  fraction of metabolism due to various pathways. Rectangles are proportional
+  in size to the fm values and include labels for the drug-metabolizing
+  enzyme involved and the percentage that enzyme is responsible for. Any
+  rectangles that would be smaller than some user-specified cutoff (see
+  argument "label_fm_cutoff") will be pulled out underneath the graph for
+  readability.
+
+  \strong{Why bother with a treemap as opposed to a pie chart?} Rectangles
+  are easier to compare visually than the sizes of pie slices, making a
+  treemap easier to understand and interpret (reference: "The Visual Display
+  of Quantitative Information" by Edward Tufte, Professor Emeritus of
+  Political Science, Statistics, and Computer Science at Yale University).
 }
 \examples{
 
 Lenv_fm <- data.frame(DME = c("CYP3A4", "other CYPs", "aldehyde oxidase"),
                       fm = c(0.79, 0.20, 0.01))
 fm_treemap(fm_dataframe = Lenv_fm,
-           pathway_column = DME, 
+           pathway_column = DME,
            fm_column = fm)
 
 fm_treemap(fm_dataframe = Lenv_fm,
-           pathway_column = DME, 
-           fm_column = fm, 
-           color_set = "blue-green", 
+           pathway_column = DME,
+           fm_column = fm,
+           color_set = "blue-green",
            label_fm_cutoff = 0.01)
 
 }
