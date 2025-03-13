@@ -781,7 +781,7 @@ pk_table <- function(PKparameters = NA,
             paste0("There were no possible PK parameters to be extracted for the ",
                    unique(PKparameters[[i]]$CompoundID),
                    " in ", unique(PKparameters[[i]]$Tissue), 
-                   " for the simulation `", i,
+                   " for the simulation `", unique(PKparameters[[i]]$File),
                    "` on the ", 
                    ifelse(is.na(unique(PKparameters[[i]]$Sheet)) || 
                              unique(PKparameters[[i]]$Sheet) == "default", 
