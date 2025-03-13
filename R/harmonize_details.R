@@ -366,9 +366,16 @@ harmonize_details <- function(existing_exp_details){
                                 .default = Regimen_inhib2))
       )
       
-      # Harmonizing dosing. Note that this must come AFTER making sure that
-      # the list has items named MainDetails and named CustomDosing!
-      existing_exp_details <- harmonize_dosing(existing_exp_details)
+      # Harmonizing dosing. Note that this must come AFTER making sure that the
+      # list has items named MainDetails and named CustomDosing! Skipping this
+      # step when crucial info unavailable, which is sometimes the case when
+      # it's from an XML file.
+      if(all(sapply(c("Dose", "DoseRoute", "DoseInt", "StartHr", "NumDoses", 
+                      "SimStartDayTime", "Units_dose_sub"), 
+                    \(x) any(str_detect(
+                       names(existing_exp_details$MainDetails), x))))){
+         existing_exp_details <- harmonize_dosing(existing_exp_details)
+      }
       
       # Making sure the order is correct
       existing_exp_details <- existing_exp_details[ExpDetailListItems]
