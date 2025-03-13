@@ -1993,9 +1993,9 @@ forest_plot <- function(forest_dataframe,
       G <- G +
          facet_grid(. ~ PKparameter_exp, 
                     labeller = label_parsed, 
-                    switch(y_axis_label_position, 
-                           "left" = "y", 
-                           "right" = NULL)) +
+                    switch = switch(y_axis_label_position, 
+                                    "left" = "y", 
+                                    "right" = NULL)) +
          scale_shape_manual(values = MyShapes) +
          labs(fill = "Interaction level", shape = NULL)
       
