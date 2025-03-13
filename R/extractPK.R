@@ -1215,17 +1215,20 @@ extractPK <- function(sim_data_file,
    if(length(PKparameters_Abs) > 0 &
       any(PKparameters_orig %in% c("AUC tab")) == FALSE){
       
-      PKparameters_Abs_ADAM <- intersect(PKparameters_Abs, 
-                                         c("fa_sub", "Fg_sub", "fa_apparent_sub"))
+      PKparameters_Abs_ADAM <- intersect(
+         PKparameters_Abs, 
+         
+         AllPKParameters %>% filter(Sheet == "Overall Fa Fg") %>% 
+            pull(PKparameter))
       
       # Error catching
       if(any(c("Absorption", "Overall Fa Fg") %in% SheetNames) == FALSE){
-         warning(paste0("A sheet called `Absorption` or `Overall Fa Fg` must be present in the Excel simulated data file to extract the PK parameters ",
-                        str_c(PKparameters_Abs, collapse = ", "),
-                        ". None of these parameters can be extracted."),
+         warning(wrapn(paste0("A sheet called `Absorption` or `Overall Fa Fg` must be present in the Excel simulated data file to extract the PK parameters ",
+                              str_c(PKparameters_Abs, collapse = ", "),
+                              ". None of these parameters can be extracted.")),
                  call. = FALSE)
       } else if(Deets$Species != "human"){
-         warning("You have requested information from the Absorption tab from an animal simulation; we apologize, but we have not set up this function for animal data extraction from the Absorption tab yet.", 
+         warning(wrapn("You have requested information from the Absorption tab from an animal simulation; we apologize, but we have not set up this function for animal data extraction from the Absorption tab yet."), 
                  call. = FALSE)
       } else {
          
@@ -1236,7 +1239,7 @@ extractPK <- function(sim_data_file,
                                   col_names = FALSE))
             
             SubCols <- 3:5
-            # This is IN THE PRESENCE OF AN PERPETRATOR -- not the perpetrator
+            # This is IN THE PRESENCE OF A PERPETRATOR -- not the perpetrator
             # itself. I haven't set that up yet. 
             WithInhibCols <- 6:10
             
