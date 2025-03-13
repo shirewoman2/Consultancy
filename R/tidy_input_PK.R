@@ -1154,6 +1154,20 @@ tidy_input_PK <- function(PKparameters,
                    UserInterval = complete.cases(Sheet))
       }
       
+      # Give a warning if the requested PK parameter is not among the
+      # possibilities.
+      BadParam <- setdiff(PKparameters$PKparameter, AllPKParameters$PKparameter)
+      if(length(BadParam) > 0){
+         warning(paste0("The following are not among the possible PK parameters:\n", 
+                        str_c(paste0("     ", BadParam), collapse = "\n"), "\n",
+                        wrapn("We won't be able to return information on them. Please check that any PK parameters you list are included in the column 'PKparameter' when you run this in the console:"), 
+                        "     view(PKParameterDefinitions)"), 
+                 call. = FALSE)
+         
+         PKparameters <- PKparameters %>% 
+            filter(PKparameter %in% BadParam == FALSE)
+      }
+      
       PKparameters <- PKparameters %>% 
          mutate(UserInterval = complete.cases(Sheet) & 
                    Sheet != "") %>% 
