@@ -452,7 +452,7 @@ extractConcTime <- function(sim_data_file,
    SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
    
    if(is.na(SimConcUnits) & 
-      any(str_detect(sim_data_xl$...1, "Therapeutic protein"))){
+      any(str_detect(sim_data_xl$...1, "Therapeutic protein"), na.rm = T)){
       
       SimConcUnits <- sim_data_xl$...1[
          which(str_detect(sim_data_xl$...1, "Therapeutic protein"))[1]]
