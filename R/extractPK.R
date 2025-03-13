@@ -1241,7 +1241,8 @@ extractPK <- function(sim_data_file,
             SubCols <- 3:5
             # This is IN THE PRESENCE OF A PERPETRATOR -- not the perpetrator
             # itself. I haven't set that up yet. 
-            WithInhibCols <- 6:10
+            WithInhibCols <- 6:8
+            RatioCols <- 9:10
             
             StartRow_agg <- 3
             EndRow_agg <- which(is.na(FaFg_xl$...1[3:nrow(FaFg_xl)]))[1] + 1
@@ -1261,12 +1262,17 @@ extractPK <- function(sim_data_file,
                # i. For the absorption tab, there are columns for the substrate
                # and columns for Inhibitor 1. (There are also columns for
                # Inhibitor 2 and 3 but I've never seen them filled in. -LSh)
-               StartCol <- ifelse(str_detect(i, "withInhib"),
-                                  WithInhibCols, SubCols)
+               if(str_detect(i, "withInhib")){
+                  ColsToUse <- WithInhibCols
+               } else if(str_detect(i, "ratio")){
+                  ColsToUse <- RatioCols
+               } else {
+                  ColsToUse <- SubCols
+               }
                
-               ColNum <- which(str_detect(
-                  as.character(FaFg_xl[2, StartCol:(StartCol+2)]),
-                  ToDetect$SearchText)) + StartCol - 1
+               ColNum <- ColsToUse[
+                  which(str_detect(as.character(FaFg_xl[2, ColsToUse]),
+                                   ToDetect$SearchText))]
                
                if(length(ColNum) == 0 || is.na(ColNum)){
                   if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
