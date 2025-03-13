@@ -54,12 +54,21 @@ eCT_harmonize <- function(sim_data_xl,
       # Scenario 5: Liver sometimes
       # Can have sub, PM1, PM2, maybe sec met?, inhib1, inhib2, maybe inhib1 met?. Example: "mdz-met1-met2-inhib1-inhib2-md-alltissues-v22.xlsx"
       
+      # Scenario 6: Biologics
+      # This is NOT WELL TESTED. 
+      # Possible names: Therapeutic protein CSys
+      
       NApos <- which(is.na(sim_data_xl$...1))
       
       # Looking for all possible compounds. If there is an inhibitor, this will
       # include substrate alone as well as substrate + interaction.
-      CmpdMatches1 <- sim_data_xl$...1[(NApos[1] + 1):(NApos[2]-1)] 
-      CmpdMatches1 <- CmpdMatches1[!str_detect(CmpdMatches1, "Trial")]
+      CmpdMatches1_rows <- c(NApos[1] + 1, NApos[2]-1)
+      if(CmpdMatches1_rows[1] < CmpdMatches1_rows[2]){
+         CmpdMatches1 <- sim_data_xl$...1[(NApos[1] + 1):(NApos[2]-1)] 
+         CmpdMatches1 <- CmpdMatches1[!str_detect(CmpdMatches1, "Trial")]
+      } else {
+         CmpdMatches1 <- "UNCONVENTIONAL COMPOUND"
+      }
       
       # For some pediatric simulations, subjects are binned by age, and there
       # will be at least 1 extra row for the age bin. This should not be
@@ -115,8 +124,11 @@ eCT_harmonize <- function(sim_data_xl,
       # Last step: Find the unique versions of the coding.
       CmpdMatches2 <- unique(CmpdMatches2)
       
-      if(PerpPresent == FALSE & str_detect(tissue, "plasma|blood") == FALSE){
+      if(PerpPresent == FALSE & 
+         str_detect(tissue, "plasma|blood") == FALSE){
          CmpdMatches2 <- CmpdMatches1
+      } else if(CmpdMatches1[1] == "UNCONVENTIONAL COMPOUND"){
+         CmpdMatches1 <- CmpdMatches2
       }
       
       if(length(CmpdMatches1) != length(CmpdMatches2)){
@@ -157,10 +169,10 @@ eCT_harmonize <- function(sim_data_xl,
       
       # Output sometimes dosen't list the compound name. Not sure what the
       # pattern is for when this happens. They only list, e.g., "CPlasma" or
-      # "ITissue".
-      
+      # "ITissue". Dealing with this. 
       CompoundThatShouldBePresent <- compoundToExtract
-      ShouldBeButNotInhib <- CompoundThatShouldBePresent[!str_detect(CompoundThatShouldBePresent, "inhibitor")]
+      ShouldBeButNotInhib <- CompoundThatShouldBePresent[
+         !str_detect(CompoundThatShouldBePresent, "inhibitor")]
       if(length(ShouldBeButNotInhib) == 0){
          ShouldBeButNotInhib <- NA
       }
@@ -168,13 +180,14 @@ eCT_harmonize <- function(sim_data_xl,
       if(any(is.na(CmpdMatches$CompoundID))){
          CmpdMatches <- CmpdMatches %>% 
             mutate(CompoundID = case_when(
-               is.na(CompoundID) & CompoundCode %in% c("CPlasma", 
-                                                       "CPlasma interaction", 
-                                                       "CSys", 
-                                                       "CSys interaction", 
-                                                       "CTissue", 
-                                                       "CTissue Sub", 
-                                                       "CTissue interaction") ~ ShouldBeButNotInhib,
+               is.na(CompoundID) & 
+                  CompoundCode %in% c("CPlasma", 
+                                      "CPlasma interaction", 
+                                      "CSys", 
+                                      "CSys interaction", 
+                                      "CTissue", 
+                                      "CTissue Sub", 
+                                      "CTissue interaction") ~ ShouldBeButNotInhib,
                
                is.na(CompoundID) & CompoundCode == "ITissue" ~ "inhibitor 1", 
                is.na(CompoundID) & CompoundCode == "IPlasma" ~ "inhibitor 1", 
@@ -185,7 +198,8 @@ eCT_harmonize <- function(sim_data_xl,
       
       for(cmpd in compoundToExtract){
          
-         if(complete.cases(Deets[AllCompounds$DetailNames[AllCompounds$CompoundID == cmpd]]) &
+         if(complete.cases(Deets[AllCompounds$DetailNames[
+            AllCompounds$CompoundID == cmpd]]) &
             cmpd %in% CmpdMatches$CompoundID){
             
             # NB: I made inhibitor 1 be "PERPETRATOR1INHIB" rather than just

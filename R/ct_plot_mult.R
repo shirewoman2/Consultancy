@@ -8,17 +8,6 @@
 #'   concentration-time data into datasets by a) file, b) compound ID, c)
 #'   tissue, and d) tissue subtype for any ADAM- or brain-model data.
 #'
-#'   If you have more than one dataset per file, the graph titles won't
-#'   necessarily be clear, so please pay attention to what data you're
-#'   including. If you get unexpected or unclear output, try using
-#'   \code{\link{ct_plot_overlay}} to graph your data; it might work better for
-#'   what you want to show. For detailed instructions and examples, please see
-#'   the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
-#'   Files/SimcypConsultancy function examples and
-#'   instructions/Concentration-time plots 2 - multiple plots at
-#'   once/Concentration-time-plot-examples-2.docx". (Sorry, we are unable to
-#'   include a link to it here.)
-#'
 #'   \strong{A note on the order of the graphs:} This function arranges graphs
 #'   first by file, then by compound ID, then by tissue, and then by tissue
 #'   subtype, and all sorting is alphabetical. However, since sorting
@@ -30,6 +19,12 @@
 #'   unfamiliar with setting factor levels in R and setting \code{graph_titles}
 #'   isn't achieving what you want, please ask a member of the R Working Group
 #'   for assistance.
+#'
+#'   For detailed instructions and examples, please see the SharePoint file
+#'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+#'   function examples and instructions/Concentration-time plots 2 - multiple
+#'   plots at once/Concentration-time-plot-examples-2.docx". (Sorry, we are
+#'   unable to include a link to it here.)
 #'
 #' @param ct_dataframe the data.frame with multiple sets of concentration-time
 #'   data
@@ -226,24 +221,40 @@
 #'   acceptable. Examples: "red dotted", "blue dashed", or "#FFBE33 longdash".
 #'   To see all the possible linetypes, type \code{ggpubr::show_line_types()}
 #'   into the console.
-#' @param graph_titles optionally specify titles to be used in the graphs and
-#'   specify the order in which the files are graphed or use "none" (default) to
-#'   have no titles on your graphs. Input should be a named character vector of
-#'   the files in the order you would like and what you want to use for the
-#'   title. The file name must \emph{perfectly} match the file name listed in
+#' @param graph_titles optionally specify titles to be used in the graphs and,
+#'   at the same time, specify the order of the graphs or use "none" (default)
+#'   to have no titles on your graphs.
+#'
+#'   If you will only have one graph per file, setting \code{graph_titles} is
+#'   straightforward, and the input should be a named character vector of the
+#'   files in the order you would like and what you want to use for the title.
+#'   The file name must \emph{perfectly} match the file name listed in
 #'   ct_dataframe or it won't be used. An example of how this might be
 #'   specified: \code{graph_titles = c("My file 1.xlsx" = "Healthy volunteers",
 #'   "My file 2.xlsx" = "Mild hepatic impairment")}  If you get an order that
 #'   you didn't think you specified, please double check that you have specified
 #'   the file names \emph{exactly} as they appear in \code{ct_dataframe}.
-#'   \strong{CAVEAT:} If you have more than one dataset per file, this is
-#'   trickier. However, you can specify titles using the name of the simulator
-#'   output file, the compound ID, the tissue, and then the ADAM-model
-#'   subsection (use "none" if that doesn't apply here), each separated with a
-#'   ".". An example: \code{graph_titles = c("my sim
-#'   file.xlsx.substrate.plasma.none" = "Midazolam", "my sim file.xlsx.inhibitor
-#'   1.plasma.none" = "Ketoconazole")} Please see the "Examples" section for an
-#'   example with the dataset MDZ_Keto.
+#'
+#'   If you will have more than one graph per file, this is trickier. The name
+#'   of each dataset will be compound ID, "__", tissue, "__", what kind of
+#'   tissue subtype it is (often "none"), "__", and then the file name, e.g.,
+#'   "substrate__plasma__none__my-file-a.xlsx". Still not quite sure what each
+#'   dataset will be called? Please run something like this once to get exactly
+#'   what the dataset names are and NO GRAPHs:
+#'   
+#'   \code{ct_plot_mult(..., graph_titles = "tell me")}
+#'
+#'   This will print the names of the datasets and where to put the title in the
+#'   console. Again, this will not make any graphs. Once you've got that,
+#'   though, you can use that named character vector as input to
+#'   \code{ct_plot_mult(..., graph_titles = c(...))} to actually make graphs
+#'   with titles. Please see the "Examples" section for an example with the
+#'   dataset MDZ_Keto.
+#'
+#'   If you get unexpected or unclear output, try using
+#'   \code{\link{ct_plot_overlay}} to graph your data; it might work better for
+#'   what you want to show.
+#'
 #' @param graph_title_size the font size for the graph title if it's included;
 #'   default is 14. This also determines the font size of the graph labels.
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
@@ -272,7 +283,7 @@
 #'   care of stringing them together appropriately. Just list them as a
 #'   character vector, e.g., \code{name_clinical_study = c("101",
 #'   "102", "103")} will become "clinical studies 101, 102, and 103."
-#' @param report_progress TRUE or FALSE (default) for whether show a progress
+#' @param report_progress TRUE (default) or FALSE for whether show a progress
 #'   message on creating and saving graphs
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png"or "My conc time graph.docx".
@@ -299,25 +310,35 @@
 #' @export
 #'
 #' @examples
-#'
-#' data(MDZct)
+#' 
+#' # Using just the default settings with a data.frame of 
+#' # concentration-time data
 #' ct_plot_mult(ct_dataframe = MDZct)
 #'
+#' # Adding titles to each graph 
 #' ct_plot_mult(ct_dataframe = MDZct,
 #'    graph_titles = c("mdz-5mg-sd-fa1.xlsx" = "fa = 1",
 #'                     "mdz-5mg-sd-fa0_8.xlsx" = "fa = 0.8",
 #'                     "mdz-5mg-sd-fa0_6.xlsx" = "fa = 0.6",
 #'                     "mdz-5mg-sd-fa0_4.xlsx" = "fa = 0.4"))
 #'
-#'
-#' # Graph titles when you have the tricky situation of more than one
-#' # dataset per file
+#' # When you have the tricky situation of more than one
+#' # dataset per file, ask what the dataset names will be first:
 #' ct_plot_mult(
-#'     ct_dataframe = MDZ_Keto,
-#'     graph_titles = c("mdz-qd-keto-qd.xlsx.substrate.plasma.none" = "Midazolam in plasma",
-#'                      "mdz-qd-keto-qd.xlsx.substrate.blood.none" = "Midazolam in blood",
-#'                      "mdz-qd-keto-qd.xlsx.inhibitor 1.plasma.none" = "Ketoconazole in plasma",
-#'                      "mdz-qd-keto-qd.xlsx.inhibitor 1.blood.none" = "Ketoconazole in blood"))
+#'    ct_dataframe = MDZ_Keto, graph_titles = "tell me")
+#'    
+#' # You now have a template you can adjust as desired and 
+#' # supply to the argument graph_titles: 
+#' ct_plot_mult(ct_dataframe = MDZ_Keto, 
+#'              graph_titles = 
+#'                 c(`inhibitor 1__blood__none__mdz-qd-keto-qd.xlsx` = 
+#'                      "Ketoconazole in blood", 
+#'                   `inhibitor 1__plasma__none__mdz-qd-keto-qd.xlsx` = 
+#'                      "Ketoconazole in plasma", 
+#'                   `substrate__blood__none__mdz-qd-keto-qd.xlsx` =
+#'                      "Midazolam in blood", 
+#'                   `substrate__plasma__none__mdz-qd-keto-qd.xlsx` = 
+#'                      "Midazolam in plasma"))
 #' 
 
 
@@ -350,7 +371,7 @@ ct_plot_mult <- function(ct_dataframe,
                          graph_labels = TRUE,
                          prettify_compound_names = TRUE,
                          name_clinical_study = NA, 
-                         report_progress = FALSE, 
+                         report_progress = TRUE, 
                          save_graph = NA,
                          file_suffix = NA,
                          fig_height = 8,
@@ -418,7 +439,7 @@ ct_plot_mult <- function(ct_dataframe,
              # dataset, it adds ~5 sec. 
              # File_orig = File, 
              # File = gsub("__", "-", File), 
-             GraphLabs = paste(File, CompoundID, Tissue, Tissue_subtype, sep = "__"))
+             GraphLabs = paste(CompoundID, Tissue, Tissue_subtype, File, sep = "__"))
    
    # Checking for situations where they'll get the same file name for more than
    # one set of data. This is also going to be used for making graph titles if
@@ -426,7 +447,7 @@ ct_plot_mult <- function(ct_dataframe,
    DatasetCheck <- unique(ct_dataframe$GraphLabs[ct_dataframe$Simulated == TRUE])
    DatasetCheck <- data.frame(GraphLabs = DatasetCheck) %>% 
       separate(col = GraphLabs, 
-               into = c("File", "CompoundID", "Tissue", "Tissue_subtype"), 
+               into = c("CompoundID", "Tissue", "Tissue_subtype", "File"), 
                sep = "__", 
                remove = FALSE)
    
@@ -437,6 +458,19 @@ ct_plot_mult <- function(ct_dataframe,
    }
    
    ## Setting up graph titles and order --------------------------------------
+   if(length(graph_titles) == 1 && complete.cases(graph_titles) &&
+      str_detect(tolower(graph_titles), "tell me")){
+      
+      graph_titles_all <- sort(unique(DatasetCheck$GraphLabs))
+      
+      Out <- paste("Graph title", 1:length(graph_titles_all), "goes here")
+      names(Out) <- graph_titles_all
+      
+      message("Here are the names of your datasets for setting graph titles:\n")
+      return(dput(Out))
+      
+   }
+   
    if(length(graph_titles) > 1 && any(complete.cases(graph_titles))){
       
       # If they have named some graph_titles but not all, fix that.
@@ -534,11 +568,11 @@ ct_plot_mult <- function(ct_dataframe,
       
       if(any(duplicated(DatasetCheck$File))){
          
-         Order <- expand_grid("File" = getOrder(ct_dataframe$File), 
-                              "CompoundID" = getOrder(ct_dataframe$CompoundID), 
+         Order <- expand_grid("CompoundID" = getOrder(ct_dataframe$CompoundID), 
                               "Tissue" = getOrder(ct_dataframe$Tissue), 
-                              "Tissue_subtype" = getOrder(ct_dataframe$Tissue_subtype)) %>% 
-            mutate(Order = paste(File, CompoundID, Tissue, Tissue_subtype, sep = ".")) %>% 
+                              "Tissue_subtype" = getOrder(ct_dataframe$Tissue_subtype), 
+                              "File" = getOrder(ct_dataframe$File)) %>% 
+            mutate(Order = paste(CompoundID, Tissue, Tissue_subtype, File, sep = "__")) %>% 
             pull(Order)
       } else {
          Order <- getOrder(ct_dataframe$File)
@@ -549,11 +583,15 @@ ct_plot_mult <- function(ct_dataframe,
    }    
    
    if(any(duplicated(DatasetCheck$File))){
+      # Making the names here match the names in Order
       ct_dataframe <- split(ct_dataframe, 
-                            f = list(as.character(ct_dataframe$File),
-                                     as.character(ct_dataframe$CompoundID), 
+                            f = list(as.character(ct_dataframe$CompoundID), 
                                      as.character(ct_dataframe$Tissue), 
-                                     as.character(ct_dataframe$Tissue_subtype)))
+                                     as.character(ct_dataframe$Tissue_subtype),
+                                     as.character(ct_dataframe$File)))
+      names(ct_dataframe) <- gsub("\\.", "__", names(ct_dataframe))
+      names(ct_dataframe) <- sub("__xlsx", ".xlsx", names(ct_dataframe))
+      
    } else {
       ct_dataframe <- split(ct_dataframe, f = as.character(ct_dataframe$File))
    }
@@ -574,11 +612,7 @@ ct_plot_mult <- function(ct_dataframe,
          if(any(names(graph_titles_all) != graph_titles_all)){
             Title_i <- graph_titles_all[i]
          } else {
-            y <- str_split(i, pattern = "\\.")[[1]]
-            Title_i <- paste(str_trim(
-               paste(paste(y[1], y[2], sep = "."), 
-                     y[3], y[4], 
-                     ifelse(y[5] == "none", "", y[5]))))
+            Title_i <- sub("\\.xlsx|\\.wksz|\\.db", "", i)
          }
       } else {
          Title_i <- graph_titles_all[i]
@@ -592,7 +626,7 @@ ct_plot_mult <- function(ct_dataframe,
       # print(i)
       # print(head(ct_dataframe[[i]]))
       
-      if(report_progress){message(paste0("Creating graph ID ", i))}
+      if(report_progress){message(paste0("Creating graph ID '", i, "'"))}
       
       AllGraphs[[i]] <- 
          ct_plot(ct_dataframe = ct_dataframe[[i]], 
@@ -697,17 +731,13 @@ ct_plot_mult <- function(ct_dataframe,
                                    paste0(" - ", file_suffix), ""), ".png")
          
          if(any(duplicated(DatasetCheck$File))){
-            Split_i <- str_split(sub("\\.xlsx", "", basename(i)), pattern = "\\.")[[1]]
-            FileName <- paste0(Split_i[3], " ",
-                               Split_i[2], " ",
-                               Split_i[4], " ",
-                               ifelse(is.na(Split_i[5]) | Split_i[5] == "none",
-                                      "", 
-                                      paste0(" subsection ADAM ", Split_i[5])),
-                               FileName)
+            FileName <- sub("\\.xlsx|\\.wksz|\\.db", 
+                            ifelse(complete.cases(file_suffix),
+                                   paste0(" - ", file_suffix, ".png"), 
+                                   ".png"), i)
          } 
          
-         if(report_progress){message(paste0("Saving graph ID ", i))}
+         if(report_progress){message(paste0("Saving graph ID '", i, "'"))}
          
          ggsave(FileName, 
                 height = fig_height, width = fig_width, dpi = 600, 

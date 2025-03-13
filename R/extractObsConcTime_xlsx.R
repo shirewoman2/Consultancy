@@ -56,20 +56,38 @@ extractObsConcTime_xlsx <- function(obs_data_file){
    # Figuring version of simulator b/c col names differ based on that
    if(Animal){
       SimVersion <- "animal"
-      names(obs_data) <- c("Individual", "Time", "Conc", "DVID", "Weighting", 
-                           "DoseAmount", "InfDuration", "Weight_kg")
+      names(obs_data) <- ObsColNames[[SimVersion]]$ColName
       obs_data$SmokingStatus <- NA
       obs_data$Species <- tolower(as.character(
          obs_data_xl[MetaRowNum+1, which(MetaRow == "Species")]))
       
    } else {
       
-      SimVersion <- map(.x = ObsColNames, 
-                        .f = \(x) all(MainColNames %in% x$PEColName))
-      SimVersion <- SimVersion[which(SimVersion == TRUE)]
-      SimVersion <- names(SimVersion)[1]
+      # Getting the version based on the largest number of columns that overlap
+      # between the particular observed file and the standard PE template column
+      # names. Sometimes, not all are present. That's why we can't just ask
+      # which set of names in obs_data_file perfectly matches the standard names
+      # for each version.
+      SimVersion <- map(ObsColNames,
+                        .f = \(x) length(intersect(x$PEColName, MainColNames))) %>% 
+         unlist() %>% which.max() %>% names()
       
-      names(obs_data) <- ObsColNames[[SimVersion]]$ColName
+      ObsNames <- tibble(PEColName = MainColNames) %>% 
+         # This should have no duplicates. Things will break if there are, but I
+         # don't see how there could be.
+         left_join(ObsColNames[[SimVersion]], by = "PEColName")
+      
+      if(any(is.na(ObsNames$ColName))){
+         # This can happen, e.g., between pre v19 and v19 b/c Compound became
+         # CompoundID, so if something else is missing, this might actually be
+         # V19 instead of preV19.
+         SimVersion <- which(names(ObsColNames) == SimVersion) + 1
+         SimVersion <- names(ObsColNames)[SimVersion]
+         ObsNames <- tibble(PEColName = MainColNames) %>% 
+            left_join(ObsColNames[[SimVersion]], by = "PEColName")
+      }
+      
+      names(obs_data) <- ObsNames$ColName
       obs_data$Species <- "human"
    }
    
@@ -81,10 +99,13 @@ extractObsConcTime_xlsx <- function(obs_data_file){
       mutate(Dose_units = gsub("\\(|\\)", "", Dose_units), 
              ObsFile = obs_data_file, 
              CompoundID = tolower(CompoundID)) %>% 
+      
       select(any_of(c("Individual", "ObsFile", "CompoundID", "Time", 
                       ObsColNames[[SimVersion]]$ColName[
                          ObsColNames[[SimVersion]]$DosingInfo == TRUE]))) %>% 
+      
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
+      
       pivot_longer(cols = -c(Individual, ObsFile, CompoundID, Time), 
                    names_to = "Parameter", 
                    values_to = "Value") %>% 
@@ -95,7 +116,7 @@ extractObsConcTime_xlsx <- function(obs_data_file){
             AllCompounds$DosedCompoundID == "inhibitor 1"] ~ paste0(Parameter, "_inhib"), 
          CompoundID %in% AllCompounds$CompoundID[
             AllCompounds$DosedCompoundID == "inhibitor 2"] ~ paste0(Parameter, "_inhib2"))) %>% 
-      select(-Parameter) %>% 
+      select(-Parameter) %>% unique() %>% 
       pivot_wider(names_from = ParameterCmpd, 
                   values_from = Value) %>% 
       mutate(across(.cols = any_of(c(paste0(rep(c("DoseAmount", "InfDuration", 

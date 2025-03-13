@@ -22,6 +22,7 @@ forest_plot(
   x_axis_number_type = "ratios",
   x_order = NA,
   y_axis_title = "none",
+  y_axis_label_position = "left",
   pad_y_axis = TRUE,
   legend_position = "none",
   color_set = "grays",
@@ -38,6 +39,7 @@ forest_plot(
   include_dose_num = NA,
   include_ratio_in_labels = TRUE,
   error_bar_height = NA,
+  error_bars_on_top = FALSE,
   show_borders = TRUE,
   vline_at_1 = "gray dashed",
   dose_units = "mg",
@@ -239,6 +241,9 @@ order with \code{x_order = c("QD", "BID")}}
 the left of the y axis. Example: \code{y_axis_title = "Perpetrator
 co-administered with Drug X"}. Default ("none") leaves off any y-axis title.}
 
+\item{y_axis_label_position}{position of y axis title. Options are "left"
+(default) or "right".}
+
 \item{pad_y_axis}{optionally add a smidge of padding to the y axis (default
 is TRUE, which includes some generally reasonable padding). If set to
 FALSE, the y axis tick marks will be placed closer to the top and bottom of
@@ -396,6 +401,9 @@ the default behavior and get exactly what you want.}
 line at the end of the error bar. If left as NA, it will be set to 0.3. If
 set to 0, the error bars will be just lines. Try it and you'll see what we
 mean.}
+
+\item{error_bars_on_top}{TRUE or FALSE (default) for whether to put the error
+bars on top of the points}
 
 \item{show_borders}{TRUE (default) or FALSE for whether to show a light gray
 line between the files on the y axis. Note: This works best when

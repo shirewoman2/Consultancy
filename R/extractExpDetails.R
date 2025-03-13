@@ -1,12 +1,13 @@
 #' Extract details about the experimental design
 #'
-#' \code{extractExpDetails} looks up experimental design details from a Simcyp
-#' Simulator output file. For detailed instructions and examples, please see the
-#' SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
-#' Files/SimcypConsultancy function examples and instructions/Checking
-#' simulation experimental
-#' details/Checking-simulation-experimental-details.docx". (Sorry, we are unable
-#' to include a link to it here.)
+#' @description \code{extractExpDetails} looks up experimental design details
+#'   from a Simcyp Simulator output file.
+#'
+#'   For detailed instructions and examples, please see the SharePoint file
+#'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+#'   function examples and instructions/Checking simulation experimental
+#'   details/Checking-simulation-experimental-details.docx". (Sorry, we are
+#'   unable to include a link to it here.)
 #'
 #' @param sim_data_file name of the Excel file containing the simulator output,
 #'   in quotes. \strong{A note:} There are just a few items that we will attempt
@@ -76,6 +77,7 @@ extractExpDetails <- function(sim_data_file,
    # Checking that the file is, indeed, a simulator output file.
    SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
                           error = openxlsx::getSheetNames(sim_data_file))
+   
    if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
       # Using "warning" instead of "stop" here b/c I want this to be able to
       # pass through to extractExpDetails_mult and just skip any files that
@@ -116,7 +118,7 @@ extractExpDetails <- function(sim_data_file,
    
    if(exp_details %in% c("summary and input", "population tab", "workspace", 
                          "all", "simcyp inputs") == FALSE){
-      warning("The only options for the argument `exp_details` are `Summary and Input`, `population tab`, `workspace`, `Simcyp inputs`, or `all` (not case sensitive), and you've supplied something else. We'll set this to `all` for now.\n", 
+      warning(wrapn("The only options for the argument `exp_details` are `Summary and Input`, `population tab`, `workspace`, `Simcyp inputs`, `VBE` (only applies to VBE simulations), or `all` (not case sensitive), and you've supplied something else. We'll set this to `all` for now."), 
               call. = FALSE)
       exp_details <- "all"
    }

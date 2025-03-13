@@ -1638,7 +1638,7 @@ annotateDetails <- function(existing_exp_details,
                
                RouteColors <- c("Oral" = "dodgerblue4", 
                                 "i.v. bolus" = "#E41A1C", 
-                                "iv. infusion" = "#91429D", 
+                                "i.v. infusion" = "#91429D", 
                                 "Dermal" = "seagreen", 
                                 "Inhaled" = "#5ECCF3", 
                                 "Long-Acting-Injectable" = "orange", 

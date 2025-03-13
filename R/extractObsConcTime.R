@@ -159,14 +159,14 @@ extractObsConcTime <- function(obs_data_file,
    dose_data <- obs_data_untidy$dose_data
    
    DoseCols <- ObsColNames %>% bind_rows() %>% 
-      select(PEColName, ColName, DosingInfo) %>% 
+      select(PEColName, ColName, DosingInfo) %>% unique() %>% 
       filter(DosingInfo == TRUE) %>% 
       pull(ColName) %>% unique()
    DoseCols <- paste0(rep(DoseCols, each = 3), 
                       c("_sub", "_inhib", "_inhib2"))
    
    NonDoseCols <- ObsColNames %>% bind_rows() %>% 
-      select(PEColName, ColName, DosingInfo) %>% 
+      select(PEColName, ColName, DosingInfo) %>% unique() %>% 
       filter(DosingInfo == FALSE) %>% 
       pull(ColName) %>% unique()
    
