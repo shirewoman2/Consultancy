@@ -340,8 +340,8 @@ extractPK <- function(sim_data_file,
                            "Int AUC 1st(_CI|_SD)?", 
                            switch(compoundToExtract,
                                   "substrate" = "\\(Sub\\)", 
-                                  "primary metabolite 1" = "\\(Sub Met\\)|\\(Sub Pri Met1\\)",
-                                  "primary metabolite 2" = "\\(Sub Met2\\)|\\(Sub Pri Met2\\)",
+                                  "primary metabolite 1" = "(\\(Sub Met\\)|\\(Sub Pri Met1\\))",
+                                  "primary metabolite 2" = "(\\(Sub Met2\\)|\\(Sub Pri Met2\\))",
                                   "secondary metabolite" = "\\(Sub S(ec )?M(et)?\\)", 
                                   "inhibitor 1" = "\\(Inh 1\\)",
                                   "inhibitor 1 metabolite" = "\\(Inh( )?1 M(et)?\\)", 
@@ -1215,17 +1215,20 @@ extractPK <- function(sim_data_file,
    if(length(PKparameters_Abs) > 0 &
       any(PKparameters_orig %in% c("AUC tab")) == FALSE){
       
-      PKparameters_Abs_ADAM <- intersect(PKparameters_Abs, 
-                                         c("fa_sub", "Fg_sub", "fa_apparent_sub"))
+      PKparameters_Abs_ADAM <- intersect(
+         PKparameters_Abs, 
+         
+         AllPKParameters %>% filter(Sheet == "Overall Fa Fg") %>% 
+            pull(PKparameter))
       
       # Error catching
       if(any(c("Absorption", "Overall Fa Fg") %in% SheetNames) == FALSE){
-         warning(paste0("A sheet called `Absorption` or `Overall Fa Fg` must be present in the Excel simulated data file to extract the PK parameters ",
-                        str_c(PKparameters_Abs, collapse = ", "),
-                        ". None of these parameters can be extracted."),
+         warning(wrapn(paste0("A sheet called `Absorption` or `Overall Fa Fg` must be present in the Excel simulated data file to extract the PK parameters ",
+                              str_c(PKparameters_Abs, collapse = ", "),
+                              ". None of these parameters can be extracted.")),
                  call. = FALSE)
       } else if(Deets$Species != "human"){
-         warning("You have requested information from the Absorption tab from an animal simulation; we apologize, but we have not set up this function for animal data extraction from the Absorption tab yet.", 
+         warning(wrapn("You have requested information from the Absorption tab from an animal simulation; we apologize, but we have not set up this function for animal data extraction from the Absorption tab yet."), 
                  call. = FALSE)
       } else {
          
@@ -1236,9 +1239,10 @@ extractPK <- function(sim_data_file,
                                   col_names = FALSE))
             
             SubCols <- 3:5
-            # This is IN THE PRESENCE OF AN PERPETRATOR -- not the perpetrator
+            # This is IN THE PRESENCE OF A PERPETRATOR -- not the perpetrator
             # itself. I haven't set that up yet. 
-            WithInhibCols <- 6:10
+            WithInhibCols <- 6:8
+            RatioCols <- 9:10
             
             StartRow_agg <- 3
             EndRow_agg <- which(is.na(FaFg_xl$...1[3:nrow(FaFg_xl)]))[1] + 1
@@ -1258,12 +1262,17 @@ extractPK <- function(sim_data_file,
                # i. For the absorption tab, there are columns for the substrate
                # and columns for Inhibitor 1. (There are also columns for
                # Inhibitor 2 and 3 but I've never seen them filled in. -LSh)
-               StartCol <- ifelse(str_detect(i, "withInhib"),
-                                  WithInhibCols, SubCols)
+               if(str_detect(i, "withInhib")){
+                  ColsToUse <- WithInhibCols
+               } else if(str_detect(i, "ratio")){
+                  ColsToUse <- RatioCols
+               } else {
+                  ColsToUse <- SubCols
+               }
                
-               ColNum <- which(str_detect(
-                  as.character(FaFg_xl[2, StartCol:(StartCol+2)]),
-                  ToDetect$SearchText)) + StartCol - 1
+               ColNum <- ColsToUse[
+                  which(str_detect(as.character(FaFg_xl[2, ColsToUse]),
+                                   ToDetect$SearchText))]
                
                if(length(ColNum) == 0 || is.na(ColNum)){
                   if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){

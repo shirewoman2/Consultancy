@@ -444,11 +444,21 @@ extractConcTime <- function(sim_data_file,
    ## Checking units ---------------------------------------------------------
    
    # Determining concentration and time units. This will be NA for most ADAM
-   # tissues. For ADC compounds, this will be NA here but we'll fix that later.
+   # tissues, but we'll fix it in a sec. For ADC compounds, this will be NA and
+   # then we need to fix that here.
    SimConcUnits <- as.character(
       sim_data_xl[2, which(str_detect(as.character(sim_data_xl[2, ]),
                                       "CMax"))])[1]
    SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
+   
+   if(is.na(SimConcUnits) & 
+      any(str_detect(sim_data_xl$...1, "Therapeutic protein"), na.rm = T)){
+      
+      SimConcUnits <- sim_data_xl$...1[
+         which(str_detect(sim_data_xl$...1, "Therapeutic protein"))[1]]
+      SimConcUnits <- gsub("Therapeutic protein SUBSTRATE( Mean)? \\(|\\)", "", SimConcUnits)
+      
+   }
    
    # # ADAM options available (this is for my reference and was copied from ct_plot.R)
    # ADAMoptions <- c("undissolved compound", "free compound in lumen",

@@ -92,8 +92,8 @@ harmonize_details <- function(existing_exp_details){
          # Check whether MainDetails includes SheetNames b/c need it for other
          # functions now.
          if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-             (any(is.na(existing_exp_details$MainDetails$SheetNames)) |
-              any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T))) | 
+             any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+             any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
             "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
             
             for(i in existing_exp_details$MainDetails$File){
@@ -164,10 +164,12 @@ harmonize_details <- function(existing_exp_details){
          
          # Harmonizing dosing. Note that this must come AFTER making sure that
          # the list has items named MainDetails and named CustomDosing!
-         Out <- harmonize_dosing(existing_exp_details)
+         existing_exp_details <- harmonize_dosing(existing_exp_details)
          
          # Making sure the order is correct
-         Out <- Out[ExpDetailListItems]
+         existing_exp_details <- existing_exp_details[ExpDetailListItems]
+         
+         return(existing_exp_details[ExpDetailListItems])
          
       } else {
          
@@ -257,10 +259,12 @@ harmonize_details <- function(existing_exp_details){
          
          # Harmonizing dosing. Note that this must come AFTER making sure that
          # the list has items named MainDetails and named CustomDosing!
-         Out <- harmonize_dosing(existing_exp_details)
+         existing_exp_details <- harmonize_dosing(existing_exp_details)
          
          # Making sure the order is correct
-         Out <- Out[ExpDetailListItems]
+         existing_exp_details <- existing_exp_details[ExpDetailListItems]
+         
+         return(Out)
          
       }
       
@@ -362,31 +366,21 @@ harmonize_details <- function(existing_exp_details){
                                 .default = Regimen_inhib2))
       )
       
-      # Harmonizing dosing. Note that this must come AFTER making sure that
-      # the list has items named MainDetails and named CustomDosing!
-      Out <- harmonize_dosing(existing_exp_details)
+      # Harmonizing dosing. Note that this must come AFTER making sure that the
+      # list has items named MainDetails and named CustomDosing! Skipping this
+      # step when crucial info unavailable, which is sometimes the case when
+      # it's from an XML file.
+      if(all(sapply(c("Dose", "DoseRoute", "DoseInt", "StartHr", "NumDoses", 
+                      "SimStartDayTime", "Units_dose_sub"), 
+                    \(x) any(str_detect(
+                       names(existing_exp_details$MainDetails), x))))){
+         existing_exp_details <- harmonize_dosing(existing_exp_details)
+      }
       
       # Making sure the order is correct
-      Out <- Out[ExpDetailListItems]
+      existing_exp_details <- existing_exp_details[ExpDetailListItems]
       
+      return(existing_exp_details[ExpDetailListItems])
    }
-   
-   # Sorting MainDetails
-   Out$MainDetails <- Out$MainDetails[, sort(names(Out$MainDetails))]
-   
-   # Making the simulation file name the 1st column for all items in the list
-   ItemsToCheck <- setdiff(names(Out), "VBE")
-   ItemsToCheck <- map(Out[ItemsToCheck], 
-                       \(x) is.null(x) |
-                          ("data.frame" %in% class(x) && nrow(x) == 0)) %>% 
-      unlist()
-   ItemsToCheck <- names(ItemsToCheck)[ItemsToCheck == FALSE]
-   
-   for(j in ItemsToCheck){
-      Out[[j]] <- Out[[j]] %>% select(File, everything())
-   }
-   
-   return(Out)
-
 }
 

@@ -1,17 +1,19 @@
 #' For comparing fm values, make a treemap as opposed to the standard and
 #' arguably inferior pie chart
 #'
-#' Create a treemap -- filled rectangles -- to indicate the fraction of
-#' metabolism due to various pathways. Rectangles are proportional in size to
-#' the fm values and include labels for the drug-metabolizing enzyme involved
-#' and the percentage that enzyme is responsible for. Any rectangles that would
-#' be smaller than some user-specified cutoff (see argument "label_fm_cutoff")
-#' will be pulled out underneath the graph for readability. Why bother with a
-#' treemap as opposed to a pie chart? Rectangles are easier to compare visually
-#' than the sizes of pie slices, making a treemap easier to understand and
-#' interpret (reference: "The Visual Display of Quantitative Information" by
-#' Edward Tufte, Professor Emeritus of Political Science, Statistics, and
-#' Computer Science at Yale University).
+#' @description Create a treemap -- filled rectangles -- to indicate the
+#'   fraction of metabolism due to various pathways. Rectangles are proportional
+#'   in size to the fm values and include labels for the drug-metabolizing
+#'   enzyme involved and the percentage that enzyme is responsible for. Any
+#'   rectangles that would be smaller than some user-specified cutoff (see
+#'   argument "label_fm_cutoff") will be pulled out underneath the graph for
+#'   readability.
+#'
+#'   \strong{Why bother with a treemap as opposed to a pie chart?} Rectangles
+#'   are easier to compare visually than the sizes of pie slices, making a
+#'   treemap easier to understand and interpret (reference: "The Visual Display
+#'   of Quantitative Information" by Edward Tufte, Professor Emeritus of
+#'   Political Science, Statistics, and Computer Science at Yale University).
 #'
 #'
 #' @param fm_dataframe a data.frame containing columns for the drug-metabolizing
@@ -20,6 +22,9 @@
 #'   data you want. For example, if this was a DDI simulation, you would want to
 #'   use only the data in the absense of a perpetrator or only in the presence
 #'   of one; summing up both numbers wouldn't make sense.
+#' @param mean_type If there is a column called "statistic" in your data, which
+#'   mean type would you like to display? Acceptable values are any statistics
+#'   present in that column, but you can only show one.
 #' @param DDI_option If the fm_dataframe included fm and fe values for when any
 #'   DDI perpetrator drugs are present, then you've got some options for how to
 #'   display this. Acceptable options are: "baseline only" (default) to show
@@ -87,18 +92,19 @@
 #' Lenv_fm <- data.frame(DME = c("CYP3A4", "other CYPs", "aldehyde oxidase"),
 #'                       fm = c(0.79, 0.20, 0.01))
 #' fm_treemap(fm_dataframe = Lenv_fm,
-#'            pathway_column = DME, 
+#'            pathway_column = DME,
 #'            fm_column = fm)
-#' 
+#'
 #' fm_treemap(fm_dataframe = Lenv_fm,
-#'            pathway_column = DME, 
-#'            fm_column = fm, 
-#'            color_set = "blue-green", 
+#'            pathway_column = DME,
+#'            fm_column = fm,
+#'            color_set = "blue-green",
 #'            label_fm_cutoff = 0.01)
 #' 
 fm_treemap <- function(fm_dataframe,
                        pathway_column, 
                        fm_column, 
+                       mean_type = NA, 
                        DDI_option = "baseline only", 
                        show_numbers_on_graph = TRUE, 
                        rounding = NA, 
@@ -128,6 +134,11 @@ fm_treemap <- function(fm_dataframe,
    # Check whether treemapify has been installed. 
    if("treemapify" %in% installed.packages() == FALSE){
       stop("The function fm_treemap requires the package treemapify. Please run `install.packages('treemapify')`.", 
+           call. = FALSE)
+   }
+   
+   if("Time" %in% names(fm_dataframe)){
+      stop(wrapn("You have supplied fm data that change with time, and this function only works with static fm data or with the maximum or minimum fm data from the 'Time variant %fm and fe' tab of a Simulator Excel file."), 
            call. = FALSE)
    }
    
@@ -170,6 +181,20 @@ fm_treemap <- function(fm_dataframe,
    # If Tissue column not present, assume that it should be plasma.
    if("Tissue" %in% names(fm_dataframe) == FALSE){
       fm_dataframe$Tissue <- "plasma"
+   }
+   
+   mean_type <- mean_type[1]
+   if("Statistic" %in% names(fm_dataframe)){
+      if(complete.cases(mean_type) & 
+         mean_type %in% fm_dataframe$Statistic == FALSE){
+         stop(wrapn(paste0("You requested a mean_type of '", 
+                           mean_type, 
+                           "', but that is not present in the data. Please supply a value for mean_type that is present in the column 'Statistic'.")), 
+              call. = FALSE)
+      } else {
+         fm_dataframe <- fm_dataframe %>% 
+            filter(Statistic == mean_type)
+      }
    }
    
    

@@ -297,6 +297,12 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                 "true" ~ "locked", 
                                 "false" ~ "unlocked"), 
                   
+                  str_detect(k, "DoseRoute") ~ 
+                     case_match(DeetValue, 
+                                "1" ~ "i.v. bolus", 
+                                "2" ~ "Oral", 
+                                .default = DeetValue), 
+                  
                   TRUE ~ DeetValue)
                
                suppressWarnings(
@@ -420,13 +426,17 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             }
             
             # Also dealing with instances where the value in the XML file is
-            # coded to make it clear what the actual value in the simulation
-            # was and to match what the user would see in the Excel results.
+            # coded to make it clear what the actual value in the simulation was
+            # and to match what the user would see in the Excel results. NB: I
+            # was first attempting to do this with case_when(m == ...) and then
+            # case_match for each, but that requires all the data types to be
+            # the same, which they are NOT. Thus the multiple if and if else
+            # statments.
             if(m == "CYP3A4_ontogeny_profile"){
-               DeetValue <- switch(DeetValue, 
-                                   "0" = "CYP3A4 Profile 1", 
-                                   "1" = "CYP3A4 Profile 2")
-            }
+               DeetValue <- case_match(DeetValue, 
+                                       "0" ~ "CYP3A4 Profile 1", 
+                                       "1" ~ "CYP3A4 Profile 2")
+            } 
             
             Deets[[i]][[DeetInfo$Detail]] <- DeetValue
             
