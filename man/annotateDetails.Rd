@@ -50,9 +50,7 @@ of the files included in the object you supply for
 \code{existing_exp_details} -- that can be used as a template simulation to
 compare all the other simulations to. Any details in any simulations that
 do NOT match the template simulation details will be highlighted in red if
-you save the output to an Excel file using \code{save_output}. NOTE: We
-have not yet set this up for VBE simulations, so you don't currently have
-this option.
+you save the output to an Excel file using \code{save_output}.
 \strong{NOTE:} If you use a template simulation, we \emph{strongly
 recommend} you also set \code{compoundID} to be only the compound ID you
 want, e.g., \code{compoundID = "substrate"} and/or set the compound name to
@@ -218,7 +216,7 @@ Returns a data.frame of simulation experimental details including the
   \item{SimulatorSection}{the simulator section this detail is from, e.g.,
   "absorption" or "elimination"}
 
-  \item{DataSource}{the source of the data; this will be a sheet name in an
+  \item{DataSource}{the source of the data; this will be a sheet name in an 
   Excel output file or a workspace or database file}
 
   \item{Notes}{an explanation of what this detail is}
@@ -242,36 +240,26 @@ Returns a data.frame of simulation experimental details including the
   experimental details for each file will show up in their own columns}}
 }
 \description{
-\code{annotateDetails} uses output from
-  \code{\link{extractExpDetails_mult}}, \code{\link{extractExpDetails}}, or
-  \code{\link{extractExpDetails_VBE}},
-formats the data, adds columns for \enumerate{\item{which
+\code{annotateDetails} uses output from either
+\code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}},
+formats it, adds columns for \enumerate{\item{which
 compound the information pertains to (substrate, inhibitor, etc.),}
 \item{which section of the Simcyp Simulator this detail is found in
 (physchem, absorption, distribution, etc.),} \item{notes describing what the
 detail is, and} \item{which sheet in the Simulator output Excel file or in
 the Simulator workspace the information was
 pulled from.}} It will also optionally filter the data to return only
-  specifically requested information.
-
-  If you find yourself overwhelmed at the amount of information, we recommend
-  looking at just one compound at a time. You can set the \code{compoundID}
-  argument to just the compound ID you want
+specifically requested information. If you find yourself overwhelmed at the
+amount of information, we recommend looking at just one compound at a time.
+You can set the \code{compoundID} argument to just the compound ID you want
 -- "substrate", "inhibitor 1", etc. -- or set the \code{compound} argument to
-  just the compound you want -- "midazolam" or "Client Drug X" -- and that
-  will also help make things less overwhelming and easier to find.
-
-  \strong{NOTE:} We have just started adapting this to work with virtual
-  bioequivalence simulations, so things are not as well tested there and you
-  may encounter bugs. At least at this point, please do not combine VBE
-  information with other information from other simulation types; things will
-  likely break.
-
-  For detailed instructions and examples, please see the SharePoint file
-  "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
-  function examples and instructions/Checking simulation experimental
-  details/Checking-simulation-experimental-details.docx". (Sorry, we are
-  unable to include a link to it here.)
+just the compound you want -- "midazolam" or "Client Drug X" -- and that will
+also help make things less overwhelming and easier to find. For detailed
+instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
+R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+instructions/Checking simulation experimental
+details/Checking-simulation-experimental-details.docx". (Sorry, we are unable
+to include a link to it here.)
 }
 \examples{
 

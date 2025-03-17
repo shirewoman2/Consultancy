@@ -1,35 +1,25 @@
 #' Annotate Simcyp Simulator experimental details
 #'
-#' @description \code{annotateDetails} uses output from
-#'   \code{\link{extractExpDetails_mult}}, \code{\link{extractExpDetails}}, or
-#'   \code{\link{extractExpDetails_VBE}},
-#' formats the data, adds columns for \enumerate{\item{which
+#' \code{annotateDetails} uses output from either
+#' \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}},
+#' formats it, adds columns for \enumerate{\item{which
 #' compound the information pertains to (substrate, inhibitor, etc.),}
 #' \item{which section of the Simcyp Simulator this detail is found in
 #' (physchem, absorption, distribution, etc.),} \item{notes describing what the
 #' detail is, and} \item{which sheet in the Simulator output Excel file or in
 #' the Simulator workspace the information was
 #' pulled from.}} It will also optionally filter the data to return only
-#'   specifically requested information.
-#'
-#'   If you find yourself overwhelmed at the amount of information, we recommend
-#'   looking at just one compound at a time. You can set the \code{compoundID}
-#'   argument to just the compound ID you want
+#' specifically requested information. If you find yourself overwhelmed at the
+#' amount of information, we recommend looking at just one compound at a time.
+#' You can set the \code{compoundID} argument to just the compound ID you want
 #' -- "substrate", "inhibitor 1", etc. -- or set the \code{compound} argument to
-#'   just the compound you want -- "midazolam" or "Client Drug X" -- and that
-#'   will also help make things less overwhelming and easier to find.
-#'
-#'   \strong{NOTE:} We have just started adapting this to work with virtual
-#'   bioequivalence simulations, so things are not as well tested there and you
-#'   may encounter bugs. At least at this point, please do not combine VBE
-#'   information with other information from other simulation types; things will
-#'   likely break.
-#'
-#'   For detailed instructions and examples, please see the SharePoint file
-#'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
-#'   function examples and instructions/Checking simulation experimental
-#'   details/Checking-simulation-experimental-details.docx". (Sorry, we are
-#'   unable to include a link to it here.)
+#' just the compound you want -- "midazolam" or "Client Drug X" -- and that will
+#' also help make things less overwhelming and easier to find. For detailed
+#' instructions and examples, please see the SharePoint file "Simcyp PBPKConsult
+#' R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
+#' instructions/Checking simulation experimental
+#' details/Checking-simulation-experimental-details.docx". (Sorry, we are unable
+#' to include a link to it here.)
 #'
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}}
@@ -38,9 +28,7 @@
 #'   \code{existing_exp_details} -- that can be used as a template simulation to
 #'   compare all the other simulations to. Any details in any simulations that
 #'   do NOT match the template simulation details will be highlighted in red if
-#'   you save the output to an Excel file using \code{save_output}. NOTE: We
-#'   have not yet set this up for VBE simulations, so you don't currently have
-#'   this option.
+#'   you save the output to an Excel file using \code{save_output}.
 #'   \strong{NOTE:} If you use a template simulation, we \emph{strongly
 #'   recommend} you also set \code{compoundID} to be only the compound ID you
 #'   want, e.g., \code{compoundID = "substrate"} and/or set the compound name to
@@ -210,7 +198,7 @@
 #'   \item{SimulatorSection}{the simulator section this detail is from, e.g.,
 #'   "absorption" or "elimination"}
 #'
-#'   \item{DataSource}{the source of the data; this will be a sheet name in an
+#'   \item{DataSource}{the source of the data; this will be a sheet name in an 
 #'   Excel output file or a workspace or database file}
 #'
 #'   \item{Notes}{an explanation of what this detail is}
@@ -277,7 +265,7 @@ annotateDetails <- function(existing_exp_details,
    # Error catching --------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop(paste0(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), "\n     library(tidyverse)\n\nand then try again."), call. = FALSE)
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
    compoundID <- tolower(compoundID)
@@ -374,9 +362,6 @@ annotateDetails <- function(existing_exp_details,
               call. = FALSE)
    }
    
-   # Noting whether this includes info on VBE sims
-   VBE <- "Treatment" %in% names(existing_exp_details$MainDetails)
-   
    if("Substrate" %in% names(existing_exp_details$MainDetails) == FALSE & 
       (show_compound_col == TRUE | show_compound_col == "concatenate") & 
       "Compound" %in% names(existing_exp_details$MainDetails) == FALSE){
@@ -436,7 +421,7 @@ annotateDetails <- function(existing_exp_details,
    
    MainDetails <- existing_exp_details$MainDetails %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
-      pivot_longer(cols = -any_of(c("File", "Treatment")),
+      pivot_longer(cols = -File,
                    names_to = "Detail", 
                    values_to = "Value") %>% 
       mutate(CompoundID = str_extract(Detail, "_sub$|_inhib$|_met1$|_met2$|_secmet$|_inhib2$|_inhib1met$"),
@@ -447,21 +432,6 @@ annotateDetails <- function(existing_exp_details,
                                     CompoundID == "_met2" | Detail == "PrimaryMetabolite2" ~ "primary metabolite 2", 
                                     CompoundID == "_secmet" | Detail == "SecondaryMetabolite" ~ "secondary metabolite",
                                     CompoundID == "_inhib1met" | Detail == "Inhibitor1Metabolite" ~ "inhibitor 1 metabolite"))
-   
-   if(VBE){
-      # Hacking this to work with VBE sims
-      MainDetails <- MainDetails %>% 
-         mutate(File = paste(File, Treatment)) %>% 
-         select(-Treatment)
-      
-      for(i in setdiff(ExpDetailListItems, "MainDetails")){
-         if(length(existing_exp_details[[i]]) == 0 || 
-            nrow(existing_exp_details[[i]]) == 0){next}
-         
-         existing_exp_details[[i]] <- existing_exp_details[[i]] %>% 
-            mutate(File = paste(File, Treatment)) %>% select(-Treatment)
-      }
-   }
    
    # If the model was *not* ADAM, existing_exp_details will include a bunch of
    # irrelevant details. Removing those if none of the models for that compound
@@ -717,11 +687,9 @@ annotateDetails <- function(existing_exp_details,
       
       item_char <- switch(item, 
                           "MainDetails" = "main set of simulation details", 
-                          "Dosing" = "dosing information", 
                           "CustomDosing" = "custom-dosing information", 
-                          "ConcDependent_BP" = "concentration-dependent B/P information", 
                           "ConcDependent_fup" = "concentration-dependent fup information", 
-                          "pH_dependent_LuminalDegradation" = "pH-dependent luminal degradation", 
+                          "ConcDependent_BP" = "concentration-dependent B/P information", 
                           "pH_dependent_solubility" = "pH-dependent solubility information")
       
       if(item == "MainDetails"){
@@ -1217,8 +1185,8 @@ annotateDetails <- function(existing_exp_details,
             suppressMessages(
                AllSame <- DF %>% 
                   select(any_of(c("CompoundID", "Compound", GroupingDetails)), 
-                         matches("xlsx( Treatment [0-9]{1,})?$|\\.db$")) %>% 
-                  pivot_longer(cols = matches("xlsx( Treatment [0-9]{1,})?$|\\.db$"), 
+                         matches("xlsx$|\\.db$")) %>% 
+                  pivot_longer(cols = matches("xlsx$|\\.db$"), 
                                names_to = "File", values_to = "Value") %>% 
                   group_by(across(.cols = any_of(c(GroupingDetails, "CompoundID", "Compound")))) %>% 
                   summarize(Length = length(unique(Value)), 
@@ -1301,7 +1269,7 @@ annotateDetails <- function(existing_exp_details,
          
          # Removing anything that was all NA's if that's what user requested
          if(omit_all_missing){
-            DF$AllNA <- apply(DF[, names(DF)[str_detect(names(DF), "xlsx( Treatment [0-9]{1,})?$|\\.db$")]], 
+            DF$AllNA <- apply(DF[, names(DF)[str_detect(names(DF), "xlsx$|\\.db$")]], 
                               MARGIN = 1, FUN = function(.) all(is.na(.)))    
             
             DF <- DF %>% filter(AllNA == FALSE) %>% select(-AllNA)
@@ -1500,33 +1468,11 @@ annotateDetails <- function(existing_exp_details,
                                                   fgFill = "#FFC7CE", 
                                                   fontColour = "#9B030C")
                
-               if(VBE & item == "MainDetails"){
-                  
-                  Out[[item]][["Diffs"]] <- list()
-                  for(ff in unique(existing_exp_details$MainDetails$File)){
-                     
-                     ColTx1 <- which(str_detect(names(Out[[item]]$DF), ff) & 
-                                        str_detect(names(Out[[item]]$DF), "Treatment 1"))
-                     NotColTx1 <- which(str_detect(names(Out[[item]]$DF), ff) & 
-                                           !str_detect(names(Out[[item]]$DF), "Treatment 1"))
-                     for(cc in NotColTx1){
-                        Out[[item]][["Diffs"]][[cc]] <- 
-                           list(columns = cc, 
-                                rows = which(Out[[item]]$DF[, ColTx1] != 
-                                                Out[[item]]$DF[, cc]))
-                     }
-                  }
-                  
-                  # highlighting mismatches in red
-                  if(length(Out[[item]][["Diffs"]]) > 0){
-                     for(i in 1:length(Out[[item]][["Diffs"]])){
-                        openxlsx::addStyle(wb = WB,
-                                           sheet = output_tab_name,
-                                           style = ProbCells,
-                                           rows = Out[[item]][["Diffs"]][[i]]$rows + 1,
-                                           cols = Out[[item]][["Diffs"]][[i]]$columns)
-                     }
-                  }
+               
+               if(is.na(template_sim) | length(FileOrder) == 1){
+                  # This is when there is no template simulation, but we are
+                  # including a column noting when a given value was the same for
+                  # all simulations.
                   
                   openxlsx::addStyle(wb = WB, 
                                      sheet = output_tab_name, 
@@ -1542,55 +1488,33 @@ annotateDetails <- function(existing_exp_details,
                                      cols = which(str_detect(names(Out[[item]][["DF"]]),
                                                              "All files have this")))
                   
-                  
                } else {
-                  if(is.na(template_sim) | length(FileOrder) == 1){
-                     # This is when there is no template simulation, but we are
-                     # including a column noting when a given value was the same for
-                     # all simulations.
-                     
-                     openxlsx::addStyle(wb = WB, 
-                                        sheet = output_tab_name, 
-                                        style = BlueColumn, 
-                                        rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
-                                        cols = which(str_detect(names(Out[[item]][["DF"]]),
-                                                                "All files have this")))
-                     
-                     openxlsx::addStyle(wb = WB, 
-                                        sheet = output_tab_name, 
-                                        style = BlueColumnHeader, 
-                                        rows = 1, 
-                                        cols = which(str_detect(names(Out[[item]][["DF"]]),
-                                                                "All files have this")))
-                     
-                  } else {
-                     # This is when there IS a template simulation. Formatting to
-                     # highlight in red all the places where things differ.
-                     
-                     # making the template sim column blue
-                     openxlsx::addStyle(wb = WB, 
-                                        sheet = output_tab_name, 
-                                        style = BlueColumn, 
-                                        rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
-                                        cols = which(str_detect(names(Out[[item]][["DF"]]),
-                                                                template_sim)))
-                     
-                     openxlsx::addStyle(wb = WB, 
-                                        sheet = output_tab_name, 
-                                        style = BlueColumnHeader, 
-                                        rows = 1, 
-                                        cols = which(str_detect(names(Out[[item]][["DF"]]),
-                                                                template_sim)))
-                     
-                     # highlighting mismatches in red
-                     if(length(Out[[item]][["Diffs"]]) > 0){
-                        for(i in 1:length(Out[[item]][["Diffs"]])){
-                           openxlsx::addStyle(wb = WB, 
-                                              sheet = output_tab_name, 
-                                              style = ProbCells, 
-                                              rows = Out[[item]][["Diffs"]][[i]]$rows + 1, 
-                                              cols = Out[[item]][["Diffs"]][[i]]$columns)
-                        }
+                  # This is when there IS a template simulation. Formatting to
+                  # highlight in red all the places where things differ.
+                  
+                  # making the template sim column blue
+                  openxlsx::addStyle(wb = WB, 
+                                     sheet = output_tab_name, 
+                                     style = BlueColumn, 
+                                     rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
+                                     cols = which(str_detect(names(Out[[item]][["DF"]]),
+                                                             template_sim)))
+                  
+                  openxlsx::addStyle(wb = WB, 
+                                     sheet = output_tab_name, 
+                                     style = BlueColumnHeader, 
+                                     rows = 1, 
+                                     cols = which(str_detect(names(Out[[item]][["DF"]]),
+                                                             template_sim)))
+                  
+                  # highlighting mismatches in red
+                  if(length(Out[[item]][["Diffs"]]) > 0){
+                     for(i in 1:length(Out[[item]][["Diffs"]])){
+                        openxlsx::addStyle(wb = WB, 
+                                           sheet = output_tab_name, 
+                                           style = ProbCells, 
+                                           rows = Out[[item]][["Diffs"]][[i]]$rows + 1, 
+                                           cols = Out[[item]][["Diffs"]][[i]]$columns)
                      }
                   }
                }
@@ -1660,9 +1584,9 @@ annotateDetails <- function(existing_exp_details,
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
                PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 5
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
@@ -1695,9 +1619,9 @@ annotateDetails <- function(existing_exp_details,
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
                PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 5
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
@@ -1781,9 +1705,9 @@ annotateDetails <- function(existing_exp_details,
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
                PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 5
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
@@ -1810,9 +1734,9 @@ annotateDetails <- function(existing_exp_details,
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
                PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 5
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
@@ -1824,41 +1748,6 @@ annotateDetails <- function(existing_exp_details,
                                     startCol = 1)
                
                rm(NumFiles, PlotWidth)
-               
-            } else if(i == "pH_dependent_LuminalDegradation"){
-               
-               ## pH_dependent_LuminalDegradation tab ------------------------
-               
-               suppressMessages(
-                  plot(ggplot(existing_exp_details[[item]], 
-                              aes(x = pH, y = DegradationRateConstant,
-                                  color = File)) +
-                          geom_point() + 
-                          geom_line() +
-                          facet_grid(Compound ~ ., switch = "y") +
-                          scale_color_manual(values = rainbow(length(unique(existing_exp_details[[item]]$File)))) +
-                          ylab("Degradation rate constant (1/h)") +
-                          ggtitle("pH-dependent luminal degradation", 
-                                  subtitle = "Points will overlap perfectly when all simulations have the same values.") +
-                          theme_consultancy(border = TRUE) +
-                          theme(strip.placement = "outside")
-                  ))
-               
-               # Seems like ggplot makes not more than 20 items in the legend
-               # before going over a column. Will need to consider that when
-               # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
-               PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 5
-               
-               openxlsx::insertPlot(wb = WB, 
-                                    sheet = output_tab_name, 
-                                    width = PlotWidth,  
-                                    height = PlotHeight,
-                                    fileType = "png", 
-                                    units = "in", 
-                                    startRow = nrow(Out[[item]][["DF"]]) + 5, 
-                                    startCol = 1)
                
             } else if(i == "pH_dependent_solubility"){
                
@@ -1881,9 +1770,9 @@ annotateDetails <- function(existing_exp_details,
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 5
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
                PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 5
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
@@ -1897,9 +1786,6 @@ annotateDetails <- function(existing_exp_details,
             }
          }
       } # end subfun for saving xlsx
-      
-      
-      ## End of saving subfun and actually saving ------------------------------
       
       GoodItems <- as.logical(
          map(Out, function(x){is.null(x) == FALSE && nrow(x$DF) > 0}))
