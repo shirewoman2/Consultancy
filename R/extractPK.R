@@ -592,7 +592,9 @@ extractPK <- function(sim_data_file,
                     pull(PKparameter) %>% unique()), 
              
              SheetCLTSS = PKparameter %in% 
-                (AllPKParameters %>% filter(Sheet == "Clearance Trials SS") %>% 
+                (AllPKParameters %>% 
+                    filter(Sheet %in% c("Clearance Trials SS",
+                                        "Interaction Trials SS")) %>% 
                     pull(PKparameter) %>% unique()))
    
    # Adding user-defined sheet.
@@ -1204,7 +1206,7 @@ extractPK <- function(sim_data_file,
       
    }
    
-   # Pulling data from the "Absorption" sheet -----------------------------------
+   # Pulling data "Absorption" and related sheets ------------------------------
    
    # Some PK parameters show up on multiple sheets. No need to pull
    # those here if they've already been pulled from another sheet.
@@ -1215,259 +1217,279 @@ extractPK <- function(sim_data_file,
    if(length(PKparameters_Abs) > 0 &
       any(PKparameters_orig %in% c("AUC tab")) == FALSE){
       
-      PKparameters_Abs_ADAM <- intersect(
-         PKparameters_Abs, 
-         
-         AllPKParameters %>% filter(Sheet == "Overall Fa Fg") %>% 
-            pull(PKparameter))
-      
-      # Error catching
-      if(any(c("Absorption", "Overall Fa Fg") %in% SheetNames) == FALSE){
-         warning(wrapn(paste0("A sheet called `Absorption` or `Overall Fa Fg` must be present in the Excel simulated data file to extract the PK parameters ",
-                              str_c(PKparameters_Abs, collapse = ", "),
-                              ". None of these parameters can be extracted.")),
-                 call. = FALSE)
-      } else if(Deets$Species != "human"){
-         warning(wrapn("You have requested information from the Absorption tab from an animal simulation; we apologize, but we have not set up this function for animal data extraction from the Absorption tab yet."), 
+      if(Deets$Species != "human"){
+         warning(wrapn("You have requested information from the 'Absorption' tab from an animal simulation; we apologize, but we have not set up this function for animal data extraction from the 'Absorption' tab yet."), 
                  call. = FALSE)
       } else {
          
-         if("Overall Fa Fg" %in% SheetNames){
-            
-            FaFg_xl <- suppressMessages(
-               readxl::read_excel(path = sim_data_file, sheet = "Overall Fa Fg",
-                                  col_names = FALSE))
-            
-            SubCols <- 3:5
-            # This is IN THE PRESENCE OF A PERPETRATOR -- not the perpetrator
-            # itself. I haven't set that up yet. 
-            WithInhibCols <- 6:8
-            RatioCols <- 9:10
-            
-            StartRow_agg <- 3
-            EndRow_agg <- which(is.na(FaFg_xl$...1[3:nrow(FaFg_xl)]))[1] + 1
-            StartRow_ind <- which(FaFg_xl$...1 == "Index")[1] + 1
-            
-            # Looping through parameters and extracting values
-            for(i in PKparameters_Abs_ADAM){
-               
-               # Using regex to find the correct column. See
-               # data(AllPKParameters) for all the possible parameters as well
-               # as what regular expressions are being searched for each. 
-               ToDetect <- AllPKParameters %>% 
-                  filter(Sheet == "Overall Fa Fg" & PKparameter == i) %>% 
-                  select(PKparameter, SearchText)
-               
-               # Looking for the regular expression specific to this parameter
-               # i. For the absorption tab, there are columns for the substrate
-               # and columns for Inhibitor 1. (There are also columns for
-               # Inhibitor 2 and 3 but I've never seen them filled in. -LSh)
-               if(str_detect(i, "withInhib")){
-                  ColsToUse <- WithInhibCols
-               } else if(str_detect(i, "ratio")){
-                  ColsToUse <- RatioCols
-               } else {
-                  ColsToUse <- SubCols
-               }
-               
-               ColNum <- ColsToUse[
-                  which(str_detect(as.character(FaFg_xl[2, ColsToUse]),
-                                   ToDetect$SearchText))]
-               
-               if(length(ColNum) == 0 || is.na(ColNum)){
-                  if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
-                     warning(wrapn(paste0("The column with information for ", i,
-                                          " on the tab `Overall Fa Fg` cannot be found in the file '", 
-                                          sim_data_file, "'.")), 
-                             call. = FALSE)
-                  }
-                  suppressMessages(rm(ToDetect, ColNum))
-                  PKparameters_Abs_ADAM <- setdiff(PKparameters_Abs_ADAM, i)
-                  next
-               }
-               
-               suppressWarnings(
-                  Out_ind[[i]] <- FaFg_xl[StartRow_ind:nrow(FaFg_xl), ColNum] %>%
-                     pull(1) %>% as.numeric
-               )
-               
-               suppressWarnings(
-                  Out_agg[[i]] <- FaFg_xl[StartRow_agg:EndRow_agg, ColNum] %>%
-                     pull(1) %>% as.numeric
-               )
-               names(Out_agg[[i]]) <- FaFg_xl[StartRow_agg:EndRow_agg, 1] %>%
-                  pull(1)
-               
-               if(checkDataSource){
-                  DataCheck <- DataCheck %>%
-                     bind_rows(data.frame(PKparam = i,
-                                          Tab = "Overall Fa Fg",
-                                          SearchText = ToDetect$SearchText,
-                                          Column = ColNum,
-                                          StartRow_agg = StartRow_agg,
-                                          EndRow_agg = EndRow_agg,
-                                          StartRow_ind = StartRow_ind,
-                                          EndRow_ind = nrow(FaFg_xl)))
-               }
-            }
-            
-            if(includeTrialInfo & length(PKparameters_Abs_ADAM) > 0){
-               # Subject and trial info
-               SubjTrial_Abs <- FaFg_xl[StartRow_ind:nrow(FaFg_xl), 1:2] %>%
-                  rename("Individual" = ...1, "Trial" = ...2)
-               
-               Out_ind[["Abstab"]] <- cbind(SubjTrial_Abs,
-                                            as.data.frame(Out_ind[PKparameters_Abs_ADAM]))
-            }
-            
-         } 
+         # Checking absorption model
+         AbsModel <- existing_exp_details$MainDetails[
+            paste0("Abs_model", AllCompounds$Suffix[
+               AllCompounds$CompoundID == compoundToExtract])]
          
-         if("Absorption" %in% SheetNames){
+         if(AbsModel == "ADAM"){
             
-            PKparameters_Abs <- setdiff(PKparameters_Abs, unique(c(names(Out_ind), 
-                                                                   names(Out_agg))))
-            
-            if(length(PKparameters_Abs) > 0){
+            PKparameters_Abs_ADAM <- intersect(
+               PKparameters_Abs, 
                
-               Abs_xl <- suppressMessages(
-                  readxl::read_excel(path = sim_data_file, sheet = "Absorption",
+               AllPKParameters %>% filter(Sheet == "Overall Fa Fg") %>% 
+                  pull(PKparameter))
+            
+            # Error catching
+            if("Overall Fa Fg" %in% SheetNames == FALSE){
+               warning(wrapn(paste0("A sheet titled 'Overall Fa Fg' must be present in the Excel simulated data file to extract the PK parameters ",
+                                    str_c(PKparameters_Abs_ADAM, collapse = ", "),
+                                    ". None of these parameters can be extracted.")),
+                       call. = FALSE)
+            } else {
+               
+               FaFg_xl <- suppressMessages(
+                  readxl::read_excel(path = sim_data_file, sheet = "Overall Fa Fg",
                                      col_names = FALSE))
                
-               SubCols <- which(as.character(Abs_xl[8, ]) == "Substrate")[1]
-               InhibCols <- which(as.character(Abs_xl[8, ]) == "Inhibitor 1")[1]
+               SubCols <- 3:5
+               # This is IN THE PRESENCE OF A PERPETRATOR -- not the perpetrator
+               # itself. I haven't set that up yet. 
+               WithInhibCols <- 6:8
+               RatioCols <- 9:10
+               
+               StartRow_agg <- 3
+               EndRow_agg <- which(is.na(FaFg_xl$...1[3:nrow(FaFg_xl)]))[1] + 1
+               StartRow_ind <- which(FaFg_xl$...1 == "Index")[1] + 1
                
                # Looping through parameters and extracting values
-               for(i in PKparameters_Abs){
+               for(i in PKparameters_Abs_ADAM){
                   
                   # Using regex to find the correct column. See
                   # data(AllPKParameters) for all the possible parameters as well
                   # as what regular expressions are being searched for each. 
                   ToDetect <- AllPKParameters %>% 
-                     filter(Sheet == "Absorption" & PKparameter == i) %>% 
+                     filter(Sheet == "Overall Fa Fg" & PKparameter == i) %>% 
                      select(PKparameter, SearchText)
                   
-                  # fa_apparent_sub is not always available.
-                  if(nrow(ToDetect) == 0){
-                     suppressMessages(rm(ToDetect))
-                     PKparameters_Abs <- setdiff(PKparameters_Abs, i)
-                     next
+                  # Looking for the regular expression specific to this parameter
+                  # i. For the absorption tab, there are columns for the substrate
+                  # and columns for Inhibitor 1. (There are also columns for
+                  # Inhibitor 2 and 3 but I've never seen them filled in. -LSh)
+                  if(str_detect(i, "withInhib")){
+                     ColsToUse <- WithInhibCols
+                  } else if(str_detect(i, "ratio")){
+                     ColsToUse <- RatioCols
+                  } else {
+                     ColsToUse <- SubCols
                   }
                   
-                  # Looking for the regular expression specific to this
-                  # parameter i. For the absorption tab, there are columns for
-                  # the substrate and columns for Inhibitor 1. (There are also
-                  # columns for Inhibitor 2 and 3 but I've never seen them
-                  # filled in. -LSh)
-                  StartCol <- ifelse(str_detect(i, "sub"),
-                                     SubCols, InhibCols)
-                  
-                  ColNum <- which(str_detect(
-                     as.character(Abs_xl[9, StartCol:(StartCol+2)]),
-                     ToDetect$SearchText)) + StartCol - 1
+                  ColNum <- ColsToUse[
+                     which(str_detect(as.character(FaFg_xl[2, ColsToUse]),
+                                      ToDetect$SearchText))]
                   
                   if(length(ColNum) == 0 || is.na(ColNum)){
                      if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
                         warning(wrapn(paste0("The column with information for ", i,
-                                             " on the tab 'Absorption' cannot be found in the file '", 
+                                             " on the tab `Overall Fa Fg` cannot be found in the file '", 
                                              sim_data_file, "'.")), 
                                 call. = FALSE)
                      }
                      suppressMessages(rm(ToDetect, ColNum))
-                     PKparameters_Abs <- setdiff(PKparameters_Abs, i)
+                     PKparameters_Abs_ADAM <- setdiff(PKparameters_Abs_ADAM, i)
                      next
                   }
                   
                   suppressWarnings(
-                     Out_ind[[i]] <- Abs_xl[10:nrow(Abs_xl), ColNum] %>%
+                     Out_ind[[i]] <- FaFg_xl[StartRow_ind:nrow(FaFg_xl), ColNum] %>%
                         pull(1) %>% as.numeric
                   )
-                  
-                  if(checkDataSource){
-                     DataCheck <- DataCheck %>%
-                        bind_rows(data.frame(PKparam = i,
-                                             Tab = "Absorption",
-                                             SearchText = ToDetect$SearchText,
-                                             Column = ColNum,
-                                             StartRow_agg = NA,
-                                             EndRow_agg = NA,
-                                             StartRow_ind = 10,
-                                             EndRow_ind = nrow(Abs_xl)))
-                  }
-               }
-               
-               if(includeTrialInfo & length(PKparameters_Abs) > 0){
-                  # Subject and trial info
-                  SubjTrial_Abs <- Abs_xl[10:nrow(Abs_xl), 1:2] %>%
-                     rename("Individual" = ...1, "Trial" = ...2)
-                  
-                  Out_ind[["Abstab"]] <- cbind(SubjTrial_Abs,
-                                               as.data.frame(Out_ind[PKparameters_Abs]))
-               }
-               
-               # AGGREGATE VALUES: For the absorption tab, the aggregate values are
-               # stored in a COMPLETELY different place, so extracting those values
-               # completely separately.
-               IndexRow <- which(Abs_xl$...1 == "Index")
-               StartCol_agg <- which(str_detect(t(Abs_xl[IndexRow, ]), "Trial"))[2]
-               
-               # They are NOT ALWAYS LABELED (!!!!) as such, but the summary stats
-               # are for fa, ka, and lag time in order for 1) the substrate, 2)
-               # inhibitor 1, 3) inhibitor 2, and 4) inhibitor 3. Getting the
-               # appropriate columns.
-               SubCols <- StartCol_agg:(StartCol_agg + 2)
-               Inhib1Cols <- (StartCol_agg + 3):(StartCol_agg + 5)
-               Inhib2Cols <- (StartCol_agg + 6):(StartCol_agg + 8)
-               Inhib3Cols <- (StartCol_agg + 9):(StartCol_agg + 11)
-               # Note: I have only set this up for substrate and inhibitor 1 so
-               # far. Return to this later if/when we want more. -LSh
-               
-               # "Statistics" is in the column before StartCol_agg, so looking
-               # for that next.
-               StartRow_agg <- which(Abs_xl[, StartCol_agg - 1] == "Statistics") + 1
-               EndRow_agg <- which(is.na(Abs_xl[, StartCol_agg - 1]))
-               EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
-               EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(Abs_xl), EndRow_agg)
-               
-               # finding the PK parameters requested
-               for(i in PKparameters_Abs){
-                  
-                  MyCols <- switch(str_extract(i, "sub|inhib"), 
-                                   "sub" = SubCols, 
-                                   "inhib" = InhibCols)
-                  
-                  ColNum <- MyCols[which(str_detect(
-                     as.character(Abs_xl[StartRow_agg, MyCols]), 
-                     ToDetect$SearchText))]
-                  
-                  if(length(ColNum) == 0){
-                     warning(wrapn(paste0("The column with information for ", i,
-                                          " on the tab 'Absorption' cannot be found in the file '", 
-                                          sim_data_file, "'.")), 
-                             call. = FALSE)
-                     suppressWarnings(rm(ColNum, SearchText))
-                     next
-                  }
                   
                   suppressWarnings(
-                     Out_agg[[i]] <- Abs_xl[(StartRow_agg + 1):EndRow_agg, ColNum] %>%
+                     Out_agg[[i]] <- FaFg_xl[StartRow_agg:EndRow_agg, ColNum] %>%
                         pull(1) %>% as.numeric
                   )
-                  names(Out_agg[[i]]) <- Abs_xl[(StartRow_agg + 1):EndRow_agg, StartCol_agg - 1] %>%
+                  names(Out_agg[[i]]) <- FaFg_xl[StartRow_agg:EndRow_agg, 1] %>%
                      pull(1)
                   
                   if(checkDataSource){
                      DataCheck <- DataCheck %>%
                         bind_rows(data.frame(PKparam = i,
-                                             Tab = "Absorption",
+                                             Tab = "Overall Fa Fg",
                                              SearchText = ToDetect$SearchText,
                                              Column = ColNum,
-                                             StartRow_agg = StartRow_agg + 1,
+                                             StartRow_agg = StartRow_agg,
                                              EndRow_agg = EndRow_agg,
-                                             StartRow_ind = NA,
-                                             EndRow_ind = NA))
+                                             StartRow_ind = StartRow_ind,
+                                             EndRow_ind = nrow(FaFg_xl)))
                   }
-                  suppressWarnings(rm(ColNum, MyCols))
                }
+               
+               if(includeTrialInfo & length(PKparameters_Abs_ADAM) > 0){
+                  # Subject and trial info
+                  SubjTrial_Abs <- FaFg_xl[StartRow_ind:nrow(FaFg_xl), 1:2] %>%
+                     rename("Individual" = ...1, "Trial" = ...2)
+                  
+                  Out_ind[["Abstab"]] <- cbind(SubjTrial_Abs,
+                                               as.data.frame(Out_ind[PKparameters_Abs_ADAM]))
+               }
+               
+            } 
+            
+         } else if(AbsModel == "1st order"){
+            # Data extraction when model was first order
+            
+            # Error catching
+            if(any(c("Absorption", "Clearance Trials SS") %in% SheetNames) == FALSE){
+               warning(wrapn(paste0("A sheet called 'Absorption' or 'Clearance Trials SS' must be present in the Excel simulated data file to extract the PK parameters ",
+                                    str_c(PKparameters_Abs, collapse = ", "),
+                                    ". None of these parameters can be extracted.")),
+                       call. = FALSE)
+            } else {
+               
+               if("Absorption" %in% SheetNames){
+                  # NB: Not getting data from "Clearance Trials SS" or
+                  # "Interaction Trials SS" b/c those will be extracted in a
+                  # different section.
+                  
+                  if(length(PKparameters_Abs) > 0){
+                     
+                     Abs_xl <- suppressMessages(
+                        readxl::read_excel(path = sim_data_file, sheet = "Absorption",
+                                           col_names = FALSE))
+                     
+                     SubCols <- which(as.character(Abs_xl[8, ]) == "Substrate")[1]
+                     InhibCols <- which(as.character(Abs_xl[8, ]) == "Inhibitor 1")[1]
+                     
+                     # Looping through parameters and extracting values
+                     for(i in PKparameters_Abs){
+                        
+                        # Using regex to find the correct column. See
+                        # data(AllPKParameters) for all the possible parameters as well
+                        # as what regular expressions are being searched for each. 
+                        ToDetect <- AllPKParameters %>% 
+                           filter(Sheet == "Absorption" & PKparameter == i) %>% 
+                           select(PKparameter, SearchText)
+                        
+                        # fa_apparent_sub is not always available.
+                        if(nrow(ToDetect) == 0){
+                           suppressMessages(rm(ToDetect))
+                           PKparameters_Abs <- setdiff(PKparameters_Abs, i)
+                           next
+                        }
+                        
+                        # Looking for the regular expression specific to this
+                        # parameter i. For the absorption tab, there are columns for
+                        # the substrate and columns for Inhibitor 1. (There are also
+                        # columns for Inhibitor 2 and 3 but I've never seen them
+                        # filled in. -LSh)
+                        StartCol <- ifelse(str_detect(i, "sub"),
+                                           SubCols, InhibCols)
+                        
+                        ColNum <- which(str_detect(
+                           as.character(Abs_xl[9, StartCol:(StartCol+2)]),
+                           ToDetect$SearchText)) + StartCol - 1
+                        
+                        if(length(ColNum) == 0 || is.na(ColNum)){
+                           if(any(PKparameters_orig %in% c("all", "Absorption tab")) == FALSE){
+                              warning(wrapn(paste0("The column with information for ", i,
+                                                   " on the tab 'Absorption' cannot be found in the file '", 
+                                                   sim_data_file, "'.")), 
+                                      call. = FALSE)
+                           }
+                           suppressMessages(rm(ToDetect, ColNum))
+                           PKparameters_Abs <- setdiff(PKparameters_Abs, i)
+                           next
+                        }
+                        
+                        suppressWarnings(
+                           Out_ind[[i]] <- Abs_xl[10:nrow(Abs_xl), ColNum] %>%
+                              pull(1) %>% as.numeric
+                        )
+                        
+                        if(checkDataSource){
+                           DataCheck <- DataCheck %>%
+                              bind_rows(data.frame(PKparam = i,
+                                                   Tab = "Absorption",
+                                                   SearchText = ToDetect$SearchText,
+                                                   Column = ColNum,
+                                                   StartRow_agg = NA,
+                                                   EndRow_agg = NA,
+                                                   StartRow_ind = 10,
+                                                   EndRow_ind = nrow(Abs_xl)))
+                        }
+                     }
+                     
+                     if(includeTrialInfo & length(PKparameters_Abs) > 0){
+                        # Subject and trial info
+                        SubjTrial_Abs <- Abs_xl[10:nrow(Abs_xl), 1:2] %>%
+                           rename("Individual" = ...1, "Trial" = ...2)
+                        
+                        Out_ind[["Abstab"]] <- cbind(SubjTrial_Abs,
+                                                     as.data.frame(Out_ind[PKparameters_Abs]))
+                     }
+                     
+                     # AGGREGATE VALUES: For the absorption tab, the aggregate values are
+                     # stored in a COMPLETELY different place, so extracting those values
+                     # completely separately.
+                     IndexRow <- which(Abs_xl$...1 == "Index")
+                     StartCol_agg <- which(str_detect(t(Abs_xl[IndexRow, ]), "Trial"))[2]
+                     
+                     # They are NOT ALWAYS LABELED (!!!!) as such, but the summary stats
+                     # are for fa, ka, and lag time in order for 1) the substrate, 2)
+                     # inhibitor 1, 3) inhibitor 2, and 4) inhibitor 3. Getting the
+                     # appropriate columns.
+                     SubCols <- StartCol_agg:(StartCol_agg + 2)
+                     Inhib1Cols <- (StartCol_agg + 3):(StartCol_agg + 5)
+                     Inhib2Cols <- (StartCol_agg + 6):(StartCol_agg + 8)
+                     Inhib3Cols <- (StartCol_agg + 9):(StartCol_agg + 11)
+                     # Note: I have only set this up for substrate and inhibitor 1 so
+                     # far. Return to this later if/when we want more. -LSh
+                     
+                     # "Statistics" is in the column before StartCol_agg, so looking
+                     # for that next.
+                     StartRow_agg <- which(Abs_xl[, StartCol_agg - 1] == "Statistics") + 1
+                     EndRow_agg <- which(is.na(Abs_xl[, StartCol_agg - 1]))
+                     EndRow_agg <- EndRow_agg[which(EndRow_agg > StartRow_agg)][1] - 1
+                     EndRow_agg <- ifelse(is.na(EndRow_agg), nrow(Abs_xl), EndRow_agg)
+                     
+                     # finding the PK parameters requested
+                     for(i in PKparameters_Abs){
+                        
+                        MyCols <- switch(str_extract(i, "sub|inhib"), 
+                                         "sub" = SubCols, 
+                                         "inhib" = InhibCols)
+                        
+                        ColNum <- MyCols[which(str_detect(
+                           as.character(Abs_xl[StartRow_agg, MyCols]), 
+                           ToDetect$SearchText))]
+                        
+                        if(length(ColNum) == 0){
+                           warning(wrapn(paste0("The column with information for ", i,
+                                                " on the tab 'Absorption' cannot be found in the file '", 
+                                                sim_data_file, "'.")), 
+                                   call. = FALSE)
+                           suppressWarnings(rm(ColNum, SearchText))
+                           next
+                        }
+                        
+                        suppressWarnings(
+                           Out_agg[[i]] <- Abs_xl[(StartRow_agg + 1):EndRow_agg, ColNum] %>%
+                              pull(1) %>% as.numeric
+                        )
+                        names(Out_agg[[i]]) <- Abs_xl[(StartRow_agg + 1):EndRow_agg, StartCol_agg - 1] %>%
+                           pull(1)
+                        
+                        if(checkDataSource){
+                           DataCheck <- DataCheck %>%
+                              bind_rows(data.frame(PKparam = i,
+                                                   Tab = "Absorption",
+                                                   SearchText = ToDetect$SearchText,
+                                                   Column = ColNum,
+                                                   StartRow_agg = StartRow_agg + 1,
+                                                   EndRow_agg = EndRow_agg,
+                                                   StartRow_ind = NA,
+                                                   EndRow_ind = NA))
+                        }
+                        suppressWarnings(rm(ColNum, MyCols))
+                     }
+                  }
+               } 
             }
          }
       }
@@ -1580,17 +1602,27 @@ extractPK <- function(sim_data_file,
    if(length(PKparameters_CLTSS) > 0 &
       any(PKparameters_orig %in% c("AUC tab", "Absorption tab")) == FALSE){
       # Error catching
-      if("Clearance Trials SS" %in% SheetNames == FALSE){
+      if(any(c("Clearance Trials SS", "Interaction Trials SS") %in% 
+             SheetNames) == FALSE){
          
-         warning(wrapn(paste0("The sheet `Clearance Trials SS` was not present in the Excel simulated data file to extract the PK parameters ",
-                              str_comma(PKparameters_CLTSS), ", so those will be skipped.")), 
+         warning(wrapn(paste0("The sheet 'Clearance Trials SS' and possibly the sheet 'Interaction Trials SS' was/were not present in the Excel simulated data file to extract the PK parameters ",
+                              str_comma(paste0("'", PKparameters_CLTSS, "'")),
+                              ", so those will be skipped.")), 
                  call. = FALSE)
          
       } else {
          
-         CLTSS_xl <- suppressMessages(
-            readxl::read_excel(path = sim_data_file, sheet = "Clearance Trials SS",
-                               col_names = FALSE))
+         if("Interaction Trials SS" %in% SheetNames){
+            # Prioritizing the interaction tab b/c it also includes baseline
+            # info. Don't need both.
+            CLTSS_xl <- suppressMessages(
+               readxl::read_excel(path = sim_data_file, sheet = "Interaction Trials SS",
+                                  col_names = FALSE))
+         } else {
+            CLTSS_xl <- suppressMessages(
+               readxl::read_excel(path = sim_data_file, sheet = "Clearance Trials SS",
+                                  col_names = FALSE))
+         }
          
          # Looping through parameters and extracting values
          for(i in PKparameters_CLTSS){
@@ -1599,8 +1631,10 @@ extractPK <- function(sim_data_file,
             # data(AllPKParameters) for all the possible parameters as well
             # as what regular expressions are being searched for each. 
             ToDetect <- AllPKParameters %>% 
-               filter(Sheet == "Clearance Trials SS" & PKparameter == i) %>% 
-               select(PKparameter, SearchText)
+               filter(Sheet %in% c("Clearance Trials SS", 
+                                   "Interaction Trials SS") & 
+                         PKparameter == i) %>% 
+               select(PKparameter, SearchText) %>% unique()
             
             # Looking for the regular expression specific to this parameter
             # i. 
@@ -1631,7 +1665,9 @@ extractPK <- function(sim_data_file,
             if(checkDataSource){
                DataCheck <- DataCheck %>%
                   bind_rows(data.frame(PKparam = i, 
-                                       Tab = "Clearance Trials SS",
+                                       Tab = ifelse("Interaction Trials SS" %in% SheetNames, 
+                                                    "Interaction Trials SS",
+                                                    "Clearance Trials SS"),
                                        SearchText = ToDetect$SearchText,
                                        Column = ColNum, 
                                        StartRow_agg = NA,
@@ -1657,12 +1693,41 @@ extractPK <- function(sim_data_file,
             # data(AllPKParameters) for all the possible parameters as well
             # as what regular expressions are being searched for each. 
             ToDetect <- AllPKParameters %>% 
-               filter(Sheet == "Clearance Trials SS" & PKparameter == i) %>% 
+               filter(Sheet %in% c("Clearance Trials SS", 
+                                   "Interaction Trials SS") & 
+                         PKparameter == i) %>% 
                select(PKparameter, SearchText)
             
             # Looking for the regular expression specific to this parameter
             # i. 
-            RowNum <- which(str_detect(CLTSS_xl$...1, "Mean"))[1] - 1
+            ColNum_prelim <- 1
+            RowNum <- which(
+               str_detect(t(CLTSS_xl[, ColNum_prelim]), "Mean"))[1] - 1
+            
+            if(is.na(RowNum)){
+               if("Interaction Trials SS" %in% SheetNames){
+                  # The column to search for "Statistics", which is right next
+                  # to the aggregate data, is column with "Trial Groups" in 1st
+                  # row. 
+                  ColNum_prelim <- which(
+                     str_detect(as.vector(t(CLTSS_xl[1, ])), "Trial Groups"))
+                  
+                  RowNum <- which(
+                     str_detect(t(CLTSS_xl[, ColNum_prelim]), "Statistics")) + 1 
+                  
+               } else {
+                  # The column to search for "Statistics", which is right next
+                  # to the aggregate data, is column with "Trial Groups" in 2nd
+                  # row. 
+                  ColNum_prelim <- which(
+                     str_detect(as.vector(t(CLTSS_xl[2, ])), "Trial Groups"))
+                  
+                  RowNum <- which(
+                     str_detect(t(CLTSS_xl[, ColNum_prelim]), "Statistics")) + 1
+                  
+               }
+            }
+            
             RowNum <- ifelse(length(RowNum) == 0 || is.na(RowNum), 
                              1, RowNum)
             
@@ -1683,19 +1748,22 @@ extractPK <- function(sim_data_file,
             
             # "Fold" should be the penultimate row. There's also "Std Dev", but
             # I think that's not always spelled/abbreviated consistently.
-            EndRow_agg <- which(str_detect(tolower(CLTSS_xl$...1), "fold"))[1] + 1
+            EndRow_agg <- which(
+               str_detect(tolower(t(CLTSS_xl[, ColNum_prelim])), "fold"))[1] + 1
             
             suppressWarnings(
                Out_agg[[i]] <- CLTSS_xl[(RowNum + 1):EndRow_agg, ColNum] %>%
                   pull(1) %>% as.numeric
             )
-            names(Out_agg[[i]]) <- CLTSS_xl[(RowNum + 1):EndRow_agg, 1] %>%
-               pull(1)
+            names(Out_agg[[i]]) <- 
+               CLTSS_xl[(RowNum + 1):EndRow_agg, ColNum_prelim] %>% pull(1)
             
             if(checkDataSource){
                DataCheck <- DataCheck %>%
                   bind_rows(data.frame(PKparam = i, 
-                                       Tab = "Clearance Trials SS",
+                                       Tab = ifelse("Interaction Trials SS" %in% SheetNames, 
+                                                    "Interaction Trials SS",
+                                                    "Clearance Trials SS"),
                                        SearchText = ToDetect$SearchText,
                                        Column = ColNum, 
                                        StartRow_agg = RowNum + 1,
