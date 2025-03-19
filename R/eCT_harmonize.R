@@ -27,38 +27,57 @@ eCT_harmonize <- function(sim_data_xl,
    
    if(any(ADAM, AdvBrainModel) == FALSE){
       
-      # If "interaction" or "Csys" or other similar strings are part of the name
-      # of any of the compounds, that messes up the regex. Plus, the Simulator
-      # has a variety of inconsistent ways that it names compounds that are hard
-      # to figure out sometimes. Substituting to standardize the compound names.
-      # Also need to consider the possibility that user may have had to hack
-      # things and may have the same compound in multiple positions.
+      # Here's what we're trying to overcome with this function: If
+      # "interaction" or "Csys" or other similar strings are part of the name of
+      # any of the compounds, that messes up the regex, so we need to remove
+      # those. Second, the Simulator has a variety of inconsistent ways that it
+      # names compounds that are hard to figure out sometimes. Substituting here
+      # to standardize the compound names. Also need to consider the possibility
+      # that user may have had to hack things and may have the same compound in
+      # multiple positions, so this will also account for that.
       
       # Scenario 1: Systemic tissue, no perpetrator
-      # CSys will be listed for all concs. Each compound ID will be on its own tab.
+      # "CSys" will be listed for all concs. Each compound ID will be on its own tab.
       
       # Scenario 2: Systemic tissue, + perpetrator
-      # Substrate: CSys for substrate alone, CSys + interaction for substrate + perp,
-      # Each metabolite will be on its own tab. All concs labeled as CSys.
-      # Perpetrators: ISys for inhibitor 1 concs, ISys 2 for inhibitor 2 concs, ISys and some other number for inhibitor metabolite concs. Not clear how they pick the number for the metabolite concs.
+      # Substrate: "CSys" for substrate alone, "CSys + interaction" for substrate + perp,
+      # Each metabolite will be on its own tab. All concs labeled as "CSys."
+      # Perpetrators: "ISys" for inhibitor 1 concs, "ISys" 2 for inhibitor 2 concs, ISys and some other number for inhibitor metabolite concs. Not clear how they pick the number for the metabolite concs.
       
-      # REMINDER TO SELF: As far as I can tell, only substrate and inhibitor concentrations are available for solid tissues. 
+      # CODING NOTE: As far as I can tell, only substrate and inhibitor
+      # concentrations are available for solid tissues.
       
       # Scenario 3: Solid tissue except sometimes liver, no perpetrator
       # Many concs possible. 
-      # Adipose, Bone, Brain (except when AdvBrainModel), Gut, Heart, Kidney, Lung, Muscle, Skin, Spleen, Pancreas: CTissue
+      # Adipose, Bone, Brain (except when AdvBrainModel), Gut, Heart, Kidney, Lung, Muscle, Skin, Spleen, Pancreas: Labeled as "CTissue"
       
       # Scenario 4: Solid tissue except sometimes liver, + perpetrator
-      # Adipose, Bone, Brain (except when AdvBrainModel), Gut, Heart, Kidney, Lung, Muscle, Skin, Spleen, Pancreas: CTissue or CTissue + Interaction for substrate, ITissue(Inh X) for inhibitor. This will be 1 for inhibitor 1 but need to check on other perp compound IDs. 
+      # Adipose, Bone, Brain (except when AdvBrainModel), Gut, Heart, Kidney, Lung, Muscle, Skin, Spleen, Pancreas: Labeled as "CTissue" or "CTissue + Interaction" for substrate, "ITissue(Inh X)" for inhibitor. This will be 1 for inhibitor 1 but need to check on other perp compound IDs. 
       
-      # Scenario 5: Liver sometimes
+      # Scenario 5: Liver sometimes -- NOT WELL TESTED
       # Can have sub, PM1, PM2, maybe sec met?, inhib1, inhib2, maybe inhib1 met?. Example: "mdz-met1-met2-inhib1-inhib2-md-alltissues-v22.xlsx"
       
       # Scenario 6: Biologics
       # This is NOT WELL TESTED. 
-      # Possible names: Therapeutic protein CSys
+      # Possible names: "Therapeutic protein CSys"
       
+      # Noting NA positions b/c that will help figure out which rows to extract
       NApos <- which(is.na(sim_data_xl$...1))
+      
+      # Here is the strategy: The upper part of a concentration-time profile tab
+      # in the Excel results often lists the compound name and not necessarily
+      # the compound ID, e.g., "midazolam" or "Itraconazole_Fed Capsule", but
+      # then lower on the tab it will list only "CSys" or "ISys1". It seems to
+      # do that when the compound is substrate or any of the perpetrator
+      # compounds and the tissue is a systemic one. For other compounds or other
+      # tissues, the top only lists, e.g., "CSys" or "CTissue", and then it
+      # lists the same thing lower down. What we're doing with this function is
+      # replacing ALL the instances where there's a reference to a specific
+      # compound with a standardized, all caps name for that compound. This will
+      # make it easier and more accurate when we pull specific data and assign
+      # them to specific compounds later. CmpdMatches1 is for figuring out what
+      # was listed at the top of the tab and CmpdMatches2 is for figuring out
+      # what was listed at the bottom of the tab and matching things up. 
       
       # Looking for all possible compounds. If there is an inhibitor, this will
       # include substrate alone as well as substrate + interaction.
@@ -66,6 +85,8 @@ eCT_harmonize <- function(sim_data_xl,
       if(CmpdMatches1_rows[1] < CmpdMatches1_rows[2]){
          CmpdMatches1 <- sim_data_xl$...1[(NApos[1] + 1):(NApos[2]-1)] 
          CmpdMatches1 <- CmpdMatches1[!str_detect(CmpdMatches1, "Trial")]
+      } else if(length(unique(CmpdMatches1_rows)) == 1){
+         CmpdMatches1 <- sim_data_xl$...1[(NApos[1] + 1)] 
       } else {
          CmpdMatches1 <- "UNCONVENTIONAL COMPOUND"
       }
@@ -79,18 +100,6 @@ eCT_harmonize <- function(sim_data_xl,
       CmpdMatches1 <- CmpdMatches1[!str_detect(CmpdMatches1, " \\(Bin [0-9]")]
       BinRows <- which(str_detect(sim_data_xl$...1, " Bin [0-9]| \\(Bin [0-9]"))
       sim_data_xl$...1[BinRows] <- sub("[Mm]ean", "", sim_data_xl$...1[BinRows])
-      
-      # # If the compound is not on the same tab as the substrate, then removing
-      # # all the "Trial" rows removes all the rows with the compound name.
-      # # Adjusting for that. Also adjusting for the weird situation with some
-      # # liver concentrations where the metabolite concentrations are on the same
-      # # tab as the substrate and inhibitors.
-      # if(any(compoundToExtract %in% c("primary metabolite 1", "primary metabolite 2", 
-      #                                 "secondary metabolite")) &
-      #    !(tissue == "liver" & 
-      #    as.numeric(str_extract(Deets$SimulatorVersion, "[0-9]{2}")) >= 22)){
-      #    CmpdMatches1 <- rep(AllCompoundsPresent[[compoundToExtract]], length(CmpdMatches1))
-      # }
       
       # Next, need to figure out which combination of CSys and ISys 1 or ISys 3
       # or whatever number belongs to which actual compound. Looking for what
@@ -124,10 +133,7 @@ eCT_harmonize <- function(sim_data_xl,
       # Last step: Find the unique versions of the coding.
       CmpdMatches2 <- unique(CmpdMatches2)
       
-      if(PerpPresent == FALSE & 
-         str_detect(tissue, "plasma|blood") == FALSE){
-         CmpdMatches2 <- CmpdMatches1
-      } else if(CmpdMatches1[1] == "UNCONVENTIONAL COMPOUND"){
+      if(CmpdMatches1[1] == "UNCONVENTIONAL COMPOUND"){
          CmpdMatches1 <- CmpdMatches2
       }
       
@@ -157,19 +163,31 @@ eCT_harmonize <- function(sim_data_xl,
                                 CompoundCode = CmpdMatches2) %>% 
          mutate(CompoundName = sub("( )?\\+( )?[Ii]nteraction", "", NamesInExcel), 
                 CompoundID = AllCompoundsInv[CompoundName], 
-                CompoundID = ifelse(str_detect(CompoundCode, "I(Sys|liver|pv|Tissue)") & 
-                                       CompoundID %in% c("substrate", 
-                                                         "primary metabolite 1", 
-                                                         "primary metabolite 2", 
-                                                         "secondary metabolite"), 
-                                    AllCompoundsInv[str_detect(AllCompoundsInv, "inhibitor")][CompoundName], 
-                                    CompoundID), 
+                CompoundID = case_when(
+                   str_detect(CompoundCode, "I(Sys|liver|pv|Tissue)") & 
+                      CompoundID %in% c("substrate", 
+                                        "primary metabolite 1", 
+                                        "primary metabolite 2", 
+                                        "secondary metabolite") ~ 
+                      AllCompoundsInv[str_detect(AllCompoundsInv, "inhibitor")][CompoundName], 
+                   
+                   is.na(CompoundID) & str_detect(NamesInExcel, "Tissue.*Sub") ~ 
+                      # This is when it's a solid tissue. Only options are
+                      # substrate and inhibitor 1, so if "Sub" is there, it must
+                      # be substrate. Covering inhibitor 1 in next line. 
+                      "substrate", 
+                   
+                   is.na(CompoundID) & str_detect(NamesInExcel, "Tissue.*Inh 1") ~ 
+                      "inhibitor 1", 
+                   
+                   .default = CompoundID), 
                 CompoundNameForRegex = sub("\\+|\\(|\\)|\\%|\\%", ".", CompoundName), 
                 Interaction = str_detect(CompoundCode, "interaction"))
       
-      # Output sometimes dosen't list the compound name. Not sure what the
-      # pattern is for when this happens. They only list, e.g., "CPlasma" or
-      # "ITissue". Dealing with this. 
+      # Output sometimes doesn't list the compound name, I think only when it's
+      # not substrate or any inhibitor compounds or it's not a systemic tissue.
+      # Somtimes the ouput will only list, e.g., "CPlasma" or "ITissue". Dealing
+      # with this.
       CompoundThatShouldBePresent <- compoundToExtract
       ShouldBeButNotInhib <- CompoundThatShouldBePresent[
          !str_detect(CompoundThatShouldBePresent, "inhibitor")]
@@ -288,3 +306,4 @@ eCT_harmonize <- function(sim_data_xl,
    return(sim_data_xl)
    
 }
+
