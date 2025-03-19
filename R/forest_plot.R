@@ -210,6 +210,7 @@
 #'   mean.
 #' @param error_bars_on_top TRUE or FALSE (default) for whether to put the error
 #'   bars on top of the points
+#' @param point_size 2.5 (default) or set it to whatever you like
 #' @param show_borders TRUE (default) or FALSE for whether to show a light gray
 #'   line between the files on the y axis. Note: This works best when
 #'   \code{color_set = "none"}. Otherwise, you'll be able to see what looks like
@@ -563,6 +564,7 @@ forest_plot <- function(forest_dataframe,
                         point_shape = c(24, 21),
                         point_color_column, 
                         point_color_set = "default",
+                        point_size = 2.5, 
                         angle_x_axis_text = 0, 
                         graph_title = NA,
                         graph_title_size = 14,
@@ -1975,11 +1977,11 @@ forest_plot <- function(forest_dataframe,
       }
       
       if(as_label(point_color_column) == "<empty>"){
-         G <- G + geom_point(size = 2.5, fill = "white") +
+         G <- G + geom_point(size = point_size, fill = "white") +
             scale_color_manual(values = MyColors) + 
             labs(fill = "Interaction level", shape = NULL)
       } else {
-         G <- G + geom_point(size = 2.5) + 
+         G <- G + geom_point(size = point_size) + 
             labs(fill = "Interaction level",
                  shape = NULL, color = NULL)
       }
@@ -2086,11 +2088,11 @@ forest_plot <- function(forest_dataframe,
       }
       
       if(as_label(point_color_column) == "<empty>"){
-         G <- G + geom_point(size = 2.5, fill = "white") +
+         G <- G + geom_point(size = point_size, fill = "white") +
             scale_color_manual(values = MyColors) +
             labs(fill = "Interaction level", shape = NULL)
       } else {
-         G <- G + geom_point(size = 2.5) + 
+         G <- G + geom_point(size = point_size) + 
             labs(fill = "Interaction level",
                  shape = NULL, color = NULL)
       }

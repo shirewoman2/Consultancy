@@ -285,7 +285,7 @@ reds <- function(ncolors,
 #' @export
 #'
 green_to_red <- function(){
-   c("negligible" = "#C7FEAC", # light green
+   c("negligible" = "#A4E4AF", # light green
      "weak" = "#FFFF95", # light yellow
      "moderate" = "#FFDA95", # light orange
      "strong" = "#FF9595")   # light red
