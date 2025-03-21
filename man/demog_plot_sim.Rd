@@ -22,6 +22,7 @@ demog_plot_sim(
   facet_column_additional,
   border_facets = TRUE,
   graph_labels = TRUE,
+  return_indiv_graphs = FALSE,
   save_graph = NA,
   fig_height = 8,
   fig_width = 6
@@ -200,6 +201,9 @@ around the facets if the graphs are broken up by the sex of the subjects}
 
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs.}
+
+\item{return_indiv_graphs}{TRUE or FALSE (default) for whether to return a
+list of each of the individual graphs}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "Demographics comparisons.png". Acceptable graphical
