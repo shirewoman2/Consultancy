@@ -631,7 +631,7 @@ demog_plot_sim <- function(demog_dataframe,
             xlab("Age (years)") +
             theme_consultancy(border = border_facets) + 
             theme(strip.placement = "outside", 
-                  legend.position = legend_position)
+                  legend.position = ifelse(AnyScatter, "none", legend_position))
          
          if(complete.cases(legend_label_color)){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
@@ -639,7 +639,7 @@ demog_plot_sim <- function(demog_dataframe,
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = NULL)
          }
          
-         MyGraphs[[yy]] <- patchwork::free(MyGraphs[[yy]])
+         # MyGraphs[[yy]] <- patchwork::free(MyGraphs[[yy]])
          
          
       } else if(yy == "sex"){
@@ -771,8 +771,12 @@ demog_plot_sim <- function(demog_dataframe,
       theme(plot.title = element_text(size = 12,
                                       hjust = 0.5,
                                       face = "bold"),
-            legend.position = legend_position, 
             legend.box = "vertical")
+   
+   if(legend_position %in% c("bottom", "top", "left")){
+      G <- G & 
+         theme(legend.position = legend_position)
+   }
    
    
    # # This does not work. ggpubr only keeps the 1st legend. 
