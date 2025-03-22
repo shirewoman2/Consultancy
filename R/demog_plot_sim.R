@@ -1,6 +1,23 @@
 #' Make plots for comparing populations across simulations
 #'
-#' UNDER CONSTRUCTION.
+#' @description \code{demog_plot_sim} will make a series of graphs comparing
+#'   parameters across simulated populations. All the parameters available on
+#'   the "Demographic Data" tab of a Simcyp Simulator output Excel file are
+#'   available for making comparisons, and you must obtain the input data for
+#'   making these graphs by running \code{\link{extractDemog}}. If you are
+#'   looking at the distributions of one parameter across populations, you can
+#'   display that with either boxplots or kernel density plots (like a smoothed
+#'   histogram). If you want to compare across simulations the relationship
+#'   between pairs of parameters, scatter plots will be used. (Only certain
+#'   pairs of parameters are available; please see notes for the argument
+#'   'demog_parameters'.)
+#'
+#'   \emph{A note:} We're having trouble with the legend getting duplicated when
+#'   1) you have a mix of boxplots or density plots and then also scatter plots
+#'   and 2) the legend position is set to anything other than "right". We think
+#'   it may be a bug in the "patchwork" package, which is used to arrange these
+#'   plots behind the scenes. We're working on fixing this. 
+#'
 #'
 #' @param demog_dataframe the output from running \code{\link{extractDemog}}.
 #' @param sims_to_include optionally specify which simulations to include. These
@@ -98,7 +115,7 @@
 #'   name is for \code{colorBy_column}. If you don't want a label for this
 #'   legend item, set this to "none".
 #' @param legend_position specify where you want the legend to be. Options are
-#'   "left", "right", "bottom" (default), "top", or "none" if you don't want one
+#'   "left", "right" (default), "bottom", "top", or "none" if you don't want one
 #'   at all.
 #' @param color_set the set of colors to use. Options: \describe{
 #'
@@ -185,7 +202,7 @@ demog_plot_sim <- function(demog_dataframe,
                            color_set = "default", 
                            color_labels = NA, 
                            legend_label_color = NA,
-                           legend_position = "bottom", 
+                           legend_position = "right", 
                            graph_title = "Demographics", 
                            alpha = 0.8, 
                            ncol = NULL, 
