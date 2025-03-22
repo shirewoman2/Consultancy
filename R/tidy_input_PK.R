@@ -806,28 +806,97 @@ tidy_input_PK <- function(PKparameters,
    }
    
    
+   ## Sheet ------------------------------------------------------------------
+   
+   # Checking sheet input. Things that should happen with the sheet: 
+   
+   # 1. If PKparameter applies to all doses, Sheet should be NA. 
+   
+   # 2. If PKparameter applies to a specific dose and they have listed _dose1 or
+   # _last on the PK parameter, Sheet should be NA.
+   
+   # 3. If PKparameter applies to a specific user-defined interval and they thus
+   # have NOT listed _dose1 or _last on the PK parameter, they SHOULD have
+   # supplied a specific sheet.
+   
+   PKparameters <- PKparameters %>% 
+      mutate(
+         # Not giving a warning when they request AUCinf w/out including _dose1
+         # and just fixing this b/c it's clear which dose it's for.
+         PKparameter = case_when(
+            PKparameter == "AUCinf" ~ "AUCinf_dose1", 
+            PKparameter == "AUCinf_withInhib" ~ "AUCinf_dose1_withInhib", 
+            PKparameter == "AUCinf_ratio" ~ "AUCinf_ratio_dose1", 
+            .default = PKparameter), 
+         AUCinfNoDose = FALSE, 
+         
+         AUCinfSheetMismatch = 
+            case_when(
+               str_detect(PKparameter, "AUCinf") & 
+                  complete.cases(Sheet) ~ TRUE, 
+               .default = FALSE), 
+         
+         ShouldListSheet = 
+            case_when(
+               PKparameter %in% AllPKParameters$PKparameter[
+                  AllPKParameters$AppliesToAllDoses == TRUE] ~ FALSE, 
+               
+               str_detect(PKparameter, "_dose1|_last") ~ FALSE, 
+               
+               .default = TRUE), 
+         
+         ShouldListSheetButDidnt = ShouldListSheet == TRUE & is.na(Sheet), 
+         
+         ShouldntListSheetButDid = ShouldListSheet == FALSE & complete.cases(Sheet))
+   
+   
+   if(any(PKparameters$AUCinfSheetMismatch, na.rm = T)){
+      warning(wrapn("You requested AUCinf but then also specified what sheet to use for getting that parameter. We assume that, if you're supplying a sheet name, it's because it's a custom AUC interval, which wouldn't make sense for AUCinf, which is only a first-dose PK parameter. We will ignore the sheet you specified for AUCinf."), 
+              call. = FALSE)
+      
+      PKparameters <- PKparameters %>% 
+         mutate(
+            Sheet = case_when(str_detect(PKparameter, "AUCinf") ~ NA, 
+                              .default = Sheet), 
+            
+            # Redoing checks above with updated data.frame
+            ShouldListSheet = 
+               case_when(
+                  PKparameter %in% AllPKParameters$PKparameter[
+                     AllPKParameters$AppliesToAllDoses == TRUE] ~ FALSE, 
+                  
+                  str_detect(PKparameter, "_dose1|_last") ~ FALSE, 
+                  
+                  .default = TRUE), 
+            
+            ShouldListSheetButDidnt = ShouldListSheet == TRUE & is.na(Sheet), 
+            
+            ShouldntListSheetButDid = ShouldListSheet == FALSE & complete.cases(Sheet))
+   }
+   
+   if(any(PKparameters$ShouldListSheetButDidnt, na.rm = T)){
+      warning(wrapn("It looks like you would like PK data from a user-defined AUC interval because you did not include '_dose1' or '_last' in the PK parameter name for some PK parameters. We know which sheet to use for the first dose and which to use for the last dose, but we only know which to use for a user-defined AUC interval when you tell us. We will have to ignore any parameters that look like they must be for a custom interval."), 
+              call. = FALSE)
+      
+      PKparameters <- PKparameters %>% filter(!ShouldListSheetButDidnt == TRUE)
+      
+   }
+   
+   if(any(PKparameters$ShouldntListSheetButDid, na.rm = T)){
+      warning(wrapn("It looks like you would like standard first-dose or last-dose PK because you included '_dose1' or '_last' in the PK parameter name for at least some PK parameters, but you also included the sheet to use. We only need to know the sheet name when it is a custom user-defined AUC interval. We will ignore any specifications for which tab to use."), 
+              call. = FALSE)
+      
+      PKparameters <- PKparameters %>% 
+         mutate(Sheet = case_when(
+            ShouldntListSheetButDid == TRUE ~ NA, 
+            .default = Sheet))
+   }
+   
+   
    ## PKparameter -----------------------------------------------------------
    
    # Harmonizing
    PKparameters$PKparameter <- harmonize_PK_names(PKparameters$PKparameter)
-   
-   # Check for when they have supplied a tab for AUCinf b/c that shouldn't
-   # happen.
-   PKparameters <- PKparameters %>% 
-      mutate(AUCinfCheck = (str_detect(PKparameter, "AUCinf") & is.na(Sheet)) |
-                !str_detect(PKparameter, "AUCinf"))
-   
-   if(any(PKparameters$AUCinfCheck == FALSE, na.rm = T)){
-      warning(wrapn("You requested AUCinf but then also specified what sheet to use for getting that parameter. We assume that, if you're supplying a sheet name, it's because it's a custom AUC interval, which wouldn't make sense for AUCinf, which is only a first-dose PK parameter. We will ignore the sheet you specified for AUCinf."), 
-              call. = FALSE)
-      PKparameters <- PKparameters %>% 
-         mutate(Sheet = case_when(str_detect(PKparameter, "AUCinf") ~ NA, 
-                                  .default = Sheet), 
-                PKparameter = case_when(str_detect(PKparameter, "AUCinf") ~ "AUCinf_dose1", 
-                                        .default = PKparameter)) %>% 
-         unique()
-      
-   }
    
    BadParams <- setdiff(PKparameters$PKparameter, 
                         c(AllPKParameters$PKparameter, 
