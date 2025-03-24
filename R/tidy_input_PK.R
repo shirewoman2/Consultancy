@@ -841,6 +841,8 @@ tidy_input_PK <- function(PKparameters,
                PKparameter %in% AllPKParameters$PKparameter[
                   AllPKParameters$AppliesToAllDoses == TRUE] ~ FALSE, 
                
+               is.na(PKparameter) ~ FALSE, 
+               
                str_detect(PKparameter, "_dose1|_last") ~ FALSE, 
                
                .default = TRUE), 
