@@ -175,7 +175,10 @@ legend item, set this to "none".}
 
 \item{legend_position}{specify where you want the legend to be. Options are
 "left", "right" (default), "bottom", "top", or "none" if you don't want one
-at all.}
+at all. Note: If you include labels on your graphs (graph_labels = TRUE),
+we recommend NOT putting the legend on the left or the top because the
+labels wind up on the outside compared to the legend, and it just looks
+dorky.}
 
 \item{graph_title}{title to use on the plots}
 
@@ -232,12 +235,6 @@ a set of graphs. This does not yet save the graphs for you, so you'll
   between pairs of parameters, scatter plots will be used. (Only certain
   pairs of parameters are available; please see notes for the argument
   'demog_parameters'.)
-
-  \emph{A note:} We're having trouble with the legend getting duplicated when
-  1) you have a mix of boxplots or density plots and then also scatter plots
-  and 2) the legend position is set to anything other than "right". We think
-  it may be a bug in the "patchwork" package, which is used to arrange these
-  plots behind the scenes. We're working on fixing this.
 }
 \examples{
 # none yet
