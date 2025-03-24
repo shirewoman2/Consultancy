@@ -21,7 +21,7 @@ extractObsConcTime_XML <- function(obs_data_file){
    
    obs_data <- obs_data_xml$Observations
    
-   NewNames <- ObsColNames %>% 
+   NewNames <- ObsColNames %>% bind_rows() %>% 
       select(PEColName, ColName) %>% unique() %>% 
       mutate(DBColName = str_replace_all(PEColName, " ", ""), 
              DBColName = case_match(DBColName, 
