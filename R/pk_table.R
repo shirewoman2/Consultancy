@@ -1285,6 +1285,16 @@ pk_table <- function(PKparameters = NA,
    
    Out <- list("Table" = MyPKResults)
    
+   # Checking that stat names are all harmonized with the rest of the package.
+   # The average user should NOT see this error; it should ONLY show up when
+   # we've coded something w/a nonstandard stat name (see AllStats for all
+   # standard stat names). I need this to break here for downstream functions to
+   # all work correctly.
+   if(all(MyPKResults$Statistic %in% c(AllStats$InternalColNames, 
+                                       AllStats$ReportNames)) == FALSE){
+      stop("Non standardized statistic name. This must be standardized to proceed.")
+   }
+   
    
    # Setting up table caption ------------------------------------------------
    

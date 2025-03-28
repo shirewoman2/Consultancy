@@ -16,6 +16,8 @@ so_graph(
   boundary_line_types = "default",
   boundary_line_types_Guest = "default",
   boundary_line_width = 0.3,
+  error_bars = "none",
+  variability_type = "90\% CI",
   point_color_column,
   point_color_set = "default",
   legend_label_point_color = NA,
@@ -141,6 +143,17 @@ c("dotted", "dashed", "solid")}. To see the possibilities, type
 
 \item{boundary_line_width}{line width; default is 0.7. This only applies when
 \code{boundary_indicator} is set to "lines", the default.}
+
+\item{error_bars}{Which error bars should be shown on the graph? Options are
+"none" (default), "simulated" to show vertical error bars ("vertical" also
+works in case that's easier to remember), "observed" ("horizontal" also
+works), or "both".}
+
+\item{variability_type}{If you're including error bars, what kind of
+variability would you like to have those error bars display? Options are
+"90% CI" (default), "95% CI", "CV%", "percentiles", "SD", "standard
+deviation", or "range". If \code{error_bars} is set to "none", this will be
+ignored.}
 
 \item{point_color_column}{(optional) the column in \code{PKtable} that should
 be used for determining which color the points will be. This should be
@@ -270,9 +283,9 @@ facet titles. If left as NA, a reasonable guess will be used.}
 
   \item{"use my expressions"}{If you'd like to use your own specific R
   expressions rather than the defaults included in the package, you can do
-  that. You will need to supply a list here, and all of your PK parameters 
-  must be included or things will not work well. Here is an example of how 
-  to use this: title_adjustments = list("AUCtau_last" = expression(AUC[t]), 
+  that. You will need to supply a list here, and all of your PK parameters
+  must be included or things will not work well. Here is an example of how
+  to use this: title_adjustments = list("AUCtau_last" = expression(AUC[t]),
   "Cmax_last" = expression(C[max]), "Cmin_last" = expression(C[trough]))}
 
   \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other

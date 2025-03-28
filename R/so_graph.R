@@ -111,6 +111,15 @@
 #'   \code{axis_title_x}. Optionally specify what you'd like for the x and y
 #'   axis titles with a named character vector. The default is \code{axis_titles =
 #'   c("x" = "Observed", "y" = "Simulated")}
+#' @param error_bars Which error bars should be shown on the graph? Options are
+#'   "none" (default), "simulated" to show vertical error bars ("vertical" also
+#'   works in case that's easier to remember), "observed" ("horizontal" also
+#'   works), or "both".
+#' @param variability_type If you're including error bars, what kind of
+#'   variability would you like to have those error bars display? Options are
+#'   "90% CI" (default), "95% CI", "CV%", "percentiles", "SD", "standard
+#'   deviation", or "range". If \code{error_bars} is set to "none", this will be
+#'   ignored.
 #' @param point_color_column (optional) the column in \code{PKtable} that should
 #'   be used for determining which color the points will be. This should be
 #'   unquoted. For example, if you have a column named "Study" in the data.frame
@@ -238,15 +247,14 @@
 #'
 #'   \item{"use my expressions"}{If you'd like to use your own specific R
 #'   expressions rather than the defaults included in the package, you can do
-#'   that. You will need to supply a list here, and all of your PK parameters 
-#'   must be included or things will not work well. Here is an example of how 
-#'   to use this: title_adjustments = list("AUCtau_last" = expression(AUC[t]), 
+#'   that. You will need to supply a list here, and all of your PK parameters
+#'   must be included or things will not work well. Here is an example of how
+#'   to use this: title_adjustments = list("AUCtau_last" = expression(AUC[t]),
 #'   "Cmax_last" = expression(C[max]), "Cmin_last" = expression(C[trough]))}
 #'
 #'   \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other
 #'   substitutions people might want. Instead of the using AUCinf, graph titles will
 #'   use AUC0 to inf}}
-#'
 #'
 #' @return a set of arranged ggplot2 graphs
 #' @export
@@ -281,6 +289,8 @@ so_graph <- function(PKtable,
                      boundary_line_types = "default",
                      boundary_line_types_Guest = "default",
                      boundary_line_width = 0.3, 
+                     error_bars = "none", 
+                     variability_type = "90% CI", 
                      point_color_column, 
                      point_color_set = "default",
                      legend_label_point_color = NA, 
@@ -455,6 +465,34 @@ so_graph <- function(PKtable,
    
    suppressWarnings(point_transparency <- as.numeric(point_transparency[1]))
    
+   error_bars <- tolower(error_bars)[1]
+   error_bars <- case_match(error_bars, 
+                            "none" ~ "none", 
+                            "simulated" ~ "vertical", 
+                            "vertical" ~ "vertical", 
+                            "observed" ~ "horizontal", 
+                            "horizontal" ~ "horizontal", 
+                            "both" ~ "both")
+   if(is.na(error_bars)){
+      warning(wrapn("You have requested something for error_bars that is not among the possible options, so we will use the default value of 'none'."), 
+              call. = FALSE)
+   }
+   
+   variability_type <- tolower(variability_type)[1]
+   variability_type <- case_match(variability_type, 
+                                  "90% ci" ~ "90% CI",
+                                  "95% ci" ~ "95% CI", 
+                                  "CV%" ~ "cv%",
+                                  "percentiles" ~ "percentiles",
+                                  "sd" ~ "SD",
+                                  "standard deviation" ~ "SD",
+                                  "range" ~ "range")
+   if(error_bars != "none" & is.na(variability_type)){
+      warning(wrapn("You have requested something for variability_type that is not among the possible options, so we will use the default value of '90% CI'."), 
+              call. = FALSE)
+   }
+   
+   
    # Main body of function --------------------------------------------------
    
    ## Setting colors & linetypes -----------------------------------------------
@@ -615,14 +653,12 @@ so_graph <- function(PKtable,
       }
    }
    
+   
+   # Dealing with units if there are more than one set.
    ## Setting things up for nonstandard evaluation - Part 1 --------------------
    point_color_column <- rlang::enquo(point_color_column)
    point_shape_column <- rlang::enquo(point_shape_column)
    
-   # Only including sim and obs data.
-   PKtable <- PKtable %>% filter(Statistic %in% c("Simulated", "Observed"))
-   
-   # Dealing with units if there are more than one set.
    PKUnits <- names(PKtable)[str_detect(names(PKtable), " \\(")]
    # CL will always be L/h, so removing those from consideration. Also removing
    # anything with a time unit s/a tmax b/c it will always be h.
@@ -759,11 +795,189 @@ so_graph <- function(PKtable,
                       as_label(point_color_column), 
                       as_label(point_shape_column))))%>% 
       unique() %>% 
-      mutate(across(.cols = PKparameters, .fns = as.numeric)) %>% 
       pivot_longer(names_to = "PKparameter", 
                    values_to = "Value", 
                    cols = PKparameters) %>% 
       filter(complete.cases(Value))
+   
+   ## Tidying input data further now that format is long by parameter -------------
+   
+   # Standardizing names and un-concatenating variability as necessary so that
+   # we can graph it as error bars. Lower error bar will be for "Var_lower" and
+   # upper error bar will be "Var_upper". Observed error bars will be
+   # "ObsVar_lower" and "ObsVar_upper". First, need to fill in any NA values in
+   # columns we're splitting by b/c they will make the whole list be empty. This
+   # won't affect anything else, so fine to leave "default" in the data. This is
+   # also where I'm making everything in the Value column numeric.
+   SO <- SO %>% 
+      mutate(across(.cols = c(Statistic, File, CompoundID, Tissue, Sheet,
+                              PKparameter), 
+                    .fns = \(x) ifelse(is.na(x), "default", x)), 
+             Value = gsub("\\(|\\)|\\[|\\]", "", Value), 
+             Value = sub(", | - ", " to ", Value))
+   
+   SO <- split(SO, list(SO$Statistic, 
+                        SO$File, 
+                        SO$CompoundID, 
+                        SO$Tissue, 
+                        SO$Sheet, 
+                        SO$PKparameter))
+   
+   for(i in names(SO)){
+      
+      if(nrow(SO[[i]]) == 0){
+         suppressWarnings(
+            SO[[i]]$Value <- as.numeric(SO[[i]]$Value)
+         )
+         next
+      }
+      
+      # NB: Values in the column Statistic should ONLY be among those listed
+      # in AllStats$ReportNames.
+      VarType <- SO[[i]]$Statistic
+      
+      # Need to skip central stats, need to split any concatenated
+      # variability and need to calculate any variability that would only be
+      # 1 number, e.g., CV or SD.
+      
+      if(VarType %in% c(AllStats$ReportNames[
+         which(AllStats$StatType == "central statistic")], 
+         
+         AllStats$ReportNames[
+            which(str_detect(AllStats$ReportNames, "trial means"))])){
+         
+         suppressWarnings(
+            SO[[i]]$Value <- as.numeric(SO[[i]]$Value)
+         )
+         
+      } else if(VarType %in% c("CV%", "Standard deviation")){
+         # VarType must be calculated to get high and low - simulated
+         
+         CentralValue <- as.numeric(SO[[sub(VarType, "Simulated", i)]]$Value)
+         
+         SO[[i]] <- SO[[i]] %>% 
+            mutate(
+               Value = as.numeric(Value), 
+               Var_lower = case_match(
+                  {VarType}, 
+                  "CV%" ~ CentralValue - CentralValue * Value/100, 
+                  "Standard deviation" ~ CentralValue - Value), 
+               
+               Var_upper = case_match(
+                  {VarType}, 
+                  "CV%" ~ CentralValue + CentralValue * Value/100, 
+                  "Standard deviation" ~ CentralValue + Value)) %>% 
+            select(-Value, -Statistic) %>% 
+            pivot_longer(cols = c(Var_lower, Var_upper), 
+                         names_to = "Statistic", 
+                         values_to = "Value")
+         
+      } else if(VarType %in% c("Observed CV%", 
+                               "Observed standard deviation")){
+         # VarType must be calculated to get high and low - observed
+         
+         CentralValue <- as.numeric(SO[[sub(VarType, "Observed", i)]]$Value)
+         
+         SO[[i]] <- SO[[i]] %>% 
+            mutate(
+               Value = as.numeric(Value), 
+               Var_lower = case_match(
+                  {VarType}, 
+                  "Observed CV%" ~ CentralValue - CentralValue * Value/100, 
+                  "Observed standard deviation" ~ CentralValue - Value), 
+               
+               Var_upper = case_match(
+                  {VarType}, 
+                  "Observed CV%" ~ CentralValue + CentralValue * Value/100, 
+                  "Observed standard deviation" ~ CentralValue + Value)) %>% 
+            select(-Value, -Statistic) %>% 
+            pivot_longer(cols = c(Var_lower, Var_upper), 
+                         names_to = "Statistic", 
+                         values_to = "Value")
+         
+      } else if(VarType %in% c("5th to 95th Percentile", 
+                               "90% CI", "95% CI", "Observed CI", 
+                               "Observed range", "Range")){
+         # VarType must be split to get high and low
+         
+         SO[[i]] <- SO[[i]] %>% 
+            separate_wider_delim(cols = Value, 
+                                 delim = " to ", 
+                                 names = c("Var_lower", "Var_upper"), 
+                                 too_few = "align_start") %>% 
+            select(-Statistic) %>% 
+            pivot_longer(cols = c(Var_lower, Var_upper), 
+                         names_to = "Statistic", 
+                         values_to = "Value") %>% 
+            mutate(Value = as.numeric(Value))
+         
+      } else if(VarType %in% c("90% CI - Lower", "95% CI - Lower", 
+                               "5th Percentile", "Minimum", 
+                               "Observed CI - Lower")){
+         # VarType must be renamed to Var_lower
+         SO[[i]] <- SO[[i]] %>% rename(Value = Var_lower)
+         
+      } else if(VarType %in% c("90% CI - Upper", "95% CI - Upper", 
+                               "95th Percentile", "Maximum", 
+                               "Observed CI - Upper")){
+         # VarType must be renamed to Var_upper
+         SO[[i]] <- SO[[i]] %>% rename(Value = Var_upper)
+         
+      }
+      
+      if(VarType %in% AllStats$ReportNames[AllStats$SorO == "Observed"]){
+         SO[[i]] <- SO[[i]] %>% 
+            mutate(Statistic = case_match(Statistic, 
+                                          "Var_lower" ~ "ObsVar_lower", 
+                                          "Var_upper" ~ "ObsVar_upper", 
+                                          .default = Statistic))
+         
+      }
+      
+      SO[[i]]$OrigStat <- VarType
+      
+      rm(VarType)
+   }
+   
+   SO <- bind_rows(SO) %>% 
+      pivot_wider(names_from = Statistic, values_from = Value) 
+   
+   # Filtering to retain only the central stat and the variability type they
+   # requested.
+   GoodStats <- c("Simulated", "Observed", 
+                  switch(variability_type, 
+                         "90% CI" = c("90% CI - Lower", 
+                                      "90% CI - Upper", 
+                                      "90% CI", 
+                                      "Observed CI - Lower", 
+                                      "Observed CI - Upper", 
+                                      "Observed CI"),
+                         "95% CI" = c("95% CI - Lower", 
+                                      "95% CI - Upper", 
+                                      "95% CI", 
+                                      "Observed CI - Lower", 
+                                      "Observed CI - Upper", 
+                                      "Observed CI"), 
+                         "CV%" = c("CV%", "Observed CV%"), 
+                         "percentiles" = c("5th Percentile", 
+                                           "95th Percentile", 
+                                           "5th to 95th Percentile"), 
+                         "SD" = "Standard deviation", 
+                         "Standard deviation" = "Standard deviation", 
+                         "range" = c("Minimum", "Maximum", "Range", 
+                                     "Observed range")))
+   
+   SO <- SO %>% filter(OrigStat %in% GoodStats) %>% 
+      select(-any_of(c("OrigStat", "S/O"))) %>% 
+      pivot_longer(cols = any_of(c("Var_lower", "Var_upper", 
+                                   "ObsVar_lower", "ObsVar_upper", 
+                                   "Simulated", "Observed")), 
+                   names_to = "Statistic", 
+                   values_to = "Value") %>% 
+      filter(complete.cases(Value)) %>% 
+      pivot_wider(names_from = Statistic, 
+                  values_from = Value) %>% 
+      filter(complete.cases(Observed) & PKparameter %in% {{PKparameters}})
    
    # A bit more error catching now that everything is tidy
    if("CompoundID" %in% names(SO) && length(unique(SO$CompoundID)) > 1){
@@ -785,12 +999,6 @@ so_graph <- function(PKtable,
            call. = FALSE)
       
    }
-   
-   suppressWarnings(
-      SO <- SO %>% 
-         pivot_wider(names_from = Statistic, values_from = Value) %>% 
-         filter(complete.cases(Observed) & PKparameter %in% {{PKparameters}})
-   )
    
    include_dose_num <- check_include_dose_num(PK = PKparameters, 
                                               include_dose_num = include_dose_num)
@@ -944,10 +1152,44 @@ so_graph <- function(PKtable,
    
    for(i in names(SO)){
       
-      Limits <- c(
-         round_down(min(c(SO[[i]]$Observed, SO[[i]]$Simulated), na.rm = T)),
+      Limits <- switch(
+         error_bars, 
+         "none" = c(
+            round_down(min(c(SO[[i]]$Observed, 
+                             SO[[i]]$Simulated), na.rm = T)),
+            
+            round_up(max(c(SO[[i]]$Observed, 
+                           SO[[i]]$Simulated), na.rm = T))), 
          
-         round_up(max(c(SO[[i]]$Observed, SO[[i]]$Simulated), na.rm = T)))
+         "vertical" = c(
+            round_down(min(c(SO[[i]]$Observed, 
+                             SO[[i]]$Var_lower, 
+                             SO[[i]]$Simulated), na.rm = T)),
+            
+            round_up(max(c(SO[[i]]$Observed, 
+                           SO[[i]]$Var_upper, 
+                           SO[[i]]$Simulated), na.rm = T))), 
+         
+         "horizontal" = c(
+            round_down(min(c(SO[[i]]$Observed, 
+                             SO[[i]]$ObsVar_lower, 
+                             SO[[i]]$Simulated), na.rm = T)),
+            
+            round_up(max(c(SO[[i]]$Observed, 
+                           SO[[i]]$ObsVar_upper, 
+                           SO[[i]]$Simulated), na.rm = T))), 
+         
+         "both" = c(
+            round_down(min(c(SO[[i]]$Observed, 
+                             SO[[i]]$ObsVar_lower, 
+                             SO[[i]]$Var_lower, 
+                             SO[[i]]$Simulated), na.rm = T)),
+            
+            round_up(max(c(SO[[i]]$Observed, 
+                           SO[[i]]$ObsVar_upper, 
+                           SO[[i]]$Var_upper, 
+                           SO[[i]]$Simulated), na.rm = T)))
+      )
       
       if(str_detect(i, "ratio")){
          
@@ -1065,6 +1307,38 @@ so_graph <- function(PKtable,
                         3*10^(-3:9),
                         5*10^(-3:9))
          MinBreaks <- rep(1:9)*rep(10^(-3:9), each = 9)
+      }
+      
+      # Need to set the width and height of these error bars or they're
+      # preposterously large.
+      BarWidth <- 0.067
+      
+      if(error_bars == "vertical"){
+         G[[i]] <- G[[i]] +
+            geom_errorbar(data = SO[[i]], 
+                          aes(x = Observed, 
+                              color = point_color_column, 
+                              ymin = Var_lower, ymax = Var_upper),
+                          width = BarWidth)
+      } else if(error_bars == "horizontal"){
+         G[[i]] <- G[[i]] +
+            geom_errorbarh(data = SO[[i]], 
+                           aes(y = Simulated, 
+                               color = point_color_column, 
+                               xmin = ObsVar_lower, xmax = ObsVar_upper), 
+                           height = BarWidth)
+      } else if(error_bars == "both"){
+         G[[i]] <- G[[i]] +
+            geom_errorbar(data = SO[[i]], 
+                          aes(x = Observed, 
+                              color = point_color_column, 
+                              ymin = Var_lower, ymax = Var_upper), 
+                          width = BarWidth) +
+            geom_errorbarh(data = SO[[i]], 
+                           aes(y = Simulated, 
+                               color = point_color_column, 
+                               xmin = ObsVar_lower, xmax = ObsVar_upper), 
+                           height = BarWidth)
       }
       
       # Aesthetics for points are determined by:
