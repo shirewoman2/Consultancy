@@ -48,15 +48,22 @@
 #'   an additional 2 seconds per simulation. If you have supplied something for
 #'   'existing_exp_details', you don't need this and we'll ignore it if you set
 #'   this to TRUE.
-#' @param use_basename_for_obsfile TRUE or FALSE (default) for whether to remove
-#'   the folder name from the observed overlay XML file name. By default, we'll
-#'   list the XML file where it was located when the workspace was saved.
-#'   However, if you set this to TRUE, we'll only list the file name without the
-#'   path. Why would you want this? Say you've moved all your XML observed
-#'   overlay files from their original locations when you ran the simulations
-#'   into a new folder that you'll be sharing with the client at the end of the
-#'   project. This way, you can show which simulation had which XML observed
-#'   overlay file without the confusion of including the original path.
+#' @param obsfile_path_option How would you like to see the observed overlay XML
+#'   file path? Options are: \describe{
+#'
+#'   \item{"full path" (default, "full" also works)}{Show the entire path to the XML
+#'   observed overlay file}
+#'
+#'   \item{"basename"}{Only show the file name (the basename)
+#'   of the XML overlay file and NOT any of the path. Why would you want
+#'   this? Say you've moved all your XML observed overlay files from their
+#'   original locations when you ran the simulations into a new folder that
+#'   you'll be sharing with the client at the end of the project. This way, you
+#'   can show which simulation had which XML observed overlay file without the
+#'   confusion of including the original path.}
+#'
+#'   \item{"relative"}{Show the path relative to the project folder}}
+#'
 #' @param save_table optionally specify an Excel file name for saving your
 #'   simulation directory. If you don't include the file extension ".xlsx",
 #'   we'll add it.
@@ -65,6 +72,13 @@
 #'   overwrite, "no" to never overwrite, or "ask" (default), which means that we
 #'   will ask you whether to overwrite and give you a chance to supply a
 #'   different file name if the one you supplied already exists.
+#' @param report_progress "yes", "no" (default), or "some" for whether to report
+#'   progress on reading workspaces to find observed XML overlay files. This
+#'   only applies when you have set \code{search_workspaces_for_obsfile} to
+#'   TRUE. Setting this to "yes" will report a message in the console for each
+#'   workspace as it is read. Setting this to "some" will report a message
+#'   saying when it has started and when it has finished reading workspaces, and
+#'   setting this to "no" will give no progress messages.
 #'
 #' @return a data.frame of simulation files and their respective file paths
 #' @export
@@ -76,7 +90,9 @@ make_simulation_directory <- function(project_folder = NA,
                                       sim_data_files = "recursive", 
                                       existing_exp_details = NA, 
                                       search_workspaces_for_obsfile = FALSE, 
-                                      use_basename_for_obsfile = FALSE, 
+                                      include_possible_obsfiles = TRUE, 
+                                      obsfile_path_option = "full path", 
+                                      report_progress = "no", 
                                       save_table = NA, 
                                       overwrite = "ask"){
    
@@ -100,40 +116,33 @@ make_simulation_directory <- function(project_folder = NA,
       search_workspaces_for_obsfile <- FALSE
    }
    
-   # subfuns -----------------------------------------------------------------
-   # subfun for V23+ data extraction 
+   obsfile_path_option <- tolower(obsfile_path_option)[1]
+   obsfile_path_option <- case_match(obsfile_path_option, 
+                                     "full" ~ "full path", 
+                                     "full path" ~ "full path", 
+                                     "fullpath" ~ "full path", 
+                                     "basename" ~ "basename", 
+                                     "base name" ~ "basename", 
+                                     "base" ~ "basename", 
+                                     "relative" ~ "relative")
    
-   # For some reason, you have to unzip the workspaces 1st if they're V23 or
-   # later. Not sure what changed.
-   unzip1st_fun <- function(workspace){
-      R.utils::gunzip(workspace, destname = "TEMP.wks", remove = FALSE)
-      workspace_xml <- XML::xmlTreeParse("TEMP.wks", useInternal = TRUE)
-      file.remove("TEMP.wks")
-      return(workspace_xml)
+   if(is.na(obsfile_path_option)){
+      warning(wrapn("For the argument 'obsfile_path_option', you requested something other than 'full path', 'basename', or 'relative', which are the only available options. We'll use the default value of 'full path'."), 
+              call. = FALSE)
    }
    
-   get_obs_file <- function(workspace){
-      
-      if(file.exists(workspace) == FALSE){
-         return(NA)
-      }
-      
-      workspace_xml <- tryCatch(XML::xmlTreeParse(workspace, useInternal = TRUE), 
-                                error = unzip1st_fun(workspace))
-      
-      RootNode <- XML::xmlRoot(workspace_xml)
-      
-      UseObs <- as.logical(XML::xmlValue(RootNode[["GraphsData"]][["UseObservedData"]]))
-      
-      if(UseObs){
-         Out <- XML::xmlValue(RootNode[["GraphsData"]][["ObservedDataPath"]])
-      } else {
-         Out <- NA
-      }
-      
-      return(Out)
+   report_progress <- tolower(report_progress)[1]
+   report_progress <- case_match(report_progress, 
+                                 "yes" ~ "yes", 
+                                 "y" ~ "yes", 
+                                 "n" ~ "no", 
+                                 "no" ~ "no", 
+                                 "some" ~ "some", 
+                                 "report some" ~ "some")
+   if(is.na(report_progress)){
+      warning(wrapn("For the argument 'report_progress', you requested something other than 'yes', 'no', or 'some', which are the only available options. We'll use the default value of 'no'."), 
+              call. = FALSE)
    }
-   
    
    # Main body of function ---------------------------------------------------
    
@@ -220,7 +229,9 @@ make_simulation_directory <- function(project_folder = NA,
             by = "File")
    } 
    
-   if("File" %in% names(Directory) == FALSE){Directory$File <- Directory$PathFile}
+   if("File" %in% names(Directory) == FALSE){
+      Directory$File <- Directory$PathFile
+   }
    
    # Removing temporary files and making sure that all File values are basename. 
    Directory <- Directory %>% 
@@ -314,32 +325,25 @@ make_simulation_directory <- function(project_folder = NA,
       select(Filename, Filetype, Folder, `Table/Figure`, Comments, FileNameCheck, DuplicateFileCheck) %>% 
       unique()
    
+   ## Dealing with obs overlay XML files --------------------------------------
+   
    if("NULL" %in% class(existing_exp_details) == FALSE){
       
       if("ObsOverlayFile" %in% names(existing_exp_details$MainDetails)){
          if(any(complete.cases(existing_exp_details$MainDetails$ObsOverlayFile))){
+            
             Directory <- Directory %>% 
                left_join(existing_exp_details$MainDetails %>% 
                             select(File, ObsOverlayFile) %>% 
-                            mutate(Filename = sub("\\..*$", "", basename(File))) %>% 
-                            select(-File), by = "Filename") %>% 
-               mutate(ObsOverlayFile = R.utils::getRelativePath(ObsOverlayFile, 
-                                                                relativeTo = project_folder), 
-                      ObsOverlayFile = case_when(
-                         str_detect(ObsOverlayFile, "Working Directory/XMLs") ~ 
-                            sub(".*/XMLs", "XMLs", ObsOverlayFile),
-                         .default = ObsOverlayFile), 
-                      XMLFileNameCheck = check_file_name(ObsOverlayFile), 
-                      XMLFileNameCheck = case_when(
-                         XMLFileNameCheck == "File name meets naming standards." ~ "", 
-                         is.na(XMLFileNameCheck) ~ "", 
-                         .default = sub("File name", "XML file name", XMLFileNameCheck))) %>% 
-               rename("XML file used" = ObsOverlayFile)
+                            select(-File), by = "Filename")
             
             ObsOverlayKnown <- TRUE
+            
          } else {
+            
             ObsOverlayKnown <- FALSE
             Directory$XMLFileNameCheck <- ""
+            
          }
          
       } else {
@@ -352,15 +356,21 @@ make_simulation_directory <- function(project_folder = NA,
          
          ObsOverlayKnown <- FALSE
          Directory$XMLFileNameCheck <- ""
+         Directory$ObsOverlayFile <- as.character(NA)
       }
    } else {
       ObsOverlayKnown <- FALSE
       Directory$XMLFileNameCheck <- ""
+      Directory$ObsOverlayFile <- as.character(NA)
    }
    
    if(search_workspaces_for_obsfile){
       
       Directory$ObsOverlayFile <- as.character(NA)
+      
+      if(report_progress == "some"){
+         message("Starting to read workspaces for observed XML overlay file names...\n")
+      }
       
       for(ff in 1:nrow(Directory)){
          
@@ -370,36 +380,70 @@ make_simulation_directory <- function(project_folder = NA,
             next
          }
          
-         Directory$ObsOverlayFile[ff] <- 
-            get_obs_file(workspace = 
-                            paste0(
-                               case_when(Directory$Folder[ff] == "" ~ "", 
-                                         .default = paste0(Directory$Folder[ff], "/")),
-                               Directory$Filename[ff], ".wksz"))
+         MyWksp <- paste0(
+            case_when(Directory$Folder[ff] == "" ~ "", 
+                      .default = paste0(Directory$Folder[ff], "/")),
+            Directory$Filename[ff], ".wksz")
+         
+         if(file.exists(MyWksp) == FALSE){
+            warning(wrapn(paste0("Cannot find file: ", MyWksp)), 
+                    call. = FALSE)
+         } else {
+            if(report_progress == "yes"){
+               message(paste0("Reading '", MyWksp, "'"))
+            }
+            
+            Directory$ObsOverlayFile[ff] <- get_obs_file(workspace = MyWksp)
+         }
       }
       
-      Directory$ObsOverlayFile <- gsub("\\\\", "/", Directory$ObsOverlayFile)
-      Directory$ObsOverlayFile <- sub("C:/Users.*Certara/Simcyp PBPKConsult BMG BMG43A - Model(l)?ing Working Directory/", 
-                                      "", Directory$ObsOverlayFile)
-      
-      Directory <- Directory %>% 
-         mutate(ObsOverlayFile = R.utils::getRelativePath(ObsOverlayFile, 
-                                                          relativeTo = project_folder), 
-                ObsOverlayFile = case_when(
-                   str_detect(ObsOverlayFile, "Working Directory/XMLs") ~ 
-                      sub(".*/XMLs", "XMLs", ObsOverlayFile),
-                   .default = ObsOverlayFile), 
-                XMLFileNameCheck = check_file_name(ObsOverlayFile), 
-                XMLFileNameCheck = case_when(
-                   XMLFileNameCheck == "File name meets naming standards." ~ "", 
-                   is.na(XMLFileNameCheck) ~ "", 
-                   .default = sub("File name", "XML file name", XMLFileNameCheck))) %>% 
-         rename("XML file used" = ObsOverlayFile)
+      if(report_progress == "some"){
+         message("... done.")
+      }
       
       ObsOverlayKnown <- TRUE
    }
    
-   if(ObsOverlayKnown == FALSE){
+   if(ObsOverlayKnown){
+      
+      # Need the basename to check for file naming standards. 
+      Directory <- Directory %>% 
+         mutate(ObsOverlayFile = gsub("\\\\", "/", ObsOverlayFile), 
+                ObsOverlayBaseName = sub("\\..*$", "", basename(ObsOverlayFile))) %>% 
+         arrange(Folder, Filename)
+      
+      if(obsfile_path_option == "relative"){
+         
+         Directory <- Directory %>% 
+            mutate(ObsOverlayFile = R.utils::getRelativePath(ObsOverlayFile, 
+                                                             relativeTo = project_folder), 
+                   ObsOverlayFile = sub("C:/Users.*Certara/Simcyp PBPKConsult BMG BMG43A - Model(l)?ing Working Directory/",
+                                        "", ObsOverlayFile), 
+                   
+                   ObsOverlayFile = case_when(
+                      str_detect(ObsOverlayFile, "Working Directory/XMLs") ~ 
+                         sub(".*/XMLs", "XMLs", ObsOverlayFile),
+                      .default = ObsOverlayFile))
+      }
+      
+      Directory <- Directory %>% 
+         mutate(XMLFileNameCheck = check_file_name(ObsOverlayBaseName), 
+                XMLFileNameCheck = case_when(
+                   XMLFileNameCheck == "File name meets naming standards." ~ "", 
+                   is.na(XMLFileNameCheck) ~ "", 
+                   .default = sub("File name", "XML file name", XMLFileNameCheck))) 
+      
+      if(obsfile_path_option == "basename"){
+         Directory <- Directory %>% 
+            select(-ObsOverlayFile) %>% 
+            rename("XML file used" = ObsOverlayBaseName)
+      } else {
+         Directory <- Directory %>% 
+            rename("XML file used" = ObsOverlayFile) %>% 
+            select(-ObsOverlayBaseName)
+      }
+   } else if(include_possible_obsfiles){
+      
       # Checking for XML files in both the project directory and in any folder
       # that includes "XML" below the folder ending in "Working Directory", e.g., 
       # for the project folder whose full path would be 
@@ -479,7 +523,7 @@ make_simulation_directory <- function(project_folder = NA,
       rename("File type" = Filetype, 
              "File name" = Filename)
    
-   if(use_basename_for_obsfile == TRUE & "XML file used" %in% names(Directory)){
+   if(obsfile_path_option == TRUE & "XML file used" %in% names(Directory)){
       
       Directory$`XML file used` <- basename(Directory$`XML file used`)
       

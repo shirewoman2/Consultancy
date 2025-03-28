@@ -11,7 +11,9 @@ make_simulation_directory(
   sim_data_files = "recursive",
   existing_exp_details = NA,
   search_workspaces_for_obsfile = FALSE,
-  use_basename_for_obsfile = FALSE,
+  include_possible_obsfiles = TRUE,
+  obsfile_path_option = "full path",
+  report_progress = "no",
   save_table = NA,
   overwrite = "ask"
 )
@@ -52,15 +54,29 @@ an additional 2 seconds per simulation. If you have supplied something for
 'existing_exp_details', you don't need this and we'll ignore it if you set
 this to TRUE.}
 
-\item{use_basename_for_obsfile}{TRUE or FALSE (default) for whether to remove
-the folder name from the observed overlay XML file name. By default, we'll
-list the XML file where it was located when the workspace was saved.
-However, if you set this to TRUE, we'll only list the file name without the
-path. Why would you want this? Say you've moved all your XML observed
-overlay files from their original locations when you ran the simulations
-into a new folder that you'll be sharing with the client at the end of the
-project. This way, you can show which simulation had which XML observed
-overlay file without the confusion of including the original path.}
+\item{obsfile_path_option}{How would you like to see the observed overlay XML
+  file path? Options are: \describe{
+
+  \item{"full path" (default, "full" also works)}{Show the entire path to the XML
+  observed overlay file}
+
+  \item{"basename"}{Only show the file name (the basename)
+  of the XML overlay file and NOT any of the path. Why would you want
+  this? Say you've moved all your XML observed overlay files from their
+  original locations when you ran the simulations into a new folder that
+  you'll be sharing with the client at the end of the project. This way, you
+  can show which simulation had which XML observed overlay file without the
+  confusion of including the original path.}
+
+  \item{"relative"}{Show the path relative to the project folder}}}
+
+\item{report_progress}{"yes", "no" (default), or "some" for whether to report
+progress on reading workspaces to find observed XML overlay files. This
+only applies when you have set \code{search_workspaces_for_obsfile} to
+TRUE. Setting this to "yes" will report a message in the console for each
+workspace as it is read. Setting this to "some" will report a message
+saying when it has started and when it has finished reading workspaces, and
+setting this to "no" will give no progress messages.}
 
 \item{save_table}{optionally specify an Excel file name for saving your
 simulation directory. If you don't include the file extension ".xlsx",
