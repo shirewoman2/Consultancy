@@ -117,9 +117,9 @@
 #'   works), or "both".
 #' @param variability_type If you're including error bars, what kind of
 #'   variability would you like to have those error bars display? Options are
-#'   "90% CI" (default), "95% CI", "CV%", "percentiles", "SD", "standard
-#'   deviation", or "range". If \code{error_bars} is set to "none", this will be
-#'   ignored.
+#'   "90% CI" (default), "95% CI", "CV%", "percentiles", "standard deviation",
+#'   ("SD" will also work fine), or "range". If \code{error_bars} is set to
+#'   "none", this will be ignored.
 #' @param point_color_column (optional) the column in \code{PKtable} that should
 #'   be used for determining which color the points will be. This should be
 #'   unquoted. For example, if you have a column named "Study" in the data.frame
@@ -481,8 +481,11 @@ so_graph <- function(PKtable,
    variability_type <- tolower(variability_type)[1]
    variability_type <- case_match(variability_type, 
                                   "90% ci" ~ "90% CI",
+                                  "ci" ~ "90% CI", 
                                   "95% ci" ~ "95% CI", 
-                                  "CV%" ~ "cv%",
+                                  "cv%" ~ "CV%",
+                                  "cv" ~ "CV%", 
+                                  "gcv" ~ "CV%", 
                                   "percentiles" ~ "percentiles",
                                   "sd" ~ "SD",
                                   "standard deviation" ~ "SD",
@@ -809,6 +812,14 @@ so_graph <- function(PKtable,
    # columns we're splitting by b/c they will make the whole list be empty. This
    # won't affect anything else, so fine to leave "default" in the data. This is
    # also where I'm making everything in the Value column numeric.
+   
+   # Adding placeholder columns as needed
+   MissingCols <- setdiff(c("File", "CompoundID", "Tissue", "Sheet"), 
+                          names(SO))
+   for(mm in MissingCols){
+      SO[, mm] <- "default"
+   }
+   
    SO <- SO %>% 
       mutate(across(.cols = c(Statistic, File, CompoundID, Tissue, Sheet,
                               PKparameter), 
@@ -896,6 +907,7 @@ so_graph <- function(PKtable,
                          values_to = "Value")
          
       } else if(VarType %in% c("5th to 95th Percentile", 
+                               "Observed 5th to 95th Percentile", 
                                "90% CI", "95% CI", "Observed CI", 
                                "Observed range", "Range")){
          # VarType must be split to get high and low
@@ -912,13 +924,15 @@ so_graph <- function(PKtable,
             mutate(Value = as.numeric(Value))
          
       } else if(VarType %in% c("90% CI - Lower", "95% CI - Lower", 
-                               "5th Percentile", "Minimum", 
+                               "5th Percentile", "Observed 5th Percentile",
+                               "Minimum", 
                                "Observed CI - Lower")){
          # VarType must be renamed to Var_lower
          SO[[i]] <- SO[[i]] %>% rename(Value = Var_lower)
          
       } else if(VarType %in% c("90% CI - Upper", "95% CI - Upper", 
-                               "95th Percentile", "Maximum", 
+                               "95th Percentile", "Observed 95th Percentile", 
+                               "Maximum", 
                                "Observed CI - Upper")){
          # VarType must be renamed to Var_upper
          SO[[i]] <- SO[[i]] %>% rename(Value = Var_upper)
@@ -961,7 +975,8 @@ so_graph <- function(PKtable,
                          "CV%" = c("CV%", "Observed CV%"), 
                          "percentiles" = c("5th Percentile", 
                                            "95th Percentile", 
-                                           "5th to 95th Percentile"), 
+                                           "5th to 95th Percentile", 
+                                           "Observed 5th to 95th Percentile"), 
                          "SD" = "Standard deviation", 
                          "Standard deviation" = "Standard deviation", 
                          "range" = c("Minimum", "Maximum", "Range", 
@@ -1149,11 +1164,52 @@ so_graph <- function(PKtable,
    ## Making graphs ---------------------------------------------------------
    G <- list()
    SO <- split(SO, f = SO$PKparameter)
+   ErrorBarMsg <- list()
    
    for(i in names(SO)){
       
+      # Removing columns when everything is NA b/c that will make for inaccurate
+      # warnings.
+      SO[[i]] <- SO[[i]] %>% purrr::discard(~all(is.na(.)))
+      
+      # Noting which error bars are possible
+      ErrorBarCheck <- 
+         switch(
+            paste("Sim", all(c("Var_lower", "Var_upper") %in% names(SO[[i]])), 
+                  "Obs", all(c("ObsVar_lower", "ObsVar_upper") %in% names(SO[[i]]))), 
+            
+            "Sim TRUE Obs TRUE" = c("none", "vertical", "horizontal", "both"), 
+            "Sim TRUE Obs FALSE" = c("none", "vertical"), 
+            "Sim FALSE Obs TRUE" = c("none", "horizontal"), 
+            "Sim FALSE Obs FALSE" = c("none"))
+      
+      ErrorBarMsg[[i]] <- case_when(
+         error_bars %in% ErrorBarCheck ~ "no message", 
+         error_bars == "none" ~ "no message", 
+         error_bars == "both" & "horizontal" %in% ErrorBarCheck ~ "you requested error bars in both directions, but your data only included information for horizontal ones.", 
+         error_bars == "both" & "vertical" %in% ErrorBarCheck ~ "you requested error bars in both directions, but your data only included information for vertical ones.", 
+         error_bars %in% ErrorBarCheck == FALSE ~ paste0("you requested ", 
+                                                         case_match(error_bars, 
+                                                                    "both" ~ "error bars in both directions", 
+                                                                    "vertical" ~ "vertical error bars", 
+                                                                    "horizontal" ~ "horizontal error bars"), 
+                                                         ", but no variability data were included in what you supplied for PKtable. We won't be able to include error bars for this/these parameter(s).")
+      )
+      
+      error_bars_i <- case_when(
+         error_bars %in% ErrorBarCheck ~ error_bars, 
+         error_bars == "none" ~ error_bars, 
+         error_bars == "both" & "horizontal" %in% ErrorBarCheck ~ "horizontal", 
+         error_bars == "both" & "vertical" %in% ErrorBarCheck ~ "vertical", 
+         # below is when they've requested horizontal and only vertical
+         # available or vice versa
+         error_bars %in% ErrorBarCheck == FALSE ~ "none", 
+         # Above scenarios should cover all possibilities, but including
+         # .default just in case.
+         .default = "none")
+      
       Limits <- switch(
-         error_bars, 
+         error_bars_i, 
          "none" = c(
             round_down(min(c(SO[[i]]$Observed, 
                              SO[[i]]$Simulated), na.rm = T)),
@@ -1310,36 +1366,28 @@ so_graph <- function(PKtable,
       }
       
       # Need to set the width and height of these error bars or they're
-      # preposterously large.
-      BarWidth <- 0.067
+      # preposterously large for some and itty bitty for others. This required a
+      # lot of fiddling before I figured out what the relationship was b/c it's
+      # really not clear what a given value for the bar width means.
+      BarWidth <- log10(round_up(Limits[2] / Limits[1])) * 0.05 - 0.025
       
-      if(error_bars == "vertical"){
+      if(error_bars_i %in% c("vertical", "both")){
          G[[i]] <- G[[i]] +
             geom_errorbar(data = SO[[i]], 
                           aes(x = Observed, 
                               color = point_color_column, 
                               ymin = Var_lower, ymax = Var_upper),
                           width = BarWidth)
-      } else if(error_bars == "horizontal"){
+      } 
+      
+      if(error_bars_i %in% c("horizontal", "both")){
          G[[i]] <- G[[i]] +
             geom_errorbarh(data = SO[[i]], 
                            aes(y = Simulated, 
                                color = point_color_column, 
                                xmin = ObsVar_lower, xmax = ObsVar_upper), 
                            height = BarWidth)
-      } else if(error_bars == "both"){
-         G[[i]] <- G[[i]] +
-            geom_errorbar(data = SO[[i]], 
-                          aes(x = Observed, 
-                              color = point_color_column, 
-                              ymin = Var_lower, ymax = Var_upper), 
-                          width = BarWidth) +
-            geom_errorbarh(data = SO[[i]], 
-                           aes(y = Simulated, 
-                               color = point_color_column, 
-                               xmin = ObsVar_lower, xmax = ObsVar_upper), 
-                           height = BarWidth)
-      }
+      } 
       
       # Aesthetics for points are determined by:
       
@@ -1635,6 +1683,21 @@ so_graph <- function(PKtable,
          common.legend = TRUE) # FIXME - Switch to patchwork and collect the legends. This makes it so that legend items ONLY include what was in the 1st graph. 
    }
    
+   # Collecting error bar warnings
+   ErrorBarMsg <- 
+      tibble(PKparameter = names(ErrorBarMsg), 
+             Msg = unlist(ErrorBarMsg)) %>% 
+      filter(!Msg == "no message") %>% 
+      group_by(Msg) %>% 
+      summarize(Warning = paste0("For ", str_comma(PKparameter), ", ",
+                                 unique(Msg))) %>% 
+      ungroup() %>% 
+      pull(Warning)
+   
+   if(length(ErrorBarMsg) > 0){
+      warning(str_c(wrapn(ErrorBarMsg), sep = "\n"), 
+              call. = FALSE)
+   }
    
    # Saving --------------------------------------------------------------
    if(complete.cases(save_graph)){
