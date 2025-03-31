@@ -680,6 +680,29 @@ annotateDetails <- function(existing_exp_details,
                       "Compound", "Detail")), everything()) %>% 
       select(-Enzyme, -DetailType)
    
+   # Checking for duplicates from, e.g., there being more than one pathway
+   PathwayCheck <- MainDetails %>% 
+      # filter(complete.cases(Value)) %>% 
+      group_by(Notes) %>% 
+      summarize(N = n()) %>% 
+      ungroup() %>% 
+      filter(N > 1) %>% 
+      left_join(MainDetails %>% select(Notes, Detail), by = "Notes") %>% 
+      mutate(Enzyme = str_extract(Detail, 
+                                   "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+             Pathway = str_extract(Detail, pattern = paste0(Enzyme, ".*_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)")), 
+             Pathway = str_remove(Pathway, paste0(Enzyme, "_")), 
+             Pathway = str_remove(Pathway, "_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)"), 
+             Pathway = sub("OH", "-OH", Pathway), 
+             Pathway = sub("^-", "", Pathway), 
+             Pathway = str_replace(Notes, Enzyme, paste0(Enzyme, " (", Pathway, " pathway)")))
+   
+   if(nrow(PathwayCheck) > 0){
+      MainDetails <- MainDetails %>% 
+         left_join(PathwayCheck %>% select(Detail, Pathway), by = "Detail") %>% 
+         mutate(Notes = case_when(complete.cases(Pathway) ~ Pathway,
+                                  .default = Notes))
+   }
    
    # subfunction starts here ------------------------------------------------
    
