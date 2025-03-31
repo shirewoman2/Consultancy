@@ -838,6 +838,9 @@ tidy_input_PK <- function(PKparameters,
          
          ShouldListSheet = 
             case_when(
+               
+               complete.cases(Sheet) ~ TRUE, 
+                  
                PKparameter %in% AllPKParameters$PKparameter[
                   AllPKParameters$AppliesToAllDoses == TRUE] ~ FALSE, 
                
@@ -864,6 +867,8 @@ tidy_input_PK <- function(PKparameters,
             # Redoing checks above with updated data.frame
             ShouldListSheet = 
                case_when(
+                  complete.cases(Sheet) ~ TRUE, 
+                  
                   PKparameter %in% AllPKParameters$PKparameter[
                      AllPKParameters$AppliesToAllDoses == TRUE] ~ FALSE, 
                   
