@@ -217,7 +217,7 @@ extractExpDetails <- function(sim_data_file,
       exp_details <- exp_details[!exp_details == "AGP"]
    }
    
-   if(any(exp_details %in% AllExpDetails$Detail == FALSE)){
+   if(any(exp_details %in% AllExpDetails$Detail) == FALSE){
       Problem <- str_comma(unique(setdiff(exp_details,
                                           AllExpDetails$Detail)))
       warning(paste0("These study details are not among the possible options: ",

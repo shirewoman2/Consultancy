@@ -116,7 +116,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    
    # Checking compound IDs
    compoundsToExtract <- tolower(compoundsToExtract)
-   PossCmpd <- c(AllCompounds$CompoundID, "all")
+   PossCmpd <- c(AllCompounds$CompoundID[
+      complete.cases(AllCompounds$DetailNames)], "all")
    
    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
       warning(paste0("The compound(s) ", 
@@ -128,9 +129,12 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    }
    
    if(any(compoundsToExtract == "all")){
-      compoundsToExtract <- AllCompounds$CompoundID
+      compoundsToExtract <- AllCompounds$CompoundID[
+         complete.cases(AllCompounds$DetailNames)]
    } else {
-      compoundsToExtract <- intersect(compoundsToExtract, AllCompounds$CompoundID)
+      compoundsToExtract <- intersect(compoundsToExtract, 
+                                      AllCompounds$CompoundID[
+                                         complete.cases(AllCompounds$DetailNames)])
    }
    
    # subfun for V23+ data extraction ------------------------------------------
