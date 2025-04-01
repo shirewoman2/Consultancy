@@ -329,7 +329,8 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
    FT <- FT %>% 
       rename("Section of model" = SimulatorSection) %>% 
       filter(complete.cases(Value) & 
-                !Detail %in% c("SimulatorVersion", AllCompounds$DetailNames))
+                !Detail %in% c("SimulatorVersion",
+                               sort(unique(AllCompounds$DetailNames))))
    
    if(nrow(FT) == 0){
       warning(paste0(wrapn("There are no rows in the model summary table. This generally happens when you have different compounds in your simulations, and there are no parameters with the same value for all. To see what data this function is attempting to use for your table, please try running:"), 
@@ -351,11 +352,12 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
    
    suppressWarnings(
       FT <- FT %>% 
-         left_join(AllExpDetails %>% select(Detail, ReportTableText) %>% 
-                      mutate(Detail = sub(str_c(AllCompounds$Suffix, 
-                                                collapse = "|"), "", 
-                                          Detail)) %>% unique(), 
-                   by = "Detail")  %>% 
+         left_join(
+            AllExpDetails %>% 
+               select(Detail, ReportTableText) %>% 
+               mutate(Detail = sub(str_c(AllCompounds$Suffix, collapse = "|"), 
+                                   "", Detail)) %>% unique(), 
+                   by = "Detail") %>% 
          mutate(Parameter = 
                    case_when(
                       is.na(Notes) ~ Detail,
