@@ -1357,10 +1357,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                      "colorBy_column", "FC1", "FC2")), 
                sep = " ", remove = FALSE) %>% 
          mutate(CompoundID = factor(CompoundID,
-                                    levels = c("substrate", "primary metabolite 1",
-                                               "primary metabolite 2", "secondary metabolite",
-                                               "inhibitor 1", "inhibitor 1 metabolite", 
-                                               "inhibitor 2"))) 
+                                    levels = AllCompounds$CompoundID)) 
       
       if(all(complete.cases(ct_dataframe$DoseNum))){
          # If it's dose number 0, remove those rows so that we'll show only the

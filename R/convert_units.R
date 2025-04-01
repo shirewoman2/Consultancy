@@ -454,19 +454,20 @@ convert_time_units <- function(DF_to_convert,
                  1/24,  1/(24*60),  1,      7, 
                  1/168, 1/(168*60), 1/7,    1))
    
-   if(unique(DF_with_good_units$Time_units) %in% ConvTable_time$OrigUnits == FALSE |
-      unique(DF_to_convert$Time_units) %in% ConvTable_time$RevUnits == FALSE){
+   if(all(unique(DF_with_good_units$Time_units) %in% ConvTable_time$OrigUnits) == FALSE |
+      all(unique(DF_to_convert$Time_units) %in% ConvTable_time$RevUnits) == FALSE){
       stop("Our apologies, but we have not yet set up this function to deal with your time units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.",
            call. = FALSE)
    }
    
-   ConvFactor_time <-
-      ConvTable_time$Factor[
-         which(ConvTable_time$OrigUnits == unique(DF_to_convert$Time_units) &
-                  ConvTable_time$RevUnits == unique(DF_with_good_units$Time_units))]
-   
-   DF_to_convert <- DF_to_convert %>% mutate(Time = Time*ConvFactor_time,
-                                             Time_units = unique(DF_with_good_units$Time_units))
+   DF_to_convert <- DF_to_convert %>%
+      left_join(ConvTable_time %>% 
+                   rename(Time_units = OrigUnits) %>% 
+                   filter(RevUnits %in% DF_with_good_units$Time_units), 
+                by = "Time_units") %>% 
+      mutate(Time = Time * Factor,
+             Time_units = RevUnits) %>% 
+      select(-Factor, -RevUnits)
    
    
    # Output -----------------------------------------------------------
