@@ -13,7 +13,8 @@ eCT_harmonize(
   PerpPresent,
   Deets,
   ADAM,
-  AdvBrainModel
+  AdvBrainModel,
+  ADC = FALSE
 )
 }
 \arguments{
@@ -21,11 +22,19 @@ eCT_harmonize(
 
 \item{compoundToExtract}{compoundToExtract}
 
+\item{AllCompoundsPresent}{all compounds present}
+
+\item{tissue}{tissue}
+
 \item{PerpPresent}{T or F}
+
+\item{Deets}{1 row for existing_exp_details$MainDetails}
 
 \item{ADAM}{T or F}
 
 \item{AdvBrainModel}{T or F}
+
+\item{ADC}{T or F}
 }
 \value{
 a data.frame of sim_data_xl with compound names and compound codes

@@ -38,29 +38,36 @@ Other options are "blood" or any tissues included in "Sheet Options",
 blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
-"jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only 
+"jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only
 applies to rodents), "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
 released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
 SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
-concentration-time data? Options are: \itemize{\item{"substrate"
-(default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
-\item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
-inducer, inhibitor, activator, or suppresesor, but it's labeled as
-"Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
-listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
-metabolite of inhibitor 1} \item{"conjugated protein" for DAR1-DARmax for
-an antibody-drug conjugate; observed data with DV listed as "Conjugated
-Protein Plasma Total" will match these simulated data,} \item{"total
-protein" for DAR0-DARmax for an ADC; observed data with DV listed as "Total
-Protein Conjugate Plasma Total" will match these simulated data,}
-\item{"released payload" for the released drug from an ADC, which shows up
-as primary metabolite 1 in Simulator output files.}} \strong{Note:} If your
-compound is a therapeutic protein or ADC, we haven't tested this very
-thoroughly, so please be extra careful to check that you're getting the
-correct data.}
+  concentration-time data? Options are:
+
+  \itemize{\item{"substrate" (default)}
+  \item{"primary metabolite 1"}
+  \item{"primary metabolite 2"}
+  \item{"secondary metabolite"}
+  \item{"inhibitor 1" -- this can be an inducer, inhibitor, activator, or
+  suppresesor, but it's labeled as "Inhibitor 1" in the simulator}
+  \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation}
+  \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
+  \item{"conjugated protein" for DAR1-DARmax for an antibody-drug conjugate;
+  observed data with DV listed as "Conjugated Protein Plasma Total" will
+  match these simulated data}
+  \item{"total protein" for DAR0-DARmax for an ADC; observed data with DV
+  listed as "Total Protein Conjugate Plasma Total" will match these simulated data}
+  \item{"protein-conjugated payload"; observed data with DV listed as 
+  "Conjugated Drug Plasma Total" will match these simulated data}
+  \item{"released payload" for the released drug from an ADC, which shows up
+  as primary metabolite 1 in Simulator output files.}}
+
+  \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
+  tested this very thoroughly, so please be extra careful to check that
+  you're getting the correct data.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are "aggregate", "individual", or "both"

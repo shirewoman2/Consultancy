@@ -6,8 +6,12 @@
 #' @param sim_data_xl sim_data_xl
 #' @param compoundToExtract compoundToExtract
 #' @param PerpPresent T or F
+#' @param AllCompoundsPresent all compounds present
+#' @param tissue tissue
+#' @param Deets 1 row for existing_exp_details$MainDetails
 #' @param ADAM T or F
 #' @param AdvBrainModel T or F
+#' @param ADC T or F
 #'
 #' @return a data.frame of sim_data_xl with compound names and compound codes
 #'   switched to, e.g., SUBSTRATE
@@ -21,12 +25,15 @@ eCT_harmonize <- function(sim_data_xl,
                           PerpPresent, 
                           Deets, 
                           ADAM,
-                          AdvBrainModel){
+                          AdvBrainModel, 
+                          ADC = FALSE){
    
    # Renaming compounds -------------------------------------------------------
    
-   if(any(ADAM, AdvBrainModel) == FALSE){
-      
+   # AdvBrainModel sheets do not need to be harmonized and will pass through.
+   
+   if(any(ADAM, AdvBrainModel, ADC) == FALSE |
+      (ADC == TRUE & any(compoundToExtract %in% c("primary metabolite 1")))){
       # Here's what we're trying to overcome with this function: If
       # "interaction" or "Csys" or other similar strings are part of the name of
       # any of the compounds, that messes up the regex, so we need to remove
@@ -287,8 +294,26 @@ eCT_harmonize <- function(sim_data_xl,
                                                                     "95th ptile")])
       }
       
+   } else if(ADC){
+      
+      # PopStatRow <- which(str_detect(sim_data_xl$...1, "Population Statistics"))
+      # NArows <- which(is.na(sim_data_xl$...1))
+      # CmpdRows <- sim_data_xl$...1[(PopStatRow + 2):
+      #                                 (NArows[which(NArows > PopStatRow)][1] - 1)]
+      
+      # "Protein Total" at the top of the Excel sheet can be listed as
+      # "Therapeutic Protein" lower down. Making them all "PROTEINTOTAL". 
+      sim_data_xl$...1 <- sub("^Protein Total|^Therapeutic Protein",
+                              "PROTEINTOTAL", 
+                              sim_data_xl$...1)
+      
+      # Protein Conjugated Drug is consistent throughout but making it
+      # consistent to be sure.
+      sim_data_xl$...1 <- sub("^Protein Conjugated Drug",
+                              "PROTEINCONJDRUG", 
+                              sim_data_xl$...1)
+      
    }
-   
    
    
    # Renaming interaction text -------------------------------------------------

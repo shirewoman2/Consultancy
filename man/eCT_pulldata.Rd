@@ -12,6 +12,7 @@ eCT_pulldata(
   fromMultFunction,
   Deets,
   ADAM,
+  ADC = FALSE,
   ss,
   AdvBrainModel,
   tissue,
@@ -35,11 +36,15 @@ eCT_pulldata(
 
 \item{ADAM}{T or F}
 
+\item{ADC}{T or F}
+
 \item{ss}{tissue subtype}
 
 \item{AdvBrainModel}{T or F}
 
 \item{tissue}{tissue}
+
+\item{SimTimeUnits}{time units}
 
 \item{SimConcUnits}{SimConcUnits}
 
