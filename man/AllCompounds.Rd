@@ -3,7 +3,7 @@
 \docType{data}
 \name{AllCompounds}
 \alias{AllCompounds}
-\title{All possible compound IDs, suffixes, etc.}
+\title{All possible compound IDs, suffixes, etc., including ADC-related compounds}
 \format{
 a data.frame
 }
@@ -11,6 +11,6 @@ a data.frame
 AllCompounds
 }
 \description{
-All possible compound IDs, suffixes, etc.
+All possible compound IDs, suffixes, etc., including ADC-related compounds
 }
 \keyword{datasets}

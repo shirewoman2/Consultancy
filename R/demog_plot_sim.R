@@ -1,6 +1,16 @@
 #' Make plots for comparing populations across simulations
 #'
-#' UNDER CONSTRUCTION.
+#' @description \code{demog_plot_sim} will make a series of graphs comparing
+#'   parameters across simulated populations. All the parameters available on
+#'   the "Demographic Data" tab of a Simcyp Simulator output Excel file are
+#'   available for making comparisons, and you must obtain the input data for
+#'   making these graphs by running \code{\link{extractDemog}}. If you are
+#'   looking at the distributions of one parameter across populations, you can
+#'   display that with either boxplots or kernel density plots (like a smoothed
+#'   histogram). If you want to compare across simulations the relationship
+#'   between pairs of parameters, scatter plots will be used. (Only certain
+#'   pairs of parameters are available; please see notes for the argument
+#'   'demog_parameters'.)
 #'
 #' @param demog_dataframe the output from running \code{\link{extractDemog}}.
 #' @param sims_to_include optionally specify which simulations to include. These
@@ -98,8 +108,11 @@
 #'   name is for \code{colorBy_column}. If you don't want a label for this
 #'   legend item, set this to "none".
 #' @param legend_position specify where you want the legend to be. Options are
-#'   "left", "right", "bottom" (default), "top", or "none" if you don't want one
-#'   at all.
+#'   "left", "right" (default), "bottom", "top", or "none" if you don't want one
+#'   at all. Note: If you include labels on your graphs (graph_labels = TRUE),
+#'   we recommend NOT putting the legend on the left or the top because the
+#'   labels wind up on the outside compared to the legend, and it just looks
+#'   dorky. 
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -159,6 +172,8 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #'
+#' @param return_indiv_graphs TRUE or FALSE (default) for whether to return a
+#'   list of each of the individual graphs
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "Demographics comparisons.png". Acceptable graphical
 #'   file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or
@@ -183,7 +198,7 @@ demog_plot_sim <- function(demog_dataframe,
                            color_set = "default", 
                            color_labels = NA, 
                            legend_label_color = NA,
-                           legend_position = "bottom", 
+                           legend_position = "right", 
                            graph_title = "Demographics", 
                            alpha = 0.8, 
                            ncol = NULL, 
@@ -192,6 +207,7 @@ demog_plot_sim <- function(demog_dataframe,
                            facet_column_additional, 
                            border_facets = TRUE, 
                            graph_labels = TRUE, 
+                           return_indiv_graphs = FALSE, 
                            save_graph = NA,
                            fig_height = 8,
                            fig_width = 6){
@@ -226,6 +242,8 @@ demog_plot_sim <- function(demog_dataframe,
                                      include_or_omit = "include")
    }
    
+   # Noting original requests for parameters
+   DemogParams <- tibble(Orig = demog_parameters)
    
    # Setting things up for nonstandard evaluation ----------------------------
    
@@ -365,204 +383,140 @@ demog_plot_sim <- function(demog_dataframe,
    
    # Possible demographic parameters -----------------------------------------
    
-   PossDemogParams <- data.frame(Parameter = c("Age", 
-                                               "AGP_gL",
-                                               "AllometricScalar", 
-                                               "BMI_kgm2", 
-                                               "BSA_m2", 
-                                               "BrainWt_g", 
-                                               "CardiacOut", 
-                                               "Creatinine_umolL", 
-                                               "GFR_mLminm2",
-                                               "Haematocrit", 
-                                               "Height_cm", 
-                                               "Height vs Age", 
-                                               "HSA_gL",
-                                               "KidneyWt_g", 
-                                               "LiverWt_g", 
-                                               "Weight_kg",
-                                               "Weight vs Age", 
-                                               "Weight vs Height",
-                                               "Sex", 
-                                               "Sex vs Age", 
-                                               "RenalFunction"), 
-                                 Label = c("Age (years)", 
-                                           "AGP (g/L)", 
-                                           "allometric scalar", 
-                                           "BMI (kg/m2)", 
-                                           "Body surface area (m2)", 
-                                           "Brain weight (g)", 
-                                           "Cardiac output (L/h)", 
-                                           "Creatinine (uM)", 
-                                           "Glomerular filtration rate\n(mL/min/m2 body surface area)", 
-                                           "Haematocrit (%)", 
-                                           "Height (cm)", 
-                                           NA, 
-                                           "Human serum albumin (g/L)", 
-                                           "Kidney weight (g)", 
-                                           "Liver weight (g)", 
-                                           "Weight (kg)", 
-                                           NA,
-                                           NA, 
-                                           "Percent female", 
-                                           NA, 
-                                           "renalfunction" = "Renal function"))
+   PossDemogParams <- tibble(
+      Parameter = c("Age", 
+                    "AGP_gL",
+                    "AllometricScalar", 
+                    "BMI_kgm2", 
+                    "BSA_m2", 
+                    "BrainWt_g", 
+                    "CardiacOut", 
+                    "Creatinine_umolL", 
+                    "GFR_mLminm2",
+                    "Haematocrit", 
+                    "Height_cm", 
+                    "Height vs Age", 
+                    "HSA_gL",
+                    "KidneyWt_g", 
+                    "LiverWt_g", 
+                    "Weight_kg",
+                    "Weight vs Age", 
+                    "Weight vs Height",
+                    "Sex", 
+                    "Sex vs Age", 
+                    "RenalFunction"), 
+      Label = c("Age (years)", 
+                "AGP (g/L)", 
+                "allometric scalar", 
+                "BMI (kg/m2)", 
+                "Body surface area (m2)", 
+                "Brain weight (g)", 
+                "Cardiac output (L/h)", 
+                "Creatinine (uM)", 
+                "Glomerular filtration rate\n(mL/min/m2 body surface area)", 
+                "Haematocrit (%)", 
+                "Height (cm)", 
+                NA, 
+                "Human serum albumin (g/L)", 
+                "Kidney weight (g)", 
+                "Liver weight (g)", 
+                "Weight (kg)", 
+                NA,
+                NA, 
+                "Percent female", 
+                NA, 
+                "renalfunction" = "Renal function"))
    
    
    # Returning to error catching ---------------------------------------------
    
    # Addressing any issues w/case and periods for "vs"
-   demog_parameters <- tolower(gsub("\\.", "", as.character(demog_parameters)))
+   DemogParams$Parameter <-
+      tolower(gsub("\\.", "", as.character(DemogParams$Orig)))
    names(demog_dataframe) <- tolower(names(demog_dataframe))
    # Renaming colorBy_column for ease of coding since I'm lifting some of the
    # code from other functions. This is just fixing the case since I just made
    # everything lower.
-   demog_dataframe <- demog_dataframe %>% rename(colorBy_column = colorby_column)
+   demog_dataframe <- demog_dataframe %>% 
+      rename(colorBy_column = colorby_column)
    
-   demog_parameters <- case_match(demog_parameters, 
-                                  "height vs weight" ~ "weight vs height", 
-                                  "age vs height" ~ "height vs age", 
-                                  "age vs weight" ~ "weight vs age", 
-                                  "age vs sex" ~ "sex vs age", 
-                                  "weight" ~ "weight_kg",
-                                  "height" ~ "height_cm",
-                                  "hsa" ~ "hsa_gl",
-                                  "agp" ~ "agp_gl",
-                                  "bmi" ~ "bmi_kgm2",
-                                  "bsa" ~ "bsa_m2", 
-                                  "brain" ~ "brainwt_g", 
-                                  "brainwt" ~ "brainwt_g", 
-                                  "cardiac" ~ "cardiacout", 
-                                  "creatinine" ~ "creatinine_umolL", 
-                                  "creatinine_uM"  ~ "creatinine_umolL", 
-                                  "gfr" ~ "gfr_mlminm2", 
-                                  "hematocrit" ~ "haematocrit", 
-                                  "kidney" ~ "kidneywt_g", 
-                                  "kidneywt" ~ "kidneywt_g", 
-                                  "liverwt" ~ "liverwt_g", 
-                                  "liver" ~ "liverwt_g", 
-                                  "gfr" ~ "gfr_mlminm2", 
-                                  .default = demog_parameters)
+   DemogParams <- DemogParams %>% 
+      mutate(Parameter = case_match(Parameter, 
+                                    "height vs weight" ~ "weight vs height", 
+                                    "age vs height" ~ "height vs age", 
+                                    "age vs weight" ~ "weight vs age", 
+                                    "age vs sex" ~ "sex vs age", 
+                                    "weight" ~ "weight_kg",
+                                    "height" ~ "height_cm",
+                                    "hsa" ~ "hsa_gl",
+                                    "agp" ~ "agp_gl",
+                                    "bmi" ~ "bmi_kgm2",
+                                    "bsa" ~ "bsa_m2", 
+                                    "brain" ~ "brainwt_g", 
+                                    "brainwt" ~ "brainwt_g", 
+                                    "cardiac" ~ "cardiacout", 
+                                    "creatinine" ~ "creatinine_umolL", 
+                                    "creatinine_uM"  ~ "creatinine_umolL", 
+                                    "gfr" ~ "gfr_mlminm2", 
+                                    "hematocrit" ~ "haematocrit", 
+                                    "kidney" ~ "kidneywt_g", 
+                                    "kidneywt" ~ "kidneywt_g", 
+                                    "liverwt" ~ "liverwt_g", 
+                                    "liver" ~ "liverwt_g", 
+                                    "gfr" ~ "gfr_mlminm2", 
+                                    .default = Parameter))
    
-   BadVar <- setdiff(demog_parameters, 
+   BadVar <- setdiff(DemogParams$Parameter, 
                      tolower(PossDemogParams$Parameter))
    
    if(length(BadVar) > 0 && any(complete.cases(BadVar))){
-      warning(paste0("The demographic parameters ", 
-                     str_comma(paste0("`", BadVar, "`")), 
-                     " are not among the possible options for demog_parameters, so they won't be included. Please check the help file for options.\n"), 
-              call. = FALSE)
+      warning(wrapn(paste0(
+         "The demographic parameter(s) ", 
+         str_comma(paste0("'", 
+                          DemogParams$Orig[DemogParams$Parameter %in% BadVar], 
+                          "'")), 
+         " is/are not among the possible options for demog_parameters, so they won't be included. Please check the help file for options.")), 
+         call. = FALSE)
       
-      demog_parameters <- setdiff(demog_parameters, BadVar)
+      DemogParams <- DemogParams %>% filter(!Parameter %in% BadVar)
    }
    
    if("sex" %in% names(demog_dataframe) == FALSE){
-      demog_dataframe$Sex <- "unknown"
+      demog_dataframe$sex <- "unknown"
    }
    
    DemogLabs <- PossDemogParams$Label
    names(DemogLabs) <- tolower(PossDemogParams$Parameter)
    
-   if(all(is.na(demog_parameters))){
-      DemogParams <- tolower(PossDemogParams$Parameter)
-   } else {
-      DemogParams <- tolower(demog_parameters)
-   }
+   if(all(is.na(DemogParams$Parameter))){
+      DemogParams <- 
+         tibble(Orig = as.character(NA), 
+                Parameter = tolower(PossDemogParams$Parameter))
+   } 
    
    
    # Setting up colors -------------------------------------------------------
    NumColorsNeeded <- demog_dataframe %>% 
       pull(colorBy_column) %>% unique() %>% length()
    
-   # This is when the user wants specific user-specified colors rather
-   # that one of the pre-made sets.
+   MyColors <- make_color_set(color_set = color_set, 
+                              num_colors = NumColorsNeeded)
    
-   ColorCheck <- try(expr = col2rgb(color_set), silent = TRUE)
+   # NOTE: For no reason I can discern, if the user has observed
+   # data that should be all one color but then uses scale_color_X
+   # where x is anything except "manual", the observed points
+   # DISAPPEAR. That's why, below, whenever it's scale_color_x, I'm
+   # setting the colors needed and then using scale_color_manual
+   # instead of scale_color_x. -LSh
    
-   if(length(color_set) > 1 |
-      (NumColorsNeeded == 1 & is.matrix(ColorCheck))){
-      
-      # If they supply a named character vector whose values are not
-      # present in the data, convert it to an unnamed character vector.
-      if(is.null(names(color_set)) == FALSE && 
-         all(unique(demog_dataframe$colorBy_column) %in% names(color_set) == FALSE)){
-         warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
-                        as_label(colorBy_column),
-                        " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
-                        as_label(colorBy_column), ".\n"), 
-                 call. = FALSE)
-         
-         MyColors <- as.character(color_set)
-      } else if(length(color_set) < NumColorsNeeded){
-         warning(paste("There are", NumColorsNeeded,
-                       "unique values in the column you have specified for the colors, but you have only specified", 
-                       length(color_set), 
-                       "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph.\n"), 
-                 call. = FALSE)
-         
-         MyColors <- rep(color_set, 100)[1:NumColorsNeeded]
-      } else {
-         MyColors <- color_set
-      }
-      
-   } else {
-      
-      # If there are only 2 groups for the colorBy_column and color_set was set to
-      # "default", use Brewer set 1 instead of Brewer set 2 b/c it's more
-      # aesthetically pleasing.
-      if(NumColorsNeeded <= 2 &
-         color_set[1] == "default"){
-         color_set <- "Brewer set 1"
-      }
-      
-      # NOTE: For no reason I can discern, if the user has observed
-      # data that should be all one color but then uses scale_color_X
-      # where x is anything except "manual", the observed points
-      # DISAPPEAR. That's why, below, whenever it's scale_color_x, I'm
-      # setting the colors needed and then using scale_color_manual
-      # instead of scale_color_x. -LSh
-      
-      color_set <- ifelse(str_detect(tolower(color_set), 
-                                     "default|brewer.*2|set.*2"), 
-                          "set2", color_set)
-      color_set <- ifelse(str_detect(tolower(color_set),
-                                     "brewer.*1|set.*1"), 
-                          "set1", color_set)
-      
-      suppressWarnings(
-         MyColors <- 
-            switch(
-               color_set,
-               # Using "Dark2" b/c "Set2" is just really,
-               # really light.
-               "set2" = RColorBrewer::brewer.pal(NumColorsNeeded, "Dark2")[
-                  1:NumColorsNeeded], 
-               "blue-green" = blueGreens(NumColorsNeeded),
-               "blues" = blues(NumColorsNeeded),
-               "greens" = chartreuse(NumColorsNeeded, shade = "darker"), 
-               "purples" = purples(NumColorsNeeded, shade = "darker"), 
-               "rainbow" = rainbow(NumColorsNeeded),
-               "set1" = RColorBrewer::brewer.pal(NumColorsNeeded, "Set1")[
-                  1:NumColorsNeeded],
-               "Tableau" = ggthemes::tableau_color_pal(
-                  palette = "Tableau 10")(NumColorsNeeded),
-               "viridis" = viridis::viridis_pal()(NumColorsNeeded))
-      )
-      # NB: For the RColorBrewer palettes, the minimum number of
-      # colors you can get is 3. Since sometimes we might only want 1
-      # or 2 colors, though, we have to add the [1:NumColorsNeeded]
-      # bit.
-      
-      if(any(is.na(MyColors))){
-         warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.\n", 
-                 call. = FALSE)
-         
-         MyColors <- rainbow(NumColorsNeeded)
-      }
-      
-      # FIXME - Add a check here that the colors supplied are all actually colors.
-      
-   }
+   # If there are only single variables being plotted (only boxplots or density
+   # plots), then the legend is fine. If there is a mix of single variables and
+   # then also scatter plots comparing 2 variables, then the legend just WILL
+   # NOT work: It duplicates the fill legend no matter what I do. To work around
+   # this, check for whether there are ANY scatter plots and, if there are, omit
+   # the legend for the single variable graphs.
+   AnyScatter <- any(str_detect(DemogParams$Parameter, "vs"))
+   
    
    # Graphing -----------------------------------------------------------------
    
@@ -614,7 +568,7 @@ demog_plot_sim <- function(demog_dataframe,
          scale_fill_manual(values = MyColors) +
          theme_consultancy(border = border_facets) + 
          theme(strip.placement = "outside", 
-               legend.position = legend_position)
+               legend.position = ifelse(AnyScatter, "none", legend_position))
       
       return(G)
    }
@@ -647,15 +601,32 @@ demog_plot_sim <- function(demog_dataframe,
          scale_fill_manual(values = MyColors) +
          theme_consultancy(border = border_facets) + 
          theme(strip.placement = "outside", 
-               legend.position = legend_position)
+               legend.position = ifelse(AnyScatter, "none", legend_position))
       
       return(G)
    }
    
    
    MyGraphs <- list()
+   MissingParams <- as.character(c())
    
-   for(yy in DemogParams){
+   for(yy in DemogParams$Parameter){
+      
+      if(yy %in% c(names(demog_dataframe), 
+                   tolower(PossDemogParams$Parameter)) == FALSE & 
+         all(is.na(DemogParams$Orig)) == FALSE){
+         MissingParams <- c(MissingParams, 
+                            DemogParams$Orig[DemogParams$Parameter == yy])
+         next
+      }
+      
+      if(all(is.na(DemogParams$Orig)) & 
+         yy == "allometricscalar" & 
+         "allometricscalar" %in% names(demog_dataframe) &&
+         all(demog_dataframe$allometricscalar == 1, na.rm = T)){
+         next
+      }
+      
       if(yy == "sex vs age"){
          MyGraphs[[yy]] <- 
             ggplot(demog_dataframe, 
@@ -673,7 +644,7 @@ demog_plot_sim <- function(demog_dataframe,
             xlab("Age (years)") +
             theme_consultancy(border = border_facets) + 
             theme(strip.placement = "outside", 
-                  legend.position = legend_position)
+                  legend.position = ifelse(AnyScatter, "none", legend_position))
          
          if(complete.cases(legend_label_color)){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
@@ -681,7 +652,7 @@ demog_plot_sim <- function(demog_dataframe,
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = NULL)
          }
          
-         MyGraphs[[yy]] <- patchwork::free(MyGraphs[[yy]])
+         # MyGraphs[[yy]] <- patchwork::free(MyGraphs[[yy]])
          
          
       } else if(yy == "sex"){
@@ -711,7 +682,7 @@ demog_plot_sim <- function(demog_dataframe,
             labs(fill = NULL) +
             theme_consultancy(border = border_facets) + 
             theme(strip.placement = "outside", 
-                  legend.position = legend_position)
+                  legend.position = ifelse(AnyScatter, "none", legend_position))
          
          if(complete.cases(legend_label_color)){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
@@ -773,56 +744,56 @@ demog_plot_sim <- function(demog_dataframe,
          if(as_label(facet_column_additional) != "<empty>"){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + 
                facet_grid(sex ~ fc, switch = "y") +
-               theme(strip.placement = "outside", 
-                     legend.position = legend_position)
+               theme(strip.placement = "outside")
             
          } else {
             MyGraphs[[yy]] <- MyGraphs[[yy]] + 
                facet_grid(sex ~ ., switch = "y") +
-               theme(strip.placement = "outside", 
-                     legend.position = legend_position)
+               theme(strip.placement = "outside")
             
          }
       } else {
          if(as_label(facet_column_additional) != "<empty>"){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + 
                facet_grid(. ~ fc, switch = "y") +
-               theme(strip.placement = "outside", 
-                     legend.position = legend_position)
+               theme(strip.placement = "outside")
          }  
       }
+   }
+   
+   if(length(MissingParams) > 0){
+      warning(wrapn(paste0(
+         "The variable(s) ", 
+         str_comma(paste0("'", MissingParams, "'")), 
+         " is/are not included in what you have supplied for demog_dataframe, so we will not be able to make that graph.")),
+         call. = FALSE)
+      
    }
    
    
    # Printing collected graphs -----------------------------------------------
    
+   # NB: theme(legend.position... must be inside plot_annotation or ALL of the
+   # possible legends will show up.
+   
    G <- patchwork::wrap_plots(MyGraphs) +
-      patchwork::plot_layout(guides = "collect",
-                             ncol = ncol,
-                             nrow = nrow) +
-      patchwork::plot_annotation(title = graph_title,
-                                 tag_levels = switch(as.character(graph_labels),
-                                                     "TRUE" = "A",
-                                                     "FALSE" = NULL)) &
+      patchwork::plot_layout(
+         guides = "collect",
+         ncol = ncol,
+         nrow = nrow) +
+      patchwork::plot_annotation(
+         title = graph_title,
+         tag_levels = switch(as.character(graph_labels),
+                             "TRUE" = "A",
+                             "FALSE" = NULL), 
+         theme = theme(legend.position = legend_position)) &
       theme(plot.title = element_text(size = 12,
                                       hjust = 0.5,
                                       face = "bold"),
-            legend.position = legend_position, 
-            legend.box = "vertical")
-   
-   
-   # # This does not work. ggpubr only keeps the 1st legend. 
-   # G <- ggpubr::ggarrange(plotlist = MyGraphs, 
-   #                   ncol = ncol, 
-   #                   nrow = nrow, 
-   #                   common.legend = TRUE, 
-   #                   legend = legend_position)
-   # 
-   # ggpubr::annotate_figure(G, 
-   #                         top = ggpubr::text_grob(graph_title,
-   #                                                 size = 12, 
-   #                                                 hjust = 0.5, 
-   #                                                 face = "bold"))   
+            legend.box = case_when(
+               legend_position %in% c("left", "right") ~ "vertical", 
+               legend_position %in% c("top", "bottom") ~ "horizontal"), 
+            legend.justification = c(0.5, 0.5))
    
    
    # Saving ----------------------------------------------------------------
@@ -854,7 +825,11 @@ demog_plot_sim <- function(demog_dataframe,
       
    }
    
-   return(G)
+   if(return_indiv_graphs){
+      return(MyGraphs)
+   } else {
+      return(G)
+   }
    
 }
 

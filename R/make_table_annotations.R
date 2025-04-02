@@ -65,7 +65,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
             which(tolower(names(prettify_compound_names)) == "perpetrator")] <- "inhibitor 1"
          
          if(any(names(prettify_compound_names) %in% 
-                AllCompounds$CompoundID == FALSE)){
+                AllRegCompounds$CompoundID == FALSE)){
             warning(wrapn("It looks like you're trying to supply a named character vector for the argument 'prettify_compound_names', but we need the names to be compound IDs such as 'substrate' or 'inhibitor 1'. We'll set 'prettify_compound_names' to FALSE for now, but please check the help file on this."), 
                     call. = FALSE)
             prettify_compound_names <- FALSE
@@ -262,7 +262,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
    } else if(class(prettify_compound_names) == "character"){
       MyCompound <- prettify_compound_names[MyCompoundID]
       MyDosedCompound <- prettify_compound_names[
-         AllCompounds$DosedCompoundID[AllCompounds$CompoundID == MyCompoundID]]
+         AllRegCompounds$DosedCompoundID[AllRegCompounds$CompoundID == MyCompoundID]]
    } else {
       MyCompound <- switch(MyCompoundID, 
                            "substrate" = existing_exp_details$Substrate,
@@ -274,8 +274,8 @@ make_table_annotations <- function(MyPKResults, # only PK table
                            "inhibitor 1 metabolite" = existing_exp_details$Inhibitor1Metabolite)
    }
    
-   MyDoseInt <- paste0("DoseInt", AllCompounds$Suffix[
-      AllCompounds$CompoundID == MyCompoundID])
+   MyDoseInt <- paste0("DoseInt", AllRegCompounds$Suffix[
+      AllRegCompounds$CompoundID == MyCompoundID])
    
    MyDoseUnits <- switch(MyCompoundID, 
                          "substrate" = existing_exp_details$Units_dose_sub,

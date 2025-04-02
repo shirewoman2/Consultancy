@@ -1,4 +1,4 @@
-#' Concentration-time plots to match Consultancy template
+#' Concentration-time plots to match the Simcyp Consultancy Team template
 #'
 #' @description Using observed and simulated concentration-time data generated
 #'   from the function \code{\link{extractConcTime}}, make publication-quality
@@ -416,6 +416,8 @@
 #'   \code{\link{extractExpDetails_mult}} to be used for creating figure
 #'   headings and captions tailored to the specific simulation when saving to a
 #'   Word file or for use with \code{qc_graph}
+#' @param border TRUE or FALSE (default) for whether to include a border around
+#'   each graph.
 #' @param return_caption TRUE or FALSE (default) for whether to return any
 #'   caption text to use with the graph. This works best if you supply something
 #'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
@@ -542,6 +544,7 @@ ct_plot <- function(ct_dataframe = NA,
                     graph_labels = TRUE,
                     graph_title = NA,
                     graph_title_size = 14, 
+                    border = FALSE, 
                     qc_graph = FALSE,
                     existing_exp_details = NA,
                     return_caption = FALSE, 
@@ -1096,7 +1099,7 @@ ct_plot <- function(ct_dataframe = NA,
    # Converting conc and time units if requested
    if(any(complete.cases(conc_units_to_use))){
       if("logical" %in% class(existing_exp_details) == FALSE){
-         MWs_1 <- AllCompounds %>% 
+         MWs_1 <- AllRegCompounds %>% 
             mutate(Detail = paste0("MW", Suffix)) %>% 
             select(CompoundID, Detail) %>% 
             left_join(harmonize_details(existing_exp_details)[["MainDetails"]] %>%
@@ -1713,7 +1716,7 @@ ct_plot <- function(ct_dataframe = NA,
            fill = case_when(complete.cases(legend_label) ~ legend_label,
                             figure_type == "compound summary" ~ "Study",
                             .default = "Inhibitor")) +
-      theme_consultancy()
+      theme_consultancy(border = border)
    
    
    # If the user didn't want the legend or if the graph is of a perpetrator,

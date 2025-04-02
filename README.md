@@ -17,8 +17,8 @@ package are to:
 
 **Important:** The SimcypConsultancy R package is *separate* from the
 Simcyp R package and serves a different purpose. The SimcypConsultancy
-package does *not* interact with the simulator and instead is focused on
-report-writing tasks.
+package does *not* interact with the Simcyp Simulator and instead is
+focused on report-writing tasks.
 
 ## Installation
 
@@ -27,7 +27,7 @@ You can install the SimcypConsultancy package from GitHub like this:
     devtools::install_github(repo = "shirewoman2/Consultancy", 
                              upgrade = "never")
 
-Current version: 3.9.5
+Current version: 3.10.4
 
 **NOTE:** The SimcypConsultancy package requires that you have tidyverse
 loaded.
@@ -123,10 +123,8 @@ below.
 
 ![](inst/images/overviewtable2.png?raw=TRUE)
 
-To see all the possible experimental details, please see the file
-**“[All possible experimental details to use with
-extractExpDetails.csv](https://certaragbr.sharepoint.com/:x:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/All%20possible%20experimental%20details%20to%20use%20with%20extractExpDetails.csv?d=wac18447b1ef557789cb09d8487781223&csf=1&web=1&e=yu3dId)”**
-(Bold text is a link) or type this into the console:
+To see all the possible experimental details, please type this into the
+console:
 
      view(ExpDetailDefinitions)
 
@@ -601,9 +599,6 @@ scatter plot of height vs. overall body weight.
                    fig_height = 6, fig_width = 5)
 
 ![](inst/images/demogplot_hi.png?raw=TRUE)
-
-*Note: We’re working on the legend but having some trouble with it
-repeating things at the moment.*
 
 For more information and examples, please see
 **[Examples-for-checking-subject-demographics.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Demographics%20plots/Examples-for-checking-subject-demographics.docx?d=wd07adeb48d7a4ee199b99d1e2ee083ec&csf=1&web=1&e=asP4FD)**

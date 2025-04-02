@@ -78,9 +78,9 @@ check_doseint <- function(sim_data_file,
            call. = FALSE)
    }
    
-   if(compoundID %in% AllCompounds$CompoundID == FALSE){
+   if(compoundID %in% AllRegCompounds$CompoundID == FALSE){
       warning(wrapn(paste0("Acceptable values for the argument compoundID are ", 
-                           str_comma(paste0("'", AllCompounds$CompoundID, "'"), 
+                           str_comma(paste0("'", AllRegCompounds$CompoundID, "'"), 
                                      conjunction = "or"), 
                            " and you have entered something else. We'll assume you want to check the AUC interval for the substrate.")), 
               call. = FALSE)

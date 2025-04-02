@@ -76,15 +76,19 @@ eCT_readxl <- function(sim_data_file,
       
       if(TissueType == "systemic"){
          
-         if(all(CompoundToFind == "ADC")){ # FIXME - Haven't set this up really
+         if(all(CompoundToFind %in% c(# "intact ADC", 
+                                      "total antibody", 
+                                      "conjugated payload"))){ 
+            
             PossSheets <- PossSheets[
                str_detect(PossSheets, 
-                          switch(compoundToExtract, 
-                                 "conjugated protein" = "Conc Profiles C[Ss]ys|Protein Conc Trials", 
-                                 "total protein" = "Conc Profiles C[Ss]ys|Protein Conc Trials", 
-                                 "released payload" = paste0("Sub Pri Met1.*",
-                                                             str_to_title(tissue))
-                          ))]
+                          case_when(
+                             CompoundToFind[1] %in% c("total antibody", 
+                                                      # "intact ADC", 
+                                                      "conjugated payload") ~
+                                case_match(tissue, 
+                                           "plasma" ~ "Conc Profiles C[Ss]ys|Protein Conc Trials", 
+                                           "lymph" ~ "Lymph Conc Profiles")))]
             
          } else {
             
@@ -212,9 +216,9 @@ eCT_readxl <- function(sim_data_file,
    
    if(length(Sheet) == 0 | is.na(Sheet) | Sheet %in% SheetNames == FALSE){
       warning(wrapn(paste0("You requested data for ", str_comma(compoundToExtract),
-                     " in ", tissue,
-                     " from the file `",
-                     sim_data_file, "``, but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped.")),
+                           " in ", tissue,
+                           " from the file `",
+                           sim_data_file, "``, but that compound and/or tissue or that combination of compound and tissue is not available in that file and will be skipped.")),
               call. = FALSE)
       return(data.frame())
    }

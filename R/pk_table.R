@@ -135,13 +135,13 @@
 #'   leave the order "as is", in which case the order will be whatever is
 #'   specified with \code{sim_data_files}.
 #' @param sheet_PKparameters (optional) If you want the PK parameters to be
-#'   pulled from a specific tab in the simulator output file, list that tab
-#'   here. Otherwise, this should be left as NA. \code{sheet_PKparameters} can
-#'   only have a \emph{single value}, though. If you want some parameters from a
-#'   custom-interval tab and others from the regular tabs, you must supply that
-#'   as part of a data.frame or csv file for the argument \code{PKparameters}.
-#'   Please try running \code{\link{make_example_PK_input}} to see examples for
-#'   how to do this.
+#'   pulled from a \strong{user-defined interval tab} in the simulator output
+#'   file, list that tab here. Otherwise, this should be left as NA.
+#'   \code{sheet_PKparameters} can only have a \emph{single value}, though. If
+#'   you want some parameters from a custom-interval tab and others from the
+#'   regular tabs, you must supply that as part of a data.frame or csv file for
+#'   the argument \code{PKparameters}. Please try running
+#'   \code{\link{make_example_PK_input}} to see examples for how to do this.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
@@ -950,7 +950,7 @@ pk_table <- function(PKparameters = NA,
              Stat = factor(Stat, levels = unique(
                 AllStats$InternalColNames[
                    which(complete.cases(AllStats$InternalColNames))]))) %>% 
-      arrange(File, CompoundID, SorO, Stat) %>% 
+      arrange(File, CompoundID, Tissue, SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) 
    
@@ -1071,7 +1071,7 @@ pk_table <- function(PKparameters = NA,
                               unique(AllStats$InternalColNames[
                                  which(complete.cases(AllStats$InternalColNames))])), 
              File = factor(File, levels = file_order)) %>% 
-      arrange(File, CompoundID, SorO, Stat) %>% 
+      arrange(File, CompoundID, Tissue, SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
       select(-Stat, -SorO) %>%
@@ -1172,7 +1172,7 @@ pk_table <- function(PKparameters = NA,
                                         PKparameter, 
                                         paste(PKparameter, Interval))) %>% 
             select(-Interval, -Sheet) %>%
-            filter(complete.cases(Value)) %>% 
+            filter(complete.cases(Value)) %>% unique() %>% 
             pivot_wider(names_from = PKparameter,
                         values_from = Value)
          
@@ -1284,6 +1284,16 @@ pk_table <- function(PKparameters = NA,
    }
    
    Out <- list("Table" = MyPKResults)
+   
+   # Checking that stat names are all harmonized with the rest of the package.
+   # The average user should NOT see this error; it should ONLY show up when
+   # we've coded something w/a nonstandard stat name (see AllStats for all
+   # standard stat names). I need this to break here for downstream functions to
+   # all work correctly.
+   if(all(MyPKResults$Statistic %in% c(AllStats$InternalColNames, 
+                                       AllStats$ReportNames)) == FALSE){
+      stop("Non standardized statistic name. This must be standardized to proceed.")
+   }
    
    
    # Setting up table caption ------------------------------------------------

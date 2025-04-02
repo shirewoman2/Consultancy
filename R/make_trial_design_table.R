@@ -137,13 +137,13 @@ make_trial_design_table <- function(existing_exp_details,
       if(prettify_compound_names){
          existing_exp_details$MainDetails <- 
             existing_exp_details$MainDetails %>% 
-            mutate(across(.cols = any_of(AllCompounds$DetailNames), 
+            mutate(across(.cols = any_of(AllRegCompounds$DetailNames), 
                           .fns = prettify_compound_name))
       }
    } else {
       # this is when they have supplied a character vector for what to use for
       # each compound name
-      for(d in AllCompounds$DetailNames){
+      for(d in AllRegCompounds$DetailNames){
          for(cmpd in names(prettify_compound_names)){
             existing_exp_details$MainDetails[, d][
                which(existing_exp_details$MainDetails[, d] == cmpd)] <- 
@@ -210,7 +210,7 @@ make_trial_design_table <- function(existing_exp_details,
                 CompoundID = ifelse(is.na(CompoundID), 
                                     "none", as.character(CompoundID)), 
                 CompoundID = factor(CompoundID,
-                                    levels = c("none", AllCompounds$CompoundID))) %>% 
+                                    levels = c("none", AllRegCompounds$CompoundID))) %>% 
          arrange(CompoundID, SortOrder) %>%
          select(-SortOrder) %>% unique() %>% 
          rename(Parameter = Notes) %>% 

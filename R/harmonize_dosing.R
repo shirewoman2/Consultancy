@@ -29,10 +29,10 @@ harmonize_dosing <- function(existing_exp_details){
       
       Dosing[[ff]] <- list()
       
-      for(cmpd in unique(AllCompounds$DosedCompoundID)){
+      for(cmpd in unique(AllRegCompounds$DosedCompoundID)){
          
-         MyCompundName <- Main[[ff]][[AllCompounds$DetailNames[
-            AllCompounds$CompoundID == cmpd]]]
+         MyCompundName <- Main[[ff]][[AllRegCompounds$DetailNames[
+            AllRegCompounds$CompoundID == cmpd]]]
          
          if(is.null(MyCompundName) || is.na(MyCompundName)){next}
          
@@ -114,8 +114,8 @@ harmonize_dosing <- function(existing_exp_details){
             Dosing[[ff]][[cmpd]] <- Dosing[[ff]][[cmpd]] %>% 
                mutate(File = ff, 
                       CompoundID = cmpd, 
-                      Compound = Main[[ff]][[AllCompounds$DetailNames[
-                         AllCompounds$CompoundID == cmpd]]], 
+                      Compound = Main[[ff]][[AllRegCompounds$DetailNames[
+                         AllRegCompounds$CompoundID == cmpd]]], 
                       Time_units = Main[[ff]]$Units_tmax, 
                       Dose = switch(cmpd, 
                                     "substrate" = as.numeric(Main[[ff]]$Dose_sub), 

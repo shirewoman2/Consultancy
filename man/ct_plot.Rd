@@ -2,7 +2,7 @@
 % Please edit documentation in R/ct_plot.R
 \name{ct_plot}
 \alias{ct_plot}
-\title{Concentration-time plots to match Consultancy template}
+\title{Concentration-time plots to match the Simcyp Consultancy Team template}
 \usage{
 ct_plot(
   ct_dataframe = NA,
@@ -48,6 +48,7 @@ ct_plot(
   graph_labels = TRUE,
   graph_title = NA,
   graph_title_size = 14,
+  border = FALSE,
   qc_graph = FALSE,
   existing_exp_details = NA,
   return_caption = FALSE,
@@ -478,6 +479,9 @@ your graph or set of graphs}
 
 \item{graph_title_size}{the font size for the graph title if it's included;
 default is 14. This also determines the font size of the graph labels.}
+
+\item{border}{TRUE or FALSE (default) for whether to include a border around
+each graph.}
 
 \item{qc_graph}{TRUE or FALSE (default) on whether to create a second copy of
 the graph where the left panel shows the original graph and the right panel

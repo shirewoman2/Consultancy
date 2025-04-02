@@ -190,8 +190,8 @@ extractPK_DB <- function(sim_data_file,
             AllTissues$Simcyp_ProfileName[
                AllTissues$Tissue == tissue]]),
          compound = as.numeric(Simcyp::CompoundID[
-            AllCompounds$CompoundID_Simcyp[
-               AllCompounds$CompoundID == compoundToExtract]]),
+            AllRegCompounds$CompoundID_Simcyp[
+               AllRegCompounds$CompoundID == compoundToExtract]]),
          individual = individual,
          allDoses = TRUE, 
          conn = conn) %>% 
@@ -227,8 +227,8 @@ extractPK_DB <- function(sim_data_file,
                       values_to = "Value") %>% 
          # Adding fup 
          mutate(fu = existing_exp_details$MainDetails %>% 
-                   pull(paste0("fu", AllCompounds$Suffix[
-                      AllCompounds$CompoundID == compoundToExtract])), 
+                   pull(paste0("fu", AllRegCompounds$Suffix[
+                      AllRegCompounds$CompoundID == compoundToExtract])), 
                 CalcRequired = AllTissues %>% filter(Tissue == tissue) %>% 
                    pull(Simcyp_calculation_required), 
                 Value = case_match(CalcRequired, 
@@ -245,20 +245,20 @@ extractPK_DB <- function(sim_data_file,
                                                 .default = "")), 
                 CompoundID = compoundToExtract,
                 Compound = as.character(Deets[
-                   AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]),
+                   AllRegCompounds$DetailNames[AllRegCompounds$CompoundID == compoundToExtract]]),
                 Tissue = tissue,
                 Simulated = TRUE,
                 File = sim_data_file,
                 Dose = as.numeric(
                    Deets %>%
                       pull(any_of(paste0("Dose",
-                                         AllCompounds$DosedCompoundSuffix[
-                                            AllCompounds$CompoundID == compoundToExtract])))))
+                                         AllRegCompounds$DosedCompoundSuffix[
+                                            AllRegCompounds$CompoundID == compoundToExtract])))))
    )
    
    # Calculating ratios
    if(any(PK_indiv$Inhibition == "yesinhib") & 
-      AllCompounds$DDIrole[AllCompounds$CompoundID == compoundToExtract] == "victim"){
+      AllRegCompounds$DDIrole[AllRegCompounds$CompoundID == compoundToExtract] == "victim"){
       
       Ratios <- PK_indiv %>% 
          pivot_wider(names_from = Inhibition, 

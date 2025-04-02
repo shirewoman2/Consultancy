@@ -14,6 +14,8 @@
 #' @param SimConcUnits SimConcUnits
 #' @param returnAggregateOrIndiv returnAggregateOrIndiv
 #' @param sim_data_xl sim_data_xl
+#' @param ADC T or F
+#' @param SimTimeUnits time units
 #'
 #' @return data.frame of conc time data
 #'
@@ -27,12 +29,17 @@ eCT_pulldata <- function(sim_data_xl,
                          fromMultFunction, 
                          Deets,
                          ADAM, 
+                         ADC = FALSE, 
                          ss, 
                          AdvBrainModel, 
                          tissue, 
                          SimTimeUnits,
                          SimConcUnits, 
                          returnAggregateOrIndiv){
+   
+   NamesToCheck <- sim_data_xl$...1
+   InteractionIndices <- which(str_detect(NamesToCheck, "WITHINTERACTION"))
+   TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))[1]
    
    if(ADAM & cmpd != "substrate"){
       if(tissue %in% c("faeces", "gut tissue")){
@@ -55,101 +62,97 @@ eCT_pulldata <- function(sim_data_xl,
       }
    }
    
-   MyCompound <-
-      switch(cmpd,
-             "substrate" = Deets$Substrate,
-             "inhibitor 1" = Deets$Inhibitor1,
-             "inhibitor 2" = Deets$Inhibitor2,
-             "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite,
-             "primary metabolite 1" = Deets$PrimaryMetabolite1,
-             "primary metabolite 2" = Deets$PrimaryMetabolite2,
-             "secondary metabolite" = Deets$SecondaryMetabolite) %>%
-      as.character()
-   
-   MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
-                        "secondary metabolite",
-                        "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
-                        "inhibitor 2 metabolite")
-   
-   # if(all(CompoundType == "ADC")){
-   #    MyCompound <- switch(cmpd,
-   #                         "total protein" = paste("total", Deets$Substrate),
-   #                         "conjugated protein" = paste("conjugated", Deets$Substrate),
-   #                         "released payload" = Deets$PrimaryMetabolite1)
-   # }
-   
-   # Determining rows to use ----------------------------------------------
-   
-   TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))[1]
-   
-   # Figuring out which rows contain which data
-   FirstBlank <- intersect(which(is.na(sim_data_xl$...1)),
-                           which(1:nrow(sim_data_xl) > TimeRow))[1]
-   FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl) + 1, FirstBlank)
-   # NamesToCheck <- sim_data_xl$...1[TimeRow:(FirstBlank-1)]
-   NamesToCheck <- sim_data_xl$...1
-   
-   InteractionIndices <- which(str_detect(NamesToCheck, "WITHINTERACTION"))
-   
-   
-   if(cmpd %in% c(MainCompoundIDs, "released payload") & 
-      ADAM == FALSE & AdvBrainModel == FALSE){
-      # cmpd is one of main compounds is not ADAM or AdvBrainModel 
+   if(ADC & !cmpd %in% c("primary metabolite 1")){
       
-      # released payload looks like primary metabolite 1, so extracting
-      # those data here rather than with the rest of the ADC data
+      MyCompound <- cmpd
       
-      CompoundIndices <- which(str_detect(NamesToCheck,
-                                          switch(cmpd, 
-                                                 "substrate" = "SUBSTRATE",
-                                                 "primary metabolite 1" = "PRIMET1", 
-                                                 "primary metabolite 2" = "PRIMET2", 
-                                                 "secondary metabolite" = "SECMET", 
-                                                 "inhibitor 1" = "PERPETRATOR1INHIB", 
-                                                 "inhibitor 2" = "PERPETRATOR2", 
-                                                 "inhibitor 1 metabolite" = "PERPETRATOR1MET")))
-      
-   } else if(ADAM|AdvBrainModel){
-      # cmpd is ADAM model compound
-      
-      # Step 1: Find all rows w/ADAM model concentrations
-      CompoundIndices <- which(str_detect(NamesToCheck, 
-                                          "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|ITissue|dissolved|absorbed|^C Enterocyte|Release fraction|CIntracranial|CBrainI[CS]F|CCSF(Spinal|Cranial)|Kpuu_I[CS]F|Kpuu I[CS]F|Kpuu_BrainMass|Kpuu brain mass|CTotal( )?Brain"))
-      # IMPORTANT: If you change the above regex b/c you find some new weird way
-      # that the Simulator output refers to things, ALSO CHANGE IT IN
-      # extractConcTime.
-      
-      # Step 2: Find only those rows with this particular tissue subtype
-      temp_regex <- paste0(ifelse(
-         str_detect(SimConcUnits$TypeCode[SimConcUnits$Type == ss],
-                    "dissolved|absorbed"),
-         "", "^"),
-         SimConcUnits$TypeCode[SimConcUnits$Type == ss])
-      
-      # gut tissue tab is set up slightly differently, so need to
-      # adjust what regex to use.
-      if(tissue == "gut tissue"){ # FIXME - CHECK THIS
-         temp_regex <- ifelse(cmpd == "inhibitor 1",
-                              "^ITissue", "^CTissue")
+      if(length(AllPerpsPresent) == 0){
+         
+         CompoundIndices <- which(
+            str_detect(sim_data_xl$...1,
+                       switch(cmpd,
+                              "total antibody" = "PROTEINTOTAL",
+                              # "intact adc" = "conjugated protein .dar1", # ??
+                              "total antibody" = "cantibody total", # ??
+                              "conjugated payload" = "PROTEINCONJDRUG" # CHECK THIS ONE with an example; just guessing for now
+                       )))
+         CompoundIndices <- CompoundIndices[
+            which(CompoundIndices > which(str_detect(sim_data_xl$...1, "Population Statistics")))]
+         
       }
+   } else {
       
-      CompoundIndices <- intersect(
-         which(str_detect(NamesToCheck, temp_regex)), 
-         CompoundIndices)
+      MyCompound <-
+         switch(cmpd,
+                "substrate" = Deets$Substrate,
+                "inhibitor 1" = Deets$Inhibitor1,
+                "inhibitor 2" = Deets$Inhibitor2,
+                "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite,
+                "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                "secondary metabolite" = Deets$SecondaryMetabolite) %>%
+         as.character()
       
-   } else if(all(CompoundType == "ADC") & cmpd != "released payload" &
-             length(AllPerpsPresent) == 0){
+      MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
+                           "secondary metabolite",
+                           "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
+                           "inhibitor 2 metabolite")
       
-      CompoundIndices <- which(
-         str_detect(tolower(sim_data_xl$...1),
-                    switch(ss,
-                           "total protein" = "protein total .dar0",
-                           "conjugated protein" = "conjugated protein .dar1",
-                           "total antibody" = "cantibody total",
-                           "protein-conjugated substrate" = "protein conjugated drug" # CHECK THIS ONE with an example; just guessing for now
-                    )))
       
-   }
+      # Determining rows to use ----------------------------------------------
+      
+      # Figuring out which rows contain which data
+      FirstBlank <- intersect(which(is.na(sim_data_xl$...1)),
+                              which(1:nrow(sim_data_xl) > TimeRow))[1]
+      FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl) + 1, FirstBlank)
+      # NamesToCheck <- sim_data_xl$...1[TimeRow:(FirstBlank-1)]
+      
+      if(cmpd %in% MainCompoundIDs & ADAM == FALSE & AdvBrainModel == FALSE){
+         # cmpd is one of main compounds is not ADAM or AdvBrainModel 
+         
+         # released payload looks like primary metabolite 1, so extracting
+         # those data here rather than with the rest of the ADC data
+         
+         CompoundIndices <- which(str_detect(NamesToCheck,
+                                             switch(cmpd, 
+                                                    "substrate" = "SUBSTRATE",
+                                                    "primary metabolite 1" = "PRIMET1", 
+                                                    "primary metabolite 2" = "PRIMET2", 
+                                                    "secondary metabolite" = "SECMET", 
+                                                    "inhibitor 1" = "PERPETRATOR1INHIB", 
+                                                    "inhibitor 2" = "PERPETRATOR2", 
+                                                    "inhibitor 1 metabolite" = "PERPETRATOR1MET")))
+         
+      } else if(ADAM|AdvBrainModel){
+         # cmpd is ADAM model compound
+         
+         # Step 1: Find all rows w/ADAM model concentrations
+         CompoundIndices <- which(str_detect(NamesToCheck, 
+                                             "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|ITissue|dissolved|absorbed|^C Enterocyte|Release fraction|CIntracranial|CBrainI[CS]F|CCSF(Spinal|Cranial)|Kpuu_I[CS]F|Kpuu I[CS]F|Kpuu_BrainMass|Kpuu brain mass|CTotal( )?Brain"))
+         # IMPORTANT: If you change the above regex b/c you find some new weird way
+         # that the Simulator output refers to things, ALSO CHANGE IT IN
+         # extractConcTime.
+         
+         # Step 2: Find only those rows with this particular tissue subtype
+         temp_regex <- paste0(ifelse(
+            str_detect(SimConcUnits$TypeCode[SimConcUnits$Type == ss],
+                       "dissolved|absorbed"),
+            "", "^"),
+            SimConcUnits$TypeCode[SimConcUnits$Type == ss])
+         
+         # gut tissue tab is set up slightly differently, so need to
+         # adjust what regex to use.
+         if(tissue == "gut tissue"){ # FIXME - CHECK THIS
+            temp_regex <- ifelse(cmpd == "inhibitor 1",
+                                 "^ITissue", "^CTissue")
+         }
+         
+         CompoundIndices <- intersect(
+            which(str_detect(NamesToCheck, temp_regex)), 
+            CompoundIndices)
+         
+      } 
+   } 
    
    if(pull_interaction_data){
       Include <- intersect(CompoundIndices, 

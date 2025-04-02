@@ -157,13 +157,13 @@ want for which simulation and which compound, etc. when you supply a
 data.frame or csv file to the argument \code{PKparameters}.}
 
 \item{sheet_PKparameters}{(optional) If you want the PK parameters to be
-pulled from a specific tab in the simulator output file, list that tab
-here. Otherwise, this should be left as NA. \code{sheet_PKparameters} can
-only have a \emph{single value}, though. If you want some parameters from a
-custom-interval tab and others from the regular tabs, you must supply that
-as part of a data.frame or csv file for the argument \code{PKparameters}.
-Please try running \code{\link{make_example_PK_input}} to see examples for
-how to do this.}
+pulled from a \strong{user-defined interval tab} in the simulator output
+file, list that tab here. Otherwise, this should be left as NA.
+\code{sheet_PKparameters} can only have a \emph{single value}, though. If
+you want some parameters from a custom-interval tab and others from the
+regular tabs, you must supply that as part of a data.frame or csv file for
+the argument \code{PKparameters}. Please try running
+\code{\link{make_example_PK_input}} to see examples for how to do this.}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} to get all the details from the "Input

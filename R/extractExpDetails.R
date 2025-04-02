@@ -173,7 +173,7 @@ extractExpDetails <- function(sim_data_file,
    # included. 
    exp_details <- 
       unique(c(exp_details, 
-               AllCompounds$DetailNames, 
+               AllRegCompounds$DetailNames, 
                "Units_AUC", "Units_Cmax", "Units_CL", "Units_tmax",
                "PopRepSim", "SimulatorUsed",
                paste0(rep(c("StartHr", "StartDayTime", "Regimen", "MW",
@@ -217,7 +217,7 @@ extractExpDetails <- function(sim_data_file,
       exp_details <- exp_details[!exp_details == "AGP"]
    }
    
-   if(any(exp_details %in% AllExpDetails$Detail == FALSE)){
+   if(any(exp_details %in% AllExpDetails$Detail) == FALSE){
       Problem <- str_comma(unique(setdiff(exp_details,
                                           AllExpDetails$Detail)))
       warning(paste0("These study details are not among the possible options: ",
@@ -515,7 +515,7 @@ extractExpDetails <- function(sim_data_file,
             # 1st check whether the value listed is "User" and then get the value
             # in the cell right below that if it is.
             kpcheck <- str_detect(deet, "kp_scalar_") & 
-               deet %in% paste0("kp_scalar", AllCompounds$Suffix) == FALSE
+               deet %in% paste0("kp_scalar", AllRegCompounds$Suffix) == FALSE
             if(kpcheck){
                if(complete.cases(Val) && Val == "Predicted"){
                   Val <- NA
@@ -525,7 +525,7 @@ extractExpDetails <- function(sim_data_file,
                                               which(InputDeets$Deet == deet)]] %>% pull()
                   if(str_detect(tolower(NameColBelow),
                                 tolower(gsub(paste0("kp_scalar_|",
-                                                    str_c(AllCompounds$Suffix, collapse = "|")),
+                                                    str_c(AllRegCompounds$Suffix, collapse = "|")),
                                              "", 
                                              sub("additional_organ", "Additional Organ", deet))))){
                      Val <- InputTab[Row + 1, InputDeets$ValueCol[
@@ -627,7 +627,7 @@ extractExpDetails <- function(sim_data_file,
          
          for(i in names(ColLocations)[!names(ColLocations) == "Trial Design"]){
             
-            Suffix <- AllCompounds$Suffix[AllCompounds$CompoundID == i]
+            Suffix <- AllRegCompounds$Suffix[AllRegCompounds$CompoundID == i]
             
             if(any(str_detect(t(InputTab[, as.numeric(ColLocations[i])]), "Release Mean"),
                    na.rm = TRUE)){
@@ -653,8 +653,8 @@ extractExpDetails <- function(sim_data_file,
                             Release_CV = Release_CV / 100, # Making this a fraction instead of a number up to 100
                             File = sim_data_file, 
                             CompoundID = i, 
-                            Compound = as.character(Out[AllCompounds$DetailNames[
-                               AllCompounds$CompoundID == i]])) %>% 
+                            Compound = as.character(Out[AllRegCompounds$DetailNames[
+                               AllRegCompounds$CompoundID == i]])) %>% 
                      select(File, CompoundID, Compound, Time, Release_mean, Release_CV)
                )
                
@@ -662,12 +662,12 @@ extractExpDetails <- function(sim_data_file,
                
             } else if(
                complete.cases(Out[[paste0("CR_MR_Input", 
-                                          AllCompounds$Suffix[AllCompounds$CompoundID == i])]]) &&
+                                          AllRegCompounds$Suffix[AllRegCompounds$CompoundID == i])]]) &&
                Out[[paste0("CR_MR_Input", 
-                           AllCompounds$Suffix[AllCompounds$CompoundID == i])]] == 
+                           AllRegCompounds$Suffix[AllRegCompounds$CompoundID == i])]] == 
                "Weibull"){
                
-               Suffix <- AllCompounds$Suffix[AllCompounds$CompoundID == i]
+               Suffix <- AllRegCompounds$Suffix[AllRegCompounds$CompoundID == i]
                
                ReleaseProfs <- data.frame(
                   CR_MR_input = Out[[paste0("CR_MR_Input", Suffix)]], 
@@ -683,8 +683,8 @@ extractExpDetails <- function(sim_data_file,
                   mutate(CV = CV / 100, # Making this a fraction instead of a number up to 100
                          File = sim_data_file, 
                          CompoundID = i, 
-                         Compound = as.character(Out[AllCompounds$DetailNames[
-                            AllCompounds$CompoundID == i]])) %>% 
+                         Compound = as.character(Out[AllRegCompounds$DetailNames[
+                            AllRegCompounds$CompoundID == i]])) %>% 
                   select(File, CompoundID, Compound, CR_MR_input, Parameter, Value, CV)
                
             } else {
@@ -772,8 +772,8 @@ extractExpDetails <- function(sim_data_file,
                             File = sim_data_file, 
                             Tissue = DissoTissues[[tiss]],
                             CompoundID = i, 
-                            Compound = as.character(Out[AllCompounds$DetailNames[
-                               AllCompounds$CompoundID == i]]))
+                            Compound = as.character(Out[AllRegCompounds$DetailNames[
+                               AllRegCompounds$CompoundID == i]]))
                )
                
                rm(Disso_temp, DissoCV)
@@ -824,8 +824,8 @@ extractExpDetails <- function(sim_data_file,
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = as.character(Out[AllCompounds$DetailNames[
-                         AllCompounds$CompoundID == i]])) %>% 
+                      Compound = as.character(Out[AllRegCompounds$DetailNames[
+                         AllRegCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, Conc, fup)
             
             rm(StartRow, EndRow, CDfup_temp)
@@ -870,8 +870,8 @@ extractExpDetails <- function(sim_data_file,
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = as.character(Out[AllCompounds$DetailNames[
-                         AllCompounds$CompoundID == i]])) %>% 
+                      Compound = as.character(Out[AllRegCompounds$DetailNames[
+                         AllRegCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, Conc, BP)
             
             rm(StartRow, EndRow, CDBP_temp)
@@ -916,8 +916,8 @@ extractExpDetails <- function(sim_data_file,
                mutate(across(.cols = everything(), .fns = as.numeric), 
                       File = sim_data_file, 
                       CompoundID = i, 
-                      Compound = as.character(Out[AllCompounds$DetailNames[
-                         AllCompounds$CompoundID == i]])) %>% 
+                      Compound = as.character(Out[AllRegCompounds$DetailNames[
+                         AllRegCompounds$CompoundID == i]])) %>% 
                select(File, CompoundID, Compound, pH, Solubility)
             
             rm(StartRow, EndRow, pHSol_temp)
@@ -1673,8 +1673,8 @@ extractExpDetails <- function(sim_data_file,
          TimeUnits <- names(CustomDosing)[str_detect(names(CustomDosing), "Offset")]
          names(CustomDosing)[str_detect(names(CustomDosing), "Offset")] <- "Time"
          
-         MyCompoundID <- AllCompounds$CompoundID[AllCompounds$Suffix == Suffix]
-         MyCompound <- as.character(Out[AllCompounds$DetailNames[AllCompounds$Suffix == Suffix]])
+         MyCompoundID <- AllRegCompounds$CompoundID[AllRegCompounds$Suffix == Suffix]
+         MyCompound <- as.character(Out[AllRegCompounds$DetailNames[AllRegCompounds$Suffix == Suffix]])
          
          CustomDosing <- CustomDosing %>% 
             # Removing any rows where Time is NA b/c those are likely places
@@ -1874,7 +1874,7 @@ extractExpDetails <- function(sim_data_file,
    # Other functions call on "Inhibitor1", etc., so we need those objects to
    # exist, even if they were not used in this simulation. Setting them to NA if
    # they don't exist.
-   MissingCmpd <- setdiff(AllCompounds$DetailNames, 
+   MissingCmpd <- setdiff(AllRegCompounds$DetailNames, 
                           names(Out))
    MissingCmpd_list <- as.list(rep(NA, length(MissingCmpd)))
    names(MissingCmpd_list) <- MissingCmpd

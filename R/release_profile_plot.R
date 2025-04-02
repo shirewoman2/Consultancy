@@ -381,13 +381,13 @@ release_profile_plot <- function(existing_exp_details,
    
    
    if(all(is.na(compoundsToExtract))){
-      compoundsToExtract <- AllCompounds$CompoundID
+      compoundsToExtract <- AllRegCompounds$CompoundID
    }
    
    # Checking for bad inputs on compounds
    BadCmpd <- tolower(compoundsToExtract)[
-      which(tolower(compoundsToExtract) %in% AllCompounds$CompoundID == FALSE)]
-   GoodCmpd <- intersect(AllCompounds$CompoundID, 
+      which(tolower(compoundsToExtract) %in% AllRegCompounds$CompoundID == FALSE)]
+   GoodCmpd <- intersect(AllRegCompounds$CompoundID, 
                          tolower(compoundsToExtract))
    
    if(length(BadCmpd) > 0){
@@ -421,11 +421,11 @@ release_profile_plot <- function(existing_exp_details,
          
          # Checking on whether compound was included in sim
          if(as.logical(is.na(Deets$MainDetails[
-            AllCompounds$DetailNames[AllCompounds$CompoundID == cmpd]]))){
+            AllRegCompounds$DetailNames[AllRegCompounds$CompoundID == cmpd]]))){
             next
          }
          
-         Suffix <- AllCompounds$Suffix[AllCompounds$CompoundID == cmpd]
+         Suffix <- AllRegCompounds$Suffix[AllRegCompounds$CompoundID == cmpd]
          
          # Different input data depending on the CR/MR input
          if(complete.cases(Deets$MainDetails[[paste0("CR_MR_Input", Suffix)]]) &&
@@ -555,7 +555,7 @@ release_profile_plot <- function(existing_exp_details,
          pivot_longer(cols = -File, 
                       names_to = "DetailNames", 
                       values_to = "Compound") %>% 
-         left_join(AllCompounds) %>% 
+         left_join(AllRegCompounds) %>% 
          select(File, CompoundID, Compound) %>% 
          filter(complete.cases(Compound))
    )

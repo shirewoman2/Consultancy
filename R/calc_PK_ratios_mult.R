@@ -472,11 +472,11 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       # CmpdNum and CmpdDenom should be the same.
       CmpdNum <- existing_exp_details$MainDetails %>% 
          filter(File == unique(FilePairs[[i]]$Numerator_File)) %>% 
-         pull(AllCompounds$DetailNames[AllCompounds$CompoundID == unique(FilePairs[[i]]$Numerator_CompoundID)])
+         pull(AllRegCompounds$DetailNames[AllRegCompounds$CompoundID == unique(FilePairs[[i]]$Numerator_CompoundID)])
       
       CmpdDenom <- existing_exp_details$MainDetails %>% 
          filter(File == unique(FilePairs[[i]]$Denominator_File)) %>% 
-         pull(AllCompounds$DetailNames[AllCompounds$CompoundID == unique(FilePairs[[i]]$Denominator_CompoundID)])
+         pull(AllRegCompounds$DetailNames[AllRegCompounds$CompoundID == unique(FilePairs[[i]]$Denominator_CompoundID)])
       
       suppressWarnings(
          ForestInfo[[i]] <- data.frame(
