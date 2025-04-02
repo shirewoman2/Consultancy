@@ -317,7 +317,7 @@ extractFmFe <- function(sim_data_file,
       }
       
       # Noting which compound names belong to which compound IDs
-      AllCompounds <-  c("substrate" = Deets$Substrate,
+      AllRegCompounds <-  c("substrate" = Deets$Substrate,
                          "primary metabolite 1" = Deets$PrimaryMetabolite1,
                          "primary metabolite 2" = Deets$PrimaryMetabolite2,
                          "secondary metabolite" = Deets$SecondaryMetabolite,
@@ -460,7 +460,7 @@ extractFmFe <- function(sim_data_file,
                 Inhibitor = ifelse(PerpPresent,
                                    str_comma(AllPerpetrators), "none"), 
                 Substrate = Deets$Substrate, 
-                Compound = AllCompounds[CompoundID], 
+                Compound = AllRegCompounds[CompoundID], 
                 Pathway = case_when(
                    is.na(Enzyme) ~ Tissue,
                    .default = paste(Tissue, Enzyme))) %>%

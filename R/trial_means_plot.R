@@ -812,7 +812,7 @@ trial_means_plot <- function(sim_data_file,
                 PKdata[["ExpDetails"]]$Age_max, 
                 ") following ", 
                 ifelse(
-                   AllCompounds$DDIrole[AllCompounds$CompoundID == compoundToExtract] == "victim", 
+                   AllRegCompounds$DDIrole[AllRegCompounds$CompoundID == compoundToExtract] == "victim", 
                    Legos$DosingText_sub_lower, 
                    Legos$DosingText_inhib_lower), 
                 ifelse(str_detect(PKparameter, "withInhib|ratio"), 
@@ -882,8 +882,8 @@ trial_means_plot <- function(sim_data_file,
       MyCompound <- 
          as.character(PKdata[["ExpDetails"]] %>% 
                          filter(File == sim_data_file) %>% 
-                         select(AllCompounds$DetailNames[
-                            AllCompounds$CompoundID == compoundToExtract]))
+                         select(AllRegCompounds$DetailNames[
+                            AllRegCompounds$CompoundID == compoundToExtract]))
       
       Heading <- paste0("Simulated ", 
                         ifelse("logical" %in% class(observed_PK), 

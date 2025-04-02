@@ -8,7 +8,7 @@ easier later.}
 eCT_harmonize(
   sim_data_xl,
   compoundToExtract,
-  AllCompoundsPresent,
+  AllRegCompoundsPresent,
   tissue,
   PerpPresent,
   Deets,
@@ -22,7 +22,7 @@ eCT_harmonize(
 
 \item{compoundToExtract}{compoundToExtract}
 
-\item{AllCompoundsPresent}{all compounds present}
+\item{AllRegCompoundsPresent}{all compounds present}
 
 \item{tissue}{tissue}
 

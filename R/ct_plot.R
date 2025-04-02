@@ -1099,7 +1099,7 @@ ct_plot <- function(ct_dataframe = NA,
    # Converting conc and time units if requested
    if(any(complete.cases(conc_units_to_use))){
       if("logical" %in% class(existing_exp_details) == FALSE){
-         MWs_1 <- AllCompounds %>% 
+         MWs_1 <- AllRegCompounds %>% 
             mutate(Detail = paste0("MW", Suffix)) %>% 
             select(CompoundID, Detail) %>% 
             left_join(harmonize_details(existing_exp_details)[["MainDetails"]] %>%

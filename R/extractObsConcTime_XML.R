@@ -79,7 +79,7 @@ extractObsConcTime_XML <- function(obs_data_file){
                                    "InfDuration", "InjectionSite")), 
                    names_to = "Parameter", 
                    values_to = "Value") %>% 
-      left_join(AllCompounds %>% select(CompoundID, Suffix), by = "CompoundID") %>% 
+      left_join(AllRegCompounds %>% select(CompoundID, Suffix), by = "CompoundID") %>% 
       mutate(Parameter = paste0(Parameter, Suffix)) %>% 
       select(-Suffix, -Compound) %>%
       pivot_wider(names_from = Parameter, 

@@ -262,7 +262,7 @@ extractConcTime <- function(sim_data_file,
    # NB: NOT including "released payload" here b/c it's coded as primary
    # metabolite 1 in the outputs. Will change this at the end.
    
-   if(any(compoundToExtract %in% c(AllCompounds$CompoundID, 
+   if(any(compoundToExtract %in% c(AllRegCompounds$CompoundID, 
                                    ADCCompoundIDs) == FALSE)){
       stop(wrapn("The compound for which you requested concentration-time data was not one of the possible options. For 'compoundToExtract', please enter 'substrate', 'primary metabolite 1', 'secondary metabolite', 'inhibitor 1', 'inhibitor 2', or 'inhibitor 1 metabolite'."),
            call. = FALSE)
@@ -386,15 +386,15 @@ extractConcTime <- function(sim_data_file,
    AllPerpsPresent <- AllPerpsPresent[complete.cases(AllPerpsPresent)]
    
    # Noting all compounds present
-   AllCompoundsPresent <- c("substrate" = Deets$Substrate,
-                            "primary metabolite 1" = Deets$PrimaryMetabolite1, 
-                            "primary metabolite 2" = Deets$PrimaryMetabolite2,
-                            "secondary metabolite" = Deets$SecondaryMetabolite,
-                            "inhibitor 1" = Deets$Inhibitor1,
-                            "inhibitor 2" = Deets$Inhibitor2,
-                            "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
-   AllCompoundsPresent <- AllCompoundsPresent[complete.cases(AllCompoundsPresent)]
-   AllCompoundsID <- names(AllCompoundsPresent)
+   AllRegCompoundsPresent <- c("substrate" = Deets$Substrate,
+                               "primary metabolite 1" = Deets$PrimaryMetabolite1, 
+                               "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                               "secondary metabolite" = Deets$SecondaryMetabolite,
+                               "inhibitor 1" = Deets$Inhibitor1,
+                               "inhibitor 2" = Deets$Inhibitor2,
+                               "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
+   AllRegCompoundsPresent <- AllRegCompoundsPresent[complete.cases(AllRegCompoundsPresent)]
+   AllRegCompoundsID <- names(AllRegCompoundsPresent)
    
    # Extracting tissue or plasma/blood data? Sheet format differs.
    TissueType <- case_when(
@@ -453,7 +453,7 @@ extractConcTime <- function(sim_data_file,
    
    sim_data_xl <- eCT_harmonize(sim_data_xl = sim_data_xl, 
                                 compoundToExtract = compoundToExtract, 
-                                AllCompoundsPresent = AllCompoundsPresent,
+                                AllRegCompoundsPresent = AllRegCompoundsPresent,
                                 tissue = tissue, 
                                 Deets = Deets, 
                                 PerpPresent = PerpPresent, 
@@ -719,14 +719,11 @@ extractConcTime <- function(sim_data_file,
         "primary metabolite 1" = Deets$PrimaryMetabolite1,
         "primary metabolite 2" = Deets$PrimaryMetabolite2,
         "secondary metabolite" = Deets$SecondaryMetabolite,
-        "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
-   
-   # if(CompoundType == "ADC"){
-   #    ObsCompounds <- c(ObsCompounds,
-   #                      "intact ADC" = paste("conjugated", Deets$Substrate),
-   #                      "total antibody" = paste("total", Deets$Substrate),
-   #                      "released payload" = Deets$PrimaryMetabolite1)
-   # }
+        "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite, 
+        "intact ADC" = paste0(Deets$Substrate, "-", Deets$PrimaryMetabolite1), 
+        "conjugated payload" = NA, 
+        "total antibody" = Deets$Substrate, 
+        "released payload" = Deets$PrimaryMetabolite1)
    
    AllPerps_comma <- ifelse(length(AllPerpsPresent) == 0,
                             NA, str_comma(AllPerpsPresent))
@@ -813,12 +810,12 @@ extractConcTime <- function(sim_data_file,
                                   Inhibitor = "none",
                                   CompoundID = ifelse(tissue == "plasma" &
                                                          all(compoundToExtract == "substrate") &
-                                                         all(AllCompoundsID == "substrate"),
+                                                         all(AllRegCompoundsID == "substrate"),
                                                       cmpd, "UNKNOWN"),
                                   Compound = ifelse(tissue == "plasma" &
                                                        all(compoundToExtract == "substrate") &
-                                                       all(AllCompoundsID == "substrate"),
-                                                    AllCompoundsPresent["substrate"], "UNKNOWN"),
+                                                       all(AllRegCompoundsID == "substrate"),
+                                                    AllRegCompoundsPresent["substrate"], "UNKNOWN"),
                                   ObsFile = NA,
                                   Species = ifelse(is.na(Deets$Species),
                                                    "human",
@@ -843,6 +840,15 @@ extractConcTime <- function(sim_data_file,
          
          obs_data <- extractObsConcTime(obs_data_file)
          
+         if(ADC){
+            obs_data <- obs_data %>% 
+               mutate(CompoundID = 
+                         case_match(CompoundID, 
+                                    "substrate" ~ "total antibody", # FIXME: Not sure this is how I should set this up. Need clarity on all the Obs DV options for ADC sims.
+                                    "primary metabolite 1" ~ "released payload", 
+                                    .default = CompoundID))
+         }
+         
          if("CompoundID" %in% names(obs_data)){
             obs_data <- obs_data %>% 
                filter(CompoundID %in% compoundToExtract) %>%
@@ -852,11 +858,6 @@ extractConcTime <- function(sim_data_file,
                                             complete.cases(AllPerps_comma),
                                          AllPerps_comma, Inhibitor))
             
-            # if(CompoundType == "ADC"){
-            #    obs_data <- obs_data %>%
-            #       mutate(CompoundID = ifelse(CompoundID == "primary metabolite 1",
-            #                                  "released payload", CompoundID))
-            # }
          }
          
          if(nrow(obs_data) == 0){
@@ -867,15 +868,20 @@ extractConcTime <- function(sim_data_file,
             # the simulation, don't include those and give the user a
             # warning.
             Missing <- setdiff(unique(obs_data$CompoundID),
-                               names(ObsCompounds[complete.cases(ObsCompounds)]))
+                               c(names(ObsCompounds[complete.cases(ObsCompounds)]), 
+                                 # FIXME: This warning is not set up correctly
+                                 # for ADC compounds.
+                                 AllCompounds$CompoundID[
+                                    AllCompounds$CompoundType == "ADC"]))
             
             if(length(Missing) > 0){
-               warning(paste0("The observed data file includes ",
-                              str_comma(Missing),
-                              ", which is/are not present in the simulated data. Observed data for ",
-                              str_comma(Missing),
-                              " will not be included in the output.\n"),
-                       call. = FALSE)
+               warning(wrapn(paste0(
+                  "The observed data file includes ",
+                  str_comma(Missing),
+                  ", which is/are not present in the simulated data. Observed data for ",
+                  str_comma(Missing),
+                  " will not be included in the output.")),
+                  call. = FALSE)
                obs_data <- obs_data %>%
                   filter(!CompoundID %in% Missing)
             }
@@ -883,7 +889,18 @@ extractConcTime <- function(sim_data_file,
             # As necessary, convert simulated data units to match the
             # observed data
             sim_data <- convert_units(DF_to_convert = sim_data,
-                                      DF_with_good_units = obs_data)
+                                      DF_with_good_units = obs_data, 
+                                      MW = c("substrate" = Deets$MW_sub, 
+                                             "inhibitor 1" = Deets$MW_inhib,
+                                             "primary metabolite 1" = Deets$MW_met1, 
+                                             "primary metabolite 2" = Deets$MW_met2, 
+                                             "inhibitor 2" = Deets$MW_inhib2, 
+                                             "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                                             "secondary metabolite" = Deets$MW_secmet, 
+                                             "conjugated payload" = as.numeric(Deets$MW_sub) + 
+                                                as.numeric(Deets$MW_met1), 
+                                             "total antibody" = Deets$MW_sub, 
+                                             "released payload" = Deets$MW_met1))
          }
       }
    }
@@ -906,14 +923,13 @@ extractConcTime <- function(sim_data_file,
                             "substrate" = Deets$Regimen_sub,
                             "total antibody" = Deets$Regimen_sub,
                             "conjugated payload" = Deets$Regimen_sub,
-                            # "released payload" = Deets$Regimen_sub,
+                            "released payload" = Deets$Regimen_sub,
                             "primary metabolite 1" = Deets$Regimen_sub,
                             "primary metabolite 2" = Deets$Regimen_sub,
                             "secondary metabolite" = Deets$Regimen_sub,
                             "inhibitor 1" = Deets$Regimen_inhib,
                             "inhibitor 2" = Deets$Regimen_inhib2,
                             "inhibitor 1 metabolite" = Deets$Regimen_inhib)
-   # DosingScenario <- ifelse(CompoundType == "ADC", Deets$Regimen_sub, DosingScenario)
    
    if(adjust_obs_time & DosingScenario == "Multiple Dose" &
       exists("obs_data", inherits = FALSE)){

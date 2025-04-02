@@ -116,8 +116,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    
    # Checking compound IDs
    compoundsToExtract <- tolower(compoundsToExtract)
-   PossCmpd <- c(AllCompounds$CompoundID[
-      complete.cases(AllCompounds$DetailNames)], "all")
+   PossCmpd <- c(AllRegCompounds$CompoundID[
+      complete.cases(AllRegCompounds$DetailNames)], "all")
    
    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
       warning(paste0("The compound(s) ", 
@@ -129,12 +129,12 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    }
    
    if(any(compoundsToExtract == "all")){
-      compoundsToExtract <- AllCompounds$CompoundID[
-         complete.cases(AllCompounds$DetailNames)]
+      compoundsToExtract <- AllRegCompounds$CompoundID[
+         complete.cases(AllRegCompounds$DetailNames)]
    } else {
       compoundsToExtract <- intersect(compoundsToExtract, 
-                                      AllCompounds$CompoundID[
-                                         complete.cases(AllCompounds$DetailNames)])
+                                      AllRegCompounds$CompoundID[
+                                         complete.cases(AllRegCompounds$DetailNames)])
    }
    
    # subfun for V23+ data extraction ------------------------------------------
@@ -219,7 +219,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                   "inhibitor 2" = 3, 
                                   "inhibitor 1 metabolite" = 6)
             
-            Suffix <- AllCompounds %>% filter(CompoundID == j) %>% 
+            Suffix <- AllRegCompounds %>% filter(CompoundID == j) %>% 
                pull(Suffix)
             
             # Check whether that compound was activated and skip if not. 

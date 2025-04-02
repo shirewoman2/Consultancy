@@ -649,14 +649,14 @@ tidy_input_PK <- function(PKparameters,
          if(any(compoundsToExtract == "all", na.rm = T)){
             
             Cmpd_all <- 
-               existing_exp_details$MainDetails[, c("File", AllCompounds$DetailNames)] %>% 
+               existing_exp_details$MainDetails[, c("File", AllRegCompounds$DetailNames)] %>% 
                pivot_longer(cols = -File, 
                             names_to = "DetailNames", 
                             values_to = "ObsValue") %>% 
-               left_join(AllCompounds %>% select(CompoundID, DetailNames), 
+               left_join(AllRegCompounds %>% select(CompoundID, DetailNames), 
                          by = "DetailNames")
             
-            compoundsToExtract <- AllCompounds$CompoundID
+            compoundsToExtract <- AllRegCompounds$CompoundID
          }
          
          PKparameters <- PKparameters %>% 
@@ -980,18 +980,18 @@ tidy_input_PK <- function(PKparameters,
    
    if(any(complete.cases(compoundsToExtract)) && 
       any(compoundsToExtract[complete.cases(compoundsToExtract)] %in% 
-          AllCompounds$CompoundID == FALSE, na.rm = T)){
+          AllRegCompounds$CompoundID == FALSE, na.rm = T)){
       warning(paste0(str_wrap(paste0(
          "The compound(s) ", 
-         str_comma(paste0("`", setdiff(compoundsToExtract, AllCompounds$CompoundID), "`")),
+         str_comma(paste0("`", setdiff(compoundsToExtract, AllRegCompounds$CompoundID), "`")),
          " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-         str_comma(paste0("`", AllCompounds$CompoundID, "`")))), "\n"), 
+         str_comma(paste0("`", AllRegCompounds$CompoundID, "`")))), "\n"), 
          call. = FALSE)
-      compoundsToExtract <- intersect(compoundsToExtract, AllCompounds$CoampoundID)
+      compoundsToExtract <- intersect(compoundsToExtract, AllRegCompounds$CoampoundID)
    }
    
    PKparameters <- PKparameters %>% 
-      filter(CompoundID %in% AllCompounds$CompoundID)
+      filter(CompoundID %in% AllRegCompounds$CompoundID)
    
    
    # Checking inputs specific to each sim ------------------------------------
@@ -1070,25 +1070,25 @@ tidy_input_PK <- function(PKparameters,
    if(any(compoundsToExtract == "all", na.rm = T)){
       
       Cmpd_all <- 
-         existing_exp_details$MainDetails[, c("File", AllCompounds$DetailNames)] %>% 
+         existing_exp_details$MainDetails[, c("File", AllRegCompounds$DetailNames)] %>% 
          pivot_longer(cols = -File, 
                       names_to = "DetailNames", 
                       values_to = "ObsValue") %>% 
-         left_join(AllCompounds %>% select(CompoundID, DetailNames), 
+         left_join(AllRegCompounds %>% select(CompoundID, DetailNames), 
                    by = "DetailNames")
       
-      compoundsToExtract <- AllCompounds$CompoundID
+      compoundsToExtract <- AllRegCompounds$CompoundID
    }
    
    if(any(compoundsToExtract[complete.cases(compoundsToExtract)] %in%
-          AllCompounds$CompoundID == FALSE)){
+          AllRegCompounds$CompoundID == FALSE)){
       warning(paste0("The compound(s) ", 
-                     str_comma(paste0("`", setdiff(compoundsToExtract, AllCompounds$CompoundID), "`")),
+                     str_comma(paste0("`", setdiff(compoundsToExtract, AllRegCompounds$CompoundID), "`")),
                      " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                     str_comma(paste0("`", AllCompounds$CompoundID, "`")), "
+                     str_comma(paste0("`", AllRegCompounds$CompoundID, "`")), "
                      "), 
               call. = FALSE)
-      compoundsToExtract <- intersect(compoundsToExtract, AllCompounds$CompoundID)
+      compoundsToExtract <- intersect(compoundsToExtract, AllRegCompounds$CompoundID)
    }
    
    if(InputWasDF){
@@ -1118,7 +1118,7 @@ tidy_input_PK <- function(PKparameters,
    
    PKparameters <- PKparameters %>% 
       left_join(existing_exp_details$MainDetails %>% 
-                   select(File, any_of(AllCompounds$DetailNames), 
+                   select(File, any_of(AllRegCompounds$DetailNames), 
                           matches("Regimen")), 
                 by = "File") %>% 
       mutate(GoodCmpd = 
@@ -1131,14 +1131,14 @@ tidy_input_PK <- function(PKparameters,
                 (CompoundID == "inhibitor 1 metabolite" & complete.cases(Inhibitor1Metabolite)), 
              DDI = complete.cases(Inhibitor1), 
              MD = 
-                (CompoundID %in% AllCompounds$CompoundID[
-                   AllCompounds$DosedCompoundID == "substrate"] & 
+                (CompoundID %in% AllRegCompounds$CompoundID[
+                   AllRegCompounds$DosedCompoundID == "substrate"] & 
                     Regimen_sub == "Multiple Dose") |
-                (CompoundID %in% AllCompounds$CompoundID[
-                   AllCompounds$DosedCompoundID == "inhibitor 1"] & 
+                (CompoundID %in% AllRegCompounds$CompoundID[
+                   AllRegCompounds$DosedCompoundID == "inhibitor 1"] & 
                     Regimen_inhib == "Multiple Dose") |
-                (CompoundID %in% AllCompounds$CompoundID[
-                   AllCompounds$DosedCompoundID == "inhibitor 2"] & 
+                (CompoundID %in% AllRegCompounds$CompoundID[
+                   AllRegCompounds$DosedCompoundID == "inhibitor 2"] & 
                     Regimen_inhib2 == "Multiple Dose"))
    
    if(any(PKparameters$GoodCmpd == FALSE)){
@@ -1190,7 +1190,7 @@ tidy_input_PK <- function(PKparameters,
       # If it's a multiple-dose sim, only show the last-dose PK. Note that this
       # only applies when they have NOT requested specific PK parameters.
       PKparameters <- PKparameters %>% 
-         left_join(AllCompounds %>% 
+         left_join(AllRegCompounds %>% 
                       select(CompoundID, DosedCompoundID, DosedCompoundSuffix),
                    by = "CompoundID") %>% 
          left_join(existing_exp_details$MainDetails %>% 
@@ -1246,8 +1246,8 @@ tidy_input_PK <- function(PKparameters,
       mutate(HarmoniousDDI =  AppliesOnlyWhenPerpPresent == FALSE | 
                 (AppliesOnlyWhenPerpPresent == TRUE & 
                     DDI == TRUE),
-             HarmoniousDDI = ifelse(CompoundID %in% AllCompounds$CompoundID[
-                AllCompounds$DDIrole == "perpetrator"] &
+             HarmoniousDDI = ifelse(CompoundID %in% AllRegCompounds$CompoundID[
+                AllRegCompounds$DDIrole == "perpetrator"] &
                    str_detect(PKparameter, "_withInhib|_ratio"), 
                 FALSE, HarmoniousDDI), 
              HarmoniousRegimen = AppliesToSingleDose == TRUE |

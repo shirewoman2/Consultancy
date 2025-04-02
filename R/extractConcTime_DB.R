@@ -386,8 +386,8 @@ extractConcTime_DB <- function(sim_data_file,
                                    DDI = FALSE){
       
       compound_num <- as.numeric(Simcyp::CompoundID[
-         AllCompounds$CompoundID_Simcyp[
-            AllCompounds$CompoundID == compoundToExtract]])
+         AllRegCompounds$CompoundID_Simcyp[
+            AllRegCompounds$CompoundID == compoundToExtract]])
       
       # Need to account for the fact that some tissues are actually tissue sub
       # types.
@@ -444,7 +444,7 @@ extractConcTime_DB <- function(sim_data_file,
                        "FALSE" = Conc)) %>% 
          mutate(CompoundID = compoundToExtract, 
                 Compound = as.character(Deets[
-                   AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
+                   AllRegCompounds$DetailNames[AllRegCompounds$CompoundID == compoundToExtract]]), 
                 Tissue = tissue, 
                 Individual = individual, 
                 Trial = Simcyp::GetIndividualValue_DB(individual,

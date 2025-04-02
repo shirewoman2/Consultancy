@@ -1224,8 +1224,8 @@ extractPK <- function(sim_data_file,
          
          # Checking absorption model
          AbsModel <- existing_exp_details$MainDetails[
-            paste0("Abs_model", AllCompounds$Suffix[
-               AllCompounds$CompoundID == compoundToExtract])]
+            paste0("Abs_model", AllRegCompounds$Suffix[
+               AllRegCompounds$CompoundID == compoundToExtract])]
          
          if(AbsModel == "ADAM"){
             
@@ -1912,14 +1912,14 @@ extractPK <- function(sim_data_file,
                 Tissue = tissue, 
                 CompoundID = compoundToExtract, 
                 Compound = as.character(Deets[
-                   AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
+                   AllRegCompounds$DetailNames[AllRegCompounds$CompoundID == compoundToExtract]]), 
                 Simulated = TRUE,
                 # FIXME - Add DoseNum
                 Dose = as.numeric(
                    Deets %>%
                       pull(any_of(paste0("Dose",
-                                         AllCompounds$DosedCompoundSuffix[
-                                            AllCompounds$CompoundID == compoundToExtract])))))
+                                         AllRegCompounds$DosedCompoundSuffix[
+                                            AllRegCompounds$CompoundID == compoundToExtract])))))
    )
    
    for(i in names(Out_agg)){
@@ -1945,14 +1945,14 @@ extractPK <- function(sim_data_file,
                 Tissue = tissue, 
                 CompoundID = compoundToExtract, 
                 Compound = as.character(Deets[
-                   AllCompounds$DetailNames[AllCompounds$CompoundID == compoundToExtract]]), 
+                   AllRegCompounds$DetailNames[AllRegCompounds$CompoundID == compoundToExtract]]), 
                 Simulated = TRUE,
                 # FIXME - Add DoseNum
                 Dose = as.numeric(
                    Deets %>%
                       pull(any_of(paste0("Dose",
-                                         AllCompounds$DosedCompoundSuffix[
-                                            AllCompounds$CompoundID == compoundToExtract])))), 
+                                         AllRegCompounds$DosedCompoundSuffix[
+                                            AllRegCompounds$CompoundID == compoundToExtract])))), 
                 # Units are always these for db files
                 Units = case_when(str_detect(PKparameter, "AUC") ~ Deets$Units_AUC, 
                                   str_detect(PKparameter, "CL") ~ Deets$Units_CL, 

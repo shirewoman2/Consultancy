@@ -258,11 +258,11 @@ match_obs_to_sim <- function(ct_dataframe,
          # include all the dose numbers at all the right times and instead
          # should get the dose number and dosing interval from the sim
          # file existing_exp_details.
-         Deets <- existing_exp_details
-         Deets$MainDetails <- Deets$MainDetails %>% filter(File == k)
+         Deets <- existing_exp_details$MainDetails %>% filter(File == k)
          
-         ObsData_j[[k]] <- calc_dosenumber(ct_dataframe = ObsData_j[[k]], 
-                                           existing_exp_details = Deets)
+         ObsData_j[[k]] <- calc_dosenumber(
+            ct_dataframe = ObsData_j[[k]], 
+            existing_exp_details = filter_sims(existing_exp_details, k, "include"))
          
          # Matching units. Need to do this one compound at a time. 
          ObsData_j[[k]] <- split(ObsData_j[[k]], f = ObsData_j[[k]]$CompoundID)
@@ -280,7 +280,8 @@ match_obs_to_sim <- function(ct_dataframe,
                                     "inhibitor 2" = Deets$MW_inhib2, 
                                     "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
                                     "secondary metabolite" = Deets$MW_secmet, 
-                                    "conjugated payload" = Deets$MW_sub + Deets$MW_met1, 
+                                    "conjugated payload" = as.numeric(Deets$MW_sub) + 
+                                       as.numeric(Deets$MW_met1), 
                                     "total antibody" = Deets$MW_sub, 
                                     "released payload" = Deets$MW_met1))
          }

@@ -436,8 +436,8 @@ annotateDetails <- function(existing_exp_details,
    # If the model was *not* ADAM, existing_exp_details will include a bunch of
    # irrelevant details. Removing those if none of the models for that compound
    # ID were ADAM.
-   ADAMcheck <- data.frame(CompoundID = AllCompounds$CompoundID, 
-                           Detail = paste0("Abs_model", AllCompounds$Suffix)) %>% 
+   ADAMcheck <- data.frame(CompoundID = AllRegCompounds$CompoundID, 
+                           Detail = paste0("Abs_model", AllRegCompounds$Suffix)) %>% 
       filter(Detail %in% names(existing_exp_details$MainDetails))
    
    if(nrow(ADAMcheck) > 0){

@@ -588,14 +588,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
                ObsAssign$Exists_xml <- FALSE
             } 
             
-            MyObsFileToUse <- ObsAssign %>% 
+            MissingObsFile <- ObsAssign %>% 
                filter(complete.cases(ObsFile) & is.na(ObsFileToUse)) %>% 
                pull(ObsFileToUse) %>% unique()
             
-            if(length(MyObsFileToUse) > 0){
+            if(length(MissingObsFile) > 0 && complete.cases(MissingObsFile)){
                warning(wrapn(paste0(
                   "The observed data file(s) ", str_comma(
-                     paste0("'", MyObsFileToUse, "'")), 
+                     paste0("'", MissingObsFile, "'")), 
                   " is/are not present and will be skipped.")), 
                   call. = FALSE)
             }
@@ -742,7 +742,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    # End of error catching for obs_to_sim_assignment. ObsAssign should now be a
    # data.frame with columns File and ObsFile or else a completely empty
    # data.frame.
-   if(length(ObsAssign) > 0){
+   if(nrow(ObsAssign) > 0){
       ObsAssign <- ObsAssign %>% filter(complete.cases(File) &
                                            complete.cases(ObsFile) &
                                            File %in% sim_data_files_topull) 
@@ -1085,19 +1085,21 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             if(nrow(CT_nonadam) > 0){
                CT_nonadam <- CT_nonadam %>% 
-                  convert_units(DF_with_good_units = NA, 
-                                conc_units = conc_units_to_use,
-                                time_units = time_units_to_use, 
-                                MW = c("substrate" = Deets$MW_sub, 
-                                       "inhibitor 1" = Deets$MW_inhib,
-                                       "primary metabolite 1" = Deets$MW_met1, 
-                                       "primary metabolite 2" = Deets$MW_met2, 
-                                       "inhibitor 2" = Deets$MW_inhib2, 
-                                       "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
-                                       "secondary metabolite" = Deets$MW_secmet, 
-                                       "conjugated payload" = Deets$MW_sub + Deets$MW_met1, 
-                                       "total antibody" = Deets$MW_sub, 
-                                       "released payload" = Deets$MW_met1))
+                  convert_units(
+                     DF_with_good_units = NA, 
+                     conc_units = conc_units_to_use,
+                     time_units = time_units_to_use, 
+                     MW = c("substrate" = Deets$MW_sub, 
+                            "inhibitor 1" = Deets$MW_inhib,
+                            "primary metabolite 1" = Deets$MW_met1, 
+                            "primary metabolite 2" = Deets$MW_met2, 
+                            "inhibitor 2" = Deets$MW_inhib2, 
+                            "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                            "secondary metabolite" = Deets$MW_secmet, 
+                            "conjugated payload" = as.numeric(Deets$MW_sub) + 
+                               as.numeric(Deets$MW_met1), 
+                            "total antibody" = Deets$MW_sub, 
+                            "released payload" = Deets$MW_met1))
             }
             
             MultData[[ff]][[j]] <- bind_rows(CT_adam, CT_nonadam)

@@ -263,14 +263,14 @@ extractObsConcTime <- function(obs_data_file,
    }
    
    if(any(complete.cases(compound_name)) &&
-      any(names(compound_name) %in% AllCompounds$CompoundID) == FALSE){
+      any(names(compound_name) %in% AllRegCompounds$CompoundID) == FALSE){
       warning("Some of the compound IDs used for naming the values for `compound_name` are not among the permissible compound IDs, so we won't be able to supply a compound name for any of the compound IDs listed. Please check the help file for what values are acceptable.\n", 
               call. = FALSE)
       
-      compound_name <- rep(NA, each = nrow(AllCompounds))
-      names(compound_name) <- AllCompounds$CompoundID
+      compound_name <- rep(NA, each = nrow(AllRegCompounds))
+      names(compound_name) <- AllRegCompounds$CompoundID
    } else {
-      Missing <- setdiff(AllCompounds$CompoundID, names(compound_name))
+      Missing <- setdiff(AllRegCompounds$CompoundID, names(compound_name))
       ToAdd <- rep(NA, each = length(Missing))
       names(ToAdd) <- Missing
       compound_name <- c(compound_name, Missing)

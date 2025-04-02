@@ -6,7 +6,7 @@
 #' @param sim_data_xl sim_data_xl
 #' @param compoundToExtract compoundToExtract
 #' @param PerpPresent T or F
-#' @param AllCompoundsPresent all compounds present
+#' @param AllRegCompoundsPresent all compounds present
 #' @param tissue tissue
 #' @param Deets 1 row for existing_exp_details$MainDetails
 #' @param ADAM T or F
@@ -20,7 +20,7 @@
 #' # none
 eCT_harmonize <- function(sim_data_xl, 
                           compoundToExtract, 
-                          AllCompoundsPresent,
+                          AllRegCompoundsPresent,
                           tissue, 
                           PerpPresent, 
                           Deets, 
@@ -148,14 +148,14 @@ eCT_harmonize <- function(sim_data_xl,
          warning("PLEASE TELL LAURA SHIREMAN YOU SAW AN ERROR CALLED `COMPOUNDCODE` WHEN TRYING TO EXTRACT CONCENTRATION TIME DATA")
       }
       
-      AllCompoundsInv <- names(AllCompoundsPresent)
-      names(AllCompoundsInv) <- AllCompoundsPresent
+      AllRegCompoundsInv <- names(AllRegCompoundsPresent)
+      names(AllRegCompoundsInv) <- AllRegCompoundsPresent
       # This works fine as long as there are no duplicate compounds, e.g., Drug
       # X is both the primary metabolite 1 AND inhibitor 1, which CAN happen
       # when we need to hack things in the Simulator. Need to filter to retain
       # ONLY compounds in compoundsToExtract or the function glitches farther
       # down.
-      AllCompoundsInv <- AllCompoundsInv[AllCompoundsInv %in% compoundToExtract]
+      AllRegCompoundsInv <- AllRegCompoundsInv[AllRegCompoundsInv %in% compoundToExtract]
       
       # Admittedly, this step here where we say that CmpdMatches1, which is the
       # actual compound names, is going to be in the same order as CmpdMatches2,
@@ -169,14 +169,14 @@ eCT_harmonize <- function(sim_data_xl,
       CmpdMatches <- data.frame(NamesInExcel = CmpdMatches1, 
                                 CompoundCode = CmpdMatches2) %>% 
          mutate(CompoundName = sub("( )?\\+( )?[Ii]nteraction", "", NamesInExcel), 
-                CompoundID = AllCompoundsInv[CompoundName], 
+                CompoundID = AllRegCompoundsInv[CompoundName], 
                 CompoundID = case_when(
                    str_detect(CompoundCode, "I(Sys|liver|pv|Tissue)") & 
                       CompoundID %in% c("substrate", 
                                         "primary metabolite 1", 
                                         "primary metabolite 2", 
                                         "secondary metabolite") ~ 
-                      AllCompoundsInv[str_detect(AllCompoundsInv, "inhibitor")][CompoundName], 
+                      AllRegCompoundsInv[str_detect(AllRegCompoundsInv, "inhibitor")][CompoundName], 
                    
                    is.na(CompoundID) & str_detect(NamesInExcel, "Tissue.*Sub") ~ 
                       # This is when it's a solid tissue. Only options are
@@ -219,12 +219,12 @@ eCT_harmonize <- function(sim_data_xl,
                TRUE ~ CompoundID))
       }
       
-      rm(CmpdMatches1, CmpdMatches2, NApos, StartRow, EndRow, AllCompoundsInv)
+      rm(CmpdMatches1, CmpdMatches2, NApos, StartRow, EndRow, AllRegCompoundsInv)
       
       for(cmpd in compoundToExtract){
          
-         if(complete.cases(Deets[AllCompounds$DetailNames[
-            AllCompounds$CompoundID == cmpd]]) &
+         if(complete.cases(Deets[AllRegCompounds$DetailNames[
+            AllRegCompounds$CompoundID == cmpd]]) &
             cmpd %in% CmpdMatches$CompoundID){
             
             # NB: I made inhibitor 1 be "PERPETRATOR1INHIB" rather than just

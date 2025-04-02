@@ -237,13 +237,13 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                          compoundID = compoundID, 
                          compound = compound,
                          detail_set = "Simcyp inputs") %>% 
-      mutate(Detail = sub(str_c(AllCompounds$Suffix, collapse = "|"), "", 
+      mutate(Detail = sub(str_c(AllRegCompounds$Suffix, collapse = "|"), "", 
                           Detail))
    
    if(any(complete.cases(parameters_to_omit))){
       FT <- FT %>% 
          filter(!Detail %in% c(parameters_to_omit, 
-                               sub(str_c(AllCompounds$Suffix, 
+                               sub(str_c(AllRegCompounds$Suffix, 
                                          collapse = "|"), "", 
                                    parameters_to_omit)))
    }
@@ -252,7 +252,7 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
       if("character" %in% class(compound)){
          # When compound was supplied, need to remove suffix from detail
          references <- references %>% 
-            mutate(Detail = sub(str_c(AllCompounds$Suffix, 
+            mutate(Detail = sub(str_c(AllRegCompounds$Suffix, 
                                       collapse = "|"), "", 
                                 Detail))
       }
@@ -305,7 +305,7 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
          # Need to re-order things we add rows
          left_join(AllExpDetails %>% 
                       select(Detail, SimulatorSection, SortOrder) %>% 
-                      mutate(Detail = sub(str_c(AllCompounds$Suffix, 
+                      mutate(Detail = sub(str_c(AllRegCompounds$Suffix, 
                                                 collapse = "|"), "", 
                                           Detail)) %>% 
                       unique(), 
@@ -330,7 +330,7 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
       rename("Section of model" = SimulatorSection) %>% 
       filter(complete.cases(Value) & 
                 !Detail %in% c("SimulatorVersion",
-                               sort(unique(AllCompounds$DetailNames))))
+                               sort(unique(AllRegCompounds$DetailNames))))
    
    if(nrow(FT) == 0){
       warning(paste0(wrapn("There are no rows in the model summary table. This generally happens when you have different compounds in your simulations, and there are no parameters with the same value for all. To see what data this function is attempting to use for your table, please try running:"), 
@@ -355,7 +355,7 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
          left_join(
             AllExpDetails %>% 
                select(Detail, ReportTableText) %>% 
-               mutate(Detail = sub(str_c(AllCompounds$Suffix, collapse = "|"), 
+               mutate(Detail = sub(str_c(AllRegCompounds$Suffix, collapse = "|"), 
                                    "", Detail)) %>% unique(), 
                    by = "Detail") %>% 
          mutate(Parameter = 

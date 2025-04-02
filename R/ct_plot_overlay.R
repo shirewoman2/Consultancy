@@ -993,14 +993,14 @@ ct_plot_overlay <- function(ct_dataframe,
                     names(ct_dataframe))){
          ct_dataframe <- ct_dataframe %>% 
             mutate(Conc = case_when(
-               CompoundID %in% AllCompounds$CompoundID[
-                  AllCompounds$DosedCompoundID == "substrate"] ~ Conc / Dose_sub, 
+               CompoundID %in% AllRegCompounds$CompoundID[
+                  AllRegCompounds$DosedCompoundID == "substrate"] ~ Conc / Dose_sub, 
                
-               CompoundID %in% AllCompounds$CompoundID[
-                  AllCompounds$DosedCompoundID == "inhibitor 1"] ~ Conc / Dose_inhib, 
+               CompoundID %in% AllRegCompounds$CompoundID[
+                  AllRegCompounds$DosedCompoundID == "inhibitor 1"] ~ Conc / Dose_inhib, 
                
-               CompoundID %in% AllCompounds$CompoundID[
-                  AllCompounds$DosedCompoundID == "inhibitor 2"] ~ Conc / Dose_inhib2))
+               CompoundID %in% AllRegCompounds$CompoundID[
+                  AllRegCompounds$DosedCompoundID == "inhibitor 2"] ~ Conc / Dose_inhib2))
          
       } else if(all(c("Dose_sub", "Dose_inhib", "Dose_inhib2") %in% 
                     names(ct_dataframe)) == FALSE){
@@ -1780,7 +1780,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # Converting conc and time units if requested
    if(any(complete.cases(conc_units_to_use))){
       if("logical" %in% class(existing_exp_details) == FALSE){
-         MWs_1 <- AllCompounds %>% 
+         MWs_1 <- AllRegCompounds %>% 
             mutate(Detail = paste0("MW", Suffix)) %>% 
             select(CompoundID, Detail) %>% 
             left_join(harmonize_details(existing_exp_details)[["MainDetails"]] %>%

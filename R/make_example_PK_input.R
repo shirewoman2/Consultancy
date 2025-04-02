@@ -200,7 +200,7 @@ make_example_PK_input <- function(){
          if(nrow(Examples[["A5"]]) > 0){
             Examples[["A5"]]$Notes[1] <- 
                paste("All the possible compounds:", 
-                     str_comma(AllCompounds$CompoundID))
+                     str_comma(AllRegCompounds$CompoundID))
          }
       }
       
