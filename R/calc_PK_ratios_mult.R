@@ -457,7 +457,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          # them ultimately. Removing this lower in script if they did not ask
          # for CIs.
          includeConfInt = TRUE, 
-         include_dose_num = include_dose_num, 
+         include_dose_num = TRUE, # will remove dose number at end if needed
          prettify_columns = FALSE, 
          prettify_compound_names = FALSE, 
          rounding = "none", # will change this later as needed
@@ -518,7 +518,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          pivot_wider(names_from = Statistic, 
                      values_from = Value) %>% 
          mutate(`90% CI` = case_when(
-            all(complete.cases(c(`90% CI - Lower`, `90% CI - Upper`))) ~
+            complete.cases(`90% CI - Lower`) & complete.cases(`90% CI - Upper`) ~
                switch(variability_format, 
                       "to" = paste(`90% CI - Lower`, "to", `90% CI - Upper`),
                       "hyphen" = paste(`90% CI - Lower`, "-", `90% CI - Upper`),
@@ -640,8 +640,6 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          save_table <- basename(save_table)
       }
       
-      setwd(OutPath)
-      
       if(str_detect(save_table, "docx")){ 
          # This is when they want a Word file as output
          
@@ -651,8 +649,6 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          PKToPull <- PKparameters
          MeanType <- mean_type
          FromCalcPKRatios <- TRUE
-         highlight_so_cutoffs = NA
-         highlight_so_colors = "yellow to red"
          TemplatePath <- switch(page_orientation, 
                                 "landscape" = system.file("Word/landscape_report_template.dotx",
                                                           package="SimcypConsultancy"), 
@@ -660,11 +656,15 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                                                          package="SimcypConsultancy"))
          
          add_header_for_DDI <- FALSE
+         include_dose_num_orig <- include_dose_num
          
          # Hacking CheckDoseInt, which is needed for the .Rmd file. Not checking
          # this for people here. Too complicated. May add a warning later,
-         # though.
-         CheckDoseInt <- list("message" = "good")
+         # though. Just using placeholder data for now.
+         CheckDoseInt <- list("message" = c("placeholder.xlsx" = "good"), 
+                              "interval" = tibble(File = "placeholder.xlsx", 
+                                                  CompoundID = "substrate", 
+                                                  Tissue = "plasma"))
          # Similarly, hacking "Sheet" column
          MyPKResults$Sheet <- NA
          
@@ -689,7 +689,6 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
       }
       
-      setwd(CurrDir)
    }
    
    if(extract_forest_data){

@@ -23,7 +23,8 @@ MyPerpetrator <- determine_myperpetrator(Deets = Deets,
 
 DosesIncluded <- c("Dose1" = any(str_detect(PKparameters[[i]]$PKparameter, "_dose1")),
                    "Last" = any(str_detect(PKparameters[[i]]$PKparameter, "_last")), 
-                   "User" = any(complete.cases(PKparameters[[i]]$Sheet)))
+                   "User" = "Sheet" %in% names(PKparameters[[i]]) &&
+                      any(complete.cases(PKparameters[[i]]$Sheet)))
 DosesIncluded <- str_c(names(DosesIncluded)[DosesIncluded], collapse = " ")
 
 if(FromCalcPKRatios){
