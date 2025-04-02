@@ -2,8 +2,8 @@
 % Please edit documentation in R/format_scripts.R
 \name{format_scripts}
 \alias{format_scripts}
-\title{Format common PBPK model parameters to have appropriate subscripts and
-superscripts. UNDER CONSTRUCTION.}
+\title{INTERNAL: Format common PBPK model parameters to have appropriate subscripts
+and superscripts.}
 \usage{
 format_scripts(
   DF,
@@ -37,8 +37,8 @@ what's what.}
 a flextable
 }
 \description{
-Format common PBPK model parameters to have appropriate subscripts and
-superscripts. UNDER CONSTRUCTION.
+INTERNAL: Format common PBPK model parameters to have appropriate subscripts
+and superscripts.
 }
 \examples{
 DF <- data.frame(Parameter = c("MW", "ka (h^-1)",
