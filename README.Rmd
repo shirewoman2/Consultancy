@@ -41,7 +41,7 @@ devtools::install_github(repo = "shirewoman2/Consultancy",
                          upgrade = "never")
 ```
 
-Current version: `r packageVersion("SimcypConsultancy")`
+Current version: 3.10.4
 
 **NOTE:** The SimcypConsultancy package requires that you have tidyverse loaded. 
 

@@ -616,13 +616,13 @@ annotateDetails <- function(existing_exp_details,
             str_detect(Detail, "^Km_") ~ 
                paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
                       " Km", 
-                      case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (pmol/min/pmol)", 
+                      case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (uM)", 
                                 .default = "")), 
             
             str_detect(Detail, "^Vmax_") ~ 
                paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
                       " Vmax", 
-                      case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (uM)"), 
+                      case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (pmol/min/pmol)"), 
                       .default = ""), 
             
             # inhibition
@@ -682,12 +682,15 @@ annotateDetails <- function(existing_exp_details,
    
    # Checking for duplicates from, e.g., there being more than one pathway
    PathwayCheck <- MainDetails %>% 
-      # filter(complete.cases(Value)) %>% 
+      filter(complete.cases(Value) & complete.cases(Notes)) %>%
       group_by(Notes) %>% 
-      summarize(N = n()) %>% 
+      summarize(N = length(sort(unique(Detail))), 
+                DetailConcat = str_c(unique(Detail), collapse = " | ")) %>% 
       ungroup() %>% 
-      filter(N > 1) %>% 
+      filter(N > 1) %>%
+      select(-N) %>% 
       left_join(MainDetails %>% select(Notes, Detail), by = "Notes") %>% 
+      unique() %>% 
       mutate(Enzyme = str_extract(Detail, 
                                    "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
              Pathway = str_extract(Detail, pattern = paste0(Enzyme, ".*_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)")), 
@@ -695,7 +698,10 @@ annotateDetails <- function(existing_exp_details,
              Pathway = str_remove(Pathway, "_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)"), 
              Pathway = sub("OH", "-OH", Pathway), 
              Pathway = sub("^-", "", Pathway), 
-             Pathway = str_replace(Notes, Enzyme, paste0(Enzyme, " (", Pathway, " pathway)")))
+             Pathway = str_replace(Notes, Enzyme, paste0(Enzyme, " (", Pathway, " pathway)"))) %>% 
+      # Removing some things that wind up being duplicates here b/c the
+      # Simulator codes them oddly
+      filter(!str_detect(Detail, "NumDoses|StartDayTimeH"))
    
    if(nrow(PathwayCheck) > 0){
       MainDetails <- MainDetails %>% 
