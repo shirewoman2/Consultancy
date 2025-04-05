@@ -2414,17 +2414,36 @@ ct_plot_overlay <- function(ct_dataframe,
    if(include_errorbars){
       if(nrow(obs_dataframe) > 0 && "SD_SE" %in% names(obs_dataframe)){
          if(figure_type == "percentile ribbon"){
-            A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
-                                   aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            A <- A + geom_errorbar(data = obs_dataframe %>% 
+                                      rename(MyMean = Conc) %>% 
+                                      mutate(Ymax = MyMean + SD_SE, 
+                                             Ymin = MyMean - SD_SE, 
+                                             Ymin = case_when(Ymin < 0 ~ 0, 
+                                                              .default = Ymin)), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
                                    width = errorbar_width)
          } else {
-            A <- A + geom_errorbar(data = obs_dataframe, 
-                                   aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            A <- A + geom_errorbar(data = obs_dataframe %>% 
+                                      mutate(Ymax = MyMean + SD_SE, 
+                                             Ymin = MyMean - SD_SE, 
+                                             Ymin = case_when(Ymin < 0 ~ 0, 
+                                                              .default = Ymin)), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
                                    width = errorbar_width)
          }
       } else if(ReleaseProfPlot | DissolutionProfPlot){
-         A <- A + geom_errorbar(data = sim_dataframe, 
-                                aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+         # If error bars are below 0, that's nonsensical. Setting anything < 0
+         # to 0 for graphing.
+         A <- A + geom_errorbar(data = sim_dataframe %>% 
+                                   mutate(Ymax = MyMean + SD_SE, 
+                                          Ymin = MyMean - SD_SE, 
+                                          Ymin = case_when(Ymin < 0 ~ 0, 
+                                                           .default = Ymin)), 
+                                aes(ymin = Ymin, ymax = Ymax), 
                                 width = errorbar_width)
       }
    }
