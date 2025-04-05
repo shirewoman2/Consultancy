@@ -490,20 +490,22 @@ extractPK <- function(sim_data_file,
       # and compound and we'll narrow down to the exact one we want next.
       Tab_last_check <- SheetNames[
          str_detect(SheetNames, 
-                    paste0("AUC(t)?[1-9]{1,}(_SD|_CI)?", 
-                           switch(compoundToExtract,
-                                  "substrate" = "\\(Sub\\)", 
-                                  "primary metabolite 1" = "\\(Sub Met\\)",
-                                  "primary metabolite 2" = "\\(Sub Met2\\)",
-                                  "secondary metabolite" = "\\(Sub SM\\)", 
-                                  "inhibitor 1" = "\\(Inh 1\\)",
-                                  "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
-                                  "inhibitor 2" = "\\(Inh 2\\)"), 
-                           switch(tissue, 
-                                  "plasma" = "\\(CP", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
-                                  "unbound plasma" = "\\(CuP",
-                                  "blood" = "\\(CB", 
-                                  "unbound blood" = "\\(CuB")))]
+                    "AUC(t)?[1-9]{1,}(_SD|_CI)?") & 
+            str_detect(SheetNames, 
+                       paste0(
+                          switch(compoundToExtract,
+                                 "substrate" = "\\(Sub\\)", 
+                                 "primary metabolite 1" = "\\(Sub Met\\)",
+                                 "primary metabolite 2" = "\\(Sub Met2\\)",
+                                 "secondary metabolite" = "\\(Sub SM\\)", 
+                                 "inhibitor 1" = "\\(Inh 1\\)",
+                                 "inhibitor 1 metabolite" = "\\(Inh1 M(et)?\\)", 
+                                 "inhibitor 2" = "\\(Inh 2\\)"), 
+                          switch(tissue, 
+                                 "plasma" = "\\(CP", # some sheet names have ellipses, e.g., "Int AUC 1st_SD(Sub Met)(CPl...)"
+                                 "unbound plasma" = "\\(CuP",
+                                 "blood" = "\\(CB", 
+                                 "unbound blood" = "\\(CuB")))]
       
       if(length(Tab_last_check) > 0){
          LastDoseNum <- data.frame(Tab_last = Tab_last_check) %>% 
