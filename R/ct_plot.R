@@ -862,6 +862,7 @@ ct_plot <- function(ct_dataframe = NA,
                                       .default = "horizontal")
    }
    
+   
    # Main body of function --------------------------------------------------
    
    # This will run orders of magnitude faster if we only include aggregate data.
@@ -1020,7 +1021,8 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Error catching now that we've figured out which Tissue_subtype they want
    if("Conc_units" %in% names(Data) && length(unique(Data$Conc_units)) > 1){
-      stop("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+      stop(wrapn("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time."), 
+           call. = FALSE)
    }
    
    
@@ -1626,13 +1628,30 @@ ct_plot <- function(ct_dataframe = NA,
       A <- A + guides(shape = "none")
    } else {
       if("SD_SE" %in% names(obs_dataframe) & include_errorbars){
+         
          if(figure_type == "percentile ribbon"){
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            obs_dataframe <- obs_dataframe %>% 
+               mutate(Ymax = MyMean + SD_SE, 
+                      Ymin = MyMean - SD_SE, 
+                      Ymin = case_when(Ymin < 0 ~ 0, 
+                                       .default = Ymin))
+            
             A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
-                                   aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
                                    width = errorbar_width)
          } else {
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            obs_dataframe <- obs_dataframe %>% 
+               mutate(Ymax = Conc + SD_SE, 
+                      Ymin = Conc - SD_SE, 
+                      Ymin = case_when(Ymin < 0 ~ 0, 
+                                       .default = Ymin))
+            
             A <- A + geom_errorbar(data = obs_dataframe, 
-                                   aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
                                    width = errorbar_width)
          }
       }
@@ -1940,7 +1959,11 @@ ct_plot <- function(ct_dataframe = NA,
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
                               linear_or_log = linear_or_log, 
-                              figure_type = figure_type,
+                              # Dealing w/mismatch between figure_type here and
+                              # what's expected in make_ct_caption
+                              figure_type = case_match(figure_type, 
+                                                       "freddy" ~ "Freddy", 
+                                                       .default = figure_type),
                               plot_type = PlotType, 
                               name_clinical_study = name_clinical_study, 
                               prettify_compound_names = prettify_compound_names, 

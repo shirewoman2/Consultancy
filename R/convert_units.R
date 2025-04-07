@@ -360,16 +360,17 @@ convert_conc_units <- function(DF_to_convert,
       
       DF_to_convert <- DF_to_convert %>% 
          left_join(ConvTable_conc, by = "CompoundID") %>% 
-         mutate(Conc = Conc*Factor,
+         mutate(across(.cols = any_of(c("Conc", "SD_SE")), 
+                       .fns = \(x) x*Factor),
                 Conc_units = RevUnits)
       
    } else {
-      ConvFactor_conc <-
+      Factor <-
          ConvTable_conc$Factor[
             which(ConvTable_conc$OrigUnits == unique(DF_to_convert$Conc_units) &
                      ConvTable_conc$RevUnits == unique(DF_with_good_units$Conc_units))]
       
-      if(length(ConvFactor_conc) < 1){
+      if(length(Factor) < 1){
          stop(paste0("You supplied concentration units of ",
                      str_comma(unique(DF_to_convert$Conc_units)), 
                      ", but we were not able to convert them to the desired units of ", 
@@ -378,8 +379,11 @@ convert_conc_units <- function(DF_to_convert,
               call. = FALSE)
       }
       
-      DF_to_convert <- DF_to_convert %>% mutate(Conc = Conc*ConvFactor_conc,
-                                                Conc_units = unique(DF_with_good_units$Conc_units))
+      # NB: Factor is an external variable in this case, not a column; hence the {}
+      DF_to_convert <- DF_to_convert %>% 
+         mutate(across(.cols = any_of(c("Conc", "SD_SE")), 
+                       .fns = \(x) x*{Factor}),
+                Conc_units = unique(DF_with_good_units$Conc_units))
    }
    
    ## Output -----------------------------------------------------------
