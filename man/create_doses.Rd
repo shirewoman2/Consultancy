@@ -92,24 +92,28 @@ saved.}
 a data.frame
 }
 \description{
-\code{create_doses} generates a data.frame of dosing times and amounts -- one
-for every subject if subject IDs are provided -- based on the dosing regimen
-specified. This is meant for generating XML files for use as observed data
-overlays for the Simcyp Simulator. \strong{Special notes for when you have
-more than one value for some items:} If you have multiple values for anything
-having to do with the compound -- the compound ID, administration route, dose
-unit, or dose amount (all have the prefix "compound_") -- then all the other
-arguments having to do with compounds must have that same number of values or
-must have only one value, which will be repeated as needed. Really, this
-function will just be easier to use if you run it once for each compound you
-want. (See the examples at the bottom of the help file.) Similarly, if you
-have multiple values for anything having to do with the subject -- the
-subject ID, age, weight, height, or sex (all have the prefix "subj_") -- then
-all the other arguments having to do with subjects must have that same number
-of values or must have only one value, which will be repeated as needed. Any
-time you need to specify multiple values, you can make use of the R function
-\code{\link{rep}} to repeat elements of a vector. (See the R coding tip for
-the argument \code{compound_dose_amount} for an example.)
+\code{create_doses} generates a data.frame of dosing times and
+  amounts -- one for every subject if subject IDs are provided -- based on
+  the dosing regimen specified. This is meant for generating XML files for
+  use as observed data overlays for the Simcyp Simulator.
+
+  \strong{Special notes for when you have more than one value for some
+  items:} If you have multiple values for anything having to do with the
+  compound -- the compound ID, administration route, dose unit, or dose
+  amount (all have the prefix "compound_") -- then all the other arguments
+  having to do with compounds must have that same number of values or must
+  have only one value, which will be repeated as needed. Really, this
+  function will just be easier to use if you run it once for each compound
+  you want. (See the examples at the bottom of the help file.)
+
+  Similarly, if you have multiple values for anything having to do with the
+  subject -- the subject ID, age, weight, height, or sex (all have the prefix
+  "subj_") -- then all the other arguments having to do with subjects must
+  have that same number of values or must have only one value, which will be
+  repeated as needed. Any time you need to specify multiple values, you can
+  make use of the R function \code{\link{rep}} to repeat elements of a
+  vector. (See the R coding tip for the argument \code{compound_dose_amount}
+  for an example.)
 }
 \examples{
 

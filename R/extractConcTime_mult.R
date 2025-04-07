@@ -560,23 +560,48 @@ extractConcTime_mult <- function(sim_data_files = NA,
                            "Users/(?<=\\/)[^\\/]+(?=\\/)", 
                            paste0("Users/", Sys.info()["user"]))
             
+            
             ObsAssign <- existing_exp_details$MainDetails %>% 
                select(File, ObsOverlayFile) %>% 
                rename(ObsFile = ObsOverlayFile) %>% 
-               mutate(ObsFile = gsub("\\\\", "/", ObsFile), 
-                      ObsFile = sub("Users/.*/Certara", 
-                                    paste0("Users/", Sys.info()["user"], 
-                                           "/Certara"), ObsFile), 
-                      # Checking that the file exists.
-                      Exists = file.exists(ObsFile), 
-                      ObsFile_xlsx = sub("\\.xml$", ".xlsx", ObsFile), 
-                      ObsFile_xml = sub("\\.xlsx$", ".xml", ObsFile), 
-                      Exists_xlsx = file.exists(ObsFile_xlsx), 
-                      Exists_xml = file.exists(ObsFile_xml), 
-                      ObsFileToUse = case_when(
-                         Exists_xlsx ~ ObsFile_xlsx, 
-                         Exists_xml ~ ObsFile_xml, 
-                         Exists ~ ObsFile))
+               mutate(
+                  ObsFile = gsub("\\\\", "/", ObsFile), 
+                  ObsFile = sub("Users/.*/Certara", 
+                                paste0("Users/", Sys.info()["user"], 
+                                       "/Certara"), ObsFile), 
+                  # Noting whether obs file was from V24+ and thus embedded, which
+                  # means we don't know path.
+                  V24plusObsFile = str_detect(ObsFile, "embedded"), 
+                  ObsFile = case_when(
+                     V24plusObsFile == TRUE ~
+                        paste0(sub("\\(embedded\\)", "", ObsFile), 
+                               ".xml"), 
+                     .default = ObsFile), 
+                  # Checking that the file exists.
+                  Exists = file.exists(ObsFile), 
+                  ObsFile_xlsx = sub("\\.xml$", ".xlsx", ObsFile), 
+                  ObsFile_xml = sub("\\.xlsx$", ".xml", ObsFile), 
+                  Exists_xlsx = file.exists(ObsFile_xlsx), 
+                  Exists_xml = file.exists(ObsFile_xml), 
+                  ObsFileToUse = case_when(
+                     Exists_xlsx ~ ObsFile_xlsx, 
+                     Exists_xml ~ ObsFile_xml, 
+                     Exists ~ ObsFile), 
+                  ObsFileToUseExists = file.exists(ObsFileToUse))
+            
+            MissingV24ObsFiles <- 
+               ObsAssign %>% filter(ObsFileToUseExists == FALSE &
+                                       V24plusObsFile == TRUE)
+            
+            if(nrow(MissingV24ObsFiles) > 0){
+               
+               message(wrapn("The observed overlay XML file(s) for the following simulation(s) could not be found:"))
+               Problem <- capture.output(print(MissingV24ObsFiles %>% 
+                                                  select(File, ObsFile), row.names = FALSE))
+               message(str_c(Problem, collapse = "\n"))
+               message(wrapn("Please note that, in Simcyp Simulator versions 24 and above, the path of the observed file is not saved with the workspace, so we won't be able to extract the data if it's not in the same folder."))
+               
+            }
             
             # To get data from the xml file, we need to have the Simcyp package
             # installed and it has to be a version of Simcyp that has the
