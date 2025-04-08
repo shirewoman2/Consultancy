@@ -130,6 +130,7 @@ ct_y_axis <- function(ADAMorAdvBrain,
       
       if(normalize_by_dose){
          PossConcUnits <- list("mg/mL" = "Dose-normalized\nconcentration (mg/mL/mg)",
+                               "mg/L" = "Dose-normalized\nconcentration (mg/L)", 
                                "µg/L" = "Dose-normalized\nconcentration (µg/L/mg)", 
                                "µg/mL" = "Dose-normalized\nconcentration (µg/mL/mg)",
                                "ng/mL" = "Dose-normalized\nconcentration (ng/mL/mg)",
@@ -139,6 +140,7 @@ ct_y_axis <- function(ADAMorAdvBrain,
                                "µg/mL" = "Dose-normalized\nconcentration (µg/mL/mg)")
       } else {
          PossConcUnits <- list("mg/mL" = "Concentration (mg/mL)",
+                               "mg/L" = "Concentration (mg/L)", 
                                "µg/L" = "Concentration (µg/L)", 
                                "µg/mL" = "Concentration (µg/mL)",
                                "ng/mL" = "Concentration (ng/mL)",

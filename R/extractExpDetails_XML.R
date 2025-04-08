@@ -346,6 +346,13 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                           DeetInfo$Level7]]))
                )
                
+               # Adding a few exceptions for earlier simulator versions
+               if(str_detect(k, "Abs_model") & 
+                  is.na(DeetValue)){
+                  DeetValue <- XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
+                     "AbsorptionSwitch"]])
+               }
+               
                # Decoding as necessary. Add to the options for k as needed.
                DeetValue <- case_when(
                   str_detect(k, "Abs_model") ~  
@@ -460,7 +467,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             
             # Removing things that do not apply, e.g., ADAM-model parameters
             # when it was a 1st-order absorption model
-            if(Deets[[i]][[paste0("Abs_model", Suffix)]] == "1st order"){
+            if(complete.cases(Deets[[i]][[paste0("Abs_model", Suffix)]]) && 
+               Deets[[i]][[paste0("Abs_model", Suffix)]] == "1st order"){
                Keep <- setdiff(names(Deets[[i]]), 
                                
                                AllExpDetails$Detail[
