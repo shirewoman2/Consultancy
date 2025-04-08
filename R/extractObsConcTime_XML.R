@@ -67,7 +67,7 @@ extractObsConcTime_XML <- function(obs_data_file){
    names(NewNames_ch) <- NewNames %>% filter(DBColName %in% names(dose_data)) %>% 
       pull(DBColName)
    
-   dose_data <- dose_data %>% 
+   dose_data <- dose_data %>% unique() %>% 
       rename_with(~ str_replace_all(., NewNames_ch)) %>% 
       mutate(ObsFile = obs_data_file, 
              CompoundID = tolower(Compound), 
