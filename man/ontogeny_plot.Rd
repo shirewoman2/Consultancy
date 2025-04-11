@@ -7,6 +7,7 @@
 ontogeny_plot(
   enzyme = NA,
   enzyme_type = NA,
+  ask_if_multiple_enzymes = TRUE,
   ontogeny_equations_to_use = NA,
   simulator_version = 23,
   compare_to_no_ontogeny = FALSE,
@@ -124,13 +125,14 @@ unquoted, e.g., \code{colorBy_column = Tissue}.}
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
-  \item{"greens"}{a set of greens fading from chartreuse to forest. Like
-  "blue-green", this palette can be especially useful if you are comparing a
-  systematic change in some continuous variable.}
+  \item{"greens"}{a set of greens fading from chartreuse to forest. Great for showing
+  systematic changes in a continuous variable.}
 
-  \item{"purples"}{a set of purples fading from lavender to aubergine. Like
-  "blue-green", this palette can be especially useful if you are comparing a
-  systematic change in some continuous variable.}
+  \item{"purples"}{a set of purples fading from lavender to aubergine. Great for showing
+  systematic changes in a continuous variable.}
+
+  \item{"reds"}{a set of reds from pink to brick. Great for showing
+  systematic changes in a continuous variable.}
 
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
@@ -145,9 +147,9 @@ unquoted, e.g., \code{colorBy_column = Tissue}.}
   colors here. An example of how the syntax should look: \code{color_set =
   c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
   which item in \code{colorBy_column} gets which color, you can supply a
-  named vector. For example, if you're coloring the lines by the compound ID,
-  you could do this: \code{color_set = c("substrate" = "dodgerblue3",
-  "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+  named vector. For example, if you're coloring the lines by the enzyme,
+  you could do this: \code{color_set = c("CYP3A4" = "dodgerblue3",
+  "CYP3A5" = "purple", "CYP3A7" = "#D8212D")}. If you'd
   like help creating a specific gradation of colors, please talk to a member
   of the R Working Group about how to do that using
   \link{colorRampPalette}.}}}
