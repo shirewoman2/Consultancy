@@ -10,7 +10,8 @@ rainbow(ncolors, shade = "regular")
 \item{ncolors}{number of colors desired}
 
 \item{shade}{the shade of colors to use, which can be "regular" (default),
-"darker", or "lighter"}
+"darker", "lighter", or "muted" (although "muted" in this case is the same
+as "darker")}
 }
 \value{
 a character vector of colors
