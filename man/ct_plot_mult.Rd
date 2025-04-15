@@ -12,6 +12,8 @@ ct_plot_mult(
   existing_exp_details = NA,
   figure_type = "percentiles",
   mean_type = "arithmetic",
+  include_errorbars = FALSE,
+  errorbar_width = 0.5,
   linear_or_log = "semi-log",
   time_range = NA,
   x_axis_interval = NA,
@@ -126,6 +128,15 @@ argument \code{existing_exp_details}.}
 
 \item{mean_type}{graph "arithmetic" (default) or "geometric" means or
 "median" for median concentrations}
+
+\item{include_errorbars}{TRUE or FALSE (default) for whether to include error
+bars for observed data points. This ONLY applies when you have supplied
+observed data from V22 or higher because those data files included a column
+titled "SD/SE", which is what we'll use for determining the error bar
+heights.}
+
+\item{errorbar_width}{width of error bars to use in hours (or, if you've used
+some other time unit, in whatever units are in your data). Default is 0.5.}
 
 \item{linear_or_log}{the type of graph to be returned. Options: "semi-log"
 (default), "linear", "both vertical" (graphs are stacked vertically), or

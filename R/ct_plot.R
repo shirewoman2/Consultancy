@@ -1958,6 +1958,7 @@ ct_plot <- function(ct_dataframe = NA,
                               single_or_multiple_profiles = "single", 
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
+                              include_errorbars = include_errorbars, 
                               linear_or_log = linear_or_log, 
                               # Dealing w/mismatch between figure_type here and
                               # what's expected in make_ct_caption

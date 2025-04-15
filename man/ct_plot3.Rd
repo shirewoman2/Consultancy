@@ -22,6 +22,8 @@ ct_plot3(
   legend_orientation = NA,
   graph_labels = TRUE,
   conc_units_to_use = NA,
+  include_errorbars = FALSE,
+  errorbar_width = 0.5,
   hline_position = NA,
   hline_style = "red dotted",
   vline_position = NA,
@@ -169,6 +171,15 @@ options are "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"),
 concentration and your source data were in mass per volume units or vice
 versa, you'll need to provide something for the argument
 \code{existing_exp_details}.}
+
+\item{include_errorbars}{TRUE or FALSE (default) for whether to include error
+bars for observed data points. This ONLY applies when you have supplied
+observed data from V22 or higher because those data files included a column
+titled "SD/SE", which is what we'll use for determining the error bar
+heights.}
+
+\item{errorbar_width}{width of error bars to use in hours (or, if you've used
+some other time unit, in whatever units are in your data). Default is 0.5.}
 
 \item{hline_position}{numerical position(s) of any horizontal lines to add to
 the graph. The default is NA to have no lines, and good syntax if you

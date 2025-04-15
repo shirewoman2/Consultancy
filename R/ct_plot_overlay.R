@@ -3144,6 +3144,7 @@ ct_plot_overlay <- function(ct_dataframe,
                               plot_type = PlotType, 
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
+                              include_errorbars = include_errorbars, 
                               linear_or_log = linear_or_log, 
                               figure_type = figure_type, 
                               # !!! Important! This must be PrettyCmpds and not
