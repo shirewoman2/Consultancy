@@ -486,3 +486,10 @@
 "ObsColNames"
 
 
+#' Examples for setting up data for use with the VBE_safe_space_plot function
+#'
+#' @format a data.frame
+"VBE_disso_example"
+
+
+
