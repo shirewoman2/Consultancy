@@ -6,7 +6,8 @@
 #'
 #' @param ncolors number of colors desired
 #' @param shade the shade of colors to use, which can be "regular" (default),
-#'   "darker", or "lighter"
+#'   "darker", "lighter", or "muted" (although "muted" in this case is the same
+#'   as "darker")
 #'
 #' @return a character vector of colors
 #' @export
@@ -14,12 +15,18 @@
 #' @examples
 #' # Create a rainbow of 10 colors.
 #' rainbow(10)
-#' 
+#'
 #' # Try using scales::show_col() to visualize the colors, ex:
 #' scales::show_col(rainbow(10))
 #' 
 rainbow <- function(ncolors, 
                     shade = "regular"){
+   
+   shade <- tolower(shade)[1]
+   if(shade %in% c("lighter", "darker", "regular", "muted") == FALSE){
+      warning(wrapn("You have supplied something for 'shade' that is not among the possible options; we'll set the shade to 'regular'."), 
+              call. = F)
+   }
    
    if(ncolors <= 7){
       colRainbow <- colorRampPalette(c("#B91E02FF", "#F66D19FF", "#B8F735FF",
@@ -39,6 +46,8 @@ rainbow <- function(ncolors,
       MyColors <- scales::muted(MyColors, l = 30, c = 70)
    } else if(shade == "lighter"){
       MyColors <- scales::muted(MyColors, l = 90, c = 100)
+   } else if(shade == "muted"){
+      MyColors <- scales::muted(MyColors)
    }
    
    return(MyColors)
@@ -53,7 +62,7 @@ rainbow <- function(ncolors,
 #'
 #' @param ncolors number of colors desired
 #' @param shade the shade of colors to use, which can be "regular" (default),
-#'   "darker", or "lighter"
+#'   "darker", "lighter", or "muted"
 #'
 #' @return a character vector of colors
 #' @export
@@ -68,6 +77,12 @@ rainbow <- function(ncolors,
 blueGreens <- function(ncolors, 
                        shade = "regular"){
    
+   shade <- tolower(shade)[1]
+   if(shade %in% c("lighter", "darker", "regular", "muted") == FALSE){
+      warning(wrapn("You have supplied something for 'shade' that is not among the possible options; we'll set the shade to 'regular'."), 
+              call. = F)
+   }
+   
    if(shade == "darker"){
       colblueGreens <- colorRampPalette(c("#0D3053", "#2171B5", "#024E4E", "#083E22"))
       
@@ -75,12 +90,16 @@ blueGreens <- function(ncolors,
       colblueGreens <- colorRampPalette(c("#6ED1FE", "#D5F2FF", "#78FE78"))
       
    } else {
-      # regular
+      # regular or muted
       colblueGreens <- colorRampPalette(c("royalblue4", "dodgerblue3",
                                           "cadetblue", "seagreen3", "green3"))
-   }
+   } 
    
    MyColors <- colblueGreens(ncolors)
+   
+   if(shade == "muted"){
+      MyColors <- scales::muted(MyColors)
+   }
    
    return(MyColors)
    
@@ -91,11 +110,12 @@ blueGreens <- function(ncolors,
 #'
 #' \code{blues} is useful for getting a set of pretty blues for graphs. These
 #' blues come from the 4th through 9th blues from grDevices::blues9, just to
-#' give credit where it's due. 
+#' give credit where it's due.
 #'
 #' @param ncolors number of colors desired
 #' @param shade the shade of colors to use, which can be "regular" (default),
-#'   "darker", or "lighter"
+#'   "darker", "lighter", or "muted" (although "muted" isn't working well atm
+#'   and it just making everything the same color)
 #'
 #' @return a character vector of colors
 #' @export
@@ -110,18 +130,27 @@ blueGreens <- function(ncolors,
 blues <- function(ncolors, 
                   shade = "regular"){
    
+   shade <- tolower(shade)[1]
+   if(shade %in% c("lighter", "darker", "regular", "muted") == FALSE){
+      warning(wrapn("You have supplied something for 'shade' that is not among the possible options; we'll set the shade to 'regular'."), 
+              call. = F)
+   }
+   
    if(shade == "darker"){
       colBlues <- colorRampPalette(c("#2171B5", "#031023"))
    } else if(shade == "lighter"){
       colBlues <- colorRampPalette(c("#D5F2FF", "#6ED1FE", "#0B86F5"))
    } else {
-      # regular
+      # regular or muted
       colBlues <- colorRampPalette(c("#9ECAE1", "#6BAED6", "#4292C6", "#2171B5",
                                      "#08519C", "#08306B"))
-      
    }
    
    MyColors <- colBlues(ncolors)
+   
+   if(shade == "muted"){
+      MyColors <- scales::muted(MyColors)
+   }
    
    return(MyColors)
    
@@ -137,7 +166,7 @@ blues <- function(ncolors,
 #'
 #' @param ncolors number of colors desired
 #' @param shade the shade of colors to use, which can be "regular" (default),
-#'   "darker", or "lighter"
+#'   "darker", "lighter", or "muted" 
 #'
 #' @return a character vector of colors
 #' @export
@@ -153,6 +182,12 @@ blues <- function(ncolors,
 greens <- function(ncolors, 
                    shade = "regular"){
    
+   shade <- tolower(shade)[1]
+   if(shade %in% c("lighter", "darker", "regular", "muted") == FALSE){
+      warning(wrapn("You have supplied something for 'shade' that is not among the possible options; we'll set the shade to 'regular'."), 
+              call. = F)
+   }
+   
    if(shade == "darker"){
       colGreen <- colorRampPalette(c("#78C679", "#41AB5D", 
                                      "#238443", "#006837", "#004529", 
@@ -167,7 +202,13 @@ greens <- function(ncolors,
                                      "#238443", "#006837", "#004529"))
    }
    
-   return(colGreen(ncolors))
+   MyColors <- colGreen(ncolors)
+   
+   if(shade == "muted"){
+      MyColors <- scales::muted(MyColors)
+   }
+   
+   return(MyColors)
    
 }
 
@@ -181,7 +222,7 @@ greens <- function(ncolors,
 #'
 #' @param ncolors number of colors desired
 #' @param shade the shade of colors to use, which can be "regular" (default),
-#'   "darker", or "lighter"
+#'   "darker", "lighter", or "muted" 
 #'
 #' @return a character vector of colors
 #' @export
@@ -206,7 +247,7 @@ chartreuse <- function(ncolors,
 #'
 #' @param ncolors number of colors desired
 #' @param shade the shade of colors to use, which can be "regular" (default),
-#'   "darker", or "lighter"
+#'   "darker", "lighter", or "muted" 
 #'
 #' @return a character vector of colors
 #' @export
@@ -220,6 +261,12 @@ chartreuse <- function(ncolors,
 #' 
 purples <- function(ncolors, 
                     shade = "regular"){
+   
+   shade <- tolower(shade)[1]
+   if(shade %in% c("lighter", "darker", "regular", "muted") == FALSE){
+      warning(wrapn("You have supplied something for 'shade' that is not among the possible options; we'll set the shade to 'regular'."), 
+              call. = F)
+   }
    
    if(shade == "darker"){
       colPurple <- colorRampPalette(c("#9E9AC8", "#807DBA", 
@@ -235,7 +282,13 @@ purples <- function(ncolors,
                                       "#6A51A3", "#54278F", "#3F007D"))
    }
    
-   return(colPurple(ncolors))
+   MyColors <- colPurple(ncolors)
+   
+   if(shade == "muted"){
+      MyColors <- scales::muted(MyColors)
+   }
+   
+   return(MyColors)
    
 }
 
@@ -247,7 +300,8 @@ purples <- function(ncolors,
 #'
 #' @param ncolors number of colors desired
 #' @param shade the shade of colors to use, which can be "regular" (default),
-#'   "darker", or "lighter"
+#'   "darker", "lighter", or "muted" (although "muted" isn't working well atm
+#'   and it just making everything the same color)
 #'
 #' @return a character vector of colors
 #' @export
@@ -263,6 +317,12 @@ purples <- function(ncolors,
 reds <- function(ncolors, 
                  shade = "regular"){
    
+   shade <- tolower(shade)[1]
+   if(shade %in% c("lighter", "darker", "regular", "muted") == FALSE){
+      warning(wrapn("You have supplied something for 'shade' that is not among the possible options; we'll set the shade to 'regular'."), 
+              call. = F)
+   }
+   
    if(shade == "darker"){
       colRed <- colorRampPalette(c("#E41A1C", "#480808"))
    } else if(shade == "lighter"){
@@ -272,7 +332,13 @@ reds <- function(ncolors,
       colRed <- colorRampPalette(c("#FDC3C3", "#E41A1C", "#480808"))
    }
    
-   return(colRed(ncolors))
+   MyColors <- colRed(ncolors)
+   
+   if(shade == "muted"){
+      MyColors <- scales::muted(MyColors)
+   }
+   
+   return(MyColors)
    
 }
 
@@ -285,7 +351,7 @@ reds <- function(ncolors,
 #' @export
 #'
 green_to_red <- function(){
-   c("negligible" = "#C7FEAC", # light green
+   c("negligible" = "#A4E4AF", # light green
      "weak" = "#FFFF95", # light yellow
      "moderate" = "#FFDA95", # light orange
      "strong" = "#FF9595")   # light red

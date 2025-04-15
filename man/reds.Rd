@@ -10,7 +10,8 @@ reds(ncolors, shade = "regular")
 \item{ncolors}{number of colors desired}
 
 \item{shade}{the shade of colors to use, which can be "regular" (default),
-"darker", or "lighter"}
+"darker", "lighter", or "muted" (although "muted" isn't working well atm
+and it just making everything the same color)}
 }
 \value{
 a character vector of colors

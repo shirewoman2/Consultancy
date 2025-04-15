@@ -13,7 +13,7 @@ demog_plot_sim(
   color_set = "default",
   color_labels = NA,
   legend_label_color = NA,
-  legend_position = "bottom",
+  legend_position = "right",
   graph_title = "Demographics",
   alpha = 0.8,
   ncol = NULL,
@@ -22,6 +22,7 @@ demog_plot_sim(
   facet_column_additional,
   border_facets = TRUE,
   graph_labels = TRUE,
+  return_indiv_graphs = FALSE,
   save_graph = NA,
   fig_height = 8,
   fig_width = 6
@@ -137,6 +138,9 @@ color by the simulation file name.}
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
+  \item{"reds"}{a set of reds from pink to brick. Great for showing
+  systematic changes in a continuous variable.}
+
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
 
@@ -173,8 +177,11 @@ name is for \code{colorBy_column}. If you don't want a label for this
 legend item, set this to "none".}
 
 \item{legend_position}{specify where you want the legend to be. Options are
-"left", "right", "bottom" (default), "top", or "none" if you don't want one
-at all.}
+"left", "right" (default), "bottom", "top", or "none" if you don't want one
+at all. Note: If you include labels on your graphs (graph_labels = TRUE),
+we recommend NOT putting the legend on the left or the top because the
+labels wind up on the outside compared to the legend, and it just looks
+dorky.}
 
 \item{graph_title}{title to use on the plots}
 
@@ -201,12 +208,14 @@ around the facets if the graphs are broken up by the sex of the subjects}
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs.}
 
+\item{return_indiv_graphs}{TRUE or FALSE (default) for whether to return a
+list of each of the individual graphs}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "Demographics comparisons.png". Acceptable graphical
 file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or
 "svg". Do not include any slashes, dollar signs, or periods in the file
-name. Leaving this as NA means the file will not be automatically saved to
-disk.}
+name. Leaving this as NA means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 8}
 
@@ -217,7 +226,17 @@ a set of graphs. This does not yet save the graphs for you, so you'll
   need to run ggsave(...) to do that.
 }
 \description{
-UNDER CONSTRUCTION.
+\code{demog_plot_sim} will make a series of graphs comparing
+  parameters across simulated populations. All the parameters available on
+  the "Demographic Data" tab of a Simcyp Simulator output Excel file are
+  available for making comparisons, and you must obtain the input data for
+  making these graphs by running \code{\link{extractDemog}}. If you are
+  looking at the distributions of one parameter across populations, you can
+  display that with either boxplots or kernel density plots (like a smoothed
+  histogram). If you want to compare across simulations the relationship
+  between pairs of parameters, scatter plots will be used. (Only certain
+  pairs of parameters are available; please see notes for the argument
+  'demog_parameters'.)
 }
 \examples{
 # none yet

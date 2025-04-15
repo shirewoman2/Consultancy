@@ -21,7 +21,7 @@ extractObsConcTime_XML <- function(obs_data_file){
    
    obs_data <- obs_data_xml$Observations
    
-   NewNames <- ObsColNames %>% 
+   NewNames <- ObsColNames %>% bind_rows() %>% 
       select(PEColName, ColName) %>% unique() %>% 
       mutate(DBColName = str_replace_all(PEColName, " ", ""), 
              DBColName = case_match(DBColName, 
@@ -67,7 +67,7 @@ extractObsConcTime_XML <- function(obs_data_file){
    names(NewNames_ch) <- NewNames %>% filter(DBColName %in% names(dose_data)) %>% 
       pull(DBColName)
    
-   dose_data <- dose_data %>% 
+   dose_data <- dose_data %>% unique() %>% 
       rename_with(~ str_replace_all(., NewNames_ch)) %>% 
       mutate(ObsFile = obs_data_file, 
              CompoundID = tolower(Compound), 
@@ -79,7 +79,7 @@ extractObsConcTime_XML <- function(obs_data_file){
                                    "InfDuration", "InjectionSite")), 
                    names_to = "Parameter", 
                    values_to = "Value") %>% 
-      left_join(AllCompounds %>% select(CompoundID, Suffix), by = "CompoundID") %>% 
+      left_join(AllRegCompounds %>% select(CompoundID, Suffix), by = "CompoundID") %>% 
       mutate(Parameter = paste0(Parameter, Suffix)) %>% 
       select(-Suffix, -Compound) %>%
       pivot_wider(names_from = Parameter, 

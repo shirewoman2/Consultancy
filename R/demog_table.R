@@ -173,22 +173,28 @@ demog_table <- function(demog_dataframe,
       demog_dataframe$Sex <- "both"
    }
    
-   PossDemogParams <- c("Age", "Weight_kg", "Height_cm", "BSA_m2", "BrainWt_g", 
-                        "KidneyWt_g", "LiverWt_g", "BMI_kgm2", "CardiacOut",
-                        "Haematocrit", "HSA_gL", "AGP_gL", "Other_uM",
-                        "Creatinine_umolL", "GFR_mLminm2", "RenalFunction")
    
-   if(any(complete.cases(demog_parameters))){
-      demog_parameters <- intersect(demog_parameters, 
-                                    PossDemogParams) %>% unique()
-      
-      if(length(demog_parameters) == 0){
-         stop("You have not supplied any valid demographic parameters. Please check your input and try again.\n", 
-              call. = FALSE)
-      }
-   } else {
-      demog_parameters <- PossDemogParams
+   # Tidying inputs ----------------------------------------------------------
+   
+   names(demog_dataframe)[
+      !names(demog_dataframe) %in% c("File", "Trial", "Individual", "Population", 
+                                     "Simulated")] <-
+      tolower(names(demog_dataframe)[
+         !names(demog_dataframe) %in% c("File", "Trial", "Individual", "Population", 
+                                        "Simulated")])
+   
+   Harmonized <- harmonize_demog(demog_dataframe = demog_dataframe, 
+                                 demog_parameters = demog_parameters)
+   DemogParams <- Harmonized$DemogParams
+   PossDemogParams <- Harmonized$PossDemogParams
+   
+   if(nrow(DemogParams) == 0){
+      stop(wrapn("You have not supplied any valid demographic parameters. Please check your input and try again."), 
+           call. = FALSE)
    }
+   
+   DemogLabs <- PossDemogParams$Label
+   names(DemogLabs) <- tolower(PossDemogParams$Parameter)
    
    
    # Main body of function ---------------------------------------------------
@@ -196,11 +202,13 @@ demog_table <- function(demog_dataframe,
    FT <- 
       suppressWarnings(suppressMessages(
          demog_dataframe %>% 
-            select(-Population, -AllometricScalar) %>% 
-            pivot_longer(cols = PossDemogParams, 
+            select(any_of(c("File", "Trial", "Individual", "Population", "sex",
+                            "Simulated", DemogParams$Parameter))) %>% 
+            rename(Sex = sex) %>% # dealing w/inconsistencies between table and graph functions
+            pivot_longer(cols = DemogParams$Parameter, 
                          names_to = "Parameter", 
                          values_to = "Value") %>% 
-            filter(Parameter %in% demog_parameters) %>% 
+            filter(Parameter %in% DemogParams$Parameter) %>% 
             group_by(File, Simulated, Sex, Parameter) %>% 
             summarize(Mean = mean(Value, na.rm = T), 
                       SD = sd(Value, na.rm = T), 
@@ -282,7 +290,7 @@ demog_table <- function(demog_dataframe,
    if(variability_type == "none"){
       FT <- FT %>% filter(!Statistic == "REMOVE THIS ROW")
    }
-
+   
    
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){

@@ -29,7 +29,7 @@ The SimcypConsultancy R package provides tools for analyzing and reporting PBPK 
 2. Create scientifically informative, professional-quality graphs 
 4. Perform additional analyses of PBPK data 
 
-**Important:** The SimcypConsultancy R package is *separate* from the Simcyp R package and serves a different purpose. The SimcypConsultancy package does *not* interact with the simulator and instead is focused on report-writing tasks.  
+**Important:** The SimcypConsultancy R package is *separate* from the Simcyp R package and serves a different purpose. The SimcypConsultancy package does *not* interact with the Simcyp Simulator and instead is focused on report-writing tasks.  
 
 
 ## Installation
@@ -41,7 +41,7 @@ devtools::install_github(repo = "shirewoman2/Consultancy",
                          upgrade = "never")
 ```
 
-Current version: `r packageVersion("SimcypConsultancy")`
+Current version: 3.10.6
 
 **NOTE:** The SimcypConsultancy package requires that you have tidyverse loaded. 
 
@@ -123,7 +123,7 @@ annotateDetails(Details,
 
 ![](inst/images/overviewtable2.png?raw=TRUE)
 
-To see all the possible experimental details, please see the file **"[All possible experimental details to use with extractExpDetails.csv](https://certaragbr.sharepoint.com/:x:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/All%20possible%20experimental%20details%20to%20use%20with%20extractExpDetails.csv?d=wac18447b1ef557789cb09d8487781223&csf=1&web=1&e=yu3dId)"** (Bold text is a link) or type this into the console:
+To see all the possible experimental details, please type this into the console:
 
      view(ExpDetailDefinitions)
 
@@ -532,8 +532,6 @@ demog_plot_sim(demog_dataframe = Demog,
 ```
 
 ![](inst/images/demogplot_hi.png?raw=TRUE)
-
-*Note: We're working on the legend but having some trouble with it repeating things at the moment.*
 
 For more information and examples, please see **[Examples-for-checking-subject-demographics.docx](https://certaragbr.sharepoint.com/:w:/r/sites/SimcypPBPKConsultRFiles/Simcyp%20PBPKConsult%20R%20Files/SimcypConsultancy%20function%20examples%20and%20instructions/Demographics%20plots/Examples-for-checking-subject-demographics.docx?d=wd07adeb48d7a4ee199b99d1e2ee083ec&csf=1&web=1&e=asP4FD)**
 

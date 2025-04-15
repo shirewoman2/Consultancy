@@ -197,7 +197,13 @@
 #'   \code{\link{ct_plot_overlay}}
 #' @param graph_labels TRUE (default) or FALSE for whether to include labels (A,
 #'   B, C) for each of the small graphs.
-
+#' @param include_errorbars TRUE or FALSE (default) for whether to include error
+#'   bars for observed data points. This ONLY applies when you have supplied
+#'   observed data from V22 or higher because those data files included a column
+#'   titled "SD/SE", which is what we'll use for determining the error bar
+#'   heights.
+#' @param errorbar_width width of error bars to use in hours (or, if you've used
+#'   some other time unit, in whatever units are in your data). Default is 0.5.
 #'
 #' @return a set of 3 arranged ggplot2 graphs
 #' @export
@@ -253,7 +259,6 @@
 #' # You can adjust the graph titles and time ranges the same way as with a single
 #' # simulation.
 #' 
-
 ct_plot3 <- function(ct_dataframe, 
                      overlay = FALSE, 
                      figure_type = "means only",
@@ -271,6 +276,8 @@ ct_plot3 <- function(ct_dataframe,
                      legend_orientation = NA, 
                      graph_labels = TRUE, 
                      conc_units_to_use = NA, 
+                     include_errorbars = FALSE, 
+                     errorbar_width = 0.5, 
                      hline_position = NA, 
                      hline_style = "red dotted", 
                      vline_position = NA, 
@@ -514,6 +521,7 @@ ct_plot3 <- function(ct_dataframe,
                               plot_type = "concentration-time", 
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
+                              include_errorbars = include_errorbars, 
                               linear_or_log = linear_or_log, 
                               figure_type = figure_type, 
                               prettify_compound_names = prettify_compound_names, 

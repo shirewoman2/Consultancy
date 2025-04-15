@@ -1,4 +1,4 @@
-#' Concentration-time plots to match Consultancy template
+#' Concentration-time plots to match the Simcyp Consultancy Team template
 #'
 #' @description Using observed and simulated concentration-time data generated
 #'   from the function \code{\link{extractConcTime}}, make publication-quality
@@ -416,6 +416,8 @@
 #'   \code{\link{extractExpDetails_mult}} to be used for creating figure
 #'   headings and captions tailored to the specific simulation when saving to a
 #'   Word file or for use with \code{qc_graph}
+#' @param border TRUE or FALSE (default) for whether to include a border around
+#'   each graph.
 #' @param return_caption TRUE or FALSE (default) for whether to return any
 #'   caption text to use with the graph. This works best if you supply something
 #'   for the argument \code{existing_exp_details}. If set to TRUE, you'll get as
@@ -542,6 +544,7 @@ ct_plot <- function(ct_dataframe = NA,
                     graph_labels = TRUE,
                     graph_title = NA,
                     graph_title_size = 14, 
+                    border = FALSE, 
                     qc_graph = FALSE,
                     existing_exp_details = NA,
                     return_caption = FALSE, 
@@ -859,6 +862,7 @@ ct_plot <- function(ct_dataframe = NA,
                                       .default = "horizontal")
    }
    
+   
    # Main body of function --------------------------------------------------
    
    # This will run orders of magnitude faster if we only include aggregate data.
@@ -1017,7 +1021,8 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Error catching now that we've figured out which Tissue_subtype they want
    if("Conc_units" %in% names(Data) && length(unique(Data$Conc_units)) > 1){
-      stop("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+      stop(wrapn("It looks like you have more than one kind of data here because you have multiple concentration units. Maybe you've got more than one ADAM-model tissue included? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time."), 
+           call. = FALSE)
    }
    
    
@@ -1096,7 +1101,7 @@ ct_plot <- function(ct_dataframe = NA,
    # Converting conc and time units if requested
    if(any(complete.cases(conc_units_to_use))){
       if("logical" %in% class(existing_exp_details) == FALSE){
-         MWs_1 <- AllCompounds %>% 
+         MWs_1 <- AllRegCompounds %>% 
             mutate(Detail = paste0("MW", Suffix)) %>% 
             select(CompoundID, Detail) %>% 
             left_join(harmonize_details(existing_exp_details)[["MainDetails"]] %>%
@@ -1623,13 +1628,30 @@ ct_plot <- function(ct_dataframe = NA,
       A <- A + guides(shape = "none")
    } else {
       if("SD_SE" %in% names(obs_dataframe) & include_errorbars){
+         
          if(figure_type == "percentile ribbon"){
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            obs_dataframe <- obs_dataframe %>% 
+               mutate(Ymax = MyMean + SD_SE, 
+                      Ymin = MyMean - SD_SE, 
+                      Ymin = case_when(Ymin < 0 ~ 0, 
+                                       .default = Ymin))
+            
             A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
-                                   aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
                                    width = errorbar_width)
          } else {
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            obs_dataframe <- obs_dataframe %>% 
+               mutate(Ymax = Conc + SD_SE, 
+                      Ymin = Conc - SD_SE, 
+                      Ymin = case_when(Ymin < 0 ~ 0, 
+                                       .default = Ymin))
+            
             A <- A + geom_errorbar(data = obs_dataframe, 
-                                   aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
                                    width = errorbar_width)
          }
       }
@@ -1713,7 +1735,7 @@ ct_plot <- function(ct_dataframe = NA,
            fill = case_when(complete.cases(legend_label) ~ legend_label,
                             figure_type == "compound summary" ~ "Study",
                             .default = "Inhibitor")) +
-      theme_consultancy()
+      theme_consultancy(border = border)
    
    
    # If the user didn't want the legend or if the graph is of a perpetrator,
@@ -1936,8 +1958,13 @@ ct_plot <- function(ct_dataframe = NA,
                               single_or_multiple_profiles = "single", 
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
+                              include_errorbars = include_errorbars, 
                               linear_or_log = linear_or_log, 
-                              figure_type = figure_type,
+                              # Dealing w/mismatch between figure_type here and
+                              # what's expected in make_ct_caption
+                              figure_type = case_match(figure_type, 
+                                                       "freddy" ~ "Freddy", 
+                                                       .default = figure_type),
                               plot_type = PlotType, 
                               name_clinical_study = name_clinical_study, 
                               prettify_compound_names = prettify_compound_names, 

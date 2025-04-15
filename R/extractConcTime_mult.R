@@ -144,27 +144,30 @@
 #'   c("plasma", "blood", "liver")} or, if you want all possible tissues and
 #'   you've got some time to kill, "all". That will make R check for all sorts
 #'   of possible permutations of tab names, so it does take a while.
-#' @param compoundsToExtract For which compound do you want to extract
-#'   concentration-time data? Options are: \itemize{\item{"all" (default) for
-#'   all the possible compounds in the simulation (substrate, metabolites,
-#'   inhibitors, and ADC-related compounds)} \item{"substrate" (default),}
-#'   \item{"primary metabolite 1",} \item{"primary metabolite 2",}
-#'   \item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
-#'   inducer, inhibitor, activator, or suppresesor, but it's labeled as
-#'   "Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
-#'   listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
-#'   metabolite of inhibitor 1,} \item{"conjugated protein" for DAR1-DARmax for
-#'   an antibody-drug conjugate; observed data with DV listed as "Conjugated
-#'   Protein Plasma Total" will match these simulated data,} \item{"total
-#'   protein" for DAR0-DARmax for an ADC; observed data with DV listed as "Total
-#'   Protein Conjugate Plasma Total" will match these simulated data, or}
+#' @param compoundsToExtract For which compounds do you want to extract
+#'   concentration-time data? Options are:
+#'
+#'   \itemize{\item{"substrate" (default)}
+#'   \item{"primary metabolite 1"}
+#'   \item{"primary metabolite 2"}
+#'   \item{"secondary metabolite"}
+#'   \item{"inhibitor 1" -- this can be an inducer, inhibitor, activator, or
+#'   suppresesor, but it's labeled as "Inhibitor 1" in the simulator}
+#'   \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation}
+#'   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
+#'   \item{NOT SET UP YET --> "intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
+#'   observed data with DV listed as "Conjugated Protein Plasma Total" will
+#'   match these simulated data}
+#'   \item{"total antibody" for DAR0-DARmax for an ADC; observed data with DV
+#'   listed as "Total Protein Conjugate Plasma Total" will match these simulated data}
+#'   \item{"conjugated payload"; observed data with DV listed as 
+#'   "Conjugated Drug Plasma Total" will match these simulated data}
 #'   \item{"released payload" for the released drug from an ADC, which shows up
-#'   as primary metabolite 1 in Simulator output files}} Input to this argument
-#'   should be all desired compounds as a character vector, e.g.,
-#'   \code{c("substrate", "primary metabolite 1")}. \strong{Note: If your
-#'   compound is a therapeutic protein or ADC, we haven't tested this very
-#'   thoroughly, so please be extra careful to check that you're getting the
-#'   correct data.}
+#'   as "Sub Pri Met1" in Simulator output files.}}
+#'
+#'   \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
+#'   tested this very thoroughly, so please be extra careful to check that
+#'   you're getting the correct data.
 #' @param ... other arguments passed to the function
 #'   \code{\link{extractConcTime}}
 #' @param conc_units_to_use concentration units to use so that all data will be
@@ -246,23 +249,41 @@ extractConcTime_mult <- function(sim_data_files = NA,
       compoundsToExtract <- sys.call()$compoundToExtract
    }
    
+   compoundsToExtract_orig <- compoundsToExtract
    compoundsToExtract <- tolower(compoundsToExtract)
+   compoundsToExtract <- sub("released payload", "primary metabolite 1", 
+                             compoundsToExtract)
    
-   MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
+   MainCompoundIDs <- c("substrate", 
+                        "primary metabolite 1", 
+                        "primary metabolite 2",
                         "secondary metabolite",
-                        "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
+                        "inhibitor 1",
+                        "inhibitor 2",
+                        "inhibitor 1 metabolite",
                         "inhibitor 2 metabolite")
    
-   ADCCompoundIDs <- c("total protein", "conjugated protein", "released payload")
+   ADCCompoundIDs <- c("total antibody", 
+                       # "intact adc",
+                       "conjugated payload")
+   # NB: Released payload included w/MainCompoundIDs as primary metabolite 1
    
    PossCmpd <- c(MainCompoundIDs, ADCCompoundIDs, "all")
    
    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
-      warning(paste0("The compound(s) ", 
-                     str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
-                     " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                     str_comma(paste0("`", PossCmpd, "`")), "\n"), 
-              call. = FALSE)
+      
+      BadCmpds <- tibble(Orig = compoundsToExtract_orig, 
+                         Rev = compoundsToExtract) %>% 
+         filter(Rev %in% setdiff(compoundsToExtract, PossCmpd)) %>% 
+         pull(Orig)
+      
+      warning(wrapn(paste0(
+         "The compound(s) ", 
+         str_comma(paste0("'", BadCmpds, "'")),
+         " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
+         str_comma(paste0("'", PossCmpd, "'")))), 
+         call. = FALSE)
+      
       compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
    }
    
@@ -539,23 +560,48 @@ extractConcTime_mult <- function(sim_data_files = NA,
                            "Users/(?<=\\/)[^\\/]+(?=\\/)", 
                            paste0("Users/", Sys.info()["user"]))
             
+            
             ObsAssign <- existing_exp_details$MainDetails %>% 
                select(File, ObsOverlayFile) %>% 
                rename(ObsFile = ObsOverlayFile) %>% 
-               mutate(ObsFile = gsub("\\\\", "/", ObsFile), 
-                      ObsFile = sub("Users/.*/Certara", 
-                                    paste0("Users/", Sys.info()["user"], 
-                                           "/Certara"), ObsFile), 
-                      # Checking that the file exists.
-                      Exists = file.exists(ObsFile), 
-                      ObsFile_xlsx = sub("\\.xml$", ".xlsx", ObsFile), 
-                      ObsFile_xml = sub("\\.xlsx$", ".xml", ObsFile), 
-                      Exists_xlsx = file.exists(ObsFile_xlsx), 
-                      Exists_xml = file.exists(ObsFile_xml), 
-                      ObsFileToUse = case_when(
-                         Exists_xlsx ~ ObsFile_xlsx, 
-                         Exists_xml ~ ObsFile_xml, 
-                         Exists ~ ObsFile))
+               mutate(
+                  ObsFile = gsub("\\\\", "/", ObsFile), 
+                  ObsFile = sub("Users/.*/Certara", 
+                                paste0("Users/", Sys.info()["user"], 
+                                       "/Certara"), ObsFile), 
+                  # Noting whether obs file was from V24+ and thus embedded, which
+                  # means we don't know path.
+                  V24plusObsFile = str_detect(ObsFile, "embedded"), 
+                  ObsFile = case_when(
+                     V24plusObsFile == TRUE ~
+                        paste0(sub("\\(embedded\\)", "", ObsFile), 
+                               ".xml"), 
+                     .default = ObsFile), 
+                  # Checking that the file exists.
+                  Exists = file.exists(ObsFile), 
+                  ObsFile_xlsx = sub("\\.xml$", ".xlsx", ObsFile), 
+                  ObsFile_xml = sub("\\.xlsx$", ".xml", ObsFile), 
+                  Exists_xlsx = file.exists(ObsFile_xlsx), 
+                  Exists_xml = file.exists(ObsFile_xml), 
+                  ObsFileToUse = case_when(
+                     Exists_xlsx ~ ObsFile_xlsx, 
+                     Exists_xml ~ ObsFile_xml, 
+                     Exists ~ ObsFile), 
+                  ObsFileToUseExists = file.exists(ObsFileToUse))
+            
+            MissingV24ObsFiles <- 
+               ObsAssign %>% filter(ObsFileToUseExists == FALSE &
+                                       V24plusObsFile == TRUE)
+            
+            if(nrow(MissingV24ObsFiles) > 0){
+               
+               message(wrapn("The observed overlay XML file(s) for the following simulation(s) could not be found:"))
+               Problem <- capture.output(print(MissingV24ObsFiles %>% 
+                                                  select(File, ObsFile), row.names = FALSE))
+               message(str_c(Problem, collapse = "\n"))
+               message(wrapn("Please note that, in Simcyp Simulator versions 24 and above, the path of the observed file is not saved with the workspace, so we won't be able to extract the data if it's not in the same folder."))
+               
+            }
             
             # To get data from the xml file, we need to have the Simcyp package
             # installed and it has to be a version of Simcyp that has the
@@ -567,14 +613,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
                ObsAssign$Exists_xml <- FALSE
             } 
             
-            MyObsFileToUse <- ObsAssign %>% 
+            MissingObsFile <- ObsAssign %>% 
                filter(complete.cases(ObsFile) & is.na(ObsFileToUse)) %>% 
                pull(ObsFileToUse) %>% unique()
             
-            if(length(MyObsFileToUse) > 0){
+            if(length(MissingObsFile) > 0 && complete.cases(MissingObsFile)){
                warning(wrapn(paste0(
                   "The observed data file(s) ", str_comma(
-                     paste0("'", MyObsFileToUse, "'")), 
+                     paste0("'", MissingObsFile, "'")), 
                   " is/are not present and will be skipped.")), 
                   call. = FALSE)
             }
@@ -721,7 +767,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    # End of error catching for obs_to_sim_assignment. ObsAssign should now be a
    # data.frame with columns File and ObsFile or else a completely empty
    # data.frame.
-   if(length(ObsAssign) > 0){
+   if(nrow(ObsAssign) > 0){
       ObsAssign <- ObsAssign %>% filter(complete.cases(File) &
                                            complete.cases(ObsFile) &
                                            File %in% sim_data_files_topull) 
@@ -770,9 +816,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
       # back compatibility w/package versions < 2.6.0
       if(any(Deets$ADCSimulation, Deets$ADCSimulation_sub, na.rm = TRUE)){
          CompoundCheck <- c(CompoundCheck,
-                            "conjugated protein" = "conjugated protein",
-                            "total protein" = "total protein",
-                            "released payload" = "released payload")
+                            "total antibody" = "total antibody",
+                            "total payload" = "total payload", 
+                            # "intact adc" = "intact adc",
+                            "conjugated payload" = "conjugated payload")
+         # NB: NOT including "released payload" here b/c it's coded as primary
+         # metabolite 1 in the outputs. Will change this at the end.
       }
       
       if(compoundsToExtract_orig[1] == "all"){
@@ -825,6 +874,10 @@ extractConcTime_mult <- function(sim_data_files = NA,
          # d) feces have only compound ID per tab. I think the only compounds
          # available for feces are substrate and inhibitor 1. Calling this
          # tissue type "faeces".
+         
+         # e) Concentrations for parts of ADCs are available in plasma for sure
+         # and maybe blood (need to check) and then "conjugated payload"
+         # and "intact ADC" are also available in lymph. 
          
          TissueType <- case_when(
             str_detect(j, "plasma|blood|peripheral") ~ "systemic",
@@ -935,7 +988,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
                mutate(Type = ifelse(PossCompounds %in%
                                        c("substrate", "inhibitor 1",
                                          "inhibitor 2",
-                                         "inhibitor 1 metabolite"),
+                                         "inhibitor 1 metabolite", 
+                                         "total antibody", 
+                                         # "intact ADC",
+                                         "conjugated payload"
+                                       ),
                                     "substrate", PossCompounds)) %>%
                filter(PossCompounds %in% compoundsToExtract_n)
             
@@ -947,6 +1004,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
                compoundsToExtract_k <-
                   CompoundTypes %>% filter(Type == k) %>%
                   pull(PossCompounds)
+               
+               if(any(c(Deets$ADCSimulation_sub, Deets$ADCSimulation), na.rm = T)){
+                  compoundsToExtract_k <- setdiff(compoundsToExtract_k, 
+                                                  "substrate")
+               }
                
                if(str_detect(ff, "\\.db$")){
                   for(l in compoundsToExtract_k){
@@ -1048,16 +1110,21 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             if(nrow(CT_nonadam) > 0){
                CT_nonadam <- CT_nonadam %>% 
-                  convert_units(DF_with_good_units = NA, 
-                                conc_units = conc_units_to_use,
-                                time_units = time_units_to_use, 
-                                MW = c("substrate" = Deets$MW_sub, 
-                                       "inhibitor 1" = Deets$MW_inhib,
-                                       "primary metabolite 1" = Deets$MW_met1, 
-                                       "primary metabolite 2" = Deets$MW_met2, 
-                                       "inhibitor 2" = Deets$MW_inhib2, 
-                                       "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
-                                       "secondary metabolite" = Deets$MW_secmet))
+                  convert_units(
+                     DF_with_good_units = NA, 
+                     conc_units = conc_units_to_use,
+                     time_units = time_units_to_use, 
+                     MW = c("substrate" = Deets$MW_sub, 
+                            "inhibitor 1" = Deets$MW_inhib,
+                            "primary metabolite 1" = Deets$MW_met1, 
+                            "primary metabolite 2" = Deets$MW_met2, 
+                            "inhibitor 2" = Deets$MW_inhib2, 
+                            "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                            "secondary metabolite" = Deets$MW_secmet, 
+                            "conjugated payload" = as.numeric(Deets$MW_sub) + 
+                               as.numeric(Deets$MW_met1), 
+                            "total antibody" = Deets$MW_sub, 
+                            "released payload" = Deets$MW_met1))
             }
             
             MultData[[ff]][[j]] <- bind_rows(CT_adam, CT_nonadam)

@@ -53,9 +53,14 @@ if(FromCalcPKRatios){
    
 } 
 
+TableLabel <- ifelse(Annotations[["table_heading"]] == "", 
+                     "", 
+                     paste0("***Table XXX.*** *", 
+                            Annotations[["table_heading"]], "*"))
+
 ```
 
-`r Annotations[["table_heading"]]`
+`r TableLabel`
 
 ```{r}
 

@@ -485,7 +485,7 @@
 #'   format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
 #'   "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar
 #'   signs, or periods in the file name. Leaving this as NA means the file will
-#'   not be automatically saved to disk.
+#'   not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param y_axis_interval set the linear y-axis major tick-mark interval.
@@ -993,14 +993,14 @@ ct_plot_overlay <- function(ct_dataframe,
                     names(ct_dataframe))){
          ct_dataframe <- ct_dataframe %>% 
             mutate(Conc = case_when(
-               CompoundID %in% AllCompounds$CompoundID[
-                  AllCompounds$DosedCompoundID == "substrate"] ~ Conc / Dose_sub, 
+               CompoundID %in% AllRegCompounds$CompoundID[
+                  AllRegCompounds$DosedCompoundID == "substrate"] ~ Conc / Dose_sub, 
                
-               CompoundID %in% AllCompounds$CompoundID[
-                  AllCompounds$DosedCompoundID == "inhibitor 1"] ~ Conc / Dose_inhib, 
+               CompoundID %in% AllRegCompounds$CompoundID[
+                  AllRegCompounds$DosedCompoundID == "inhibitor 1"] ~ Conc / Dose_inhib, 
                
-               CompoundID %in% AllCompounds$CompoundID[
-                  AllCompounds$DosedCompoundID == "inhibitor 2"] ~ Conc / Dose_inhib2))
+               CompoundID %in% AllRegCompounds$CompoundID[
+                  AllRegCompounds$DosedCompoundID == "inhibitor 2"] ~ Conc / Dose_inhib2))
          
       } else if(all(c("Dose_sub", "Dose_inhib", "Dose_inhib2") %in% 
                     names(ct_dataframe)) == FALSE){
@@ -1357,10 +1357,7 @@ ct_plot_overlay <- function(ct_dataframe,
                                      "colorBy_column", "FC1", "FC2")), 
                sep = " ", remove = FALSE) %>% 
          mutate(CompoundID = factor(CompoundID,
-                                    levels = c("substrate", "primary metabolite 1",
-                                               "primary metabolite 2", "secondary metabolite",
-                                               "inhibitor 1", "inhibitor 1 metabolite", 
-                                               "inhibitor 2"))) 
+                                    levels = AllCompounds$CompoundID)) 
       
       if(all(complete.cases(ct_dataframe$DoseNum))){
          # If it's dose number 0, remove those rows so that we'll show only the
@@ -1783,7 +1780,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # Converting conc and time units if requested
    if(any(complete.cases(conc_units_to_use))){
       if("logical" %in% class(existing_exp_details) == FALSE){
-         MWs_1 <- AllCompounds %>% 
+         MWs_1 <- AllRegCompounds %>% 
             mutate(Detail = paste0("MW", Suffix)) %>% 
             select(CompoundID, Detail) %>% 
             left_join(harmonize_details(existing_exp_details)[["MainDetails"]] %>%
@@ -1820,13 +1817,24 @@ ct_plot_overlay <- function(ct_dataframe,
       }
    }
    
-   # Setting up the x axis using the subfunction ct_x_axis
-   XStuff <- ct_x_axis(Data = bind_rows(sim_dataframe, obs_dataframe),
-                       time_range = time_range, 
-                       t0 = "simulation start",
-                       pad_x_axis = pad_x_axis,
-                       MyCompoundID = AnchorCompound, 
-                       EnzPlot = EnzPlot)
+   # Setting up the x axis using the subfunction ct_x_axis. This will have
+   # trouble with mismatched data types if one of the data.frames has 0 rows.
+   DataPresent <- c("SimGood" = nrow(sim_dataframe) > 0, 
+                    "ObsGood" = nrow(obs_dataframe) > 0)
+   DataPresent <- names(DataPresent)[which(DataPresent)] %>% 
+      str_c(collapse = " ")
+   
+   XStuff <- ct_x_axis(
+      Data = switch(
+         DataPresent, 
+         "SimGood ObsGood" = bind_rows(sim_dataframe, obs_dataframe),
+         "SimGood" = sim_dataframe, 
+         "ObsGood" = obs_dataframe), 
+      time_range = time_range, 
+      t0 = "simulation start",
+      pad_x_axis = pad_x_axis,
+      MyCompoundID = AnchorCompound, 
+      EnzPlot = EnzPlot)
    
    xlab <- XStuff$xlab
    time_range <- XStuff$time_range
@@ -1836,19 +1844,25 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # Checking whether there are data in the time range requested and warning if
    # not.
-   if(any(bind_rows(sim_dataframe, obs_dataframe)$Time >= time_range_relative[1] & 
-          bind_rows(sim_dataframe, obs_dataframe)$Time <= time_range_relative[2]) == FALSE){
+   GoodData <- switch(
+      DataPresent, 
+      "SimGood ObsGood" = bind_rows(sim_dataframe, obs_dataframe),
+      "SimGood" = sim_dataframe, 
+      "ObsGood" = obs_dataframe) %>% 
+      pull(Time)
+   
+   if(any(GoodData >= time_range_relative[1] & 
+          GoodData <= time_range_relative[2]) == FALSE){
       warning(wrapn(paste0(
          "You requested a time range of ", 
          time_range_relative[1], " to ", time_range_relative[2], 
          " h, but your data are in the range of ",
-         min(bind_rows(sim_dataframe, obs_dataframe)$Time), " to ", 
-         max(bind_rows(sim_dataframe, obs_dataframe)$Time), " h. ",
+         min(GoodData), " to ", 
+         max(GoodData), " h. ",
          "Since none of your data are in the time range requested, the full time range will be returned.")), 
          call. = FALSE)
       
-      time_range <- c(min(bind_rows(sim_dataframe, obs_dataframe)$Time),
-                      max(bind_rows(sim_dataframe, obs_dataframe)$Time))
+      time_range <- c(min(GoodData), max(GoodData))
       time_range_relative <- time_range
    }
    
@@ -1986,19 +2000,115 @@ ct_plot_overlay <- function(ct_dataframe,
       obs_shape <- obs_shape[1:NumShapes] 
    }
    
+   ## Setting up colors and making the colorBy_column factor if needed --------
+   
+   if(AES %in% c("color", "color-linetype")){
+      
+      # Calculating the number of colors needed
+      
+      # If the user requests the column Individual for colorBy_column, they
+      # most likely want each observed individual to be a different color but
+      # the aggregate simulated data to be the usual colors (black or gray).
+      # NumColorsNeeded should only include the obs data in that scenario.
+      if(AESCols["color"] == "Individual"){
+         # If user has omitted aggregate data here, then the length will be 1
+         # short, so that's why double checking whether data are factor (I think
+         # they always will be) or character and adding accordingly.
+         if("factor" %in% class(obs_dataframe$colorBy_column)){
+            NumColorsNeeded <- length(levels(obs_dataframe$colorBy_column))
+            if(length(color_set) != 1 & 
+               length(NumColorsNeeded) != length(color_set)){
+               color_set <- rep(color_set, 2)[1:NumColorsNeeded]
+            }
+         } else {
+            NumColorsNeeded <- obs_dataframe %>% 
+               pull(colorBy_column) %>% unique() %>% length() 
+         }
+      } else {
+         NumColorsNeeded <-
+            bind_rows(sim_dataframe, obs_dataframe) %>%
+            pull(colorBy_column) %>% unique() %>% length()
+      }
+      
+      # If they supply a named character vector whose values are not present in
+      # the data, convert it to an unnamed character vector.
+      if(is.null(names(color_set)) == FALSE){
+         if(all(unique(sim_dataframe$colorBy_column) %in%
+                names(color_set) == FALSE)){
+            warning(wrapn(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
+                                 as_label(colorBy_column),
+                                 " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
+                                 as_label(colorBy_column), ".")), 
+                    call. = FALSE)
+            
+            color_set <- as.character(color_set)
+            MyColNames <- NA
+         } else {
+            # This is when they have supplied a named character vector for the
+            # colors. colorBy_column must now be made into factor data and must
+            # have the levels set by the names of that vector.
+            MyColNames <- names(color_set)
+            sim_dataframe$colorBy_column <- 
+               factor(sim_dataframe$colorBy_column, 
+                      levels = MyColNames)
+            
+            if("data.frame" %in% class(obs_dataframe) && 
+               nrow(obs_dataframe) > 0){
+               obs_dataframe$colorBy_column <- 
+                  factor(obs_dataframe$colorBy_column, 
+                         levels = MyColNames)
+            }
+         }
+      } else {
+         MyColNames <- NA
+      }
+      
+      MyColors <- make_color_set(color_set = color_set, 
+                                 num_colors = NumColorsNeeded)
+      
+      if(any(complete.cases(MyColNames))){
+         names(MyColors) <- MyColNames
+      }
+      
+      if(MapObsFile_color){
+         names(MyColors) <- unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
+                                      arrange(colorBy_column) %>% 
+                                      pull(colorBy_column))
+      } else if(length(color_set) == 1){
+         if(AESCols["color"] == "Individual"){
+            # Figuring out all the colorBy_column values
+            AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
+                                pull(colorBy_column))
+            
+            MyColors[which(AllCBC %in% c("mean", "geomean", "median"))] <- "black"
+            names(MyColors) <- levels(ct_dataframe$colorBy_column)
+            
+         } else {
+            # This is when the colors are NOT set by the observed file
+            # AND the user hasn't supplied a named character vector for
+            # how to assign the colors AND the colors are not assigned
+            # to the individual subject.
+            names(MyColors) <- levels(c(sim_dataframe$colorBy_column,
+                                        obs_dataframe$colorBy_column))
+            
+         }
+      }
+   }
+   
+   
    ## Setting up for faceting later -----------------------------------------
    
    # If the user wants to title their facets, check whether ggh4x is installed
    # and ask user if they want to install it if not.
    if(any(c(complete.cases(facet1_title), complete.cases(facet2_title))) & 
       length(find.package("ggh4x", quiet = TRUE)) == 0){
-      message("\nYou requested a title for facet1 or facet 2. Adding a title to facets requires the package ggh4x,\nwhich the R Working Group will ask IT to install next time VDIs are rebuilt but which we didn't\nthink of this go 'round.")
+      message(paste0("\n", wrapn("You requested a title for facet1 or facet 2. Adding a title to facets requires the package ggh4x.")))
       Install <- readline(prompt = "Is it ok to install ggh4x for you? (y or n)   ")
       
       if(tolower(str_sub(Install, 1, 1)) == "y"){
          install.packages("ggh4x")
       } else {
-         message("Ok, we will not install ggh4x for you, but we also won't be able to add facet titles to your graph.\n")
+         message(wrapn("Ok, we will not install ggh4x for you, but we also won't be able to add facet titles to your graph."))
          facet1_title <- NA
          facet2_title <- NA
       }
@@ -2417,17 +2527,36 @@ ct_plot_overlay <- function(ct_dataframe,
    if(include_errorbars){
       if(nrow(obs_dataframe) > 0 && "SD_SE" %in% names(obs_dataframe)){
          if(figure_type == "percentile ribbon"){
-            A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
-                                   aes(ymin = MyMean - SD_SE, ymax = MyMean + SD_SE), 
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            A <- A + geom_errorbar(data = obs_dataframe %>% 
+                                      rename(MyMean = Conc) %>% 
+                                      mutate(Ymax = MyMean + SD_SE, 
+                                             Ymin = MyMean - SD_SE, 
+                                             Ymin = case_when(Ymin < 0 ~ 0, 
+                                                              .default = Ymin)), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
                                    width = errorbar_width)
          } else {
-            A <- A + geom_errorbar(data = obs_dataframe, 
-                                   aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            A <- A + geom_errorbar(data = obs_dataframe %>% 
+                                      mutate(Ymax = Conc + SD_SE, 
+                                             Ymin = Conc - SD_SE, 
+                                             Ymin = case_when(Ymin < 0 ~ 0, 
+                                                              .default = Ymin)), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
                                    width = errorbar_width)
          }
       } else if(ReleaseProfPlot | DissolutionProfPlot){
-         A <- A + geom_errorbar(data = sim_dataframe, 
-                                aes(ymin = Conc - SD_SE, ymax = Conc + SD_SE), 
+         # If error bars are below 0, that's nonsensical. Setting anything < 0
+         # to 0 for graphing.
+         A <- A + geom_errorbar(data = sim_dataframe %>% 
+                                   mutate(Ymax = MyMean + SD_SE, 
+                                          Ymin = MyMean - SD_SE, 
+                                          Ymin = case_when(Ymin < 0 ~ 0, 
+                                                           .default = Ymin)), 
+                                aes(ymin = Ymin, ymax = Ymax), 
                                 width = errorbar_width)
       }
    }
@@ -2650,84 +2779,6 @@ ct_plot_overlay <- function(ct_dataframe,
    # tictoc::tic(msg = "setting aesthetics")
    
    if(AES %in% c("color", "color-linetype")){
-      
-      # Calculating the number of colors needed
-      
-      # If the user requests the column Individual for colorBy_column, they
-      # most likely want each observed individual to be a different color but
-      # the aggregate simulated data to be the usual colors (black or gray).
-      # NumColorsNeeded should only include the obs data in that scenario.
-      if(AESCols["color"] == "Individual"){
-         # If user has omitted aggregate data here, then the length will be 1
-         # short, so that's why double checking whether data are factor (I think
-         # they always will be) or character and adding accordingly.
-         if("factor" %in% class(obs_dataframe$colorBy_column)){
-            NumColorsNeeded <- length(levels(obs_dataframe$colorBy_column))
-            if(length(color_set) != 1 & 
-               length(NumColorsNeeded) != length(color_set)){
-               color_set <- rep(color_set, 2)[1:NumColorsNeeded]
-            }
-         } else {
-            NumColorsNeeded <- obs_dataframe %>% 
-               pull(colorBy_column) %>% unique() %>% length() 
-         }
-      } else {
-         NumColorsNeeded <-
-            bind_rows(sim_dataframe, obs_dataframe) %>%
-            pull(colorBy_column) %>% unique() %>% length()
-      }
-      
-      # If they supply a named character vector whose values are not
-      # present in the data, convert it to an unnamed character vector.
-      if(is.null(names(color_set)) == FALSE){
-         if(all(unique(sim_dataframe$colorBy_column) %in%
-                names(color_set) == FALSE)){
-            warning(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
-                           as_label(colorBy_column),
-                           " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
-                           as_label(colorBy_column), ".\n"), 
-                    call. = FALSE)
-            
-            color_set <- as.character(color_set)
-            MyColNames <- NA
-         } else {
-            MyColNames <- names(color_set)
-         }
-      } else {
-         MyColNames <- NA
-      }
-      
-      MyColors <- make_color_set(color_set = color_set, 
-                                 num_colors = NumColorsNeeded)
-      
-      if(any(complete.cases(MyColNames))){
-         names(MyColors) <- MyColNames
-      }
-      
-      if(MapObsFile_color){
-         names(MyColors) <- unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
-                                      arrange(colorBy_column) %>% 
-                                      pull(colorBy_column))
-      } else if(length(color_set) == 1){
-         if(AESCols["color"] == "Individual"){
-            # Figuring out all the colorBy_column values
-            AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
-                                pull(colorBy_column))
-            
-            MyColors[which(AllCBC %in% c("mean", "geomean", "median"))] <- "black"
-            names(MyColors) <- levels(ct_dataframe$colorBy_column)
-            
-         } else {
-            # This is when the colors are NOT set by the observed file
-            # AND the user hasn't supplied a named character vector for
-            # how to assign the colors AND the colors are not assigned
-            # to the individual subject.
-            names(MyColors) <- levels(c(sim_dataframe$colorBy_column,
-                                        obs_dataframe$colorBy_column))
-            
-         }
-      }
-      
       suppressWarnings(
          A <-  A + scale_color_manual(values = MyColors, drop = FALSE) +
             scale_fill_manual(values = MyColors, drop = FALSE)
@@ -2790,6 +2841,7 @@ ct_plot_overlay <- function(ct_dataframe,
          }
       }
    }
+   
    
    ### Adding legend label for color and linetype as appropriate ----------------
    if(complete.cases(legend_label_color)){
@@ -3092,6 +3144,7 @@ ct_plot_overlay <- function(ct_dataframe,
                               plot_type = PlotType, 
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
+                              include_errorbars = include_errorbars, 
                               linear_or_log = linear_or_log, 
                               figure_type = figure_type, 
                               # !!! Important! This must be PrettyCmpds and not

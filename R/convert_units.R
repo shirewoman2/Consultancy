@@ -156,10 +156,7 @@ convert_conc_units <- function(DF_to_convert,
       
       names(MW) <- unique(DF_to_convert$CompoundID)
       
-      if(any(names(MW) %in% 
-             c("substrate", "inhibitor 1", "primary metabolite 1", 
-               "primary metabolite 2", "inhibitor 2", "inhibitor 1 metabolite", 
-               "secondary metabolite") == FALSE)){
+      if(any(names(MW) %in% AllCompounds$CompoundID == FALSE)){
          warning(wrapn("The names you have supplied for which molecular weight is which are not among the acceptable options for compound ID. Please see the help file for the acceptable names and an example."), 
                  call. = FALSE)
          return(DF_to_convert)
@@ -363,16 +360,17 @@ convert_conc_units <- function(DF_to_convert,
       
       DF_to_convert <- DF_to_convert %>% 
          left_join(ConvTable_conc, by = "CompoundID") %>% 
-         mutate(Conc = Conc*Factor,
+         mutate(across(.cols = any_of(c("Conc", "SD_SE")), 
+                       .fns = \(x) x*Factor),
                 Conc_units = RevUnits)
       
    } else {
-      ConvFactor_conc <-
+      Factor <-
          ConvTable_conc$Factor[
             which(ConvTable_conc$OrigUnits == unique(DF_to_convert$Conc_units) &
                      ConvTable_conc$RevUnits == unique(DF_with_good_units$Conc_units))]
       
-      if(length(ConvFactor_conc) < 1){
+      if(length(Factor) < 1){
          stop(paste0("You supplied concentration units of ",
                      str_comma(unique(DF_to_convert$Conc_units)), 
                      ", but we were not able to convert them to the desired units of ", 
@@ -381,8 +379,11 @@ convert_conc_units <- function(DF_to_convert,
               call. = FALSE)
       }
       
-      DF_to_convert <- DF_to_convert %>% mutate(Conc = Conc*ConvFactor_conc,
-                                                Conc_units = unique(DF_with_good_units$Conc_units))
+      # NB: Factor is an external variable in this case, not a column; hence the {}
+      DF_to_convert <- DF_to_convert %>% 
+         mutate(across(.cols = any_of(c("Conc", "SD_SE")), 
+                       .fns = \(x) x*{Factor}),
+                Conc_units = unique(DF_with_good_units$Conc_units))
    }
    
    ## Output -----------------------------------------------------------
@@ -454,19 +455,20 @@ convert_time_units <- function(DF_to_convert,
                  1/24,  1/(24*60),  1,      7, 
                  1/168, 1/(168*60), 1/7,    1))
    
-   if(unique(DF_with_good_units$Time_units) %in% ConvTable_time$OrigUnits == FALSE |
-      unique(DF_to_convert$Time_units) %in% ConvTable_time$RevUnits == FALSE){
+   if(all(unique(DF_with_good_units$Time_units) %in% ConvTable_time$OrigUnits) == FALSE |
+      all(unique(DF_to_convert$Time_units) %in% ConvTable_time$RevUnits) == FALSE){
       stop("Our apologies, but we have not yet set up this function to deal with your time units. Please tell the Consultancy Team R working group what units you're working with and we can fix this.",
            call. = FALSE)
    }
    
-   ConvFactor_time <-
-      ConvTable_time$Factor[
-         which(ConvTable_time$OrigUnits == unique(DF_to_convert$Time_units) &
-                  ConvTable_time$RevUnits == unique(DF_with_good_units$Time_units))]
-   
-   DF_to_convert <- DF_to_convert %>% mutate(Time = Time*ConvFactor_time,
-                                             Time_units = unique(DF_with_good_units$Time_units))
+   DF_to_convert <- DF_to_convert %>%
+      left_join(ConvTable_time %>% 
+                   rename(Time_units = OrigUnits) %>% 
+                   filter(RevUnits %in% DF_with_good_units$Time_units), 
+                by = "Time_units") %>% 
+      mutate(Time = Time * Factor,
+             Time_units = RevUnits) %>% 
+      select(-Factor, -RevUnits)
    
    
    # Output -----------------------------------------------------------

@@ -54,28 +54,35 @@
 #'   blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 #'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 #'   or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
-#'   "jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only 
+#'   "jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only
 #'   applies to rodents), "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 #'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
 #'   released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
 #'   SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.
 #' @param compoundToExtract For which compound do you want to extract
-#'   concentration-time data? Options are: \itemize{\item{"substrate"
-#'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
-#'   \item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
-#'   inducer, inhibitor, activator, or suppresesor, but it's labeled as
-#'   "Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
-#'   listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
-#'   metabolite of inhibitor 1} \item{"conjugated protein" for DAR1-DARmax for
-#'   an antibody-drug conjugate; observed data with DV listed as "Conjugated
-#'   Protein Plasma Total" will match these simulated data,} \item{"total
-#'   protein" for DAR0-DARmax for an ADC; observed data with DV listed as "Total
-#'   Protein Conjugate Plasma Total" will match these simulated data,}
+#'   concentration-time data? Options are:
+#'
+#'   \itemize{\item{"substrate" (default)}
+#'   \item{"primary metabolite 1"}
+#'   \item{"primary metabolite 2"}
+#'   \item{"secondary metabolite"}
+#'   \item{"inhibitor 1" -- this can be an inducer, inhibitor, activator, or
+#'   suppresesor, but it's labeled as "Inhibitor 1" in the simulator}
+#'   \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation}
+#'   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
+#'   \item{NOT SET UP YET --> "intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
+#'   observed data with DV listed as "Conjugated Protein Plasma Total" will
+#'   match these simulated data}
+#'   \item{"total antibody" for DAR0-DARmax for an ADC; observed data with DV
+#'   listed as "Total Protein Conjugate Plasma Total" will match these simulated data}
+#'   \item{"conjugated payload"; observed data with DV listed as 
+#'   "Conjugated Drug Plasma Total" will match these simulated data}
 #'   \item{"released payload" for the released drug from an ADC, which shows up
-#'   as primary metabolite 1 in Simulator output files.}} \strong{Note:} If your
-#'   compound is a therapeutic protein or ADC, we haven't tested this very
-#'   thoroughly, so please be extra careful to check that you're getting the
-#'   correct data.
+#'   as "Sub Pri Met1" in Simulator output files.}}
+#'
+#'   \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
+#'   tested this very thoroughly, so please be extra careful to check that
+#'   you're getting the correct data.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are "aggregate", "individual", or "both"
 #'   (default). Aggregated data are not calculated here but are pulled from the
@@ -235,7 +242,7 @@ extractConcTime <- function(sim_data_file,
                  "portal vein unbound blood", "portal vein unbound plasma", "skin", 
                  "solid organ", "spleen", "stomach",
                  "tumour volume", 
-                 # "total protein", "conjugated protein",
+                 # "total antibody", "intact ADC",
                  # "total antibody", "protein-conjugated antibody",
                  "unbound blood", "unbound plasma", "urine")
    
@@ -244,27 +251,22 @@ extractConcTime <- function(sim_data_file,
            call. = FALSE)
    }
    
+   compoundToExtract_orig <- compoundToExtract
    compoundToExtract <- tolower(compoundToExtract)
+   compoundToExtract <- sub("released payload", "primary metabolite 1", 
+                            compoundToExtract)
    
-   ADCCompoundIDs <- c("total protein",
-                       "conjugated protein",
-                       "released payload")
+   ADCCompoundIDs <- c("total antibody",
+                       # "intact adc",
+                       "conjugated payload") 
+   # NB: NOT including "released payload" here b/c it's coded as primary
+   # metabolite 1 in the outputs. Will change this at the end.
    
-   if(any(compoundToExtract %in% c(AllCompounds$CompoundID, 
+   if(any(compoundToExtract %in% c(AllRegCompounds$CompoundID, 
                                    ADCCompoundIDs) == FALSE)){
-      stop("The compound for which you requested concentration-time data was not one of the possible options. For 'compoundToExtract', please enter 'substrate', 'primary metabolite 1', 'secondary metabolite', 'inhibitor 1', 'inhibitor 2', or 'inhibitor 1 metabolite'.",
+      stop(wrapn("The compound for which you requested concentration-time data was not one of the possible options. For 'compoundToExtract', please enter 'substrate', 'primary metabolite 1', 'secondary metabolite', 'inhibitor 1', 'inhibitor 2', or 'inhibitor 1 metabolite'."),
            call. = FALSE)
    }
-   
-   # Noting whether the tissue was from an ADAM model
-   ADAM <- tissue %in% c("stomach", "duodenum",
-                         "jejunum i", "jejunum ii",
-                         # NB: rodents have additional jejunums: III and IV
-                         "jejunum iii", "jejunum iv", 
-                         "ileum i", "ileum ii", "ileum iii", "ileum iv",
-                         "colon", "faeces", 
-                         "cumulative absorption", "cumulative dissolution", 
-                         "cumulative fraction released", "gut tissue")
    
    # toc(log = TRUE)
    
@@ -373,9 +375,10 @@ extractConcTime <- function(sim_data_file,
    if(PerpPresent == FALSE & any(str_detect(compoundToExtract, "inhibitor"))){
       # Giving user an empty data.frame rather than stopping so that this will
       # work with either single or multiple version of function.
-      warning(paste0("There are no inhibitor data in `", 
-                     sim_data_file, "`. Please either submit a different Simulator output file or request concentration-time data for a substrate or metabolite.\n"),
-              call. = FALSE)
+      warning(wrapn(paste0(
+         "There are no inhibitor data in '", 
+         sim_data_file, "'. Please either submit a different Simulator output file or request concentration-time data for a substrate or metabolite.")),
+         call. = FALSE)
       return(data.frame())
    }
    
@@ -383,15 +386,15 @@ extractConcTime <- function(sim_data_file,
    AllPerpsPresent <- AllPerpsPresent[complete.cases(AllPerpsPresent)]
    
    # Noting all compounds present
-   AllCompoundsPresent <- c("substrate" = Deets$Substrate,
-                            "primary metabolite 1" = Deets$PrimaryMetabolite1, 
-                            "primary metabolite 2" = Deets$PrimaryMetabolite2,
-                            "secondary metabolite" = Deets$SecondaryMetabolite,
-                            "inhibitor 1" = Deets$Inhibitor1,
-                            "inhibitor 2" = Deets$Inhibitor2,
-                            "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
-   AllCompoundsPresent <- AllCompoundsPresent[complete.cases(AllCompoundsPresent)]
-   AllCompoundsID <- names(AllCompoundsPresent)
+   AllRegCompoundsPresent <- c("substrate" = Deets$Substrate,
+                               "primary metabolite 1" = Deets$PrimaryMetabolite1, 
+                               "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                               "secondary metabolite" = Deets$SecondaryMetabolite,
+                               "inhibitor 1" = Deets$Inhibitor1,
+                               "inhibitor 2" = Deets$Inhibitor2,
+                               "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
+   AllRegCompoundsPresent <- AllRegCompoundsPresent[complete.cases(AllRegCompoundsPresent)]
+   AllRegCompoundsID <- names(AllRegCompoundsPresent)
    
    # Extracting tissue or plasma/blood data? Sheet format differs.
    TissueType <- case_when(
@@ -427,19 +430,36 @@ extractConcTime <- function(sim_data_file,
       return(data.frame())
    }
    
-   AdvBrainModel <- any(str_detect(sim_data_xl$...1, "Intracranial"), na.rm = TRUE)
-   # toc(log = T)
    ## Harmonizing compound names ---------------------------------------------
    # tic(msg = "Harmonizing cmpd names")
    
+   # Noting whether the tissue was from an ADAM model, advanced brain model, or
+   # ADC simulation.
+   AdvBrainModel <- any(str_detect(sim_data_xl$...1, "Intracranial"), na.rm = TRUE)
+   
+   ADAM <- tissue %in% c("stomach", "duodenum",
+                         "jejunum i", "jejunum ii",
+                         # NB: rodents have additional jejunums: III and IV
+                         "jejunum iii", "jejunum iv", 
+                         "ileum i", "ileum ii", "ileum iii", "ileum iv",
+                         "colon", "faeces", 
+                         "cumulative absorption", "cumulative dissolution", 
+                         "cumulative fraction released", "gut tissue")
+   
+   ADC <- any(c(existing_exp_details$MainDetails$ADCSimulation_sub, 
+                existing_exp_details$MainDetails$ADCSimulation), na.rm = T)
+   
+   # toc(log = T)
+   
    sim_data_xl <- eCT_harmonize(sim_data_xl = sim_data_xl, 
                                 compoundToExtract = compoundToExtract, 
-                                AllCompoundsPresent = AllCompoundsPresent,
+                                AllRegCompoundsPresent = AllRegCompoundsPresent,
                                 tissue = tissue, 
                                 Deets = Deets, 
                                 PerpPresent = PerpPresent, 
                                 ADAM = ADAM,
-                                AdvBrainModel = AdvBrainModel)
+                                AdvBrainModel = AdvBrainModel, 
+                                ADC = ADC)
    
    ## Checking units ---------------------------------------------------------
    
@@ -451,13 +471,14 @@ extractConcTime <- function(sim_data_file,
                                       "CMax"))])[1]
    SimConcUnits <- gsub("CMax \\(|\\)", "", SimConcUnits)
    
-   if(is.na(SimConcUnits) & 
-      any(str_detect(sim_data_xl$...1, "Therapeutic protein"), na.rm = T)){
+   if(is.na(SimConcUnits) & ADC){
       
       SimConcUnits <- sim_data_xl$...1[
-         which(str_detect(sim_data_xl$...1, "Therapeutic protein"))[1]]
-      SimConcUnits <- gsub("Therapeutic protein SUBSTRATE( Mean)? \\(|\\)", "", SimConcUnits)
-      
+         which(str_detect(sim_data_xl$...1, "(PROTEINTOTAL|PROTEINCONJDRUG).*\\("))]
+      SimConcUnits <- gsub("\\(DAR0-DARmax\\)", "", SimConcUnits)
+      SimConcUnits <- SimConcUnits[which(str_detect(SimConcUnits, "\\("))][1]
+      SimConcUnits <- str_extract(SimConcUnits, "\\(.*\\)")
+      SimConcUnits <- gsub("\\(|\\)", "", SimConcUnits)
    }
    
    # # ADAM options available (this is for my reference and was copied from ct_plot.R)
@@ -570,7 +591,10 @@ extractConcTime <- function(sim_data_file,
       # tic(msg = paste("Extracting", cmpd))
       
       if(fromMultFunction){
-         message(paste("          for compound ID =", cmpd))
+         message(paste("          for compound ID =",
+                       case_when(cmpd == "primary metabolite 1" & 
+                                    ADC == TRUE ~ "released payload",
+                                 .default = cmpd)))
       }
       
       sim_data[[cmpd]] <- list() 
@@ -587,6 +611,7 @@ extractConcTime <- function(sim_data_file,
                          fromMultFunction = fromMultFunction, 
                          Deets = Deets, 
                          ADAM = ADAM, 
+                         ADC = ADC, 
                          ss = ss, 
                          AdvBrainModel = AdvBrainModel, 
                          tissue = tissue, 
@@ -694,14 +719,11 @@ extractConcTime <- function(sim_data_file,
         "primary metabolite 1" = Deets$PrimaryMetabolite1,
         "primary metabolite 2" = Deets$PrimaryMetabolite2,
         "secondary metabolite" = Deets$SecondaryMetabolite,
-        "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
-   
-   # if(CompoundType == "ADC"){
-   #    ObsCompounds <- c(ObsCompounds,
-   #                      "conjugated protein" = paste("conjugated", Deets$Substrate),
-   #                      "total protein" = paste("total", Deets$Substrate),
-   #                      "released payload" = Deets$PrimaryMetabolite1)
-   # }
+        "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite, 
+        "intact ADC" = paste0(Deets$Substrate, "-", Deets$PrimaryMetabolite1), 
+        "conjugated payload" = NA, 
+        "total antibody" = Deets$Substrate, 
+        "released payload" = Deets$PrimaryMetabolite1)
    
    AllPerps_comma <- ifelse(length(AllPerpsPresent) == 0,
                             NA, str_comma(AllPerpsPresent))
@@ -788,12 +810,12 @@ extractConcTime <- function(sim_data_file,
                                   Inhibitor = "none",
                                   CompoundID = ifelse(tissue == "plasma" &
                                                          all(compoundToExtract == "substrate") &
-                                                         all(AllCompoundsID == "substrate"),
+                                                         all(AllRegCompoundsID == "substrate"),
                                                       cmpd, "UNKNOWN"),
                                   Compound = ifelse(tissue == "plasma" &
                                                        all(compoundToExtract == "substrate") &
-                                                       all(AllCompoundsID == "substrate"),
-                                                    AllCompoundsPresent["substrate"], "UNKNOWN"),
+                                                       all(AllRegCompoundsID == "substrate"),
+                                                    AllRegCompoundsPresent["substrate"], "UNKNOWN"),
                                   ObsFile = NA,
                                   Species = ifelse(is.na(Deets$Species),
                                                    "human",
@@ -818,6 +840,15 @@ extractConcTime <- function(sim_data_file,
          
          obs_data <- extractObsConcTime(obs_data_file)
          
+         if(ADC){
+            obs_data <- obs_data %>% 
+               mutate(CompoundID = 
+                         case_match(CompoundID, 
+                                    "substrate" ~ "total antibody", # FIXME: Not sure this is how I should set this up. Need clarity on all the Obs DV options for ADC sims.
+                                    "primary metabolite 1" ~ "released payload", 
+                                    .default = CompoundID))
+         }
+         
          if("CompoundID" %in% names(obs_data)){
             obs_data <- obs_data %>% 
                filter(CompoundID %in% compoundToExtract) %>%
@@ -827,11 +858,6 @@ extractConcTime <- function(sim_data_file,
                                             complete.cases(AllPerps_comma),
                                          AllPerps_comma, Inhibitor))
             
-            # if(CompoundType == "ADC"){
-            #    obs_data <- obs_data %>%
-            #       mutate(CompoundID = ifelse(CompoundID == "primary metabolite 1",
-            #                                  "released payload", CompoundID))
-            # }
          }
          
          if(nrow(obs_data) == 0){
@@ -842,15 +868,20 @@ extractConcTime <- function(sim_data_file,
             # the simulation, don't include those and give the user a
             # warning.
             Missing <- setdiff(unique(obs_data$CompoundID),
-                               names(ObsCompounds[complete.cases(ObsCompounds)]))
+                               c(names(ObsCompounds[complete.cases(ObsCompounds)]), 
+                                 # FIXME: This warning is not set up correctly
+                                 # for ADC compounds.
+                                 AllCompounds$CompoundID[
+                                    AllCompounds$CompoundType == "ADC"]))
             
             if(length(Missing) > 0){
-               warning(paste0("The observed data file includes ",
-                              str_comma(Missing),
-                              ", which is/are not present in the simulated data. Observed data for ",
-                              str_comma(Missing),
-                              " will not be included in the output.\n"),
-                       call. = FALSE)
+               warning(wrapn(paste0(
+                  "The observed data file includes ",
+                  str_comma(Missing),
+                  ", which is/are not present in the simulated data. Observed data for ",
+                  str_comma(Missing),
+                  " will not be included in the output.")),
+                  call. = FALSE)
                obs_data <- obs_data %>%
                   filter(!CompoundID %in% Missing)
             }
@@ -858,7 +889,18 @@ extractConcTime <- function(sim_data_file,
             # As necessary, convert simulated data units to match the
             # observed data
             sim_data <- convert_units(DF_to_convert = sim_data,
-                                      DF_with_good_units = obs_data)
+                                      DF_with_good_units = obs_data, 
+                                      MW = c("substrate" = Deets$MW_sub, 
+                                             "inhibitor 1" = Deets$MW_inhib,
+                                             "primary metabolite 1" = Deets$MW_met1, 
+                                             "primary metabolite 2" = Deets$MW_met2, 
+                                             "inhibitor 2" = Deets$MW_inhib2, 
+                                             "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                                             "secondary metabolite" = Deets$MW_secmet, 
+                                             "conjugated payload" = as.numeric(Deets$MW_sub) + 
+                                                as.numeric(Deets$MW_met1), 
+                                             "total antibody" = Deets$MW_sub, 
+                                             "released payload" = Deets$MW_met1))
          }
       }
    }
@@ -879,13 +921,15 @@ extractConcTime <- function(sim_data_file,
    # Dosing regimen info ---------------------------------------------------
    DosingScenario <- switch(cmpd,
                             "substrate" = Deets$Regimen_sub,
+                            "total antibody" = Deets$Regimen_sub,
+                            "conjugated payload" = Deets$Regimen_sub,
+                            "released payload" = Deets$Regimen_sub,
                             "primary metabolite 1" = Deets$Regimen_sub,
                             "primary metabolite 2" = Deets$Regimen_sub,
                             "secondary metabolite" = Deets$Regimen_sub,
                             "inhibitor 1" = Deets$Regimen_inhib,
                             "inhibitor 2" = Deets$Regimen_inhib2,
                             "inhibitor 1 metabolite" = Deets$Regimen_inhib)
-   # DosingScenario <- ifelse(CompoundType == "ADC", Deets$Regimen_sub, DosingScenario)
    
    if(adjust_obs_time & DosingScenario == "Multiple Dose" &
       exists("obs_data", inherits = FALSE)){
@@ -907,6 +951,11 @@ extractConcTime <- function(sim_data_file,
    
    Data[["sim"]] <- bind_rows(sim_data) %>%
       mutate(Simulated = TRUE,
+             CompoundID = 
+                case_when(
+                   {ADC} == TRUE & CompoundID == "primary metabolite 1" ~ 
+                      "released payload", 
+                   .default = CompoundID), 
              Species = ifelse(is.na(Deets$Species),
                               "human",
                               tolower(sub("Sim-", "", Deets$Species)))) %>%
@@ -920,6 +969,13 @@ extractConcTime <- function(sim_data_file,
          Data[["obs"]] <- obs_data %>% 
             mutate(Species = Deets$Species)
       }
+      
+      Data[["obs"]] <- Data[["obs"]] %>% 
+         mutate(CompoundID = 
+                   case_when(
+                      {ADC} == TRUE & CompoundID == "primary metabolite 1" ~ 
+                         "released payload", 
+                      .default = CompoundID))
    }
    
    Data <- bind_rows(Data) %>%

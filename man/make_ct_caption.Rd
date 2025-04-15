@@ -10,6 +10,7 @@ make_ct_caption(
   plot_type = "concentration-time",
   existing_exp_details = NA,
   mean_type = "arithmetic",
+  include_errorbars = FALSE,
   linear_or_log = "linear",
   figure_type = "percentiles",
   prettify_compound_names = TRUE,

@@ -66,11 +66,11 @@ extractExpDetails_DB <- function(sim_data_file){
    
    # Figure out which compound positions were active. 
    ActiveCompounds <- 
-      sapply(paste0("idInhEnabled", AllCompounds$CompoundID_num_Simcyp), 
+      sapply(paste0("idInhEnabled", AllRegCompounds$CompoundID_num_Simcyp), 
              \(x) Simcyp::GetParameter(Tag = x, 
                                        Category = Simcyp::CategoryID$SimulationData, 
                                        SubCategory = 0))
-   names(ActiveCompounds) <- AllCompounds$DetailNames
+   names(ActiveCompounds) <- AllRegCompounds$DetailNames
    ActiveCompounds <- names(ActiveCompounds)[ActiveCompounds]
    
    # # Comment this out for actual function, but here is how to see all possible
@@ -102,7 +102,7 @@ extractExpDetails_DB <- function(sim_data_file){
          ColsChangeWithCmpd == TRUE ~ sub("_sub|_inhib2|_inhib$|_met1|_met2|_secmet|_inhib1met", 
                                           "", Detail), 
          TRUE ~ Detail)) %>% 
-      left_join(AllCompounds %>% select(CompoundID, Suffix, CompoundID_Simcyp), 
+      left_join(AllRegCompounds %>% select(CompoundID, Suffix, CompoundID_Simcyp), 
                 by = "CompoundID") %>% 
       mutate(CompoundID_Simcyp = factor(CompoundID_Simcyp, 
                                         levels = c("Substrate", "SubPriMet1", "SubPriMet2", 
@@ -117,7 +117,7 @@ extractExpDetails_DB <- function(sim_data_file){
    CmpdParam <- unique(
       ParameterConversion$Detail_nosuffix[
          ParameterConversion$SimcypParameterType == "compound"])
-   CmpdParam <- setdiff(CmpdParam, AllCompounds$DetailNames)
+   CmpdParam <- setdiff(CmpdParam, AllRegCompounds$DetailNames)
    
    for(k in CmpdParam){
       
@@ -188,7 +188,7 @@ extractExpDetails_DB <- function(sim_data_file){
    # Removing info for compounds that are not active
    Details <- Details[
       which(str_detect(names(Details), 
-                       str_c(paste0(AllCompounds$Suffix[AllCompounds$DetailNames %in% ActiveCompounds], 
+                       str_c(paste0(AllRegCompounds$Suffix[AllRegCompounds$DetailNames %in% ActiveCompounds], 
                                     "$"), 
                              collapse = "|")))]
    
@@ -213,8 +213,8 @@ extractExpDetails_DB <- function(sim_data_file){
       pull(Detail)
    
    # Only the ones that apply to active compounds
-   Y <- X[str_detect(X, AllCompounds$DosedCompoundSuffix[
-      AllCompounds$DetailNames %in% ActiveCompounds])]
+   Y <- X[str_detect(X, AllRegCompounds$DosedCompoundSuffix[
+      AllRegCompounds$DetailNames %in% ActiveCompounds])]
    
    Remove <- setdiff(X, Y)
    
@@ -265,21 +265,21 @@ extractExpDetails_DB <- function(sim_data_file){
    
    # Getting compound names separately.
    CmpdNames <- 
-      map(.x = AllCompounds$CompoundID_num_Simcyp, 
+      map(.x = AllRegCompounds$CompoundID_num_Simcyp, 
           .f = function(x){Simcyp::GetCompoundParameter(
              Tag = "idName", 
              Compound = x)})
-   names(CmpdNames) <- AllCompounds$DetailNames
+   names(CmpdNames) <- AllRegCompounds$DetailNames
    
    Details <- c(Details, 
-                CmpdNames[intersect(AllCompounds$DetailNames, ActiveCompounds)])
+                CmpdNames[intersect(AllRegCompounds$DetailNames, ActiveCompounds)])
    
    # t(as.data.frame(Details))
    
    # Other functions call on "Inhibitor1", etc., so we need those objects to
    # exist, even if they were not used in this simulation. Setting them to NA if
    # they don't exist.
-   MissingCmpd <- setdiff(AllCompounds$DetailNames, 
+   MissingCmpd <- setdiff(AllRegCompounds$DetailNames, 
                           names(Details))
    MissingCmpd_list <- as.list(rep(NA, length(MissingCmpd)))
    names(MissingCmpd_list) <- MissingCmpd
@@ -301,9 +301,9 @@ extractExpDetails_DB <- function(sim_data_file){
              PrandialSt = case_match(DosingFedState,
                                      3 ~ "Fasted"),
              CompoundID_num_Simcyp = CompoundIndex + 1) %>% 
-      left_join(AllCompounds %>% select(CompoundID_num_Simcyp, CompoundID), 
+      left_join(AllRegCompounds %>% select(CompoundID_num_Simcyp, CompoundID), 
                 by = "CompoundID_num_Simcyp") %>% 
-      filter(CompoundID %in% unique(AllCompounds$DosedCompoundID)) %>% 
+      filter(CompoundID %in% unique(AllRegCompounds$DosedCompoundID)) %>% 
       select(File, CompoundID, Time, DoseNum, PrandialSt, InfusionDuration, 
              Dose, DoseRoute, Dose_units) %>% unique()
    
@@ -313,7 +313,7 @@ extractExpDetails_DB <- function(sim_data_file){
    # here for now.
    PrandialState <- Dosing %>% 
       select(CompoundID, PrandialSt) %>% unique() %>% 
-      left_join(AllCompounds %>% select(CompoundID, Suffix), 
+      left_join(AllRegCompounds %>% select(CompoundID, Suffix), 
                 by = "CompoundID") %>% 
       mutate(Parameter = paste0("PrandialSt", Suffix))
    

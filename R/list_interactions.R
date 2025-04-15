@@ -72,14 +72,14 @@ list_interactions <- function(sim_data_file,
    } else {
       
       vic_elim <- details_subset %>% 
-         filter(CompoundID %in% AllCompounds$CompoundID[
-            AllCompounds$DosedCompoundID == "substrate"] &
+         filter(CompoundID %in% AllRegCompounds$CompoundID[
+            AllRegCompounds$DosedCompoundID == "substrate"] &
                SimulatorSection %in% c("Elimination", 
                                        "Transport"))
       
       perp_DDI <- details_subset %>% 
-         filter(CompoundID %in% AllCompounds$CompoundID[
-            AllCompounds$DosedCompoundID != "substrate"] &
+         filter(CompoundID %in% AllRegCompounds$CompoundID[
+            AllRegCompounds$DosedCompoundID != "substrate"] &
                SimulatorSection == "Interaction")
    }
    

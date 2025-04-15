@@ -48,8 +48,8 @@ harmonize_details <- function(existing_exp_details){
                           "CustomDosing_inhib2")){
                if(nrow(existing_exp_details[[item]]) > 0){
                   existing_exp_details[[item]] <- existing_exp_details[[item]] %>% 
-                     mutate(CompoundID = AllCompounds$CompoundID[
-                        which(AllCompounds$Suffix == sub("CustomDosing", "", item))]) %>% 
+                     mutate(CompoundID = AllRegCompounds$CompoundID[
+                        which(AllRegCompounds$Suffix == sub("CustomDosing", "", item))]) %>% 
                      rename_with(.cols = everything(), 
                                  .fn = function(x) sub("_sub|_inhib|_inhib2", "", x))
                }
@@ -65,7 +65,7 @@ harmonize_details <- function(existing_exp_details){
                                pivot_longer(cols = -File, 
                                             names_to = "DetailNames", 
                                             values_to = "Compound") %>% 
-                               left_join(AllCompounds %>%
+                               left_join(AllRegCompounds %>%
                                             select(DetailNames, CompoundID), 
                                          by = "DetailNames"), 
                             by = c("File", "CompoundID")) %>% 

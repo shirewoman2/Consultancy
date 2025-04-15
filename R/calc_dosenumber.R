@@ -25,7 +25,7 @@
 #'   \item{Regimen_sub}{(character) presumably "Multiple Dose" but "Single Dose"
 #'   is also acceptable}} If you want the dose number for other compound IDs,
 #'   then replace "_sub" with, e.g., "_inhib". Please run
-#'   \code{view(AllCompounds)} to see acceptable suffixes for each compound ID.
+#'   \code{view(AllRegCompounds)} to see acceptable suffixes for each compound ID.
 #'
 #' @return Output is a data.frame of concentration-time data with the calculated
 #'   dose number included

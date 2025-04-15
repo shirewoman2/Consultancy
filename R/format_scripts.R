@@ -1,5 +1,5 @@
-#' Format common PBPK model parameters to have appropriate subscripts and
-#' superscripts. UNDER CONSTRUCTION.
+#' INTERNAL: Format common PBPK model parameters to have appropriate subscripts
+#' and superscripts.
 #'
 #' @param DF a data.frame with a column containing, e.g., "ka (h^-1)", "fu,p",
 #'   or other PBPK model parameters with syntax that matches what's in the
@@ -138,31 +138,30 @@ format_scripts <- function(DF,
          # don't need to be run in a loop b/c we replace EVERYTHING with the same
          # value, so, even if there were more than one place with, e.g., "ka
          # (h^-1)", ALL of those places would be replaced with the same thing.
+         
          flextable::compose(i = which(DF$Parameter == "ka (h^-1)"), 
                             j = which(names(DF) == "Parameter"), 
                             part = "body", 
                             value = flextable::as_paragraph(
                                "k", flextable::as_sub("a"), " (h", flextable::as_sup("-1"), ")")) %>% 
          
+         flextable::compose(i = which(DF$Parameter == "kin,SAC (h-1)"), 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "k", flextable::as_sub("in,SAC"), " (h", flextable::as_sup("-1"), ")")) %>% 
+         
+         flextable::compose(i = which(DF$Parameter == "kout,SAC (h-1)"), 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "k", flextable::as_sub("out,SAC"), " (h", flextable::as_sup("-1"), ")")) %>% 
+         
          flextable::compose(i = which(DF$Parameter == "fu,p"), 
                             j = which(names(DF) == "Parameter"), 
                             part = "body", 
                             value = flextable::as_paragraph(
                                "fu", flextable::as_sub("p"))) %>% 
-         
-         flextable::compose(i = which(DF$Parameter == "tlag (h)"), 
-                            j = which(names(DF) == "Parameter"), 
-                            part = "body", 
-                            value = flextable::as_paragraph(
-                               "t", flextable::as_sub("lag"), " (h)")) %>% 
-         
-         flextable::compose(i = which(DF$Parameter == "Peff,human (10^-4 cm/s)"),
-                            j = which(names(DF) == "Parameter"), 
-                            part = "body", 
-                            value = flextable::as_paragraph(
-                               "P", flextable::as_sub("eff,human"), 
-                               " (10", flextable::as_sup("-4"), 
-                               " cm/s)")) %>% 
          
          flextable::compose(i = which(DF$Parameter == "Papp determined in Caco-2 cells (10^-6 cm/s)"),
                             j = which(names(DF) == "Parameter"), 
@@ -182,6 +181,54 @@ format_scripts <- function(DF,
                                flextable::as_sup("-6"), 
                                " cm/s)")) %>% 
          
+         flextable::compose(i = which(DF$Parameter == "Peff,human (10^-4 cm/s)"),
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "P", flextable::as_sub("eff,human"), 
+                               " (10", flextable::as_sup("-4"), 
+                               " cm/s)")) %>% 
+         
+         flextable::compose(i = which(DF$Parameter == "tlag (h)"), 
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "t", flextable::as_sub("lag"), " (h)")) %>% 
+         
+         flextable::compose(i = which(DF$Parameter == "Vsac volume (L/kg)"),
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "V", flextable::as_sub("SAC"), 
+                               " volume (L/kg)")) %>% 
+         
+         flextable::compose(i = which(DF$Parameter == "Vss input (L/kg)"),
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "V", flextable::as_sub("SS"), 
+                               " input (L/kg)")) %>% 
+         
+         flextable::compose(i = which(DF$Parameter == "Vss prediction method used"),
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "V", flextable::as_sub("SS"), 
+                               " prediction method used")) %>% 
+         
+         flextable::compose(i = which(DF$Parameter == "Vss used in the simulation (L/kg)"),
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "V", flextable::as_sub("SS"), 
+                               " used in the simulation (L/kg)")) %>% 
+         
+         flextable::compose(i = which(DF$Parameter == "Input type for Vss"),
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "Input type for V", flextable::as_sub("SS"))) %>% 
+         
          flextable::compose(i = which(DF$Parameter == "Calibrator compound used for calculating Papp"),
                             j = which(names(DF) == "Parameter"), 
                             part = "body", 
@@ -189,13 +236,15 @@ format_scripts <- function(DF,
                                "Calibrator compound used for calculating P",
                                flextable::as_sub("app")))
       
-      # Next, all the places where there might be multiple matches b/c we're only
+      # Second, all the places where there might be multiple matches b/c we're only
       # matching, e.g., the 1st part of the string and then need to fill in the
       # rest of the string with variable text.
       MultPieceVars <- c("Additional HLM CLint (uL/min/mg protein)", 
                          "fu,gut", "^fu,mic", "^fu,inc", "^Ki fu,mic", "^Ki",
-                         "^Km", "^Vmax", "^IndC50", "^IndMax", "^Ind gamma", 
-                         "^Ind fu,inc", "uL", "uM", "Qgut", 
+                         "uM", # NB: "uM" MUST come before "Km \\(uM" or it will overwrite the latter.
+                         "Km \\(uM", "Vmax", 
+                         "^IndC50", "^IndMax", "^Ind gamma", 
+                         "^Ind fu,inc", "uL", "Qgut", 
                          "^Kapp", "^kinact", "uL/min/10\\^6")
       
       for(mpv in MultPieceVars){
@@ -269,11 +318,15 @@ format_scripts <- function(DF,
                                            sub(mpv, "", 
                                                DF[r, which(names(DF) == "Parameter")])), 
                                      
-                                     "^Km" = 
+                                     "Km \\(uM" = 
+                                        # flextable::as_paragraph(
+                                        #    "K", flextable::as_sub("M"), 
+                                        #    sub(mpv, "", 
+                                        #        DF[r, which(names(DF) == "Parameter")])),
                                         flextable::as_paragraph(
+                                           Snips[1], 
                                            "K", flextable::as_sub("M"), 
-                                           sub(mpv, "", 
-                                               DF[r, which(names(DF) == "Parameter")])), 
+                                           " (\u03BCM", Snips[2]), 
                                      
                                      "^Kapp" = 
                                         flextable::as_paragraph(
@@ -293,11 +346,15 @@ format_scripts <- function(DF,
                                            sub(mpv, "", 
                                                DF[r, which(names(DF) == "Parameter")])), 
                                      
-                                     "^Vmax" = 
+                                     "Vmax" = 
+                                        # flextable::as_paragraph(
+                                        #    "V", flextable::as_sub("max"), 
+                                        #    sub(mpv, "", 
+                                        #        DF[r, which(names(DF) == "Parameter")])),
                                         flextable::as_paragraph(
+                                           Snips[1], 
                                            "V", flextable::as_sub("max"), 
-                                           sub(mpv, "", 
-                                               DF[r, which(names(DF) == "Parameter")])), 
+                                           Snips[2]), 
                                      
                                      "uL/min/10\\^6" = 
                                         flextable::as_paragraph(

@@ -168,13 +168,17 @@ pk_table_subfun <- function(sim_data_file,
       # units -- only conc.
       if(Deets$Units_Cmax != conc_units){
          
-         MolWts <- c("substrate" = Deets$MW_sub, 
-                     "inhibitor 1" = Deets$MW_inhib, 
-                     "inhibitor 2" = Deets$MW_inhib2, 
-                     "primary metabolite 1" = Deets$MW_met1, 
-                     "primary metabolite 2" = Deets$MW_met2,
-                     "secondary metabolite" = Deets$MW_secmet, 
-                     "inhibitor 1 metabolite" = Deets$MW_inhib1met)
+         MW = c("substrate" = Deets$MW_sub, 
+                "inhibitor 1" = Deets$MW_inhib,
+                "primary metabolite 1" = Deets$MW_met1, 
+                "primary metabolite 2" = Deets$MW_met2, 
+                "inhibitor 2" = Deets$MW_inhib2, 
+                "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
+                "secondary metabolite" = Deets$MW_secmet, 
+                "conjugated payload" = as.numeric(Deets$MW_sub) + 
+                   as.numeric(Deets$MW_met1), 
+                "total antibody" = Deets$MW_sub, 
+                "released payload" = Deets$MW_met1)
          
          MyPKResults_all$aggregate <- 
             split(MyPKResults_all$aggregate,
@@ -203,7 +207,7 @@ pk_table_subfun <- function(sim_data_file,
             MyPKResults_all$aggregate[[param]] <- 
                convert_conc_units(DF_to_convert = MyPKResults_all$aggregate[[param]],
                                   conc_units = conc_units,
-                                  MW = MolWts) %>%
+                                  MW = MW) %>%
                select(-Conc_units) %>% 
                pivot_wider(names_from = Stat, 
                            values_from = Conc)
@@ -218,7 +222,7 @@ pk_table_subfun <- function(sim_data_file,
                   MyPKResults_all$individual[[param]] <- 
                      convert_conc_units(DF_to_convert = MyPKResults_all$individual[[param]],
                                         conc_units = conc_units,
-                                        MW = MolWts) %>%
+                                        MW = MW) %>%
                      select(-Conc_units) %>% 
                      rename(Value = Conc)
                } else {
@@ -226,7 +230,7 @@ pk_table_subfun <- function(sim_data_file,
                      tibble(Conc = MyPKResults_all$individual[[param]], 
                             Conc_units = Deets$Units_Cmax) %>% 
                      convert_conc_units(conc_units = conc_units, 
-                                        MW = MolWts) %>% 
+                                        MW = MW) %>% 
                      pull(Conc)
                }
             }

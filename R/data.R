@@ -1,7 +1,14 @@
-#' All possible compound IDs, suffixes, etc.
+#' All possible compound IDs, suffixes, etc., including ADC-related compounds
 #'
 #' @format a data.frame 
 "AllCompounds"
+
+
+#' All regular compound IDs, suffixes, etc.
+#'
+#' @format a data.frame 
+"AllRegCompounds"
+
 
 
 #' All possible experimental details for \code{\link{extractExpDetails}}
@@ -210,6 +217,16 @@
 #'
 #' @format A data.frame 
 "LMVct"
+
+
+#' Plasma concentration-time data for a simulation of letermovir
+#'
+#' Plasma concentration-time data after 8 days of 60 mg PO QD letermovir,
+#' including arithmetic-mean observed data for the last dose. Format of the data
+#' are the same as the output from \code{\link{extractConcTime}}.
+#'
+#' @format A data.frame
+"LMVct_mean"
 
 
 #' Plasma concentration-time data for multiple simulations of midazolam
