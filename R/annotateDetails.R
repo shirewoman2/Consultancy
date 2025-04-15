@@ -710,6 +710,8 @@ annotateDetails <- function(existing_exp_details,
                                   .default = Notes))
    }
    
+   MainDetails <- MainDetails %>% select(-Pathway)
+   
    # subfunction starts here ------------------------------------------------
    
    annotate_subfun <- function(item){
@@ -1527,7 +1529,8 @@ annotateDetails <- function(existing_exp_details,
                                      style = BlueColumn, 
                                      rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
                                      cols = which(str_detect(names(Out[[item]][["DF"]]),
-                                                             template_sim)))
+                                                             template_sim)), 
+                                     gridExpand = T)
                   
                   openxlsx::addStyle(wb = WB, 
                                      sheet = output_tab_name, 

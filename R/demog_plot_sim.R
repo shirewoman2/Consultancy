@@ -242,9 +242,6 @@ demog_plot_sim <- function(demog_dataframe,
                                      include_or_omit = "include")
    }
    
-   # Noting original requests for parameters
-   DemogParams <- tibble(Orig = demog_parameters)
-   
    # Setting things up for nonstandard evaluation ----------------------------
    
    colorBy_column <- rlang::enquo(colorBy_column)
@@ -383,56 +380,6 @@ demog_plot_sim <- function(demog_dataframe,
    
    # Possible demographic parameters -----------------------------------------
    
-   PossDemogParams <- tibble(
-      Parameter = c("Age", 
-                    "AGP_gL",
-                    "AllometricScalar", 
-                    "BMI_kgm2", 
-                    "BSA_m2", 
-                    "BrainWt_g", 
-                    "CardiacOut", 
-                    "Creatinine_umolL", 
-                    "GFR_mLminm2",
-                    "Haematocrit", 
-                    "Height_cm", 
-                    "Height vs Age", 
-                    "HSA_gL",
-                    "KidneyWt_g", 
-                    "LiverWt_g", 
-                    "Weight_kg",
-                    "Weight vs Age", 
-                    "Weight vs Height",
-                    "Sex", 
-                    "Sex vs Age", 
-                    "RenalFunction"), 
-      Label = c("Age (years)", 
-                "AGP (g/L)", 
-                "allometric scalar", 
-                "BMI (kg/m2)", 
-                "Body surface area (m2)", 
-                "Brain weight (g)", 
-                "Cardiac output (L/h)", 
-                "Creatinine (uM)", 
-                "Glomerular filtration rate\n(mL/min/m2 body surface area)", 
-                "Haematocrit (%)", 
-                "Height (cm)", 
-                NA, 
-                "Human serum albumin (g/L)", 
-                "Kidney weight (g)", 
-                "Liver weight (g)", 
-                "Weight (kg)", 
-                NA,
-                NA, 
-                "Percent female", 
-                NA, 
-                "renalfunction" = "Renal function"))
-   
-   
-   # Returning to error catching ---------------------------------------------
-   
-   # Addressing any issues w/case and periods for "vs"
-   DemogParams$Parameter <-
-      tolower(gsub("\\.", "", as.character(DemogParams$Orig)))
    names(demog_dataframe) <- tolower(names(demog_dataframe))
    # Renaming colorBy_column for ease of coding since I'm lifting some of the
    # code from other functions. This is just fixing the case since I just made
@@ -440,59 +387,13 @@ demog_plot_sim <- function(demog_dataframe,
    demog_dataframe <- demog_dataframe %>% 
       rename(colorBy_column = colorby_column)
    
-   DemogParams <- DemogParams %>% 
-      mutate(Parameter = case_match(Parameter, 
-                                    "height vs weight" ~ "weight vs height", 
-                                    "age vs height" ~ "height vs age", 
-                                    "age vs weight" ~ "weight vs age", 
-                                    "age vs sex" ~ "sex vs age", 
-                                    "weight" ~ "weight_kg",
-                                    "height" ~ "height_cm",
-                                    "hsa" ~ "hsa_gl",
-                                    "agp" ~ "agp_gl",
-                                    "bmi" ~ "bmi_kgm2",
-                                    "bsa" ~ "bsa_m2", 
-                                    "brain" ~ "brainwt_g", 
-                                    "brainwt" ~ "brainwt_g", 
-                                    "cardiac" ~ "cardiacout", 
-                                    "creatinine" ~ "creatinine_umolL", 
-                                    "creatinine_uM"  ~ "creatinine_umolL", 
-                                    "gfr" ~ "gfr_mlminm2", 
-                                    "hematocrit" ~ "haematocrit", 
-                                    "kidney" ~ "kidneywt_g", 
-                                    "kidneywt" ~ "kidneywt_g", 
-                                    "liverwt" ~ "liverwt_g", 
-                                    "liver" ~ "liverwt_g", 
-                                    "gfr" ~ "gfr_mlminm2", 
-                                    .default = Parameter))
-   
-   BadVar <- setdiff(DemogParams$Parameter, 
-                     tolower(PossDemogParams$Parameter))
-   
-   if(length(BadVar) > 0 && any(complete.cases(BadVar))){
-      warning(wrapn(paste0(
-         "The demographic parameter(s) ", 
-         str_comma(paste0("'", 
-                          DemogParams$Orig[DemogParams$Parameter %in% BadVar], 
-                          "'")), 
-         " is/are not among the possible options for demog_parameters, so they won't be included. Please check the help file for options.")), 
-         call. = FALSE)
-      
-      DemogParams <- DemogParams %>% filter(!Parameter %in% BadVar)
-   }
-   
-   if("sex" %in% names(demog_dataframe) == FALSE){
-      demog_dataframe$sex <- "unknown"
-   }
+   Harmonized <- harmonize_demog(demog_dataframe = demog_dataframe, 
+                                 demog_parameters = demog_parameters)
+   DemogParams <- Harmonized$DemogParams
+   PossDemogParams <- Harmonized$PossDemogParams
    
    DemogLabs <- PossDemogParams$Label
    names(DemogLabs) <- tolower(PossDemogParams$Parameter)
-   
-   if(all(is.na(DemogParams$Parameter))){
-      DemogParams <- 
-         tibble(Orig = as.character(NA), 
-                Parameter = tolower(PossDemogParams$Parameter))
-   } 
    
    
    # Setting up colors -------------------------------------------------------
@@ -612,11 +513,20 @@ demog_plot_sim <- function(demog_dataframe,
    
    for(yy in DemogParams$Parameter){
       
+      if(yy %in% names(demog_dataframe) == FALSE){
+         MissingParams <- c(MissingParams, yy)
+         next
+      }
+      
       if(yy %in% c(names(demog_dataframe), 
                    tolower(PossDemogParams$Parameter)) == FALSE & 
          all(is.na(DemogParams$Orig)) == FALSE){
          MissingParams <- c(MissingParams, 
                             DemogParams$Orig[DemogParams$Parameter == yy])
+         next
+      }
+      
+      if(all(is.na(demog_dataframe[, yy]))){
          next
       }
       
@@ -761,7 +671,7 @@ demog_plot_sim <- function(demog_dataframe,
       }
    }
    
-   if(length(MissingParams) > 0){
+   if(length(MissingParams) > 0 & all(complete.cases(DemogParams$Orig))){
       warning(wrapn(paste0(
          "The variable(s) ", 
          str_comma(paste0("'", MissingParams, "'")), 
