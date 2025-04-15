@@ -138,6 +138,9 @@ color by the simulation file name.}
   "blue-green", this palette can be especially useful if you are comparing a
   systematic change in some continuous variable.}
 
+  \item{"reds"}{a set of reds from pink to brick. Great for showing
+  systematic changes in a continuous variable.}
+
   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
   package}
 
@@ -212,8 +215,7 @@ list of each of the individual graphs}
 in quotes here, e.g., "Demographics comparisons.png". Acceptable graphical
 file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or
 "svg". Do not include any slashes, dollar signs, or periods in the file
-name. Leaving this as NA means the file will not be automatically saved to
-disk.}
+name. Leaving this as NA means the file will not be saved to disk.}
 
 \item{fig_height}{figure height in inches; default is 8}
 

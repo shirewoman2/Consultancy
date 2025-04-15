@@ -112,7 +112,7 @@
 #'   at all. Note: If you include labels on your graphs (graph_labels = TRUE),
 #'   we recommend NOT putting the legend on the left or the top because the
 #'   labels wind up on the outside compared to the legend, and it just looks
-#'   dorky. 
+#'   dorky.
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -152,6 +152,9 @@
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
+#'   \item{"reds"}{a set of reds from pink to brick. Great for showing
+#'   systematic changes in a continuous variable.}
+#'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
 #'
@@ -178,8 +181,7 @@
 #'   in quotes here, e.g., "Demographics comparisons.png". Acceptable graphical
 #'   file extensions are "eps", "ps", "jpeg", "jpg", "tiff", "png", "bmp", or
 #'   "svg". Do not include any slashes, dollar signs, or periods in the file
-#'   name. Leaving this as NA means the file will not be automatically saved to
-#'   disk.
+#'   name. Leaving this as NA means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 6
 #'
