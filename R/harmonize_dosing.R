@@ -25,7 +25,11 @@ harmonize_dosing <- function(existing_exp_details){
    for(ff in names(Main)){
       
       # Skipping this when it's from extractExpDetails_XML or _DB for now. 
-      if(str_detect(ff, "\\.wksz$|\\.db$")){return(existing_exp_details)}
+      if(str_detect(ff, "\\.wksz$|\\.db$") | 
+         ("Treatment" %in% names(Main[[ff]]) && 
+          any(complete.cases(Main$Treatment)))){
+         next
+      }
       
       Dosing[[ff]] <- list()
       
