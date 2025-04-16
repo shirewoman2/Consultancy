@@ -91,13 +91,14 @@
 #'   "blue-green", this palette can be especially useful if you are comparing a
 #'   systematic change in some continuous variable.}
 #'
-#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Like
-#'   "blue-green", this palette can be especially useful if you are comparing a
-#'   systematic change in some continuous variable.}
+#'   \item{"greens"}{a set of greens fading from chartreuse to forest. Great for showing
+#'   systematic changes in a continuous variable.}
 #'
-#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Like
-#'   "blue-green", this palette can be especially useful if you are comparing a
-#'   systematic change in some continuous variable.}
+#'   \item{"purples"}{a set of purples fading from lavender to aubergine. Great for showing
+#'   systematic changes in a continuous variable.}
+#'
+#'   \item{"reds"}{a set of reds from pink to brick. Great for showing
+#'   systematic changes in a continuous variable.}
 #'
 #'   \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
 #'   package}
@@ -112,9 +113,9 @@
 #'   colors here. An example of how the syntax should look: \code{color_set =
 #'   c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
 #'   which item in \code{colorBy_column} gets which color, you can supply a
-#'   named vector. For example, if you're coloring the lines by the compound ID,
-#'   you could do this: \code{color_set = c("substrate" = "dodgerblue3",
-#'   "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+#'   named vector. For example, if you're coloring the lines by the enzyme,
+#'   you could do this: \code{color_set = c("CYP3A4" = "dodgerblue3",
+#'   "CYP3A5" = "purple", "CYP3A7" = "#D8212D")}. If you'd
 #'   like help creating a specific gradation of colors, please talk to a member
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
@@ -140,6 +141,7 @@
 #' 
 ontogeny_plot <- function(enzyme = NA, 
                           enzyme_type = NA, 
+                          ask_if_multiple_enzymes = TRUE, 
                           ontogeny_equations_to_use = NA, 
                           simulator_version = 23, 
                           compare_to_no_ontogeny = FALSE, 
@@ -207,6 +209,10 @@ ontogeny_plot <- function(enzyme = NA,
       }
    }
    
+   # This object is easiest to grab here, but there will be a message about this
+   # and possibly an interactive input lower down in function.
+   EnzymesIncluded <- Ontogenies %>% select(EnzymeType, Enzyme, EnzymeDescription)
+   
    Ontogenies <- Ontogenies %>% 
       left_join(expand_grid(Age = seq(0, 25, length.out = 1000), 
                             EnzymeDescription = OntogenyEquations$EnzymeDescription),
@@ -248,7 +254,6 @@ ontogeny_plot <- function(enzyme = NA,
                                   .default = Fraction),
              
              Age_mo = Age * 12)  
-   
    
    if(compare_to_no_ontogeny){
       Ontogenies <- Ontogenies %>% 
@@ -305,7 +310,7 @@ ontogeny_plot <- function(enzyme = NA,
    # and ask user if they want to install it if not.
    if(any(c(complete.cases(facet1_title), complete.cases(facet2_title))) & 
       length(find.package("ggh4x", quiet = TRUE)) == 0){
-      message("\nYou requested a title for facet1 or facet 2. Adding a title to facets requires the package ggh4x,\nwhich the R Working Group will ask IT to install next time VDIs are rebuilt but which we didn't\nthink of this go 'round.")
+      message(paste0("\n", wrapn("You requested a title for facet1 or facet 2. Adding a title to facets requires the package ggh4x.")))
       Install <- readline(prompt = "Is it ok to install ggh4x for you? (y or n)   ")
       
       if(tolower(str_sub(Install, 1, 1)) == "y"){
@@ -333,6 +338,33 @@ ontogeny_plot <- function(enzyme = NA,
    
    Ontogenies <- Ontogenies %>% 
       unite(col = Group, Enzyme, EnzymeDescription, EnzymeType, Tissue, remove = FALSE)
+   
+   # Checking that we're including what the user expects
+   message("Enzymes to be included in the graph: ")
+   message(paste(paste(capture.output(as.data.frame(EnzymesIncluded)), collapse = "\n"), 
+                 "\n"))
+   
+   if(nrow(EnzymesIncluded) > 1 & ask_if_multiple_enzymes == TRUE){
+      
+      message(str_wrap("\nWhich rows in the data.frame do you want? Please use a numeric vector such as 'c(1, 3, 4:5)' to specify or say 'all' for all rows."))
+      WhichRows <- readline("   ")
+      message("\n")
+      
+      if(tolower(WhichRows[1]) != "all"){
+         WhichRows <- eval(str2expression(WhichRows))
+         if(as.numeric(WhichRows) == FALSE){
+            warning(wrapn("You provided input that was not 'all' nor was it numeric, so we don't know which rows of enzymes you want. We'll give you all of them."), 
+                    call. = FALSE)
+         } else {
+            EnzymesIncluded <- EnzymesIncluded %>% slice(WhichRows)
+            
+            Ontogenies <- Ontogenies %>% 
+               filter(Enzyme %in% EnzymesIncluded$Enzyme & 
+                         EnzymeType %in% EnzymesIncluded$EnzymeType & 
+                         EnzymeDescription %in% EnzymesIncluded$EnzymeDescription)
+         }
+      }
+   }
    
    
    # Graphing -----------------------------------------------------------------

@@ -283,6 +283,13 @@
 #'   care of stringing them together appropriately. Just list them as a
 #'   character vector, e.g., \code{name_clinical_study = c("101",
 #'   "102", "103")} will become "clinical studies 101, 102, and 103."
+#' @param include_errorbars TRUE or FALSE (default) for whether to include error
+#'   bars for observed data points. This ONLY applies when you have supplied
+#'   observed data from V22 or higher because those data files included a column
+#'   titled "SD/SE", which is what we'll use for determining the error bar
+#'   heights.
+#' @param errorbar_width width of error bars to use in hours (or, if you've used
+#'   some other time unit, in whatever units are in your data). Default is 0.5.
 #' @param report_progress TRUE (default) or FALSE for whether show a progress
 #'   message on creating and saving graphs
 #' @param save_graph optionally save the output graph by supplying a file name
@@ -349,6 +356,8 @@ ct_plot_mult <- function(ct_dataframe,
                          existing_exp_details = NA,
                          figure_type = "percentiles",
                          mean_type = "arithmetic",
+                         include_errorbars = FALSE, 
+                         errorbar_width = 0.5,
                          linear_or_log = "semi-log",
                          time_range = NA, 
                          x_axis_interval = NA, 
@@ -711,6 +720,7 @@ ct_plot_mult <- function(ct_dataframe,
                               plot_type = PlotType, 
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
+                              include_errorbars = include_errorbars, 
                               linear_or_log = linear_or_log, 
                               figure_type = figure_type, 
                               prettify_compound_names = prettify_compound_names, 

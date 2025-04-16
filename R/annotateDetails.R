@@ -51,7 +51,7 @@
 #'   that match the regular expression. This must have length = 1, and it IS
 #'   case sensitive. For example, say you only want to look at development or
 #'   verification simulations and you included "dev" or "ver" in those file
-#'   names, respectively. Here is how you could specify that (the verical pipe |
+#'   names, respectively. Here is how you could specify that (the vertical pipe |
 #'   means "or" for regular expressions): \code{sim_to_include = "dev|ver"}}}
 #' @param show_only_diff_from_template TRUE or FALSE (default) to show only the
 #'   details that differ from the template simulation, which reduces the number
@@ -198,7 +198,7 @@
 #'   \item{SimulatorSection}{the simulator section this detail is from, e.g.,
 #'   "absorption" or "elimination"}
 #'
-#'   \item{DataSource}{the source of the data; this will be a sheet name in an 
+#'   \item{DataSource}{the source of the data; this will be a sheet name in an
 #'   Excel output file or a workspace or database file}
 #'
 #'   \item{Notes}{an explanation of what this detail is}
@@ -420,7 +420,59 @@ annotateDetails <- function(existing_exp_details,
    InteractionRegex <- "^Ki_|^kinact|^Kapp|^MBI|^Ind"
    
    MainDetails <- existing_exp_details$MainDetails %>% 
-      mutate(across(.cols = everything(), .fns = as.character)) %>% 
+      mutate(across(.cols = everything(), .fns = as.character)) 
+   
+   if("Treatment" %in% names(MainDetails) && 
+      any(complete.cases(MainDetails$Treatment))){
+      # For VBE sims, adding Treatment to File so that pivoting will work right
+      # since there will be multiples of every detail in a single simulation
+      # based on what treatment it was
+      MainDetails <- MainDetails %>% 
+         # NB: Code lower down requires order to be File and then Treatment.
+         # Plus, I think that looks nicer in the output; it's clearer to group
+         # by File and then Treatment, so I think you naturally expect that to
+         # be the order.
+         mutate(File = paste(File, Treatment)) %>% 
+         select(-Treatment)
+      
+      # Need to revise FileOrder now that we've changed the names 
+      if(any(is.na(file_order))){
+         FileOrder <- paste(existing_exp_details$MainDetails$File, 
+                            existing_exp_details$MainDetails$Treatment) %>% 
+            unique()
+      } else {
+         FileOrder <- existing_exp_details$MainDetails %>% 
+            mutate(File = factor(
+               File, 
+               levels = unique(c(intersect(file_order,
+                                           existing_exp_details$MainDetails$File), 
+                                 existing_exp_details$MainDetails$File)))) %>% 
+            arrange(File) %>% 
+            mutate(File = paste(File, Treatment)) %>% 
+            pull(File)
+      }
+      
+      # also need to change File in existing_exp_details$MainDetails and in
+      # template_sim to note the change so that downstream code will work
+      existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+         mutate(FileAlone = File, 
+                File = paste(File, Treatment))
+      
+      template_sim <- case_when(
+         is.na(template_sim) ~ as.character(NA), 
+         
+         complete.cases(template_sim) ~ 
+            intersect(unique(existing_exp_details$MainDetails$File),
+                      paste(template_sim, "Treatment 1"))[1]
+      )
+      
+      # Noting that there were VBE sims present
+      VBEsims <- TRUE
+   } else {
+      VBEsims <- FALSE
+   }
+   
+   MainDetails <- MainDetails %>% 
       pivot_longer(cols = -File,
                    names_to = "Detail", 
                    values_to = "Value") %>% 
@@ -493,7 +545,7 @@ annotateDetails <- function(existing_exp_details,
          filter(!Detail %in% c("Detail", "Value")) %>% 
          group_by(across(any_of(c("File", "Detail", "CompoundID", "SimulatorSection", 
                                   "Notes", "Value")))) %>% 
-         summarize(DataSource = str_comma(sort(DataSource), conjunction = "or")) %>% 
+         summarize(DataSource = str_comma(sort(unique(DataSource)), conjunction = "or")) %>% 
          mutate(DataSource = ifelse(str_detect(DataSource, "calculated or Summary|Summary or calculated") &
                                        Detail == "SimDuration", 
                                     "Summary", DataSource),
@@ -692,7 +744,7 @@ annotateDetails <- function(existing_exp_details,
       left_join(MainDetails %>% select(Notes, Detail), by = "Notes") %>% 
       unique() %>% 
       mutate(Enzyme = str_extract(Detail, 
-                                   "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+                                  "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
              Pathway = str_extract(Detail, pattern = paste0(Enzyme, ".*_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)")), 
              Pathway = str_remove(Pathway, paste0(Enzyme, "_")), 
              Pathway = str_remove(Pathway, "_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)"), 
@@ -709,6 +761,8 @@ annotateDetails <- function(existing_exp_details,
          mutate(Notes = case_when(complete.cases(Pathway) ~ Pathway,
                                   .default = Notes))
    }
+   
+   MainDetails <- MainDetails %>% select(-Pathway)
    
    # subfunction starts here ------------------------------------------------
    
@@ -747,9 +801,11 @@ annotateDetails <- function(existing_exp_details,
       
       # template simulation might not be present in the particular list item.
       # Checking for that.
-      TemplateSim_subfun <- ifelse(is.na(template_sim), 
-                                   NA, intersect(unique(DF$File), 
-                                                 template_sim))
+      TemplateSim_subfun <- case_when(
+         is.na(template_sim) ~ as.character(NA), 
+         
+         complete.cases(template_sim) ~ 
+            intersect(unique(DF$File), template_sim)[1])
       
       ## Filtering as requested -----------------------------------------
       
@@ -1076,12 +1132,13 @@ annotateDetails <- function(existing_exp_details,
       }
       
       # Removing compound column if they don't want it
-      if(class(show_compound_col) == "logical"){
+      if(class(show_compound_col) == "logical" & 
+         VBEsims == FALSE){
          if(show_compound_col == FALSE){
             DF <- DF %>% select(-Compound)
          }
          
-      } else if(show_compound_col == "concatenate"){
+      } else if(show_compound_col == "concatenate" | VBEsims){
          if(complete.cases(compound)){
             
             # Checking whether user has asked to concatenate compounds that
@@ -1130,10 +1187,17 @@ annotateDetails <- function(existing_exp_details,
                
             }
          } else {
-            AllMyCompounds <- MainDetails %>% select(Compound, CompoundID) %>% 
-               filter(complete.cases(CompoundID)) %>% 
+            
+            AllMyCompounds <- MainDetails %>% 
+               select(Compound, CompoundID) %>% 
+               filter(complete.cases(CompoundID) & 
+                         complete.cases(Compound)) %>% 
+               unique() %>% 
                group_by(CompoundID) %>% 
-               summarize(Compound = str_comma(sort(unique(Compound)), conjunction = "or"))
+               summarize(
+                  Compound = str_comma(sort(unique(Compound)),
+                                       conjunction = "or")) %>% 
+               ungroup() 
             
             suppressMessages(
                DF <- DF %>% select(-Compound) %>% left_join(AllMyCompounds))
@@ -1177,7 +1241,7 @@ annotateDetails <- function(existing_exp_details,
          # be any more if the user has filtered results for a specific compound
          # ID that doesn't exist in template_sim. 
          if(complete.cases(template_sim) & 
-            template_sim %in% names(DF) == FALSE){
+            TemplateSim_subfun %in% names(DF) == FALSE){
             
             # Only giving the warning when it's for MainDetails b/c otherwise
             # it's confusing. 
@@ -1214,10 +1278,13 @@ annotateDetails <- function(existing_exp_details,
             suppressMessages(
                AllSame <- DF %>% 
                   select(any_of(c("CompoundID", "Compound", GroupingDetails)), 
-                         matches("xlsx$|\\.db$")) %>% 
-                  pivot_longer(cols = matches("xlsx$|\\.db$"), 
-                               names_to = "File", values_to = "Value") %>% 
-                  group_by(across(.cols = any_of(c(GroupingDetails, "CompoundID", "Compound")))) %>% 
+                         matches("\\.xlsx|\\.db")) %>% 
+                  pivot_longer(cols = matches("\\.xlsx|\\.db"), 
+                               names_to = "File",
+                               values_to = "Value") %>% 
+                  group_by(across(.cols = any_of(c(GroupingDetails,
+                                                   "CompoundID",
+                                                   "Compound")))) %>% 
                   summarize(Length = length(unique(Value)), 
                             UniqueVal = unique(Value)[1]) %>% 
                   filter(Length == 1) %>% 
@@ -1256,13 +1323,13 @@ annotateDetails <- function(existing_exp_details,
                
                if("Compound" %in% names(DF)){
                   if(complete.cases(compound)){
-                     All_name <- switch(item, 
-                                        "MainDetails" = "All files have this value for this compound", 
-                                        "CustomDosing" = "All files have this dose for this compound", 
-                                        "ConcDependent_fup" = "All files have this fu,p for this compound", 
-                                        "ConcDependent_BP" = "All files have this B/P for this compound", 
-                                        "pH_dependent_solubility" = "All files have this solubility for this compound")
-                     
+                     All_name <- switch(
+                        item, 
+                        "MainDetails" = "All files have this value for this compound", 
+                        "CustomDosing" = "All files have this dose for this compound", 
+                        "ConcDependent_fup" = "All files have this fu,p for this compound", 
+                        "ConcDependent_BP" = "All files have this B/P for this compound", 
+                        "pH_dependent_solubility" = "All files have this solubility for this compound")
                      
                      names(DF)[names(DF) == "UniqueVal"] <- All_name
                      
@@ -1272,23 +1339,25 @@ annotateDetails <- function(existing_exp_details,
                                   is.na(Compound)) %>% 
                         filter(ToOmit == FALSE) %>% select(-ToOmit)
                      
-                     All_name <- switch(item, 
-                                        "MainDetails" = "All files have this value for this compound ID and compound", 
-                                        "CustomDosing" = "All files have this dose for this compound ID and compound", 
-                                        "ConcDependent_fup" = "All files have this fu,p for this compound ID and compound", 
-                                        "ConcDependent_BP" = "All files have this B/P for this compound ID and compound", 
-                                        "pH_dependent_solubility" = "All files have this solubility for this compound ID and compound")
+                     All_name <- switch(
+                        item, 
+                        "MainDetails" = "All files have this value for this compound ID and compound", 
+                        "CustomDosing" = "All files have this dose for this compound ID and compound", 
+                        "ConcDependent_fup" = "All files have this fu,p for this compound ID and compound", 
+                        "ConcDependent_BP" = "All files have this B/P for this compound ID and compound", 
+                        "pH_dependent_solubility" = "All files have this solubility for this compound ID and compound")
                      
                      names(DF)[names(DF) == "UniqueVal"] <- All_name
                   }
                } else {
                   
-                  All_name <- switch(item, 
-                                     "MainDetails" = "All files have this value for this compound ID", 
-                                     "CustomDosing" = "All files have this dose for this compound ID", 
-                                     "ConcDependent_fup" = "All files have this fu,p for this compound ID", 
-                                     "ConcDependent_BP" = "All files have this B/P for this compound ID", 
-                                     "pH_dependent_solubility" = "All files have this solubility for this compound ID")
+                  All_name <- switch(
+                     item, 
+                     "MainDetails" = "All files have this value for this compound ID", 
+                     "CustomDosing" = "All files have this dose for this compound ID", 
+                     "ConcDependent_fup" = "All files have this fu,p for this compound ID", 
+                     "ConcDependent_BP" = "All files have this B/P for this compound ID", 
+                     "pH_dependent_solubility" = "All files have this solubility for this compound ID")
                   
                   names(DF)[names(DF) == "UniqueVal"] <- All_name
                   
@@ -1298,7 +1367,7 @@ annotateDetails <- function(existing_exp_details,
          
          # Removing anything that was all NA's if that's what user requested
          if(omit_all_missing){
-            DF$AllNA <- apply(DF[, names(DF)[str_detect(names(DF), "xlsx$|\\.db$")]], 
+            DF$AllNA <- apply(DF[, names(DF)[str_detect(names(DF), "\\.xlsx|\\.db")]], 
                               MARGIN = 1, FUN = function(.) all(is.na(.)))    
             
             DF <- DF %>% filter(AllNA == FALSE) %>% select(-AllNA)
@@ -1326,8 +1395,7 @@ annotateDetails <- function(existing_exp_details,
          
          # Checking for differences from template sim
          if(complete.cases(template_sim) & 
-            length(intersect(FileOrder, 
-                             unique(existing_exp_details[[item]]$File))) > 1){
+            length(FileOrder) > 1){
             Diffs <- list()
             NontempFiles <- setdiff(intersect(FileOrder, names(DF)), 
                                     template_sim)
@@ -1341,6 +1409,29 @@ annotateDetails <- function(existing_exp_details,
                                        (is.na(DF[ , NontempFiles[i]]) & 
                                            complete.cases(DF[, TSim]))))
             }
+         } else if(VBEsims){
+            
+            Diffs <- list()
+            Sets <- existing_exp_details$MainDetails %>% 
+               select(File, FileAlone, Treatment)
+            Sets <- split(Sets, f = Sets$FileAlone)
+            
+            for(i in names(Sets)){
+               # Making tx 1 the template
+               TSim <- Sets[[i]]$File[
+                  which(str_detect(Sets[[i]]$File, "Treatment 1$"))]
+               
+               for(j in which(names(DF) %in% setdiff(Sets[[i]]$File, 
+                                                     TSim))){
+                  Diffs[[names(DF)[j]]] <- 
+                     list(columns = j,
+                          rows = which(
+                             DF[ , j] != DF[, TSim] |
+                                (complete.cases(DF[ , j]) & is.na(DF[, TSim])) |
+                                (is.na(DF[ , j]) & complete.cases(DF[, TSim]))))
+               }
+            }
+            
          } else {
             Diffs <- list()
          }
@@ -1391,7 +1482,7 @@ annotateDetails <- function(existing_exp_details,
       }
       
       
-      # subfunction for saving ----------------------------------------------
+      ## subfunction for saving ----------------------------------------------
       
       write_subfun <- function(item, 
                                output_tab_name){
@@ -1527,7 +1618,8 @@ annotateDetails <- function(existing_exp_details,
                                      style = BlueColumn, 
                                      rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
                                      cols = which(str_detect(names(Out[[item]][["DF"]]),
-                                                             template_sim)))
+                                                             template_sim)), 
+                                     gridExpand = T)
                   
                   openxlsx::addStyle(wb = WB, 
                                      sheet = output_tab_name, 
@@ -1537,6 +1629,21 @@ annotateDetails <- function(existing_exp_details,
                                                              template_sim)))
                   
                   # highlighting mismatches in red
+                  if(length(Out[[item]][["Diffs"]]) > 0){
+                     for(i in 1:length(Out[[item]][["Diffs"]])){
+                        openxlsx::addStyle(wb = WB, 
+                                           sheet = output_tab_name, 
+                                           style = ProbCells, 
+                                           rows = Out[[item]][["Diffs"]][[i]]$rows + 1, 
+                                           cols = Out[[item]][["Diffs"]][[i]]$columns)
+                     }
+                  }
+               }
+               
+               # When VBE sims present, highlighting in red differences between
+               # treatments
+               if(VBEsims){
+                  
                   if(length(Out[[item]][["Diffs"]]) > 0){
                      for(i in 1:length(Out[[item]][["Diffs"]])){
                         openxlsx::addStyle(wb = WB, 
@@ -1815,6 +1922,8 @@ annotateDetails <- function(existing_exp_details,
             }
          }
       } # end subfun for saving xlsx
+      
+      ## subfunction ends here -----------------------------------------------
       
       GoodItems <- as.logical(
          map(Out, function(x){is.null(x) == FALSE && nrow(x$DF) > 0}))

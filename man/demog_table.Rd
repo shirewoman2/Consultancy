@@ -7,10 +7,13 @@
 demog_table(
   demog_dataframe,
   demog_parameters = NA,
+  sims_to_include = NA,
+  sim_file_labels = NA,
   mean_type = "geometric",
   variability_type = "90\% CI",
   variability_format = "to",
   break_down_by_sex = TRUE,
+  include_SorO_column = F,
   rounding = NA,
   save_table = NA,
   sort_column,
@@ -30,6 +33,33 @@ include. No need to include any columns that are not a demographic
 parameter because we'll ignore them, e.g., you don't need to tell us to
 include the columns "File" or "Individual", etc.)}
 
+\item{sims_to_include}{optionally specify which simulation files you'd like
+  to include in the annotated output. Acceptable input:
+
+  \describe{\item{NA (default)}{get all the simulations included in
+  \code{demog_dataframe}}
+
+  \item{a character vector of the file names you want}{The items in the character
+  vector must \emph{exactly} match file names in the column "File" of the
+  \code{demog_dataframe}, including the file extension}
+
+  \item{a regular expression}{This will include in the output only files
+  that match the regular expression. This must have length = 1, and it IS
+  case sensitive. For example, say you only want to look at development or
+  verification simulations and you included "dev" or "ver" in those file
+  names, respectively. Here is how you could specify that (the vertical pipe |
+  means "or" for regular expressions): \code{sim_to_include = "dev|ver"}}}}
+
+\item{sim_file_labels}{optionally specify labels to use in lieu of simulation
+file names in the table. This should be a named character vector where the
+names are the simulation file name and the values are what you'd like to
+have appear in the table instead. Be sure that the file name matches
+perfectly, including the file extension! The order you list here will be
+the order the simulations appear in your table. Example:
+\code{sim_file_labels = c("mdz-5mg-sd-hv.xlsx" = "Healthy subjects",
+"mdz-5mg-sd-cpa.xlsx" = "Child-Pugh A", "mdz-5mg-sd-cpb.xlsx" = "Child-Pugh B",
+"mdz-5mg-sd-cpc.xlsx" = "Child-Pugh C")}}
+
 \item{mean_type}{What kind of means and CVs or confidence intervals do you
 want listed in the output table? Options are "arithmetic" or "geometric"
 (default).}
@@ -39,7 +69,7 @@ the variability? Options are: \describe{\item{"90\% CI" (default)}{90\% confiden
 interval; this will be geometric or arithmetic based on your choice for
 \code{mean_type}} \item{"CV"}{coefficient of variation; this will be
 geometric or arithmetic based on your choice for \code{mean_type}}
-\item{"SD"}{arithmetic standard deviation} \item{"none"}{to get no 
+\item{"SD"}{arithmetic standard deviation} \item{"none"}{to get no
 variability stats included in the table}}}
 
 \item{variability_format}{formatting used to indicate the variability When
@@ -52,6 +82,11 @@ that there was another name for parentheses.)}
 
 \item{break_down_by_sex}{TRUE (default) or FALSE for whether to break down
 the data by sex.}
+
+\item{include_SorO_column}{TRUE or FALSE (default) for whether to include a
+column indicating whether the data were simulated or observed. TRUE will
+always include it and FALSE will only include it when there were both
+simulated and observed data present.}
 
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{NA or "Consultancy"}{All output will be rounded according
@@ -94,34 +129,6 @@ table must include those two columns for that to work.)}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
-
-\item{shading_column}{If you would like to alternate the shading of the rows
-in the output table, supply here the unquoted name of the column to check
-for when to change the shading; every time that column's value changes, the
-shading will alternate between white and light gray. For example, if you
-have a table with PK values for multiple files and you have more than one
-row per file (an example of this would be the output from the function
-\code{\link{pksummary_mult}}), setting \code{shading_column = File} will
-cause the shading of the rows to alternate between white and light gray
-whenever the file changes. Please see the examples at the bottom of this
-help file.}
-
-\item{merge_shaded_cells}{TRUE (default) or FALSE for whether to merge the
-cells that have the same shade. This only applies when one of the columns
-in the input data.frame is used for deciding when to alternate shading,
-that is, \code{shading_column} has a value.}
-
-\item{merge_columns}{a vector of quoted column names or of numeric column
-positions that should be merged vertically whenever the values are the
-same. For example, \code{merge_columns = c("File", "Tissue")} will cause
-the cells in the columns "File" and "Tissue" to merge vertically whenever
-the same value shows up in consecutive rows. Similarly, \code{merge_columns
-= c(1, 3, 5)} will merge vertically the 1st, 3rd, and 5th columns whenever
-the values are the same. Note: This is different from most other functions
-in the SimcypConsultancy package, which require unquoted column names.
-Honestly, we just don't know how code things for you to supply a variable
-number of unquoted column names for a single argument; we've just hit a
-coding knowledge limitation here!}
 }
 \value{
 a formatted table

@@ -2,7 +2,7 @@
 % Please edit documentation in R/extractExpDetails_mult.R
 \name{extractExpDetails_mult}
 \alias{extractExpDetails_mult}
-\title{Extract experimental details for multiple files at once}
+\title{Extract simulation experimental details for multiple files at once}
 \usage{
 extractExpDetails_mult(
   sim_data_files = NA,
@@ -81,7 +81,8 @@ extracted only some of the possible experimental details and you now would
 like more experimental details from each simulator output file.}
 }
 \value{
-Returns a data.frame of experimental details for simulator files
+Returns a named list of simulation experimental details for simulator
+  files
 }
 \description{
 \code{extractExpDetails_mult} takes a character vector of Simcyp Simulator

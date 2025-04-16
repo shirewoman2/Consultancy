@@ -446,8 +446,15 @@ extractConcTime <- function(sim_data_file,
                          "cumulative absorption", "cumulative dissolution", 
                          "cumulative fraction released", "gut tissue")
    
-   ADC <- any(c(existing_exp_details$MainDetails$ADCSimulation_sub, 
-                existing_exp_details$MainDetails$ADCSimulation), na.rm = T)
+   if("ADCSimulation_sub" %in% names(Deets) == FALSE){
+      if("ADCSimulation" %in% names(Deets)){
+         Deets$ADCSimulation_sub <- Deets$ADCSimulation
+      } else {
+         Deets$ADCSimulation_sub <- FALSE
+      }
+   }
+   
+   ADC <- any(Deets$ADCSimulation_sub, na.rm = T)
    
    # toc(log = T)
    

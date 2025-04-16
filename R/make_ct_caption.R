@@ -36,6 +36,7 @@ make_ct_caption <- function(ct_dataframe,
                             plot_type = "concentration-time", 
                             existing_exp_details = NA,
                             mean_type = "arithmetic", 
+                            include_errorbars = FALSE, 
                             linear_or_log = "linear", 
                             figure_type = "percentiles", 
                             prettify_compound_names = TRUE, 
@@ -428,6 +429,10 @@ make_ct_caption <- function(ct_dataframe,
          CapText2 <- paste0(CapText2, "*")
       } else {
          CapText2 <- paste0(CapText2, " ")
+      }
+      
+      if(include_errorbars){
+         CapText2 <- paste(CapText2, "Error bars indicate the standard deviation. ")
       }
       
       Caption <- paste0(CapText1, " ", CapText2, 

@@ -485,7 +485,7 @@
 #'   format. Acceptable graphical file extensions are "eps", "ps", "jpeg",
 #'   "jpg", "tiff", "png", "bmp", or "svg". Do not include any slashes, dollar
 #'   signs, or periods in the file name. Leaving this as NA means the file will
-#'   not be automatically saved to disk.
+#'   not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 5
 #' @param y_axis_interval set the linear y-axis major tick-mark interval.
@@ -3144,6 +3144,7 @@ ct_plot_overlay <- function(ct_dataframe,
                               plot_type = PlotType, 
                               existing_exp_details = existing_exp_details, 
                               mean_type = mean_type, 
+                              include_errorbars = include_errorbars, 
                               linear_or_log = linear_or_log, 
                               figure_type = figure_type, 
                               # !!! Important! This must be PrettyCmpds and not

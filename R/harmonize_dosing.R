@@ -25,14 +25,18 @@ harmonize_dosing <- function(existing_exp_details){
    for(ff in names(Main)){
       
       # Skipping this when it's from extractExpDetails_XML or _DB for now. 
-      if(str_detect(ff, "\\.wksz$|\\.db$")){return(existing_exp_details)}
+      if(str_detect(ff, "\\.wksz$|\\.db$") | 
+         ("Treatment" %in% names(Main[[ff]]) && 
+          any(complete.cases(Main[[ff]]$Treatment)))){
+         next
+      }
       
       Dosing[[ff]] <- list()
       
-      for(cmpd in unique(AllRegCompounds$DosedCompoundID)){
+      for(cmpd in unique(AllCompounds$DosedCompoundID)){
          
-         MyCompundName <- Main[[ff]][[AllRegCompounds$DetailNames[
-            AllRegCompounds$CompoundID == cmpd]]]
+         MyCompundName <- Main[[ff]][[AllCompounds$DetailNames[
+            AllCompounds$CompoundID == cmpd]]]
          
          if(is.null(MyCompundName) || is.na(MyCompundName)){next}
          
@@ -114,8 +118,8 @@ harmonize_dosing <- function(existing_exp_details){
             Dosing[[ff]][[cmpd]] <- Dosing[[ff]][[cmpd]] %>% 
                mutate(File = ff, 
                       CompoundID = cmpd, 
-                      Compound = Main[[ff]][[AllRegCompounds$DetailNames[
-                         AllRegCompounds$CompoundID == cmpd]]], 
+                      Compound = Main[[ff]][[AllCompounds$DetailNames[
+                         AllCompounds$CompoundID == cmpd]]], 
                       Time_units = Main[[ff]]$Units_tmax, 
                       Dose = switch(cmpd, 
                                     "substrate" = as.numeric(Main[[ff]]$Dose_sub), 

@@ -2,9 +2,14 @@
 % Please edit documentation in R/extractExpDetails.R
 \name{extractExpDetails}
 \alias{extractExpDetails}
-\title{Extract details about the experimental design}
+\title{Extract simulation experimental details for Simcyp Simulator or Discovery
+files}
 \usage{
-extractExpDetails(sim_data_file, exp_details = "Summary and Input")
+extractExpDetails(
+  sim_data_file,
+  exp_details = "Summary and Input",
+  sheet_names = NA
+)
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulator output,
@@ -51,7 +56,8 @@ the autorunner adds as long as that stamp is in a format like this: "myfile
   and transporter parameters (ex: "Transport_sub").}}}
 }
 \value{
-Returns a named list of the experimental details
+Returns a named list of simulation experimental details for simulator
+  files
 }
 \description{
 \code{extractExpDetails} looks up experimental design details
