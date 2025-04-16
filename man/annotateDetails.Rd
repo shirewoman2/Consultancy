@@ -216,7 +216,7 @@ Returns a data.frame of simulation experimental details including the
   \item{SimulatorSection}{the simulator section this detail is from, e.g.,
   "absorption" or "elimination"}
 
-  \item{DataSource}{the source of the data; this will be a sheet name in an 
+  \item{DataSource}{the source of the data; this will be a sheet name in an
   Excel output file or a workspace or database file}
 
   \item{Notes}{an explanation of what this detail is}
