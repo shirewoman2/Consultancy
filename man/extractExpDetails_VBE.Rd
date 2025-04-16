@@ -2,16 +2,56 @@
 % Please edit documentation in R/extractExpDetails_VBE.R
 \name{extractExpDetails_VBE}
 \alias{extractExpDetails_VBE}
-\title{Extract details about the experimental design}
+\title{Extract details about the experimental design of a VBE simulation - UNDER
+CONSTRUCTION}
 \usage{
-extractExpDetails_VBE(sim_data_file)
+extractExpDetails_VBE(
+  sim_data_files,
+  existing_exp_details = NA,
+  overwrite = FALSE,
+  sheet_names = NA,
+  ...
+)
 }
 \arguments{
-\item{sim_data_file}{name of the Excel file containing the simulator output,
-in quotes}
+\item{sim_data_files}{a character vector of simulator output files, each in
+quotes and encapsulated with \code{c(...)}, NA to extract experimental
+details for \emph{all} the Excel files in the current folder, or
+"recursive" to extract experimental details for \emph{all} the Excel files
+in the current folder and \emph{all} subfolders. Example of acceptable
+input: \code{sim_data_files = c("sim1.xlsx", "sim2.xlsx")}. If some of your
+Excel files are not regular simulator output, e.g. they are sensitivity
+analyses or a file where you were doing some calculations, those files will
+be skipped. \strong{A note:} There are just a few items that we will
+attempt to extract from the matching workspace file (actually, no, it
+won't. This is placeholder text for when we do implement that; at present,
+it will only look at Excel files); for that information, we will look for a
+workspace file that is named \emph{identically} to the Excel file except
+for the file extension. It will ignore the date/time stamp that the
+autorunner adds as long as that stamp is in a format like this: "myfile -
+2023-10-31 07-23-15.xlsx".}
+
+\item{existing_exp_details}{(optional) a data.frame that contains previously
+extracted experimental details. If this object \emph{does} exist, it should
+NOT be in quotes, e.g. \code{existing_exp_details = MyDeets}. Because we
+can see scenarios where you might want to extract some experimental details
+and then run more simulations for comparisons, this function will
+\emph{add} data to that data.frame. It will \emph{not} overwrite existing
+data unless \code{overwrite} is set to TRUE.}
+
+\item{overwrite}{TRUE or FALSE (default) on whether to re-extract the
+experimental details from output files that are already included in
+\code{existing_exp_details}. Since pulling data from Excel files is slow,
+by default, this will \emph{not} overwrite existing data and instead will
+only add data from any Excel files that aren't already included. A
+situation where you might want to set this to TRUE would be when you have
+changed input parameters for simulations and re-run them OR when you have
+extracted only some of the possible experimental details and you now would
+like more experimental details from each simulator output file.}
 }
 \value{
-a named list
+Returns a named list of simulation experimental details for simulator
+  files
 }
 \description{
 \code{extractExpDetails} looks up experimental design details

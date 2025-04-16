@@ -445,10 +445,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
       
       existing_exp_details <- harmonize_details(existing_exp_details)
       
-      if(all(sim_data_files %in% c(existing_exp_details$MainDetails$File, 
-                                   existing_exp_details$MainDetails$DBFile, 
-                                   sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File), 
-                                   sub("\\.db", ".xlsx", existing_exp_details$MainDetails$DBFile))) == FALSE){
+      PossFiles <- 
+         switch(as.character("DBFile" %in% names(existing_exp_details$MainDetails)), 
+                "TRUE" = c(existing_exp_details$MainDetails$File, 
+                           existing_exp_details$MainDetails$DBFile, 
+                           sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File), 
+                           sub("\\.db", ".xlsx", existing_exp_details$MainDetails$DBFile)), 
+                "FALSE" = c(existing_exp_details$MainDetails$File, 
+                            sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File)))
+                
+      if(all(sim_data_files %in% PossFiles) == FALSE){
          existing_exp_details <- 
             extractExpDetails_mult(sim_data_files = sim_data_files, 
                                    exp_details = "Summary and Input", 
@@ -492,20 +498,21 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # If the file is a Simulator output file, we should have it now. Checking and
    # removing any that are not.
-   if(all(sim_data_files_topull %in% 
-          c(existing_exp_details$MainDetails$File, 
-            existing_exp_details$MainDetails$DBFile)) == FALSE){
+   
+   PossFiles <- 
+      switch(as.character("DBFile" %in% names(existing_exp_details$MainDetails)), 
+             "TRUE" = c(existing_exp_details$MainDetails$File, 
+                        existing_exp_details$MainDetails$DBFile), 
+             "FALSE" = existing_exp_details$MainDetails$File)
+   
+   if(all(sim_data_files_topull %in% PossFiles) == FALSE){
       
-      BadFiles <- setdiff(sim_data_files_topull,
-                          c(existing_exp_details$MainDetails$File, 
-                            existing_exp_details$MainDetails$DBFile))
+      BadFiles <- setdiff(sim_data_files_topull, PossFiles)
       
       warning(paste0("The following files were requested but do not appear to be Simcyp Simulator files and will be ignored:\n", 
                      str_c(BadFiles, collapse = "\n")), 
               call. = FALSE)
-      sim_data_files_topull <- intersect(sim_data_files_topull,
-                                         c(existing_exp_details$MainDetails$File, 
-                                           existing_exp_details$MainDetails$DBFile))
+      sim_data_files_topull <- intersect(sim_data_files_topull, PossFiles)
    }
    
    ## Dealing with possible observed data assignments -------------------------
@@ -812,9 +819,18 @@ extractConcTime_mult <- function(sim_data_files = NA,
                          "secondary metabolite" = ifelse("SecondaryMetabolite" %in% names(Deets), 
                                                          Deets$SecondaryMetabolite, NA))
       
-      # NB: Asking whether it's an ADCSimulation or an ADCSimulation_sub for
-      # back compatibility w/package versions < 2.6.0
-      if(any(Deets$ADCSimulation, Deets$ADCSimulation_sub, na.rm = TRUE)){
+      # NB: Asking whether it's an ADCSimulation or an ADCSimulation_sub, the
+      # former for back compatibility w/package versions < 2.6.0
+      
+      if("ADCSimulation_sub" %in% names(Deets) == FALSE){
+         if("ADCSimulation" %in% names(Deets)){
+            Deets$ADCSimulation_sub <- Deets$ADCSimulation
+         } else {
+            Deets$ADCSimulation_sub <- FALSE
+         }
+      }
+      
+      if(any(Deets$ADCSimulation_sub, na.rm = TRUE)){
          CompoundCheck <- c(CompoundCheck,
                             "total antibody" = "total antibody",
                             "total payload" = "total payload", 
@@ -1005,7 +1021,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                   CompoundTypes %>% filter(Type == k) %>%
                   pull(PossCompounds)
                
-               if(any(c(Deets$ADCSimulation_sub, Deets$ADCSimulation), na.rm = T)){
+               if(any(Deets$ADCSimulation_sub, na.rm = T)){
                   compoundsToExtract_k <- setdiff(compoundsToExtract_k, 
                                                   "substrate")
                }

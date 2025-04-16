@@ -67,7 +67,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), "\n     library(tidyverse)\n\nand then try again."), call. = FALSE)
    }
    
    # If user did not supply files, then extract all the files in the current
@@ -225,9 +225,13 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             Suffix <- AllRegCompounds %>% filter(CompoundID == j) %>% 
                pull(Suffix)
             
-            # Check whether that compound was activated and skip if not. 
+            # Check whether that compound was activated and skip if not. Also
+            # remove any info related to that compound from exp_details or we
+            # can wind up with, e.g., "StartDayTimeH_inhib2" when there is no
+            # inhitibor 2.
             if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
                paste0("idInhEnabled", CompoundNum)]])) == FALSE){
+               exp_details <- exp_details[!str_detect(exp_details, Suffix)]
                next
             }
             
