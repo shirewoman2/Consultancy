@@ -90,9 +90,13 @@
 #'   have appear in the table instead. Be sure that the file name matches
 #'   perfectly, including the file extension! The order you list here will be
 #'   the order the simulations appear in your table. Example:
-#'   \code{sim_file_labels = c("mdz-5mg-sd-hv.xlsx" = "Healthy subjects", 
+#'   \code{sim_file_labels = c("mdz-5mg-sd-hv.xlsx" = "Healthy subjects",
 #'   "mdz-5mg-sd-cpa.xlsx" = "Child-Pugh A", "mdz-5mg-sd-cpb.xlsx" = "Child-Pugh B",
 #'   "mdz-5mg-sd-cpc.xlsx" = "Child-Pugh C")}
+#' @param include_SorO_column TRUE or FALSE (default) for whether to include a
+#'   column indicating whether the data were simulated or observed. TRUE will
+#'   always include it and FALSE will only include it when there were both
+#'   simulated and observed data present.
 #'
 #' @return a formatted table
 #' @export
@@ -108,11 +112,9 @@ demog_table <- function(demog_dataframe,
                         variability_type = "90% CI", 
                         variability_format = "to",
                         break_down_by_sex = TRUE, 
+                        include_SorO_column = F, 
                         rounding = NA, 
                         save_table = NA, 
-                        # shading_column, 
-                        # merge_shaded_cells = TRUE,
-                        # merge_columns = NA, 
                         sort_column, 
                         page_orientation = "landscape", 
                         fontsize = 11){
@@ -265,11 +267,14 @@ demog_table <- function(demog_dataframe,
    GroupCols <- switch(as.character(break_down_by_sex),
                        "TRUE" = c("File", "Simulated", "Parameter", "sex"), 
                        "FALSE" = c("File", "Simulated", "Parameter"))
+   ParamCols <- switch(as.character(break_down_by_sex),
+                       "TRUE" = c(DemogParams$Parameter, "sex"), 
+                       "FALSE" = DemogParams$Parameter)
    
    suppressWarnings(suppressMessages(
       FT <- demog_dataframe %>% 
          select(any_of(c("File", "Trial", "Individual", "Population", "Simulated",
-                         DemogParams$Parameter))) %>% 
+                         ParamCols))) %>% 
          # NB: Can't pivot with sex b/c not numeric data and the other
          # parameters are.
          pivot_longer(cols = any_of(setdiff(tolower(PossDemogParams$Parameter),
@@ -355,6 +360,10 @@ demog_table <- function(demog_dataframe,
       FT <- FT %>% filter(!Statistic == "REMOVE THIS ROW")
    }
    
+   if(include_SorO_column == FALSE & 
+      length(sort(unique(demog_dataframe$Simulated))) == 1){
+      FT <- FT %>% select(-`Simulated or observed`)
+   }
    
    # Saving --------------------------------------------------------------
    if(complete.cases(save_table)){
@@ -380,14 +389,17 @@ demog_table <- function(demog_dataframe,
                                str_comma(ObsFiles)), 
                         Caption)
       
+      MergeCols <- intersect(c("File", "Population", 
+                               "Simulated or observed", "Sex"), 
+                             names(FT))
+      
       if(break_down_by_sex){
+         
          FT <- FT %>% 
             formatTable_Simcyp(
                fontsize = fontsize, 
                merge_shaded_cells = TRUE, 
-               merge_columns = c(ifelse("File" %in% names(FT), 
-                                        "File", "Population"), 
-                                 "Simulated or observed", "Sex"), 
+               merge_columns = MergeCols, 
                shading_column = Sex, 
                center_1st_column = T, 
                bold_cells = list(c(0, NA)), 
@@ -404,9 +416,7 @@ demog_table <- function(demog_dataframe,
                formatTable_Simcyp(
                   fontsize = fontsize, 
                   merge_shaded_cells = TRUE, 
-                  merge_columns = c(ifelse("File" %in% names(FT), 
-                                           "File", "Population"), 
-                                    "Simulated or observed"), 
+                  merge_columns = MergeCols, 
                   shading_column = File, 
                   center_1st_column = T, 
                   bold_cells = list(c(0, NA)), 
@@ -419,9 +429,7 @@ demog_table <- function(demog_dataframe,
                formatTable_Simcyp(
                   fontsize = fontsize, 
                   merge_shaded_cells = TRUE, 
-                  merge_columns = c(ifelse("File" %in% names(FT), 
-                                           "File", "Population"), 
-                                    "Simulated or observed"), 
+                  merge_columns = MergeCols, 
                   shading_column = Population, 
                   center_1st_column = T, 
                   bold_cells = list(c(0, NA)), 

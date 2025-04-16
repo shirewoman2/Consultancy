@@ -13,6 +13,7 @@ demog_table(
   variability_type = "90\% CI",
   variability_format = "to",
   break_down_by_sex = TRUE,
+  include_SorO_column = F,
   rounding = NA,
   save_table = NA,
   sort_column,
@@ -55,7 +56,7 @@ names are the simulation file name and the values are what you'd like to
 have appear in the table instead. Be sure that the file name matches
 perfectly, including the file extension! The order you list here will be
 the order the simulations appear in your table. Example:
-\code{sim_file_labels = c("mdz-5mg-sd-hv.xlsx" = "Healthy subjects", 
+\code{sim_file_labels = c("mdz-5mg-sd-hv.xlsx" = "Healthy subjects",
 "mdz-5mg-sd-cpa.xlsx" = "Child-Pugh A", "mdz-5mg-sd-cpb.xlsx" = "Child-Pugh B",
 "mdz-5mg-sd-cpc.xlsx" = "Child-Pugh C")}}
 
@@ -81,6 +82,11 @@ that there was another name for parentheses.)}
 
 \item{break_down_by_sex}{TRUE (default) or FALSE for whether to break down
 the data by sex.}
+
+\item{include_SorO_column}{TRUE or FALSE (default) for whether to include a
+column indicating whether the data were simulated or observed. TRUE will
+always include it and FALSE will only include it when there were both
+simulated and observed data present.}
 
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{NA or "Consultancy"}{All output will be rounded according

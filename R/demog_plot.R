@@ -15,6 +15,16 @@
 #' @param demog_dataframe the output from running \code{\link{extractDemog}}.
 #' @param sims_to_include optionally specify which simulations to include. These
 #'   must be included in \code{demog_dataframe} in the column "File".
+#' @param sim_file_labels optionally specify labels to use in lieu of simulation
+#'   file names in the graph. This should be a named character vector where the
+#'   names are the simulation file name and the values are what you'd like to
+#'   have appear in the graph instead. Be sure that the file name matches
+#'   perfectly, including the file extension! The order you list here will be
+#'   the order the simulations appear in the legend, unless you have specified
+#'   something for legend_label_color, which overrides this. Example:
+#'   \code{sim_file_labels = c("mdz-5mg-sd-hv.xlsx" = "Healthy subjects",
+#'   "mdz-5mg-sd-cpa.xlsx" = "Child-Pugh A", "mdz-5mg-sd-cpb.xlsx" = "Child-Pugh B",
+#'   "mdz-5mg-sd-cpc.xlsx" = "Child-Pugh C")}
 #' @param graph_title title to use on the plots
 #' @param demog_parameters demographic parameters to include. We're starting
 #'   with a limited set: \itemize{\item{Individual parameters, which will be
@@ -193,26 +203,27 @@
 #' @examples
 #' # none yet
 demog_plot <- function(demog_dataframe, 
-                           sims_to_include = "all", 
-                           demog_parameters = NA, 
-                           variability_display = "kernel density", 
-                           colorBy_column, 
-                           color_set = "default", 
-                           color_labels = NA, 
-                           legend_label_color = NA,
-                           legend_position = "right", 
-                           graph_title = "Demographics", 
-                           alpha = 0.8, 
-                           ncol = NULL, 
-                           nrow = NULL, 
-                           facet_by_sex = TRUE, 
-                           facet_column_additional, 
-                           border_facets = TRUE, 
-                           graph_labels = TRUE, 
-                           return_indiv_graphs = FALSE, 
-                           save_graph = NA,
-                           fig_height = 8,
-                           fig_width = 6){
+                       sims_to_include = "all", 
+                       sim_file_labels = NA, 
+                       demog_parameters = NA, 
+                       variability_display = "kernel density", 
+                       colorBy_column, 
+                       color_set = "default", 
+                       color_labels = NA, 
+                       legend_label_color = NA,
+                       legend_position = "right", 
+                       graph_title = "Demographics", 
+                       alpha = 0.8, 
+                       ncol = NULL, 
+                       nrow = NULL, 
+                       facet_by_sex = TRUE, 
+                       facet_column_additional, 
+                       border_facets = TRUE, 
+                       graph_labels = TRUE, 
+                       return_indiv_graphs = FALSE, 
+                       save_graph = NA,
+                       fig_height = 8,
+                       fig_width = 6){
    
    # Error catching ----------------------------------------------------------
    
@@ -236,12 +247,52 @@ demog_plot <- function(demog_dataframe,
       legend_position <- "bottom"
    }
    
-   # Keeping only requested sims ----------------------------------------------
+   # Filtering files and setting file labels ------------------------------------
    
    if(all(sims_to_include == "all") == FALSE){
       demog_dataframe <- filter_sims(demog_dataframe, 
                                      which_sims = sims_to_include, 
                                      include_or_omit = "include")
+   }
+   
+   
+   if(any(complete.cases(sim_file_labels))){
+      
+      ExtraFiles <- setdiff(names(sim_file_labels), 
+                            unique(demog_dataframe$File))
+      if(length(ExtraFiles) > 0){
+         warning(paste0(wrapn("The following files were included in 'sim_file_labels' but are not present in 'demog_dataframe', so we will ignore them:"), 
+                        str_c(paste0("   '", ExtraFiles, "'"), 
+                              collapse = "\n"), 
+                        "\n"), 
+                 call. = FALSE)
+      }
+      
+      FileLevels <- intersect(names(sim_file_labels),
+                              unique(demog_dataframe$File))
+      MissingFiles <- setdiff(unique(demog_dataframe$File), FileLevels)
+      if(length(MissingFiles) > 0){
+         warning(paste0(wrapn("The following files were included in 'demog_dataframe' but not in 'sim_file_labels', so we will list them after the ones that *were* included in 'sim_file_labels':"), 
+                        str_c(paste0("   '", MissingFiles, "'"), 
+                              collapse = "\n"), 
+                        "\n", 
+                        wrapn("If you meant for those files to be omitted entirely, please specify which simulation files you wanted with the argument 'sims_to_include'.")), 
+                 call. = FALSE)
+         FileLevels <- c(FileLevels, MissingFiles)
+         names(MissingFiles) <- MissingFiles
+         sim_file_labels <- c(sim_file_labels, MissingFiles)
+      }
+   } else {
+      FileLevels <- sort(unique(demog_dataframe$File))
+   }
+   
+   if(any(complete.cases(sim_file_labels))){
+      demog_dataframe <- demog_dataframe %>% 
+         mutate(File = sim_file_labels[as.character(File)], 
+                File = factor(File, levels = sim_file_labels))
+   } else {
+      demog_dataframe <- demog_dataframe %>% 
+         mutate(File = factor(File, levels = FileLevels))
    }
    
    # Setting things up for nonstandard evaluation ----------------------------
@@ -442,12 +493,12 @@ demog_plot <- function(demog_dataframe,
          }
          
          if(yy == "height vs age"){
-            if(all(c("age", "height_cm") %in% names(demog_parameters)) == FALSE){
+            if(all(c("age", "height_cm") %in% names(demog_dataframe)) == FALSE){
                MissingParams <- c(MissingParams, yy)
                next
             } else {
-               if(all(is.na(demog_parameters$age)) | 
-                  all(is.na(demog_parameters$height_cm))){
+               if(all(is.na(demog_dataframe$age)) | 
+                  all(is.na(demog_dataframe$height_cm))){
                   MissingParams <- c(MissingParams, yy)
                   next
                }
@@ -455,12 +506,12 @@ demog_plot <- function(demog_dataframe,
          }
          
          if(yy == "weight vs age"){
-            if(all(c("age", "weight_kg") %in% names(demog_parameters)) == FALSE){
+            if(all(c("age", "weight_kg") %in% names(demog_dataframe)) == FALSE){
                MissingParams <- c(MissingParams, yy)
                next
             } else {
-               if(all(is.na(demog_parameters$age)) | 
-                  all(is.na(demog_parameters$weight_kg))){
+               if(all(is.na(demog_dataframe$age)) | 
+                  all(is.na(demog_dataframe$weight_kg))){
                   MissingParams <- c(MissingParams, yy)
                   next
                }
@@ -468,12 +519,12 @@ demog_plot <- function(demog_dataframe,
          }
          
          if(yy == "sex vs age"){
-            if(all(c("age", "sex") %in% names(demog_parameters)) == FALSE){
+            if(all(c("age", "sex") %in% names(demog_dataframe)) == FALSE){
                MissingParams <- c(MissingParams, yy)
                next
             } else {
-               if(all(is.na(demog_parameters$age)) | 
-                  all(is.na(demog_parameters$sex))){
+               if(all(is.na(demog_dataframe$age)) | 
+                  all(is.na(demog_dataframe$sex))){
                   MissingParams <- c(MissingParams, yy)
                   next
                }
