@@ -9,6 +9,7 @@ extractExpDetails_VBE(
   sim_data_files,
   existing_exp_details = NA,
   overwrite = FALSE,
+  sheet_names = NA,
   ...
 )
 }

@@ -5,7 +5,11 @@
 \title{Extract simulation experimental details for Simcyp Simulator or Discovery
 files}
 \usage{
-extractExpDetails(sim_data_file, exp_details = "Summary and Input")
+extractExpDetails(
+  sim_data_file,
+  exp_details = "Summary and Input",
+  sheet_names = NA
+)
 }
 \arguments{
 \item{sim_data_file}{name of the Excel file containing the simulator output,

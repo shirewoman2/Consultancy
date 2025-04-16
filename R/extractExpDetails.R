@@ -65,7 +65,8 @@
 #'
 #' 
 extractExpDetails <- function(sim_data_file,
-                              exp_details = "Summary and Input"){
+                              exp_details = "Summary and Input", 
+                              sheet_names = NA){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -77,8 +78,12 @@ extractExpDetails <- function(sim_data_file,
    sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_file), ".xlsx")
    
    # Checking that the file is, indeed, a simulator output file.
-   SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
-                          error = openxlsx::getSheetNames(sim_data_file))
+   if(all(is.na(sheet_names))){
+      SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
+                             error = openxlsx::getSheetNames(sim_data_file))
+   } else {
+      SheetNames <- sheet_names
+   }
    
    if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
       # Using "warning" instead of "stop" here b/c I want this to be able to
@@ -222,9 +227,9 @@ extractExpDetails <- function(sim_data_file,
    if(any(exp_details %in% AllExpDetails$Detail) == FALSE){
       Problem <- str_comma(unique(setdiff(exp_details,
                                           AllExpDetails$Detail)))
-      warning(paste0("These study details are not among the possible options: ",
-                     Problem,
-                     ", so they will be omitted. Please enter 'view(ExpDetailDefinitions)' into the console for all options.\n"),
+      warning(paste0("These study details are not among the possible options:\n",
+                     str_c(Problem, collapse = "\n"), 
+                     wrapn("They will be omitted. Please enter 'view(ExpDetailDefinitions)' into the console for all options.")),
               call. = FALSE)
       exp_details <- intersect(exp_details, AllExpDetails$Detail)
    }
@@ -278,6 +283,8 @@ extractExpDetails <- function(sim_data_file,
                                                     "Discovery only"), 
                              "Simcyp Simulator" = c("Simulator only", 
                                                     "Simulator and Discovery"))
+      Out[["ExcelResultsTimeStamp"]] <- 
+         timeConv(as.numeric(SummaryTab[2, 1]), dataSource = "Excel")
       
       # Need to filter to keep only details that we can possibly find based on
       # what type of simulator was used
@@ -407,29 +414,13 @@ extractExpDetails <- function(sim_data_file,
    if(length(MyInputDeets) > 0){
       
       MyInputDeets <- unique(c(MyInputDeets, AllCompounds$DetailNames))
-               deet %in% paste0("kp_scalar", AllRegCompounds$Suffix) == FALSE
-                                                    str_c(AllRegCompounds$Suffix, collapse = "|")),
-            Suffix <- AllRegCompounds$Suffix[AllRegCompounds$CompoundID == i]
-                            Compound = as.character(Out[AllRegCompounds$DetailNames[
-                               AllRegCompounds$CompoundID == i]])) %>% 
-                                          AllRegCompounds$Suffix[AllRegCompounds$CompoundID == i])]]) &&
-                           AllRegCompounds$Suffix[AllRegCompounds$CompoundID == i])]] == 
-               Suffix <- AllRegCompounds$Suffix[AllRegCompounds$CompoundID == i]
-                         Compound = as.character(Out[AllRegCompounds$DetailNames[
-                            AllRegCompounds$CompoundID == i]])) %>% 
-                            Compound = as.character(Out[AllRegCompounds$DetailNames[
-                               AllRegCompounds$CompoundID == i]]))
-                      Compound = as.character(Out[AllRegCompounds$DetailNames[
-                         AllRegCompounds$CompoundID == i]])) %>% 
-                      Compound = as.character(Out[AllRegCompounds$DetailNames[
-                         AllRegCompounds$CompoundID == i]])) %>% 
-                      Compound = as.character(Out[AllRegCompounds$DetailNames[
-                         AllRegCompounds$CompoundID == i]])) %>% 
       
       InputInfo <- extractInputTab(deets = MyInputDeets,
                                    sim_data_file = sim_data_file, 
                                    sheet = "Input Sheet", 
                                    CustomDosing = CustomDosing)
+      
+      Out <- c(Out, InputInfo[setdiff(names(InputInfo), names(Out))])
       
    }
    
@@ -678,8 +669,7 @@ extractExpDetails <- function(sim_data_file,
    # Other functions call on "Inhibitor1", etc., so we need those objects to
    # exist, even if they were not used in this simulation. Setting them to NA if
    # they don't exist.
-   MissingCmpd <- setdiff(AllRegCompounds$DetailNames, 
-                          names(Out))
+   MissingCmpd <- setdiff(AllRegCompounds$DetailNames, names(Out))
    MissingCmpd_list <- as.list(rep(NA, length(MissingCmpd)))
    names(MissingCmpd_list) <- MissingCmpd
    Out <- c(Out, MissingCmpd_list)
@@ -786,10 +776,10 @@ extractExpDetails <- function(sim_data_file,
    # Splitting this up into main details -- a data.frame -- and then,
    # separately, whatever items need to be lists, e.g., custom dosing regimens
    # and dissolution profiles. 
-   suppressMessages(
-      Main <- as_tibble(Out[which(sapply(Out, length) == 1)]) %>% 
-         left_join(as_tibble(InputInfo))
-   )
+   Main <- as_tibble(Out[which(sapply(Out, length) == 1)])
+   # InputDF <- as_tibble(InputInfo[which(sapply(InputInfo, length) == 1)])
+   # ColsToInclude <- setdiff(names(InputDF), names(Main))
+   # Main <- cbind(Main, InputDF[, ColsToInclude])
    
    # Making absolutely sure that File included in Main. When we run
    # harmonize_details, it will add it to the other items whenever there is at

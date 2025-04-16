@@ -50,6 +50,7 @@
 extractExpDetails_VBE <- function(sim_data_files, 
                                   existing_exp_details = NA, 
                                   overwrite = FALSE,
+                                  sheet_names = NA,
                                   ...){
    
    # Error catching ---------------------------------------------------------
@@ -125,7 +126,7 @@ extractExpDetails_VBE <- function(sim_data_files,
       Recode_existing_exp_details <- TRUE
    }
    
-   if(Recode_existing_exp_details){
+   if(Recode_existing_exp_details || length(existing_exp_details) == 0){
       existing_exp_details <- "none"
    }
    
@@ -156,8 +157,12 @@ extractExpDetails_VBE <- function(sim_data_files,
    for(sim_data_file in sim_data_files_topull){
       
       # Checking that the file is, indeed, a simulator output file.
-      SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
-                             error = openxlsx::getSheetNames(sim_data_file))
+      if(all(is.na(sheet_names))){
+         SheetNames <- tryCatch(readxl::excel_sheets(sim_data_file),
+                                error = openxlsx::getSheetNames(sim_data_file))
+      } else {
+         SheetNames <- sheet_names
+      }
       
       if(any(str_detect(SheetNames, "Treatment [0-9]")) == FALSE){
          # Using "warning" instead of "stop" here b/c I want this to be able to
@@ -371,6 +376,7 @@ extractExpDetails_VBE <- function(sim_data_files,
       # Noting when this was run. 
       MainDetails$expDetails_TimeStamp <- Sys.time()
       
+      browser()
       
       ## Returning ---------------------------------------------------------------
       
@@ -386,7 +392,6 @@ extractExpDetails_VBE <- function(sim_data_files,
    }
    
    MyDeets <- Out
-   
    Out <- c(list(existing_exp_details), MyDeets)
    names(Out)[1] <- ifelse(names(Out)[1] == "", "existing", names(Out)[1])
    # Retaining only files that were simulations.

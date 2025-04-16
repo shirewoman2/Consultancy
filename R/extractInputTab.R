@@ -33,6 +33,9 @@ extractInputTab <- function(deets = "all",
       names(InputTab) <- paste0("...", 1:ncol(InputTab))
    }
    
+   Out[["ExcelResultsTimeStamp"]] <- 
+      timeConv(as.numeric(InputTab[2, 1]), dataSource = "Excel")
+   
    # When Inhibitor 1 is not present, don't look for those values.
    if(any(str_detect(t(InputTab[5, ]), "Inhibitor 1"), na.rm = T) == FALSE){
       MyInputDeets <- MyInputDeets[!str_detect(MyInputDeets, "_inhib$|Inhibitor1")]
@@ -336,6 +339,8 @@ extractInputTab <- function(deets = "all",
       
       if(nrow(ReleaseProfs) == 0){ReleaseProfs <- NULL}
       
+   } else {
+      ReleaseProfs <- NULL
    }
    
    ### Checking on dissolution profiles ------------------------------------

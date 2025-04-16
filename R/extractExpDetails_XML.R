@@ -225,9 +225,13 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             Suffix <- AllRegCompounds %>% filter(CompoundID == j) %>% 
                pull(Suffix)
             
-            # Check whether that compound was activated and skip if not. 
+            # Check whether that compound was activated and skip if not. Also
+            # remove any info related to that compound from exp_details or we
+            # can wind up with, e.g., "StartDayTimeH_inhib2" when there is no
+            # inhitibor 2.
             if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
                paste0("idInhEnabled", CompoundNum)]])) == FALSE){
+               exp_details <- exp_details[!str_detect(exp_details, Suffix)]
                next
             }
             

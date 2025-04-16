@@ -169,7 +169,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       Recode_existing_exp_details <- TRUE
    }
    
-   if(Recode_existing_exp_details){
+   if(Recode_existing_exp_details || length(existing_exp_details) == 0){
       existing_exp_details <- "none"
    }
    
@@ -201,11 +201,43 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    
    for(i in sim_data_files_topull){ 
       message(paste("Extracting simulation experimental details from file =", i))
+      
       if(str_detect(i, "\\.db$")){
          MyDeets[[i]] <- extractExpDetails_DB(sim_data_file = i) 
       } else {
-         MyDeets[[i]] <- extractExpDetails(sim_data_file = i, 
-                                           exp_details = exp_details) 
+         
+         # Getting sheet names 1st b/c that will determine whether to use _vbe version
+         SheetNames <- tryCatch(readxl::excel_sheets(i),
+                                error = openxlsx::getSheetNames(i))
+         
+         if(any(str_detect(SheetNames, "Treatment [0-9]"))){
+            MyDeets[[i]] <- extractExpDetails_VBE(
+               sim_data_file = i, 
+               exp_details = exp_details, 
+               sheet_names = SheetNames) 
+            
+            if(length(MyDeets[[i]]) == 0){
+               MyDeets[[i]] <- NULL
+               next
+            }
+            
+            # Noting that this was a VBE simulation
+            MyDeets[[i]]$MainDetails$VBEsim <- TRUE
+            
+         } else {
+            MyDeets[[i]] <- extractExpDetails(
+               sim_data_file = i, 
+               exp_details = exp_details, 
+               sheet_names = SheetNames) 
+            
+            if(length(MyDeets[[i]]) == 0){
+               MyDeets[[i]] <- NULL
+               next
+            }
+            
+            # Noting that this was NOT a VBE simulation
+            MyDeets[[i]]$MainDetails$VBEsim <- FALSE
+         }
       }
    }
    
