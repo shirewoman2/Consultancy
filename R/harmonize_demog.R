@@ -5,7 +5,8 @@
 #'
 #' @returns list of harmonized demog_dataframe and demog_parameters
 harmonize_demog <- function(demog_dataframe, 
-                            demog_parameters){
+                            demog_parameters, 
+                            table_or_graph = "graph"){
    
    PossDemogParams <- tibble(
       Parameter = c("Age", 
@@ -33,7 +34,7 @@ harmonize_demog <- function(demog_dataframe,
       LowerCase = tolower(Parameter), 
       Label = c("Age (years)", 
                 "AGP (g/L)", 
-                "allometric scalar", 
+                "Allometric scalar", 
                 "BMI (kg/m2)", 
                 "Body surface area (m2)", 
                 "Brain weight (g)", 
@@ -53,6 +54,11 @@ harmonize_demog <- function(demog_dataframe,
                 "Percent female", 
                 NA, 
                 "renalfunction" = "Renal function"))
+   
+   if(table_or_graph == "table"){
+      PossDemogParams <- PossDemogParams %>% 
+         filter(!str_detect(Parameter, " vs "))
+   }
    
    # Checking for which kind of GFR was included
    Omit <- setdiff(c("gfr_mlminm2", "gfr_mlmin"), 

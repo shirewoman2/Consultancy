@@ -1,6 +1,6 @@
 #' Make plots for comparing populations across simulations
 #'
-#' @description \code{demog_plot_sim} will make a series of graphs comparing
+#' @description \code{demog_plot} will make a series of graphs comparing
 #'   parameters across simulated populations. All the parameters available on
 #'   the "Demographic Data" tab of a Simcyp Simulator output Excel file are
 #'   available for making comparisons, and you must obtain the input data for
@@ -192,7 +192,7 @@
 #'
 #' @examples
 #' # none yet
-demog_plot_sim <- function(demog_dataframe, 
+demog_plot <- function(demog_dataframe, 
                            sims_to_include = "all", 
                            demog_parameters = NA, 
                            variability_display = "kernel density", 
@@ -390,7 +390,8 @@ demog_plot_sim <- function(demog_dataframe,
       rename(colorBy_column = colorby_column)
    
    Harmonized <- harmonize_demog(demog_dataframe = demog_dataframe, 
-                                 demog_parameters = demog_parameters)
+                                 demog_parameters = demog_parameters, 
+                                 table_or_graph = "graph")
    DemogParams <- Harmonized$DemogParams
    PossDemogParams <- Harmonized$PossDemogParams
    
@@ -398,7 +399,7 @@ demog_plot_sim <- function(demog_dataframe,
    names(DemogLabs) <- tolower(PossDemogParams$Parameter)
    
    
-   # Setting up colors -------------------------------------------------------
+   # Setting up colors and legend overall prefs --------------------------------
    NumColorsNeeded <- demog_dataframe %>% 
       pull(colorBy_column) %>% unique() %>% length()
    
@@ -417,33 +418,112 @@ demog_plot_sim <- function(demog_dataframe,
    # then also scatter plots comparing 2 variables, then the legend just WILL
    # NOT work: It duplicates the fill legend no matter what I do. To work around
    # this, check for whether there are ANY scatter plots and, if there are, omit
-   # the legend for the single variable graphs.
+   # the legend for the single variable graphs. 
+   
+   # First, need to make sure that all data needed are available. 
+   MissingParams <- as.character(c())
+   
+   for(yy in DemogParams$Parameter){
+      
+      if(str_detect(yy, " vs ")){
+         
+         if(yy == "weight vs height"){
+            if(all(c("weight_kg", "height_cm") %in% 
+                   names(demog_dataframe)) == FALSE){
+               MissingParams <- c(MissingParams, yy)
+               next
+            } else {
+               if(all(is.na(demog_dataframe$weight_kg)) | 
+                  all(is.na(demog_dataframe$height_cm))){
+                  MissingParams <- c(MissingParams, yy)
+                  next
+               }
+            }
+         }
+         
+         if(yy == "height vs age"){
+            if(all(c("age", "height_cm") %in% names(demog_parameters)) == FALSE){
+               MissingParams <- c(MissingParams, yy)
+               next
+            } else {
+               if(all(is.na(demog_parameters$age)) | 
+                  all(is.na(demog_parameters$height_cm))){
+                  MissingParams <- c(MissingParams, yy)
+                  next
+               }
+            }
+         }
+         
+         if(yy == "weight vs age"){
+            if(all(c("age", "weight_kg") %in% names(demog_parameters)) == FALSE){
+               MissingParams <- c(MissingParams, yy)
+               next
+            } else {
+               if(all(is.na(demog_parameters$age)) | 
+                  all(is.na(demog_parameters$weight_kg))){
+                  MissingParams <- c(MissingParams, yy)
+                  next
+               }
+            }
+         }
+         
+         if(yy == "sex vs age"){
+            if(all(c("age", "sex") %in% names(demog_parameters)) == FALSE){
+               MissingParams <- c(MissingParams, yy)
+               next
+            } else {
+               if(all(is.na(demog_parameters$age)) | 
+                  all(is.na(demog_parameters$sex))){
+                  MissingParams <- c(MissingParams, yy)
+                  next
+               }
+            }
+         }
+      } else {
+         
+         if(yy %in% names(demog_dataframe) == FALSE){
+            MissingParams <- c(MissingParams, yy)
+            next
+         }
+         
+         if(yy %in% c(names(demog_dataframe),
+                      tolower(PossDemogParams$Parameter)) == FALSE &
+            all(is.na(DemogParams$Orig)) == FALSE){
+            MissingParams <- c(MissingParams,
+                               DemogParams$Orig[DemogParams$Parameter == yy])
+            next
+         }
+         
+         if(all(is.na(demog_dataframe[, yy]))){
+            next
+         }
+         
+         if(yy == "allometricscalar" &
+            all(is.na(DemogParams$Orig)) &
+            "allometricscalar" %in% names(demog_dataframe) &&
+            all(demog_dataframe$allometricscalar == 1, na.rm = T)){
+            DemogParams <- DemogParams %>% 
+               filter(Parameter != "allometricscalar")
+            next
+         }
+      }
+   }
+   
+   if(length(MissingParams) > 0 & all(complete.cases(DemogParams$Orig))){
+      warning(wrapn(paste0(
+         "The variable(s) ", 
+         str_comma(paste0("'", MissingParams, "'")), 
+         " is/are not included in what you have supplied for demog_dataframe, so we will not be able to make that graph.")),
+         call. = FALSE)
+      
+      DemogParams <- DemogParams %>% 
+         filter(!Parameter %in% MissingParams)
+   }
+   
    AnyScatter <- any(str_detect(DemogParams$Parameter, "vs"))
    
    
    # Graphing -----------------------------------------------------------------
-   
-   # # Setting up function for making the glyph be a filled rectangle no matter
-   # # what. Credit for this:
-   # # https://stackoverflow.com/questions/76872072/change-legend-geom-with-override-aes-or-key-glyph
-   # 
-   # "%||%" <- function(a, b) {
-   #    if (!is.null(a)) a else b
-   # }
-   # 
-   # draw_key_cust <- function(data, params, size) {
-   #    # make fill inherit color if NA
-   #    if (is.na(data$fill)) data$fill <- data$col
-   #    
-   #    grid::rectGrob(
-   #       gp = grid::gpar(
-   #          col = NA, fill = alpha(data$fill %||%
-   #                                    data$colour %||% "grey20", data$alpha),
-   #          lty = data$linetype %||%
-   #             1
-   #       )
-   #    )
-   # }
    
    subfun_density <- function(Var){
       names(demog_dataframe)[names(demog_dataframe) == Var] <- "MyVar"
@@ -511,33 +591,33 @@ demog_plot_sim <- function(demog_dataframe,
    
    
    MyGraphs <- list()
-   MissingParams <- as.character(c())
    
    for(yy in DemogParams$Parameter){
       
-      if(yy %in% names(demog_dataframe) == FALSE){
-         MissingParams <- c(MissingParams, yy)
-         next
-      }
-      
-      if(yy %in% c(names(demog_dataframe), 
-                   tolower(PossDemogParams$Parameter)) == FALSE & 
-         all(is.na(DemogParams$Orig)) == FALSE){
-         MissingParams <- c(MissingParams, 
-                            DemogParams$Orig[DemogParams$Parameter == yy])
-         next
-      }
-      
-      if(all(is.na(demog_dataframe[, yy]))){
-         next
-      }
-      
-      if(all(is.na(DemogParams$Orig)) & 
-         yy == "allometricscalar" & 
-         "allometricscalar" %in% names(demog_dataframe) &&
-         all(demog_dataframe$allometricscalar == 1, na.rm = T)){
-         next
-      }
+      # if(str_detect(yy, " vs ") == FALSE & 
+      #    yy %in% names(demog_dataframe) == FALSE){
+      #    MissingParams <- c(MissingParams, yy)
+      #    next
+      # }
+      # 
+      # if(yy %in% c(names(demog_dataframe), 
+      #              tolower(PossDemogParams$Parameter)) == FALSE & 
+      #    all(is.na(DemogParams$Orig)) == FALSE){
+      #    MissingParams <- c(MissingParams, 
+      #                       DemogParams$Orig[DemogParams$Parameter == yy])
+      #    next
+      # }
+      # 
+      # if(all(is.na(demog_dataframe[, yy]))){
+      #    next
+      # }
+      # 
+      # if(all(is.na(DemogParams$Orig)) & 
+      #    yy == "allometricscalar" & 
+      #    "allometricscalar" %in% names(demog_dataframe) &&
+      #    all(demog_dataframe$allometricscalar == 1, na.rm = T)){
+      #    next
+      # }
       
       if(yy == "sex vs age"){
          MyGraphs[[yy]] <- 
@@ -673,15 +753,6 @@ demog_plot_sim <- function(demog_dataframe,
       }
    }
    
-   if(length(MissingParams) > 0 & all(complete.cases(DemogParams$Orig))){
-      warning(wrapn(paste0(
-         "The variable(s) ", 
-         str_comma(paste0("'", MissingParams, "'")), 
-         " is/are not included in what you have supplied for demog_dataframe, so we will not be able to make that graph.")),
-         call. = FALSE)
-      
-   }
-   
    
    # Printing collected graphs -----------------------------------------------
    
@@ -746,6 +817,23 @@ demog_plot_sim <- function(demog_dataframe,
 }
 
 
+#' TO BE DEPRECATED: Make plots comparing demographic parameters
+#'
+#' Please use the function demog_plot, which works exactly the same as
+#' demog_plot_sim.
+#'
+#' @param ...
+#'
+#' @returns graphs
+#' @export
+#'
+demog_plot_sim <- function(...){
+   
+   warning(wrapn("You have called on the function 'demog_plot_sim', which we are deprecating in favor of the simpler and more flexible 'demog_plot'. Please use 'demog_plot' going forward."), 
+           call. = FALSE)
+   demog_plot(...)
+   
+} 
 
 
 

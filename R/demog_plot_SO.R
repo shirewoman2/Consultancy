@@ -51,8 +51,8 @@ demog_plot_SO <- function(demog_dataframe,
    # Error catching ----------------------------------------------------------
    
    # FIXME: !!!! NOTE TO SELF: This needs some tidying. It replicates needlessly
-   # some of the stuff I have set up in demog_plot_SO_sim. Really, I shoudl change
-   # this to just use demog_plot_SO_sim with some modification rather than having
+   # some of the stuff I have set up in demog_plot_sim. Really, I should change
+   # this to just use demog_plot_sim with some modification rather than having
    # this be a separate function.
    
    

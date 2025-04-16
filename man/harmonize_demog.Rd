@@ -4,7 +4,7 @@
 \alias{harmonize_demog}
 \title{INTERNAL - Harmonize inputs for demog_x functions}
 \usage{
-harmonize_demog(demog_dataframe, demog_parameters)
+harmonize_demog(demog_dataframe, demog_parameters, table_or_graph = "graph")
 }
 \arguments{
 \item{demog_dataframe}{data.frame of demographic data}

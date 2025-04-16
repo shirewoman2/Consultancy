@@ -20,7 +20,7 @@
 #'   interval; this will be geometric or arithmetic based on your choice for
 #'   \code{mean_type}} \item{"CV"}{coefficient of variation; this will be
 #'   geometric or arithmetic based on your choice for \code{mean_type}}
-#'   \item{"SD"}{arithmetic standard deviation} \item{"none"}{to get no 
+#'   \item{"SD"}{arithmetic standard deviation} \item{"none"}{to get no
 #'   variability stats included in the table}}
 #' @param variability_format formatting used to indicate the variability When
 #'   the variability is concatenated. Options are "to" (default) to get output
@@ -57,31 +57,6 @@
 #'   leave off the file extension, we'll assume you want it to be ".csv". All PK
 #'   info will be included in a single Word or csv file, and, if
 #'   \code{checkDataSource = TRUE}, that will be saved in a single csv file.
-#' @param shading_column If you would like to alternate the shading of the rows
-#'   in the output table, supply here the unquoted name of the column to check
-#'   for when to change the shading; every time that column's value changes, the
-#'   shading will alternate between white and light gray. For example, if you
-#'   have a table with PK values for multiple files and you have more than one
-#'   row per file (an example of this would be the output from the function
-#'   \code{\link{pksummary_mult}}), setting \code{shading_column = File} will
-#'   cause the shading of the rows to alternate between white and light gray
-#'   whenever the file changes. Please see the examples at the bottom of this
-#'   help file.
-#' @param merge_shaded_cells TRUE (default) or FALSE for whether to merge the
-#'   cells that have the same shade. This only applies when one of the columns
-#'   in the input data.frame is used for deciding when to alternate shading,
-#'   that is, \code{shading_column} has a value.
-#' @param merge_columns a vector of quoted column names or of numeric column
-#'   positions that should be merged vertically whenever the values are the
-#'   same. For example, \code{merge_columns = c("File", "Tissue")} will cause
-#'   the cells in the columns "File" and "Tissue" to merge vertically whenever
-#'   the same value shows up in consecutive rows. Similarly, \code{merge_columns
-#'   = c(1, 3, 5)} will merge vertically the 1st, 3rd, and 5th columns whenever
-#'   the values are the same. Note: This is different from most other functions
-#'   in the SimcypConsultancy package, which require unquoted column names.
-#'   Honestly, we just don't know how code things for you to supply a variable
-#'   number of unquoted column names for a single argument; we've just hit a
-#'   coding knowledge limitation here!
 #' @param sort_column optionally specify a column to sort by. If none are
 #'   supplied, the table will not be sorted. If you would like to sort by more
 #'   than one column, we recommend sorting \emph{before} using this function,
@@ -93,6 +68,31 @@
 #'   "portrait" (default) or "landscape"
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
+#' @param sims_to_include optionally specify which simulation files you'd like
+#'   to include in the annotated output. Acceptable input:
+#'
+#'   \describe{\item{NA (default)}{get all the simulations included in
+#'   \code{demog_dataframe}}
+#'
+#'   \item{a character vector of the file names you want}{The items in the character
+#'   vector must \emph{exactly} match file names in the column "File" of the
+#'   \code{demog_dataframe}, including the file extension}
+#'
+#'   \item{a regular expression}{This will include in the output only files
+#'   that match the regular expression. This must have length = 1, and it IS
+#'   case sensitive. For example, say you only want to look at development or
+#'   verification simulations and you included "dev" or "ver" in those file
+#'   names, respectively. Here is how you could specify that (the vertical pipe |
+#'   means "or" for regular expressions): \code{sim_to_include = "dev|ver"}}}
+#' @param sim_file_labels optionally specify labels to use in lieu of simulation
+#'   file names in the table. This should be a named character vector where the
+#'   names are the simulation file name and the values are what you'd like to
+#'   have appear in the table instead. Be sure that the file name matches
+#'   perfectly, including the file extension! The order you list here will be
+#'   the order the simulations appear in your table. Example:
+#'   \code{sim_file_labels = c("mdz-5mg-sd-hv.xlsx" = "Healthy subjects", 
+#'   "mdz-5mg-sd-cpa.xlsx" = "Child-Pugh A", "mdz-5mg-sd-cpb.xlsx" = "Child-Pugh B",
+#'   "mdz-5mg-sd-cpc.xlsx" = "Child-Pugh C")}
 #'
 #' @return a formatted table
 #' @export
@@ -102,6 +102,8 @@
 #' 
 demog_table <- function(demog_dataframe, 
                         demog_parameters = NA, 
+                        sims_to_include = NA, 
+                        sim_file_labels = NA, 
                         mean_type = "geometric", 
                         variability_type = "90% CI", 
                         variability_format = "to",
@@ -164,15 +166,64 @@ demog_table <- function(demog_dataframe,
    
    # Make sure that input to variability_format is ok
    if(variability_format %in% c("to", "hyphen", "brackets", "parentheses") == FALSE){
-      warning("The input for variability_format is not among the acceptable options, which are `to`, `hyphen`, `brackets` for square brackets, or `parentheses` for the eponymous symbol if you're an American and a bracket if you're British. We'll use the default of `to`.\n",
+      warning(wrapn("The input for variability_format is not among the acceptable options, which are 'to', 'hyphen', 'brackets' for square brackets, or 'parentheses' for the eponymous symbol if you're an American and a bracket if you're British. We'll use the default of 'to'."),
               call. = FALSE)
       variability_format <- "to"
    }
    
-   if(break_down_by_sex == FALSE){
-      demog_dataframe$Sex <- "both"
+   # If user has supplied regex for sims_to_include, that should have length 1.
+   # If they supplied a character vector of files, that should probably have
+   # length > 1. Even if they only supplied a single file name here, it should
+   # still work to use regex instead of a perfect match.
+   if(any(complete.cases(sims_to_include)) && 
+      length(sims_to_include) == 1){
+      sims_to_include <- 
+         demog_dataframe$File[str_detect(demog_dataframe$File, 
+                                         sims_to_include)]
+      # At this point, sims_to_include should be a character vector of file
+      # names.
    }
    
+   # Keeping only the requested sims for sims_to_include
+   if(any(complete.cases(sims_to_include))){
+      demog_dataframe <- filter_sims(which_object = demog_dataframe, 
+                                     which_sims = sims_to_include,
+                                     include_or_omit = "include")
+   }
+   
+   if(any(complete.cases(sim_file_labels))){
+      
+      ExtraFiles <- setdiff(names(sim_file_labels), 
+                            unique(demog_dataframe$File))
+      if(length(ExtraFiles) > 0){
+         warning(paste0(wrapn("The following files were included in 'sim_file_labels' but are not present in 'demog_dataframe', so we will ignore them:"), 
+                        str_c(paste0("   '", ExtraFiles, "'"), 
+                              collapse = "\n"), 
+                        "\n"), 
+                 call. = FALSE)
+         
+      }
+      
+      FileLevels <- intersect(names(sim_file_labels),
+                              unique(demog_dataframe$File))
+      MissingFiles <- setdiff(unique(demog_dataframe$File), FileLevels)
+      if(length(MissingFiles) > 0){
+         warning(paste0(wrapn("The following files were included in 'demog_dataframe' but not in 'sim_file_labels', so we will list them after the ones that *were* included in 'sim_file_labels':"), 
+                        str_c(paste0("   '", MissingFiles, "'"), 
+                              collapse = "\n"), 
+                        "\n", 
+                        wrapn("If you meant for those files to be omitted entirely, please specify which simulation files you wanted with the argument 'sims_to_include'.")), 
+                 call. = FALSE)
+         FileLevels <- c(FileLevels, MissingFiles)
+         names(MissingFiles) <- MissingFiles
+         sim_file_labels <- c(sim_file_labels, MissingFiles)
+      }
+   } else {
+      FileLevels <- sort(unique(demog_dataframe$File))
+   }
+   
+   demog_dataframe$File <- factor(demog_dataframe$File, 
+                                  levels = FileLevels)
    
    # Tidying inputs ----------------------------------------------------------
    
@@ -184,7 +235,8 @@ demog_table <- function(demog_dataframe,
                                         "Simulated")])
    
    Harmonized <- harmonize_demog(demog_dataframe = demog_dataframe, 
-                                 demog_parameters = demog_parameters)
+                                 demog_parameters = demog_parameters, 
+                                 table_or_graph = "table")
    DemogParams <- Harmonized$DemogParams
    PossDemogParams <- Harmonized$PossDemogParams
    
@@ -196,42 +248,58 @@ demog_table <- function(demog_dataframe,
    DemogLabs <- PossDemogParams$Label
    names(DemogLabs) <- tolower(PossDemogParams$Parameter)
    
+   # If they didn't specifically ask for allometric scalar initially and the
+   # values in that column are all 1, omit that parameter b/c not interesting.
+   if(all(is.na(demog_parameters)) &
+      "allometricscalar" %in% names(demog_dataframe) &&
+      (all(demog_dataframe$allometricscalar == 1) | 
+       all(is.na(demog_dataframe$allometricscalar)))){
+      demog_dataframe$allometricscalar <- NULL
+      DemogParams <- DemogParams %>% 
+         filter(Parameter != "allometricscalar")
+   }
+   
    
    # Main body of function ---------------------------------------------------
    
-   FT <- 
-      suppressWarnings(suppressMessages(
-         demog_dataframe %>% 
-            select(any_of(c("File", "Trial", "Individual", "Population", "sex",
-                            "Simulated", DemogParams$Parameter))) %>% 
-            rename(Sex = sex) %>% # dealing w/inconsistencies between table and graph functions
-            pivot_longer(cols = DemogParams$Parameter, 
-                         names_to = "Parameter", 
-                         values_to = "Value") %>% 
-            filter(Parameter %in% DemogParams$Parameter) %>% 
-            group_by(File, Simulated, Sex, Parameter) %>% 
-            summarize(Mean = mean(Value, na.rm = T), 
-                      SD = sd(Value, na.rm = T), 
-                      Median = median(Value, na.rm = T),
-                      Geomean = gm_mean(Value), 
-                      CI90_l = switch(mean_type, 
-                                      "geometric" = gm_conf(Value, CI = 0.9)[1], 
-                                      "arithmetic" = confInt(Value, CI = 0.9)[1], 
-                                      "median" = gm_conf(Value, CI = 0.9)[1]), 
-                      CI90_u = switch(mean_type, 
-                                      "geometric" = gm_conf(Value, CI = 0.9)[2], 
-                                      "arithmetic" = confInt(Value, CI = 0.9)[2],
-                                      "median" = gm_conf(Value, CI = 0.9)[2]), 
-                      CV = switch(mean_type, 
-                                  "geometric" = gm_CV(Value), 
-                                  "arithmetic" = sd(Value, na.rm = T) / 
-                                     mean(Value, na.rm = T),
-                                  "median" = sd(Value, na.rm = T) / 
-                                     mean(Value, na.rm = T)))
-      ))
+   GroupCols <- switch(as.character(break_down_by_sex),
+                       "TRUE" = c("File", "Simulated", "Parameter", "sex"), 
+                       "FALSE" = c("File", "Simulated", "Parameter"))
+   
+   suppressWarnings(suppressMessages(
+      FT <- demog_dataframe %>% 
+         select(any_of(c("File", "Trial", "Individual", "Population", "Simulated",
+                         DemogParams$Parameter))) %>% 
+         # NB: Can't pivot with sex b/c not numeric data and the other
+         # parameters are.
+         pivot_longer(cols = any_of(setdiff(tolower(PossDemogParams$Parameter),
+                                            "sex")), 
+                      names_to = "Parameter", 
+                      values_to = "Value") %>% 
+         filter(Parameter %in% DemogParams$Parameter) %>% 
+         group_by(across(.cols = any_of(GroupCols))) %>% 
+         summarize(Mean = mean(Value, na.rm = T), 
+                   SD = sd(Value, na.rm = T), 
+                   Median = median(Value, na.rm = T),
+                   Geomean = gm_mean(Value), 
+                   CI90_l = switch(mean_type, 
+                                   "geometric" = gm_conf(Value, CI = 0.9)[1], 
+                                   "arithmetic" = confInt(Value, CI = 0.9)[1], 
+                                   "median" = gm_conf(Value, CI = 0.9)[1]), 
+                   CI90_u = switch(mean_type, 
+                                   "geometric" = gm_conf(Value, CI = 0.9)[2], 
+                                   "arithmetic" = confInt(Value, CI = 0.9)[2],
+                                   "median" = gm_conf(Value, CI = 0.9)[2]), 
+                   CV = switch(mean_type, 
+                               "geometric" = gm_CV(Value), 
+                               "arithmetic" = sd(Value, na.rm = T) / 
+                                  mean(Value, na.rm = T),
+                               "median" = sd(Value, na.rm = T) / 
+                                  mean(Value, na.rm = T)))
+   ))
    
    FT <- FT %>% ungroup() %>% 
-      mutate(across(.cols = -c(File, Simulated, Sex, Parameter), 
+      mutate(across(.cols = -GroupCols, 
                     .fns = function(x) round_opt(x, round_fun = rounding)),  
              Var = switch(variability_type, 
                           "90% CI" = switch(variability_format, 
@@ -248,8 +316,7 @@ demog_table <- function(demog_dataframe,
                             "geometric" = Geomean, 
                             "arithmetic" = Mean, 
                             "median" = Median)) %>% 
-      select(File, Simulated, Sex, Parameter, Value, Var) %>% 
-      rename(SorO = Simulated) %>% 
+      select(any_of(c(GroupCols, "Value", "Var"))) %>% 
       pivot_longer(cols = c(Value, Var), 
                    names_to = "Statistic", 
                    values_to = "Val") %>% 
@@ -267,25 +334,22 @@ demog_table <- function(demog_dataframe,
                                       {{variability_type}} == "SD" ~ "standard deviation", 
                                    Statistic == "Var" & 
                                       {{variability_type}} == "none" ~ "REMOVE THIS ROW"), 
-             SorO = ifelse(SorO == TRUE, "simulated", "observed"), 
-             Parameter = case_match(Parameter, 
-                                    "Weight_kg" ~ "Weight (kg)", 
-                                    "Height_cm" ~ "Height (cm)", 
-                                    "BSA_m2" ~ "BSA (m^2^)", 
-                                    "BrainWt_g" ~ "Brain weight (g)", 
-                                    "KidneyWt_g" ~ "Kidney weight (g)", 
-                                    "LiverWt_g" ~ "Liver weight (g)", 
-                                    "BMI_kgm2" ~ "BMI (kg/m^2^)", 
-                                    "CardiacOut" ~ "Cardiac output (L/h)", 
-                                    "Haematocrit" ~ "Haematocrit (percent)", 
-                                    "RenalFunction" ~ "Renal function", 
-                                    "HSA_gL" ~ "HSA (g/L)", 
-                                    "AGP_gL" ~ "AGP (g/L)", 
-                                    "Other_uM" ~ "Other drug-binding protein (uM)", 
-                                    "Creatinine_umolL" ~ "Creatinine (umol/L)", 
-                                    "GFR_mLminm2" ~ "GFR (mL/min/m^2^)", 
-                                    .default = Parameter)) %>% 
+             `Simulated or observed` = ifelse(Simulated == TRUE, "simulated", "observed"), 
+             Parameter = DemogLabs[Parameter]) %>% 
+      select(-Simulated)
+   
+   # Adjusting capitalization of column for sex if present
+   names(FT)[which(names(FT) == "sex")] <- "Sex"
+   
+   FT <- FT %>% 
       pivot_wider(names_from = Parameter, values_from = Val)
+   
+   if(any(complete.cases(sim_file_labels))){
+      FT <- FT %>% 
+         mutate(Population = sim_file_labels[File]) %>% 
+         select(-File) %>% 
+         select(Population, everything())
+   }
    
    if(variability_type == "none"){
       FT <- FT %>% filter(!Statistic == "REMOVE THIS ROW")
@@ -301,24 +365,14 @@ demog_table <- function(demog_dataframe,
                            sub("\\..*", ".docx", save_table), 
                            paste0(save_table, ".docx"))
       
-      # Now that the file should have an appropriate extension, check what
-      # the path and basename should be.
-      OutPath <- dirname(save_table)
-      save_table <- basename(save_table)
-      
-      # May need to change the working directory temporarily, so
-      # determining what it is now
-      CurrDir <- getwd()
-      
-      OutPath <- dirname(save_table)
-      if(OutPath == "."){
-         OutPath <- getwd()
+      FileName <- save_table
+      if(str_detect(FileName, "\\.docx") == FALSE){
+         # Making sure they've got a good extension
+         FileName <- paste0(sub(".*$", "", FileName), ".docx")
       }
       
-      FileName <- basename(save_table)
-      
-      SimFiles <- unique(demog_dataframe$File[demog_dataframe$Simulated])
-      ObsFiles <- unique(demog_dataframe$File[demog_dataframe$Simulated == FALSE])
+      SimFiles <- unique(as.character(demog_dataframe$File[demog_dataframe$Simulated]))
+      ObsFiles <- unique(as.character(demog_dataframe$File[demog_dataframe$Simulated == FALSE]))
       Caption <- paste0("Source simulated data: ", str_comma(SimFiles))
       
       Caption <- ifelse(length(ObsFiles) > 0, 
@@ -328,26 +382,54 @@ demog_table <- function(demog_dataframe,
       
       if(break_down_by_sex){
          FT <- FT %>% 
-            formatTable_Simcyp(fontsize = fontsize, 
-                               merge_shaded_cells = TRUE, 
-                               merge_columns = c("File", "SorO", "Sex"), 
-                               shading_column = Sex, 
-                               page_orientation = page_orientation, 
-                               save_table = save_table, 
-                               title_document = "Demographics", 
-                               table_caption = Caption)
+            formatTable_Simcyp(
+               fontsize = fontsize, 
+               merge_shaded_cells = TRUE, 
+               merge_columns = c(ifelse("File" %in% names(FT), 
+                                        "File", "Population"), 
+                                 "Simulated or observed", "Sex"), 
+               shading_column = Sex, 
+               center_1st_column = T, 
+               bold_cells = list(c(0, NA)), 
+               page_orientation = page_orientation, 
+               save_table = FileName, 
+               title_document = "Demographics", 
+               table_caption = Caption)
          
       } else {
          
-         FT <- FT %>% select(-Sex) %>% 
-            formatTable_Simcyp(fontsize = fontsize, 
-                               merge_shaded_cells = TRUE, 
-                               merge_columns = c("File", "SorO"), 
-                               shading_column = File, 
-                               page_orientation = page_orientation, 
-                               save_table = save_table, 
-                               title_document = "Demographics", 
-                               table_caption = Caption)
+         if("File" %in% names(FT)){
+            
+            FT <- FT %>% 
+               formatTable_Simcyp(
+                  fontsize = fontsize, 
+                  merge_shaded_cells = TRUE, 
+                  merge_columns = c(ifelse("File" %in% names(FT), 
+                                           "File", "Population"), 
+                                    "Simulated or observed"), 
+                  shading_column = File, 
+                  center_1st_column = T, 
+                  bold_cells = list(c(0, NA)), 
+                  page_orientation = page_orientation, 
+                  save_table = FileName, 
+                  title_document = "Demographics", 
+                  table_caption = Caption)
+         } else {
+            FT <- FT %>% 
+               formatTable_Simcyp(
+                  fontsize = fontsize, 
+                  merge_shaded_cells = TRUE, 
+                  merge_columns = c(ifelse("File" %in% names(FT), 
+                                           "File", "Population"), 
+                                    "Simulated or observed"), 
+                  shading_column = Population, 
+                  center_1st_column = T, 
+                  bold_cells = list(c(0, NA)), 
+                  page_orientation = page_orientation, 
+                  save_table = FileName, 
+                  title_document = "Demographics", 
+                  table_caption = Caption)
+         }
       }
    }
    
