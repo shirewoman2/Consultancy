@@ -51,7 +51,7 @@
 #'   that match the regular expression. This must have length = 1, and it IS
 #'   case sensitive. For example, say you only want to look at development or
 #'   verification simulations and you included "dev" or "ver" in those file
-#'   names, respectively. Here is how you could specify that (the verical pipe |
+#'   names, respectively. Here is how you could specify that (the vertical pipe |
 #'   means "or" for regular expressions): \code{sim_to_include = "dev|ver"}}}
 #' @param show_only_diff_from_template TRUE or FALSE (default) to show only the
 #'   details that differ from the template simulation, which reduces the number
@@ -198,7 +198,7 @@
 #'   \item{SimulatorSection}{the simulator section this detail is from, e.g.,
 #'   "absorption" or "elimination"}
 #'
-#'   \item{DataSource}{the source of the data; this will be a sheet name in an 
+#'   \item{DataSource}{the source of the data; this will be a sheet name in an
 #'   Excel output file or a workspace or database file}
 #'
 #'   \item{Notes}{an explanation of what this detail is}
