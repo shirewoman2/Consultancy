@@ -7,7 +7,6 @@
 demog_plot(
   demog_dataframe,
   sims_to_include = "all",
-  sim_file_labels = NA,
   demog_parameters = NA,
   variability_display = "kernel density",
   colorBy_column,
@@ -34,17 +33,6 @@ demog_plot(
 
 \item{sims_to_include}{optionally specify which simulations to include. These
 must be included in \code{demog_dataframe} in the column "File".}
-
-\item{sim_file_labels}{optionally specify labels to use in lieu of simulation
-file names in the graph. This should be a named character vector where the
-names are the simulation file name and the values are what you'd like to
-have appear in the graph instead. Be sure that the file name matches
-perfectly, including the file extension! The order you list here will be
-the order the simulations appear in the legend, unless you have specified
-something for legend_label_color, which overrides this. Example:
-\code{sim_file_labels = c("mdz-5mg-sd-hv.xlsx" = "Healthy subjects",
-"mdz-5mg-sd-cpa.xlsx" = "Child-Pugh A", "mdz-5mg-sd-cpb.xlsx" = "Child-Pugh B",
-"mdz-5mg-sd-cpc.xlsx" = "Child-Pugh C")}}
 
 \item{demog_parameters}{demographic parameters to include. We're starting
   with a limited set: \itemize{\item{Individual parameters, which will be
