@@ -128,7 +128,7 @@ eCT_pulldata <- function(sim_data_xl,
          
          # Step 1: Find all rows w/ADAM model concentrations
          CompoundIndices <- which(str_detect(NamesToCheck, 
-                                             "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|ITissue|dissolved|absorbed|^C Enterocyte|Release fraction|CIntracranial|CBrainI[CS]F|CCSF(Spinal|Cranial)|Kpuu_I[CS]F|Kpuu I[CS]F|Kpuu_BrainMass|Kpuu brain mass|CTotal( )?Brain"))
+                                             "^Ms|^Dissolution Rate Solid State|^C Lumen Free|^C Lumen Total|^Heff|^Absorption Rate|^Mur|^Md|^Inh Md|^Luminal CLint|CTissue|ITissue|dissolved|absorbed|^C Enterocyte|Release [Ff]raction|CIntracranial|CBrainI[CS]F|CCSF(Spinal|Cranial)|Kpuu_I[CS]F|Kpuu I[CS]F|Kpuu_BrainMass|Kpuu brain mass|CTotal( )?Brain"))
          # IMPORTANT: If you change the above regex b/c you find some new weird way
          # that the Simulator output refers to things, ALSO CHANGE IT IN
          # extractConcTime.

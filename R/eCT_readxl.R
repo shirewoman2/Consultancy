@@ -35,10 +35,14 @@ eCT_readxl <- function(sim_data_file,
                                   "inhibitor 1 metabolite", 
                                   "inhibitor 2") == FALSE ~ compoundToExtract, 
       
-      TissueType %in% c("liver", "faeces", "tissue") ~ "substrate") %>% 
+      Deets$SimulatorUsed == "Simcyp Discovery" & 
+         TissueType == "liver" ~ compoundToExtract, 
+      
+      TissueType %in% c("faeces", "tissue") ~ "substrate") %>% 
       unique()
    
-   if("SimulatorUsed" %in% names(Deets) && Deets$SimulatorUsed == "Simcyp Discovery"){
+   if("SimulatorUsed" %in% names(Deets) && 
+      Deets$SimulatorUsed == "Simcyp Discovery"){
       # Simcyp Discovery data extraction
       
       # Already took care of this situation elsewhere, so we can probably delete this.
@@ -57,7 +61,8 @@ eCT_readxl <- function(sim_data_file,
                                 "portal vein" = "PV Conc Profiles"), 
                       "primary metabolite 1" =
                          switch(tissue, 
-                                "plasma" = "Sub Pri Metab Conc Profiles"))
+                                "plasma" = "Sub Pri Metab Conc Profiles", 
+                                "liver" = "Sub Pri Metab Liver Conc"))
       
       if(is.null(Sheet)){
          warning("The combination of compound ID and tissue you requested is not availble for Simcyp Discovery files. Please contact the R Working Group if you think it should be.\n", 
@@ -77,8 +82,8 @@ eCT_readxl <- function(sim_data_file,
       if(TissueType == "systemic"){
          
          if(all(CompoundToFind %in% c(# "intact ADC", 
-                                      "total antibody", 
-                                      "conjugated payload"))){ 
+            "total antibody", 
+            "conjugated payload"))){ 
             
             PossSheets <- PossSheets[
                str_detect(PossSheets, 
