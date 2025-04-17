@@ -762,7 +762,7 @@ annotateDetails <- function(existing_exp_details,
                                   .default = Notes))
    }
    
-   MainDetails <- MainDetails %>% select(-Pathway)
+   MainDetails <- MainDetails %>% select(-any_of("Pathway"))
    
    # subfunction starts here ------------------------------------------------
    
