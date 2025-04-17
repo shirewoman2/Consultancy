@@ -323,9 +323,13 @@ eCT_harmonize <- function(sim_data_xl,
    sim_data_xl$...1 <- sub("After Inh|[iI]nteraction", "WITHINTERACTION", 
                            sim_data_xl$...1)
    
-   # When it's lumen free, for some reason, it's labeled differently. Dealing
-   # with that.
+   # When it's lumen free or feces sometimes, for some reason, it's labeled
+   # differently. Dealing with that.
    sim_data_xl$...1 <- sub("Inh C Lumen Free", "C Lumen Free WITHINTERACTION", 
+                           sim_data_xl$...1)
+   sim_data_xl$...1 <- sub("Inh Mur", "Mur WITHINTERACTION", 
+                           sim_data_xl$...1)
+   sim_data_xl$...1 <- sub("Inh Md", "Md WITHINTERACTION", 
                            sim_data_xl$...1)
    
    return(sim_data_xl)

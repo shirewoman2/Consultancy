@@ -453,7 +453,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                            sub("\\.db", ".xlsx", existing_exp_details$MainDetails$DBFile)), 
                 "FALSE" = c(existing_exp_details$MainDetails$File, 
                             sub("\\.xlsx", ".db", existing_exp_details$MainDetails$File)))
-                
+      
       if(all(sim_data_files %in% PossFiles) == FALSE){
          existing_exp_details <- 
             extractExpDetails_mult(sim_data_files = sim_data_files, 
@@ -984,15 +984,39 @@ extractConcTime_mult <- function(sim_data_files = NA,
                
             } else {
                
-               MultData[[ff]][[j]] <-
-                  extractConcTime(
-                     sim_data_file = ff,
-                     obs_data_file = MyObsFile, 
-                     compoundToExtract = compoundsToExtract_n,
-                     tissue = j,
-                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
-                     fromMultFunction = TRUE, 
-                     existing_exp_details = existing_exp_details)
+               if(Deets$SimulatorUsed == "Simcyp Discovery"){
+                  
+                  # Liver tissue has all compounds together in the main
+                  # simulator but on separate tabs in Discovery. This is just a
+                  # hack to make things work anyway.
+                  LiverDisc <- list()
+                  
+                  for(cc in compoundsToExtract_n){
+                     LiverDisc[[cc]] <- extractConcTime(
+                        sim_data_file = ff,
+                        obs_data_file = MyObsFile, 
+                        compoundToExtract = cc,
+                        tissue = j,
+                        returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                        fromMultFunction = TRUE, 
+                        existing_exp_details = existing_exp_details)
+                  }
+                  
+                  MultData[[ff]][[j]] <- bind_rows(LiverDisc)
+                  rm(LiverDisc)
+                  
+               } else {
+                  
+                  MultData[[ff]][[j]] <-
+                     extractConcTime(
+                        sim_data_file = ff,
+                        obs_data_file = MyObsFile, 
+                        compoundToExtract = compoundsToExtract_n,
+                        tissue = j,
+                        returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                        fromMultFunction = TRUE, 
+                        existing_exp_details = existing_exp_details)
+               }
             }
             
          } else if(TissueType == "systemic"){

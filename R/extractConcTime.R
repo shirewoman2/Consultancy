@@ -626,6 +626,8 @@ extractConcTime <- function(sim_data_file,
                          SimTimeUnits = SimTimeUnits,
                          returnAggregateOrIndiv = c("aggregate", "individual"))
          
+         if(length(sim_data[[cmpd]][[ss]]) == 0){next}
+         
          if(length(AllPerpsPresent) > 0 & cmpd %in% c("substrate", 
                                                       "primary metabolite 1", 
                                                       "primary metabolite 2", 
