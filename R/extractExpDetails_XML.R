@@ -244,12 +244,28 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                
                DeetInfo <- XMLDeets %>% 
                   filter(DataSource == "workspace or database" & Detail == k)
+               
                DeetLevels <- t(DeetInfo[, paste0("Level", 1:7)])
+               
                if(all(complete.cases(DeetLevels))){
                   DeetLevels <- "7"
                } else {
                   DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
                }
+               
+               # Data class must be numeric for specific levels in some cases.
+               # Setting that as needed here.
+               if(k %in% c("Transporter_Gut_ABCB1_P_gp_MDR1_Apical_RAFREF", 
+                           "Transporter_Gut_ABCB1_P_gp_system")){
+                  DeetInfo$Level4 <- as.numeric(DeetInfo$Level4)
+               }
+               
+               if(k %in% k %in% c("ParticleSizeD10", 
+                                  "ParticleSizeD50", 
+                                  "ParticleSizeD90")){
+                  DeetInfo$Level6 <- as.numeric(DeetInfo$Level6)
+               }
+               
                
                # Check for a switch b/c that will change what tag we extract
                if(complete.cases(DeetInfo$XMLswitch)){
@@ -304,17 +320,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                               DeetInfo$Level3]][[
                                  DeetInfo$Level4]]), 
                         
-                        DeetLevels == "5" & 
-                           k %in% c("Transporter_Gut_ABCB1_P_gp_MDR1_Apical_RAFREF", 
-                                    "Transporter_Gut_ABCB1_P_gp_system") ~ 
-                           XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                              DeetInfo$Level3]][[
-                                 as.numeric(DeetInfo$Level4)]][[
-                                    DeetInfo$Level5]]), 
-                        
-                        DeetLevels == "5" & 
-                           !k %in% c("Transporter_Gut_ABCB1_P_gp_MDR1_Apical_RAFREF", 
-                                     "Transporter_Gut_ABCB1_P_gp_system") ~ 
+                        DeetLevels == "5" ~ 
                            XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
                               DeetInfo$Level3]][[
                                  DeetInfo$Level4]][[
@@ -327,21 +333,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                     DeetInfo$Level5]][[
                                        DeetInfo$Level6]]), 
                         
-                        DeetLevels == "7" & 
-                           k %in% c("ParticleSizeD10", 
-                                    "ParticleSizeD50", 
-                                    "ParticleSizeD90") ~ 
-                           XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                              DeetInfo$Level3]][[
-                                 DeetInfo$Level4]][[
-                                    DeetInfo$Level5]][[
-                                       as.numeric(DeetInfo$Level6)]][[
-                                          DeetInfo$Level7]]), 
-                        
-                        DeetLevels == "7" & 
-                           !k %in% c("ParticleSizeD10", 
-                                     "ParticleSizeD50", 
-                                     "ParticleSizeD90") ~ 
+                        DeetLevels == "7" ~ 
                            XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
                               DeetInfo$Level3]][[
                                  DeetInfo$Level4]][[
@@ -349,15 +341,6 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                        DeetInfo$Level6]][[
                                           DeetInfo$Level7]]))
                )
-               
-               # Adding a few exceptions for earlier simulator versions
-               
-               # FIXME: I don't think the below is correct. 
-               # if(str_detect(k, "Abs_model") & 
-               #    is.na(DeetValue)){
-               #    DeetValue <- XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-               #       "AbsorptionSwitch"]])
-               # }
                
                # Decoding as necessary. Add to the options for k as needed.
                DeetValue <- case_when(
@@ -514,49 +497,61 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             DeetLevels <- t(DeetInfo[, paste0("Level", 1:7)])
             DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
             
+            # NB: Population parameters need to have level 2 be numeric rather
+            # than character.
+            if(is.na(DeetInfo$Level1)){browser()}
+            if(DeetInfo$Level1 == "Populations"){
+               DeetInfo$Level2 <- as.numeric(DeetInfo$Level2)
+            }
+            
             if(DeetLevels == 0){next} # This is 0 when it's only set up for getting database parameters and not for extracting from workspace.
             
             DeetValue <- 
-               switch(DeetLevels, 
-                      "2" = XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2]]),
-                      
-                      "3" =  XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2]][[
-                               DeetInfo$Level3]]), 
-                      
-                      "4" = XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2
-                         ]][[
-                            DeetInfo$Level3]][[
-                               DeetInfo$Level4]]), 
-                      
-                      "5" = XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2]][[
-                               DeetInfo$Level3]][[
-                                  DeetInfo$Level4]][[
-                                     DeetInfo$Level5]]), 
-                      
-                      "6" = XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2]][[
-                               DeetInfo$Level3]][[
-                                  DeetInfo$Level4]][[
-                                     DeetInfo$Level5]][[
-                                        DeetInfo$Level6]]), 
-                      
-                      "7" = XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2]][[
-                               DeetInfo$Level3]][[
-                                  DeetInfo$Level4]][[
-                                     DeetInfo$Level5]][[
-                                        DeetInfo$Level6]][[
-                                           DeetInfo$Level7]]))
+               case_when(
+                  DeetLevels == "2" ~
+                     XML::xmlValue(RootNode[[
+                        DeetInfo$Level1]][[
+                           DeetInfo$Level2]]),
+                  
+                  DeetLevels == "3" ~ 
+                     XML::xmlValue(RootNode[[
+                        DeetInfo$Level1]][[
+                           DeetInfo$Level2]][[
+                              DeetInfo$Level3]]), 
+                  
+                  DeetLevels == "4" ~ 
+                     XML::xmlValue(RootNode[[
+                        DeetInfo$Level1]][[
+                           DeetInfo$Level2]][[
+                              DeetInfo$Level3]][[
+                                 DeetInfo$Level4]]), 
+                  
+                  DeetLevels == "5" ~ 
+                     XML::xmlValue(RootNode[[
+                        DeetInfo$Level1]][[
+                           DeetInfo$Level2]][[
+                              DeetInfo$Level3]][[
+                                 DeetInfo$Level4]][[
+                                    DeetInfo$Level5]]), 
+                  
+                  DeetLevels == "6" ~ 
+                     XML::xmlValue(RootNode[[
+                        DeetInfo$Level1]][[
+                           DeetInfo$Level2]][[
+                              DeetInfo$Level3]][[
+                                 DeetInfo$Level4]][[
+                                    DeetInfo$Level5]][[
+                                       DeetInfo$Level6]]), 
+                  
+                  DeetLevels == "7" ~
+                     XML::xmlValue(RootNode[[
+                        DeetInfo$Level1]][[
+                           DeetInfo$Level2]][[
+                              DeetInfo$Level3]][[
+                                 DeetInfo$Level4]][[
+                                    DeetInfo$Level5]][[
+                                       DeetInfo$Level6]][[
+                                          DeetInfo$Level7]]))
             
             DeetValue <- switch(DeetInfo$Class, 
                                 "numeric" = as.numeric(DeetValue), 
@@ -587,7 +582,14 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                DeetValue <- case_match(DeetValue, 
                                        "0" ~ "CYP3A4 Profile 1", 
                                        "1" ~ "CYP3A4 Profile 2")
-            } 
+            } else if(m == "GFR_pred_method"){
+               DeetValue <- case_when(
+                  XML::xmlValue(RootNode[["Populations"]][[1]][[
+                     "Kidney"]][["RenalGFRPredictionFunction"]]) == "1" ~ 
+                     "user defined", 
+                  DeetValue == "0" ~ "Method 1", 
+                  DeetValue == "1" ~ "Method 2")
+            }
             
             Deets[[i]][[DeetInfo$Detail]] <- DeetValue
             

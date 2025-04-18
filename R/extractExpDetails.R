@@ -589,6 +589,10 @@ extractExpDetails <- function(sim_data_file,
          Val <- ifelse(complete.cases(Val) & Val == "n/a",
                        NA, Val)
          
+         Val <- case_when(deet == "GFR_pred_method" & Val == "Scripted" ~
+                             "user defined", 
+                          .default = as.character(Val))
+         
          return(Val)
       }
       
