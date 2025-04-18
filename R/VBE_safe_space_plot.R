@@ -110,10 +110,11 @@
 #' VBE_safe_space_plot(VBE_dataframe = VBE_disso_example)
 #' 
 #' # Setting some colors for actual and hypothetical datasets
-#' MyColors_actual <- reds(3)
-#' names(MyColors_actual) <- c("Formulation A", 
+#' MyColors_actual <- reds(4)
+#' names(MyColors_actual) <- c("Formulation A",
 #'                             "Formulation B",
-#'                             "Formulation C")
+#'                             "Formulation C", 
+#'                             "Formulation D")
 #' 
 #' MyColors_hyp <- blues(6)
 #' names(MyColors_hyp) <- paste("Test", 1:6)
@@ -125,7 +126,7 @@
 #'                     safe_space_color = "gray80",
 #'                     linetypes = c("solid", "longdash"),
 #'                     save_graph = "VBE safe space.png",
-#'                     fig_height = 3, fig_width = 5)
+#'                     fig_height = 4, fig_width = 6)
 #' 
 #' 
 VBE_safe_space_plot <- function(VBE_dataframe, 
