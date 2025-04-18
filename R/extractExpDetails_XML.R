@@ -351,11 +351,13 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                )
                
                # Adding a few exceptions for earlier simulator versions
-               if(str_detect(k, "Abs_model") & 
-                  is.na(DeetValue)){
-                  DeetValue <- XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                     "AbsorptionSwitch"]])
-               }
+               
+               # FIXME: I don't think the below is correct. 
+               # if(str_detect(k, "Abs_model") & 
+               #    is.na(DeetValue)){
+               #    DeetValue <- XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
+               #       "AbsorptionSwitch"]])
+               # }
                
                # Decoding as necessary. Add to the options for k as needed.
                DeetValue <- case_when(
@@ -373,6 +375,12 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                      case_match(DeetValue, 
                                 "1" ~ "i.v. bolus", 
                                 "2" ~ "Oral", 
+                                .default = DeetValue), 
+                  
+                  str_detect(k, "fa_input_type") ~ 
+                     case_match(DeetValue, 
+                                "0" ~ "user defined", 
+                                "1" ~ "predicted", 
                                 .default = DeetValue), 
                   
                   str_detect(k, "Formulation") ~ 
@@ -405,6 +413,13 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                # apply. Peff is complicated, so it's separate from this.
                if(str_detect(k, "Qgut_userinput") & 
                   XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["QGutSwitch"]]) == "1"){
+                  DeetValue <- NA
+               }
+               
+               if(k %in% paste0("fa", AllRegCompounds$Suffix) & 
+                  XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["AbsorptionSwitch"]]) == "1"){
+                  # This is when fa is predicted and the value listed in the
+                  # workspace is thus unreliable.
                   DeetValue <- NA
                }
                
@@ -567,7 +582,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             # was first attempting to do this with case_when(m == ...) and then
             # case_match for each, but that requires all the data types to be
             # the same, which they are NOT. Thus the multiple if and if else
-            # statments.
+            # statements.
             if(m == "CYP3A4_ontogeny_profile"){
                DeetValue <- case_match(DeetValue, 
                                        "0" ~ "CYP3A4 Profile 1", 

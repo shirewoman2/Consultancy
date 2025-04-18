@@ -119,7 +119,14 @@
 #' names(MyColors_hyp) <- paste("Test", 1:6)
 #' 
 #' MyColors <- c(MyColors_actual, MyColors_hyp)
-
+#' 
+#' VBE_safe_space_plot(VBE_dataframe = VBE_disso_example,
+#'                     color_set = MyColors,
+#'                     safe_space_color = "gray80",
+#'                     linetypes = c("solid", "longdash"),
+#'                     save_graph = "VBE safe space.png",
+#'                     fig_height = 3, fig_width = 5)
+#' 
 #' 
 VBE_safe_space_plot <- function(VBE_dataframe, 
                                 color_set = NA, 
