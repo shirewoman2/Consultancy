@@ -785,8 +785,12 @@ calc_PK_ratios <- function(PKparameters = NA,
    } else {
       
       # Using calculations recommended by Frederic Bois for the confidence
-      # interval. (Note to self: See email from March 3, 2023. -LSh)
-      geomratio_stats <- function(x_num, x_denom){
+      # interval for UNPAIRED comparisons. (Note to self: See email from March
+      # 3, 2023. -LSh)
+      geomratio_stats <- function(x_num, x_denom, 
+                                  distribution_type = distribution_type, 
+                                  rounding = rounding, 
+                                  conf_int = conf_int){
          
          # Log transforming individual data
          logx_num <- log(x_num)

@@ -353,6 +353,8 @@
 #'   writing table headings later.
 #' @param convert_conc_units SOON TO BE DEPRECATED. Please use the argument
 #'   "conc_units" instead.
+#' @param checkDosingInterval TRUE or FALSE (default) for whether to return
+#'   information for checking the dosing intervals
 #'
 #' @return a data.frame
 #' @export
@@ -388,6 +390,7 @@ pk_table <- function(PKparameters = NA,
                      name_clinical_study = NA, 
                      extract_forest_data = FALSE, 
                      checkDataSource = FALSE, 
+                     checkDosingInterval = FALSE, 
                      save_table = NA, 
                      highlight_gmr_colors = NA, 
                      highlight_so_cutoffs = NA, 
@@ -863,7 +866,8 @@ pk_table <- function(PKparameters = NA,
          OutQC[[i]] <- temp$QC
       } 
       
-      FD[[i]] <- temp$ForestData
+      FD[[i]] <- temp$ForestData %>% 
+         mutate(Sheet = as.character(Sheet))
       
       CheckDoseInt[[i]] <- temp$CheckDoseInt
       
@@ -1427,6 +1431,17 @@ pk_table <- function(PKparameters = NA,
       if(complete.cases(save_table)){
          
          write.csv(OutQC, sub(".csv|.docx", " - QC.csv", save_table), row.names = F)
+         
+      }
+   }
+   
+   if(checkDosingInterval){
+      Out[["DosingIntervals"]] <- CheckDoseInt
+      
+      if(complete.cases(save_table)){
+         
+         write.csv(CheckDoseInt, sub(".csv|.docx", " - dosing intervals.csv",
+                                     save_table), row.names = F)
          
       }
    }

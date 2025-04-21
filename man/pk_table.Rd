@@ -33,6 +33,7 @@ pk_table(
   name_clinical_study = NA,
   extract_forest_data = FALSE,
   checkDataSource = FALSE,
+  checkDosingInterval = FALSE,
   save_table = NA,
   highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
@@ -323,6 +324,9 @@ for the simulation, but all PK are for the victim compound listed.}
 \item{checkDataSource}{TRUE or FALSE (default) for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
+
+\item{checkDosingInterval}{TRUE or FALSE (default) for whether to return
+information for checking the dosing intervals}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
