@@ -98,7 +98,7 @@ harmonize_details <- function(existing_exp_details){
             
             for(i in existing_exp_details$MainDetails$File){
                if(file.exists(i) & 
-                  !str_detect(i, "\\.db$")){
+                  !str_detect(i, "\\.db$|\\.wksz")){
                   SheetNames <- tryCatch(readxl::excel_sheets(i),
                                          error = openxlsx::getSheetNames(i))
                } else { SheetNames <- NA}

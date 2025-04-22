@@ -99,7 +99,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                      str_comma(paste0("`", MissingSimFiles, "`")), 
                      " is/are not present and thus will not be extracted.\n"), 
               call. = FALSE)
-      return()
+      sim_workspace_files <- setdiff(sim_workspace_files, MissingSimFiles)
    }
    
    sim_workspace_files <- WkspFile
@@ -120,10 +120,10 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       complete.cases(AllRegCompounds$DetailNames)], "all")
    
    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
-      warning(paste0("The compound(s) ", 
+      warning(wrapn(paste0("The compound(s) ", 
                      str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
                      " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                     str_comma(paste0("`", PossCmpd, "`")), "\n"), 
+                     str_comma(paste0("`", PossCmpd, "`")))), 
               call. = FALSE)
       compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
    }
@@ -167,6 +167,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       filter(DataSource == "workspace or database" & Level1 == "Populations")
    
    Deets <- list()
+   UserIntervals <- list()
    
    for(i in sim_workspace_files){
       
@@ -178,7 +179,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       
       # Adjusting which details to pull based on which simulator was used.
       if(Deets[[i]]$SimulatorUsed == "Simcyp Simulator"){
-         exp_details <- intersect(
+         exp_details_i <- intersect(
             exp_details, 
             
             AllExpDetails %>% 
@@ -188,7 +189,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                pull(Detail)
          )
       } else if(Deets[[i]]$SimulatorUsed == "Simcyp Discovery"){
-         exp_details <- intersect(
+         exp_details_i <- intersect(
             exp_details, 
             
             AllExpDetails %>% 
@@ -204,10 +205,19 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       
       RootNode <- XML::xmlRoot(workspace_xml)
       
+      Deets[[i]]$SimStartDayTime <- 
+         paste0("Day ", XML::xmlValue(
+            RootNode[["SimulationData"]][["idStudyStartDay"]]), ", ",
+            formatC(as.numeric(XML::xmlValue(RootNode[["SimulationData"]][["idStudyStartTimeHour"]])), 
+                    width = 2, format = "d", flag = "0"), 
+            ":", 
+            formatC(as.numeric(XML::xmlValue(RootNode[["SimulationData"]][["idStudyStartTimeMin"]])), 
+                    width = 2, format = "d", flag = "0")) 
+      
       
       ## Compound-specific info -------------------------------------------------
       
-      if(any(exp_details %in% CompoundDetails)){
+      if(any(exp_details_i %in% CompoundDetails)){
          
          # Extracting anything under "Compounds" on level 1 here.
          
@@ -231,14 +241,14 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             # inhitibor 2.
             if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
                paste0("idInhEnabled", CompoundNum)]])) == FALSE){
-               exp_details <- exp_details[!str_detect(exp_details, Suffix)]
+               exp_details_i <- exp_details_i[!str_detect(exp_details_i, Suffix)]
                next
             }
             
             exp_details_cmpd <- 
-               exp_details[exp_details %in% CompoundDetails &
-                              exp_details %in% (XMLDeets %>% filter(CompoundID == j) %>% 
-                                                   pull(Detail))]
+               exp_details_i[exp_details_i %in% CompoundDetails &
+                                exp_details_i %in% (XMLDeets %>% filter(CompoundID == j) %>% 
+                                                       pull(Detail))]
             
             for(k in exp_details_cmpd){
                
@@ -484,11 +494,11 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       
       ## Other general info -------------------------------------------------
       
-      if(length(setdiff(exp_details, CompoundDetails)) >= 1){
+      if(length(setdiff(exp_details_i, CompoundDetails)) >= 1){
          
          # Extracting anything that was NOT under "Compounds" on level 1 here.
          
-         for(m in setdiff(exp_details, CompoundDetails)){
+         for(m in setdiff(exp_details_i, CompoundDetails)){
             
             DeetInfo <- XMLDeets %>% 
                filter(DataSource == "workspace or database" & Detail == m) %>% 
@@ -623,12 +633,101 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       
       Deets[[i]] <- as.data.frame(Deets[[i]]) %>% mutate(Workspace = i)
       
+      ## User AUC intervals ------------------------------------------------------
+      UserIntervals[[i]] <- list()
+      
+      for(j in compoundsToExtract){
+         
+         UserIntervals[[i]][[j]] <- list()
+         
+         # Check whether that compound was activated and skip if not. Also
+         # remove any info related to that compound from exp_details or we
+         # can wind up with, e.g., "StartDayTimeH_inhib2" when there is no
+         # inhitibor 2.
+         if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
+            paste0("idInhEnabled", AllRegCompounds$CompoundID_num_Simcyp[
+               AllRegCompounds$CompoundID == j])]])) == FALSE){
+            next
+         }
+         
+         Suffix <- AllRegCompounds %>% filter(CompoundID == j) %>% 
+            pull(SimulatorSuffix)
+         
+         k <- 1
+         
+         while(is.null(RootNode[["SimulationData"]][["PostProcessingData"]][[
+            paste0("AUCCalculations", Suffix)]][["UserIntervals"]][[k]]) == FALSE){
+            UserIntervals[[i]][[j]][[k]] <- 
+               tibble(StartDay = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][["PostProcessingData"]][[
+                               paste0("AUCCalculations", Suffix)]][["UserIntervals"]][[k]][[
+                                  "StartDay"]]), 
+                      StartClockMin = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][["PostProcessingData"]][[
+                               paste0("AUCCalculations", Suffix)]][["UserIntervals"]][[k]][[
+                                  "StartTime"]]), 
+                      EndDay = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][["PostProcessingData"]][[
+                               paste0("AUCCalculations", Suffix)]][["UserIntervals"]][[k]][[
+                                  "EndDay"]]), 
+                      EndClockMin = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][["PostProcessingData"]][[
+                               paste0("AUCCalculations", Suffix)]][["UserIntervals"]][[k]][[
+                                  "EndTime"]]))
+            k <- k + 1
+         }
+         
+         if(length(UserIntervals[[i]][[j]]) == 0){
+            UserIntervals[[i]][[j]] <- list()
+            next
+         }
+         
+         UserIntervals[[i]][[j]] <-
+            bind_rows(UserIntervals[[i]][[j]]) %>% 
+            mutate(
+               across(.cols = everything(), 
+                      .fns = as.numeric), 
+               StartClockHr = StartClockMin %/% 60,
+               EndClockHr = EndClockMin %/% 60, 
+               StartClockMin = round((StartClockMin %% 60)/60, 2), 
+               EndClockMin = round((EndClockMin %% 60)/60, 2), 
+               Int_StartDayTime = paste0("Day ", StartDay, ", ", 
+                                         formatC(StartClockHr, width = 2, format = "d", flag = "0"),
+                                         ":", 
+                                         formatC(StartClockMin, width = 2, format = "d", flag = "0")), 
+               Int_EndDayTime = paste0("Day ", EndDay, ", ", 
+                                       formatC(EndClockHr, width = 2, format = "d", flag = "0"),
+                                       ":", 
+                                       formatC(EndClockMin, width = 2, format = "d", flag = "0")), 
+               Interval = difftime_sim(time1 = Int_StartDayTime, 
+                                       time2 = Int_EndDayTime, units = "hours"), 
+               Int_StartHr = difftime_sim(time1 = Deets[[i]]$SimStartDayTime, 
+                                          time2 = Int_StartDayTime), 
+               Int_EndHr = difftime_sim(time1 = Deets[[i]]$SimStartDayTime, 
+                                        time2 = Int_EndDayTime), 
+               CompoundID = j, 
+               Workspace = i)
+      }
+      
       rm(workspace_xml, RootNode)
       
+      UserIntervals[[i]] <- bind_rows(UserIntervals[[i]])
    }
    
    Deets <- bind_rows(Deets)
    Deets[Deets == ""] <- NA
+   
+   if(nrow(bind_rows(UserIntervals)) > 0){
+      UserIntervals <- bind_rows(UserIntervals) %>% 
+         select(Workspace, CompoundID, Int_StartDayTime, Int_EndDayTime,
+                Int_StartHr, Int_EndHr, Interval)
+   } else {
+      UserIntervals <- list()
+   }
    
    # Sorting to help organize output
    Deets <- Deets %>% select(Workspace, everything())
@@ -656,11 +755,18 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    }
    
    # Temporarily calling "Workspace" "File" so that we can harmonize... 
-   Out <- harmonize_details(Deets %>% rename(File = Workspace))
+   Out <- list(MainDetails = Deets %>% rename(File = Workspace))
+   
+   if(length(UserIntervals) > 0){
+      Out$UserAUCIntervals <- UserIntervals %>% rename(File = Workspace)
+   }
+   
+   Out <- harmonize_details(Out)
    
    # ...and then changing it back.
    Out <- map(Out, 
-              .f = \(x) if(is.null(nrow(x)) == FALSE){
+              .f = \(x) if("data.frame" %in% class(x) && 
+                           nrow(x) > 0){
                  x %>% rename(Workspace = "File")})
    
    return(Out)

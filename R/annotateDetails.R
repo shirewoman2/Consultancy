@@ -770,10 +770,14 @@ annotateDetails <- function(existing_exp_details,
       
       item_char <- switch(item, 
                           "MainDetails" = "main set of simulation details", 
-                          "CustomDosing" = "custom-dosing information", 
-                          "ConcDependent_fup" = "concentration-dependent fup information", 
+                          "Dosing" = "dosing information", 
                           "ConcDependent_BP" = "concentration-dependent B/P information", 
-                          "pH_dependent_solubility" = "pH-dependent solubility information")
+                          "ConcDependent_fup" = "concentration-dependent fup information", 
+                          "CustomDosing" = "custom-dosing information", 
+                          "DissolutionProfiles" = "dissolution profiles", 
+                          "pH_dependent_LuminalDegradation" = "pH-dependent luminal degradation", 
+                          "pH_dependent_solubility" = "pH-dependent solubility information", 
+                          "ReleaseProfiles" = "release profiles")
       
       if(item == "MainDetails"){
          DF <- MainDetails
@@ -786,7 +790,7 @@ annotateDetails <- function(existing_exp_details,
          # only return custom dosing info if that section was "trial design".
          if(complete.cases(simulator_section) &&
             str_detect(simulator_section, "trial design") == FALSE & 
-            item == "CustomDosing"){
+            item %in% c("CustomDosing", "Dosing")){
             return(data.frame())
          }
          
@@ -1119,6 +1123,7 @@ annotateDetails <- function(existing_exp_details,
                                  "ConcDependent_fup" = any(complete.cases(fup)), 
                                  "ConcDependent_BP" = any(complete.cases(BP)),  
                                  "pH_dependent_solubility" = any(complete.cases(pH)), 
+                                 "pH_dependent_LuminalDegradation" = any(complete.cases(pH)), 
                                  "DissolutionProfiles" = TRUE, 
                                  "ReleaseProfiles" = TRUE)) %>% 
          filter(Keep == TRUE) %>% 
@@ -1217,25 +1222,33 @@ annotateDetails <- function(existing_exp_details,
       # that example). Variables for each with *exact* column name:
       
       # MainDetails: IV = Detail, DV = Value
-      # CustomDosing: IV = Time, DV = Dose
-      # ConcDependent_fup: IV = Conc, DV = fup
+      # Dosing: IV = Time, DV = Dose
       # ConcDependent_BP: IV = Conc, DV = BP
+      # ConcDependent_fup: IV = Conc, DV = fup
+      # CustomDosing: IV = Time, DV = Dose
+      # pH_dependent_LuminalDegradation: IV = pH, DV = LuminalDegradation 
       # pH_dependent_solubility: IV = pH, DV = Solubility
       
-      if(item %in% c("MainDetails", "CustomDosing", "Dosing", 
-                     "ConcDependent_fup", 
-                     "ConcDependent_BP", "pH_dependent_solubility")){
+      # These two do NOT work b/c they have CV columns, so too many columns to
+      # pivot wider by: DissolutionProfiles, ReleaseProfiles
+      
+      if(item %in% c("MainDetails", "CustomDosing", "Dosing",
+                     "ConcDependent_fup", "ConcDependent_BP",
+                     "pH_dependent_LuminalDegradation", 
+                     "pH_dependent_solubility")){
          
          DF <- DF %>% 
             pivot_wider(names_from = "File", 
                         # values_from calls on the dependent variable listed 
-                        values_from = switch(item, 
-                                             "MainDetails" = "Value", 
-                                             "Dosing" = "Dose", 
-                                             "CustomDosing" = "Dose", 
-                                             "ConcDependent_fup" = "fup", 
-                                             "ConcDependent_BP" = "BP", 
-                                             "pH_dependent_solubility" = "Solubility"))
+                        values_from = switch(
+                           item, 
+                           "MainDetails" = "Value", 
+                           "Dosing" = "Dose", 
+                           "ConcDependent_BP" = "BP", 
+                           "ConcDependent_fup" = "fup", 
+                           "CustomDosing" = "Dose", 
+                           "pH_dependent_LuminalDegradation" = "DegradationRateConstant", 
+                           "pH_dependent_solubility" = "Solubility"))
          
          # Need to check again whether template_sim is included b/c it might not
          # be any more if the user has filtered results for a specific compound
@@ -1326,10 +1339,12 @@ annotateDetails <- function(existing_exp_details,
                      All_name <- switch(
                         item, 
                         "MainDetails" = "All files have this value for this compound", 
+                        "Dosing" = "All files have this dose for this compound", 
                         "CustomDosing" = "All files have this dose for this compound", 
                         "ConcDependent_fup" = "All files have this fu,p for this compound", 
-                        "ConcDependent_BP" = "All files have this B/P for this compound", 
-                        "pH_dependent_solubility" = "All files have this solubility for this compound")
+                        "ConcDependent_BP" = "All files have this B/P for this compound",
+                        "pH_dependent_LuminalDegradation" = "All files have this luminal degradation rate at this pH for this compound", 
+                        "pH_dependent_solubility" = "All files have this solubility at this pH for this compound")
                      
                      names(DF)[names(DF) == "UniqueVal"] <- All_name
                      
@@ -1343,9 +1358,11 @@ annotateDetails <- function(existing_exp_details,
                         item, 
                         "MainDetails" = "All files have this value for this compound ID and compound", 
                         "CustomDosing" = "All files have this dose for this compound ID and compound", 
+                        "Dosing" = "All files have this dose for this compound ID and compound", 
                         "ConcDependent_fup" = "All files have this fu,p for this compound ID and compound", 
                         "ConcDependent_BP" = "All files have this B/P for this compound ID and compound", 
-                        "pH_dependent_solubility" = "All files have this solubility for this compound ID and compound")
+                        "pH_dependent_LuminalDegradation" = "All files have this luminal degradation rate at this pH for this compound ID and compound", 
+                        "pH_dependent_solubility" = "All files have this solubility at this pH for this compound ID and compound")
                      
                      names(DF)[names(DF) == "UniqueVal"] <- All_name
                   }
@@ -1354,10 +1371,12 @@ annotateDetails <- function(existing_exp_details,
                   All_name <- switch(
                      item, 
                      "MainDetails" = "All files have this value for this compound ID", 
+                     "Dosing" = "All files have this dose for this compound ID", 
                      "CustomDosing" = "All files have this dose for this compound ID", 
                      "ConcDependent_fup" = "All files have this fu,p for this compound ID", 
                      "ConcDependent_BP" = "All files have this B/P for this compound ID", 
-                     "pH_dependent_solubility" = "All files have this solubility for this compound ID")
+                     "pH_dependent_LuminalDegradation" = "All files have this luminal degradation rate at this pH for this compound ID",
+                     "pH_dependent_solubility" = "All files have this solubility at this pH for this compound ID")
                   
                   names(DF)[names(DF) == "UniqueVal"] <- All_name
                   
@@ -1448,8 +1467,7 @@ annotateDetails <- function(existing_exp_details,
    
    Out <- list()
    
-   # FIXME - Need to set things up for Dosing data.frame!
-   for(i in setdiff(names(existing_exp_details), "Dosing")){
+   for(i in names(existing_exp_details)){
       Out[[i]] <- annotate_subfun(i)
    }
    
@@ -1768,7 +1786,7 @@ annotateDetails <- function(existing_exp_details,
                                     startRow = nrow(Out[[item]][["DF"]]) + 5, 
                                     startCol = 1)
                
-            } else if(item == "CustomDosing"){ 
+            } else if(item %in% c("Dosing", "CustomDosing")){ 
                
                ## CustomDosing tab --------------------------------------------
                
@@ -1919,8 +1937,43 @@ annotateDetails <- function(existing_exp_details,
                                     startRow = nrow(Out[[item]][["DF"]]) + 5, 
                                     startCol = 1)
                
+            } else if(i == "pH_dependent_LuminalDegradation"){
+               ## pH_dependent_LuminalDegradation tab -------------------------
+               
+               suppressMessages(
+                  plot(ggplot(existing_exp_details[[item]], 
+                              aes(x = pH, y = DegradationRateConstant,
+                                  color = File)) +
+                          geom_point() + 
+                          geom_line() +
+                          facet_grid(Compound ~ ., switch = "y") +
+                          scale_color_manual(values = rainbow(length(unique(existing_exp_details[[item]]$File)))) +
+                          ylab("Solubility (mg/mL)") +
+                          ggtitle("pH-dependent luminal degradation", 
+                                  subtitle = "Points will overlap perfectly when all simulations have the same values.") +
+                          theme_consultancy(border = TRUE) +
+                          theme(strip.placement = "outside")
+                  ))
+               
+               # Seems like ggplot makes not more than 20 items in the legend
+               # before going over a column. Will need to consider that when
+               # adjusting width.
+               PlotWidth <- 8 + (NumFiles %/% 20 + 1) * 6
+               PlotHeight <- 0.5 + 
+                  length(unique(existing_exp_details[[item]]$Compound)) * 6
+               
+               openxlsx::insertPlot(wb = WB, 
+                                    sheet = output_tab_name, 
+                                    width = PlotWidth,  
+                                    height = PlotHeight,
+                                    fileType = "png", 
+                                    units = "in", 
+                                    startRow = nrow(Out[[item]][["DF"]]) + 5, 
+                                    startCol = 1)
+               
             }
          }
+         
       } # end subfun for saving xlsx
       
       ## subfunction ends here -----------------------------------------------
