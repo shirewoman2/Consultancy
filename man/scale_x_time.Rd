@@ -9,6 +9,7 @@ scale_x_time(
   impose_limits = TRUE,
   time_units = "hours",
   x_axis_interval = NA,
+  x_breaks = NA,
   pad_x_axis = TRUE
 )
 }
@@ -39,6 +40,21 @@ cut off.}
 Acceptable input: any number or leave as NA to accept default values, which
 are generally reasonable guesses as to aesthetically pleasing and
 time-relevant intervals.}
+
+\item{x_breaks}{x-axis breaks to use if you want more control than the
+default values. Most of the time, you want this to be NA, but if the breaks
+the function is coming up with just are not working for your scenario, you
+can specify \emph{exactly} what you want here. Either specify the exact
+numbers you want, as in, \code{x_breaks = c(0, 4, 6, 10)} or specify the
+start, end, and interval you want as in \code{x_breaks = seq(from = 0, to =
+336, by = 10)}. As an additional convenience, you can let the function
+calculate a reasonable time interval and specify that with a named list of
+"from", "to", and "by" (analogous to the base R "seq" function), e.g.,
+\code{x_breaks = list(from = 0, to = 336, by = "default")} and the minimum
+and maximum values will be set manually but the interval will be
+calculated. This differs from the argument \code{time_range} in that it
+does NOT set the limits of the actual data -- only the way things are
+labeled on the x axis.}
 
 \item{pad_x_axis}{optionally add a smidge of padding to the the x axis
 (default is TRUE, which includes some generally reasonable padding). If

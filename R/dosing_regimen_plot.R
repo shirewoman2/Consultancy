@@ -84,22 +84,37 @@
 #'   this specifies an optional second column to break up the data by
 #'   vertically. The designated column name should be unquoted, e.g.,
 #'   \code{facet1_column = CompoundID}.
-#' @param bar_width width of the bars in hours; default is 4. Note: If more than
-#'   one compound is dosed at the same time, the bar width for each will be
-#'   \code{bar_width} divided by the number of compounds dosed at that time.
+#' @param bar_width width of the bars in hours; we'll try to make a reasonable
+#'   size bar here, but you may want to adjust this. Two notes here: \itemize{
+#'   
+#'   \item{If more than one compound is dosed at the same time, the bar
+#' width for each will be \code{bar_width} divided by the number of compounds
+#' dosed at that time.}
+#'
+#' \item{If there's only 1 dose and it's a t = 0, the bar might look funky if
+#' the width is very large. If it's, say, 4, the x axis will span -2 h to +2 h,
+#' which might not be what you want, so please try adjusting the bar width in
+#' that scenario.}}
+#'
 #'
 #' @return a ggplot2 graph
 #' @export
 #'
 #' @examples
-#' # UNDER CONSTRUCTION
+#' dosing_regimen_plot(existing_exp_details = MDZdetails)
+#' 
+#' dosing_regimen_plot(existing_exp_details = MDZdetails,
+#'                     bar_width = 20)
+#' 
+#' dosing_regimen_plot(existing_exp_details = MDZdetails,
+#'                     colorBy_column = CompoundID)
 #' 
 dosing_regimen_plot <- function(existing_exp_details, 
                                 sims_to_include = NA, 
                                 colorBy_column, 
                                 color_set = NA, 
                                 facet1_column, 
-                                bar_width = 4){
+                                bar_width = NA){
    
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -125,6 +140,14 @@ dosing_regimen_plot <- function(existing_exp_details,
    }
    
    Dosing <- existing_exp_details$Dosing
+   
+   TimeRange <- max(Dosing$Time, na.rm = T) - min(Dosing$Time, na.rm = T)
+   
+   if(is.na(bar_width)){
+      bar_width <- TimeRange / 80
+   } 
+   
+   Xexpand <- (TimeRange + bar_width / 2)/TimeRange - 1
    
    ## Setting things up for nonstandard evaluation ----------------------------
    
@@ -203,20 +226,30 @@ dosing_regimen_plot <- function(existing_exp_details,
          facet_grid(. ~ File, scales = "free")
    }
    
+   Xlim <- c(min(Dosing$Time, na.rm = T) - bar_width/2, 
+             max(Dosing$Time, na.rm = T) + bar_width/2)
+   
+   
    suppressMessages(
       G <- G + 
          # scale_y_continuous(limits = c(0, max(Dosing$Dose)), 
          #                    expand = expansion(mult = c(0, 0.05))) +
-         scale_x_continuous(limits = c(0, max(Dosing$Time))) +
+         scale_x_continuous(limits = Xlim) +
          xlab("Time (h)") +
          ylab("Dose (mg)") +
          ggtitle("Dosing regimens") +
-         scale_x_time() +
+         scale_x_time(
+            time_range = Xlim, 
+            x_breaks = list(from = min(Dosing$Time, na.rm = T), 
+                            to = max(Dosing$Time, na.rm = T), 
+                            by = "default")) +
          theme_consultancy(border = TRUE) +
          theme(legend.position = "bottom", 
                legend.justification = c(0, 0), 
                strip.placement = "outside")
    )
+   
+   # FIXME!!!!!
    
    return(G)
    

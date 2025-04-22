@@ -10,7 +10,7 @@ dosing_regimen_plot(
   colorBy_column,
   color_set = NA,
   facet1_column,
-  bar_width = 4
+  bar_width = NA
 )
 }
 \arguments{
@@ -99,9 +99,17 @@ this specifies an optional second column to break up the data by
 vertically. The designated column name should be unquoted, e.g.,
 \code{facet1_column = CompoundID}.}
 
-\item{bar_width}{width of the bars in hours; default is 4. Note: If more than
-one compound is dosed at the same time, the bar width for each will be
-\code{bar_width} divided by the number of compounds dosed at that time.}
+\item{bar_width}{width of the bars in hours; we'll try to make a reasonable
+  size bar here, but you may want to adjust this. Two notes here: \itemize{
+  
+  \item{If more than one compound is dosed at the same time, the bar
+width for each will be \code{bar_width} divided by the number of compounds
+dosed at that time.}
+
+\item{If there's only 1 dose and it's a t = 0, the bar might look funky if
+the width is very large. If it's, say, 4, the x axis will span -2 h to +2 h,
+which might not be what you want, so please try adjusting the bar width in
+that scenario.}}}
 }
 \value{
 a ggplot2 graph
@@ -111,6 +119,12 @@ a ggplot2 graph
 simulations provided. UNDER CONSTRUCTION.
 }
 \examples{
-# UNDER CONSTRUCTION
+dosing_regimen_plot(existing_exp_details = MDZdetails)
+
+dosing_regimen_plot(existing_exp_details = MDZdetails,
+                    bar_width = 20)
+
+dosing_regimen_plot(existing_exp_details = MDZdetails,
+                    colorBy_column = CompoundID)
 
 }
