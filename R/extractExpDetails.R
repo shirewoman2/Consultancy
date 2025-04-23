@@ -589,6 +589,10 @@ extractExpDetails <- function(sim_data_file,
          Val <- ifelse(complete.cases(Val) & Val == "n/a",
                        NA, Val)
          
+         Val <- case_when(deet == "GFR_pred_method" & Val == "Scripted" ~
+                             "user defined", 
+                          .default = as.character(Val))
+         
          return(Val)
       }
       
@@ -627,18 +631,20 @@ extractExpDetails <- function(sim_data_file,
                                     c("inhib1met", 
                                       "_met1", "_met2", "_secmet")))))
          
-         # Note: Currently, we are not extracting anything from the workspace
-         # that would be its own separate list. When we DO do that, we'll need
-         # to adjust this code to bind the MainDetails and whatever that list
-         # is.
          Out <- c(Out,
                   TEMP$MainDetails[
                      setdiff(names(TEMP$MainDetails)[
                         names(TEMP$MainDetails) != "Workspace"], 
                         names(Out))])
          
+         UserIntervals <- TEMP$UserAUCIntervals
+         
          rm(TEMP)
+      } else {
+         UserIntervals <- list()
       }
+   } else {
+      UserIntervals <- list()
    }
    
    
@@ -826,7 +832,15 @@ extractExpDetails <- function(sim_data_file,
                   switch(as.character("pH_dependent_solubility") %in% 
                             names(InputInfo), 
                          "TRUE" = InputInfo$pH_dependent_solubility,
-                         "FALSE" = list()))
+                         "FALSE" = list()), 
+               
+               pH_dependent_LuminalDegradation = 
+                  switch(as.character("pH_dependent_LuminalDegradation") %in% 
+                            names(InputInfo), 
+                         "TRUE" = InputInfo$pH_dependent_LuminalDegradation,
+                         "FALSE" = list()), 
+               
+               UserAUCIntervals = UserIntervals)
    
    Out <- harmonize_details(Out)
    

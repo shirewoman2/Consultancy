@@ -38,6 +38,7 @@ ct_plot_obs(
   floating_facet_scale = FALSE,
   facet_spacing = NA,
   time_range = NA,
+  time_units_to_use = NA,
   x_axis_interval = NA,
   x_axis_label = NA,
   pad_x_axis = TRUE,
@@ -347,6 +348,10 @@ should not be in quotes.)}
   \item{"last dose to last observed" or "last obs" for short}{Time range will
   be limited to the start of the last dose until the last observed data
   point.} }}
+
+\item{time_units_to_use}{time units to use for graphs. If left as NA, the
+time units in the source data will be used. Options are "hours", "minutes",
+"days", or "weeks".}
 
 \item{x_axis_interval}{set the x-axis major tick-mark interval. Acceptable
 input: any number or leave as NA to accept default values, which are

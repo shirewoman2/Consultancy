@@ -27,7 +27,3 @@ rounded numbers that might, after running this, be character data
 \description{
 INTERNAL: Rounding function
 }
-\examples{
-# None.
-
-}

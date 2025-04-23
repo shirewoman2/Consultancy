@@ -785,8 +785,12 @@ calc_PK_ratios <- function(PKparameters = NA,
    } else {
       
       # Using calculations recommended by Frederic Bois for the confidence
-      # interval. (Note to self: See email from March 3, 2023. -LSh)
-      geomratio_stats <- function(x_num, x_denom){
+      # interval for UNPAIRED comparisons. (Note to self: See email from March
+      # 3, 2023. -LSh)
+      geomratio_stats <- function(x_num, x_denom, 
+                                  distribution_type = distribution_type, 
+                                  rounding = rounding, 
+                                  conf_int = conf_int){
          
          # Log transforming individual data
          logx_num <- log(x_num)
@@ -828,27 +832,29 @@ calc_PK_ratios <- function(PKparameters = NA,
                      df = (min(c(length(x_num) - 1, length(x_denom) - 1)))) * SD_delta)
          }
          
-         Out <- c("GeomeanRatio" = round_opt(exp(LogGeomeanRatio), rounding), 
-                  "GeoRatio_CI_lower" = round_opt(exp(CI_lower_delta), rounding),
-                  "GeoRatio_CI_upper" = round_opt(exp(CI_upper_delta), rounding))
+         Out <- c("Mean" = round_opt(exp(LogGeomeanRatio), rounding), 
+                  "CI90_lower" = round_opt(exp(CI_lower_delta), rounding),
+                  "CI90_upper" = round_opt(exp(CI_upper_delta), rounding))
          
          return(Out)
          
       }
       
-      MyPKResults <- PKnumerator$individual %>% 
-         rename(Value = NumeratorSim) %>% 
-         mutate(NumDenom = "Num") %>% 
-         bind_rows(PKdenominator$individual %>% 
-                      rename(Value = DenominatorSim) %>% 
-                      mutate(NumDenom = "Denom")) %>% 
-         group_by(PKparameter) %>% 
-         summarize(Mean = geomratio_stats(x_num = Value[NumDenom == "Num"], 
-                                          x_denom = Value[NumDenom == "Denom"])[1], 
-                   CI90_lower = geomratio_stats(x_num = Value[NumDenom == "Num"], 
-                                                x_denom = Value[NumDenom == "Denom"])[2], 
-                   CI90_upper = geomratio_stats(x_num = Value[NumDenom == "Num"], 
-                                                x_denom = Value[NumDenom == "Denom"])[3])
+      MyPKResults <- list()
+      for(param in unique(PKnumerator$individual$PKparameter)){
+         MyPKResults[[param]] <- 
+            geomratio_stats(
+               x_num = PKnumerator$individual$NumeratorSim[
+                  PKnumerator$individual$PKparameter == param], 
+               
+               x_denom = PKdenominator$individual$DenominatorSim[
+                  PKdenominator$individual$PKparameter == param],
+               
+               distribution_type = distribution_type, 
+               rounding = rounding, 
+               conf_int = conf_int)
+      }
+      MyPKResults <- bind_rows(MyPKResults, .id = "PKparameter")
       
       if(concatVariability){
          MyPKResults <- MyPKResults %>% 

@@ -12,9 +12,6 @@
 #'   what.
 #'
 #' @return rounded numbers that might, after running this, be character data
-#'
-#' @examples
-#' # None.
 #' 
 
 round_opt <- function(x, 

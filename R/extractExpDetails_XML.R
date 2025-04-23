@@ -99,7 +99,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                      str_comma(paste0("`", MissingSimFiles, "`")), 
                      " is/are not present and thus will not be extracted.\n"), 
               call. = FALSE)
-      return()
+      sim_workspace_files <- setdiff(sim_workspace_files, MissingSimFiles)
    }
    
    sim_workspace_files <- WkspFile
@@ -120,10 +120,10 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       complete.cases(AllRegCompounds$DetailNames)], "all")
    
    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
-      warning(paste0("The compound(s) ", 
-                     str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
-                     " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
-                     str_comma(paste0("`", PossCmpd, "`")), "\n"), 
+      warning(wrapn(paste0("The compound(s) ", 
+                           str_comma(paste0("`", setdiff(compoundsToExtract, PossCmpd), "`")),
+                           " is/are not among the possible componds to extract and will be ignored. The possible compounds to extract are only exactly these: ",
+                           str_comma(paste0("`", PossCmpd, "`")))), 
               call. = FALSE)
       compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
    }
@@ -167,10 +167,12 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       filter(DataSource == "workspace or database" & Level1 == "Populations")
    
    Deets <- list()
+   UserIntervals <- list()
    
    for(i in sim_workspace_files){
       
       Deets[[i]] <- list()
+      UserIntervals[[i]] <- list()
       
       Deets[[i]]$Workspace_TimeLastModified <- as.character(file.info(i)$mtime)
       Deets[[i]]$SimulatorUsed <- ifelse(str_detect(i, "wksz"), 
@@ -178,7 +180,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       
       # Adjusting which details to pull based on which simulator was used.
       if(Deets[[i]]$SimulatorUsed == "Simcyp Simulator"){
-         exp_details <- intersect(
+         exp_details_i <- intersect(
             exp_details, 
             
             AllExpDetails %>% 
@@ -188,7 +190,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                pull(Detail)
          )
       } else if(Deets[[i]]$SimulatorUsed == "Simcyp Discovery"){
-         exp_details <- intersect(
+         exp_details_i <- intersect(
             exp_details, 
             
             AllExpDetails %>% 
@@ -204,52 +206,80 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       
       RootNode <- XML::xmlRoot(workspace_xml)
       
+      Deets[[i]]$SimStartDayTime <- 
+         paste0("Day ", XML::xmlValue(
+            RootNode[["SimulationData"]][["idStudyStartDay"]]), ", ",
+            formatC(as.numeric(XML::xmlValue(RootNode[["SimulationData"]][["idStudyStartTimeHour"]])), 
+                    width = 2, format = "d", flag = "0"), 
+            ":", 
+            formatC(as.numeric(XML::xmlValue(RootNode[["SimulationData"]][["idStudyStartTimeMin"]])), 
+                    width = 2, format = "d", flag = "0")) 
+      
       
       ## Compound-specific info -------------------------------------------------
       
-      if(any(exp_details %in% CompoundDetails)){
+      # Extracting anything under "Compounds" on level 1 here as well as a
+      # few compound-specific details that are, for some reason, saved
+      # elsewhere in the XML file.
+      for(j in compoundsToExtract){
          
-         # Extracting anything under "Compounds" on level 1 here.
+         CompoundNum <- switch(j, 
+                               "substrate" = 1, 
+                               "primary metabolite 1" = 5,
+                               "primary metabolite 2" = 8,
+                               "secondary metabolite" = 7,
+                               "inhibitor 1" = 2,
+                               "inhibitor 2" = 3, 
+                               "inhibitor 1 metabolite" = 6)
          
-         for(j in compoundsToExtract){
-            
-            CompoundNum <- switch(j, 
-                                  "substrate" = 1, 
-                                  "primary metabolite 1" = 5,
-                                  "primary metabolite 2" = 8,
-                                  "secondary metabolite" = 7,
-                                  "inhibitor 1" = 2,
-                                  "inhibitor 2" = 3, 
-                                  "inhibitor 1 metabolite" = 6)
-            
-            Suffix <- AllRegCompounds %>% filter(CompoundID == j) %>% 
-               pull(Suffix)
-            
-            # Check whether that compound was activated and skip if not. Also
-            # remove any info related to that compound from exp_details or we
-            # can wind up with, e.g., "StartDayTimeH_inhib2" when there is no
-            # inhitibor 2.
-            if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
-               paste0("idInhEnabled", CompoundNum)]])) == FALSE){
-               exp_details <- exp_details[!str_detect(exp_details, Suffix)]
-               next
-            }
+         Suffix <- AllRegCompounds %>% filter(CompoundID == j) %>% 
+            pull(Suffix)
+         Suffix_sim <- AllRegCompounds %>% filter(CompoundID == j) %>% 
+            pull(SimulatorSuffix)
+         
+         # Check whether that compound was activated and skip if not. Also
+         # remove any info related to that compound from exp_details or we
+         # can wind up with, e.g., "StartDayTimeH_inhib2" when there is no
+         # inhitibor 2.
+         if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
+            paste0("idInhEnabled", CompoundNum)]])) == FALSE){
+            exp_details_i <- exp_details_i[!str_detect(exp_details_i, Suffix)]
+            next
+         }
+         
+         if(any(exp_details_i %in% CompoundDetails)){
             
             exp_details_cmpd <- 
-               exp_details[exp_details %in% CompoundDetails &
-                              exp_details %in% (XMLDeets %>% filter(CompoundID == j) %>% 
-                                                   pull(Detail))]
+               exp_details_i[exp_details_i %in% CompoundDetails &
+                                exp_details_i %in% (XMLDeets %>% filter(CompoundID == j) %>% 
+                                                       pull(Detail))]
             
             for(k in exp_details_cmpd){
                
                DeetInfo <- XMLDeets %>% 
                   filter(DataSource == "workspace or database" & Detail == k)
+               
                DeetLevels <- t(DeetInfo[, paste0("Level", 1:7)])
+               
                if(all(complete.cases(DeetLevels))){
                   DeetLevels <- "7"
                } else {
                   DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
                }
+               
+               # Data class must be numeric for specific levels in some cases.
+               # Setting that as needed here.
+               if(k %in% c("Transporter_Gut_ABCB1_P_gp_MDR1_Apical_RAFREF", 
+                           "Transporter_Gut_ABCB1_P_gp_system")){
+                  DeetInfo$Level4 <- as.numeric(DeetInfo$Level4)
+               }
+               
+               if(k %in% k %in% c("ParticleSizeD10", 
+                                  "ParticleSizeD50", 
+                                  "ParticleSizeD90")){
+                  DeetInfo$Level6 <- as.numeric(DeetInfo$Level6)
+               }
+               
                
                # Check for a switch b/c that will change what tag we extract
                if(complete.cases(DeetInfo$XMLswitch)){
@@ -304,17 +334,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                               DeetInfo$Level3]][[
                                  DeetInfo$Level4]]), 
                         
-                        DeetLevels == "5" & 
-                           k %in% c("Transporter_Gut_ABCB1_P_gp_MDR1_Apical_RAFREF", 
-                                    "Transporter_Gut_ABCB1_P_gp_system") ~ 
-                           XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                              DeetInfo$Level3]][[
-                                 as.numeric(DeetInfo$Level4)]][[
-                                    DeetInfo$Level5]]), 
-                        
-                        DeetLevels == "5" & 
-                           !k %in% c("Transporter_Gut_ABCB1_P_gp_MDR1_Apical_RAFREF", 
-                                     "Transporter_Gut_ABCB1_P_gp_system") ~ 
+                        DeetLevels == "5" ~ 
                            XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
                               DeetInfo$Level3]][[
                                  DeetInfo$Level4]][[
@@ -327,21 +347,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                     DeetInfo$Level5]][[
                                        DeetInfo$Level6]]), 
                         
-                        DeetLevels == "7" & 
-                           k %in% c("ParticleSizeD10", 
-                                    "ParticleSizeD50", 
-                                    "ParticleSizeD90") ~ 
-                           XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-                              DeetInfo$Level3]][[
-                                 DeetInfo$Level4]][[
-                                    DeetInfo$Level5]][[
-                                       as.numeric(DeetInfo$Level6)]][[
-                                          DeetInfo$Level7]]), 
-                        
-                        DeetLevels == "7" & 
-                           !k %in% c("ParticleSizeD10", 
-                                     "ParticleSizeD50", 
-                                     "ParticleSizeD90") ~ 
+                        DeetLevels == "7" ~ 
                            XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
                               DeetInfo$Level3]][[
                                  DeetInfo$Level4]][[
@@ -349,15 +355,6 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                        DeetInfo$Level6]][[
                                           DeetInfo$Level7]]))
                )
-               
-               # Adding a few exceptions for earlier simulator versions
-               
-               # FIXME: I don't think the below is correct. 
-               # if(str_detect(k, "Abs_model") & 
-               #    is.na(DeetValue)){
-               #    DeetValue <- XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][[
-               #       "AbsorptionSwitch"]])
-               # }
                
                # Decoding as necessary. Add to the options for k as needed.
                DeetValue <- case_when(
@@ -427,7 +424,6 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                
                rm(DeetInfo, DeetLevels, DeetValue)
             }
-            rm(CompoundNum)
             
             # Peff and its complications... 
             
@@ -483,143 +479,246 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                Deets[[i]][[paste0("Peff_MechPeff_totalvsfree", Suffix)]] <- as.character(NA)
                
             }
-            
-            # Removing things that do not apply, e.g., ADAM-model parameters
-            # when it was a 1st-order absorption model
-            if(complete.cases(Deets[[i]][[paste0("Abs_model", Suffix)]]) && 
-               Deets[[i]][[paste0("Abs_model", Suffix)]] == "1st order"){
-               Keep <- setdiff(names(Deets[[i]]), 
-                               
-                               AllExpDetails$Detail[
-                                  AllExpDetails$ADAMParameter == TRUE])
-               
-               Deets[[i]] <- Deets[[i]][Keep]
-            }
          }
-      }
-      
-      
-      ## Other general info -------------------------------------------------
-      
-      if(length(setdiff(exp_details, CompoundDetails)) >= 1){
          
-         # Extracting anything that was NOT under "Compounds" on level 1 here.
+         # Adding start time if it's a dosed compound (substrate, inhibitor 1,
+         # inhibitor 2). Start time needs to be calculated.
          
-         for(m in setdiff(exp_details, CompoundDetails)){
+         if(j %in% AllRegCompounds$DosedCompoundID){
             
-            DeetInfo <- XMLDeets %>% 
-               filter(DataSource == "workspace or database" & Detail == m) %>% 
-               mutate(Level2 = ifelse(m %in% PopulationDetails, 
-                                      as.numeric(Level2), as.character(Level2)))
-            DeetLevels <- t(DeetInfo[, paste0("Level", 1:7)])
-            DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
+            StartTimes <- 
+               tibble(StartDay = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][[paste0("idStartDay", CompoundNum)]]), 
+                      StartClockHr = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][[paste0("idInhStartTimeHr", CompoundNum)]]), 
+                      StartClockMin = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][[paste0("idStartTimeMin", CompoundNum)]])) %>% 
+               mutate(across(.cols = everything(), 
+                             .fns = as.numeric), 
+                      StartDayTime = paste0("Day ", StartDay, ", ", 
+                                            formatC(StartClockHr, width = 2, format = "d", flag = "0"),
+                                            ":", 
+                                            formatC(StartClockMin, width = 2, format = "d", flag = "0")), 
+                      StartHr = difftime_sim(time1 = Deets[[i]]$SimStartDayTime, 
+                                             time2 = StartDayTime, units = "hours"))
             
-            if(DeetLevels == 0){next} # This is 0 when it's only set up for getting database parameters and not for extracting from workspace.
+            Deets[[i]][[paste0("StartDayTime", Suffix)]] <- 
+               StartTimes$StartDayTime
+            Deets[[i]][[paste0("StartHr", Suffix)]] <- 
+               StartTimes$StartHr
             
-            DeetValue <- 
-               switch(DeetLevels, 
-                      "2" = XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2]]),
-                      
-                      "3" =  XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2]][[
-                               DeetInfo$Level3]]), 
-                      
-                      "4" = XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2
-                         ]][[
-                            DeetInfo$Level3]][[
-                               DeetInfo$Level4]]), 
-                      
-                      "5" = XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2]][[
-                               DeetInfo$Level3]][[
-                                  DeetInfo$Level4]][[
-                                     DeetInfo$Level5]]), 
-                      
-                      "6" = XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2]][[
-                               DeetInfo$Level3]][[
-                                  DeetInfo$Level4]][[
-                                     DeetInfo$Level5]][[
-                                        DeetInfo$Level6]]), 
-                      
-                      "7" = XML::xmlValue(RootNode[[
-                         DeetInfo$Level1]][[
-                            DeetInfo$Level2]][[
-                               DeetInfo$Level3]][[
-                                  DeetInfo$Level4]][[
-                                     DeetInfo$Level5]][[
-                                        DeetInfo$Level6]][[
-                                           DeetInfo$Level7]]))
+            rm(StartTimes)
             
-            DeetValue <- switch(DeetInfo$Class, 
-                                "numeric" = as.numeric(DeetValue), 
-                                "character" = as.character(DeetValue))
-            
-            # There will be some cases where we don't switch *to* some other
-            # value but just need to set the value to NA or adjust things in
-            # some way. Dealing with those here.
-            if(m == "ObsOverlayFile"){
-               if(XML::xmlValue(RootNode[["GraphsData"]][["UseObservedData"]]) == "false"){
-                  DeetValue <- NA
-               } 
-            }
-            
-            if(m == "FixedTrialDesignFile" & 
-               XML::xmlValue(RootNode[["SimulationData"]][["FixedIndividualTrialDesign"]]) == "false"){
-               DeetValue <- NA
-            }
-            
-            # Also dealing with instances where the value in the XML file is
-            # coded to make it clear what the actual value in the simulation was
-            # and to match what the user would see in the Excel results. NB: I
-            # was first attempting to do this with case_when(m == ...) and then
-            # case_match for each, but that requires all the data types to be
-            # the same, which they are NOT. Thus the multiple if and if else
-            # statements.
-            if(m == "CYP3A4_ontogeny_profile"){
-               DeetValue <- case_match(DeetValue, 
-                                       "0" ~ "CYP3A4 Profile 1", 
-                                       "1" ~ "CYP3A4 Profile 2")
-            } 
-            
-            Deets[[i]][[DeetInfo$Detail]] <- DeetValue
-            
-            rm(DeetInfo, DeetLevels, DeetValue)
          }
-      }
-      
-      # Adding compound names separately. 
-      for(j in c("Substrate", "Inhibitor1", "Inhibitor2", 
-                 "PrimaryMetabolite1", "PrimaryMetabolite2", 
-                 "SecondaryMetabolite", "Inhibitor1Metabolite")){
          
-         CompoundNum <- switch(j, 
-                               "Substrate" = 1, 
-                               "PrimaryMetabolite1" = 5,
-                               "PrimaryMetabolite2" = 8,
-                               "SecondaryMetabolite" = 7,
-                               "Inhibitor1" = 2,
-                               "Inhibitor2" = 3, 
-                               "Inhibitor1Metabolite" = 6)
+         # Removing things that do not apply, e.g., ADAM-model parameters
+         # when it was a 1st-order absorption model
+         if(complete.cases(Deets[[i]][[paste0("Abs_model", Suffix)]]) && 
+            Deets[[i]][[paste0("Abs_model", Suffix)]] == "1st order"){
+            Keep <- setdiff(names(Deets[[i]]), 
+                            
+                            AllExpDetails$Detail[
+                               AllExpDetails$ADAMParameter == TRUE])
+            
+            Deets[[i]] <- Deets[[i]][Keep]
+         }
          
-         # Check whether that compound was activated and skip if not. 
-         if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
-            paste0("idInhEnabled", CompoundNum)]])) == FALSE){
+         # Adding compound names
+         Deets[[i]][[AllRegCompounds$DetailNames[
+            AllRegCompounds$CompoundID == j]]] <- 
+            XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["idName"]])
+         
+         
+         ### User AUC intervals ------------------------------------------------------
+         
+         UserIntervals[[i]][[j]] <- list()
+         
+         k <- 1
+         
+         while(is.null(RootNode[["SimulationData"]][["PostProcessingData"]][[
+            paste0("AUCCalculations", Suffix_sim)]][["UserIntervals"]][[k]]) == FALSE){
+            UserIntervals[[i]][[j]][[k]] <- 
+               tibble(StartDay = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][["PostProcessingData"]][[
+                               paste0("AUCCalculations", Suffix_sim)]][["UserIntervals"]][[k]][[
+                                  "StartDay"]]), 
+                      StartClockMin = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][["PostProcessingData"]][[
+                               paste0("AUCCalculations", Suffix_sim)]][["UserIntervals"]][[k]][[
+                                  "StartTime"]]), 
+                      EndDay = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][["PostProcessingData"]][[
+                               paste0("AUCCalculations", Suffix_sim)]][["UserIntervals"]][[k]][[
+                                  "EndDay"]]), 
+                      EndClockMin = 
+                         XML::xmlValue(
+                            RootNode[["SimulationData"]][["PostProcessingData"]][[
+                               paste0("AUCCalculations", Suffix_sim)]][["UserIntervals"]][[k]][[
+                                  "EndTime"]]))
+            k <- k + 1
+         }
+         
+         if(length(UserIntervals[[i]][[j]]) == 0){
+            UserIntervals[[i]][[j]] <- list()
             next
          }
          
-         Deets[[i]][[j]] <- 
-            XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["idName"]])
+         UserIntervals[[i]][[j]] <-
+            bind_rows(UserIntervals[[i]][[j]]) %>% 
+            mutate(
+               across(.cols = everything(), 
+                      .fns = as.numeric), 
+               StartClockHr = StartClockMin %/% 60,
+               EndClockHr = EndClockMin %/% 60, 
+               StartClockMin = round((StartClockMin %% 60)/60, 2), 
+               EndClockMin = round((EndClockMin %% 60)/60, 2), 
+               Int_StartDayTime = paste0("Day ", StartDay, ", ", 
+                                         formatC(StartClockHr, width = 2, format = "d", flag = "0"),
+                                         ":", 
+                                         formatC(StartClockMin, width = 2, format = "d", flag = "0")), 
+               Int_EndDayTime = paste0("Day ", EndDay, ", ", 
+                                       formatC(EndClockHr, width = 2, format = "d", flag = "0"),
+                                       ":", 
+                                       formatC(EndClockMin, width = 2, format = "d", flag = "0")), 
+               Interval = difftime_sim(time1 = Int_StartDayTime, 
+                                       time2 = Int_EndDayTime, units = "hours"), 
+               Int_StartHr = difftime_sim(time1 = Deets[[i]]$SimStartDayTime, 
+                                          time2 = Int_StartDayTime), 
+               Int_EndHr = difftime_sim(time1 = Deets[[i]]$SimStartDayTime, 
+                                        time2 = Int_EndDayTime), 
+               CompoundID = j, 
+               Compound = Deets[[i]][[AllRegCompounds$DetailNames[
+                  AllRegCompounds$CompoundID == j]]], 
+               Workspace = i, 
+               File = sub("\\.wksz$", "\\.xlsx", i))
+      }
+      
+      rm(CompoundNum, Suffix, Suffix_sim, exp_details_cmpd)
+      
+      
+      ## General simulation info -----------------------------------------
+      
+      # Extracting anything that was NOT under "Compounds" on level 1 here.
+      for(m in setdiff(exp_details_i, CompoundDetails)){
+         
+         DeetInfo <- XMLDeets %>% 
+            filter(DataSource == "workspace or database" & Detail == m) %>% 
+            mutate(Level2 = ifelse(m %in% PopulationDetails, 
+                                   as.numeric(Level2), as.character(Level2)))
+         DeetLevels <- t(DeetInfo[, paste0("Level", 1:7)])
+         DeetLevels <- as.character(min(which(is.na(DeetLevels))) - 1)
+         
+         # NB: Population parameters need to have level 2 be numeric rather
+         # than character.
+         if(is.na(DeetInfo$Level1)){browser()}
+         if(DeetInfo$Level1 == "Populations"){
+            DeetInfo$Level2 <- as.numeric(DeetInfo$Level2)
+         }
+         
+         if(DeetLevels == 0){next} # This is 0 when it's only set up for getting database parameters and not for extracting from workspace.
+         
+         DeetValue <- 
+            case_when(
+               DeetLevels == "2" ~
+                  XML::xmlValue(RootNode[[
+                     DeetInfo$Level1]][[
+                        DeetInfo$Level2]]),
+               
+               DeetLevels == "3" ~ 
+                  XML::xmlValue(RootNode[[
+                     DeetInfo$Level1]][[
+                        DeetInfo$Level2]][[
+                           DeetInfo$Level3]]), 
+               
+               DeetLevels == "4" ~ 
+                  XML::xmlValue(RootNode[[
+                     DeetInfo$Level1]][[
+                        DeetInfo$Level2]][[
+                           DeetInfo$Level3]][[
+                              DeetInfo$Level4]]), 
+               
+               DeetLevels == "5" ~ 
+                  XML::xmlValue(RootNode[[
+                     DeetInfo$Level1]][[
+                        DeetInfo$Level2]][[
+                           DeetInfo$Level3]][[
+                              DeetInfo$Level4]][[
+                                 DeetInfo$Level5]]), 
+               
+               DeetLevels == "6" ~ 
+                  XML::xmlValue(RootNode[[
+                     DeetInfo$Level1]][[
+                        DeetInfo$Level2]][[
+                           DeetInfo$Level3]][[
+                              DeetInfo$Level4]][[
+                                 DeetInfo$Level5]][[
+                                    DeetInfo$Level6]]), 
+               
+               DeetLevels == "7" ~
+                  XML::xmlValue(RootNode[[
+                     DeetInfo$Level1]][[
+                        DeetInfo$Level2]][[
+                           DeetInfo$Level3]][[
+                              DeetInfo$Level4]][[
+                                 DeetInfo$Level5]][[
+                                    DeetInfo$Level6]][[
+                                       DeetInfo$Level7]]))
+         
+         DeetValue <- switch(DeetInfo$Class, 
+                             "numeric" = as.numeric(DeetValue), 
+                             "character" = as.character(DeetValue))
+         
+         # There will be some cases where we don't switch *to* some other
+         # value but just need to set the value to NA or adjust things in
+         # some way. Dealing with those here.
+         if(m == "ObsOverlayFile"){
+            if(XML::xmlValue(RootNode[["GraphsData"]][["UseObservedData"]]) == "false"){
+               DeetValue <- NA
+            } 
+         }
+         
+         if(m == "FixedTrialDesignFile"){
+            if(XML::xmlValue(RootNode[["SimulationData"]][[
+               "FixedIndividualTrialDesign"]]) == "false"){
+               DeetValue <- NA
+            } else {
+               DeetValue <- paste0(sub("^Wsp_", "", DeetValue), ".xml")
+            }
+         }
+         
+         # Also dealing with instances where the value in the XML file is
+         # coded to make it clear what the actual value in the simulation was
+         # and to match what the user would see in the Excel results. NB: I
+         # was first attempting to do this with case_when(m == ...) and then
+         # case_match for each, but that requires all the data types to be
+         # the same, which they are NOT. Thus the multiple if and if else
+         # statements.
+         if(m == "CYP3A4_ontogeny_profile"){
+            DeetValue <- case_match(DeetValue, 
+                                    "0" ~ "CYP3A4 Profile 1", 
+                                    "1" ~ "CYP3A4 Profile 2")
+         } else if(m == "GFR_pred_method"){
+            DeetValue <- case_when(
+               XML::xmlValue(RootNode[["Populations"]][[1]][[
+                  "Kidney"]][["RenalGFRPredictionFunction"]]) == "1" ~ 
+                  "user defined", 
+               DeetValue == "0" ~ "Method 1", 
+               DeetValue == "1" ~ "Method 2")
+         }
+         
+         Deets[[i]][[DeetInfo$Detail]] <- DeetValue
+         
+         rm(DeetInfo, DeetLevels, DeetValue)
       }
       
       Deets[[i]] <- as.data.frame(Deets[[i]]) %>% mutate(Workspace = i)
+      UserIntervals[[i]] <- bind_rows(UserIntervals[[i]])
       
       rm(workspace_xml, RootNode)
       
@@ -627,6 +726,15 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    
    Deets <- bind_rows(Deets)
    Deets[Deets == ""] <- NA
+   
+   if(nrow(bind_rows(UserIntervals)) > 0){
+      UserIntervals <- bind_rows(UserIntervals) %>% 
+         select(File, Workspace, CompoundID, Compound,
+                Int_StartDayTime, Int_EndDayTime,
+                Int_StartHr, Int_EndHr, Interval)
+   } else {
+      UserIntervals <- list()
+   }
    
    # Sorting to help organize output
    Deets <- Deets %>% select(Workspace, everything())
@@ -653,13 +761,11 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                            FileName))
    }
    
-   # Temporarily calling "Workspace" "File" so that we can harmonize... 
-   Out <- harmonize_details(Deets %>% rename(File = Workspace))
+   Out <- list(MainDetails = Deets %>% 
+                  mutate(File = sub("wksz", "xlsx", Workspace)), 
+               UserAUCIntervals = UserIntervals)
    
-   # ...and then changing it back.
-   Out <- map(Out, 
-              .f = \(x) if(is.null(nrow(x)) == FALSE){
-                 x %>% rename(Workspace = "File")})
+   Out <- harmonize_details(Out)
    
    return(Out)
    

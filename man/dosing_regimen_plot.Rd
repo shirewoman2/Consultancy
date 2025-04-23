@@ -7,7 +7,11 @@
 dosing_regimen_plot(
   existing_exp_details,
   sims_to_include = NA,
-  break_up_by = "Compound"
+  colorBy_column,
+  color_set = NA,
+  facet1_column,
+  facet2_column,
+  bar_width = NA
 )
 }
 \arguments{
@@ -25,20 +29,116 @@ dosing_regimen_plot(
   "MainDetails" item in \code{existing_exp_details}, including the ".xlsx" or ".db"
   file extension}}}
 
-\item{break_up_by}{The output graphs will all be broken up by the simulation
-file name and also by either the compound name (specify \code{break_up_by =
-"Compound"}, the default) or by the compound ID (specify
-\code{break_up_by = "CompoundID"} to break up the graphs by whether the
-compound was the substrate, the inhibitor 1, etc. in the simulation).}
+\item{colorBy_column}{(optional) the column in
+\code{existing_exp_details$Dosing} that should be used for determining
+which color lines will be. This should be unquoted, e.g.,
+\code{colorBy_column = Compound}.}
+
+\item{color_set}{the set of colors to use. Options: \describe{
+
+  \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
+  that are friendly to those with red-green colorblindness. The first three
+  colors are green, orange, and purple. This can also be referred to as
+  "Brewer set 2". If there are only two unique values in the colorBy_column,
+  then Brewer set 1 will be used since red and blue are still easily
+  distinguishable but also more aesthetically pleasing than green and
+  orange.}
+
+  \item{"Brewer set 1"}{colors selected from the Brewer palette "set 1". The
+  first three colors are red, blue, and green.}
+
+  \item{"ggplot2 default"}{the default set of colors used in ggplot2 graphs
+  (ggplot2 is an R package for graphing.)}
+
+  \item{"rainbow"}{colors selected from a rainbow palette. The default
+  palette is limited to something like 6 colors, so if you have more than
+  that, that's when this palette is most useful. It's \emph{not} very useful
+  when you only need a couple of colors.}
+
+  \item{"blue-green"}{a set of blues fading into greens. This palette can be
+  especially useful if you are comparing a systematic change in some
+  continuous variable -- for example, increasing dose or predicting how a
+  change in intrinsic solubility will affect concentration-time profiles --
+  because the direction of the trend will be clear.}
+
+  \item{"blues"}{a set of blues fading from sky to navy. Like
+  "blue-green", this palette can be especially useful if you are comparing a
+  systematic change in some continuous variable.}
+
+  \item{"greens"}{a set of greens fading from chartreuse to forest. Great for showing
+  systematic changes in a continuous variable.}
+
+  \item{"purples"}{a set of purples fading from lavender to aubergine. Great for showing
+  systematic changes in a continuous variable.}
+
+  \item{"reds"}{a set of reds from pink to brick. Great for showing
+  systematic changes in a continuous variable.}
+
+  \item{"Tableau"}{uses the standard Tableau palette; requires the "ggthemes"
+  package}
+
+  \item{"viridis"}{from the eponymous package by Simon Garnier and ranges
+  colors from purple to blue to green to yellow in a manner that is
+  "printer-friendly, perceptually uniform and easy to read by those with
+  colorblindness", according to the package author}
+
+  \item{a character vector of colors}{If you'd prefer to set all the colors
+  yourself to \emph{exactly} the colors you want, you can specify those
+  colors here. An example of how the syntax should look: \code{color_set =
+  c("dodgerblue3", "purple", "#D8212D")} or, if you want to specify exactly
+  which item in \code{colorBy_column} gets which color, you can supply a
+  named vector. For example, if you're coloring the lines by the compound ID,
+  you could do this: \code{color_set = c("substrate" = "dodgerblue3",
+  "inhibitor 1" = "purple", "primary metabolite 1" = "#D8212D")}. If you'd
+  like help creating a specific gradation of colors, please talk to a member
+  of the R Working Group about how to do that using
+  \link{colorRampPalette}.}}}
+
+\item{facet1_column}{optionally break up the graph into small multiples in
+the vertical direction. The designated column name should be unquoted,
+e.g., \code{facet1_column = CompoundID}. \strong{NB:} If the object with
+simulation information that you provided with the argument
+\code{existing_exp_details} doesn't have the column you want in the item
+named "Dosing", which is where this function gets the information it
+graphs, but it \emph{does} have that column in the item named
+"MainDetails", that's fine; we'll get the information we need from there.
+If you want to add some other column of information for breaking up the
+graph, please add that column to the item in \code{existing_exp_details}
+titled "Dosing".}
+
+\item{facet2_column}{optionally break up the graph into small multiples in
+the horizontal direction. The designated column name should be unquoted,
+e.g., \code{facet2_column = File}. \strong{NB:} If the object with
+simulation information that you provided with the argument
+\code{existing_exp_details} doesn't have the column you want in the item
+named "Dosing", which is where this function gets the information it
+graphs, but it \emph{does} have that column in the item named
+"MainDetails", that's fine; we'll get the information we need from there.
+If you want to add some other column of information for breaking up the
+graph, please add that column to the item in \code{existing_exp_details}
+titled "Dosing".}
+
+\item{bar_width}{width of the bars in hours; we'll go for a smallish bar as
+the default, but please do try making it larger to visualize more easily if
+your time range allows for that.}
 }
 \value{
 a ggplot2 graph
 }
 \description{
-\code{dosing_regimen_plot} creates a graph of the dosing regimen used in the
-simulations provided. UNDER CONSTRUCTION.
+\code{dosing_regimen_plot} creates a graph of the dosing regimens used. This
+requires you to have created an object with simulation information by running
+code{\link{extractExpDetails}} or code{\link{extractExpDetails_mult}}; that
+object will be a list, and the list item named "Dosing" will be used for
+creating these graphs.
 }
 \examples{
-# UNDER CONSTRUCTION 
+dosing_regimen_plot(existing_exp_details = MDZdetails)
+
+dosing_regimen_plot(existing_exp_details = MDZdetails,
+                    bar_width = 20)
+
+dosing_regimen_plot(existing_exp_details = MDZdetails,
+                    colorBy_column = CompoundID)
 
 }
