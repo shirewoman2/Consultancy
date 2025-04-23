@@ -79,14 +79,16 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #'
-#' @param facet1_column optionally break up the graph into small multiples.
-#'   Graphs will already be broken up horizontally by the simulation file name;
-#'   this specifies an optional second column to break up the data by
-#'   vertically. The designated column name should be unquoted, e.g.,
-#'   \code{facet1_column = CompoundID}.
+#' @param facet1_column optionally break up the graph into small multiples in
+#'   the vertical direction. The designated column name should be unquoted,
+#'   e.g., \code{facet1_column = CompoundID}.
+#' @param facet2_column optionally break up the graph into small multiples in
+#'   the horizontal direction. The designated column name should be unquoted,
+#'   e.g., \code{facet2_column = File}.
+#'
 #' @param bar_width width of the bars in hours; we'll try to make a reasonable
 #'   size bar here, but you may want to adjust this. Two notes here: \itemize{
-#'   
+#'
 #'   \item{If more than one compound is dosed at the same time, the bar
 #' width for each will be \code{bar_width} divided by the number of compounds
 #' dosed at that time.}
@@ -96,16 +98,15 @@
 #' which might not be what you want, so please try adjusting the bar width in
 #' that scenario.}}
 #'
-#'
 #' @return a ggplot2 graph
 #' @export
 #'
 #' @examples
 #' dosing_regimen_plot(existing_exp_details = MDZdetails)
-#' 
+#'
 #' dosing_regimen_plot(existing_exp_details = MDZdetails,
 #'                     bar_width = 20)
-#' 
+#'
 #' dosing_regimen_plot(existing_exp_details = MDZdetails,
 #'                     colorBy_column = CompoundID)
 #' 
@@ -114,6 +115,7 @@ dosing_regimen_plot <- function(existing_exp_details,
                                 colorBy_column, 
                                 color_set = NA, 
                                 facet1_column, 
+                                facet2_column, 
                                 bar_width = NA){
    
    # Error catching ---------------------------------------------------------
@@ -152,11 +154,17 @@ dosing_regimen_plot <- function(existing_exp_details,
    ## Setting things up for nonstandard evaluation ----------------------------
    
    facet1_column <- rlang::enquo(facet1_column)
+   facet2_column <- rlang::enquo(facet2_column)
    colorBy_column <- rlang::enquo(colorBy_column)
    
    if(as_label(facet1_column) != "<empty>"){
       Dosing <- Dosing %>% 
          mutate(FC1 = {{facet1_column}})
+   }
+   
+   if(as_label(facet2_column) != "<empty>"){
+      Dosing <- Dosing %>% 
+         mutate(FC2 = {{facet2_column}})
    }
    
    if(as_label(colorBy_column) != "<empty>"){
@@ -202,38 +210,59 @@ dosing_regimen_plot <- function(existing_exp_details,
       color_set <- make_color_set(color_set = color_set, 
                                   num_colors = NumColorsNeeded)
       
+      # G <- ggplot(Dosing, aes(x = Time, xend = Time,
+      #                         y = Dose, 
+      #                         fill = colorBy_column)) +
+      #    geom_bar(stat = "identity", position = "dodge", 
+      #             width = bar_width) +
+      #    scale_fill_manual(values = color_set) +
+      #    labs(fill = legend_label_color)
+      
       G <- ggplot(Dosing, aes(x = Time, xend = Time,
-                              y = Dose, 
-                              fill = colorBy_column)) +
-         geom_bar(stat = "identity", position = "dodge", 
-                  width = bar_width) +
-         scale_fill_manual(values = color_set) +
-         labs(fill = legend_label_color)
+                              y = 0, yend = Dose, 
+                              color = colorBy_column)) +
+         geom_segment(linewidth = bar_width) +
+         scale_color_manual(values = color_set) +
+         labs(color = legend_label_color)
       
    } else {
+      # G <- ggplot(Dosing, aes(x = Time, xend = Time,
+      #                         y = Dose)) +
+      #    geom_bar(stat = "identity", position = "dodge", 
+      #             width = bar_width)
+      
       G <- ggplot(Dosing, aes(x = Time, xend = Time,
-                              y = Dose)) +
-         geom_bar(stat = "identity", position = "dodge", 
-                  width = bar_width)
+                              y = 0, yend = Dose)) +
+         geom_segment(linewidth = bar_width)
    }
    
-   if(as_label(facet1_column) != "<empty>"){
+   Facets <- c("FC1" = as_label(facet1_column) != "<empty>", 
+               "FC2" = as_label(facet2_column) != "<empty>")
+   Facets <- Facets[which(Facets == TRUE)]
+   
+   if(length(Facets) != 0){
+      Facets <- str_c(names(Facets), collapse = " ")
+      
       G <- G +
-         ggh4x::facet_grid2(FC1 ~ File, scales = "free", 
-                            axes = "all", switch = "y")
-   } else {
-      G <- G + 
-         facet_grid(. ~ File, scales = "free")
+         switch(
+            Facets, 
+            "FC1" = facet_grid(rows = vars(!!facet1_column), 
+                               scales = "free"), 
+            
+            "FC2" = facet_grid(cols = vars(!!facet2_column),
+                               scales = "free"), 
+            
+            "FC1 FC2" = ggh4x::facet_grid2(FC1 ~ FC2, scales = "free", 
+                                           axes = "all", switch = "y"))
    }
    
    Xlim <- c(min(Dosing$Time, na.rm = T) - bar_width/2, 
              max(Dosing$Time, na.rm = T) + bar_width/2)
    
-   
    suppressMessages(
       G <- G + 
-         # scale_y_continuous(limits = c(0, max(Dosing$Dose)), 
-         #                    expand = expansion(mult = c(0, 0.05))) +
+         scale_y_continuous(limits = c(0, max(Dosing$Dose)),
+                            expand = expansion(mult = c(0, 0.05))) +
          scale_x_continuous(limits = Xlim) +
          xlab("Time (h)") +
          ylab("Dose (mg)") +
@@ -248,8 +277,6 @@ dosing_regimen_plot <- function(existing_exp_details,
                legend.justification = c(0, 0), 
                strip.placement = "outside")
    )
-   
-   # FIXME!!!!!
    
    return(G)
    

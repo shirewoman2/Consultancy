@@ -10,6 +10,7 @@ dosing_regimen_plot(
   colorBy_column,
   color_set = NA,
   facet1_column,
+  facet2_column,
   bar_width = NA
 )
 }
@@ -93,15 +94,17 @@ which color lines will be. This should be unquoted, e.g.,
   of the R Working Group about how to do that using
   \link{colorRampPalette}.}}}
 
-\item{facet1_column}{optionally break up the graph into small multiples.
-Graphs will already be broken up horizontally by the simulation file name;
-this specifies an optional second column to break up the data by
-vertically. The designated column name should be unquoted, e.g.,
-\code{facet1_column = CompoundID}.}
+\item{facet1_column}{optionally break up the graph into small multiples in
+the vertical direction. The designated column name should be unquoted,
+e.g., \code{facet1_column = CompoundID}.}
+
+\item{facet2_column}{optionally break up the graph into small multiples in
+the horizontal direction. The designated column name should be unquoted,
+e.g., \code{facet2_column = File}.}
 
 \item{bar_width}{width of the bars in hours; we'll try to make a reasonable
   size bar here, but you may want to adjust this. Two notes here: \itemize{
-  
+
   \item{If more than one compound is dosed at the same time, the bar
 width for each will be \code{bar_width} divided by the number of compounds
 dosed at that time.}

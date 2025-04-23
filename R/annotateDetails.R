@@ -1788,51 +1788,27 @@ annotateDetails <- function(existing_exp_details,
                
             } else if(item %in% c("Dosing", "CustomDosing")){ 
                
-               ## CustomDosing tab --------------------------------------------
-               
-               RouteColors <- c("Oral" = "dodgerblue4", 
-                                "i.v. bolus" = "#E41A1C", 
-                                "i.v. infusion" = "#91429D", 
-                                "Dermal" = "seagreen", 
-                                "Inhaled" = "#5ECCF3", 
-                                "Long-Acting-Injectable" = "orange", 
-                                "IntraVaginal" = "#08E6D1", 
-                                "Rectal" = "#6F4C29", 
-                                "Synovial Joint" = "#E0E006", 
-                                "Other site" = "gray20", 
-                                "Subcutaneous" = "#F51B7E", 
-                                "Custom" = "black")
+               ## Dosing and CustomDosing tabs ----------------------------------
                
                suppressMessages(
-                  plot(ggplot(existing_exp_details[[item]], 
-                              aes(x = Time, xend = Time,
-                                  y = 0, yend = Dose, 
-                                  color = DoseRoute)) +
-                          geom_segment(linewidth = 1) +
-                          scale_color_manual(values = RouteColors) +
-                          labs(color = "Dose route") +
-                          ggh4x::facet_grid2(Compound ~ File, scales = "free", 
-                                             axes = "all", switch = "y") + 
-                          scale_y_continuous(limits = c(0, max(existing_exp_details[[item]]$Dose)), 
-                                             expand = expansion(mult = c(0, 0.05))) +
-                          scale_x_continuous(limits = c(0, max(existing_exp_details[[item]]$Time))) +
-                          xlab("Time (h)") +
-                          ylab("Dose (mg)") +
-                          ggtitle("Custom-dosing regimens") +
-                          scale_x_time() +
-                          theme_consultancy(border = TRUE) +
-                          theme(legend.position = "bottom", 
-                                legend.justification = c(0, 0), 
-                                strip.placement = "outside"))
+                  plot(dosing_regimen_plot(existing_exp_details = existing_exp_details, 
+                                   facet1_column = CompoundID, 
+                                   colorBy_column = File, 
+                                   color_set = "rainbow", 
+                                   bar_width = 1) +
+                  ggtitle("Dosing regimens", 
+                          subtitle = "Lines will overlap perfectly when all simulations have the same dosing regimens.\nIf you have a lot of files and want to see a more-informative version of this graph,\nplease try running dosing_regimen_plot(...) separately."))
                )
                
                # Seems like ggplot makes not more than 20 items in the legend
                # before going over a column. Will need to consider that when
                # adjusting width.
-               PlotWidth <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$File)) * 5.5
-               PlotHeight <- 0.5 + 
-                  length(unique(existing_exp_details[[item]]$Compound)) * 4
+               PlotWidth <- 10
+               PlotHeight_g <- length(unique(
+                  existing_exp_details[[item]]$CompoundID)) * 3
+               PlotHeight_leg <- length(unique(
+                  existing_exp_details[[item]]$File)) %/% 10 * 0.5
+               PlotHeight <- PlotHeight_g + PlotHeight_leg
                
                openxlsx::insertPlot(wb = WB, 
                                     sheet = output_tab_name, 
