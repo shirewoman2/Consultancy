@@ -27,6 +27,9 @@
 #'   4)} and we will match each individual time with the nominal time closest to
 #'   it. This way, you'll get data from a draw time at, say, 4.1 h grouped with
 #'   another draw time at, say, 3.95 h; they'll both be put into the 4-hour bin.
+#' @param time_units_to_use time units to use for graphs. If left as NA, the
+#'   time units in the source data will be used. Options are "hours", "minutes",
+#'   "days", or "weeks".
 #' @param linear_or_log the type of graph to be returned. Options: \describe{
 #'   \item{"semi-log"}{y axis is log transformed; this is the default}
 #'
@@ -406,6 +409,7 @@ ct_plot_obs <- function(ct_dataframe,
                         floating_facet_scale = FALSE,
                         facet_spacing = NA,
                         time_range = NA, 
+                        time_units_to_use = NA, 
                         x_axis_interval = NA,
                         x_axis_label = NA,
                         pad_x_axis = TRUE,
@@ -567,6 +571,7 @@ ct_plot_obs <- function(ct_dataframe,
                    floating_facet_scale = floating_facet_scale,
                    facet_spacing = facet_spacing,
                    time_range = time_range, 
+                   time_units_to_use = time_units_to_use, 
                    x_axis_interval = x_axis_interval,
                    x_axis_label = x_axis_label,
                    pad_x_axis = pad_x_axis,

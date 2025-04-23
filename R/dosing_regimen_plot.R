@@ -1,7 +1,10 @@
 #' Plot the dosing regimens used in simulations
 #'
-#' \code{dosing_regimen_plot} creates a graph of the dosing regimen used in the
-#' simulations provided. UNDER CONSTRUCTION.
+#' \code{dosing_regimen_plot} creates a graph of the dosing regimens used. This
+#' requires you to have created an object with simulation information by running
+#' code{\link{extractExpDetails}} or code{\link{extractExpDetails_mult}}; that
+#' object will be a list, and the list item named "Dosing" will be used for
+#' creating these graphs.
 #'
 #' @param existing_exp_details output from \code{\link{extractExpDetails}} or
 #'   \code{\link{extractExpDetails_mult}}.
@@ -81,22 +84,30 @@
 #'
 #' @param facet1_column optionally break up the graph into small multiples in
 #'   the vertical direction. The designated column name should be unquoted,
-#'   e.g., \code{facet1_column = CompoundID}.
+#'   e.g., \code{facet1_column = CompoundID}. \strong{NB:} If the object with
+#'   simulation information that you provided with the argument
+#'   \code{existing_exp_details} doesn't have the column you want in the item
+#'   named "Dosing", which is where this function gets the information it
+#'   graphs, but it \emph{does} have that column in the item named
+#'   "MainDetails", that's fine; we'll get the information we need from there.
+#'   If you want to add some other column of information for breaking up the
+#'   graph, please add that column to the item in \code{existing_exp_details}
+#'   titled "Dosing".
 #' @param facet2_column optionally break up the graph into small multiples in
 #'   the horizontal direction. The designated column name should be unquoted,
-#'   e.g., \code{facet2_column = File}.
+#'   e.g., \code{facet2_column = File}. \strong{NB:} If the object with
+#'   simulation information that you provided with the argument
+#'   \code{existing_exp_details} doesn't have the column you want in the item
+#'   named "Dosing", which is where this function gets the information it
+#'   graphs, but it \emph{does} have that column in the item named
+#'   "MainDetails", that's fine; we'll get the information we need from there.
+#'   If you want to add some other column of information for breaking up the
+#'   graph, please add that column to the item in \code{existing_exp_details}
+#'   titled "Dosing".
 #'
-#' @param bar_width width of the bars in hours; we'll try to make a reasonable
-#'   size bar here, but you may want to adjust this. Two notes here: \itemize{
-#'
-#'   \item{If more than one compound is dosed at the same time, the bar
-#' width for each will be \code{bar_width} divided by the number of compounds
-#' dosed at that time.}
-#'
-#' \item{If there's only 1 dose and it's a t = 0, the bar might look funky if
-#' the width is very large. If it's, say, 4, the x axis will span -2 h to +2 h,
-#' which might not be what you want, so please try adjusting the bar width in
-#' that scenario.}}
+#' @param bar_width width of the bars in hours; we'll go for a smallish bar as
+#'   the default, but please do try making it larger to visualize more easily if
+#'   your time range allows for that.
 #'
 #' @return a ggplot2 graph
 #' @export
@@ -145,9 +156,7 @@ dosing_regimen_plot <- function(existing_exp_details,
    
    TimeRange <- max(Dosing$Time, na.rm = T) - min(Dosing$Time, na.rm = T)
    
-   if(is.na(bar_width)){
-      bar_width <- TimeRange / 80
-   } 
+   bar_width <- ifelse(is.na(bar_width), 1, as.numeric(bar_width))
    
    Xexpand <- (TimeRange + bar_width / 2)/TimeRange - 1
    
@@ -158,16 +167,43 @@ dosing_regimen_plot <- function(existing_exp_details,
    colorBy_column <- rlang::enquo(colorBy_column)
    
    if(as_label(facet1_column) != "<empty>"){
+      if(as_label(facet1_column) %in% names(Dosing) == FALSE & 
+         as_label(facet1_column) %in% names(existing_exp_details$MainDetails)){
+         suppressMessages(
+            Dosing <- left_join(Dosing,
+                                existing_exp_details$MainDetails %>% 
+                                   select(File, !!facet1_column))
+         )
+      }
+      
       Dosing <- Dosing %>% 
          mutate(FC1 = {{facet1_column}})
    }
    
    if(as_label(facet2_column) != "<empty>"){
+      if(as_label(facet2_column) %in% names(Dosing) == FALSE & 
+         as_label(facet2_column) %in% names(existing_exp_details$MainDetails)){
+         suppressMessages(
+            Dosing <- left_join(Dosing,
+                                existing_exp_details$MainDetails %>% 
+                                   select(File, !!facet2_column))
+         )
+      }
+      
       Dosing <- Dosing %>% 
          mutate(FC2 = {{facet2_column}})
    }
    
    if(as_label(colorBy_column) != "<empty>"){
+      
+      if(as_label(colorBy_column) %in% names(Dosing) == FALSE & 
+         as_label(colorBy_column) %in% names(existing_exp_details$MainDetails)){
+         suppressMessages(
+            Dosing <- left_join(Dosing,
+                                existing_exp_details$MainDetails %>% 
+                                   select(File, !!colorBy_column))
+         )
+      }
       
       Dosing <- Dosing %>%
          mutate(colorBy_column = {{colorBy_column}})

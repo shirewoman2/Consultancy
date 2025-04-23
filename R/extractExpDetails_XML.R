@@ -539,27 +539,27 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          k <- 1
          
          while(is.null(RootNode[["SimulationData"]][["PostProcessingData"]][[
-            paste0("AUCCalculations", Suffix)]][["UserIntervals"]][[k]]) == FALSE){
+            paste0("AUCCalculations", Suffix_sim)]][["UserIntervals"]][[k]]) == FALSE){
             UserIntervals[[i]][[j]][[k]] <- 
                tibble(StartDay = 
                          XML::xmlValue(
                             RootNode[["SimulationData"]][["PostProcessingData"]][[
-                               paste0("AUCCalculations", Suffix)]][["UserIntervals"]][[k]][[
+                               paste0("AUCCalculations", Suffix_sim)]][["UserIntervals"]][[k]][[
                                   "StartDay"]]), 
                       StartClockMin = 
                          XML::xmlValue(
                             RootNode[["SimulationData"]][["PostProcessingData"]][[
-                               paste0("AUCCalculations", Suffix)]][["UserIntervals"]][[k]][[
+                               paste0("AUCCalculations", Suffix_sim)]][["UserIntervals"]][[k]][[
                                   "StartTime"]]), 
                       EndDay = 
                          XML::xmlValue(
                             RootNode[["SimulationData"]][["PostProcessingData"]][[
-                               paste0("AUCCalculations", Suffix)]][["UserIntervals"]][[k]][[
+                               paste0("AUCCalculations", Suffix_sim)]][["UserIntervals"]][[k]][[
                                   "EndDay"]]), 
                       EndClockMin = 
                          XML::xmlValue(
                             RootNode[["SimulationData"]][["PostProcessingData"]][[
-                               paste0("AUCCalculations", Suffix)]][["UserIntervals"]][[k]][[
+                               paste0("AUCCalculations", Suffix_sim)]][["UserIntervals"]][[k]][[
                                   "EndTime"]]))
             k <- k + 1
          }
@@ -596,7 +596,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                Compound = Deets[[i]][[AllRegCompounds$DetailNames[
                   AllRegCompounds$CompoundID == j]]], 
                Workspace = i, 
-               File = sub("\\.wksz$", "\\.xlsx$", i))
+               File = sub("\\.wksz$", "\\.xlsx", i))
       }
       
       rm(CompoundNum, Suffix, Suffix_sim, exp_details_cmpd)
@@ -683,9 +683,13 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             } 
          }
          
-         if(m == "FixedTrialDesignFile" & 
-            XML::xmlValue(RootNode[["SimulationData"]][["FixedIndividualTrialDesign"]]) == "false"){
-            DeetValue <- NA
+         if(m == "FixedTrialDesignFile"){
+            if(XML::xmlValue(RootNode[["SimulationData"]][[
+               "FixedIndividualTrialDesign"]]) == "false"){
+               DeetValue <- NA
+            } else {
+               DeetValue <- paste0(sub("^Wsp_", "", DeetValue), ".xml")
+            }
          }
          
          # Also dealing with instances where the value in the XML file is

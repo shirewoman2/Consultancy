@@ -99,13 +99,20 @@ scale_x_time_setup <- function(time_range = NA,
                         "weeks" = round_up_unit(time_range_adj[2], 2)) 
     }
     
+    # NB: Breaks will be HALF as frequent as what we set up with BreaksToUse b/c
+    # every other break will be just a tick mark w/out a label. Keep that in
+    # mind when considering how frequently to make breaks.
     if(time_units == "hours"){
         
         PossBreaks <- data.frame(
-            Tlast = c(2, 4, 8, 12, 24, 48, 96, 168, 336, 360, 504, 672, Inf),
-            BreaksToUse = c("2hr", "4hr", "8hr", "12hr", "24hr", "48hr", "96hr",
-                            "1wk", "2wk",
-                            "15d", "3wk", "4wk", "4wkplus"))
+            Tlast = c(2, 4, 8, 12, 
+                      24, 48, 96, 168, 
+                      336, 360, 504, 672, 
+                      840, 1008, 1344, Inf),
+            BreaksToUse = c("2hr", "4hr", "8hr", "12hr",
+                            "24hr", "48hr", "96hr", "1wk", 
+                            "2wk", "15d", "3wk", "4wk",
+                            "5wk", "6wk", "8wk", "8wkplus"))
         
         BreaksToUse <- PossBreaks %>% filter(Tlast >= tlast) %>%
             slice(which.min(Tlast)) %>% pull(BreaksToUse)
@@ -126,7 +133,10 @@ scale_x_time_setup <- function(time_range = NA,
                           "15d" = seq(0, 360, 24),
                           "3wk" = seq(0, 504, 36),
                           "4wk" = seq(0, 672, 48),
-                          "4wkplus" = round_up_nice(seq(0, tlast,
+                          "5wk" = seq(0, 840, 168/2), 
+                          "6wk" = seq(0, 1008, 168/2), 
+                          "8wk" = seq(0, 1344, 168), 
+                          "8wkplus" = round_up_nice(seq(0, tlast,
                                                         length.out = 12)),
                           "UserDefined" = seq(0, max(GraphData$Time, na.rm = T),
                                               x_axis_interval/2))

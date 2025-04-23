@@ -1124,8 +1124,12 @@ annotateDetails <- function(existing_exp_details,
                                  "ConcDependent_BP" = any(complete.cases(BP)),  
                                  "pH_dependent_solubility" = any(complete.cases(pH)), 
                                  "pH_dependent_LuminalDegradation" = any(complete.cases(pH)), 
+                                 
+                                 # Items that could be empty lists should just
+                                 # be set to TRUE here
                                  "DissolutionProfiles" = TRUE, 
-                                 "ReleaseProfiles" = TRUE)) %>% 
+                                 "ReleaseProfiles" = TRUE, 
+                                 "UserAUCIntervals" = TRUE)) %>% 
          filter(Keep == TRUE) %>% 
          pull(CompoundID) %>% unique() %>% as.character()
       
