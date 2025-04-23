@@ -866,8 +866,12 @@ pk_table <- function(PKparameters = NA,
          OutQC[[i]] <- temp$QC
       } 
       
-      FD[[i]] <- temp$ForestData %>% 
-         mutate(Sheet = as.character(Sheet))
+      if(length(temp$ForestData) > 0){
+         FD[[i]] <- temp$ForestData %>% 
+            mutate(Sheet = as.character(Sheet))
+      } else {
+         FD[[i]] <- list()
+      }
       
       CheckDoseInt[[i]] <- temp$CheckDoseInt
       
