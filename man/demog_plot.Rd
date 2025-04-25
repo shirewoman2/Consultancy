@@ -255,8 +255,7 @@ name. Leaving this as NA means the file will not be saved to disk.}
 \item{fig_width}{figure width in inches; default is 6}
 }
 \value{
-a set of graphs. This does not yet save the graphs for you, so you'll
-  need to run ggsave(...) to do that.
+a set of ggplot2 graphs
 }
 \description{
 \code{demog_plot} will make a series of graphs comparing

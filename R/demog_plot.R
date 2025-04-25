@@ -213,8 +213,7 @@
 #' @param fig_width figure width in inches; default is 6
 #'
 #'
-#' @return a set of graphs. This does not yet save the graphs for you, so you'll
-#'   need to run ggsave(...) to do that.
+#' @return a set of ggplot2 graphs
 #' @export
 #'
 #' @examples
