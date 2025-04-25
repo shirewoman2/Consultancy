@@ -765,6 +765,8 @@ extractConcTime <- function(sim_data_file,
                Cols <- which(complete.cases(t(sim_data_xl[StartRow_obs, ])))
                EndRow_obs <- which(is.na(sim_data_xl[, 1]))
                EndRow_obs <- EndRow_obs[which(EndRow_obs > StartRow_obs)][1] - 1
+               EndRow_obs <- ifelse(is.na(EndRow_obs), 
+                                    nrow(sim_data_xl), EndRow_obs)
                
                obs_data <-
                   sim_data_xl[StartRow_obs:EndRow_obs, Cols] %>%
