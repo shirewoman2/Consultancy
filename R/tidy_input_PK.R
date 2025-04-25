@@ -755,8 +755,14 @@ tidy_input_PK <- function(PKparameters,
    
    # Format of PKparameters at this point: data.frame with columns File, Sheet,
    # CompoundID, Tissue. Columns may contain NA values and the exact content of
-   # the columns may not be correct, but they should exist. Harmonizing content
-   # of columns next.
+   # the columns may not be correct, but they should exist. 
+   
+   # Trimming white space
+   PKparameters <- PKparameters %>% 
+      mutate(across(.cols = where(is.character), 
+                    .fns = str_trim))
+   
+   # Harmonizing content of columns next.
    
    ## File ------------------------------------------------------------------
    
@@ -840,7 +846,7 @@ tidy_input_PK <- function(PKparameters,
             case_when(
                
                complete.cases(Sheet) ~ TRUE, 
-                  
+               
                PKparameter %in% AllPKParameters$PKparameter[
                   AllPKParameters$AppliesToAllDoses == TRUE] ~ FALSE, 
                
