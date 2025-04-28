@@ -613,6 +613,14 @@ demog_plot <- function(demog_dataframe,
    
    AnyScatter <- any(str_detect(DemogParams$Parameter, "vs"))
    
+   # Adjusting legend position for density and histogram plots based on whether
+   # there are any scatter plots and whether there are more than one value for
+   # coloring the data by.
+   LegendPosition_dist_plots <- case_when(
+      AnyScatter == TRUE ~ "none", 
+      length(sort(unique(demog_dataframe$colorBy_column))) == 1 ~ "none", 
+      .default = legend_position)
+   
    if(nrow(DemogParams) == 0){
       stop(wrapn("None of the demographic parameters you supplied could be found in your data (or they had all NA values), so we cannot make any graphs."), 
            call. = FALSE)
@@ -649,7 +657,7 @@ demog_plot <- function(demog_dataframe,
          scale_fill_manual(values = MyColors) +
          theme_consultancy(border = border_facets) + 
          theme(strip.placement = "outside", 
-               legend.position = ifelse(AnyScatter, "none", legend_position))
+               legend.position = LegendPosition_dist_plots)
       
       return(G)
    }
@@ -682,7 +690,7 @@ demog_plot <- function(demog_dataframe,
          scale_fill_manual(values = MyColors) +
          theme_consultancy(border = border_facets) + 
          theme(strip.placement = "outside", 
-               legend.position = ifelse(AnyScatter, "none", legend_position))
+               legend.position = LegendPosition_dist_plots)
       
       return(G)
    }
@@ -698,32 +706,10 @@ demog_plot <- function(demog_dataframe,
    
    for(yy in DemogParams$Parameter){
       
-      # if(str_detect(yy, " vs ") == FALSE & 
-      #    yy %in% names(demog_dataframe) == FALSE){
-      #    MissingParams <- c(MissingParams, yy)
-      #    next
-      # }
-      # 
-      # if(yy %in% c(names(demog_dataframe), 
-      #              tolower(PossDemogParams$Parameter)) == FALSE & 
-      #    all(is.na(DemogParams$Orig)) == FALSE){
-      #    MissingParams <- c(MissingParams, 
-      #                       DemogParams$Orig[DemogParams$Parameter == yy])
-      #    next
-      # }
-      # 
-      # if(all(is.na(demog_dataframe[, yy]))){
-      #    next
-      # }
-      # 
-      # if(all(is.na(DemogParams$Orig)) & 
-      #    yy == "allometricscalar" & 
-      #    "allometricscalar" %in% names(demog_dataframe) &&
-      #    all(demog_dataframe$allometricscalar == 1, na.rm = T)){
-      #    next
-      # }
-      
       if(yy == "sex vs age"){
+         
+         ### sex vs age ------------------------------------------------------
+         
          MyGraphs[[yy]] <- 
             ggplot(demog_dataframe, 
                    aes(x = age, y = colorBy_column, fill = colorBy_column)) +
@@ -740,7 +726,7 @@ demog_plot <- function(demog_dataframe,
             xlab("Age (years)") +
             theme_consultancy(border = border_facets) + 
             theme(strip.placement = "outside", 
-                  legend.position = ifelse(AnyScatter, "none", legend_position))
+                  legend.position = LegendPosition_dist_plots)
          
          if(complete.cases(legend_label_color)){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
@@ -748,12 +734,20 @@ demog_plot <- function(demog_dataframe,
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = NULL)
          }
          
-         MyGraphs[[yy]] <- MyGraphs[[yy]] +
-            scale_y_continuous(expand = expansion(mult = pad_y_num)) + 
-            scale_x_continuous(expand = expansion(mult = pad_x_num))
+         if(as_label(colorBy_column) == "<empty>"){
+            MyGraphs[[yy]] <- MyGraphs[[yy]] +
+               scale_y_discrete(expand = expansion(mult = pad_y_num)) + 
+               scale_x_continuous(expand = expansion(mult = pad_x_num))
+         } else {
+            MyGraphs[[yy]] <- MyGraphs[[yy]] +
+               scale_y_continuous(expand = expansion(mult = pad_y_num)) + 
+               scale_x_continuous(expand = expansion(mult = pad_x_num))
+         }
          
          
       } else if(yy == "sex"){
+         
+         ### sex ------------------------------------------------------  
          
          PercFemale <- demog_dataframe %>% 
             group_by(across(.cols = any_of(c("colorBy_column", "fc")))) %>% 
@@ -765,7 +759,20 @@ demog_plot <- function(demog_dataframe,
          MyGraphs[[yy]] <-
             ggplot(PercFemale, aes(x = colorBy_column, fill = colorBy_column,
                                    y = PercFemale)) +
-            geom_bar(stat = "identity", alpha = 0.7) +
+            geom_bar(stat = "identity", alpha = 0.7)
+         
+         if(as_label(colorBy_column) == "<empty>"){
+            
+            MyGraphs[[yy]] <- MyGraphs[[yy]] +
+               scale_x_discrete(expand = expansion(mult = pad_x_num))
+            
+         } else {
+            
+            MyGraphs[[yy]] <- MyGraphs[[yy]] +
+               scale_x_continuous(expand = expansion(mult = pad_x_num))
+         }
+         
+         MyGraphs[[yy]] <- MyGraphs[[yy]] +
             guides(fill = guide_legend(override.aes = 
                                           list(shape = 15, 
                                                size = 6, 
@@ -775,14 +782,18 @@ demog_plot <- function(demog_dataframe,
             scale_fill_manual(values = MyColors) +
             scale_y_continuous(labels = scales::percent, 
                                limits = c(0, 1),
-                               expand = expansion(mult = pad_y_num)) +
-            scale_x_continuous(expand = expansion(mult = pad_x_num)) +
+                               # NB: It looks weird to have any space between x
+                               # axis and the bottom of the bars, so setting
+                               # lower end of y padding to 0 regardless of user
+                               # request.
+                               expand = expansion(mult = c(0, pad_y_num[2]))) +
             ylab("Percent female") +
             xlab(NULL) +
             labs(fill = NULL) +
             theme_consultancy(border = border_facets) + 
             theme(strip.placement = "outside", 
-                  legend.position = ifelse(AnyScatter, "none", legend_position))
+                  legend.position = LegendPosition_dist_plots)
+         
          
          if(complete.cases(legend_label_color)){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = legend_label_color)
@@ -793,17 +804,37 @@ demog_plot <- function(demog_dataframe,
       } else if(yy %in% tolower(c("Weight vs Height", 
                                   "Height vs Age", 
                                   "Weight vs Age"))){
-         MyGraphs[[yy]] <- 
-            ggplot(
-               demog_dataframe, 
-               switch(yy, 
-                      "weight vs height" = aes(y = weight_kg, x = height_cm,
+         
+         ### all other scatter plots -----------------------------------------
+         
+         if(length(sort(unique(demog_dataframe$colorBy_column))) == 1){
+            MyGraphs[[yy]] <- 
+               ggplot(
+                  demog_dataframe, 
+                  switch(yy, 
+                         "weight vs height" = aes(y = weight_kg, x = height_cm,
+                                                  shape = sex), 
+                         "height vs age" = aes(y = height_cm, x = age, 
+                                               shape = sex), 
+                         "weight vs age" = aes(y = weight_kg, x = age, 
+                                               shape = sex)))
+         } else {
+            MyGraphs[[yy]] <- 
+               ggplot(
+                  demog_dataframe, 
+                  switch(yy, 
+                         "weight vs height" = aes(y = weight_kg, x = height_cm,
+                                                  shape = sex, 
+                                                  color = colorBy_column), 
+                         "height vs age" = aes(y = height_cm, x = age, 
                                                shape = sex, 
                                                color = colorBy_column), 
-                      "height vs age" = aes(y = height_cm, x = age, shape = sex, 
-                                            color = colorBy_column), 
-                      "weight vs age" = aes(y = weight_kg, x = age, shape = sex, 
-                                            color = colorBy_column))) +
+                         "weight vs age" = aes(y = weight_kg, x = age, 
+                                               shape = sex, 
+                                               color = colorBy_column)))
+         }
+         
+         MyGraphs[[yy]] <- MyGraphs[[yy]] +
             geom_point(alpha = alpha) + 
             scale_color_manual(values = MyColors) +
             labs(color = NULL) +
