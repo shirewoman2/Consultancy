@@ -760,10 +760,19 @@ extractConcTime <- function(sim_data_file,
             if(length(StartRow_obs) != 0 &&
                StartRow_obs - 1 != nrow(sim_data_xl)){
                
+               # Need to get ONLY the obs data rows in case people have added
+               # more data to cells below there
+               Cols <- which(complete.cases(t(sim_data_xl[StartRow_obs, ])))
+               EndRow_obs <- which(is.na(sim_data_xl[, 1]))
+               EndRow_obs <- EndRow_obs[which(EndRow_obs > StartRow_obs)][1] - 1
+               EndRow_obs <- ifelse(is.na(EndRow_obs), 
+                                    nrow(sim_data_xl), EndRow_obs)
+               
                obs_data <-
-                  sim_data_xl[StartRow_obs:nrow(sim_data_xl), ] %>%
+                  sim_data_xl[StartRow_obs:EndRow_obs, Cols] %>%
                   t() %>%
                   as.data.frame()
+               
                if(all(is.na(obs_data[,1]))){
                   
                   # Sometimes, there will be a single cell that says
@@ -771,7 +780,9 @@ extractConcTime <- function(sim_data_file,
                   # data. Removing the basically empty data.frame of
                   # obs data in that situation.
                   rm(obs_data)
+                  
                } else {
+                  
                   warning(wrapn("This function is extracting observed data from Simulator Excel output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of a perpetrator. The safer way to include observed data is to supply a separate file for 'obs_data_file'"),
                           call. = FALSE)
                   
@@ -782,7 +793,7 @@ extractConcTime <- function(sim_data_file,
                   # about that. Everything will be assumed to be for the same
                   # compound and tissue as the simulated data and will be
                   # assumed to NOT have an inhibitor present.
-                  NewNamesObs <- sim_data_xl[StartRow_obs:nrow(sim_data_xl), 1] %>%
+                  NewNamesObs <- sim_data_xl[StartRow_obs:EndRow_obs, 1] %>%
                      rename("OrigName" = 1) %>%
                      mutate(Individual =
                                as.character(sapply(OrigName,

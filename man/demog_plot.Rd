@@ -6,6 +6,7 @@
 \usage{
 demog_plot(
   demog_dataframe,
+  obs_demog_dataframe = NA,
   sims_to_include = "all",
   demog_parameters = NA,
   variability_display = "kernel density",
@@ -22,6 +23,8 @@ demog_plot(
   facet_column_additional,
   border_facets = TRUE,
   graph_labels = TRUE,
+  pad_x_axis = TRUE,
+  pad_y_axis = TRUE,
   return_indiv_graphs = FALSE,
   save_graph = NA,
   fig_height = 8,
@@ -29,14 +32,26 @@ demog_plot(
 )
 }
 \arguments{
-\item{demog_dataframe}{the output from running \code{\link{extractDemog}}.}
+\item{demog_dataframe}{the output from running \code{\link{extractDemog}}. If
+you would like to include observed data, you can either provide them in the
+same data.frame here and include a column titled "SorO" with "simulated" or
+"observed" to denote what kind of data that row contains or you can supply
+them separately to the argument 'obs_demog_dataframe', whichever is easiest
+for you. Either way, the column names in the observed data MUST MATCH the
+column names in the simulated data so that we know what's what. For
+example, if the observed data has a column named "WEIGHT", we need that to
+become "Weight_kg" to match what's in the simulated data.}
+
+\item{obs_demog_dataframe}{optionally supply observed demographic data for
+comparison. The columns you want to compare must have exactly the same
+names as the columns in the simulated data so that we know what's what.}
 
 \item{sims_to_include}{optionally specify which simulations to include. These
 must be included in \code{demog_dataframe} in the column "File".}
 
-\item{demog_parameters}{demographic parameters to include. We're starting
-  with a limited set: \itemize{\item{Individual parameters, which will be
-  displayed as either a kernel density plot or a boxplot depending on your
+\item{demog_parameters}{demographic parameters to include. Options:
+  \itemize{\item{Individual parameters, which will be displayed as either a
+  kernel density plot or a boxplot depending on your
   choice for \code{variability_display}: \itemize{
 
   \item{"Age" (age in years)}
@@ -208,6 +223,24 @@ around the facets if the graphs are broken up by the sex of the subjects}
 \item{graph_labels}{TRUE or FALSE for whether to include labels (A, B, C,
 etc.) for each of the small graphs.}
 
+\item{pad_x_axis}{optionally add a smidge of padding to the the x axis
+(default is TRUE, which includes some generally reasonable padding). If
+changed to FALSE, the y axis will be placed right at the beginning of your
+x axis. If you want a \emph{specific} amount of x-axis padding, set this to
+a number; the default is \code{c(0.02, 0.04)}, which adds 2\% more space to
+the left side and 4\% more to the right side of the x axis. If you only
+specify one number, we'll assume that's the percent you want added to the
+left side.}
+
+\item{pad_y_axis}{optionally add a smidge of padding to the y axis (default
+is TRUE, which includes some generally reasonable padding). As with
+\code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
+the bottom of your data, possibly cutting a point in half. If you want a
+\emph{specific} amount of y-axis padding, set this to a number; the default
+is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
+to the top of the y axis. If you only specify one number, we'll assume
+that's the percent you want added to the bottom.}
+
 \item{return_indiv_graphs}{TRUE or FALSE (default) for whether to return a
 list of each of the individual graphs}
 
@@ -222,21 +255,20 @@ name. Leaving this as NA means the file will not be saved to disk.}
 \item{fig_width}{figure width in inches; default is 6}
 }
 \value{
-a set of graphs. This does not yet save the graphs for you, so you'll
-  need to run ggsave(...) to do that.
+a set of ggplot2 graphs
 }
 \description{
 \code{demog_plot} will make a series of graphs comparing
-  parameters across simulated populations. All the parameters available on
-  the "Demographic Data" tab of a Simcyp Simulator output Excel file are
-  available for making comparisons, and you must obtain the input data for
-  making these graphs by running \code{\link{extractDemog}}. If you are
-  looking at the distributions of one parameter across populations, you can
-  display that with either boxplots or kernel density plots (like a smoothed
-  histogram). If you want to compare across simulations the relationship
-  between pairs of parameters, scatter plots will be used. (Only certain
-  pairs of parameters are available; please see notes for the argument
-  'demog_parameters'.)
+  parameters across simulated and, if provided, observed populations. All the
+  parameters available on the "Demographic Data" tab of a Simcyp Simulator
+  output Excel file are available for making comparisons, and you must obtain
+  the input data for making these graphs by running
+  \code{\link{extractDemog}}. If you are looking at the distributions of one
+  parameter across populations, you can display that with either boxplots or
+  kernel density plots (like a smoothed histogram). If you want to compare
+  across simulations the relationship between pairs of parameters, scatter
+  plots will be used. (Only certain pairs of parameters are available; please
+  see notes for the argument 'demog_parameters'.)
 }
 \examples{
 # none yet

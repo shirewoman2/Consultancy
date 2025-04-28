@@ -1,24 +1,35 @@
 #' Make plots for comparing populations across simulations
 #'
 #' @description \code{demog_plot} will make a series of graphs comparing
-#'   parameters across simulated populations. All the parameters available on
-#'   the "Demographic Data" tab of a Simcyp Simulator output Excel file are
-#'   available for making comparisons, and you must obtain the input data for
-#'   making these graphs by running \code{\link{extractDemog}}. If you are
-#'   looking at the distributions of one parameter across populations, you can
-#'   display that with either boxplots or kernel density plots (like a smoothed
-#'   histogram). If you want to compare across simulations the relationship
-#'   between pairs of parameters, scatter plots will be used. (Only certain
-#'   pairs of parameters are available; please see notes for the argument
-#'   'demog_parameters'.)
+#'   parameters across simulated and, if provided, observed populations. All the
+#'   parameters available on the "Demographic Data" tab of a Simcyp Simulator
+#'   output Excel file are available for making comparisons, and you must obtain
+#'   the input data for making these graphs by running
+#'   \code{\link{extractDemog}}. If you are looking at the distributions of one
+#'   parameter across populations, you can display that with either boxplots or
+#'   kernel density plots (like a smoothed histogram). If you want to compare
+#'   across simulations the relationship between pairs of parameters, scatter
+#'   plots will be used. (Only certain pairs of parameters are available; please
+#'   see notes for the argument 'demog_parameters'.)
 #'
-#' @param demog_dataframe the output from running \code{\link{extractDemog}}.
+#' @param demog_dataframe the output from running \code{\link{extractDemog}}. If
+#'   you would like to include observed data, you can either provide them in the
+#'   same data.frame here and include a column titled "SorO" with "simulated" or
+#'   "observed" to denote what kind of data that row contains or you can supply
+#'   them separately to the argument 'obs_demog_dataframe', whichever is easiest
+#'   for you. Either way, the column names in the observed data MUST MATCH the
+#'   column names in the simulated data so that we know what's what. For
+#'   example, if the observed data has a column named "WEIGHT", we need that to
+#'   become "Weight_kg" to match what's in the simulated data.
+#' @param obs_demog_dataframe optionally supply observed demographic data for
+#'   comparison. The columns you want to compare must have exactly the same
+#'   names as the columns in the simulated data so that we know what's what.
 #' @param sims_to_include optionally specify which simulations to include. These
 #'   must be included in \code{demog_dataframe} in the column "File".
 #' @param graph_title title to use on the plots
-#' @param demog_parameters demographic parameters to include. We're starting
-#'   with a limited set: \itemize{\item{Individual parameters, which will be
-#'   displayed as either a kernel density plot or a boxplot depending on your
+#' @param demog_parameters demographic parameters to include. Options:
+#'   \itemize{\item{Individual parameters, which will be displayed as either a
+#'   kernel density plot or a boxplot depending on your
 #'   choice for \code{variability_display}: \itemize{
 #'
 #'   \item{"Age" (age in years)}
@@ -175,6 +186,22 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #'
+#' @param pad_x_axis optionally add a smidge of padding to the the x axis
+#'   (default is TRUE, which includes some generally reasonable padding). If
+#'   changed to FALSE, the y axis will be placed right at the beginning of your
+#'   x axis. If you want a \emph{specific} amount of x-axis padding, set this to
+#'   a number; the default is \code{c(0.02, 0.04)}, which adds 2\% more space to
+#'   the left side and 4\% more to the right side of the x axis. If you only
+#'   specify one number, we'll assume that's the percent you want added to the
+#'   left side.
+#' @param pad_y_axis optionally add a smidge of padding to the y axis (default
+#'   is TRUE, which includes some generally reasonable padding). As with
+#'   \code{pad_x_axis}, if changed to FALSE, the x axis will be placed right at
+#'   the bottom of your data, possibly cutting a point in half. If you want a
+#'   \emph{specific} amount of y-axis padding, set this to a number; the default
+#'   is \code{c(0.02, 0)}, which adds 2\% more space to the bottom and nothing
+#'   to the top of the y axis. If you only specify one number, we'll assume
+#'   that's the percent you want added to the bottom.
 #' @param return_indiv_graphs TRUE or FALSE (default) for whether to return a
 #'   list of each of the individual graphs
 #' @param save_graph optionally save the output graph by supplying a file name
@@ -186,13 +213,13 @@
 #' @param fig_width figure width in inches; default is 6
 #'
 #'
-#' @return a set of graphs. This does not yet save the graphs for you, so you'll
-#'   need to run ggsave(...) to do that.
+#' @return a set of ggplot2 graphs
 #' @export
 #'
 #' @examples
 #' # none yet
 demog_plot <- function(demog_dataframe, 
+                       obs_demog_dataframe = NA, 
                        sims_to_include = "all", 
                        demog_parameters = NA, 
                        variability_display = "kernel density", 
@@ -209,6 +236,8 @@ demog_plot <- function(demog_dataframe,
                        facet_column_additional, 
                        border_facets = TRUE, 
                        graph_labels = TRUE, 
+                       pad_x_axis = TRUE,
+                       pad_y_axis = TRUE,
                        return_indiv_graphs = FALSE, 
                        save_graph = NA,
                        fig_height = 8,
@@ -236,12 +265,32 @@ demog_plot <- function(demog_dataframe,
       legend_position <- "bottom"
    }
    
-   # Filtering files ---------------------------------------------------------
+   # Filtering files, adding obs -----------------------------------------------
    
    if(all(sims_to_include == "all") == FALSE){
       demog_dataframe <- filter_sims(demog_dataframe, 
                                      which_sims = sims_to_include, 
                                      include_or_omit = "include")
+   }
+   
+   if("data.frame" %in% class(obs_demog_dataframe)){
+      demog_dataframe <- demog_dataframe %>% 
+         mutate(SorO = "simulated") %>% 
+         bind_rows(obs_demog_dataframe %>% 
+                      select(any_of(intersect(names(obs_demog_dataframe), 
+                                              names(demog_dataframe)))) %>% 
+                      mutate(SorO = "observed", 
+                             File = "observed")) %>% 
+         unique()
+   } else {
+      if("SorO" %in% names(demog_dataframe) == FALSE){
+         demog_dataframe$SorO <- "simulated"
+      }
+      
+      # Making sure that "File" has a value for obs data
+      demog_dataframe <- demog_dataframe %>% 
+         mutate(File = case_when(is.na(File) & SorO == "observed" ~ "observed", 
+                                 .default = File))
    }
    
    
@@ -380,15 +429,49 @@ demog_plot <- function(demog_dataframe,
          mutate(FC = !!facet_column_additional)
    }
    
+   # Padding axes
+   # Adding padding if user requests it
+   if(class(pad_y_axis) == "logical"){ # class is logical if pad_y_axis unspecified
+      if(pad_y_axis){
+         pad_y_num <-  c(0.02, 0.02)
+      } else {
+         pad_y_num <- c(0, 0)
+      }
+   } else {
+      pad_y_num <- pad_y_axis
+      if(length(pad_y_axis) == 1){
+         pad_y_num <- c(pad_y_num, 0)
+      } else {
+         pad_y_num <- pad_y_axis[1:2]
+      }
+      
+      pad_y_axis <- pad_y_num[1] != 0 # Making pad_y_axis logical again to work with code elsewhere
+   }
+   
+   
+   # Adding padding if user requests it
+   if(class(pad_x_axis) == "logical"){ # class is logical if pad_x_axis unspecified
+      if(pad_x_axis){
+         pad_x_num <-  c(0.02, 0.02)
+      } else {
+         pad_x_num <- c(0, 0)
+      }
+   } else {
+      pad_x_num <- pad_x_axis
+      if(length(pad_x_axis) == 1){
+         pad_x_num <- c(pad_x_num, 0)
+      } else {
+         pad_x_num <- pad_x_axis[1:2]
+      }
+      
+      pad_x_axis <- pad_x_num[1] != 0 # Making pad_x_axis logical again to work with code elsewhere
+   }
+   
+   
    
    # Possible demographic parameters -----------------------------------------
    
    names(demog_dataframe) <- tolower(names(demog_dataframe))
-   # Renaming colorBy_column for ease of coding since I'm lifting some of the
-   # code from other functions. This is just fixing the case since I just made
-   # everything lower.
-   demog_dataframe <- demog_dataframe %>% 
-      rename(colorBy_column = colorby_column)
    
    Harmonized <- harmonize_demog(demog_dataframe = demog_dataframe, 
                                  demog_parameters = demog_parameters, 
@@ -398,6 +481,13 @@ demog_plot <- function(demog_dataframe,
    
    DemogLabs <- PossDemogParams$Label
    names(DemogLabs) <- tolower(PossDemogParams$Parameter)
+   
+   # Renaming colorBy_column for ease of coding since I'm lifting some of the
+   # code from other functions. This is just fixing the case since I just made
+   # everything lower.
+   demog_dataframe <- demog_dataframe %>% 
+      rename(colorBy_column = colorby_column)
+   
    
    
    # Setting up colors and legend overall prefs --------------------------------
@@ -490,12 +580,12 @@ demog_plot <- function(demog_dataframe,
          if(yy %in% c(names(demog_dataframe),
                       tolower(PossDemogParams$Parameter)) == FALSE &
             all(is.na(DemogParams$Orig)) == FALSE){
-            MissingParams <- c(MissingParams,
-                               DemogParams$Orig[DemogParams$Parameter == yy])
+            MissingParams <- c(MissingParams, yy)
             next
          }
          
          if(all(is.na(demog_dataframe[, yy]))){
+            MissingParams <- c(MissingParams, yy)
             next
          }
          
@@ -514,17 +604,24 @@ demog_plot <- function(demog_dataframe,
       warning(wrapn(paste0(
          "The variable(s) ", 
          str_comma(paste0("'", MissingParams, "'")), 
-         " is/are not included in what you have supplied for demog_dataframe, so we will not be able to make that graph.")),
+         " is/are not included in what you have supplied for demog_dataframe or contain all NA values, so we will not be able to make that graph.")),
          call. = FALSE)
-      
-      DemogParams <- DemogParams %>% 
-         filter(!Parameter %in% MissingParams)
    }
+   
+   DemogParams <- DemogParams %>% 
+      filter(!Parameter %in% MissingParams)
    
    AnyScatter <- any(str_detect(DemogParams$Parameter, "vs"))
    
+   if(nrow(DemogParams) == 0){
+      stop(wrapn("None of the demographic parameters you supplied could be found in your data (or they had all NA values), so we cannot make any graphs."), 
+           call. = FALSE)
+   }
+   
    
    # Graphing -----------------------------------------------------------------
+   
+   ## subfunctions -------------------------------------------------------
    
    subfun_density <- function(Var){
       names(demog_dataframe)[names(demog_dataframe) == Var] <- "MyVar"
@@ -591,6 +688,12 @@ demog_plot <- function(demog_dataframe,
    }
    
    
+   ## Making graphs -------------------------------------------------------
+   
+   # Checking effect of switching facet position. Toying with adding an argument
+   # to adjust this.
+   FacetSwitch <- "y"
+   
    MyGraphs <- list()
    
    for(yy in DemogParams$Parameter){
@@ -624,7 +727,7 @@ demog_plot <- function(demog_dataframe,
          MyGraphs[[yy]] <- 
             ggplot(demog_dataframe, 
                    aes(x = age, y = colorBy_column, fill = colorBy_column)) +
-            facet_grid(sex ~ ., switch = "y") +
+            facet_grid(sex ~ ., switch = FacetSwitch) +
             geom_violin(alpha = 0.7) +
             scale_fill_manual(values = MyColors) +
             guides(fill = guide_legend(override.aes = 
@@ -645,7 +748,9 @@ demog_plot <- function(demog_dataframe,
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = NULL)
          }
          
-         # MyGraphs[[yy]] <- patchwork::free(MyGraphs[[yy]])
+         MyGraphs[[yy]] <- MyGraphs[[yy]] +
+            scale_y_continuous(expand = expansion(mult = pad_y_num)) + 
+            scale_x_continuous(expand = expansion(mult = pad_x_num))
          
          
       } else if(yy == "sex"){
@@ -669,7 +774,9 @@ demog_plot <- function(demog_dataframe,
                    color = "none") + 
             scale_fill_manual(values = MyColors) +
             scale_y_continuous(labels = scales::percent, 
-                               limits = c(0, 1)) +
+                               limits = c(0, 1),
+                               expand = expansion(mult = pad_y_num)) +
+            scale_x_continuous(expand = expansion(mult = pad_x_num)) +
             ylab("Percent female") +
             xlab(NULL) +
             labs(fill = NULL) +
@@ -720,6 +827,10 @@ demog_plot <- function(demog_dataframe,
             MyGraphs[[yy]] <- MyGraphs[[yy]] + guides(shape = "none") 
          }
          
+         MyGraphs[[yy]] <- MyGraphs[[yy]] +
+            scale_y_continuous(expand = expansion(mult = pad_y_num)) + 
+            scale_x_continuous(expand = expansion(mult = pad_x_num))
+         
       } else {
          
          if(str_detect(tolower(variability_display), "density")){
@@ -731,24 +842,29 @@ demog_plot <- function(demog_dataframe,
          if(length(unique(demog_dataframe$sex)) == 1){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + guides(shape = "none") 
          }
+         
+         MyGraphs[[yy]] <- MyGraphs[[yy]] +
+            scale_y_continuous(expand = expansion(mult = pad_y_num)) + 
+            scale_x_continuous(expand = expansion(mult = pad_x_num))
+         
       }
       
       if(facet_by_sex & yy != "sex"){
          if(as_label(facet_column_additional) != "<empty>"){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + 
-               facet_grid(sex ~ fc, switch = "y") +
+               facet_grid(sex ~ fc, switch = FacetSwitch) +
                theme(strip.placement = "outside")
             
          } else {
             MyGraphs[[yy]] <- MyGraphs[[yy]] + 
-               facet_grid(sex ~ ., switch = "y") +
+               facet_grid(sex ~ ., switch = FacetSwitch) +
                theme(strip.placement = "outside")
             
          }
       } else {
          if(as_label(facet_column_additional) != "<empty>"){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + 
-               facet_grid(. ~ fc, switch = "y") +
+               facet_grid(. ~ fc, switch = FacetSwitch) +
                theme(strip.placement = "outside")
          }  
       }
