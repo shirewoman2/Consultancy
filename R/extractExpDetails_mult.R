@@ -288,9 +288,17 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       }
    }
    
-   Out <- Out %>% list_transpose() %>% 
-      map(.f = bind_rows) %>% 
-      map(.f = remove_rownames)
+   # Having a TON of trouble with list_transpose for reasons I cannot fathom,
+   # but it's making RStudio crash. Trying a different approach. 
+   
+   # Out <- Out %>% list_transpose() %>% 
+   #    map(.f = bind_rows) %>% 
+   #    map(.f = remove_rownames)
+   
+   sapply(Out[[1]], class)
+   Out[[4]]$UserAUCIntervals <- tibble()
+   
+   TEMP <- Out %>% list_transpose()
    
    if(length(Out) == 0 | nrow(Out$MainDetails) == 0){
       stop("It was not possible to extract any simulation experimental details.")

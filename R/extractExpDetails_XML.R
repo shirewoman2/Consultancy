@@ -242,7 +242,17 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          # Check whether that compound was activated and skip if not. Also
          # remove any info related to that compound from exp_details or we
          # can wind up with, e.g., "StartDayTimeH_inhib2" when there is no
-         # inhitibor 2.
+         # inhibitor 2.
+         
+         # NB: PreV24, there was no tag for checking whether endogenous
+         # compounds were activated b/c no endogenous compounds were included in
+         # Simulator.
+         if(j == "endogenous" &
+            "idInhEnabled9" %in% names(RootNode[["SimulationData"]]) == FALSE){
+            exp_details_i <- exp_details_i[!str_detect(exp_details_i, Suffix)]
+            next
+         }
+         
          if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
             paste0("idInhEnabled", CompoundNum)]])) == FALSE){
             exp_details_i <- exp_details_i[!str_detect(exp_details_i, Suffix)]
