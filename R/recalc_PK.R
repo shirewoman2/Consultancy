@@ -1044,7 +1044,7 @@ recalc_PK <- function(ct_dataframe,
                                    CTsubset[[i]]$ID)
             
             for(j in names(CTsubset[[i]])){
-               browser()
+               
                if(nrow(CTsubset[[i]][[j]]) == 0){next}
                
                if(report_progress == "yes"){message(paste0("   Calculating PK for dataset ", j))}
