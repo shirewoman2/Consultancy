@@ -160,7 +160,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       filter(DataSource == "workspace or database" & Level1 == "Compounds" & 
                 !Detail %in% c("Substrate", "Inhibitor1", "Inhibitor2", 
                                "PrimaryMetabolite1", "PrimaryMetabolite2", 
-                               "SecondaryMetabolite", "Inhibitor1Metabolite")) %>% 
+                               "SecondaryMetabolite", "Inhibitor1Metabolite", 
+                               "Endogenous")) %>% 
       pull(Detail)
    
    PopulationDetails <- XMLDeets %>% 
@@ -230,7 +231,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                "secondary metabolite" = 7,
                                "inhibitor 1" = 2,
                                "inhibitor 2" = 3, 
-                               "inhibitor 1 metabolite" = 6)
+                               "inhibitor 1 metabolite" = 6, 
+                               "endogenous" = 9)
          
          Suffix <- AllRegCompounds %>% filter(CompoundID == j) %>% 
             pull(Suffix)
@@ -481,10 +483,11 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             }
          }
          
-         # Adding start time if it's a dosed compound (substrate, inhibitor 1,
-         # inhibitor 2). Start time needs to be calculated.
+         # Adding start time and prandial state if it's a dosed compound
+         # (substrate, inhibitor 1, inhibitor 2, endogenous). Start time needs
+         # to be calculated.
          
-         if(j %in% AllRegCompounds$DosedCompoundID){
+         if(j %in% unique(AllRegCompounds$DosedCompoundID)){
             
             StartTimes <- 
                tibble(StartDay = 

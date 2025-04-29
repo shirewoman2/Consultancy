@@ -180,6 +180,26 @@ extractEnzAbund <- function(sim_data_file,
               call. = FALSE)
    }
    
+   # Check whether MainDetails includes SheetNames and adding if not
+   if(("SheetNames" %in% names(Deets) &&
+       any(is.na(Deets$SheetNames)) |
+       any(Deets$SheetNames == "`NA`", na.rm = T)) |
+      "SheetNames" %in% names(Deets) == FALSE){
+      
+      for(i in Deets$File){
+         if(file.exists(i) &
+            !str_detect(i, "\\.db$|\\.wksz")){
+            SheetNames <- tryCatch(readxl::excel_sheets(i),
+                                   error = openxlsx::getSheetNames(i))
+         } else { SheetNames <- NA}
+         
+         Deets$SheetNames[
+            Deets$File == i] <-
+            str_c(paste0("`", SheetNames, "`"), collapse = " ")
+         rm(SheetNames)
+      }
+   }
+   
    # Figuring out which sheet to extract and dealing with case since that
    # apparently changes between Simulator versions.
    AllSheets <- gsub("`", "", str_split_1(Deets$SheetNames, pattern = "` `"))
