@@ -376,8 +376,6 @@ extractExpDetails_VBE <- function(sim_data_files,
       # Noting when this was run. 
       MainDetails$expDetails_TimeStamp <- Sys.time()
       
-      browser()
-      
       ## Returning ---------------------------------------------------------------
       
       Out[[sim_data_file]]$MainDetails <- MainDetails

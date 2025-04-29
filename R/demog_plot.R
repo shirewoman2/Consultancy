@@ -864,10 +864,18 @@ demog_plot <- function(demog_dataframe,
          
       } else {
          
+         ### distribution plots -----------------------------------------------
+         
          if(str_detect(tolower(variability_display), "density")){
-            MyGraphs[[yy]] <- subfun_density(yy)
+            MyGraphs[[yy]] <- subfun_density(yy) +
+               # NB: It looks weird to have any space between x axis and the
+               # bottom of the density plot, so setting lower end of y padding
+               # to 0 regardless of user request.
+               scale_y_continuous(expand = expansion(mult = c(0, pad_y_num[2])))
+            
          } else {
-            MyGraphs[[yy]] <- subfun_boxplots(yy)
+            MyGraphs[[yy]] <- subfun_boxplots(yy) +
+               scale_y_continuous(expand = expansion(mult = pad_y_num))
          }
          
          if(length(unique(demog_dataframe$sex)) == 1){
@@ -875,7 +883,6 @@ demog_plot <- function(demog_dataframe,
          }
          
          MyGraphs[[yy]] <- MyGraphs[[yy]] +
-            scale_y_continuous(expand = expansion(mult = pad_y_num)) + 
             scale_x_continuous(expand = expansion(mult = pad_x_num))
          
       }
