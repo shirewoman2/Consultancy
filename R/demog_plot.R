@@ -734,16 +734,8 @@ demog_plot <- function(demog_dataframe,
             MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(fill = NULL)
          }
          
-         if(as_label(colorBy_column) == "<empty>"){
-            MyGraphs[[yy]] <- MyGraphs[[yy]] +
-               scale_y_discrete(expand = expansion(mult = pad_y_num)) + 
-               scale_x_continuous(expand = expansion(mult = pad_x_num))
-         } else {
-            MyGraphs[[yy]] <- MyGraphs[[yy]] +
-               scale_y_continuous(expand = expansion(mult = pad_y_num)) + 
-               scale_x_continuous(expand = expansion(mult = pad_x_num))
-         }
-         
+         MyGraphs[[yy]] <- MyGraphs[[yy]] +
+            scale_x_continuous(expand = expansion(mult = pad_x_num))
          
       } else if(yy == "sex"){
          
@@ -759,20 +751,7 @@ demog_plot <- function(demog_dataframe,
          MyGraphs[[yy]] <-
             ggplot(PercFemale, aes(x = colorBy_column, fill = colorBy_column,
                                    y = PercFemale)) +
-            geom_bar(stat = "identity", alpha = 0.7)
-         
-         if(as_label(colorBy_column) == "<empty>"){
-            
-            MyGraphs[[yy]] <- MyGraphs[[yy]] +
-               scale_x_discrete(expand = expansion(mult = pad_x_num))
-            
-         } else {
-            
-            MyGraphs[[yy]] <- MyGraphs[[yy]] +
-               scale_x_continuous(expand = expansion(mult = pad_x_num))
-         }
-         
-         MyGraphs[[yy]] <- MyGraphs[[yy]] +
+            geom_bar(stat = "identity", alpha = 0.7) +
             guides(fill = guide_legend(override.aes = 
                                           list(shape = 15, 
                                                size = 6, 
@@ -881,10 +860,6 @@ demog_plot <- function(demog_dataframe,
          if(length(unique(demog_dataframe$sex)) == 1){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + guides(shape = "none") 
          }
-         
-         MyGraphs[[yy]] <- MyGraphs[[yy]] +
-            scale_x_continuous(expand = expansion(mult = pad_x_num))
-         
       }
       
       if(facet_by_sex & yy != "sex"){

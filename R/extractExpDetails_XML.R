@@ -529,7 +529,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          
          # Removing things that do not apply, e.g., ADAM-model parameters
          # when it was a 1st-order absorption model
-         if(complete.cases(Deets[[i]][[paste0("Abs_model", Suffix)]]) && 
+         if(paste0("Abs_model", Suffix) %in% names(Deets[[i]]) &&
+            complete.cases(Deets[[i]][[paste0("Abs_model", Suffix)]]) && 
             Deets[[i]][[paste0("Abs_model", Suffix)]] == "1st order"){
             Keep <- setdiff(names(Deets[[i]]), 
                             

@@ -149,16 +149,6 @@ calc_dosenumber <- function(ct_dataframe,
                                              1, Deets[[i]]$NumDoses_inhib), 
            "UNKNOWN" = NA)
       
-      MyDose <- 
-         c("substrate" = Deets[[i]]$Dose_sub,
-           "primary metabolite 1" = NA,
-           "primarymetabolite 2" = NA,
-           "secondary metabolite" = NA,
-           "inhibitor 1" = Deets[[i]]$Dose_inhib,
-           "inhibitor 2" = Deets[[i]]$Dose_inhib2,
-           "inhibitor 1 metabolite" = NA, 
-           "UNKNOWN" = NA)
-      
       # Converting data to numeric while also retaining names
       suppressWarnings(
          MyIntervals <- sapply(MyIntervals, FUN = as.numeric))
@@ -166,8 +156,6 @@ calc_dosenumber <- function(ct_dataframe,
          MyStartTimes <- sapply(MyStartTimes, FUN = as.numeric))
       suppressWarnings(
          MyMaxDoseNum <- sapply(MyMaxDoseNum, FUN = as.numeric))
-      suppressWarnings(
-         MyDose <- sapply(MyDose, FUN = as.numeric))
       
       ct_dataframe[[i]] <- ct_dataframe[[i]] %>%
          mutate(StartHr = MyStartTimes[CompoundID],
@@ -182,10 +170,7 @@ calc_dosenumber <- function(ct_dataframe,
                 # 1 and everything before StartHr dose 0. If it was a single
                 # dose, then DoseInt is NA.
                 DoseNum = ifelse(is.na(DoseInt),
-                                 ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum), 
-                Dose_sub = MyDose["substrate"],
-                Dose_inhib = MyDose["inhibitor 1"], 
-                Dose_inhib2 = MyDose["inhibitor 2"])
+                                 ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum))
       
       # Checking for any custom dosing
       if("list" %in% class(existing_exp_details) &&
