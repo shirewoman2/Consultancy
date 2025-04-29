@@ -295,10 +295,14 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    #    map(.f = bind_rows) %>% 
    #    map(.f = remove_rownames)
    
-   sapply(Out[[1]], class)
-   Out[[4]]$UserAUCIntervals <- tibble()
+   TEMP <- list()
+   for(ii in ExpDetailListItems){
+      for(ff in names(Out)){
+         TEMP[[ii]] <- bind_rows(map(Out, ii))
+      }
+   }
    
-   TEMP <- Out %>% list_transpose()
+   Out <- TEMP
    
    if(length(Out) == 0 | nrow(Out$MainDetails) == 0){
       stop("It was not possible to extract any simulation experimental details.")

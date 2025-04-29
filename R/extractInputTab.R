@@ -304,6 +304,9 @@ extractInputTab <- function(deets = "all",
             rm(StartRow, EndRow, Release_temp)
             
          } else if(
+            paste0("CR_MR_Input", 
+                   AllCompounds$Suffix[AllCompounds$CompoundID == i]) %in% 
+            names(Out) == TRUE &&
             complete.cases(Out[[paste0("CR_MR_Input", 
                                        AllCompounds$Suffix[AllCompounds$CompoundID == i])]]) &&
             Out[[paste0("CR_MR_Input", 
