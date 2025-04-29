@@ -568,7 +568,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          }
          
          if(length(UserIntervals[[i]][[j]]) == 0){
-            UserIntervals[[i]][[j]] <- list()
+            UserIntervals[[i]][[j]] <- data.frame()
             next
          }
          
