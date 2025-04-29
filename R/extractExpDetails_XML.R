@@ -160,7 +160,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       filter(DataSource == "workspace or database" & Level1 == "Compounds" & 
                 !Detail %in% c("Substrate", "Inhibitor1", "Inhibitor2", 
                                "PrimaryMetabolite1", "PrimaryMetabolite2", 
-                               "SecondaryMetabolite", "Inhibitor1Metabolite")) %>% 
+                               "SecondaryMetabolite", "Inhibitor1Metabolite", 
+                               "Endogenous")) %>% 
       pull(Detail)
    
    PopulationDetails <- XMLDeets %>% 
@@ -230,7 +231,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                "secondary metabolite" = 7,
                                "inhibitor 1" = 2,
                                "inhibitor 2" = 3, 
-                               "inhibitor 1 metabolite" = 6)
+                               "inhibitor 1 metabolite" = 6, 
+                               "endogenous" = 9)
          
          Suffix <- AllRegCompounds %>% filter(CompoundID == j) %>% 
             pull(Suffix)
@@ -240,7 +242,17 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          # Check whether that compound was activated and skip if not. Also
          # remove any info related to that compound from exp_details or we
          # can wind up with, e.g., "StartDayTimeH_inhib2" when there is no
-         # inhitibor 2.
+         # inhibitor 2.
+         
+         # NB: PreV24, there was no tag for checking whether endogenous
+         # compounds were activated b/c no endogenous compounds were included in
+         # Simulator.
+         if(j == "endogenous" &
+            "idInhEnabled9" %in% names(RootNode[["SimulationData"]]) == FALSE){
+            exp_details_i <- exp_details_i[!str_detect(exp_details_i, Suffix)]
+            next
+         }
+         
          if(as.logical(XML::xmlValue(RootNode[["SimulationData"]][[
             paste0("idInhEnabled", CompoundNum)]])) == FALSE){
             exp_details_i <- exp_details_i[!str_detect(exp_details_i, Suffix)]
@@ -481,10 +493,11 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
             }
          }
          
-         # Adding start time if it's a dosed compound (substrate, inhibitor 1,
-         # inhibitor 2). Start time needs to be calculated.
+         # Adding start time and prandial state if it's a dosed compound
+         # (substrate, inhibitor 1, inhibitor 2, endogenous). Start time needs
+         # to be calculated.
          
-         if(j %in% AllRegCompounds$DosedCompoundID){
+         if(j %in% unique(AllRegCompounds$DosedCompoundID)){
             
             StartTimes <- 
                tibble(StartDay = 
@@ -516,7 +529,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          
          # Removing things that do not apply, e.g., ADAM-model parameters
          # when it was a 1st-order absorption model
-         if(complete.cases(Deets[[i]][[paste0("Abs_model", Suffix)]]) && 
+         if(paste0("Abs_model", Suffix) %in% names(Deets[[i]]) &&
+            complete.cases(Deets[[i]][[paste0("Abs_model", Suffix)]]) && 
             Deets[[i]][[paste0("Abs_model", Suffix)]] == "1st order"){
             Keep <- setdiff(names(Deets[[i]]), 
                             
@@ -565,7 +579,7 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          }
          
          if(length(UserIntervals[[i]][[j]]) == 0){
-            UserIntervals[[i]][[j]] <- list()
+            UserIntervals[[i]][[j]] <- data.frame()
             next
          }
          

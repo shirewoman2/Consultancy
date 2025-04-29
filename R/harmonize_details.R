@@ -89,26 +89,26 @@ harmonize_details <- function(existing_exp_details){
          names(append_items) <- itemstoadd
          existing_exp_details <- c(existing_exp_details, append_items)
          
-         # Check whether MainDetails includes SheetNames b/c need it for other
-         # functions now.
-         if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-             any(is.na(existing_exp_details$MainDetails$SheetNames)) |
-             any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
-            "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
-            
-            for(i in existing_exp_details$MainDetails$File){
-               if(file.exists(i) & 
-                  !str_detect(i, "\\.db$|\\.wksz")){
-                  SheetNames <- tryCatch(readxl::excel_sheets(i),
-                                         error = openxlsx::getSheetNames(i))
-               } else { SheetNames <- NA}
-               
-               existing_exp_details$MainDetails$SheetNames[
-                  existing_exp_details$MainDetails$File == i] <- 
-                  str_c(paste0("`", SheetNames, "`"), collapse = " ")
-               rm(SheetNames)
-            }
-         }
+         # # Check whether MainDetails includes SheetNames b/c need it for other
+         # # functions now.
+         # if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
+         #     any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+         #     any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
+         #    "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+         #    
+         #    for(i in existing_exp_details$MainDetails$File){
+         #       if(file.exists(i) & 
+         #          !str_detect(i, "\\.db$|\\.wksz")){
+         #          SheetNames <- tryCatch(readxl::excel_sheets(i),
+         #                                 error = openxlsx::getSheetNames(i))
+         #       } else { SheetNames <- NA}
+         #       
+         #       existing_exp_details$MainDetails$SheetNames[
+         #          existing_exp_details$MainDetails$File == i] <- 
+         #          str_c(paste0("`", SheetNames, "`"), collapse = " ")
+         #       rm(SheetNames)
+         #    }
+         # }
          
          # Adding missing, necessary list items
          Missing1 <- setdiff(
@@ -185,25 +185,25 @@ harmonize_details <- function(existing_exp_details){
             Out[[i]] <- data.frame()
          }
          
-         # Check whether MainDetails includes SheetNames b/c need it for other
-         # functions now.
-         if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-             any(is.na(existing_exp_details$MainDetails$SheetNames)) |
-             any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
-            "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
-            
-            SheetNames <- as.character(c())
-            for(i in existing_exp_details$MainDetails$File){
-               if(file.exists(i)){
-                  SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
-                                            error = openxlsx::getSheetNames(i))
-               } else { SheetNames[i] <- NA}
-               
-               existing_exp_details$MainDetails$SheetNames[
-                  existing_exp_details$MainDetails$File == i] <- 
-                  str_c(paste0("`", SheetNames, "`"), collapse = " ")
-            }
-         }
+         # # Check whether MainDetails includes SheetNames b/c need it for other
+         # # functions now.
+         # if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
+         #     any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+         #     any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
+         #    "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+         #    
+         #    SheetNames <- as.character(c())
+         #    for(i in existing_exp_details$MainDetails$File){
+         #       if(file.exists(i)){
+         #          SheetNames[i] <- tryCatch(readxl::excel_sheets(i),
+         #                                    error = openxlsx::getSheetNames(i))
+         #       } else { SheetNames[i] <- NA}
+         #       
+         #       existing_exp_details$MainDetails$SheetNames[
+         #          existing_exp_details$MainDetails$File == i] <- 
+         #          str_c(paste0("`", SheetNames, "`"), collapse = " ")
+         #    }
+         # }
          
          # Adding missing, necessary list items
          Missing1 <- setdiff(
@@ -290,29 +290,29 @@ harmonize_details <- function(existing_exp_details){
          
       }
       
-      # Check whether MainDetails includes SheetNames b/c need it for other
-      # functions now.
-      if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-          any(is.na(existing_exp_details$MainDetails$SheetNames)) |
-          any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
-         "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
-         
-         SheetNames <- as.character(c())
-         for(i in existing_exp_details$MainDetails$File[
-            str_detect(existing_exp_details$MainDetails$File, "xlsx$")]){
-            if(file.exists(i)){
-               SheetNames[i] <- 
-                  str_c(paste0("'", 
-                               tryCatch(readxl::excel_sheets(i),
-                                        error = openxlsx::getSheetNames(i)), 
-                               "'"), collapse = " ")
-            } else { SheetNames[i] <- NA}
-            
-            existing_exp_details$MainDetails$SheetNames[
-               existing_exp_details$MainDetails$File == i] <- SheetNames[i]
-            
-         }
-      }
+      # # Check whether MainDetails includes SheetNames b/c need it for other
+      # # functions now.
+      # if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
+      #     any(is.na(existing_exp_details$MainDetails$SheetNames)) |
+      #     any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
+      #    "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
+      #    
+      #    SheetNames <- as.character(c())
+      #    for(i in existing_exp_details$MainDetails$File[
+      #       str_detect(existing_exp_details$MainDetails$File, "xlsx$")]){
+      #       if(file.exists(i)){
+      #          SheetNames[i] <- 
+      #             str_c(paste0("'", 
+      #                          tryCatch(readxl::excel_sheets(i),
+      #                                   error = openxlsx::getSheetNames(i)), 
+      #                          "'"), collapse = " ")
+      #       } else { SheetNames[i] <- NA}
+      #       
+      #       existing_exp_details$MainDetails$SheetNames[
+      #          existing_exp_details$MainDetails$File == i] <- SheetNames[i]
+      #       
+      #    }
+      # }
       
       # Adding missing, necessary list items
       Missing1 <- setdiff(

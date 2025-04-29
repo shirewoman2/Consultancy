@@ -677,6 +677,8 @@ recalc_PK <- function(ct_dataframe,
          
          for(j in names(CTsubset[["1"]])){
             
+            if(nrow(CTsubset[["1"]][[j]]) == 0){next}
+            
             if(report_progress == "yes"){message(paste0("   Calculating PK for dataset ", j))}
             
             MyDose <- switch(unique(CTsubset[["1"]][[j]]$CompoundID), 
@@ -1043,6 +1045,8 @@ recalc_PK <- function(ct_dataframe,
             
             for(j in names(CTsubset[[i]])){
                
+               if(nrow(CTsubset[[i]][[j]]) == 0){next}
+               
                if(report_progress == "yes"){message(paste0("   Calculating PK for dataset ", j))}
                
                MyDose <- switch(unique(CTsubset[[i]][[j]]$CompoundID), 
@@ -1218,6 +1222,8 @@ recalc_PK <- function(ct_dataframe,
          CTtemp <- split(CTtemp, CTtemp$ID)
          
          for(j in names(CTtemp)){
+            
+            if(nrow(CTtemp[[j]]) == 0){next}
             
             if(report_progress == "yes"){message(paste0("   Calculating PK for dataset ", j))}
             

@@ -299,6 +299,9 @@ extractExpDetails <- function(sim_data_file,
             filter(Deet == deet) %>% pull(Regex_row)
          NameCol <- SumDeets$NameCol[which(SumDeets$Deet == deet)]
          Row <- which(str_detect(SummaryTab[, NameCol] %>% pull(), ToDetect))
+         if(length(Row) == 0 || is.null(Row) || is.na(Row)){
+            return(NA)
+         }
          Val <- SummaryTab[Row, SumDeets$ValueCol[SumDeets$Deet == deet]] %>%
             pull()
          
@@ -792,6 +795,9 @@ extractExpDetails <- function(sim_data_file,
    # least 1 row, but we need it in Main to do that.
    Main$File <- sim_data_file 
    
+   # Adding package version and R version
+   Main$SimcypConsultancyVersion <- packageVersion("SimcypConsultancy")
+   # Main$RVersion <- sessionInfo()[[1]]$version.string
    
    ## Dosing -----------------------------------------------------------------
    # Setting up Dosing data.frame to include ALL dosing info, so custom dosing

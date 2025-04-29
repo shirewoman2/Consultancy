@@ -288,9 +288,21 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       }
    }
    
-   Out <- Out %>% list_transpose() %>% 
-      map(.f = bind_rows) %>% 
-      map(.f = remove_rownames)
+   # Having a TON of trouble with list_transpose for reasons I cannot fathom,
+   # but it's making RStudio crash. Trying a different approach. 
+   
+   # Out <- Out %>% list_transpose() %>% 
+   #    map(.f = bind_rows) %>% 
+   #    map(.f = remove_rownames)
+   
+   TEMP <- list()
+   for(ii in ExpDetailListItems){
+      for(ff in names(Out)){
+         TEMP[[ii]] <- bind_rows(map(Out, ii))
+      }
+   }
+   
+   Out <- TEMP
    
    if(length(Out) == 0 | nrow(Out$MainDetails) == 0){
       stop("It was not possible to extract any simulation experimental details.")
