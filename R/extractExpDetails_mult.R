@@ -243,6 +243,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    
    if(length(MyDeets) > 0){
       MyDeets <- MyDeets[which(sapply(MyDeets, \(x) length(x) > 0))]
+   } else if(length(existing_exp_details) > 0){
+      return(existing_exp_details)
    }
    
    Out <- c(list(existing_exp_details), MyDeets)
