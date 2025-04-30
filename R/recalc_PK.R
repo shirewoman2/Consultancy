@@ -360,7 +360,8 @@ recalc_PK <- function(ct_dataframe,
    
    ColsNeeded <- c("CompoundID", "Inhibitor", "Tissue", "Individual", "Trial", 
                    "Simulated", "DoseNum", 
-                   PossDoseCols[unique(ct_dataframe$CompoundID)])
+                   PossDoseCols[intersect(unique(ct_dataframe$CompoundID), 
+                                          AllCompounds$DosedCompoundID)])
    
    if(all(ColsNeeded %in% names(ct_dataframe)) == FALSE){
       

@@ -428,8 +428,8 @@ extractExpDetails <- function(sim_data_file,
    }
    
    # Dealing with custom dosing schedules ---------------------------------
-   if(any(str_detect(exp_details, "StartDayTime")) & 
-      any(str_detect(names(Out), "StartDayTime")) == FALSE |
+   if(any(str_detect(exp_details, "^StartDayTime")) & 
+      any(str_detect(names(Out), "^StartDayTime")) == FALSE |
       any(CustomDosing, na.rm = TRUE)){
       
       # When there's custom dosing for any of the substrate or inhibitors,
