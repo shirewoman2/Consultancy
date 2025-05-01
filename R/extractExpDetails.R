@@ -526,81 +526,86 @@ extractExpDetails <- function(sim_data_file,
          
       }
       
-      # If user has requested that the population tab be annotated, which is an
-      # option!, then there will be 2 matches to the population sheet name. We
-      # want the 1st one.
-      PopSheet <- SheetNames[str_detect(tolower(SheetNames),
-                                        str_sub(tolower(Out$Population), 1, 20))][1]
-      
-      PopTab <- suppressMessages(tryCatch(
-         readxl::read_excel(path = sim_data_file, sheet = PopSheet,
-                            col_names = FALSE),
-         error = openxlsx::read.xlsx(sim_data_file, sheet = PopSheet,
-                                     colNames = FALSE)))
-      # If openxlsx read the file, the names are different. Fixing.
-      if(names(PopTab)[1] == "X1"){
-         names(PopTab) <- paste0("...", 1:ncol(PopTab))
-      }
-      
-      MyPopDeets <- intersect(exp_details, PopDeets$Deet)
-      
-      # User can change the name of user-defined cytosolic phenotypes for GI
-      # tract, kidney, and liver. Changing this back to "Cyt1" to work for
-      # regex, though. For now, only extracting data for Cyt1 and not any more
-      # user-defined cytosolic phenotype parameters, so ignoring the others.
-      # If name is changed in one, it's changed in all. Columns are 3, 5, and
-      # 9.
-      if(any(str_detect(PopTab$...3, "Cyt1"), na.rm = T) == FALSE){
-         StartCytRow <- which(str_detect(PopTab$...3, "^User Cyt$"))[1]
+      # Skipping this for now if it's multiple populations. 
+      # FIXME: Set up something for dealing with multiple populations. 
+      if(Out$Population != "Multiple populations"){
          
-         NewName <- gsub("Abundance : | Population Scalar", "", PopTab[StartCytRow + 1, 3])
+         # If user has requested that the population tab be annotated, which is an
+         # option!, then there will be 2 matches to the population sheet name. We
+         # want the 1st one.
+         PopSheet <- SheetNames[str_detect(tolower(SheetNames),
+                                           str_sub(tolower(Out$Population), 1, 20))][1]
          
-         PopTab$...3 <- sub(NewName, "User Cyt1", PopTab$...3)
-         PopTab$...5 <- sub(NewName, "User Cyt1", PopTab$...5)
-         PopTab$...9 <- sub(NewName, "User Cyt1", PopTab$...9)
-         
-      }
-      
-      # sub function for finding correct cell
-      pullValue <- function(deet){
-         
-         # Setting up regex to search
-         ToDetect <- AllExpDetails %>% 
-            filter(Detail == deet & DataSource == "population") %>% pull(Regex_row)
-         NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
-         
-         if(ncol(PopTab) < NameCol){
-            # This happens when it's an animal simulation.
-            return(NA)
-         }
-         Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
-         if(length(Row) == 0){
-            Val <- NA
-         } else {
-            Val <- PopTab[Row, PopDeets$ValueCol[PopDeets$Deet == deet]] %>%
-               pull()
-            Val <- sort(unique(Val))
+         PopTab <- suppressMessages(tryCatch(
+            readxl::read_excel(path = sim_data_file, sheet = PopSheet,
+                               col_names = FALSE),
+            error = openxlsx::read.xlsx(sim_data_file, sheet = PopSheet,
+                                        colNames = FALSE)))
+         # If openxlsx read the file, the names are different. Fixing.
+         if(names(PopTab)[1] == "X1"){
+            names(PopTab) <- paste0("...", 1:ncol(PopTab))
          }
          
-         suppressWarnings(
-            Val <- switch(PopDeets$Class[PopDeets$Deet == deet], 
-                          "character" = as.character(Val),
-                          "numeric" = as.numeric(Val))
-         )
+         MyPopDeets <- intersect(exp_details, PopDeets$Deet)
          
-         # Tidying up some specific idiosyncracies of simulator output
-         Val <- ifelse(complete.cases(Val) & Val == "n/a",
-                       NA, Val)
+         # User can change the name of user-defined cytosolic phenotypes for GI
+         # tract, kidney, and liver. Changing this back to "Cyt1" to work for
+         # regex, though. For now, only extracting data for Cyt1 and not any more
+         # user-defined cytosolic phenotype parameters, so ignoring the others.
+         # If name is changed in one, it's changed in all. Columns are 3, 5, and
+         # 9.
+         if(any(str_detect(PopTab$...3, "Cyt1"), na.rm = T) == FALSE){
+            StartCytRow <- which(str_detect(PopTab$...3, "^User Cyt$"))[1]
+            
+            NewName <- gsub("Abundance : | Population Scalar", "", PopTab[StartCytRow + 1, 3])
+            
+            PopTab$...3 <- sub(NewName, "User Cyt1", PopTab$...3)
+            PopTab$...5 <- sub(NewName, "User Cyt1", PopTab$...5)
+            PopTab$...9 <- sub(NewName, "User Cyt1", PopTab$...9)
+            
+         }
          
-         Val <- case_when(deet == "GFR_pred_method" & Val == "Scripted" ~
-                             "user defined", 
-                          .default = as.character(Val))
+         # sub function for finding correct cell
+         pullValue <- function(deet){
+            
+            # Setting up regex to search
+            ToDetect <- AllExpDetails %>% 
+               filter(Detail == deet & DataSource == "population") %>% pull(Regex_row)
+            NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
+            
+            if(ncol(PopTab) < NameCol){
+               # This happens when it's an animal simulation.
+               return(NA)
+            }
+            Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
+            if(length(Row) == 0){
+               Val <- NA
+            } else {
+               Val <- PopTab[Row, PopDeets$ValueCol[PopDeets$Deet == deet]] %>%
+                  pull()
+               Val <- sort(unique(Val))
+            }
+            
+            suppressWarnings(
+               Val <- switch(PopDeets$Class[PopDeets$Deet == deet], 
+                             "character" = as.character(Val),
+                             "numeric" = as.numeric(Val))
+            )
+            
+            # Tidying up some specific idiosyncracies of simulator output
+            Val <- ifelse(complete.cases(Val) & Val == "n/a",
+                          NA, Val)
+            
+            Val <- case_when(deet == "GFR_pred_method" & Val == "Scripted" ~
+                                "user defined", 
+                             .default = as.character(Val))
+            
+            return(Val)
+         }
          
-         return(Val)
-      }
-      
-      for(i in MyPopDeets){
-         Out[[i]] <- pullValue(i)
+         for(i in MyPopDeets){
+            Out[[i]] <- pullValue(i)
+         }
       }
    }
    

@@ -99,11 +99,7 @@
 #' @param compoundToExtract For which compound do you want to extract
 #'   PK data? Options are: \itemize{\item{"substrate"
 #'   (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
-#'   \item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
-#'   inducer, inhibitor, activator, or suppresesor, but it's labeled as
-#'   "Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
-#'   listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
-#'   metabolite of inhibitor 1}} \strong{If you want more than one,
+#'   \item{"secondary metabolite",}} \strong{If you want more than one,
 #'   please supply a data.frame or .csv file to the argument \code{PKparameters}.}
 #' @param tissue For which tissue would you like the PK parameters to be pulled?
 #'   Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
@@ -119,6 +115,19 @@
 #'   \code{\link{make_example_PK_input}} to see examples for how to do this.
 #'   \strong{If you want more than one,
 #'   please supply a data.frame or .csv file to the argument \code{PKparameters}.}
+#' @param round_up_N TRUE (default) or FALSE for whether to round up to the
+#'   nearest whole human
+#' @param interaction_type What type of interaction was it? Default is
+#'   "inhibition", and acceptable values are also "induction", "unknown" (e.g.,
+#'   you've got multiple interactions at play and you're not sure which effect
+#'   will dominate), or "two sided". This will determine which direction we're
+#'   expecting PK values to go. Under the hood, this evaluates things similar to
+#'   a one-sided t test, and the DDI value should be higher for AUC and Cmax if
+#'   it's inhibition and lower if it's induction. Conversely, CL values should
+#'   be lower for inhibition and higher for induction. If you set the
+#'   interaction type to "unknown" or "two sided", this will assume that the
+#'   direction expected is unknown and will evaluate things like a two-sided t
+#'   test instead of a one-sided one.
 #'
 #' @returns a data.frame of the sample sizes needed for each combination of
 #'   simulation file, tissue, compound ID, and PK parameter.
@@ -126,21 +135,31 @@
 #' 
 
 estimate_sample_size_DDI <- function(alpha = 0.05, 
-                           power = 0.8, 
-                           sim_data_file = NA, 
-                           existing_exp_details = NA, 
-                           PKparameters = c("AUCinf_dose1", 
-                                            "AUCt_dose1", 
-                                            "Cmax_dose1"), 
-                           compoundToExtract = "substrate", 
-                           tissue = "plasma", 
-                           sheet_PKparameters = NA){
+                                     power = 0.8, 
+                                     interaction_type = "inhibition", 
+                                     sim_data_file = NA, 
+                                     existing_exp_details = NA, 
+                                     PKparameters = c("AUCinf_dose1", 
+                                                      "AUCt_dose1", 
+                                                      "Cmax_dose1"), 
+                                     compoundToExtract = "substrate", 
+                                     tissue = "plasma", 
+                                     sheet_PKparameters = NA, 
+                                     round_up_N = TRUE){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
+   
+   interaction_type <- tolower(interaction_type)[1]
+   interaction_type <- ifelse(is.na(interaction_type), "two.sided", interaction_type)
+   interaction_type <- case_when(str_detect(interaction_type, "two|2") ~ "two.sided", 
+                                 interaction_type == "unknown" ~ "two.sided", 
+                                 interaction_type == "inhibitor" ~ "inhibition", 
+                                 interaction_type == "inducer" ~ "induction", 
+                                 .default = interaction_type)
    
    TidyPK <- tidy_input_PK(PKparameters = PKparameters, 
                            sim_data_files = sim_data_file, 
@@ -153,6 +172,21 @@ estimate_sample_size_DDI <- function(alpha = 0.05,
    
    TidyPK <- TidyPK$PKparameters %>% 
       mutate(Sheet = case_when(is.na(Sheet) ~ "default"))
+   
+   GoodCompounds <- AllCompounds$CompoundID[AllCompounds$DDIrole == "victim"]
+   
+   if(any(TidyPK$CompoundID %in% GoodCompounds == FALSE)){
+      
+      BadCompounds <- setdiff(TidyPK$CompoundID, 
+                              GoodCompounds)
+      
+      TidyPK <- TidyPK %>% filter(CompoundID %in% GoodCompounds)
+      
+      warning(wrapn(paste0("We can only get sample size estimates for the victim drug, so the following compounds will be ignored: ", 
+                           str_comma(BadCompounds))), 
+              call. = FALSE)
+      
+   }
    
    # Check whether pwr and effsize installed and install if not.
    if(length(find.package("pwr", quiet = TRUE)) == 0){
@@ -232,11 +266,23 @@ estimate_sample_size_DDI <- function(alpha = 0.05,
             next
          }
          
-         EffectSize <- effsize::cohen.d(TestData[[param]]$BL, 
-                                        TestData[[param]]$DDI)$estimate
+         EffectSize <- effsize::cohen.d(TestData[[param]]$DDI,
+                                        TestData[[param]]$BL)$estimate
          
-         N <- pwr::pwr.t.test(n = NULL, d = EffectSize, 
-                              sig.level = alpha, power = power)$n
+         AltHyp <- case_when(
+            interaction_type == "induction" & str_detect(param, "CL") ~ "less", 
+            interaction_type == "induction" & !str_detect(param, "CL") ~ "greater", 
+            interaction_type == "inhibition" & str_detect(param, "CL") ~ "greater",
+            interaction_type == "inhibition" & !str_detect(param, "CL") ~ "less", 
+            interaction_type == "two.sided" ~ interaction_type)
+         
+         N <- pwr::pwr.t.test(
+            n = NULL, 
+            d = EffectSize, 
+            type = "paired", 
+            alternative = AltHyp, 
+            sig.level = alpha, 
+            power = power)$n
          
          Out[[i]][[param]] <- tibble(
             File = unique(TidyPK[[i]]$File), 
@@ -249,9 +295,10 @@ estimate_sample_size_DDI <- function(alpha = 0.05,
             Mean_difference = mean(TestData[[param]]$Difference), 
             alpha = alpha, 
             power = power, 
+            alternative_hypothesis = AltHyp, 
             N_required = N)
          
-         rm(EffectSize, N)
+         rm(EffectSize, N, AltHyp)
       }
       
       rm(TestData, MyPK, Params)
@@ -261,6 +308,11 @@ estimate_sample_size_DDI <- function(alpha = 0.05,
    }
    
    Out <- bind_rows(Out)
+   
+   if(round_up_N){
+      Out <- Out %>% 
+         mutate(N_required = round_up_unit(N_required, 1))
+   }
    
    return(Out)
    

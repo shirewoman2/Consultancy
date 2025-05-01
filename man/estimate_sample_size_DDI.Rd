@@ -8,18 +8,32 @@ significant DDI - UNDER CONSTRUCTION}
 estimate_sample_size_DDI(
   alpha = 0.05,
   power = 0.8,
+  interaction_type = "inhibition",
   sim_data_file = NA,
   existing_exp_details = NA,
   PKparameters = c("AUCinf_dose1", "AUCt_dose1", "Cmax_dose1"),
   compoundToExtract = "substrate",
   tissue = "plasma",
-  sheet_PKparameters = NA
+  sheet_PKparameters = NA,
+  round_up_N = TRUE
 )
 }
 \arguments{
 \item{alpha}{alpha required, default is 0.05 for the 95\% confidence level}
 
 \item{power}{power (1-beta) required, default is 0.8.}
+
+\item{interaction_type}{What type of interaction was it? Default is
+"inhibition", and acceptable values are also "induction", "unknown" (e.g.,
+you've got multiple interactions at play and you're not sure which effect
+will dominate), or "two sided". This will determine which direction we're
+expecting PK values to go. Under the hood, this evaluates things similar to
+a one-sided t test, and the DDI value should be higher for AUC and Cmax if
+it's inhibition and lower if it's induction. Conversely, CL values should
+be lower for inhibition and higher for induction. If you set the
+interaction type to "unknown" or "two sided", this will assume that the
+direction expected is unknown and will evaluate things like a two-sided t
+test instead of a one-sided one.}
 
 \item{sim_data_file}{name of the Excel file containing the simulator output,
 in quotes. \strong{If you want more than one,
@@ -112,11 +126,7 @@ about your experimental set up.}
 \item{compoundToExtract}{For which compound do you want to extract
 PK data? Options are: \itemize{\item{"substrate"
 (default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
-\item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
-inducer, inhibitor, activator, or suppresesor, but it's labeled as
-"Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
-listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
-metabolite of inhibitor 1}} \strong{If you want more than one,
+\item{"secondary metabolite",}} \strong{If you want more than one,
 please supply a data.frame or .csv file to the argument \code{PKparameters}.}}
 
 \item{tissue}{For which tissue would you like the PK parameters to be pulled?
@@ -134,6 +144,9 @@ the argument \code{PKparameters}. Please try running
 \code{\link{make_example_PK_input}} to see examples for how to do this.
 \strong{If you want more than one,
 please supply a data.frame or .csv file to the argument \code{PKparameters}.}}
+
+\item{round_up_N}{TRUE (default) or FALSE for whether to round up to the
+nearest whole human}
 }
 \value{
 a data.frame of the sample sizes needed for each combination of
