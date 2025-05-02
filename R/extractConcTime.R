@@ -928,19 +928,24 @@ extractConcTime <- function(sim_data_file,
             
             # As necessary, convert simulated data units to match the
             # observed data
+            
+            # Only including MWs for compounds that are relevant; otherwise, we
+            # get useless and confusing warnings.
+            GoodMW <-
+               Deets %>% select(matches("^MW_")) %>% 
+               pivot_longer(cols = everything(), 
+                            names_to = "Suffix", 
+                            values_to = "MW") %>% 
+               mutate(Suffix = sub("MW", "", Suffix)) %>% 
+                  left_join(AllCompounds %>% select(CompoundID, Suffix), 
+                            by = "Suffix")
+            
+            MW <- GoodMW$MW
+            names(MW) <- GoodMW$CompoundID
+            
             sim_data <- convert_units(DF_to_convert = sim_data,
                                       DF_with_good_units = obs_data, 
-                                      MW = c("substrate" = Deets$MW_sub, 
-                                             "inhibitor 1" = Deets$MW_inhib,
-                                             "primary metabolite 1" = Deets$MW_met1, 
-                                             "primary metabolite 2" = Deets$MW_met2, 
-                                             "inhibitor 2" = Deets$MW_inhib2, 
-                                             "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
-                                             "secondary metabolite" = Deets$MW_secmet, 
-                                             "conjugated payload" = as.numeric(Deets$MW_sub) + 
-                                                as.numeric(Deets$MW_met1), 
-                                             "total antibody" = Deets$MW_sub, 
-                                             "released payload" = Deets$MW_met1))
+                                      MW = MW)
          }
       }
    }
