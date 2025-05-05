@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE,
 ```
 
 
-# Induction models available -- CHANGE THE TEXT BELOW AS NEEDED
+# Induction models available -- CHANGE THE TEXT BELOW AS NEEDED FOR YOUR REPORT
 
 ***Note:*** *Some of these models will give you Ind~max~ and some will give you E~max~, so pay careful attention to which parameter each model fits. The Simcyp Simulator uses Ind~max~ as input. For converting between the two: $Ind_{max} = E_{max} + 1$ and IndC~50~ is the same thing as EC~50~.*
 

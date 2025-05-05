@@ -1,0 +1,56 @@
+---
+title: "Power calculations for estimating sample size for a paired study design"
+author: SimcypConsultancy package version `r packageVersion("SimcypConsultancy")`; `r sessionInfo()[[1]]$version.string`
+date: "Compiled on `r format(Sys.time(), '%B %d, %Y')`"
+output: word_document
+---
+```{r setupindfit, echo=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, 
+                      dpi = 600)
+
+```
+
+
+# Background
+
+For estimating the sample size required, the mean of the difference of the value under the control condition and the value under the test condition for all simulated subjects and the standard deviation of each group were calculated and used to estimate the the Cohen's d average effect size for paired samples (Equation 1, Cohen 1988 and Lakens 2013). 
+
+*Equation 1.* 
+
+ $$ d_{ave} = \frac{\mu_\text{difference}}{(\sigma_1 + \sigma_2)/2} $$
+
+where &mu; and &sigma; are the mean and standard deviation, respectively. 
+
+Hedge's correction g, which results in a less biased estimate for small sample sizes (n < 20) and makes no appreciable difference for large sample sizes (Lakens 2013), was subsequently applied as a factor to estimate the corrected Cohen's d average effect size (Equation 2). 
+
+*Equation 2.* 
+
+$$ g_{ave} = d_{ave} \times \left(1 - \frac{3}{4(n\times2)-9}\right) $$
+
+where n is the number of pairs of observations. 
+
+The pwr.t.test function from the pwr package in R (Cohen 1988), which estimates study power using a t distribution, was used to determine the number of samples required for &alpha; = `r alpha` (Type I error of `r alpha*100`\%) and power (1- &beta;) = `r power` (sensitivity of `r power*100`\%) for the corrected Cohen's d average effect size. 
+
+
+# Results
+
+```{r}
+
+Out %>% 
+   formatTable_Simcyp(shading_column = File, 
+                      bold_cells = list(c(0, NA)), 
+                      center_1st_column = T, 
+                      fontsize = 8)
+
+
+```
+
+
+
+# References 
+
+Cohen, J. (1988). Statistical power analysis for the behavioral sciences (2nd ed.). Hillsdale,NJ: Lawrence Erlbaum.
+
+Lakens, D. (2013). "Calculating and reporting effect sizes to facilitate cumulative science: a practical primer for t-tests and ANOVAs." *Frontiers in Psychology*, 4:863. doi: 10.3389/fpsyg.2013.00863 
+

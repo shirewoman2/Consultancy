@@ -1,0 +1,4 @@
+name: Power calculations for estimating sample size for an unpaired study design
+description: >
+   Power calculations for estimating N for unpaired studies
+create_dir: FALSE
