@@ -1,28 +1,36 @@
 #' Estimate the sample size necessary for determining whether there's a
-#' significant difference between the control and test conditions - UNDER
-#' CONSTRUCTION
+#' significant difference between the PK under control and test conditions -
+#' UNDER CONSTRUCTION
 #'
-#' @description \code{estimate_sample_size} uses a DDI simulation (haven't set
-#'   this up w/unpaired study design yet) with paired subjects to determine how
+#' @description \code{estimate_sample_size} compares simulated PK data under a
+#'   control condition with PK data under a test condition to determine how
 #'   large your sample size would need to be to reject the null hypothesis of no
-#'   DDI. If alpha is 0.05, i.e., a 95\% confidence level, and 1 - beta is 0.8,
-#'   i.e., 80\% power, this function answers the question: What is the estimated
-#'   sample size needed such that, at the 95\% confidence level, the null
-#'   hypothesis should be rejected 80\% percent of the time?
+#'   difference between the two. The comparison may be paired -- e.g., comparing
+#'   baseline to DDI -- or unpaired -- e.g., comparing healthy subjects to those
+#'   with hepatic impairment. If alpha is 0.05, i.e., a 95\% confidence level,
+#'   and 1 - beta is 0.8, i.e., 80\% power, this function answers the question:
+#'   What is the estimated sample size needed such that, at the 95\% confidence
+#'   level, the null hypothesis should be rejected 80\% percent of the time?
 #'
-#'   \strong{Notes on the statistics being used:} Under the hood, this is using
-#'   the function pwr.t.test from the pwr package to calculate N. The statistics
-#'   involved require an estimate of the effect size, which depends on the
-#'   sample means and on the standard deviations. If you think the Simulator may
-#'   underestimate the amount of variability present, you might want to see how
-#'   things look if you only use 1 of the simulated trials rather than all of
-#'   them.
+#'   \strong{Notes on the statistics being used:} Under the hood, this function
+#'   will estimate the Cohen's d effect size based on the simulated data,
+#'   correct with the Hedge's correction g, and then use the function pwr.t.test
+#'   from the pwr package to calculate N. For references, please see:
+#'   \itemize{\item{Cohen, J. (1988). Statistical power analysis for the
+#'   behavioral sciences (2nd ed.). Hillsdale,NJ: Lawrence Erlbaum.}
+#'
+#'   \item{Lakens, D. (2013). “Calculating and
+#'   reporting effect sizes to facilitate cumulative science: a practical primer
+#'   for t-tests and ANOVAs.” Frontiers in Psychology, 4:863. doi: 10.3389/fpsyg.2013.00863}}
+#'
+#'   If you save the results from running this as a Word file, that document
+#'   will contain more information on the methods and possible text to include
+#'   in a report.
 #'
 #' @param alpha alpha required, default is 0.05 for the 95\% confidence level
 #' @param power power (1-beta) required, default is 0.8.
-#' @param sim_data_file name of the Excel file containing the simulator output,
-#'   in quotes. \strong{If you want more than one,
-#'   please supply a data.frame or .csv file to the argument \code{PKparameters}.}
+#' @param sim_data_files name of the Excel file(s) containing the simulator
+#'   output, in quotes.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
 #'   get all the details from the "Input Sheet" (e.g., when you ran
@@ -31,25 +39,31 @@
 #'   that object here, unquoted. If left as NA, this function will run
 #'   \code{extractExpDetails} behind the scenes to figure out some information
 #'   about your experimental set up.
-#' @param PKparameters the PK parameters to include. For this, you only need to
-#'   list baseline parameters; we'll find the matching DDI one for each. There
-#'   are two main options for supplying this information: 1) supply a file to
-#'   read or a data.frame (R speak for "a table") that lists which simulation
-#'   files, compounds, tissues, and PK you want or 2) supply a character vector
-#'   of which PK parameters you want and then also specify what you need in
-#'   terms of which tissues, which compounds, which simulation files, and which
-#'   tab to get the data from with the arguments \code{tissues},
-#'   \code{compoundsToExtract}, \code{sim_data_files}, and
-#'   \code{sheet_PKparameters}.
+#' @param PKparameters the PK parameters to include. There are two main options
+#'   for supplying this information: 1) supply a file to read or a data.frame (R
+#'   speak for "a table") that lists which simulation files, compounds, tissues,
+#'   and PK you want or 2) supply a character vector of which PK parameters you
+#'   want and then also specify what you need in terms of which tissues, which
+#'   compounds, which simulation files, and which tab to get the data from with
+#'   the arguments \code{tissues}, \code{compoundsToExtract},
+#'   \code{sim_data_files}, and \code{sheet_PKparameters}.
 #'   \strong{Details on each option:} \describe{
 #'
-#'   \item{\strong{Option 1: }a file to read or a data.frame}{This
+#'   \item{\strong{Option 1:} a file to read or a data.frame}{This
 #'   is the most versatile option and, we think, the clearest in terms of
 #'   getting what you expected. Please try running \code{\link{make_example_PK_input}}
 #'   to see examples for how to set up a csv or Excel file or data.frame to
 #'   specify exactly which simulation file should get which PK parameter from
 #'   which tissue and, when user-specified intervals are involved, from which
-#'   tab in the Excel file those data should be pulled. Whatever you supply, the
+#'   tab in the Excel file those data should be pulled. If you want to make
+#'   comparisons across anything other than a standard DDI simulation, you
+#'   should use this option to specify exactly what should be compared for each
+#'   simulation. You'll need to set this up as if you're comparing ratios of
+#'   PK parameters (answer "2" to the 1st question if you run
+#'   \code{make_example_PK_input}), and you'll set the control scenario to be 
+#'   the denominator and the test scenario to be the numerator. 
+#'   
+#'   Whatever you supply, the
 #'   columns that will be read are: \itemize{\item{"File" (same thing as the argument
 #'   \code{sim_data_files})} \item{"Sheet" (same thing as the argument
 #'   \code{sheet_PKparameters})} \item{"Tissue" (same as the argument \code{tissues})}
@@ -126,17 +140,31 @@
 #'   please supply a data.frame or .csv file to the argument \code{PKparameters}.}
 #' @param round_up_N TRUE (default) or FALSE for whether to round up to the
 #'   nearest whole human
-#' @param interaction_type What type of interaction was it? Default is
-#'   "inhibition", and acceptable values are also "induction", "unknown" (e.g.,
-#'   you've got multiple interactions at play and you're not sure which effect
-#'   will dominate), or "two sided". This will determine which direction we're
-#'   expecting PK values to go. Under the hood, this evaluates things similar to
-#'   a one-sided t test, and the DDI value should be higher for AUC and Cmax if
-#'   it's inhibition and lower if it's induction. Conversely, CL values should
-#'   be lower for inhibition and higher for induction. If you set the
-#'   interaction type to "unknown" or "two sided", this will assume that the
-#'   direction expected is unknown and will evaluate things like a two-sided t
-#'   test instead of a one-sided one.
+#' @param paired TRUE (default) or FALSE for whether the study design was
+#'   paired, as in, the subjects were \emph{identical} between the two
+#'   simulations.
+#'   \strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
+#'   CALCULATIONS ARE PERFORMED!} An example of a paired study would be a DDI
+#'   study where each subject has a measurement without the perpetrator of
+#'   interest and then has a second measurement \emph{with} the perpetrator. The
+#'   comparison is for repeated measurements of the \emph{same subject}. An
+#'   example of an unpaired study design would be comparing healthy subjects to
+#'   subjects with hepatic impairment because those are measurements on
+#'   \emph{different} subjects.
+#' @param alternative_hypothesis Is the test condition expected to be greater
+#'   than or less than the control or is that unknown? Acceptable values:
+#'   \describe{\item{"two sided" (default)}{unknown \emph{a priori} whether the
+#'   test condition will be greater or less than control, i.e., a two-sided
+#'   t test would be used to compare the groups}
+#'
+#'   \item{"less"}{test condition is expected to be less than control and a
+#'   one-sided t test would be used to compare the groups. Example: Comparing
+#'   the AUC in a DDI study with an inducer.}
+#'
+#'   \item{"greater"}{test condition is expected to be greater than control and a
+#'   one-sided t test would be used to compare the groups. Example: Comparing
+#'   the AUC in a DDI study with an inhibitor.}}
+#'
 #' @param sim_trials_to_include Which simulated trials should be included in the
 #'   calculation? Options are all (default) to include all the data or any
 #'   numbers in the trials included in your simulation, e.g., 1 or 5:10.
@@ -146,47 +174,38 @@
 #'   and it MUST have both the baseline and the DDI version of each PK
 #'   parameter, e.g., both AUCinf_dose1 and AUCinf_dose1_withInhib. If you
 #'   supply something here, we'll only pay attention to the arguments
-#'   sim_data_file, existing_exp_details, PKparameters, compoundToExtract,
+#'   sim_data_files, existing_exp_details, PKparameters, compoundToExtract,
 #'   tissue, and sheet_PKparameters if what you supply doesn't have that same
-#'   structure.
-#' @param paired TRUE (default) or FALSE for whether the study design is paired,
-#'   as in, the subjects are \emph{identical} between the two simulations.
-#'   \strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
-#'   CALCULATIONS ARE PERFORMED!} An example of a paired study would be a DDI
-#'   study where each subject has a measurement without the perpetrator of
-#'   interest and then has a second measurement \emph{with} the perpetrator. The
-#'   comparison is for repeated measurements of the \emph{same subject}. An
-#'   example of an unpaired study design would be comparing healthy volunteers
-#'   to subjects with hepatic impairment because those are measurements on
-#'   \emph{different} subjects.
-#' @param save_result file name for optionally saving the result of the
-#'   calculation(s) as either an Excel file (file name must end in .xlsx) or a
-#'   Word document (file name must end in .docx). May not contain special
-#'   characters or symbols. If you save the output as a Word file, it will
-#'   include background information on how the calculations were performed and
-#'   possible wording for including in a report.
+#'   structure. This ONLY works with the simplest of possible comparisons: a
+#'   standard DDI simulation.
+#' @param save_result file name for optionally saving the results as either an
+#'   Excel file (file name must end in .xlsx) or a Word document (file name must
+#'   end in .docx). May not contain special characters or symbols. If you save
+#'   the output as a Word file, it will include background information on how
+#'   the calculations were performed and possible wording for including in a
+#'   report.
 #'
 #' @returns a data.frame of the sample sizes needed for each combination of
 #'   simulation file, tissue, compound ID, and PK parameter.
 #' @export
 #' 
 
-estimate_sample_size <- function(alpha = 0.05, 
-                                 power = 0.8, 
-                                 paired = TRUE, 
-                                 interaction_type = NA, 
-                                 PK_data = NA, 
-                                 sim_data_file = NA, 
-                                 existing_exp_details = NA, 
-                                 PKparameters = c("AUCinf_dose1", 
-                                                  "AUCt_dose1", 
-                                                  "Cmax_dose1"), 
-                                 compoundToExtract = "substrate", 
-                                 tissue = "plasma", 
-                                 sheet_PKparameters = NA, 
-                                 round_up_N = TRUE, 
-                                 sim_trials_to_include = "all", 
-                                 save_result = NA){
+estimate_sample_size <- function(
+      sim_data_files = NA, 
+      PKparameters = c("AUCinf_dose1", 
+                       "AUCt_dose1"), 
+      alpha = 0.05, 
+      power = 0.8, 
+      paired = TRUE, 
+      alternative_hypothesis = "two sided", 
+      existing_exp_details = NA, 
+      compoundToExtract = "substrate", 
+      tissue = "plasma", 
+      sheet_PKparameters = NA, 
+      PK_data = NA, 
+      round_up_N = TRUE, 
+      sim_trials_to_include = "all", 
+      save_result = NA){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -194,21 +213,29 @@ estimate_sample_size <- function(alpha = 0.05,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   interaction_type <- tolower(interaction_type)[1]
-   interaction_type <- ifelse(is.na(interaction_type), "two.sided", interaction_type)
-   interaction_type <- case_when(str_detect(interaction_type, "two|2") ~ "two.sided", 
-                                 interaction_type == "unknown" ~ "two.sided", 
-                                 interaction_type == "inhibitor" ~ "inhibition", 
-                                 interaction_type == "inducer" ~ "induction", 
-                                 .default = interaction_type)
+   alternative_hypothesis <- tolower(alternative_hypothesis)[1]
+   alternative_hypothesis <- ifelse(is.na(alternative_hypothesis), 
+                                    "two.sided", alternative_hypothesis)
+   alternative_hypothesis <- case_when(
+      str_detect(alternative_hypothesis, "two|2") ~ "two.sided", 
+      alternative_hypothesis == "unknown" ~ "two.sided", 
+      str_detect(alternative_hypothesis, "less") ~ "less", 
+      str_detect(alternative_hypothesis, "great") ~ "greater", 
+      .default = alternative_hypothesis)
+   
+   if(alternative_hypothesis %in% c("less", "greater", "two.sided") == FALSE){
+      warning(wrapn("You have supplied a value for the alternative hypothesis other than the acceptable options of 'two sided', 'less', or 'greater', so we will use the default of 'two sided'."), 
+              call. = FALSE)
+      alternative_hypothesis <- "two.sided"
+   }
    
    if("list" %in% class(PK_data) && 
       "individual" %in% names(PK_data)){
       
-      TidyPK <- PK_data$individual
+      InputPK <- PK_data$individual
       
-      if("Sheet" %in% names(TidyPK) == FALSE){
-         TidyPK$Sheet <- "default"
+      if("Sheet" %in% names(InputPK) == FALSE){
+         InputPK$Sheet <- "default"
       }
       
       PKprovided <- TRUE
@@ -217,33 +244,84 @@ estimate_sample_size <- function(alpha = 0.05,
       
       PKprovided <- FALSE 
       
-      TidyPK <- tidy_input_PK(PKparameters = PKparameters, 
-                              sim_data_files = sim_data_file, 
-                              existing_exp_details = existing_exp_details, 
-                              compoundsToExtract = compoundToExtract, 
-                              tissues = tissue, 
-                              sheet_PKparameters = sheet_PKparameters)
+      if("character" %in% class(PKparameters) & 
+         length(PKparameters) == 1 &&
+         str_detect(PKparameters, "csv$")){
+         PKparameters <- read.csv(PKparameters)
+         
+         PKwasDF <- TRUE
+      }
       
-      existing_exp_details <- TidyPK$existing_exp_details
+      if("character" %in% class(PKparameters) & 
+         paired == TRUE){
+         
+         PKparameters <- c(PKparameters, paste0(PKparameters, "_withInhib"))
+         PKparameters <- unique(sub("_withInhib_withInhib", "_withInhib", PKparameters))
+         
+         PKwasDF <- FALSE
+      } else {
+         PKwasDF <- TRUE
+      }
       
-      TidyPK <- TidyPK$PKparameters %>% 
+      InputPK <- tidy_input_PK(PKparameters = PKparameters, 
+                               sim_data_files = sim_data_files, 
+                               existing_exp_details = existing_exp_details, 
+                               compoundsToExtract = compoundToExtract, 
+                               tissues = tissue, 
+                               sheet_PKparameters = sheet_PKparameters)
+      
+      existing_exp_details <- InputPK$existing_exp_details
+      
+      InputPK <- InputPK$PKparameters %>% 
          mutate(Sheet = case_when(is.na(Sheet) ~ "default"))
+      
+      # Adjusting to make this like calc_PK_ratios format
+      if(PKwasDF == FALSE){
+         
+         # Denominator is control. Numerator is test. 
+         InputPK <- InputPK %>% 
+            mutate(PKparameter = sub("_withInhib", "", PKparameter)) %>% 
+            unique() %>% 
+            rename(Denominator_File = File, 
+                   Denominator_Sheet = Sheet, 
+                   Denominator_CompoundID = CompoundID, 
+                   Denominator_PKparameter = PKparameter, 
+                   Denominator_Tissue = Tissue) %>% 
+            mutate(Numerator_File = Denominator_File, 
+                   Numerator_Sheet = Denominator_Sheet, 
+                   Numerator_CompoundID = Denominator_CompoundID, 
+                   Numerator_PKparameter = paste0(Denominator_PKparameter, "_withInhib"), 
+                   Numerator_Tissue = Denominator_Tissue, 
+                   PairID = 1:nrow(.)) %>% 
+            select(PairID, matches("File"), 
+                   matches("Sheet"), matches("PKparameter"), 
+                   matches("Tissue"), matches("CompoundID"))
+         
+      } else {
+         InputPK <- InputPK %>% 
+            select(matches("File"), matches("PKparameter"), 
+                   matches("Tissue"), matches("CompoundID")) %>% 
+            mutate(PairID = 1:nrow(.))
+      }
    }
    
-   GoodCompounds <- AllCompounds$CompoundID[AllCompounds$DDIrole == "victim"]
+   Pairs <- InputPK
    
-   if(any(TidyPK$CompoundID %in% GoodCompounds == FALSE)){
-      
-      BadCompounds <- setdiff(TidyPK$CompoundID, 
-                              GoodCompounds)
-      
-      TidyPK <- TidyPK %>% filter(CompoundID %in% GoodCompounds)
-      
-      warning(wrapn(paste0("We can only get sample size estimates for the victim drug, so the following compounds will be ignored: ", 
-                           str_comma(BadCompounds))), 
-              call. = FALSE)
-      
-   }
+   # Now that everything is tidy and harmonized and we have pair names, need to
+   # pivot longer to get all the possible PK we need.
+   InputPK <- InputPK %>% 
+      pivot_longer(cols = -PairID, 
+                   names_to = "Parameter", 
+                   values_to = "Value") %>% 
+      separate_wider_delim(cols = Parameter, 
+                           delim = "_", 
+                           names = c("Group", "Parameter")) %>% 
+      mutate(Group = case_match(Group, 
+                                "Denominator" ~ "Control", 
+                                "Numerator" ~ "Test")) %>% 
+      pivot_wider(names_from = Parameter, 
+                  values_from = Value)
+   
    
    # Check whether pwr is installed and install if not.
    if(length(find.package("pwr", quiet = TRUE)) == 0){
@@ -261,180 +339,258 @@ estimate_sample_size <- function(alpha = 0.05,
    
    # Main body of function ---------------------------------------------------
    
-   Out <- list()
+   # helper function for formatting output
+   col_cleanup <- function(x){
+      if(length(unique(x)) == 1){
+         unique(x)
+      } else {
+         str_comma(sort(unique(x)), conjunction = "or")
+      }
+   }
    
-   TidyPK <- split(TidyPK, 
-                   f = list(TidyPK$File, 
-                            TidyPK$Sheet, 
-                            TidyPK$CompoundID, 
-                            TidyPK$Tissue))
+   ## Extracting PK --------------------------------------------------------
    
-   for(i in names(TidyPK)){
-      
-      Out[[i]] <- list()
+   TidyPK <- list()
+   
+   InputPK <- split(InputPK, 
+                    f = list(InputPK$File, 
+                             InputPK$Sheet, 
+                             InputPK$CompoundID, 
+                             InputPK$Tissue))
+   
+   for(i in names(InputPK)){
       
       if(PKprovided){
-         MyPK <- list("individual" = TidyPK[[i]])
+         TidyPK[[i]] <- list("individual" = InputPK[[i]])
+         
       } else {
-         
-         Params <- c(TidyPK[[i]]$PKparameter,
-                     paste0(TidyPK[[i]]$PKparameter, "_withInhib"))
-         Params <- unique(sub("_withInhib_withInhib", "_withInhib", Params))
-         
          # Getting PK
-         MyPK <- extractPK(sim_data_file = unique(TidyPK[[i]]$File), 
-                           PKparameters = Params, 
-                           compoundToExtract = unique(TidyPK[[i]]$CompoundID), 
-                           tissue = unique(TidyPK[[i]]$Tissue), 
-                           existing_exp_details = existing_exp_details)
-      }
-      
-      TestData <- 
-         MyPK$individual %>% 
-         select(Individual, Trial, PKparameter, Value) %>% 
-         mutate(Test = case_when(str_detect(PKparameter, "_withInhib") ~ "Test", 
-                                 .default = "Control"), 
-                PKparameter = sub("_withInhib", "", PKparameter))
-      
-      if(all(c("Control", "Test") %in% TestData$Test) == FALSE){
-         stop(wrapn("Something has gone wrong with the PK data provided or extracted from your file because we cannot find both baseline and DDI PK data here. Please check your inputs and try again."), 
-              call. = FALSE)
-      }
-      
-      if(sim_trials_to_include == "all"){
-         MyTrials <- unique(TestData$Trial)
-      } else {
-         MyTrials <- as.numeric(sim_trials_to_include)
-      }
-      
-      if(any(is.na(MyTrials))){
-         warning(wrapn("Something is amiss with what you've provided for which simulated trials to include, so we'll use the default of all the data."), 
-                 call. = FALSE)
-         MyTrials <- unique(TestData$Trial)
-      }
-      
-      TestData <- TestData %>% 
-         filter(Trial %in% MyTrials) %>% 
-         pivot_wider(names_from = Test, 
-                     values_from = Value) %>% 
-         mutate(Difference = Test - Control)
-      
-      # Splitting by PK parameter
-      TestData <- split(TestData, f = TestData$PKparameter)
-      
-      for(param in names(TestData)){
+         TEMP <- extractPK(
+            sim_data_file = unique(InputPK[[i]]$File), 
+            PKparameters = unique(InputPK[[i]]$PKparameter), 
+            compoundToExtract = unique(InputPK[[i]]$CompoundID), 
+            tissue = unique(InputPK[[i]]$Tissue), 
+            existing_exp_details = existing_exp_details)
          
-         if(any(is.na(c(TestData[[param]]$Control, 
-                        TestData[[param]]$Test)))){
+         TidyPK[[i]] <- TEMP$individual %>% 
+            mutate(Sheet = ifelse(str_detect(PKparameter, "_dose1|_last"), 
+                                  "default", unique(TEMP$QC$Tab)))
+         
+         rm(TEMP)
+      }
+   }
+   
+   TidyPK <- bind_rows(TidyPK)
+   
+   
+   ## Making comparisons ----------------------------------------------------
+   
+   Out <- list()
+   
+   for(i in 1:nrow(Pairs)){
+      
+      PK_control <- TidyPK %>%
+         filter(File == Pairs$Denominator_File[i] & 
+                   Sheet == Pairs$Denominator_Sheet[i] & 
+                   Tissue == Pairs$Denominator_Tissue[i] & 
+                   CompoundID == Pairs$Denominator_CompoundID[i] & 
+                   PKparameter == Pairs$Denominator_PKparameter[i]) %>% 
+         select(-Compound, -Dose) %>% 
+         rename(Denominator_File = File, 
+                Denominator_Sheet = Sheet, 
+                Denominator_Tissue = Tissue, 
+                Denominator_CompoundID = CompoundID, 
+                Denominator_PKparameter = PKparameter, 
+                Control = Value)
+      
+      PK_test <- TidyPK %>%
+         filter(File == Pairs$Numerator_File[i] & 
+                   Sheet == Pairs$Numerator_Sheet[i] & 
+                   Tissue == Pairs$Numerator_Tissue[i] & 
+                   CompoundID == Pairs$Numerator_CompoundID[i] & 
+                   PKparameter == Pairs$Numerator_PKparameter[i]) %>% 
+         select(-Compound, -Dose) %>% 
+         rename(Numerator_File = File, 
+                Numerator_Sheet = Sheet, 
+                Numerator_Tissue = Tissue, 
+                Numerator_CompoundID = CompoundID, 
+                Numerator_PKparameter = PKparameter, 
+                Test = Value)
+      
+      if(paired){
+         
+         PK_temp <- 
+            full_join(PK_control, PK_test, 
+                      by = c("Individual", "Trial", "Simulated"))
+         
+         if(all(c("Control", "Test") %in% names(PK_temp)) == FALSE){
+            stop(wrapn("Something has gone wrong with the PK data provided or extracted from your file because we cannot find both control and test PK data here. Please check your inputs and try again."), 
+                 call. = FALSE)
+         }
+         
+         if(sim_trials_to_include == "all"){
+            MyTrials <- unique(PK_temp$Trial)
+         } else {
+            MyTrials <- as.numeric(sim_trials_to_include)
+         }
+         
+         if(any(is.na(MyTrials))){
+            warning(wrapn("Something is amiss with what you've provided for which simulated trials to include, so we'll use the default of all the data."), 
+                    call. = FALSE)
+            MyTrials <- unique(PK_temp$Trial)
+         }
+         
+         PK_temp <- PK_temp %>% 
+            filter(Trial %in% MyTrials) %>% 
+            mutate(Difference = Test - Control)
+         
+         if(any(is.na(c(PK_temp$Control, 
+                        PK_temp$Test)))){
             warning(wrapn(paste0("There are missing values in the data for ", 
-                                 param, " in the simulation '", 
-                                 unique(TidyPK[[i]]$File), "' for the ", 
-                                 unique(TidyPK[[i]]$CompoundID), " in ", 
-                                 unique(TidyPK[[i]]$Tissue), 
+                                 unique(InputPK[[i]]$PKparameter), " in the simulation '", 
+                                 unique(InputPK[[i]]$File), "' for the ", 
+                                 unique(InputPK[[i]]$CompoundID), " in ", 
+                                 unique(InputPK[[i]]$Tissue), 
                                  ", so we will have to skip this parameter.")), 
                     call. = FALSE)
             next
          }
          
-         n1 <- length(TestData[[param]]$Test)
-         n2 <- length(TestData[[param]]$Control)
+         x1 <- PK_temp$Control
+         x2 <- PK_temp$Test
          
-         if(paired){
-            
-            # NB: This is d_ave_ in Lakens 2013 Front Psychol. 
-            EffectSize <- mean(TestData[[param]]$Difference) / 
-               ((sd(TestData[[param]]$Test) + sd(TestData[[param]]$Control))/2)
-            
-            # Listing other options for estimating Cohen's d for paired study
-            # design for reference here:
-            
-            # d_z <- mean(TestData[[param]]$Difference) /
-            #    sd(TestData[[param]]$Difference)
-            # # Likely overestimates effect, based on my understanding. 
-            # 
-            # r <- cor(TestData[[param]]$Test,
-            #          TestData[[param]]$Control)
-            # d_rm <- mean(TestData[[param]]$Difference) /
-            #    sqrt(sd(TestData[[param]]$Test)^2 +
-            #            sd(TestData[[param]]$Control)^2 -
-            #            2 * r * sd(TestData[[param]]$Test) * sd(TestData[[param]]$Control)) *
-            #    sqrt(2 * (1-r))
-            # # This is d_repeated measures and is likely too conservative. This
-            # # is the calculation you get if you run: 
-            # effsize::cohen.d(d = TestData[[param]]$Test, 
-            #                  f = TestData[[param]]$Control, 
-            #                  paired = T, hedges.correction = F)
-            
-            
-         } else {
-            
-            PoolSD <- sqrt(((n1-1)*sd(TestData[[param]]$Test)^2 +
-                               (n2-1)*sd(TestData[[param]]$Control)^2) / (n1 + n2 -2))
-            
-            EffectSize <- (mean(TestData[[param]]$Test) - 
-                              mean(TestData[[param]]$Control)) / PoolSD
-            
-         }
+      } else {
          
-         # Applying Hedge's g correction. This is effectively the same for both
-         # paired and unpaired tests.
-         EffSize_g <- EffectSize * (1 - (3/(4*(n1+n2)-9)))
+         x1 <- PK_control$Value
+         x2 <- PK_test$Value
          
-         
-         # This is asking the question will the difference of (control - test)
-         # be "less" or "greater" than the baseline value.
-         AltHyp <- case_when(
-            interaction_type == "induction" & str_detect(param, "CL") ~ "greater", 
-            interaction_type == "induction" & !str_detect(param, "CL") ~ "less", 
-            interaction_type == "inhibition" & str_detect(param, "CL") ~ "less",
-            interaction_type == "inhibition" & !str_detect(param, "CL") ~ "greater", 
-            interaction_type == "two.sided" ~ interaction_type)
-         
-         N <- pwr::pwr.t.test(
-            n = NULL, 
-            d = EffSize_g, 
-            type = ifelse(paired, "paired", "two.sample"), 
-            alternative = AltHyp, 
-            sig.level = alpha, 
-            power = power)$n
-         
-         if(paired){
-            Out[[i]][[param]] <- tibble(
-               File = unique(TidyPK[[i]]$File), 
-               Tissue = unique(TidyPK[[i]]$Tissue), 
-               CompoundID = unique(TidyPK[[i]]$CompoundID), 
-               Sheet = unique(TidyPK[[i]]$Sheet), 
-               PKparameter = param, 
-               `Mean of control` = round_consultancy(mean(TestData[[param]]$Control)), 
-               `Standard deviation of control` = round_consultancy(sd(TestData[[param]]$Control)), 
-               `Mean of test` = round_consultancy(mean(TestData[[param]]$Test)), 
-               `Standard deviation of test` = round_consultancy(sd(TestData[[param]]$Test)), 
-               `Mean difference` = round_consultancy(mean(TestData[[param]]$Difference)), 
-               `Standard deviation of difference` = round_consultancy(sd(TestData[[param]]$Difference)),
-               `Corrected Cohen's d` = signif(EffSize_g, 4), 
-               alpha = alpha, 
-               power = power, 
-               `Alternative hypothesis` = AltHyp, 
-               `N required` = N)
-         } else {
-            #FIXME - Set this up
-         }
-         
-         suppressWarnings(rm(EffectSize, EffSize_g, N, AltHyp, n1, n2, PoolSD))
       }
       
-      suppressWarnings(rm(TestData, MyPK, Params))
+      n1 <- length(x1)
+      n2 <- length(x2)
       
-      Out[[i]] <- bind_rows(Out[[i]])
+      if(paired){
+         
+         xdiff <- PK_temp$Difference
+         
+         # NB: This is d_ave in Lakens 2013 Front Psychol. 
+         d <- mean(xdiff) / ((sd(x1) + sd(x2))/2)
+         
+         # Listing other options for estimating Cohen's d for paired study
+         # design for reference here:
+         
+         # d_z <- mean(xdiff) / sd(xdiff)
+         # # Likely overestimates effect, based on my understanding. 
+         # 
+         # r <- cor(x2, x1)
+         # d_rm <- mean(xdiff) / sqrt(sd(x2)^2 + sd(x1)^2 -
+         #                               2 * r * sd(x2) * sd(x1)) *
+         #    sqrt(2 * (1-r))
+         # # This is d_repeated measures and is likely too conservative. This
+         # # is the calculation you get if you run: 
+         # effsize::cohen.d(d = x2, 
+         #                  f = x1, 
+         #                  paired = T, hedges.correction = F)
+         
+         
+      } else {
+         
+         PoolSD <- sqrt(((n1-1)*sd(x2)^2 + (n2-1)*sd(x1)^2) / (n1 + n2 -2))
+         
+         d <- (mean(x2) - mean(x1)) / PoolSD
+         
+      }
+      
+      # Applying Hedge's g correction. This is effectively the same for both
+      # paired and unpaired tests.
+      g <- d * (1 - (3/(4*(n1+n2)-9)))
+      
+      N <- pwr::pwr.t.test(
+         n = NULL, 
+         d = g, 
+         type = ifelse(paired, "paired", "two.sample"), 
+         alternative = alternative_hypothesis, 
+         sig.level = alpha, 
+         power = power)$n
+      
+      if(paired){
+         Out[[i]] <- tibble(
+            File = col_cleanup(c(PK_temp$Denominator_File, 
+                                 PK_temp$Numerator_File)),  
+            Tissue = col_cleanup(c(PK_temp$Denominator_Tissue,
+                                   PK_temp$Numerator_Tissue)), 
+            CompoundID = col_cleanup(c(PK_temp$Denominator_CompoundID, 
+                                       PK_temp$Numerator_CompoundID)), 
+            Sheet = col_cleanup(c(PK_temp$Denominator_Sheet, 
+                                  PK_temp$Numerator_Sheet)), 
+            PKparameter = col_cleanup(c(PK_temp$Denominator_PKparameter, 
+                                        PK_temp$Numerator_PKparameter)), 
+            `Mean of control` = round_consultancy(mean(x1)), 
+            `Standard deviation of control` = round_consultancy(sd(x1)), 
+            `Mean of test` = round_consultancy(mean(x2)), 
+            `Standard deviation of test` = round_consultancy(sd(x2)), 
+            `Mean difference` = round_consultancy(mean(xdiff)), 
+            `Standard deviation of difference` = round_consultancy(sd(xdiff)),
+            `Corrected Cohen's d` = signif(g, 4), 
+            alpha = alpha, 
+            power = power, 
+            `Alternative hypothesis` = case_match(
+               alternative_hypothesis, 
+               "two.sided" ~ "two sided", 
+               .default = paste0("test is ", 
+                                 alternative_hypothesis, 
+                                 " than control")), 
+            `N required` = N)
+         
+         if(round_up_N){
+            Out[[i]] <- Out[[i]] %>% 
+               mutate(`N required` = 
+                         ceiling(`N required`))
+         }
+         
+      } else {
+         Out[[i]] <- tibble(
+            File = col_cleanup(c(PK_control$File, 
+                                 PK_test$File)), 
+            Tissue = col_cleanup(c(PK_control$Tissue, 
+                                   PK_test$Tissue)), 
+            CompoundID = col_cleanup(c(PK_control$CompoundID, 
+                                       PK_test$CompoundID)), 
+            Sheet = col_cleanup(c(PK_control$Sheet, 
+                                  PK_test$Sheet)), 
+            PKparameter = col_cleanup(PK_control$PKparameter), 
+            `Mean of control` = round_consultancy(mean(x1)), 
+            `Standard deviation of control` = round_consultancy(sd(x1)), 
+            `Mean of test` = round_consultancy(mean(x2)), 
+            `Standard deviation of test` = round_consultancy(sd(x2)), 
+            `Mean difference` = round_consultancy(mean(xdiff)), 
+            `Standard deviation of difference` = round_consultancy(sd(xdiff)),
+            `Corrected Cohen's d` = signif(g, 4), 
+            alpha = alpha, 
+            power = power, 
+            `Alternative hypothesis` = case_match(
+               alternative_hypothesis, 
+               "two.sided" ~ "two sided", 
+               .default = paste0("test is ", 
+                                 alternative_hypothesis, 
+                                 " than control")), 
+            
+            `N required in each group` = N)
+         
+         if(round_up_N){
+            Out[[i]] <- Out[[i]] %>% 
+               mutate(`N required in each group` = 
+                         ceiling(`N required in each group`))
+         }
+      }
+      
+      suppressWarnings(rm(d, g, x1, x2, xdiff, N, n1, n2, PoolSD,
+                          PK_control, PK_test, PK_temp))
       
    }
    
    Out <- bind_rows(Out)
    
-   if(round_up_N){
-      Out <- Out %>% 
-         mutate(`N required` = ceiling(`N required`))
-   }
    
    # Saving -----------------------------------------------------------------
    
@@ -494,7 +650,6 @@ estimate_sample_size <- function(alpha = 0.05,
                              output_tab_name = "Power calc for N")
       } 
    }
-   
    
    return(Out)
    

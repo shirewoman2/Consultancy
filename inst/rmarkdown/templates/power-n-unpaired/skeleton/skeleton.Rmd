@@ -20,7 +20,7 @@ For estimating the sample size required, the means and standard deviations for t
 
 $$ \sigma_{\text{pooled}} = \sqrt{ \frac{(n_{1} - 1) \times (\sigma_1)^2 + (n_2-1) \times (\sigma_2)^2}{n_1 + n_2 - 2}} $$
 
-where x~1~ and x~2~ are the individual observations in the two groups being compared (baseline and with the DDI), n~1~ and n~2~ are the number of observations in each group, and &sigma;~1~ and &sigma;~2~ are the standard deviations for the groups. 
+where x~1~ and x~2~ are the individual observations in the control and test conditions, n~1~ and n~2~ are the number of observations in each group, and &sigma;~1~ and &sigma;~2~ are the standard deviations for the groups. 
 
 *Equation 2.* 
 
@@ -34,10 +34,9 @@ Hedge's correction g, which results in an unbiased estimate for small sample siz
 
 $$ g = d \times \left(1 - \frac{3}{4(n_1 + n_2)-9} \right) $$
 
-where n is the number of pairs of observations. 
+where n~1~ and n~2~ are the numbers of observations for the control and test conditions. 
 
-The pwr.t.test function from the pwr package in R (Cohen 1988), which estimates study power using a t distribution, was used to determine the number of samples required for &alpha; = `r alpha` (Type I error of `r alpha*100`\%) and power (1- &beta;) = `r power` (sensitivity of `r power*100`\%) for the corrected Cohen's d effect size. 
-
+The pwr.t.test function from the pwr package in R (Cohen 1988) was used to determine the number of observations required for &alpha; = `r alpha` (Type I error of `r alpha*100`\%) and power (1- &beta;) = `r power` (sensitivity of `r power*100`\%) for a t distribution with n-1 degrees of freedom and the corrected Cohen's d effect size. 
 
 # Results
 
