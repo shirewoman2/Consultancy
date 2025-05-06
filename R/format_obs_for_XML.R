@@ -118,7 +118,7 @@ format_obs_for_XML <- function(obs_dataframe,
                                num_doses = NA,
                                end_time = NA,
                                custom_dosing_schedule = NA,
-                               simulator_version = 22,
+                               simulator_version = 23,
                                compoundID = "Substrate",
                                demog_dataframe, # should have same column name for subject IDs as in obs_dataframe.
                                age_column, 
