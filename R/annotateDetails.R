@@ -1241,7 +1241,7 @@ annotateDetails <- function(existing_exp_details,
                      "pH_dependent_LuminalDegradation", 
                      "pH_dependent_solubility")){
          
-         DF <- DF %>% 
+         DF <- DF %>% unique() %>% 
             pivot_wider(names_from = "File", 
                         # values_from calls on the dependent variable listed 
                         values_from = switch(
@@ -1280,6 +1280,7 @@ annotateDetails <- function(existing_exp_details,
          # differences from template or which are unique.
          if(length(intersect(FileOrder, 
                              unique(existing_exp_details[[item]]$File))) > 1){
+            
             # Checking for details that are the SAME across all files
             GroupingDetails <- switch(item, 
                                       "MainDetails" = "Detail", 
@@ -1796,12 +1797,12 @@ annotateDetails <- function(existing_exp_details,
                
                suppressMessages(
                   plot(dosing_regimen_plot(existing_exp_details = existing_exp_details, 
-                                   facet1_column = CompoundID, 
-                                   colorBy_column = File, 
-                                   color_set = "rainbow", 
-                                   bar_width = 1) +
-                  ggtitle("Dosing regimens", 
-                          subtitle = "Lines will overlap perfectly when all simulations have the same dosing regimens.\nIf you have a lot of files and want to see a more-informative version of this graph,\nplease try running dosing_regimen_plot(...) separately."))
+                                           facet1_column = CompoundID, 
+                                           colorBy_column = File, 
+                                           color_set = "rainbow", 
+                                           bar_width = 1) +
+                          ggtitle("Dosing regimens", 
+                                  subtitle = "Lines will overlap perfectly when all simulations have the same dosing regimens.\nIf you have a lot of files and want to see a more-informative version of this graph,\nplease try running dosing_regimen_plot(...) separately."))
                )
                
                # Seems like ggplot makes not more than 20 items in the legend

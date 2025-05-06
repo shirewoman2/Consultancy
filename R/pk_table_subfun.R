@@ -168,6 +168,20 @@ pk_table_subfun <- function(sim_data_file,
       # units -- only conc.
       if(Deets$Units_Cmax != conc_units){
          
+         # Adding some NA values to Deets as needed for convert_units to
+         # work w/out generating a ton of warnings.
+         MissingCols <- setdiff(paste0("MW", 
+                                       c("_sub", "_met1", "_met2", "_secmet",
+                                         "_inhib", "_inhib2", "_inhib1met")), 
+                                names(Deets))
+         
+         if(length(MissingCols) > 0){
+            Deets <- Deets %>% 
+               bind_cols(as.data.frame(matrix(
+                  data = NA, ncol = length(MissingCols), 
+                  dimnames = list(NULL, MissingCols))))
+         }
+         
          MW = c("substrate" = Deets$MW_sub, 
                 "inhibitor 1" = Deets$MW_inhib,
                 "primary metabolite 1" = Deets$MW_met1, 
