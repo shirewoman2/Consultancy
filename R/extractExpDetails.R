@@ -299,7 +299,7 @@ extractExpDetails <- function(sim_data_file,
             filter(Deet == deet) %>% pull(Regex_row)
          NameCol <- SumDeets$NameCol[which(SumDeets$Deet == deet)]
          Row <- which(str_detect(SummaryTab[, NameCol] %>% pull(), ToDetect))
-         if(length(Row) == 0 || is.null(Row) || is.na(Row)){
+         if(length(Row) == 0 || all(is.null(Row)) || all(is.na(Row))){
             return(NA)
          }
          Val <- SummaryTab[Row, SumDeets$ValueCol[SumDeets$Deet == deet]] %>%
@@ -320,7 +320,7 @@ extractExpDetails <- function(sim_data_file,
          )
          
          if(length(Val) > 1){
-            Val <- str_comma(Val)
+            Val <- str_comma(unique(Val))
          }
          
          # Tidying up some specific idiosyncracies of simulator output
