@@ -60,9 +60,9 @@
 #'   should use this option to specify exactly what should be compared for each
 #'   simulation. You'll need to set this up as if you're comparing ratios of
 #'   PK parameters (answer "2" to the 1st question if you run
-#'   \code{make_example_PK_input}), and you'll set the control scenario to be 
-#'   the denominator and the test scenario to be the numerator. 
-#'   
+#'   \code{make_example_PK_input}), and you'll set the control scenario to be
+#'   the denominator and the test scenario to be the numerator.
+#'
 #'   Whatever you supply, the
 #'   columns that will be read are: \itemize{\item{"File" (same thing as the argument
 #'   \code{sim_data_files})} \item{"Sheet" (same thing as the argument
@@ -184,6 +184,10 @@
 #'   the output as a Word file, it will include background information on how
 #'   the calculations were performed and possible wording for including in a
 #'   report.
+#' @param log_transform TRUE (default) or FALSE for whether to log tranform the
+#'   data before calculating the effect size and number of subjects required.
+#'   Most PK parameters are log-normally distributed, so most of the time, you
+#'   probably want this to be TRUE.
 #'
 #' @returns a data.frame of the sample sizes needed for each combination of
 #'   simulation file, tissue, compound ID, and PK parameter.
@@ -198,6 +202,7 @@ estimate_sample_size <- function(
       power = 0.8, 
       paired = TRUE, 
       alternative_hypothesis = "two sided", 
+      log_transform = TRUE, 
       existing_exp_details = NA, 
       compoundToExtract = "substrate", 
       tissue = "plasma", 
@@ -381,6 +386,10 @@ estimate_sample_size <- function(
    }
    
    TidyPK <- bind_rows(TidyPK)
+   
+   if(log_transform){
+      TidyPK$Value <- log(TidyPK$Value)
+   }
    
    
    ## Making comparisons ----------------------------------------------------
