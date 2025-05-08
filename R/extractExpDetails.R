@@ -592,6 +592,8 @@ extractExpDetails <- function(sim_data_file,
                              "numeric" = as.numeric(Val))
             )
             
+            if(length(Val) == 0){Val <- NA}
+            
             # Tidying up some specific idiosyncracies of simulator output
             Val <- ifelse(complete.cases(Val) & Val == "n/a",
                           NA, Val)

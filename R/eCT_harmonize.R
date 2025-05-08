@@ -30,9 +30,12 @@ eCT_harmonize <- function(sim_data_xl,
    
    # Renaming compounds -------------------------------------------------------
    
-   # AdvBrainModel sheets do not need to be harmonized and will pass through.
+   # AdvBrainModel and PD sheets do not need to be harmonized and will pass
+   # through.
    
-   if(any(ADAM, AdvBrainModel, ADC) == FALSE |
+   PD <- tissue == "pd"
+   
+   if(any(ADAM, PD, ADC) == FALSE |
       (ADC == TRUE & any(compoundToExtract %in% c("primary metabolite 1")))){
       # Here's what we're trying to overcome with this function: If
       # "interaction" or "Csys" or other similar strings are part of the name of
@@ -313,7 +316,7 @@ eCT_harmonize <- function(sim_data_xl,
                               "PROTEINCONJDRUG", 
                               sim_data_xl$...1)
       
-   }
+   } 
    
    
    # Renaming interaction text -------------------------------------------------

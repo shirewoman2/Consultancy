@@ -31,18 +31,18 @@ contains only the digitized time and concentration data.}
 extracted? Default is plasma for typical plasma concentration-time data.
 Other options are "blood" or any tissues included in "Sheet Options",
 "Tissues" in the simulator. All possible options:\describe{
-\item{First-order absorption models}{"plasma", "blood", "unbound blood",
+\item{All models}{"plasma", "blood", "unbound blood",
 "unbound plasma", "additional organ", "adipose", "bone", "brain",
 "feto-placenta", "gut tissue", "heart", "kidney", "liver", "lung", "muscle",
 "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
 blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
-or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
+"spleen", "PD input" or "PD response".} \item{Specific to ADAM-models}{"stomach", "duodenum", "jejunum I",
 "jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only
 applies to rodents), "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
-SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.}
+released", or "cumulative dissolution".} \item{ADC simulations}{UNDER
+CONSTRUCTION. If you need this, please contact Laura Shireman.}} Not case sensitive.}
 
 \item{compoundToExtract}{For which compound do you want to extract
   concentration-time data? Options are:
@@ -55,7 +55,7 @@ SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.}
   suppresesor, but it's labeled as "Inhibitor 1" in the simulator}
   \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation}
   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
-  \item{NOT SET UP YET --> "intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
+  \item{UNDER CONSTRUCTION --> "intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
   observed data with DV listed as "Conjugated Protein Plasma Total" will
   match these simulated data}
   \item{"total antibody" for DAR0-DARmax for an ADC; observed data with DV
@@ -63,7 +63,8 @@ SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive.}
   \item{"conjugated payload"; observed data with DV listed as 
   "Conjugated Drug Plasma Total" will match these simulated data}
   \item{"released payload" for the released drug from an ADC, which shows up
-  as "Sub Pri Met1" in Simulator output files.}}
+  as "Sub Pri Met1" in Simulator output files.}
+  }
 
   \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
   tested this very thoroughly, so please be extra careful to check that

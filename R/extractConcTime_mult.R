@@ -1110,15 +1110,17 @@ extractConcTime_mult <- function(sim_data_files = NA,
                      dimnames = list(NULL, MissingCols))))
             }
             
-            # Need to handle ADAM and AdvBrainModel data specially
-            ADAMtissue <- c("stomach", "duodenum", "jejunum I",
+            # Need to handle ADAM, AdvBrainModel, and PD data differently b/c
+            # different units
+            SpecialTissue <- c("stomach", "duodenum", "jejunum I",
                             "jejunum II", "ileum I", "ileum II",
                             "ileum III", "ileum IV", "colon", "faeces", 
                             "gut tissue", "cumulative absorption", 
                             "cumulative fraction released",
-                            "cumulative dissolution")
+                            "cumulative dissolution", 
+                            "PD response")
             
-            ADAMsubsection <- c("undissolved compound", 
+            SpecialSubsection <- c("undissolved compound", 
                                 "dissolution rate of solid state", 
                                 "free compound in lumen", 
                                 "total compound in lumen", 
@@ -1131,7 +1133,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                 "cumulative fraction of compound dissolved", 
                                 "enterocyte concentration", 
                                 # Below are technically AdvBrainModel but
-                                # using ADAMtissue b/c that object name is
+                                # using SpecialTissue b/c that object name is
                                 # already set up. Note that this omits
                                 # AdvBrainModel tissues that just have mass
                                 # per volume units.
@@ -1141,12 +1143,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
             
             # Not adjusting ADAM model concs b/c not set up yet.
             CT_adam <- MultData[[ff]][[j]] %>% 
-               filter(Tissue %in% ADAMtissue |
-                         Tissue_subtype %in% ADAMsubsection)
+               filter(Tissue %in% SpecialTissue |
+                         Tissue_subtype %in% SpecialSubsection)
             
             CT_nonadam <- MultData[[ff]][[j]] %>% 
-               filter(!(Tissue %in% ADAMtissue |
-                           Tissue_subtype %in% ADAMsubsection))
+               filter(!(Tissue %in% SpecialTissue |
+                           Tissue_subtype %in% SpecialSubsection))
             
             if(nrow(CT_nonadam) > 0){
                CT_nonadam <- CT_nonadam %>% 
