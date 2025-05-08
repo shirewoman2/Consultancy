@@ -18,7 +18,7 @@ For estimating the sample size required, the mean of the difference of the value
 
 *Equation 1.* 
 
- $$ d_{\text{ave}} = \frac{\mu_{\text{difference}}}{(\sigma_1 + \sigma_2)/2} $$
+$$ d_{\text{ave}} = \frac{\mu_{\text{difference}}}{(\sigma_1 + \sigma_2)/2} $$
 
 where &mu; and &sigma; are the mean and standard deviation, respectively. 
 
@@ -45,7 +45,13 @@ Out %>%
 
 ```
 
+```{r}
+Message <- ifelse(log_transform, 
+                  "*Note: The data were log transformed before calculating effect size and N, so the means and standard deviations listed in the table are geometric.*", 
+                  "")
+```
 
+`r Message`
 
 # References 
 

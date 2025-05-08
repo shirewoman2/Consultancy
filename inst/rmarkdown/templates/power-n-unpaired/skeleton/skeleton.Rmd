@@ -50,6 +50,11 @@ Out %>%
 
 ```
 
+```{r}
+Message <- ifelse(log_transform, 
+                  "*Note: The data were log transformed before calculating effect size and N, so the means and standard deviations listed in the table are geometric.*", 
+                  "")
+```
 
 
 # References 

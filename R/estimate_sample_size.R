@@ -344,16 +344,6 @@ estimate_sample_size <- function(
    
    # Main body of function ---------------------------------------------------
    
-   # helper function for formatting output
-   col_cleanup <- function(x){
-      if(length(unique(x)) == 1){
-         unique(x)
-      } else {
-         str_comma(sort(unique(x)), conjunction = "or")
-      }
-   }
-   
-   ## Extracting PK --------------------------------------------------------
    
    TidyPK <- list()
    
@@ -524,22 +514,41 @@ estimate_sample_size <- function(
       
       if(paired){
          Out[[i]] <- tibble(
-            File = col_cleanup(c(PK_temp$Denominator_File, 
-                                 PK_temp$Numerator_File)),  
-            Tissue = col_cleanup(c(PK_temp$Denominator_Tissue,
-                                   PK_temp$Numerator_Tissue)), 
-            CompoundID = col_cleanup(c(PK_temp$Denominator_CompoundID, 
-                                       PK_temp$Numerator_CompoundID)), 
-            Sheet = col_cleanup(c(PK_temp$Denominator_Sheet, 
-                                  PK_temp$Numerator_Sheet)), 
-            PKparameter = col_cleanup(c(PK_temp$Denominator_PKparameter, 
-                                        PK_temp$Numerator_PKparameter)), 
-            `Mean of control` = round_consultancy(mean(x1)), 
-            `Standard deviation of control` = round_consultancy(sd(x1)), 
-            `Mean of test` = round_consultancy(mean(x2)), 
-            `Standard deviation of test` = round_consultancy(sd(x2)), 
-            `Mean difference` = round_consultancy(mean(xdiff)), 
-            `Standard deviation of difference` = round_consultancy(sd(xdiff)),
+            File = str_comma(sort(unique(c(PK_temp$Denominator_File, 
+                                           PK_temp$Numerator_File)))),  
+            Tissue = str_comma(sort(unique(c(PK_temp$Denominator_Tissue,
+                                             PK_temp$Numerator_Tissue)))), 
+            CompoundID = str_comma(sort(unique(c(PK_temp$Denominator_CompoundID, 
+                                                 PK_temp$Numerator_CompoundID)))), 
+            Sheet = str_comma(sort(unique(c(PK_temp$Denominator_Sheet, 
+                                            PK_temp$Numerator_Sheet)))), 
+            PKparameter = str_comma(sort(unique(c(PK_temp$Denominator_PKparameter, 
+                                                  PK_temp$Numerator_PKparameter)))), 
+            
+            `Mean of control` = ifelse(log_transform, 
+                                       round_consultancy(exp(mean(x1))), 
+                                       round_consultancy(mean(x1))), 
+            
+            `Standard deviation of control` = ifelse(log_transform, 
+                                                     round_consultancy(exp(sd(x1))), 
+                                                     round_consultancy(sd(x1))), 
+            
+            `Mean of test` = ifelse(log_transform, 
+                                    round_consultancy(exp(mean(x2))), 
+                                    round_consultancy(mean(x2))),
+            
+            `Standard deviation of test` = ifelse(log_transform, 
+                                                  round_consultancy(exp(sd(x2))),
+                                                  round_consultancy(sd(x2))),
+            
+            `Mean difference` = ifelse(log_transform, 
+                                       round_consultancy(exp(mean(xdiff))), 
+                                       round_consultancy(mean(xdiff))), 
+            
+            `Standard deviation of difference` = ifelse(log_transform, 
+                                                        round_consultancy(exp(sd(xdiff))),
+                                                        round_consultancy(sd(xdiff))), 
+            
             `Corrected Cohen's d` = signif(g, 4), 
             alpha = alpha, 
             power = power, 
@@ -559,21 +568,36 @@ estimate_sample_size <- function(
          
       } else {
          Out[[i]] <- tibble(
-            File = col_cleanup(c(PK_control$File, 
-                                 PK_test$File)), 
-            Tissue = col_cleanup(c(PK_control$Tissue, 
-                                   PK_test$Tissue)), 
-            CompoundID = col_cleanup(c(PK_control$CompoundID, 
-                                       PK_test$CompoundID)), 
-            Sheet = col_cleanup(c(PK_control$Sheet, 
-                                  PK_test$Sheet)), 
-            PKparameter = col_cleanup(PK_control$PKparameter), 
-            `Mean of control` = round_consultancy(mean(x1)), 
-            `Standard deviation of control` = round_consultancy(sd(x1)), 
-            `Mean of test` = round_consultancy(mean(x2)), 
-            `Standard deviation of test` = round_consultancy(sd(x2)), 
-            `Mean difference` = round_consultancy(mean(xdiff)), 
-            `Standard deviation of difference` = round_consultancy(sd(xdiff)),
+            File = str_comma(sort(unique(c(PK_control$File, 
+                                           PK_test$File)))), 
+            Tissue = str_comma(sort(unique(c(PK_control$Tissue, 
+                                             PK_test$Tissue)))), 
+            CompoundID = str_comma(sort(unique(c(PK_control$CompoundID, 
+                                                 PK_test$CompoundID)))), 
+            Sheet = str_comma(sort(unique(c(PK_control$Sheet, 
+                                            PK_test$Sheet)))), 
+            PKparameter = str_comma(sort(unique(PK_control$PKparameter))), 
+            
+            `Mean of control` = ifelse(log_transform, 
+                                       round_consultancy(exp(mean(x1))), 
+                                       round_consultancy(mean(x1))), 
+            
+            `Standard deviation of control` = ifelse(log_transform, 
+                                                     round_consultancy(exp(sd(x1))), 
+                                                     round_consultancy(sd(x1))), 
+            
+            `Mean of test` = ifelse(log_transform, 
+                                    round_consultancy(exp(mean(x2))), 
+                                    round_consultancy(mean(x2))), 
+            
+            `Standard deviation of test` = ifelse(log_transform,
+                                                  round_consultancy(exp(sd(x2))),
+                                                  round_consultancy(sd(x2))), 
+            
+            `Mean difference` = ifelse(log_transform, 
+                                       round_consultancy(exp(mean(x2)) - exp(mean(x1))), 
+                                       round_consultancy(mean(x2) - mean(x1))), 
+            
             `Corrected Cohen's d` = signif(g, 4), 
             alpha = alpha, 
             power = power, 
