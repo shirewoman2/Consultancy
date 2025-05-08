@@ -295,6 +295,15 @@ dosing_regimen_plot <- function(existing_exp_details,
    Xlim <- c(min(Dosing$Time, na.rm = T) - bar_width/2, 
              max(Dosing$Time, na.rm = T) + bar_width/2)
    
+   if(length(sort(unique(Dosing$Time))) == 1){
+      XBreaks <- sort(unique(Dosing$Time))
+      Xlim <- c(XBreaks - 1, XBreaks + 1)
+   } else {
+      XBreaks <- list(from = min(Dosing$Time, na.rm = T), 
+                      to = max(Dosing$Time, na.rm = T), 
+                      by = "default")
+   }
+   
    suppressMessages(
       G <- G + 
          scale_y_continuous(limits = c(0, max(Dosing$Dose)),
@@ -305,9 +314,7 @@ dosing_regimen_plot <- function(existing_exp_details,
          ggtitle("Dosing regimens") +
          scale_x_time(
             time_range = Xlim, 
-            x_breaks = list(from = min(Dosing$Time, na.rm = T), 
-                            to = max(Dosing$Time, na.rm = T), 
-                            by = "default")) +
+            x_breaks = XBreaks) +
          theme_consultancy(border = TRUE) +
          theme(legend.position = "bottom", 
                legend.justification = c(0, 0), 

@@ -110,9 +110,14 @@ scale_x_time <- function(time_range = NA,
          Setup$xbreaks <- x_breaks
       }
       
+      Setup$xlabels <- as.character(Setup$xbreaks)
+      
+      if(length(Setup$xbreaks) == 1){
          Setup$xlabels <- as.character(Setup$xbreaks)
+      } else {
          Setup$xlabels[seq(2,length(Setup$xlabels), by = 2)] <- ""
-         
+      }
+      
    }
    
    return(scale_x_continuous(breaks = Setup$xbreaks, 

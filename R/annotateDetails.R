@@ -1539,7 +1539,8 @@ annotateDetails <- function(existing_exp_details,
          # and then wants information that would not have been extracted. For
          # example, extractExpDetails pulls only the "Summary" tab by default, so
          # it won't have a LOT of useful information.
-         if(nrow(Out[[item]][["DF"]]) == 1){
+         if(nrow(Out[[item]][["DF"]]) == 1 & 
+            item %in% c("Dosing", "CustomDosing") == FALSE){
             warning(wrapn(paste0(
                "There is only 1 row in your output for the ",
                item_char, 
