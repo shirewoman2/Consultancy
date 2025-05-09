@@ -660,6 +660,27 @@ extractExpDetails <- function(sim_data_file,
    
    # Calculated details & data cleanup ----------------------------------------
    
+   # Other functions call on "Inhibitor1", etc., so we need those objects to
+   # exist, even if they were not used in this simulation. Setting them to NA if
+   # they don't exist.
+   MissingCmpd <- setdiff(AllRegCompounds$DetailNames, names(Out))
+   MissingCmpd_list <- as.list(rep(NA, length(MissingCmpd)))
+   names(MissingCmpd_list) <- MissingCmpd
+   Out <- c(Out, MissingCmpd_list)
+   
+   # There is a bug in at least V23 of the Simulator that can make the start
+   # time of the substrate incorrect. If you had a workspace where you had a
+   # perpetrator drug and the substrate did not start at t0 but then you remove
+   # the perp and have just the substrate, the starting time from when there was
+   # a perp present is sometimes still what is listed in the Summary and Input
+   # tabs, even though that's NOT what is in the workspace and NOT what gets
+   # simulated. Catching this and fixing it. The start time when it's a
+   # substrate alone will ALWAYS be the simulation start time.
+   if(is.na(Out$Inhibitor1) & Out$StartDayTime_sub != Out$SimStartDayTime){
+      Out$StartDayTime_sub <- Out$SimStartDayTime
+      Out$StartHr_sub <- 0
+   }
+   
    if("StartHr_sub" %in% exp_details && 
       "StartDayTime_sub" %in% names(Out) &&
       complete.cases(Out$StartDayTime_sub) && 
@@ -681,14 +702,6 @@ extractExpDetails <- function(sim_data_file,
       Out[["StartHr_inhib2"]] <- difftime_sim(time1 = Out$SimStartDayTime,
                                               time2 = Out$StartDayTime_inhib2)
    }
-   
-   # Other functions call on "Inhibitor1", etc., so we need those objects to
-   # exist, even if they were not used in this simulation. Setting them to NA if
-   # they don't exist.
-   MissingCmpd <- setdiff(AllRegCompounds$DetailNames, names(Out))
-   MissingCmpd_list <- as.list(rep(NA, length(MissingCmpd)))
-   names(MissingCmpd_list) <- MissingCmpd
-   Out <- c(Out, MissingCmpd_list)
    
    # Always including the file name. 
    Out$File <- sim_data_file

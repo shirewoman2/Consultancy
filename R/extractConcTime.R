@@ -908,12 +908,16 @@ extractConcTime <- function(sim_data_file,
             obs_data_file <- Deets$ObsOverlayFile
          }
          
-         obs_data <- extractObsConcTime(obs_data_file) %>% 
-            mutate(
-               Conc_units = case_match(
-                  Conc_units, 
-                  "PD Response" ~ "PD response", 
-                  .default = Conc_units))
+         obs_data <- extractObsConcTime(obs_data_file)
+         
+         if(nrow(obs_data) > 0){
+            obs_data <- obs_data %>% 
+               mutate(
+                  Conc_units = case_match(
+                     Conc_units, 
+                     "PD Response" ~ "PD response", 
+                     .default = Conc_units))
+         }
          
          if(ADC){
             obs_data <- obs_data %>% 
