@@ -548,8 +548,8 @@ estimate_sample_size <- function(
             `Standard deviation of difference` = ifelse(log_transform, 
                                                         round_consultancy(exp(sd(xdiff))),
                                                         round_consultancy(sd(xdiff))), 
-            
-            `Corrected Cohen's d` = signif(g, 4), 
+            `Cohen's d` = signif(d, 4), 
+            `Corrected Cohen's d aka Hedge's g` = signif(g, 4), 
             alpha = alpha, 
             power = power, 
             `Alternative hypothesis` = case_match(
@@ -598,7 +598,8 @@ estimate_sample_size <- function(
                                        round_consultancy(exp(mean(x2)) - exp(mean(x1))), 
                                        round_consultancy(mean(x2) - mean(x1))), 
             
-            `Corrected Cohen's d` = signif(g, 4), 
+            `Cohen's d` = signif(d, 4), 
+            `Corrected Cohen's d aka Hedge's g` = signif(g, 4), 
             alpha = alpha, 
             power = power, 
             `Alternative hypothesis` = case_match(
