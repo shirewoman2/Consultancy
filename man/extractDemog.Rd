@@ -5,7 +5,12 @@
 \title{Extract simulated demographic data from the "Demographic Data" tab of a
 Simcyp Simulator ouptut Excel file}
 \usage{
-extractDemog(sim_data_files = NA, demog_dataframe = NA, overwrite = FALSE)
+extractDemog(
+  sim_data_files = NA,
+  demog_dataframe = NA,
+  overwrite = FALSE,
+  which_data = "main demographics"
+)
 }
 \arguments{
 \item{sim_data_files}{a character vector of simulator output files, each in
@@ -22,6 +27,22 @@ some calculations, those files will be skipped.}
 \item{demog_dataframe}{an existing data.frame of demographic data}
 
 \item{overwrite}{TRUE or FALSE for whether to overwrite any existing data}
+
+\item{which_data}{Which type of demographic data do you want? Options are
+\describe{\item{"main demographics" (default)}{main demographic data including
+height, weight, BSA, cardiac output, etc. These are all the items present on
+the "Demographics" tab in the Simulator output.}
+
+\item{"CYPs"}{All of the information from the "Enzymatic Status CYPs" tab}
+
+\item{"UGTs}{All of the information from the "Enzymatic Status UGTs" tab}
+
+\item{"Drug-Population Parameters"}{All of the information from the
+"Drug-Population Parameters" tab, such as B/P, fu, Qgut, etc.}
+
+\item{"all"}{Demographic data from the tabs "Demographics",
+"Enzymatic Status CYPs", "Enzymatic Status UGTs", and
+"Drug-Population Parameters"}}}
 }
 \value{
 a data.frame of demographic data for simulated subjects. Columns
