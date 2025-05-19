@@ -30,8 +30,7 @@
 #'   OntogenyEquations. If you supply something here, the arguments
 #'   \code{enzyme} and \code{enzyme_type} will be ignored.
 #' @param simulator_version Simcyp Simulator version to display. Options are 21,
-#'   22, 23 (default), or, once it's available on Simcyp Consultancy Team VDIs,
-#'   24.
+#'   22, 23, or 24 (default).
 #' @param compare_to_no_ontogeny TRUE or FALSE (default) for whether to show a
 #'   line on the graph for no ontogeny, which would be a horizontal line at 1.
 #' @param age_range age range in years as a numeric vector. Default is
@@ -120,6 +119,10 @@
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
 #'
+#' @param graph_title optionally specify a title that will be centered across
+#'   your graph or set of graphs
+#' @param graph_title_size the font size for the graph title if it's included;
+#'   default is 14. This also determines the font size of the graph labels.
 #' @param legend_position Specify where you want the legend to be. Options are
 #'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 #'   you don't want one at all.
@@ -137,13 +140,52 @@
 #' @export
 #'
 #' @examples
-#' # none yet
+#' # If there's only one possible profile, using
+#' the ontogeny_plot function is straightforward.
+#' ontogeny_plot(enzyme = "UGT1A4")
+#' 
+#' # If there are multiple profiles, you'll be asked
+#' # which you would like interactively. 
+#' ontogeny_plot(enzyme = "CYP3A4")
+#' 
+#' # If you don't want to be asked, you can turn this off.
+#' ontogeny_plot(enzyme = "CYP3A4",
+#'               ask_if_multiple_enzymes = F)
+#' # ...but you might want to color the lines by the 
+#' # enzyme description because otherwise, you won't
+#' # know which is which. 
+#' ontogeny_plot(enzyme = "CYP3A4",
+#'               ask_if_multiple_enzymes = F, 
+#'               colorBy_column = EnzymeDescription)
+#' 
+#' # You can change the colors
+#' ontogeny_plot(enzyme = "CYP3A4",
+#'               ask_if_multiple_enzymes = F, 
+#'               colorBy_column = EnzymeDescription, 
+#'               color_set = "viridis")
+#' 
+#' # You can use regular expressions to get multiple 
+#' # possible enzymes. 
+#' ontogeny_plot(enzyme = "CYP|UGT", 
+#'               ask_if_multiple_enzymes = F, 
+#'               colorBy_column = EnzymeDescription, 
+#'               facet1_column = EnzymeType)
+#' 
+#' # Any ontogeny profile included in the Simcyp Simulator
+#' # may be plotted. 
+#' ontogeny_plot(enzyme = "P-gp", 
+#'               colorBy_column = EnzymeDescription)
+#' 
+#' # To see what the possibilities are and the equations 
+#' # being used:
+#' view(OntogenyEquations)
+#'
 #' 
 ontogeny_plot <- function(enzyme = NA, 
                           enzyme_type = NA, 
                           ask_if_multiple_enzymes = TRUE, 
                           ontogeny_equations_to_use = NA, 
-                          simulator_version = 23, 
+                          simulator_version = 24, 
                           compare_to_no_ontogeny = FALSE, 
                           age_range = c(0, 18), 
                           x_axis_interval = 3, 
@@ -154,6 +196,8 @@ ontogeny_plot <- function(enzyme = NA,
                           colorBy_column, 
                           color_set = "default", 
                           legend_position = "right",
+                          graph_title = NA,
+                          graph_title_size = 14, 
                           save_graph = NA,
                           fig_height = NA,
                           fig_width = NA){
@@ -164,11 +208,6 @@ ontogeny_plot <- function(enzyme = NA,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
            call. = FALSE)
    }
-   
-   # warning("The ontogeny equation shown on screen for Simcyp Simulator versions before V24 was INCORRECT. Amita is checking on the corrected equations to use with the Science Team, and these graphs should be considered as PRELIMINARY unless you have confirmed with Amita that the equations are correct. Please ask Laura Sh. about this if you want to use these graphs in a report!\n", 
-   #         call. = FALSE)
-   # # Note to self: I need to check back w/Amita after her 3/19/22 email to see
-   # # what the status is on this. -LSh
    
    if(length(enzyme) > 1){
       enzyme <- str_c(enzyme, collapse = "|")
@@ -195,7 +234,8 @@ ontogeny_plot <- function(enzyme = NA,
          filter(switch(as.character(simulator_version), 
                        "21" = V21 == TRUE, 
                        "22" = V22 == TRUE, 
-                       "23" = V23 == TRUE)) 
+                       "23" = V23 == TRUE, 
+                       "24" = V24 == TRUE)) 
       
       if(any(complete.cases(enzyme))){
          Ontogenies <- Ontogenies %>% 
@@ -352,7 +392,7 @@ ontogeny_plot <- function(enzyme = NA,
       
       if(tolower(WhichRows[1]) != "all"){
          WhichRows <- eval(str2expression(WhichRows))
-         if(as.numeric(WhichRows) == FALSE){
+         if(any(as.numeric(WhichRows) == FALSE)){
             warning(wrapn("You provided input that was not 'all' nor was it numeric, so we don't know which rows of enzymes you want. We'll give you all of them."), 
                     call. = FALSE)
          } else {
@@ -485,6 +525,12 @@ ontogeny_plot <- function(enzyme = NA,
                                        as_label(facet2_column) != "<empty>"))) +
       theme(legend.position = legend_position)
    
+   if(any(complete.cases(graph_title))){
+      A <- A + ggtitle(graph_title) +
+         theme(plot.title = element_text(hjust = 0.5, 
+                                         size = graph_title_size), 
+               plot.title.position = "panel")
+   }
    
    # Saving -----------------------------------------------------------------
    
