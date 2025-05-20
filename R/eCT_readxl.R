@@ -24,10 +24,16 @@ eCT_readxl <- function(sim_data_file,
    
    CompoundToFind <- case_when(
       TissueType == "systemic" & 
-         compoundToExtract %in% c("substrate",
-                                  "inhibitor 1", 
-                                  "inhibitor 1 metabolite", 
-                                  "inhibitor 2") ~ "substrate", 
+         compoundToExtract %in% 
+         c("substrate",
+           "inhibitor 1", 
+           "inhibitor 1 metabolite", 
+           "inhibitor 2", 
+           AllCompounds %>% 
+              filter(CompoundType == "ADC" &
+                        CompoundID != "conjugated payload") %>% 
+              pull(CompoundID) %>% 
+              tolower()) ~ "substrate", 
       
       TissueType == "systemic" & 
          compoundToExtract %in% c("substrate",

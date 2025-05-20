@@ -304,17 +304,41 @@ eCT_harmonize <- function(sim_data_xl,
       # CmpdRows <- sim_data_xl$...1[(PopStatRow + 2):
       #                                 (NArows[which(NArows > PopStatRow)][1] - 1)]
       
-      # "Protein Total" at the top of the Excel sheet can be listed as
-      # "Therapeutic Protein" lower down. Making them all "PROTEINTOTAL". 
-      sim_data_xl$...1 <- sub("^Protein Total|^Therapeutic Protein",
+      # FIXME: I previously found an instance where "Protein Total" at the top
+      # of the Excel sheet was listed as "Therapeutic Protein" lower down. I
+      # originally made them all be "PROTEINTOTAL", but that means that I can't
+      # discriminate between therapeutic protein concentrations and the protein
+      # of an ADC. Returning to making ONLY "protein total" be "PROTEINTOTAL" so
+      # that I get ONLY that and not any therapeutic protein concentrations. Not
+      # sure how to get around that if I encounter that scenario again, though.
+      # I just don't know enough about when it will occur.
+      sim_data_xl$...1 <- sub("^Protein [Tt]otal",
                               "PROTEINTOTAL", 
                               sim_data_xl$...1)
       
-      # Protein Conjugated Drug is consistent throughout but making it
-      # consistent to be sure.
-      sim_data_xl$...1 <- sub("^Protein Conjugated Drug",
+      # Protein Conjugated Drug seems to consistent throughout but making it
+      # consistent to be sure. Same with therapeutic protein but also need to
+      # discriminate between therapeutic protein and TMDD complex.
+      sim_data_xl$...1 <- sub("^Protein [Cc]onjugated [Dd]rug",
                               "PROTEINCONJDRUG", 
                               sim_data_xl$...1)
+      
+      sim_data_xl$...1 <- sub("conjugated protein .dar1", # FIXME: Check this. 
+                              "INTACTADC", 
+                              sim_data_xl$...1)
+      
+      sim_data_xl$...1 <- sub("cantibody total", # FIXME: Check this. 
+                              "TOTALAB", 
+                              sim_data_xl$...1)
+      
+      sim_data_xl$...1 <- sub("^Therapeutic [Pp]rotein.*TMDD complex",
+                              "TMDDCOMPLEX", 
+                              sim_data_xl$...1)
+      
+      sim_data_xl$...1 <- sub("^Therapeutic [Pp]rotein",
+                              "THERPROTEIN", 
+                              sim_data_xl$...1)
+      
       
    } 
    

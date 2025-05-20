@@ -15,7 +15,7 @@ extractObsConcTime_xlsx <- function(obs_data_file){
                }))
    
    if(length(obs_data_xl) == 0){
-      warning(paste("The file", obs_data_file, "does not appear to be an Excel file of observed data that's ready to be converted to an XML file. We cannot extract any data."), 
+      warning(wrapn(paste("The file", obs_data_file, "does not appear to be an Excel file of observed data that's ready to be converted to an XML file. We cannot extract any data.")), 
               call. = FALSE)
       return(list())
    }

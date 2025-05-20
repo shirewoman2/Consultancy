@@ -254,18 +254,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
    compoundsToExtract <- sub("released payload", "primary metabolite 1", 
                              compoundsToExtract)
    
-   MainCompoundIDs <- c("substrate", 
-                        "primary metabolite 1", 
-                        "primary metabolite 2",
-                        "secondary metabolite",
-                        "inhibitor 1",
-                        "inhibitor 2",
-                        "inhibitor 1 metabolite",
-                        "inhibitor 2 metabolite")
+   MainCompoundIDs <- AllRegCompounds$CompoundID
    
-   ADCCompoundIDs <- c("total antibody", 
-                       # "intact adc",
-                       "conjugated payload")
+   ADCCompoundIDs <- AllCompounds %>% 
+      filter(CompoundType == "ADC") %>% 
+      pull(CompoundID)
    # NB: Released payload included w/MainCompoundIDs as primary metabolite 1
    
    PossCmpd <- c(MainCompoundIDs, ADCCompoundIDs, "all")
@@ -335,7 +328,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # Main body of function -----------------------------------------------
    
-   # tic(msg = "Main body of function - mult")
+   tic(msg = "Main body of function - mult")
    
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx" or in all subfolders if they wanted it to be
@@ -779,12 +772,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                            complete.cases(ObsFile) &
                                            File %in% sim_data_files_topull) 
    }
-   # toc(log = TRUE)
+   toc(log = TRUE)
    
    ## Start of loop through files ------------------------------------------
    MultData <- list()
    
-   # tic(msg = "start of loop through files - mult")
+   tic(msg = "start of loop through files - mult")
    
    for(ff in sim_data_files_topull){
       message(paste("Extracting concentration-time data from file =", ff))
@@ -831,13 +824,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
       }
       
       if(any(Deets$ADCSimulation_sub, na.rm = TRUE)){
+         ToAdd <- AllCompounds %>% 
+            filter(CompoundType == "ADC" & 
+                      CompoundID != "primary metabolite 1") %>% 
+            pull(CompoundID)
+         names(ToAdd) <- ToAdd
          CompoundCheck <- c(CompoundCheck,
-                            "total antibody" = "total antibody",
-                            "total payload" = "total payload", 
-                            # "intact adc" = "intact adc",
-                            "conjugated payload" = "conjugated payload")
+                            ToAdd)
          # NB: NOT including "released payload" here b/c it's coded as primary
          # metabolite 1 in the outputs. Will change this at the end.
+         rm(ToAdd)
       }
       
       if(compoundsToExtract_orig[1] == "all"){
@@ -1025,15 +1021,16 @@ extractConcTime_mult <- function(sim_data_files = NA,
             # concs are elsewhere.
             CompoundTypes <-
                data.frame(PossCompounds = PossCmpd) %>%
-               mutate(Type = ifelse(PossCompounds %in%
-                                       c("substrate", "inhibitor 1",
-                                         "inhibitor 2",
-                                         "inhibitor 1 metabolite", 
-                                         "total antibody", 
-                                         # "intact ADC",
-                                         "conjugated payload"
-                                       ),
-                                    "substrate", PossCompounds)) %>%
+               mutate(Type = ifelse(
+                  PossCompounds %in%
+                     c("substrate", "inhibitor 1",
+                       "inhibitor 2",
+                       "inhibitor 1 metabolite", 
+                       AllCompounds %>% 
+                          filter(CompoundType == "ADC" & 
+                                    CompoundID != "released payload") %>% 
+                          pull(CompoundID)),
+                  "substrate", PossCompounds)) %>%
                filter(PossCompounds %in% compoundsToExtract_n)
             
             MultData[[ff]][[j]] <- list()
@@ -1044,11 +1041,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
                compoundsToExtract_k <-
                   CompoundTypes %>% filter(Type == k) %>%
                   pull(PossCompounds)
-               
-               if(any(Deets$ADCSimulation_sub, na.rm = T)){
-                  compoundsToExtract_k <- setdiff(compoundsToExtract_k, 
-                                                  "substrate")
-               }
                
                if(str_detect(ff, "\\.db$")){
                   for(l in compoundsToExtract_k){
@@ -1075,6 +1067,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         returnAggregateOrIndiv = returnAggregateOrIndiv, 
                         fromMultFunction = TRUE, 
                         existing_exp_details = existing_exp_details)
+               }
+               
+               if(nrow(MultData[[ff]][[j]][[k]]) == 0){
+                  warning(wrapn(paste0("No data could be found in the simulation '", 
+                                       ff, 
+                                       "' for the ", k, " (or the other compounds that are on that same tab) in ", 
+                                       j, ".")), 
+                          call. = FALSE)
                }
                
                rm(compoundsToExtract_k)
@@ -1113,33 +1113,33 @@ extractConcTime_mult <- function(sim_data_files = NA,
             # Need to handle ADAM, AdvBrainModel, and PD data differently b/c
             # different units
             SpecialTissue <- c("stomach", "duodenum", "jejunum I",
-                            "jejunum II", "ileum I", "ileum II",
-                            "ileum III", "ileum IV", "colon", "faeces", 
-                            "gut tissue", "cumulative absorption", 
-                            "cumulative fraction released",
-                            "cumulative dissolution", 
-                            "PD response")
+                               "jejunum II", "ileum I", "ileum II",
+                               "ileum III", "ileum IV", "colon", "faeces", 
+                               "gut tissue", "cumulative absorption", 
+                               "cumulative fraction released",
+                               "cumulative dissolution", 
+                               "PD response")
             
             SpecialSubsection <- c("undissolved compound", 
-                                "dissolution rate of solid state", 
-                                "free compound in lumen", 
-                                "total compound in lumen", 
-                                "Heff", 
-                                "absorption rate", 
-                                "unreleased compound in faeces", 
-                                "dissolved compound", 
-                                "luminal CLint", 
-                                "cumulative fraction of compound absorbed", 
-                                "cumulative fraction of compound dissolved", 
-                                "enterocyte concentration", 
-                                # Below are technically AdvBrainModel but
-                                # using SpecialTissue b/c that object name is
-                                # already set up. Note that this omits
-                                # AdvBrainModel tissues that just have mass
-                                # per volume units.
-                                "Kp,uu,brain", 
-                                "Kp,uu,ICF", 
-                                "Kp,uu,ISF")
+                                   "dissolution rate of solid state", 
+                                   "free compound in lumen", 
+                                   "total compound in lumen", 
+                                   "Heff", 
+                                   "absorption rate", 
+                                   "unreleased compound in faeces", 
+                                   "dissolved compound", 
+                                   "luminal CLint", 
+                                   "cumulative fraction of compound absorbed", 
+                                   "cumulative fraction of compound dissolved", 
+                                   "enterocyte concentration", 
+                                   # Below are technically AdvBrainModel but
+                                   # using SpecialTissue b/c that object name is
+                                   # already set up. Note that this omits
+                                   # AdvBrainModel tissues that just have mass
+                                   # per volume units.
+                                   "Kp,uu,brain", 
+                                   "Kp,uu,ICF", 
+                                   "Kp,uu,ISF")
             
             # Not adjusting ADAM model concs b/c not set up yet.
             CT_adam <- MultData[[ff]][[j]] %>% 
@@ -1186,11 +1186,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    MultData <- bind_rows(MultData)
    
-   # toc(log = TRUE)
+   toc(log = TRUE)
    
    # all data together -------------------------------------------------
    
-   # tic(msg = "all data together - mult")
+   tic(msg = "all data together - mult")
    
    # Dealing with custom dosing regimens
    if("Dose_sub" %in% names(ct_dataframe) &
@@ -1236,7 +1236,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                       "File", "ObsFile", "subsection_ADAM"))) %>% 
       unique()
    
-   # toc(log = TRUE)
+   toc(log = TRUE)
    
    return(ct_dataframe)
    

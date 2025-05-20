@@ -676,7 +676,12 @@ extractExpDetails <- function(sim_data_file,
    # tabs, even though that's NOT what is in the workspace and NOT what gets
    # simulated. Catching this and fixing it. The start time when it's a
    # substrate alone will ALWAYS be the simulation start time.
-   if(is.na(Out$Inhibitor1) & Out$StartDayTime_sub != Out$SimStartDayTime){
+   if("StartDayTime_sub" %in% names(Out)){
+      # This can happen if it's a custom-dosing regimen for the substrate
+      # CustomDosing %>% filter(CompoundID == "substrate")
+      
+   } else if(is.na(Out$Inhibitor1) & 
+             Out$StartDayTime_sub != Out$SimStartDayTime){
       Out$StartDayTime_sub <- Out$SimStartDayTime
       Out$StartHr_sub <- 0
    }
@@ -875,7 +880,8 @@ extractExpDetails <- function(sim_data_file,
    
    return(Out)
    
-}
-
-
-
+   }
+   
+   
+   
+   
