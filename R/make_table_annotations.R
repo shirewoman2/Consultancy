@@ -214,28 +214,28 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    # From here down, there is only 1 value for MyCompoundID, tissue, and MyFile.
    
-   existing_exp_details <- harmonize_details(existing_exp_details)$MainDetails %>% 
+   Deets <- harmonize_details(existing_exp_details)$MainDetails %>% 
       filter(File == MyFile)
    
    ## General info on MyCompoundID ----------------------------------------
    
    MyDosedCompound <- switch(MyCompoundID, 
-                             "substrate" = existing_exp_details$Substrate,
-                             "primary metabolite 1" = existing_exp_details$Substrate,
-                             "primary metabolite 2" = existing_exp_details$Substrate,
-                             "secondary metabolite" = existing_exp_details$Substrate,
-                             "inhibitor 1" = existing_exp_details$Inhibitor1,
-                             "inhibitor 2" = existing_exp_details$Inhibitor2,
-                             "inhibitor 1 metabolite" = existing_exp_details$Inhibitor1)
+                             "substrate" = Deets$Substrate,
+                             "primary metabolite 1" = Deets$Substrate,
+                             "primary metabolite 2" = Deets$Substrate,
+                             "secondary metabolite" = Deets$Substrate,
+                             "inhibitor 1" = Deets$Inhibitor1,
+                             "inhibitor 2" = Deets$Inhibitor2,
+                             "inhibitor 1 metabolite" = Deets$Inhibitor1)
    
-   MyDoseRoute <- existing_exp_details[[switch(MyCompoundID, 
-                                               "substrate" = "DoseRoute_sub",
-                                               "primary metabolite 1" = "DoseRoute_sub",
-                                               "primary metabolite 2" = "DoseRoute_sub",
-                                               "secondary metabolite" = "DoseRoute_sub",
-                                               "inhibitor 1" = "DoseRoute_inhib",
-                                               "inhibitor 2" = "DoseRoute_inhib2",
-                                               "inhibitor 1 metabolite" = "DoseRoute_inhib")]]
+   MyDoseRoute <- Deets[[switch(MyCompoundID, 
+                                "substrate" = "DoseRoute_sub",
+                                "primary metabolite 1" = "DoseRoute_sub",
+                                "primary metabolite 2" = "DoseRoute_sub",
+                                "secondary metabolite" = "DoseRoute_sub",
+                                "inhibitor 1" = "DoseRoute_inhib",
+                                "inhibitor 2" = "DoseRoute_inhib2",
+                                "inhibitor 1 metabolite" = "DoseRoute_inhib")]]
    MyDoseRoute <- switch(MyDoseRoute, 
                          "Oral" = "oral", 
                          "IV" = "IV", 
@@ -251,7 +251,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                     "inhibitor 1" = "Dose_inhib",
                     "inhibitor 2" = "Dose_inhib2",
                     "inhibitor 1 metabolite" = "Dose_inhib")
-   MyDose <- existing_exp_details[[MyDose]]
+   MyDose <- Deets[[MyDose]]
    MyDose <- sub("custom dosing", "**CUSTOM DOSING**", MyDose)
    MyDose <- ifelse(is.na(MyDose), "**MISSING VALUE FOR DOSE; CHECK THIS**", MyDose)
    
@@ -259,13 +259,13 @@ make_table_annotations <- function(MyPKResults, # only PK table
       # NB: prettify_compound_names is the argument; prettify_compound_name is the function.
       prettify_compound_names){
       MyCompound <- prettify_compound_name(switch(MyCompoundID, 
-                                                  "substrate" = existing_exp_details$Substrate,
-                                                  "primary metabolite 1" = existing_exp_details$PrimaryMetabolite1,
-                                                  "primary metabolite 2" = existing_exp_details$PrimaryMetabolite2,
-                                                  "secondary metabolite" = existing_exp_details$SecondaryMetabolite,
-                                                  "inhibitor 1" = existing_exp_details$Inhibitor1,
-                                                  "inhibitor 2" = existing_exp_details$Inhibitor2,
-                                                  "inhibitor 1 metabolite" = existing_exp_details$Inhibitor1Metabolite))
+                                                  "substrate" = Deets$Substrate,
+                                                  "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                                                  "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                                                  "secondary metabolite" = Deets$SecondaryMetabolite,
+                                                  "inhibitor 1" = Deets$Inhibitor1,
+                                                  "inhibitor 2" = Deets$Inhibitor2,
+                                                  "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite))
       MyDosedCompound <- prettify_compound_name(MyDosedCompound)
    } else if(class(prettify_compound_names) == "character"){
       MyCompound <- prettify_compound_names[MyCompoundID]
@@ -273,29 +273,29 @@ make_table_annotations <- function(MyPKResults, # only PK table
          AllRegCompounds$DosedCompoundID[AllRegCompounds$CompoundID == MyCompoundID]]
    } else {
       MyCompound <- switch(MyCompoundID, 
-                           "substrate" = existing_exp_details$Substrate,
-                           "primary metabolite 1" = existing_exp_details$PrimaryMetabolite1,
-                           "primary metabolite 2" = existing_exp_details$PrimaryMetabolite2,
-                           "secondary metabolite" = existing_exp_details$SecondaryMetabolite,
-                           "inhibitor 1" = existing_exp_details$Inhibitor1,
-                           "inhibitor 2" = existing_exp_details$Inhibitor2,
-                           "inhibitor 1 metabolite" = existing_exp_details$Inhibitor1Metabolite)
+                           "substrate" = Deets$Substrate,
+                           "primary metabolite 1" = Deets$PrimaryMetabolite1,
+                           "primary metabolite 2" = Deets$PrimaryMetabolite2,
+                           "secondary metabolite" = Deets$SecondaryMetabolite,
+                           "inhibitor 1" = Deets$Inhibitor1,
+                           "inhibitor 2" = Deets$Inhibitor2,
+                           "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite)
    }
    
    MyDoseUnits <- switch(MyCompoundID, 
-                         "substrate" = existing_exp_details$Units_dose_sub,
-                         "primary metabolite 1" = existing_exp_details$Units_dose_sub,
-                         "primary metabolite 2" = existing_exp_details$Units_dose_sub,
-                         "secondary metabolite" = existing_exp_details$Units_dose_sub,
-                         "inhibitor 1" = existing_exp_details$Units_dose_inhib,
-                         "inhibitor 2" = existing_exp_details$Units_dose_inhib2,
-                         "inhibitor 1 metabolite" = existing_exp_details$Units_dose_inhib)
+                         "substrate" = Deets$Units_dose_sub,
+                         "primary metabolite 1" = Deets$Units_dose_sub,
+                         "primary metabolite 2" = Deets$Units_dose_sub,
+                         "secondary metabolite" = Deets$Units_dose_sub,
+                         "inhibitor 1" = Deets$Units_dose_inhib,
+                         "inhibitor 2" = Deets$Units_dose_inhib2,
+                         "inhibitor 1 metabolite" = Deets$Units_dose_inhib)
    
    MyDoseInt <- paste0("DoseInt", AllRegCompounds$Suffix[
       AllRegCompounds$CompoundID == MyCompoundID])
    
-   if(MyDoseInt %in% names(existing_exp_details)){
-      MyDoseInt <- existing_exp_details[[MyDoseInt]]
+   if(MyDoseInt %in% names(Deets)){
+      MyDoseInt <- Deets[[MyDoseInt]]
       
       MyDoseFreq <- case_when(
          MyDoseInt == 12 ~ "BID", 
@@ -317,30 +317,30 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    ## Info on any perpetrators included ---------------------------------
    
-   AllPerpetrators <- c("inhibitor 1" = ifelse("Inhibitor1" %in% names(existing_exp_details), 
-                                               existing_exp_details$Inhibitor1, NA), 
-                        "inhibitor 2" = ifelse("Inhibitor2" %in% names(existing_exp_details), 
-                                               existing_exp_details$Inhibitor2, NA), 
-                        "inhibitor 1 metabolite" = ifelse("Inhibitor1Metabolite" %in% names(existing_exp_details), 
-                                                          existing_exp_details$Inhibitor1, NA))
+   AllPerpetrators <- c("inhibitor 1" = ifelse("Inhibitor1" %in% names(Deets), 
+                                               Deets$Inhibitor1, NA), 
+                        "inhibitor 2" = ifelse("Inhibitor2" %in% names(Deets), 
+                                               Deets$Inhibitor2, NA), 
+                        "inhibitor 1 metabolite" = ifelse("Inhibitor1Metabolite" %in% names(Deets), 
+                                                          Deets$Inhibitor1, NA))
    AllPerpetrators <- AllPerpetrators[complete.cases(AllPerpetrators)]
    
-   MyPerpetrator <- determine_myperpetrator(existing_exp_details, prettify_compound_names)
+   MyPerpetrator <- determine_myperpetrator(Deets, prettify_compound_names)
    
    if(MyPerpetrator != "none"){
-      SingMult_inhib <- ifelse(existing_exp_details$Regimen_inhib %in% c("custom dosing",
-                                                                         "Multiple Dose"), 
+      SingMult_inhib <- ifelse(Deets$Regimen_inhib %in% c("custom dosing",
+                                                          "Multiple Dose"), 
                                "multiple", "single")
       
-      if("DoseInt_inhib" %in% names(existing_exp_details)){
+      if("DoseInt_inhib" %in% names(Deets)){
          DoseFreq_inhib <- case_when(
-            DoseInt_inhib == 12 ~ "BID", 
-            DoseInt_inhib == 24 ~ "QD", 
-            DoseInt_inhib == 8 ~ "three times per day", 
-            DoseInt_inhib == 6 ~ "four times per day", 
-            DoseInt_inhib == 48 ~ "every other day", 
-            is.na(DoseInt_inhib) ~ "single dose", 
-            .default = paste("every", DoseInt_inhib, "hours"))
+            Deets$DoseInt_inhib == 12 ~ "BID", 
+            Deets$DoseInt_inhib == 24 ~ "QD", 
+            Deets$DoseInt_inhib == 8 ~ "three times per day", 
+            Deets$DoseInt_inhib == 6 ~ "four times per day", 
+            Deets$DoseInt_inhib == 48 ~ "every other day", 
+            is.na(Deets$DoseInt_inhib) ~ "single dose", 
+            .default = paste("every", Deets$DoseInt_inhib, "hours"))
          
       } else {
          DoseFreq_inhib <- "single dose"
@@ -352,14 +352,14 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                DoseFreq_inhib)
       
       NumDaysInhib <- suppressWarnings(
-         existing_exp_details$NumDoses_inhib*as.numeric(existing_exp_details$DoseInt_inhib)/24)
+         Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
       NumDaysInhib <- ifelse(is.na(NumDaysInhib), "**CUSTOM DOSING - FILL IN MANUALLY**",
                              NumDaysInhib)
       
       # FIXME - Started to set this up for when there are 2 inhibitors but
       # haven't finished b/c not applicable to my current situation
-      if(complete.cases(existing_exp_details$Inhibitor2)){
-         if("DoseInt_inhib2" %in% names(existing_exp_details)){
+      if(complete.cases(Deets$Inhibitor2)){
+         if("DoseInt_inhib2" %in% names(Deets)){
             DoseFreq_inhib2 <- case_when(
                DoseInt_inhib2 == 12 ~ "BID", 
                DoseInt_inhib2 == 24 ~ "QD", 
@@ -379,13 +379,13 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                    DoseFreq_inhib2)
          
          NumDaysInhib2 <- suppressWarnings(
-            existing_exp_details$NumDoses_inhib2*as.numeric(existing_exp_details$DoseInt_inhib2)/24)
+            Deets$NumDoses_inhib2*as.numeric(Deets$DoseInt_inhib2)/24)
          NumDaysInhib2 <- ifelse(is.na(NumDaysInhib2), "**CUSTOM DOSING - FILL IN MANUALLY**",
                                  NumDaysInhib2)
          
       }
       
-      DoseDay_sub <- str_split_fixed(existing_exp_details$StartDayTime_sub, "Day |, ", 3)[2]
+      DoseDay_sub <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
       LastDig <- as.numeric(str_sub(DoseDay_sub, start = -1, end = -1))
       DoseDay_sub <- paste0(DoseDay_sub, 
                             case_when(LastDig %in% c(0, 4:9) ~ "th", 
@@ -415,7 +415,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
       "Dose1 Last" = paste("the first and multiple", 
                            MyDoseRoute, "doses"),
       
-      "Dose1" = paste(ifelse(is.na(existing_exp_details$DoseInt_sub), 
+      "Dose1" = paste(ifelse(is.na(Deets$DoseInt_sub), 
                              "a single", "the first"),
                       MyDoseRoute, "dose"),
       
@@ -425,7 +425,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
       "User" = paste("multiple",
                      MyDoseRoute, "doses"), 
       
-      "no dose num included" = ifelse(is.na(existing_exp_details$DoseInt_sub), 
+      "no dose num included" = ifelse(is.na(Deets$DoseInt_sub), 
                                       paste("a single", MyDoseRoute, "dose"), 
                                       paste("the first and/or multiple", MyDoseRoute, "doses"))
    )
@@ -438,10 +438,10 @@ make_table_annotations <- function(MyPKResults, # only PK table
       paste(" with or without", 
             ifelse(DoseFreq_inhib == "single dose", 
                    paste("a single dose of", 
-                         sub("custom dosing", "**CUSTOM DOSING**", existing_exp_details$Dose_inhib), 
+                         sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
                          MyDoseUnits,
                          MyPerpetrator), 
-                   paste(sub("custom dosing", "**CUSTOM DOSING**", existing_exp_details$Dose_inhib), 
+                   paste(sub("custom dosing", "**CUSTOM DOSING**", Deets$Dose_inhib), 
                          MyDoseUnits,
                          MyPerpetrator, DoseFreq_inhib))),
       "")
@@ -459,7 +459,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                      paste(sub("custom dosing", "**CUSTOM DOSING**", MyDose), 
                            MyDoseUnits, MyDosedCompound), 
                      HeadText3, " in ", 
-                     tidyPop(existing_exp_details$Population)$Population, ".")
+                     tidyPop(Deets$Population)$Population, ".")
    
    
    # Return -----------------------------------------------------------
