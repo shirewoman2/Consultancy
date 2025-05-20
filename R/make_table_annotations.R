@@ -422,6 +422,9 @@ make_table_annotations <- function(MyPKResults, # only PK table
       "Last" = paste("multiple",
                      MyDoseRoute, "doses"), 
       
+      "User" = paste("multiple",
+                     MyDoseRoute, "doses"), 
+      
       "no dose num included" = ifelse(is.na(existing_exp_details$DoseInt_sub), 
                                       paste("a single", MyDoseRoute, "dose"), 
                                       paste("the first and/or multiple", MyDoseRoute, "doses"))

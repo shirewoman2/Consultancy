@@ -1146,7 +1146,10 @@ pk_table <- function(PKparameters = NA,
       ColNames <- prettify_column_names(MyPKResults,
                                         return_which_are_PK = TRUE) %>% 
          mutate(# Checking position of columns with custom intervals.
-            CustomInt = ColName %in% AllPKParameters$PKparameter_nodosenum)
+            CustomInt = ColName %in% 
+               (AllPKParameters %>% 
+                   filter(AppliesToAllDoses == FALSE) %>% 
+                   pull(PKparameter_nodosenum)))
       
       # Adding time interval to any data that came from custom AUC interval
       # sheets.

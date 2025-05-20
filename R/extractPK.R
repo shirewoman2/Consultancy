@@ -1356,6 +1356,12 @@ extractPK <- function(sim_data_file,
                                                as.data.frame(Out_ind[PKparameters_Abs_ADAM]))
                }
                
+               # Placeholder b/c we need something for TimeInterval downstream
+               TimeInterval[[i]] <- data.frame(
+                  File = sim_data_file, 
+                  Sheet = "Overall Fa Fg", 
+                  Interval = "full simulation") %>% 
+                  mutate(PKparameter = i)
             } 
             
          } else if(AbsModel == "1st order"){
@@ -1440,6 +1446,13 @@ extractPK <- function(sim_data_file,
                                                    StartRow_ind = 10,
                                                    EndRow_ind = nrow(Abs_xl)))
                         }
+                        
+                        # Placeholder b/c we need something for TimeInterval downstream
+                        TimeInterval[[i]] <- data.frame(
+                           File = sim_data_file, 
+                           Sheet = "Absorption", 
+                           Interval = "full simulation") %>% 
+                           mutate(PKparameter = i)
                      }
                      
                      if(includeTrialInfo & length(PKparameters_Abs) > 0){
@@ -1621,6 +1634,13 @@ extractPK <- function(sim_data_file,
                                           StartRow_ind = StartRow_ind,
                                           EndRow_ind = nrow(Dist_xl)))
                }
+               
+               # Placeholder b/c we need something for TimeInterval downstream
+               TimeInterval[[i]] <- data.frame(
+                  File = sim_data_file, 
+                  Sheet = "Distribution - Vols", 
+                  Interval = "full simulation") %>% 
+                  mutate(PKparameter = i)
             }
             
             if(includeTrialInfo & length(PKparameters_Dist) > 0){
@@ -1714,6 +1734,14 @@ extractPK <- function(sim_data_file,
                                        StartRow_ind = StartRow_ind,
                                        EndRow_ind = nrow(DrugPop_xl)))
             }
+            
+            # Placeholder b/c we need something for TimeInterval downstream
+            TimeInterval[[i]] <- data.frame(
+               File = sim_data_file, 
+               Sheet = "Drug-Population Parameters", 
+               Interval = "full simulation") %>% 
+               mutate(PKparameter = i)
+            
          }   
          
          if(includeTrialInfo & length(PKparameters_DrugPop) > 0){
@@ -1817,6 +1845,16 @@ extractPK <- function(sim_data_file,
                                        StartRow_ind = (RowNum + 1),
                                        EndRow_ind = nrow(CLTSS_xl)))
             }
+            
+            # Placeholder b/c we need something for TimeInterval downstream
+            TimeInterval[[i]] <- data.frame(
+               File = sim_data_file, 
+               Sheet = ifelse("Interaction Trials SS" %in% SheetNames, 
+                              "Interaction Trials SS",
+                              "Clearance Trials SS"),
+               Interval = "full simulation") %>% 
+               mutate(PKparameter = i)
+            
          }   
          
          if(includeTrialInfo & length(PKparameters_CLTSS) > 0){
@@ -2013,6 +2051,13 @@ extractPK <- function(sim_data_file,
                                        StartRow_ind = StartRow_ind,
                                        EndRow_ind = EndRow_ind))
             }
+            
+            # Placeholder b/c we need something for TimeInterval downstream
+            TimeInterval[[i]] <- data.frame(
+               File = sim_data_file, 
+               Sheet = "Regional ADAM Fractions (Sub)",
+               Interval = "full simulation") %>% 
+               mutate(PKparameter = i)
          }   
          
          if(includeTrialInfo & length(PKparameters_RegADAM) > 0){
