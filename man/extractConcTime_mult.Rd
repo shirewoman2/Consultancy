@@ -153,15 +153,19 @@ of possible permutations of tab names, so it does take a while.}
   suppresesor, but it's labeled as "Inhibitor 1" in the simulator}
   \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation}
   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
-  \item{NOT SET UP YET --> "intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
+  \item{"intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
   observed data with DV listed as "Conjugated Protein Plasma Total" will
   match these simulated data}
+  \item{"conjugated payload"; observed data with DV listed as
+  "Conjugated Drug Plasma Total" will match these simulated data}
   \item{"total antibody" for DAR0-DARmax for an ADC; observed data with DV
   listed as "Total Protein Conjugate Plasma Total" will match these simulated data}
-  \item{"conjugated payload"; observed data with DV listed as 
-  "Conjugated Drug Plasma Total" will match these simulated data}
   \item{"released payload" for the released drug from an ADC, which shows up
-  as "Sub Pri Met1" in Simulator output files.}}
+  as "Sub Pri Met1" in Simulator output files.}
+  \item{"therapeutic protein" for mAb concentrations alone}
+  \item{"therapeutic protein and TMDD complex" for mAb concentrations 
+  including when bound to the target}
+  }
 
   \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
   tested this very thoroughly, so please be extra careful to check that

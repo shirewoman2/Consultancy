@@ -155,15 +155,19 @@
 #'   suppresesor, but it's labeled as "Inhibitor 1" in the simulator}
 #'   \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation}
 #'   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
-#'   \item{NOT SET UP YET --> "intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
+#'   \item{"intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
 #'   observed data with DV listed as "Conjugated Protein Plasma Total" will
 #'   match these simulated data}
+#'   \item{"conjugated payload"; observed data with DV listed as
+#'   "Conjugated Drug Plasma Total" will match these simulated data}
 #'   \item{"total antibody" for DAR0-DARmax for an ADC; observed data with DV
 #'   listed as "Total Protein Conjugate Plasma Total" will match these simulated data}
-#'   \item{"conjugated payload"; observed data with DV listed as 
-#'   "Conjugated Drug Plasma Total" will match these simulated data}
 #'   \item{"released payload" for the released drug from an ADC, which shows up
-#'   as "Sub Pri Met1" in Simulator output files.}}
+#'   as "Sub Pri Met1" in Simulator output files.}
+#'   \item{"therapeutic protein" for mAb concentrations alone}
+#'   \item{"therapeutic protein and TMDD complex" for mAb concentrations 
+#'   including when bound to the target}
+#'   }
 #'
 #'   \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
 #'   tested this very thoroughly, so please be extra careful to check that
@@ -328,7 +332,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    # Main body of function -----------------------------------------------
    
-   tic(msg = "Main body of function - mult")
+   # tic(msg = "Main body of function - mult")
    
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx" or in all subfolders if they wanted it to be
@@ -772,12 +776,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                            complete.cases(ObsFile) &
                                            File %in% sim_data_files_topull) 
    }
-   toc(log = TRUE)
+   # toc(log = TRUE)
    
    ## Start of loop through files ------------------------------------------
    MultData <- list()
    
-   tic(msg = "start of loop through files - mult")
+   # tic(msg = "start of loop through files - mult")
    
    for(ff in sim_data_files_topull){
       message(paste("Extracting concentration-time data from file =", ff))
@@ -1186,11 +1190,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    MultData <- bind_rows(MultData)
    
-   toc(log = TRUE)
+   # toc(log = TRUE)
    
    # all data together -------------------------------------------------
    
-   tic(msg = "all data together - mult")
+   # tic(msg = "all data together - mult")
    
    # Dealing with custom dosing regimens
    if("Dose_sub" %in% names(ct_dataframe) &
@@ -1236,7 +1240,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                       "File", "ObsFile", "subsection_ADAM"))) %>% 
       unique()
    
-   toc(log = TRUE)
+   # toc(log = TRUE)
    
    return(ct_dataframe)
    
