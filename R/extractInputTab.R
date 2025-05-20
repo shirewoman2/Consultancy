@@ -1356,6 +1356,7 @@ extractInputTab <- function(deets = "all",
    Out[["ConcDependent_BP"]] <- CDBPProfs
    Out[["pH_dependent_solubility"]] <- pHSol
    Out[["pH_dependent_LumindalDegradation"]] <- pHLumDeg
+   Out[["CustomDosing"]] <- any(CustomDosing, na.rm = T)
    
    
    # Returning --------------------------------------------------------------

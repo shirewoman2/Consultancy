@@ -355,10 +355,6 @@ extractExpDetails <- function(sim_data_file,
       for(i in MySumDeets){
          Out[[i]] <- pullValue(i)
          
-         if(str_detect(i, "^StartDayTime") & is.na(Out[[i]])){
-            CustomDosing <- c(CustomDosing, TRUE)
-         }
-         
          if(i == "Population" & is.na(Out[[i]])){
             # This can happen when the simulator output is actually from Simcyp
             # Discovery or the Simcyp Animal Simulator. Look for
@@ -423,7 +419,10 @@ extractExpDetails <- function(sim_data_file,
                                    sheet = "Input Sheet", 
                                    CustomDosing = CustomDosing)
       
-      Out <- c(Out, InputInfo[setdiff(names(InputInfo), names(Out))])
+      CustomDosing <- InputInfo$CustomDosing
+      
+      Out <- c(Out, InputInfo[setdiff(c(names(InputInfo), "CustomDosing"),
+                                      names(Out))])
       
    }
    
@@ -433,7 +432,7 @@ extractExpDetails <- function(sim_data_file,
       any(CustomDosing, na.rm = TRUE)){
       
       # When there's custom dosing for any of the substrate or inhibitors,
-      # then the dosing start time should be pulled from a "Custom CustomDosing"
+      # then the dosing start time should be pulled from a "Custom Dosing"
       # tab. Pulling any custom dosing sheets here.
       
       CustomDoseSheets <- SheetNames[str_detect(SheetNames, "Custom Dosing")]
@@ -459,22 +458,22 @@ extractExpDetails <- function(sim_data_file,
          GoodCols <- t(CustomDose_xl[3, ]) %>% as.character()
          GoodCols <- which(complete.cases(GoodCols))
          
-         CustomDosing <- CustomDose_xl[4:nrow(CustomDose_xl), GoodCols]
-         names(CustomDosing) <- make.names(CustomDose_xl[3, GoodCols])
-         CustomDosing <- CustomDosing %>% 
+         CustomDosing_DF <- CustomDose_xl[4:nrow(CustomDose_xl), GoodCols]
+         names(CustomDosing_DF) <- make.names(CustomDose_xl[3, GoodCols])
+         CustomDosing_DF <- CustomDosing_DF %>% 
             rename(DoseNum = Dose.Number, 
                    Time1 = Time,
                    Dose_units = Dose.Units, 
                    DoseRoute = Route.of.Administration) %>% 
             mutate(Day = as.numeric(Day))
          
-         TimeUnits <- names(CustomDosing)[str_detect(names(CustomDosing), "Offset")]
-         names(CustomDosing)[str_detect(names(CustomDosing), "Offset")] <- "Time"
+         TimeUnits <- names(CustomDosing_DF)[str_detect(names(CustomDosing_DF), "Offset")]
+         names(CustomDosing_DF)[str_detect(names(CustomDosing_DF), "Offset")] <- "Time"
          
          MyCompoundID <- AllRegCompounds$CompoundID[AllRegCompounds$Suffix == Suffix]
          MyCompound <- as.character(Out[AllRegCompounds$DetailNames[AllRegCompounds$Suffix == Suffix]])
          
-         CustomDosing <- CustomDosing %>% 
+         CustomDosing_DF <- CustomDosing_DF %>% 
             # Removing any rows where Time is NA b/c those are likely places
             # where people have added some comments, etc. and not the main data
             # we want. The NA values mess up things downstream.
@@ -493,15 +492,15 @@ extractExpDetails <- function(sim_data_file,
                    Time, Time_units, DoseNum, 
                    Dose, Dose_units, DoseRoute)
          
-         Out[[paste0("CustomDosing", Suffix)]] <- CustomDosing
+         Out[[paste0("CustomDosing", Suffix)]] <- CustomDosing_DF
          Out[[paste0("Dose", Suffix)]] <- "custom dosing"
          Out[[paste0("StartDayTime", Suffix)]] <- "custom dosing"
-         Out[[paste0("StartHr", Suffix)]] <- CustomDosing$Time[CustomDosing$DoseNum == 1]
+         Out[[paste0("StartHr", Suffix)]] <- CustomDosing_DF$Time[CustomDosing_DF$DoseNum == 1]
          Out[[paste0("DoseRoute", Suffix)]] <- "custom dosing"
          Out[[paste0("DoseInt", Suffix)]] <- "custom dosing"
          Out[[paste0("Regimen", Suffix)]] <- "Multiple Dose"
          
-         rm(CustomDosing, Suffix, CustomDose_xl, MyCompoundID, MyCompound, TimeUnits)
+         rm(CustomDosing_DF, Suffix, CustomDose_xl, MyCompoundID, MyCompound, TimeUnits)
          
       }
    }
@@ -676,12 +675,8 @@ extractExpDetails <- function(sim_data_file,
    # tabs, even though that's NOT what is in the workspace and NOT what gets
    # simulated. Catching this and fixing it. The start time when it's a
    # substrate alone will ALWAYS be the simulation start time.
-   if("StartDayTime_sub" %in% names(Out)){
-      # This can happen if it's a custom-dosing regimen for the substrate
-      # CustomDosing %>% filter(CompoundID == "substrate")
-      
-   } else if(is.na(Out$Inhibitor1) & 
-             Out$StartDayTime_sub != Out$SimStartDayTime){
+   if(is.na(Out$Inhibitor1) & 
+      Out$StartDayTime_sub != Out$SimStartDayTime){
       Out$StartDayTime_sub <- Out$SimStartDayTime
       Out$StartHr_sub <- 0
    }

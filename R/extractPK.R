@@ -595,6 +595,10 @@ extractPK <- function(sim_data_file,
                                                          "Overall Fa Fg")) %>% 
                     pull(PKparameter) %>% unique()), 
              
+             SheetDistribution = PKparameter %in% 
+                (AllPKParameters %>% filter(Sheet %in% c("Distribution - Vols")) %>% 
+                    pull(PKparameter) %>% unique()), 
+             
              SheetRegADAM = PKparameter %in% 
                 (AllPKParameters %>% 
                     filter(Sheet %in% c("Regional ADAM Fractions (Sub)")) %>% # FIXME - probably can expand this to inhibitor as well.
@@ -767,7 +771,8 @@ extractPK <- function(sim_data_file,
    # } 
    
    PKparamDF <- PKparamDF %>% 
-      mutate(AnyTRUE = any(SheetAUC, SheetAbsorption, SheetRegADAM, SheetDrugPop, 
+      mutate(AnyTRUE = any(SheetAUC, SheetDistribution, SheetAbsorption,
+                           SheetRegADAM, SheetDrugPop, 
                            SheetAUC0, SheetAUClast, SheetCLTSS, SheetUser)) %>% 
       filter(AnyTRUE == TRUE) %>% select(-AnyTRUE)
    
@@ -1515,6 +1520,121 @@ extractPK <- function(sim_data_file,
             }
          }
       }
+   }
+   
+   
+   # Pulling data from "Distribution - Vols" sheet ------------------------------
+   
+   # Some PK parameters show up on multiple sheets. No need to pull
+   # those here if they've already been pulled from another sheet.
+   PKparameters_Dist <-
+      setdiff(PKparamDF$PKparameter[PKparamDF$SheetDistribution == TRUE], 
+              names(Out_agg))
+   
+   if(length(PKparameters_Dist) > 0 &
+      any(PKparameters_orig %in% c("AUC tab")) == FALSE){
+      
+      if(Deets$Species != "human"){
+         warning(wrapn("You have requested information from the 'Distribution - Vols' tab from an animal simulation; we apologize, but we have not set up this function for animal data extraction from the 'Distribution - Vols' tab yet."), 
+                 call. = FALSE)
+      } else {
+         
+         # Error catching
+         if("Distribution - Vols" %in% SheetNames == FALSE){
+            warning(wrapn(paste0("A sheet titled 'Distribution - Vols' must be present in the Excel simulated data file to extract the PK parameters ",
+                                 str_comma(paste0("'", PKparameters_Dist, "'")),
+                                 ". None of these parameters can be extracted.")),
+                    call. = FALSE)
+         } else {
+            
+            Dist_xl <- suppressMessages(
+               readxl::read_excel(path = sim_data_file, sheet = "Distribution - Vols",
+                                  col_names = FALSE))
+            
+            FirstBlank <- which(is.na(t(Dist_xl[2,])))
+            FirstBlank <- FirstBlank[FirstBlank > 2][1]
+            SubCols <- 3:(FirstBlank - 1)
+            rm(FirstBlank)
+            
+            StartRow_agg <- 3
+            EndRow_agg <- which(is.na(Dist_xl$...1[3:nrow(Dist_xl)]))[1] + 1
+            StartRow_ind <- which(Dist_xl$...1 == "Index")[1] + 1
+            
+            # Looping through parameters and extracting values
+            for(i in PKparameters_Dist){
+               
+               # Using regex to find the correct column. See
+               # data(AllPKParameters) for all the possible parameters as well
+               # as what regular expressions are being searched for each. 
+               ToDetect <- AllPKParameters %>% 
+                  filter(Sheet == "Distribution - Vols" & PKparameter == i) %>% 
+                  select(PKparameter, SearchText)
+               
+               # Looking for the regular expression specific to this parameter
+               # i. For the absorption tab, there are columns for the substrate
+               # and columns for Inhibitor 1. (There are also columns for
+               # Inhibitor 2 and 3 but I've never seen them filled in. -LSh)
+               if(str_detect(i, "withInhib")){
+                  ColsToUse <- WithInhibCols # FIXME This is not yet set up. 
+               } else if(str_detect(i, "ratio")){
+                  ColsToUse <- RatioCols # FIXME This is not yet set up. 
+               } else {
+                  ColsToUse <- SubCols
+               }
+               
+               ColNum <- ColsToUse[
+                  which(str_detect(as.character(Dist_xl[2, ColsToUse]),
+                                   ToDetect$SearchText))]
+               
+               if(length(ColNum) == 0 || is.na(ColNum)){
+                  if(any(PKparameters_orig %in% c("all")) == FALSE){
+                     warning(wrapn(paste0("The column with information for '", i,
+                                          "' on the tab `Distribution - Vols` cannot be found in the file '", 
+                                          sim_data_file, "'.")), 
+                             call. = FALSE)
+                  }
+                  suppressMessages(rm(ToDetect, ColNum))
+                  PKparameters_Dist <- setdiff(PKparameters_Dist, i)
+                  next
+               }
+               
+               suppressWarnings(
+                  Out_ind[[i]] <- Dist_xl[StartRow_ind:nrow(Dist_xl), ColNum] %>%
+                     pull(1) %>% as.numeric
+               )
+               
+               suppressWarnings(
+                  Out_agg[[i]] <- Dist_xl[StartRow_agg:EndRow_agg, ColNum] %>%
+                     pull(1) %>% as.numeric
+               )
+               names(Out_agg[[i]]) <- Dist_xl[StartRow_agg:EndRow_agg, 1] %>%
+                  pull(1)
+               
+               if(checkDataSource){
+                  DataCheck <- DataCheck %>%
+                     bind_rows(data.frame(PKparam = i,
+                                          Tab = "Distribution - Vols",
+                                          SearchText = ToDetect$SearchText,
+                                          Column = ColNum,
+                                          StartRow_agg = StartRow_agg,
+                                          EndRow_agg = EndRow_agg,
+                                          StartRow_ind = StartRow_ind,
+                                          EndRow_ind = nrow(Dist_xl)))
+               }
+            }
+            
+            if(includeTrialInfo & length(PKparameters_Dist) > 0){
+               # Subject and trial info
+               SubjTrial_Abs <- Dist_xl[StartRow_ind:nrow(Dist_xl), 1:2] %>%
+                  rename("Individual" = ...1, "Trial" = ...2)
+               
+               Out_ind[["Disttab"]] <- cbind(SubjTrial_Abs,
+                                             as.data.frame(Out_ind[PKparameters_Dist]))
+            }
+            
+         } 
+         
+      } 
    }
    
    

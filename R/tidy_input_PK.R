@@ -1301,8 +1301,16 @@ tidy_input_PK <- function(PKparameters,
                                         sub("_dose1|_last", "", PKparameter), 
                                      TRUE ~ PKparameter), 
              PKparameter = harmonize_PK_names(PKparameter), 
-             DoseNumProblem = PKparameter %in%
-                AllPKParameters$PKparameter_nodosenum & is.na(Sheet))
+             DoseNumProblem = 
+                (PKparameter %in% (AllPKParameters %>% 
+                                      filter(AppliesToAllDoses == FALSE) %>% 
+                                      pull(PKparameter)) & 
+                    is.na(Sheet) & 
+                    str_detect(PKparameter, "_dose1|_last") == FALSE) |
+                (PKparameter %in% (AllPKParameters %>% 
+                                      filter(AppliesToAllDoses == TRUE) %>% 
+                                      pull(PKparameter)) & 
+                    complete.cases(Sheet)))
    
    if(any(PKparameters$DoseNumProblem)){
       message(wrapn("You have not specified which interval you want for the following PK:"))
