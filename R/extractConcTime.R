@@ -793,6 +793,8 @@ extractConcTime <- function(sim_data_file,
         "intact ADC" = paste0(Deets$Substrate, "-", Deets$PrimaryMetabolite1), 
         "conjugated payload" = NA, 
         "total antibody" = Deets$Substrate, 
+        "therapeutic protein" = Deets$Substrate, 
+        "therapeutic protein and TMDD complex" = Deets$Substrate, 
         "released payload" = Deets$PrimaryMetabolite1, 
         "PD response" = "PD response", 
         "PD input" = "PD input")
@@ -934,11 +936,30 @@ extractConcTime <- function(sim_data_file,
          
          if(ADC){
             obs_data <- obs_data %>% 
-               mutate(CompoundID = 
-                         case_match(CompoundID, 
-                                    "substrate" ~ "total antibody", # FIXME: Not sure this is how I should set this up. Need clarity on all the Obs DV options for ADC sims.
-                                    "primary metabolite 1" ~ "released payload", 
-                                    .default = CompoundID))
+               mutate(
+                  CompoundID = 
+                     case_when(
+                        # FIXME: Not sure this is how I should set this up. Need
+                        # clarity on all the Obs DV options for ADC sims.
+                        CompoundID == "substrate" & 
+                           "intact ADC" %in% sim_data$CompoundID ~ 
+                           "intact ADC", 
+                        
+                        CompoundID == "substrate" & 
+                           "conjugated payload" %in% sim_data$CompoundID ~ 
+                           "conjugated payload", 
+                        
+                        CompoundID == "substrate" & 
+                           "therapeutic protein" %in% sim_data$CompoundID ~ 
+                           "therapeutic protein", 
+                        
+                        CompoundID == "substrate" & 
+                           "total antibody" %in% sim_data$CompoundID ~ 
+                           "total antibody", 
+                        
+                        CompoundID == "primary metabolite 1" ~ 
+                           "released payload", 
+                        .default = CompoundID))
          }
          
          if("CompoundID" %in% names(obs_data)){

@@ -77,8 +77,8 @@ make_ct_caption <- function(ct_dataframe,
                           plot_type %in% c("enzyme-abundance", "fm") &
                              InhibPresent == FALSE ~ "victim", 
                           
-                          .default = str_c(sort(unique(AllRegCompounds$DDIrole[
-                             AllRegCompounds$CompoundID %in% CompoundID])), collapse = "-"))
+                          .default = str_c(sort(unique(AllCompounds$DDIrole[
+                             AllCompounds$CompoundID %in% CompoundID])), collapse = "-"))
    
    # Adding one more plot_type to account for ADAM model data where it's not
    # really "concentration" but "amount".
@@ -376,8 +376,8 @@ make_ct_caption <- function(ct_dataframe,
                
                "concentration-time" = paste0(" concentration-time profiles of ", MyCompound)), 
             " following ",  
-            case_when(CompoundID %in% AllRegCompounds$CompoundID[
-               AllRegCompounds$DDIrole == "victim"] ~ DosingText_sub_lower, 
+            case_when(CompoundID %in% AllCompounds$CompoundID[
+               AllCompounds$DDIrole == "victim"] ~ DosingText_sub_lower, 
                .default = DosingText_inhib_lower), 
             ".") 
       }
