@@ -1470,24 +1470,37 @@ forest_plot <- function(forest_dataframe,
    forest_dataframe <- forest_dataframe %>% 
       # Graphing this is easiest if the levels start with the item we want on
       # the bottom of the y axis and work upwards.
-      mutate(PKparameter = factor(PKparameter, levels = c("Cmax_ratio",
-                                                          "Cmax_ratio_last", 
-                                                          "Cmax_nounits",
-                                                          "Cmax_last_nounits", 
-                                                          "AUCtau_ratio",
-                                                          "AUCtau_ratio_last", 
-                                                          "AUCtau_nounits",
-                                                          "AUCtau_last_nounits",
-                                                          "Cmax_ratio_dose1", 
-                                                          "Cmax_dose1_nounits",
-                                                          "AUC_ratio",
-                                                          "AUCt_ratio",
-                                                          "AUCt_ratio_dose1", 
-                                                          "AUCt_nounits",
-                                                          "AUCinf_nounits", 
-                                                          "AUCinf_dose1_nounits",
-                                                          "AUCinf_ratio",
-                                                          "AUCinf_ratio_dose1"))) %>% 
+      mutate(PKparameter = factor(PKparameter, 
+                                  levels = c("Cmin_ratio",
+                                             "Cmin_ratio_last", 
+                                             "Cmin_nounits",
+                                             "Cmin_last_nounits", 
+                                             
+                                             "Cmax_ratio",
+                                             "Cmax_ratio_last", 
+                                             "Cmax_nounits",
+                                             "Cmax_last_nounits", 
+                                             
+                                             "AUCtau_ratio",
+                                             "AUCtau_ratio_last", 
+                                             "AUCtau_nounits",
+                                             "AUCtau_last_nounits",
+                                             
+                                             "Cmin_ratio_dose1", 
+                                             "Cmin_dose1_nounits",
+                                             
+                                             "Cmax_ratio_dose1", 
+                                             "Cmax_dose1_nounits",
+                                             
+                                             "AUC_ratio",
+                                             "AUCt_ratio",
+                                             "AUCt_ratio_dose1", 
+                                             "AUCt_nounits",
+                                             
+                                             "AUCinf_nounits", 
+                                             "AUCinf_dose1_nounits",
+                                             "AUCinf_ratio",
+                                             "AUCinf_ratio_dose1"))) %>% 
       filter(complete.cases(PKparameter))
    
    # Only use PK parameters where there are all complete cases. 

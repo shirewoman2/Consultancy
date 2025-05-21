@@ -684,7 +684,7 @@ pk_table_subfun <- function(sim_data_file,
          FD <- MyPKResults %>% 
             filter(str_detect(PKParam, "ratio")) %>% 
             rename(PKparameter = PKParam) %>% 
-            filter(str_detect(PKparameter, "AUCinf_[^P]|AUCt|Cmax")) %>% 
+            filter(str_detect(PKparameter, "AUCinf_[^P]|AUCt|Cmax|Cmin")) %>% 
             mutate(File = sim_data_file, 
                    Victim = switch(unique(PKparameters$CompoundID), 
                                    "substrate" = Deets$Substrate, 
