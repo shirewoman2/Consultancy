@@ -387,6 +387,10 @@ make_ct_caption <- function(ct_dataframe,
       figure_type_mod <- case_when(figure_type %in% c("compound summary", 
                                                       "Freddy") &
                                       DDI == TRUE ~ "percentiles", 
+                                   figure_type == "means only" & 
+                                      DDI == TRUE ~ "means only DDI", 
+                                   figure_type == "means only" & 
+                                      DDI == FALSE ~ "means only baseline", 
                                    .default = figure_type)
       
       CapText2 <- switch(
@@ -405,8 +409,12 @@ make_ct_caption <- function(ct_dataframe,
             paste0("The shaded regions represent the 5^th^ to the 95^th^ percentiles and the solid darker line the ",
                    mean_type, 
                    " mean data for the simulated population (n = ", N_indiv, ")."), 
-         "means only" = 
-            paste0("The solid line represents the ", 
+         "means only DDI" = 
+            paste0("The lines represent the ", 
+                   mean_type, 
+                   " mean data for the simulated population (n = ", N_indiv, ")."), 
+         "means only baseline" = 
+            paste0("The line represents the ", 
                    mean_type, 
                    " mean data for the simulated population (n = ", N_indiv, ")."), 
          "Freddy" = 

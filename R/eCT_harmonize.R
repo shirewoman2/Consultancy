@@ -339,6 +339,15 @@ eCT_harmonize <- function(sim_data_xl,
                               "THERPROTEIN", 
                               sim_data_xl$...1)
       
+      # There are some instances where the therapeutic protein is listed as
+      # "Therapeutic protein CSys" and a few where it's only "Csys". This is
+      # likely the case for the other large molecules as well, but I'll need to
+      # check. Dealing with that.
+      if(any(str_detect(sim_data_xl$...1, "THERPROTEIN"))){
+         sim_data_xl$...1 <- sub("CSys",
+                                 "THERPROTEIN", 
+                                 sim_data_xl$...1)
+      }
       
    } 
    
