@@ -282,7 +282,7 @@ fm_treemap <- function(fm_dataframe,
          }
          
          MyColors <- switch(color_set, 
-                            "default" = SimcypColors, 
+                            "default" = CertaraColors, 
                             "set 1" = RColorBrewer::brewer.pal(NumColors, "Set1"),
                             "set 2" = RColorBrewer::brewer.pal(NumColors, "Dark2"),
                             "rainbow" = rainbow(NumColors), 
@@ -294,9 +294,9 @@ fm_treemap <- function(fm_dataframe,
          # best. :-)
          if(color_set == "default" & NumColors > 1 & NumColors < 5){
             MyColors <- switch(as.character(NumColors), 
-                               "2" = SimcypColors[2:3], 
-                               "3" = SimcypColors[2:4], 
-                               "4" = SimcypColors[2:5])
+                               "2" = CertaraColors[2:3], 
+                               "3" = CertaraColors[2:4], 
+                               "4" = CertaraColors[2:5])
          }
          
       }
