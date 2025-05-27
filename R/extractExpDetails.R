@@ -646,6 +646,11 @@ extractExpDetails <- function(sim_data_file,
                         names(TEMP$MainDetails) != "Workspace"], 
                         names(Out))])
          
+         if(is.na(Out$ObsOverlayFile) &
+            "ObsOverlayFile" %in% names(TEMP$MainDetails)){
+            Out$ObsOverlayFile <- TEMP$MainDetails$ObsOverlayFile
+         }
+         
          UserIntervals <- TEMP$UserAUCIntervals
          
          rm(TEMP)
