@@ -138,8 +138,7 @@
 #'   "jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only 
 #'   applies to rodents), "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 #'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-#'   released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
-#'   SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive. Acceptable
+#'   released", or "cumulative dissolution".}} Not case sensitive. Acceptable
 #'   input is all tissues desired as a character vector, e.g., \code{tissues =
 #'   c("plasma", "blood", "liver")} or, if you want all possible tissues and
 #'   you've got some time to kill, "all". That will make R check for all sorts
