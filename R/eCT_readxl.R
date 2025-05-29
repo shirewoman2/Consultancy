@@ -103,7 +103,7 @@ eCT_readxl <- function(sim_data_file,
                                            "plasma" ~ "Conc Profiles C[Ss]ys|Protein Conc Trials", 
                                            "lymph" ~ "Lymph Conc Profiles")))]
             
-         } else if(TissueType == "PD"){
+         } else if(any(compoundToExtract %in% c("pd response", "pd input"))){
             PossSheets <- "PD Profiles (Sub)"
             
          } else {
@@ -224,11 +224,7 @@ eCT_readxl <- function(sim_data_file,
          
          PossSheets <- SheetNames[str_detect(SheetNames, PossSheets)]
          
-      } else if(TissueType == "PD"){
-         
-         PossSheets <- intersect(PossSheets, "PD Profiles (Sub)")
-         
-      }
+      } 
       
       Sheet <- PossSheets[1]
       

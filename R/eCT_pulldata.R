@@ -16,6 +16,7 @@
 #' @param sim_data_xl sim_data_xl
 #' @param ADC T or F
 #' @param SimTimeUnits time units
+#' @param PD T or F
 #'
 #' @return data.frame of conc time data
 #'
@@ -30,6 +31,7 @@ eCT_pulldata <- function(sim_data_xl,
                          Deets,
                          ADAM, 
                          ADC = FALSE, 
+                         PD = FALSE, 
                          ss, 
                          AdvBrainModel, 
                          tissue, 
@@ -40,8 +42,6 @@ eCT_pulldata <- function(sim_data_xl,
    NamesToCheck <- sim_data_xl$...1
    InteractionIndices <- which(str_detect(NamesToCheck, "WITHINTERACTION"))
    TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))[1]
-   
-   PD <- tissue == "pd response"
    
    if(ADAM & cmpd != "substrate"){
       if(tissue %in% c("faeces", "gut tissue")){
@@ -86,24 +86,12 @@ eCT_pulldata <- function(sim_data_xl,
       }
    } else if(PD){
       
-      MyCompound <-
-         switch(cmpd,
-                "substrate" = Deets$Substrate,
-                "inhibitor 1" = Deets$Inhibitor1,
-                "inhibitor 2" = Deets$Inhibitor2,
-                "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite,
-                "primary metabolite 1" = Deets$PrimaryMetabolite1,
-                "primary metabolite 2" = Deets$PrimaryMetabolite2,
-                "secondary metabolite" = Deets$SecondaryMetabolite) %>%
-         as.character()
-      
-      # !!! Note that switch is by tissue here rather than my cmpd like in all
-      # other scenarios
+      MyCompound <- cmpd
       CompoundIndices <- which(
          str_detect(sim_data_xl$...1,
-                    switch(tissue,
-                           "pd response" = "PD Response",
-                           "pd input" = "PD Input")))
+                    switch(cmpd,
+                           "pd response" = "PDRESPONSE",
+                           "pd input" = "PDINPUT")))
       CompoundIndices <- CompoundIndices[
          which(CompoundIndices > which(str_detect(sim_data_xl$...1, "Population Statistics")))]
       
