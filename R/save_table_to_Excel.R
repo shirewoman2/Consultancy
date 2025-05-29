@@ -12,6 +12,8 @@
 #'   "Sheet1".
 #' @param freeze_top_row TRUE (default) or FALSE for whether to freeze the view
 #'   in Excel so that the top row will always be visible
+#' @param freeze_first_col TRUE (default) or FALSE for whether to freeze the
+#'   view in Excel so that the first column will always be visible
 #' @param center_top_row TRUE (default) or FALSE for whether to center the text
 #'   in the top row
 #' @param wrap_text TRUE (default) or FALSE for whether to wrap text
@@ -91,8 +93,9 @@ save_table_to_Excel <- function(table,
                                 save_table, 
                                 output_tab_name = "Sheet1", 
                                 overwrite = "yes", 
-                                freeze_top_row = TRUE, 
                                 center_top_row = TRUE, 
+                                freeze_top_row = TRUE, 
+                                freeze_first_col = TRUE, 
                                 wrap_text = TRUE, 
                                 column_widths = NA, 
                                 highlight_cells = NA, 
@@ -135,6 +138,20 @@ save_table_to_Excel <- function(table,
               call. = FALSE)
       
       overwrite <- "ask"
+   }
+   
+   freeze_top_row <- freeze_top_row[1]
+   if("logical" %in% class(freeze_top_row) == FALSE){
+      warning(wrapn("You have specified something other than TRUE or FALSE for whether to freeze the top row, so we'll use the default of TRUE."), 
+              call. = FALSE)
+      freeze_top_row <- TRUE
+   }
+
+   freeze_first_col <- freeze_first_col[1]
+   if("logical" %in% class(freeze_first_col) == FALSE){
+      warning(wrapn("You have specified something other than TRUE or FALSE for whether to freeze the first column, so we'll use the default of TRUE."), 
+              call. = FALSE)
+      freeze_first_col <- TRUE
    }
    
    
@@ -233,7 +250,8 @@ save_table_to_Excel <- function(table,
    # Freezing view 
    openxlsx::freezePane(wb = WB,
                         sheet = output_tab_name,
-                        firstRow =  freeze_top_row)
+                        firstRow =  freeze_top_row, 
+                        firstCol = freeze_first_col)
    
    # Setting column widths
    if(all(is.na(column_widths))){
