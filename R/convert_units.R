@@ -470,6 +470,7 @@ convert_time_units <- function(DF_to_convert,
    }
    
    DF_to_convert <- DF_to_convert %>%
+      select(-any_of(c("Factor", "RevUnits"))) %>% 
       left_join(ConvTable_time %>% 
                    rename(Time_units = OrigUnits) %>% 
                    filter(RevUnits %in% DF_with_good_units$Time_units), 

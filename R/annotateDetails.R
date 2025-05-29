@@ -1511,9 +1511,9 @@ annotateDetails <- function(existing_exp_details,
                                output_tab_name){
          
          if(nchar(output_tab_name) > 31){
-            warning(wrapn(paste0("The tab `", 
+            warning(wrapn(paste0("The tab '", 
                                  output_tab_name, 
-                                 "` has more than 31 characters, which is the maximum. This tab will be shortened to `", 
+                                 "' has more than 31 characters, which is the maximum. This tab will be shortened to `", 
                                  str_sub(output_tab_name, 1, 31), "`.")), 
                     call. = FALSE)
          }
@@ -1523,7 +1523,12 @@ annotateDetails <- function(existing_exp_details,
                              "CustomDosing" = "custom-dosing information", 
                              "ConcDependent_fup" = "concentration-dependent fup information", 
                              "ConcDependent_BP" = "concentration-dependent B/P information", 
-                             "pH_dependent_solubility" = "pH-dependent solubility information")
+                             "DissolutionProfiles" = "dissolution profiles", 
+                             "Dosing" = "dosing information", 
+                             "pH_dependent_LuminalDegradation" = "pH-dependent luminal degredation", 
+                             "pH_dependent_solubility" = "pH-dependent solubility information", 
+                             "ReleaseProfiles" = "release profiles", 
+                             "UserAUCIntervals" = "user-defined AUC intervals")
          
          MyStyles <- list()
          
@@ -1540,7 +1545,7 @@ annotateDetails <- function(existing_exp_details,
          # example, extractExpDetails pulls only the "Summary" tab by default, so
          # it won't have a LOT of useful information.
          if(nrow(Out[[item]][["DF"]]) == 1 & 
-            item %in% c("Dosing", "CustomDosing") == FALSE){
+            item %in% c("Dosing", "CustomDosing", "UserAUCIntervals") == FALSE){
             warning(wrapn(paste0(
                "There is only 1 row in your output for the ",
                item_char, 

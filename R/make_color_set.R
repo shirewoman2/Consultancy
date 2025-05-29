@@ -150,27 +150,43 @@ make_color_set <- function(color_set,
                             color_set %in% c("blues", "blue-green", "reds", 
                                              "rainbow") ~ "regular", 
                          
+                         is.na(shade) ~ "regular", 
+                         
                          .default = shade)
       
       suppressWarnings(
          MyColors <- 
-            switch(
-               color_set,
+            case_when(
                # Using "Dark2" b/c "Set2" is just really,
                # really light.
-               "set2" = RColorBrewer::brewer.pal(num_colors, "Dark2")[
+               color_set == "set2" ~ RColorBrewer::brewer.pal(num_colors, "Dark2")[
                   1:num_colors], 
-               "blue-green" = blueGreens(num_colors, shade = shade),
-               "blues" = blues(num_colors, shade = shade),
-               "greens" = greens(num_colors, shade = shade), 
-               "purples" = purples(num_colors, shade = shade), 
-               "reds" = reds(num_colors, shade = shade), 
-               "rainbow" = rainbow(num_colors, shade = shade),
-               "set1" = RColorBrewer::brewer.pal(num_colors, "Set1")[
+               
+               color_set == "blue-green" ~ blueGreens(num_colors, shade = shade),
+               
+               color_set == "blues" ~ blues(num_colors, shade = shade),
+               
+               color_set == "greens" ~ greens(num_colors, shade = shade), 
+               
+               color_set == "purples" ~ purples(num_colors, shade = shade), 
+               
+               color_set == "reds" ~ reds(num_colors, shade = shade), 
+               
+               color_set == "rainbow" ~ rainbow(num_colors, shade = shade),
+               
+               color_set == "elle" & num_colors <= 4 ~
+                  c("#800074", "#298c8c", "dodgerblue4", "black")[1:num_colors], 
+               
+               color_set == "elle" & num_colors > 4 ~ 
+                  rainbow(num_colors, shade = shade), 
+               
+               color_set == "set1" ~ RColorBrewer::brewer.pal(num_colors, "Set1")[
                   1:num_colors],
-               "tableau" = ggthemes::tableau_color_pal(
+               
+               color_set == "tableau" ~ ggthemes::tableau_color_pal(
                   palette = "Tableau 10")(num_colors),
-               "viridis" = viridis::viridis_pal()(num_colors))
+               
+               color_set == "viridis" ~ viridis::viridis_pal()(num_colors))
       )
       # NB: For the RColorBrewer palettes, the minimum number of
       # colors you can get is 3. Since sometimes we might only want 1
