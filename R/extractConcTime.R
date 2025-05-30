@@ -443,7 +443,7 @@ extractConcTime <- function(sim_data_file,
       str_detect(tissue, "plasma|blood|peripheral") ~ "systemic",
       str_detect(tissue, "portal|liver") ~ "liver",
       str_detect(tissue, "faeces") ~ "faeces", 
-      tissue %in% c("pd input", "pd response") ~ "PD", 
+      tissue == "pd" ~ "PD", 
       TRUE ~ "tissue")
    
    if(any(str_detect(compoundToExtract, "metabolite|inhibitor 2")) &
