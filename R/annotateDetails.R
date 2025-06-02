@@ -582,7 +582,7 @@ annotateDetails <- function(existing_exp_details,
                                    "Transport", SimulatorSection), 
          
          Enzyme = str_extract(Detail, 
-                              "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+                              "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp"), 
          
          DetailType = case_when(str_detect(Detail, "^CL|Vmax|Km|Jmax|HalfLife") ~ "CL", 
                                 str_detect(Detail, "MBI") ~ "MBI", 
@@ -605,7 +605,7 @@ annotateDetails <- function(existing_exp_details,
                                .default = "(uL/min/pmol)")),
             
             str_detect(Detail, "^Transporter") ~ 
-               paste0(str_extract(Detail, "ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"),
+               paste0(str_extract(Detail, "ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp"),
                       " ", 
                       case_when(str_detect(Detail, "Apical") ~ "apical ", 
                                 str_detect(Detail, "Basolateral") ~ "basolateral ", 
@@ -662,24 +662,24 @@ annotateDetails <- function(existing_exp_details,
                                 str_detect(Detail, "^Ki") ~ "competitive inhibition of ",
                                 .default = ""), 
                       
-                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")),
+                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")),
             
             # enzyme kinetics 
             str_detect(Detail, "^Km_") ~ 
-               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
                       " Km", 
                       case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (uM)", 
                                 .default = "")), 
             
             str_detect(Detail, "^Vmax_") ~ 
-               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
                       " Vmax", 
                       case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (pmol/min/pmol)"), 
                       .default = ""), 
             
             # inhibition
             str_detect(Detail, "^Ki_") ~ 
-               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp"), 
                       " competitive inhibition constant", 
                       case_when(str_detect(Detail, "Gut|Kidney|Liver") ~
                                    paste0(" in ", 
@@ -688,11 +688,11 @@ annotateDetails <- function(existing_exp_details,
             
             str_detect(Detail, "MBI_Kapp") ~ 
                paste("Kapp for mechanism-based inactivation of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")), 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp")), 
             
             str_detect(Detail, "MBI_kinact") ~ 
                paste("kinact for mechanism-based inactivation of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")), 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp")), 
             
             # Induction
             str_detect(Detail, "^Ind") ~ 
@@ -700,12 +700,13 @@ annotateDetails <- function(existing_exp_details,
                                 str_detect(Detail, "Ind_gamma") ~ "induction Hill coefficient (gamma)", 
                                 str_detect(Detail, "slope") ~ "induction slope"), 
                       " for ", 
-                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")),
+                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp")),
             
             TRUE ~ Notes),
          
          # Doing a little more cleanup of Notes
          Notes = gsub("MATE2_K", "MATE2-K", Notes), 
+         Notes = gsub("P_gp", "P-gp", Notes), 
          
          # Setting factors for sorting
          SimulatorSection = factor(SimulatorSection, 
@@ -744,7 +745,7 @@ annotateDetails <- function(existing_exp_details,
       left_join(MainDetails %>% select(Notes, Detail), by = "Notes") %>% 
       unique() %>% 
       mutate(Enzyme = str_extract(Detail, 
-                                  "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+                                  "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
              Pathway = str_extract(Detail, pattern = paste0(Enzyme, ".*_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)")), 
              Pathway = str_remove(Pathway, paste0(Enzyme, "_")), 
              Pathway = str_remove(Pathway, "_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)"), 
