@@ -153,7 +153,10 @@
 #' @param compoundsToExtract For which compounds do you want to extract
 #'   concentration-time data? Options are:
 #'
-#'   \itemize{\item{"substrate" (default)}
+#'   \itemize{
+#'   \item{"all" (default) for all the typical compounds in a simulation: 
+#'   substrate, perpetrators, metabolites, etc.}
+#'   \item{"substrate"}
 #'   \item{"primary metabolite 1"}
 #'   \item{"primary metabolite 2"}
 #'   \item{"secondary metabolite"}
@@ -857,7 +860,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
       }
       
       if(compoundsToExtract_orig[1] == "all"){
-         compoundsToExtract_n <- names(CompoundCheck)[complete.cases(CompoundCheck)]
+         compoundsToExtract_n <- intersect(
+            names(CompoundCheck)[complete.cases(CompoundCheck)], 
+            compoundsToExtract)
       } else {
          # If the requested compound is not present in the Excel file, remove
          # it from consideration.

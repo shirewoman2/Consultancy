@@ -525,8 +525,8 @@ extractConcTime_DB <- function(sim_data_file,
          summarize(`trial mean` = mean(Conc, na.rm = T), 
                    `trial geomean` = gm_mean(Conc), 
                    `trial median` = median(Conc, na.rm = T), 
-                   `trial per5` = quantile(Conc, 0.95), 
-                   `trial per95` = quantile(Conc, 0.05)) %>% 
+                   `trial per5` = quantile(Conc, 0.05), 
+                   `trial per95` = quantile(Conc, 0.95)) %>% 
          ungroup() %>% 
          rename(TrialOrig = Trial) %>% 
          pivot_longer(cols = c(`trial mean`, `trial geomean`, `trial median`,

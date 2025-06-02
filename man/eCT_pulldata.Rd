@@ -13,6 +13,7 @@ eCT_pulldata(
   Deets,
   ADAM,
   ADC = FALSE,
+  PD = FALSE,
   ss,
   AdvBrainModel,
   tissue,
@@ -37,6 +38,8 @@ eCT_pulldata(
 \item{ADAM}{T or F}
 
 \item{ADC}{T or F}
+
+\item{PD}{T or F}
 
 \item{ss}{tissue subtype}
 
