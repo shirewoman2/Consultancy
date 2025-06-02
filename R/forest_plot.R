@@ -172,8 +172,9 @@
 #'   co-administered with Drug X"}. Default ("none") leaves off any y-axis title.
 #' @param PK_labels optionally specify what you would like to have appear on the
 #'   y axis for labels for each PK parameter with a named list of expressions,
-#'   e.g., \code{PK_labels = list("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
-#'   "Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}. Please
+#'   e.g., \code{PK_labels = list(
+#'   "AUCinf_dose1" = expression("Dose 1"~AUC[infinity]~(ng/mL\%*\%h)),
+#'   "Cmax_dose1" = expression("Dose 1"~C[max]~(ng/mL))}. Please
 #'   particularly note that it must be a \strong{list} rather than a vector. To
 #'   see examples of PK parameters set up as expressions for use in graph
 #'   labels, try running \code{PKexpressions}.
