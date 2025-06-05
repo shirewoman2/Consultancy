@@ -1032,17 +1032,33 @@ so_graph <- function(PKtable,
    
    if(all_intervals_together){
       
-      # For this option, data must be in long format w/ a column for interval.
+      # For this option, data must be in long format. If user has not included
+      # dose numbers in the column names when they ran pk_table, we'll assume
+      # that all data were for the same standard interval. If some of the names
+      # include interval and some don't, then the ones w/out must be
+      # user-defined intervals.
+      AnyIntervalIncluded <- any(str_detect(
+         PKCols$PKparameter[PKCols$IsPKParam], "_dose1|_last"), na.rm = T)
+      
+      UnlabeledIntText <- ifelse(AnyIntervalIncluded, 
+                                 "user-defined interval", 
+                                 "applies to all intervals")
+      
+      if(as_label(point_shape_column) != "<empty>"){
+         warning(wrapn("You have specified something for the point_shape_column but also requested that we show all dosing intervals together, which overrides that. The point shape will be determined by the interval rather than by point_shape_column."), 
+                 call. = FALSE)
+      }
+      
       SO <- SO %>% 
-         mutate(Interval = case_when(str_detect(PKparameter, "dose1") ~ "first dose", 
-                                     str_detect(PKparameter, "last") ~ "last dose", 
-                                     PKparameter %in% PKCols$Ugly[
-                                        str_detect(PKCols$Orig, "for interval from")] ~ "user-defined interval", 
-                                     TRUE ~ "applies to all intervals"), 
-                PKparameter_orig = PKparameter, 
-                PKparameter = gsub("_last|_dose1|inf|tau", "", PKparameter), 
-                PKparameter = gsub("AUCt", "AUC", PKparameter), 
-                point_shape_column = Interval)
+         mutate(
+            Interval = case_when(
+               str_detect(PKparameter, "dose1") ~ "first dose", 
+               str_detect(PKparameter, "last") ~ "last dose", 
+               !str_detect(PKparameter, "dose1|last") ~ UnlabeledIntText), 
+            PKparameter_orig = PKparameter, 
+            PKparameter = gsub("_last|_dose1|inf|tau", "", PKparameter), 
+            PKparameter = gsub("AUCt", "AUC", PKparameter), 
+            point_shape_column = Interval)
       
       legend_label_point_shape <- "Interval"
       
@@ -1104,13 +1120,13 @@ so_graph <- function(PKtable,
       SO$point_color_column <- "A" # placeholder
    }
    
-   if(as_label(point_shape_column) != "<empty>"){
-      SO <- SO %>% mutate(point_shape_column = {{point_shape_column}}) %>% 
-         droplevels()
-   } else if(all_intervals_together){
-      SO$point_shape_column <- SO$Interval
-   } else {
-      SO$point_shape_column <- "A" # placeholder
+   if(all_intervals_together == FALSE){
+      if(as_label(point_shape_column) != "<empty>"){
+         SO <- SO %>% mutate(point_shape_column = {{point_shape_column}}) %>% 
+            droplevels()
+      } else {
+         SO$point_shape_column <- "A" # placeholder
+      }
    }
    
    if(as_label(point_shape_column) != "<empty>" | 
@@ -1160,6 +1176,19 @@ so_graph <- function(PKtable,
    MyColors <- setNames(SO$Color, SO$point_color_column)
    MyFillColors <- setNames(SO$Fill, SO$point_color_column)
    MyShapes <- setNames(SO$Shape, SO$point_shape_column)
+   
+   # Adding legend label for color and shape as appropriate
+   ShowLegColor <- as_label(point_color_column) != "<empty>" &&
+      length(unique(SO$point_color_column)) > 1
+   
+   ShowLegShape <- 
+      (all_intervals_together == FALSE &&
+          as_label(point_shape_column) != "<empty>" &&
+          length(unique(SO$point_shape_column)) > 1) |
+      
+      (all_intervals_together == TRUE &&
+          length(unique(SO$point_shape_column)) > 1)
+   
    
    ## Making graphs ---------------------------------------------------------
    G <- list()
@@ -1529,46 +1558,26 @@ so_graph <- function(PKtable,
          G[[i]] <- G[[i]] + theme(legend.spacing.y = unit(0.5, units = "lines"))
       }
       
-      # Adding legend label for color and shape as appropriate
-      if(as_label(point_color_column) != "<empty>"){
-         
-         if(as_label(point_color_column) == as_label(point_shape_column)){
-            if(complete.cases(legend_label_point_color)){
-               if(legend_label_point_color == "none"){    
-                  G[[i]] <- G[[i]] + labs(color = NULL, 
-                                          fill = NULL, 
-                                          shape = NULL)
-               } else {
-                  G[[i]] <- G[[i]] + labs(color = legend_label_point_color, 
-                                          fill = legend_label_point_color, 
-                                          shape = legend_label_point_color)
-               }
+      if(ShowLegColor){
+         if(complete.cases(legend_label_point_color)){
+            if(legend_label_point_color == "none"){    
+               G[[i]] <- G[[i]] + labs(color = NULL, 
+                                       fill = NULL)
             } else {
-               # This is when no legend_label_point_color has been specified.
-               G[[i]] <- G[[i]] + labs(color = as_label(point_color_column), 
-                                       fill = as_label(point_color_column), 
-                                       shape = as_label(point_color_column))
+               G[[i]] <- G[[i]] + labs(color = legend_label_point_color, 
+                                       fill = legend_label_point_color)
             }
          } else {
-            if(complete.cases(legend_label_point_color)){
-               if(legend_label_point_color == "none"){    
-                  G[[i]] <- G[[i]] + labs(color = NULL, 
-                                          fill = NULL)
-               } else {
-                  G[[i]] <- G[[i]] + labs(color = legend_label_point_color, 
-                                          fill = legend_label_point_color)
-               }
-            } else {
-               # This is when no legend_label_point_color has been specified.
-               G[[i]] <- G[[i]] + labs(color = as_label(point_color_column), 
-                                       fill = as_label(point_color_column))
-            }
+            # This is when no legend_label_point_color has been specified.
+            G[[i]] <- G[[i]] + labs(color = as_label(point_color_column), 
+                                    fill = as_label(point_color_column))
          }
+      } else {
+         G[[i]] <- G[[i]] + guides(color = "none", 
+                                   fill = "none")
       }
       
-      if(as_label(point_color_column) != as_label(point_shape_column) &
-         (as_label(point_shape_column) != "<empty>" | 
-          all_intervals_together)){
+      if(ShowLegShape){
          if(complete.cases(legend_label_point_shape)){
             if(legend_label_point_shape == "none"){    
                G[[i]] <- G[[i]] + labs(shape = NULL)
@@ -1576,19 +1585,12 @@ so_graph <- function(PKtable,
                G[[i]] <- G[[i]] + labs(shape = legend_label_point_shape)
             }
          } else {
-            # This is when no legend_label_point_shape has been specified.
+            # This is when no legend_label_point_color has been specified.
             G[[i]] <- G[[i]] + labs(shape = as_label(point_shape_column))
-         } 
-      }
-      
-      if(length(unique(SO[[i]]$Shape)) == 1){
+         }
+      } else {
          G[[i]] <- G[[i]] + guides(shape = "none")
       }
-      
-      if(length(unique(paste(SO[[i]]$Color, SO[[i]]$Fill))) == 1){
-         G[[i]] <- G[[i]] + guides(color = "none", fill = "none")
-      }
-      
    }
    
    if(length(G) == 1){

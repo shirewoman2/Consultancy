@@ -30,7 +30,7 @@ make_example_PK_input <- function(){
    Opts_main <- c("1" = "typical dose 1", 
                   "2" = "typical last dose",
                   "3" = "typical DDI", 
-                  "4" = "specifying the sheet to use", 
+                  "4" = "user-defined intervals", 
                   "5" = "specifying the compounds to use", 
                   "6" = "specifying the tissues to use", 
                   "7" = "all possible AUCs", 
