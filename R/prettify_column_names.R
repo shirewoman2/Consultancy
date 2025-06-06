@@ -36,7 +36,8 @@
 #'   "AUCinf_dose1"? Options are "pretty" (default) or "ugly".
 #' @param return_which_are_PK TRUE or FALSE (default) for whether to, instead of
 #'   prettifying, return a data.frame saying which column names are PK
-#'   parameters and which are not.
+#'   parameters and which are not. This will also include some other info s/a
+#'   the PK parameter coded name.
 #'
 #' @return a PK table with prettier column names
 #' @export
@@ -239,7 +240,11 @@ prettify_column_names <- function(PKtable,
    TableNames <- TableNames %>% 
       mutate(FinalNames = case_when({pretty_or_ugly_cols} == "pretty" ~ PrettifiedNames, 
                                     {pretty_or_ugly_cols} == "ugly" ~ PKparameter), 
-             FinalNames = ifelse(is.na(FinalNames), OrigColNames, FinalNames)) %>% 
+             FinalNames = ifelse(is.na(FinalNames), OrigColNames, FinalNames), 
+             # Adding what the interval was
+             Interval = str_extract(PrettifiedNames, "Dose 1|Last dose|for interval from.*to [0-9]{1,} h"), 
+             Interval = tolower(Interval), 
+             Interval = sub("for interval ", "", Interval)) %>% 
       unique()
    
    # Making sure that we don't have duplicates for OrigOrder b/c that would mean
@@ -327,7 +332,8 @@ prettify_column_names <- function(PKtable,
    # Returning which are PK if that's all user wanted
    if(return_which_are_PK){
       return(TableNames %>% 
-                select(OrigColNames, IsPKParam, FinalNames, PKparameter) %>%
+                select(OrigColNames, IsPKParam, FinalNames, PKparameter, 
+                       Interval) %>%
                 rename(ColName = OrigColNames, 
                        PrettifiedNames = FinalNames) %>% unique())
    } else {

@@ -45,7 +45,8 @@ AUCinf (ng/mL.h)" or do you want "ugly" but R friendly column names such as
 
 \item{return_which_are_PK}{TRUE or FALSE (default) for whether to, instead of
 prettifying, return a data.frame saying which column names are PK
-parameters and which are not.}
+parameters and which are not. This will also include some other info s/a
+the PK parameter coded name.}
 }
 \value{
 a PK table with prettier column names
