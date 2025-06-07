@@ -379,7 +379,10 @@ trial_means_plot <- function(sim_data_file,
       legend_position <- "right"
    }
    
-   point_shape <- ifelse(is.na(point_shape[1]), 21, point_shape)
+   if(length(point_shape) == 1 && is.na(point_shape)){
+      point_shape <- 21
+   }
+   
    suppressWarnings(point_size <- as.numeric(point_size)[1])
    point_size <- ifelse(is.na(point_size), 3, point_size)
    suppressWarnings(bar_width <- as.numeric(bar_width)[1])
@@ -626,7 +629,8 @@ trial_means_plot <- function(sim_data_file,
          legend_position <- "none"
       }
       
-      G <- ggplot(PK_long, aes(x = Trial, color = Study, 
+      G <- ggplot(PK_long, aes(x = Trial, shape = Study, 
+                               color = Study, fill = Study, 
                                y = Center, ymin = Lower, ymax = Upper))
       
    } else if(color_option == "by trial"){
@@ -642,7 +646,8 @@ trial_means_plot <- function(sim_data_file,
          legend_position <- "none"
       }
       
-      G <- ggplot(PK_long, aes(x = Trial, color = Trial, 
+      G <- ggplot(PK_long, aes(x = Trial, shape = Trial, 
+                               color = Trial, fill = Trial, 
                                y = Center, ymin = Lower, ymax = Upper))
       
    } else if(color_option == "s or o"){
@@ -658,9 +663,19 @@ trial_means_plot <- function(sim_data_file,
       MyFillColors <- c("white", "black")
       names(MyFillColors) <- c("simulated", "observed")
       
-      G <- ggplot(PK_long, aes(x = Trial, fill = SorO, color = SorO, 
+      G <- ggplot(PK_long, aes(x = Trial, shape = SorO, 
+                               fill = SorO, color = SorO, 
                                y = Center, ymin = Lower, ymax = Upper)) +
          labs(color = NULL, fill = NULL)
+   }
+   
+   # Making sure we have enough point shapes
+   point_shape <- rep(point_shape, length(MyColors))[1:length(MyColors)]
+   
+   # Dealing w/points that are filled
+   if(any(point_shape %in% 21:25)){
+      MyFillColors[point_shape %in% 21:25] <- MyColors[point_shape %in% 21:25]
+      MyColors[point_shape %in% 21:25] <- "black"
    }
    
    if(lines_for_population_stats != "none"){
@@ -748,9 +763,10 @@ trial_means_plot <- function(sim_data_file,
    
    G <- G +
       geom_errorbar(width = bar_width) +
-      geom_point(shape = point_shape, size = point_size) +
+      geom_point(size = point_size) +
       scale_color_manual(values = MyColors) +
       scale_fill_manual(values = MyFillColors) +
+      scale_shape_manual(values = point_shape) +
       theme_consultancy() +
       ylab(PKexpressions[[sub("_last|_dose1", "", PKparameter)]]) + 
       theme(legend.position = legend_position)
