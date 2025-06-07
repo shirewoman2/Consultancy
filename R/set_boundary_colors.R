@@ -157,14 +157,13 @@ set_boundary_colors <- function(color_set,
    # If the user has requested "yellow to red", the break_type is "SO
    # HIGHLIGHT", and 1 is included in boundaries, then switch the color set to
    # "green to red". If the user has requested "yellow to red" and NOT included
-   # 1 in the boundaries, leave the color set as is but add a 1 so that the
-   # middle will be white.
+   # 1 in the boundaries, leave the color set as is.
    if(length(color_set) == 1 &&
       (color_set == "yellow to red" & break_type == "SO HIGHLIGHT")){
       if(1 %in% boundaries){
          color_set <- "green to red"
       } else {
-         boundaries <- sort(unique(c(1, boundaries)))
+         boundaries <- sort(unique(boundaries))
       }
    }
    
@@ -331,11 +330,6 @@ set_boundary_colors <- function(color_set,
                 
                 # yellow to red ---------------------------------------------------
                 
-                # Note that it is not possible to have a color set of "yellow to
-                # red" without 1 among the boundaries. That is why there is only
-                # one set of colors here and not a similar, near replicate set that
-                # don't have 1 included.
-                
                 # Just highlight everything white. This would be weird and
                 # probably not what the user wants, but is among the possible
                 # choices for inputs.
@@ -355,6 +349,23 @@ set_boundary_colors <- function(color_set,
                    c("white",
                      colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
                         length(boundaries))),
+                
+                
+                
+                # 1 boundary 
+                "yellow to red SO HIGHLIGHT (0,1]" = c("#FF9595"),
+                
+                # 2 boundaries 
+                "yellow to red SO HIGHLIGHT (1,2]" = c("#FFFF95", "#FF9595"),
+                
+                # 3 boundaries 
+                "yellow to red SO HIGHLIGHT (2,3]" = c("#FFFF95", "#FFDA95", "#FF9595"),
+                
+                # >3 boundaries 
+                "yellow to red SO HIGHLIGHT (3,Inf]" =
+                   colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                      length(boundaries)),
+                
                 
                 
                 # green to red --------------------------------------------------

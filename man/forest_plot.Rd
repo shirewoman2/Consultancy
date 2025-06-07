@@ -75,10 +75,14 @@ forest_plot(
   \item{at least one pair of "CI90_lower" and "CI90_upper", "Per5" and
   "Per95", "Minimum" and "Maximum", or at least one of "GCV" (geometric
   coefficient of variation), "CV" (arithmetic CV), or "SD" (standard
-  deviation)}{These columns will be used for the whiskers. Not case sensitive.}
+  deviation)}{These columns will be used for the error bars. Not case sensitive.}
 
   \item{any column you want to facet by}{If you want to break up your graphs
-  along the x axis, you must include the column you want to use to do that.}}}
+  along the x axis, you must include the column you want to use to do that.}
+  
+  \item{If you have both simulated and observed data, a column titled "SorO" 
+  and the values "Sim" or "Obs" for each type of data.}
+  }}
 
 \item{y_axis_labels}{a column in \code{forest_dataframe} (unquoted) or a
 named character vector (each item in quotes) to use for labeling the

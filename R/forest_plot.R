@@ -40,10 +40,14 @@
 #'   \item{at least one pair of "CI90_lower" and "CI90_upper", "Per5" and
 #'   "Per95", "Minimum" and "Maximum", or at least one of "GCV" (geometric
 #'   coefficient of variation), "CV" (arithmetic CV), or "SD" (standard
-#'   deviation)}{These columns will be used for the whiskers. Not case sensitive.}
+#'   deviation)}{These columns will be used for the error bars. Not case sensitive.}
 #'
 #'   \item{any column you want to facet by}{If you want to break up your graphs
-#'   along the x axis, you must include the column you want to use to do that.}}
+#'   along the x axis, you must include the column you want to use to do that.}
+#'   
+#'   \item{If you have both simulated and observed data, a column titled "SorO" 
+#'   and the values "Sim" or "Obs" for each type of data.}
+#'   }
 #'
 #' @param y_axis_labels a column in \code{forest_dataframe} (unquoted) or a
 #'   named character vector (each item in quotes) to use for labeling the
@@ -1358,8 +1362,22 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
-   if((length(color_set) == 1 &&
-       color_set %in% c("none", "grays", "yellow to red", "green to red") == FALSE) |
+   if(length(color_set) == 1){
+      color_set <- tolower(color_set)
+      color_set <- case_when(str_detect(color_set, "yellow") & 
+                             str_detect(color_set, "red") ~ "yellow to red", 
+                             
+                             str_detect(color_set, "green") & 
+                             str_detect(color_set, "red") ~ "green to red", 
+                             
+                             str_detect(color_set, "gray|grey") ~ "grays", 
+                             
+                             .default = color_set)
+   } 
+   
+   if((length(color_set) == 1 && 
+       color_set %in% c("none", "grays", "yellow to red", 
+                        "green to red") == FALSE) |
       (length(color_set) > 1 && length(color_set) != 4)){
       warning(wrapn("Acceptable input for `color_set` is `grays`, `yellow to red`, `green to red`, `none`, or a named character vector of the colors you want for each interaction level (see examples in help file), and your input was not among those options. We'll use the default, `grays`, for now."), 
               call. = FALSE)
@@ -1646,14 +1664,8 @@ forest_plot <- function(forest_dataframe,
                                       "weak" = "gray95", 
                                       "moderate" = "gray90",
                                       "strong" = "gray75"), 
-                          "green to red" = c("negligible" = "#C7FEAC", 
-                                             "weak" = "#FFFF95",
-                                             "moderate" = "#FFDA95",
-                                             "strong" = "#FF9595"),
-                          "yellow to red" = c("negligible" = "white", 
-                                              "weak" = "#FFFF95",
-                                              "moderate" = "#FFDA95",
-                                              "strong" = "#FF9595"), 
+                          "green to red" = green_to_red(), 
+                          "yellow to red" = yellow_to_red(), 
                           "none" = c("negligible" = "white", 
                                      "weak" = "white",
                                      "moderate" = "white",
