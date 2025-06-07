@@ -1138,45 +1138,28 @@ calc_PK_ratios <- function(PKparameters = NA,
          
       } 
       
-      # Checking whether they have specified just "docx" or just "csv" for
-      # output b/c then, we'll use sim_data_file as file name. This allows us
-      # to determine what the path should be, too, for either sim_data_file or
-      # for some specified file name.
-      if(str_detect(sub("\\.", "", save_table), "^docx$|^csv$")){
-         OutPath <- dirname(sim_data_file)
-         save_table <- sub("xlsx", 
-                           # If they included "." at the beginning of the
-                           # file extension, need to remove that here.
-                           sub("\\.", "", save_table),
-                           basename(sim_data_file))
-      } else {
-         # If they supplied something other than just "docx" or just "csv",
-         # then check whether that file name is formatted appropriately.
-         
-         if(str_detect(basename(save_table), "\\..*")){
-            if(str_detect(basename(save_table), "\\.docx") == FALSE){
-               # If they specified a file extension that wasn't docx, make that
-               # file extension be .csv
-               save_table <- sub("\\..*", ".csv", save_table)
-            }
-         } else {
-            # If they didn't specify a file extension at all, make it .csv. 
-            save_table <- paste0(save_table, ".csv")
+      FileName <- save_table
+      if(str_detect(FileName, "\\.")){
+         # Making sure they've got a good extension
+         Ext <- sub("\\.", "", str_extract(FileName, "\\..*"))
+         FileName <- sub(paste0(".", Ext), "", FileName)
+         if(Ext %in% c("docx", "csv") == FALSE){
+            warning(wrapn(paste0("You have requested the table's file extension be `", 
+                                 Ext, "`, but we haven't set up that option. We'll save your graph as a Word file instead.")),
+                    call. = FALSE)
+            Ext <- "docx"
          }
-         
-         # Now that the file should have an appropriate extension, check what
-         # the path and basename should be.
-         OutPath <- dirname(save_table)
-         save_table <- basename(save_table)
+         FileName <- paste0(FileName, ".", Ext)
+      } 
+      
+      OutPath <- dirname(FileName)
+      if(OutPath == "."){
+         OutPath <- getwd()
       }
       
-      # May need to change the working directory temporarily, so
-      # determining what it is now
-      CurrDir <- getwd()
+      FileName <- basename(FileName)
       
-      setwd(OutPath)
-      
-      if(str_detect(save_table, "docx")){ 
+      if(Ext == "docx"){ 
          # This is when they want a Word file as output
          
          FileName <- basename(save_table)
@@ -1246,8 +1229,6 @@ calc_PK_ratios <- function(PKparameters = NA,
                                    paste("Simulated", MeanType, "mean"), Statistic))
          write.csv(MyPKResults, paste0(OutPath, "/", save_table), row.names = F)
       }
-      
-      setwd(CurrDir)
    }
    
    Out <- list("Table" = MyPKResults_out)

@@ -9,6 +9,9 @@
 #' @param includeTrialMeans determines whether to get individual data
 #'   w/extractPK
 #' @param use_median_for_tmax T or F
+#' @param extract_forest_data T or F - Only used for determining whether to
+#'   issue a warning when extracting forest data for something other than a
+#'   substrate or substrate metabolite
 #'
 #' @return a list of 1) "PK" - a data.frame of unformatted simulated and, when
 #'   supplied, observed PK data with the columns Stat, PKParam, and Sim. NOTHING
@@ -27,7 +30,8 @@ pk_table_subfun <- function(sim_data_file,
                             MeanType, 
                             GMR_mean_type, 
                             includeTrialMeans, 
-                            use_median_for_tmax){
+                            use_median_for_tmax, 
+                            extract_forest_data){
    
    ## extracting PK ------------------------------------------------------------
    
@@ -674,8 +678,10 @@ pk_table_subfun <- function(sim_data_file,
       if(unique(PKparameters$CompoundID) %in% 
          c("substrate", "primary metabolite 1", 
            "primary metabolite 2", "secondary metabolite") == FALSE){
-         warning(wrapn("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped."), 
-                 call. = FALSE)
+         if(extract_forest_data == TRUE){
+            warning(wrapn("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped."), 
+                    call. = FALSE)
+         }
          FD <- list()
          
       } else {

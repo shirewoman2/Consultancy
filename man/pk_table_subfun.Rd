@@ -12,7 +12,8 @@ pk_table_subfun(
   MeanType,
   GMR_mean_type,
   includeTrialMeans,
-  use_median_for_tmax
+  use_median_for_tmax,
+  extract_forest_data
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ pk_table_subfun(
 w/extractPK}
 
 \item{use_median_for_tmax}{T or F}
+
+\item{extract_forest_data}{T or F}
 }
 \value{
 a list of 1) "PK" - a data.frame of unformatted simulated and, when

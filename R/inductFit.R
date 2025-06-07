@@ -1161,15 +1161,12 @@ inductFit <- function(DF,
    
    # saving and formatting output ---------------------------------------------
    
-   # May need to change the working directory temporarily, so determining
-   # what it is now
-   CurrDir <- getwd()
-   
    if(include_fit_stats == FALSE){
       Out$Fit <- Out$Fit %>% select(-any_of(matches("_SE|_pvalue|AIC")))
    }
    
    if(complete.cases(save_graph)){
+      
       FileName <- save_graph
       if(str_detect(FileName, "\\.")){
          # Making sure they've got a good extension
@@ -1197,6 +1194,7 @@ inductFit <- function(DF,
    }
    
    if(complete.cases(save_table)){
+      
       FileName <- save_table
       if(str_detect(FileName, "\\.")){
          # Making sure they've got a good extension
@@ -1212,6 +1210,7 @@ inductFit <- function(DF,
          FileName <- paste0(FileName, ".", Ext)
       } else {
          FileName <- paste0(FileName, ".csv")
+         Ext <- "csv"
       }
       
       # Rounding as requested
@@ -1219,7 +1218,13 @@ inductFit <- function(DF,
          mutate(across(.cols = any_of(matches("Emax|EC50|Gamma|slope|IndC50|Indmax|AIC")),
                        .fns = round_opt, round_fun = rounding, is_this_for_Word = FALSE))
       
-      write.csv(Out$Fit, FileName, row.names = F)
+      if(Ext == "csv"){
+         write.csv(Out$Fit, FileName, row.names = F)
+      }
+      
+      if(Ext == "xlsx"){
+         save_table_to_Excel(table = Out$Fit, save_table = FileName)
+      }
       
       rm(FileName)
       
@@ -1240,8 +1245,6 @@ inductFit <- function(DF,
       }
       
       FileName <- basename(FileName)
-      
-      setwd(OutPath)
       
       TemplatePath <- switch(page_orientation, 
                              "landscape" = system.file("Word/landscape_report_template.dotx",
@@ -1269,8 +1272,6 @@ inductFit <- function(DF,
                     .fns = round_opt, 
                     round_fun = rounding,
                     is_this_for_Word = FALSE))
-   
-   setwd(CurrDir)
    
    return(Out)
    

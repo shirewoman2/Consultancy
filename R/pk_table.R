@@ -777,7 +777,8 @@ pk_table <- function(PKparameters = NA,
             MeanType = MeanType, 
             GMR_mean_type = GMR_mean_type, 
             includeTrialMeans = includeTrialMeans, 
-            use_median_for_tmax = use_median_for_tmax)
+            use_median_for_tmax = use_median_for_tmax, 
+            extract_forest_data = extract_forest_data)
       
       if(length(temp) == 0){
          warning(paste0(str_wrap(
@@ -1188,6 +1189,7 @@ pk_table <- function(PKparameters = NA,
                         values_from = Value)
          
          ColNames <- ColNames %>% 
+            select(-any_of("Interval")) %>% 
             left_join(expand_grid(Interval = unique(IntToAdd$Interval), 
                                   ColName = ColNames$ColName) %>% 
                          mutate(ColName_int = paste(ColName, Interval)) %>% 
@@ -1346,11 +1348,6 @@ pk_table <- function(PKparameters = NA,
    
    # Saving --------------------------------------------------------------
    
-   # May need to change the working directory temporarily, so
-   # determining what it is now
-   CurrDir <- getwd()
-   
-   
    if(complete.cases(save_table)){
       
       # Checking whether they have specified just "docx" or just "csv" for
@@ -1389,7 +1386,6 @@ pk_table <- function(PKparameters = NA,
       }
       
       save_table <- basename(save_table)
-      setwd(OutPath)
       
       if(str_detect(save_table, "docx")){ 
          # This is when they want a Word file as output
@@ -1427,9 +1423,6 @@ pk_table <- function(PKparameters = NA,
          write.csv(bind_rows(MyPKResults, WarningDF),
                    paste0(OutPath, "/", save_table), row.names = F)
       }
-      
-      setwd(CurrDir)
-      
    }
    
    if(checkDataSource){
