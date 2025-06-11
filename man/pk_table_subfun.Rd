@@ -34,7 +34,9 @@ w/extractPK}
 
 \item{use_median_for_tmax}{T or F}
 
-\item{extract_forest_data}{T or F}
+\item{extract_forest_data}{T or F - Only used for determining whether to
+issue a warning when extracting forest data for something other than a
+substrate or substrate metabolite}
 }
 \value{
 a list of 1) "PK" - a data.frame of unformatted simulated and, when

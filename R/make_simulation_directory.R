@@ -19,7 +19,7 @@
 #' @param project_folder location of the project folder to search. Please note
 #'   that R requires forward slashes ("/") in file paths rather than the back
 #'   slashes Microsoft uses. If left as NA (default), we'll assume your current
-#'   working directory is the top level of your project folders.
+#'   working directory is the top level of your project folder.
 #' @param sim_data_files which files to include in the directory of simulations.
 #'   This only applies when you don't supply anything for the argument
 #'   \code{existing_exp_details}. Options are:
@@ -48,11 +48,17 @@
 #'   an additional 2 seconds per simulation. If you have supplied something for
 #'   'existing_exp_details', you don't need this and we'll ignore it if you set
 #'   this to TRUE.
+#' @param simfile_path_option How would you like to see the path for each
+#'   simulation file? Options are: \describe{
+#'
+#'   \item{"full path" ("full" also works)}{Show the entire path}
+#'
+#'   \item{"relative" (default)}{Show the path relative to the project folder}}
+#'
 #' @param obsfile_path_option How would you like to see the observed overlay XML
 #'   file path? Options are: \describe{
 #'
-#'   \item{"full path" (default, "full" also works)}{Show the entire path to the XML
-#'   observed overlay file}
+#'   \item{"full path" (default, "full" also works)}{Show the entire path}
 #'
 #'   \item{"basename"}{Only show the file name (the basename)
 #'   of the XML overlay file and NOT any of the path. Why would you want
@@ -88,6 +94,7 @@
 
 make_simulation_directory <- function(project_folder = NA, 
                                       sim_data_files = "recursive", 
+                                      simfile_path_option = "relative", 
                                       existing_exp_details = NA, 
                                       search_workspaces_for_obsfile = FALSE, 
                                       include_possible_obsfiles = TRUE, 
@@ -111,9 +118,23 @@ make_simulation_directory <- function(project_folder = NA,
    
    if("logical" %in% class(existing_exp_details) == FALSE & 
       search_workspaces_for_obsfile == TRUE){
-      warning(wrapn("You requested that we search through workspaces to look for XML observed data overlay file names, but you also supplied something for 'existing_exp_details', which should already have that infomation. We will save you some time and *not* search through your workspaces for the XML observed data overlay file name."), 
-              call. = F)
+      # NB: Decided against giving this warning for now. 
+      
+      # warning(wrapn("You requested that we search through workspaces to look for XML observed data overlay file names, but you also supplied something for 'existing_exp_details', which should already have that infomation. We will save you some time and *not* search through your workspaces for the XML observed data overlay file name."), 
+      #         call. = F)
       search_workspaces_for_obsfile <- FALSE
+   }
+   
+   simfile_path_option <- tolower(simfile_path_option)[1]
+   simfile_path_option <- case_match(simfile_path_option, 
+                                     "full" ~ "full path", 
+                                     "full path" ~ "full path", 
+                                     "fullpath" ~ "full path", 
+                                     "relative" ~ "relative")
+   
+   if(is.na(simfile_path_option)){
+      warning(wrapn("For the argument 'simfile_path_option', you requested something other than 'full path' or 'relative', which are the only available options. We'll use the default value of 'relative'."), 
+              call. = FALSE)
    }
    
    obsfile_path_option <- tolower(obsfile_path_option)[1]
@@ -140,8 +161,9 @@ make_simulation_directory <- function(project_folder = NA,
                                  "some" ~ "some", 
                                  "report some" ~ "some")
    if(is.na(report_progress)){
-      warning(wrapn("For the argument 'report_progress', you requested something other than 'yes', 'no', or 'some', which are the only available options. We'll use the default value of 'no'."), 
-              call. = FALSE)
+      # Not giving a warning if they supplied an invalid value b/c not important
+      # and I don't want to overwhelm people w/warnings.
+      report_progress <- "no"
    }
    
    # Main body of function ---------------------------------------------------
@@ -249,6 +271,12 @@ make_simulation_directory <- function(project_folder = NA,
              Filename = sub("\\.xlsx|\\.db|\\.wksz", "", File),
              Filetype = str_extract(File, "xlsx$|wksz$|db$"))
    
+   # Adding Filename to existing_exp_details since we may need to match up later
+   if("NULL" %in% class(existing_exp_details) == FALSE){
+      existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+         mutate(Filename = sub("\\.xlsx|\\.db|\\.wksz", "", basename(File)))
+   }
+   
    # Removing from consideration any files that were not included in
    # existing_exp_details, if that was supplied, or if sim_data_files was
    # "recursive" or NA if the folder is now "FILE NOT FOUND" and if the Filetype
@@ -314,10 +342,6 @@ make_simulation_directory <- function(project_folder = NA,
       mutate(DuplicateFileCheck = case_when(DuplicateFileCheck == TRUE ~ "simulation file in multiple locations", 
                                             DuplicateFileCheck == FALSE ~ ""))
    
-   # Making relative paths
-   Directory$Folder <- R.utils::getRelativePath(Directory$Folder, 
-                                                relativeTo = project_folder)
-   
    # Formatting per FDA/Consultancy Team requirements
    Directory <- Directory %>% 
       mutate(Folder = case_when(Folder == "." ~ "", 
@@ -334,8 +358,7 @@ make_simulation_directory <- function(project_folder = NA,
             
             Directory <- Directory %>% 
                left_join(existing_exp_details$MainDetails %>% 
-                            select(File, ObsOverlayFile) %>% 
-                            select(-File), by = "Filename")
+                            select(Filename, ObsOverlayFile), by = "Filename")
             
             ObsOverlayKnown <- TRUE
             
@@ -515,6 +538,26 @@ make_simulation_directory <- function(project_folder = NA,
       Directory <- Directory %>% select(-DuplicateFileCheck)
    }
    
+   # Making relative paths
+   if(simfile_path_option == "relative"){
+      Directory$Folder <- 
+         R.utils::getRelativePath(Directory$Folder,
+                                  relativeTo = project_folder)
+   }
+   
+   if("XML file used" %in% names(Directory)){
+      if(obsfile_path_option == "basename"){
+         Directory$`XML file used` <-
+            basename(Directory$`XML file used`)
+         
+      } else if(obsfile_path_option == "relative"){
+         Directory$`XML file used` <- 
+            R.utils::getRelativePath(Directory$`XML file used`,
+                                     relativeTo = project_folder)
+      }
+      
+   }
+   
    # Setting column order 
    Directory <- Directory %>% 
       select(any_of(c("Filename", "Filetype", "Folder", 
@@ -522,12 +565,6 @@ make_simulation_directory <- function(project_folder = NA,
                       "Comments", "FileNameCheck", "DuplicateFileCheck"))) %>% 
       rename("File type" = Filetype, 
              "File name" = Filename)
-   
-   if(obsfile_path_option == TRUE & "XML file used" %in% names(Directory)){
-      
-      Directory$`XML file used` <- basename(Directory$`XML file used`)
-      
-   }
    
    
    # Saving -----------------------------------------------------------------
