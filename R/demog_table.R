@@ -272,7 +272,7 @@ demog_table <- function(demog_dataframe,
                        "FALSE" = DemogParams$Parameter)
    
    suppressWarnings(suppressMessages(
-      FT <- demog_dataframe %>% 
+      Out <- demog_dataframe %>% 
          select(any_of(c("File", "Trial", "Individual", "Population", "Simulated",
                          ParamCols))) %>% 
          # NB: Can't pivot with sex b/c not numeric data and the other
@@ -303,7 +303,7 @@ demog_table <- function(demog_dataframe,
                                   mean(Value, na.rm = T)))
    ))
    
-   FT <- FT %>% ungroup() %>% 
+   Out <- Out %>% ungroup() %>% 
       mutate(across(.cols = -GroupCols, 
                     .fns = function(x) round_opt(x, round_fun = rounding)),  
              Var = switch(variability_type, 
@@ -344,25 +344,25 @@ demog_table <- function(demog_dataframe,
       select(-Simulated)
    
    # Adjusting capitalization of column for sex if present
-   names(FT)[which(names(FT) == "sex")] <- "Sex"
+   names(Out)[which(names(Out) == "sex")] <- "Sex"
    
-   FT <- FT %>% 
+   Out <- Out %>% 
       pivot_wider(names_from = Parameter, values_from = Val)
    
    if(any(complete.cases(sim_file_labels))){
-      FT <- FT %>% 
+      Out <- Out %>% 
          mutate(Population = sim_file_labels[File]) %>% 
          select(-File) %>% 
          select(Population, everything())
    }
    
    if(variability_type == "none"){
-      FT <- FT %>% filter(!Statistic == "REMOVE THIS ROW")
+      Out <- Out %>% filter(!Statistic == "REMOVE THIS ROW")
    }
    
    if(include_SorO_column == FALSE & 
       length(sort(unique(demog_dataframe$Simulated))) == 1){
-      FT <- FT %>% select(-`Simulated or observed`)
+      Out <- Out %>% select(-`Simulated or observed`)
    }
    
    # Saving --------------------------------------------------------------
@@ -391,11 +391,11 @@ demog_table <- function(demog_dataframe,
       
       MergeCols <- intersect(c("File", "Population", 
                                "Simulated or observed", "Sex"), 
-                             names(FT))
+                             names(Out))
       
       if(break_down_by_sex){
          
-         FT <- FT %>% 
+         FT <- Out %>% 
             formatTable_Simcyp(
                fontsize = fontsize, 
                merge_shaded_cells = TRUE, 
@@ -410,9 +410,9 @@ demog_table <- function(demog_dataframe,
          
       } else {
          
-         if("File" %in% names(FT)){
+         if("File" %in% names(Out)){
             
-            FT <- FT %>% 
+            FT <- Out %>% 
                formatTable_Simcyp(
                   fontsize = fontsize, 
                   merge_shaded_cells = TRUE, 
@@ -425,7 +425,7 @@ demog_table <- function(demog_dataframe,
                   title_document = "Demographics", 
                   table_caption = Caption)
          } else {
-            FT <- FT %>% 
+            FT <- Out %>% 
                formatTable_Simcyp(
                   fontsize = fontsize, 
                   merge_shaded_cells = TRUE, 
@@ -441,7 +441,7 @@ demog_table <- function(demog_dataframe,
       }
    }
    
-   return(FT)
+   return(Out)
    
 }
 

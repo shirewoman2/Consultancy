@@ -19,15 +19,15 @@
 #'   graphs.
 #'
 #' @param SA_file sensitivity analysis Excel file
-#' @param dependent_variable dependent variable to plot. Options are: "AUC",
-#'   "AUC over dose", "AUC over dose with interaction", "AUC ratio", "CL",
-#'   "CLpo", "CLpo with interaction", "Cmax", "Cmax with interaction", "Cmax
-#'   ratio", "dose over AUC", "dose over AUC with interaction", "fa", "Fg", "Fg
-#'   with interaction", "Fh", "Fh with interaction", "Vss", "tmax", "tmax with
-#'   interaction", or "plasma concentration" (just "plasma" will also work).
-#'   Other than "plasma concentration", which is always included in sensitivity
-#'   analysis output, that parameter \emph{must} be one of the ones you
-#'   requested when you ran the sensitivity analysis. Not case sensitive.
+#' @param dependent_variable dependent variable to plot. Options are: "plasma
+#'   concentration" (just "plasma" will also work), "blood concentration" (just
+#'   "blood" will also work), "AUC", "AUC over dose", "AUC over dose with
+#'   interaction", "AUC ratio", "CL", "CLpo", "CLpo with interaction", "Cmax",
+#'   "Cmax with interaction", "Cmax ratio", "dose over AUC", "dose over AUC with
+#'   interaction", "fa", "Fg", "Fg with interaction", "Fh", "Fh with
+#'   interaction", "Vss", "tmax", or "tmax with interaction". The dependent
+#'   variable \emph{must} be one of the ones you requested when you ran the
+#'   sensitivity analysis. Not case sensitive.
 #' @param ind_var_label optionally specify what text use for labeling the
 #'   independent variable (the x axis). If left as NA, R will find the value
 #'   listed next to "Run Number" on the "ASA Summary" tab, which may be
@@ -53,9 +53,9 @@
 #'   or "2", "2nd", or "second" to adjust colors based on the second. If you
 #'   only have one independent variable, this will be ignored.
 #' @param linear_or_log make the y axis "linear" (default) or "log" for plasma
-#'   concentration-time plots. If you're graphing some other dependent variable,
-#'   you can also opt for "log x" to log-transform the x axis, "log y" to
-#'   log-transform the y axis (same as a traditional semi-log plot), or "both
+#'   or blood concentration-time plots. If you're graphing some other dependent
+#'   variable, you can also opt for "log x" to log-transform the x axis, "log y"
+#'   to log-transform the y axis (same as a traditional semi-log plot), or "both
 #'   log", which will log transform both the x and y axes.
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
@@ -67,15 +67,16 @@
 #' @param x_axis_limits_lin optionally set the X axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the X axis
 #'   limits for the linear plot will be automatically selected. This does not
-#'   apply when the dependent variable requested is plasma concentrations.
+#'   apply when the dependent variable requested is plasma or blood
+#'   concentrations.
 #' @param x_axis_limits_log optionally set the X axis limits for the log plot,
 #'   e.g., \code{c(10, 1000)}. Values will be rounded down and up, respectively,
 #'   to a round number. If left as the default NA, the X axis limits for the
 #'   semi-log plot will be automatically selected. This does not apply when the
-#'   dependent variable requested is plasma concentrations.
+#'   dependent variable requested is plasma or blood concentrations.
 #' @param time_range time range to show relative to the start of the simulation
 #'   for any concentration-time plots. This does not apply when the plot is of
-#'   some other dependent variable than plasma.
+#'   some other dependent variable than plasma or blood.
 #'   Options: \describe{
 #'
 #'   \item{NA}{(default) entire time range of data}
@@ -213,9 +214,9 @@ sensitivity_plot <- function(SA_file,
    linear_or_log <- tolower(linear_or_log)
    
    if(linear_or_log %in% c("both log", "log x") &
-      str_detect(dependent_variable, "plasma")){
+      str_detect(dependent_variable, "plasma|blood")){
       warning(wrapn(paste0("You requested '", linear_or_log, 
-                           "' for the argument 'linear_or_log', but you also requested a plasma concentration-time plot, and that's not an option there. We'll return both linear and semi-log concentration-time plots.")), 
+                           "' for the argument 'linear_or_log', but you also requested a plasma or blood concentration-time plot, and that's not an option there. We'll return both linear and semi-log concentration-time plots.")), 
               call. = FALSE)
       linear_or_log <- "both vertical"
    }
@@ -255,9 +256,9 @@ sensitivity_plot <- function(SA_file,
       "dose over auc with interaction" = AllSheets[str_detect(AllSheets, "Dose over AUC \\(with inter")],
       "fa" = AllSheets[str_detect(AllSheets, "fa .PKPD|fa..ADAM") & 
                           !str_detect(AllSheets, "with int")],
-      "fg" = AllSheets[str_detect(AllSheets, "Fg .PKPD") & 
+      "fg" = AllSheets[str_detect(AllSheets, "Fg .PKPD|Fg..ADAM") & 
                           !str_detect(AllSheets, "with int")],
-      "fg with interaction" = AllSheets[str_detect(AllSheets, "Fg .PKPD.*with inter") & 
+      "fg with interaction" = AllSheets[str_detect(AllSheets, "Fg .PKPD.*with inter|Fg..ADAM.*with inter") & 
                                            !str_detect(AllSheets, "with int")],
       "fh" = AllSheets[str_detect(AllSheets, "Fh .PKPD") & 
                           !str_detect(AllSheets, "with int")],
@@ -271,7 +272,12 @@ sensitivity_plot <- function(SA_file,
       "plasma concentration" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
       "plasma" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
       "plasma conc" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
-      "plasma concentrations" = AllSheets[str_detect(AllSheets, "Plasma Concentration")]
+      "plasma concentrations" = AllSheets[str_detect(AllSheets, "Plasma Concentration")], 
+      
+      "blood concentration" = AllSheets[str_detect(AllSheets, "Blood Concentration")], 
+      "blood" = AllSheets[str_detect(AllSheets, "Blood Concentration")], 
+      "blood conc" = AllSheets[str_detect(AllSheets, "Blood Concentration")], 
+      "blood concentrations" = AllSheets[str_detect(AllSheets, "Blood Concentration")]
    )
    
    Summary <- openxlsx::read.xlsx(SA_file, sheet = "ASA Summary", 
@@ -304,7 +310,7 @@ sensitivity_plot <- function(SA_file,
    
    ObsData <- list()
    
-   if(str_detect(dependent_variable, "plasma")){
+   if(str_detect(dependent_variable, "plasma|blood")){
       ObsRow <- which(SAdata.xl[, 1] == "Observed Data")
       SimT0Col <- which(names(SAdata.xl) == "RMSE") + 1
       SimT0Col <- ifelse(length(SimT0Col) == 0, 4, SimT0Col)
@@ -344,13 +350,6 @@ sensitivity_plot <- function(SA_file,
       
       
    } else {
-      
-      # # Checking for a 2nd independent parameter
-      # if(complete.cases(Summary$X3[which(Summary$X1 == "Run Number")])){
-      #    
-      #    # warning("It looks like this sensitivity analysis contains more than one independent variable. Unfortunately, this function has only been set up to graph a single independent variable unless you're graphing plasma, so only the first one will be graphed.\n",
-      #    #         call. = FALSE)
-      # }
       
       SAdata <- SAdata.xl
       if(complete.cases(SensParam2)){
@@ -465,7 +464,7 @@ sensitivity_plot <- function(SA_file,
       }
    }
    
-   if(str_detect(dependent_variable, "plasma|conc")){
+   if(str_detect(dependent_variable, "plasma|blood|conc")){
       
       if(color_by_which_indvar == "1st"){
          
@@ -528,8 +527,8 @@ sensitivity_plot <- function(SA_file,
       
    } else {
       
-      # This is when it's something other than plasma profiles that we're
-      # plotting
+      # This is when it's something other than plasma or blood profiles that
+      # we're plotting
       
       if(color_by_which_indvar == "1st"){
          if(complete.cases(SensParam2)){
@@ -614,7 +613,7 @@ sensitivity_plot <- function(SA_file,
       as.character(all(complete.cases(y_axis_limits_lin))), 
       "TRUE" = y_axis_limits_lin, 
       "FALSE" = switch(
-         as.character(str_detect(dependent_variable, "plasma|conc")), 
+         as.character(str_detect(dependent_variable, "plasma|blood|conc")), 
          "TRUE" = range(SAdata$Conc, na.rm = T), 
          "FALSE" = range(SAdata$DV, na.rm = T)))
    
@@ -623,7 +622,7 @@ sensitivity_plot <- function(SA_file,
          as.character(all(complete.cases(y_axis_limits_log))), 
          "TRUE" = y_axis_limits_log, 
          "FALSE" = switch(
-            as.character(str_detect(dependent_variable, "plasma|conc")), 
+            as.character(str_detect(dependent_variable, "plasma|blood|conc")), 
             "TRUE" = range(SAdata$Conc[SAdata$Conc > 0], na.rm = T), 
             "FALSE" = range(SAdata$DV[SAdata$DV > 0], na.rm = T))))
    
@@ -631,7 +630,7 @@ sensitivity_plot <- function(SA_file,
       as.character(all(complete.cases(x_axis_limits_lin))), 
       "TRUE" = x_axis_limits_lin, 
       "FALSE" = switch(
-         as.character(str_detect(dependent_variable, "plasma|conc")), 
+         as.character(str_detect(dependent_variable, "plasma|blood|conc")), 
          "TRUE" = range(SAdata$Time, na.rm = T), 
          "FALSE" = switch(as.character(complete.cases(SensParam2)), 
                           "TRUE" = switch(color_by_which_indvar, 
@@ -640,9 +639,9 @@ sensitivity_plot <- function(SA_file,
                           "FALSE" = range(SAdata$SensValue))))
    
    # LogXBreaks will only apply when they have requested log-transformed x axis,
-   # which is not among the options when the DV is plasma concentrations. For
-   # that reason, it does not matter that the range does not consider the range
-   # of time included.
+   # which is not among the options when the DV is plasma or blood
+   # concentrations. For that reason, it does not matter that the range does not
+   # consider the range of time included.
    LogXBreaks <- make_log_breaks(
       data_range = switch(
          as.character(all(complete.cases(x_axis_limits_log))), 
@@ -660,7 +659,7 @@ sensitivity_plot <- function(SA_file,
    if(linear_or_log %in% c("both", "both vertical", "both horizontal",
                            "semi-log", "log", "log y")){
       
-      if(str_detect(dependent_variable, "plasma|conc")){
+      if(str_detect(dependent_variable, "plasma|blood|conc")){
          
          G <- G + 
             coord_cartesian(ylim = c(round_down(LinYRange[1]),

@@ -286,35 +286,35 @@ formatTable_Simcyp <- function(DF,
       
       if(complete.cases(save_table)){
          
-         FileName <- save_table
-         if(str_detect(FileName, "\\.")){
-            # Making sure they've got a good extension
-            Filename <- ifelse(str_detect(FileName, "\\.docx$") == FALSE, 
-                               paste0(sub("\\..*$", "", FileName), ".docx"), 
-                               Filename)
-            
-            OutPath <- dirname(FileName)
-            if(OutPath == "."){
-               OutPath <- getwd()
-            }
-            
-            FileName <- basename(FileName)
-            
-            rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
-                                          package="SimcypConsultancy"), 
-                              output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
-                              output_dir = OutPath, 
-                              output_file = save_table, 
-                              quiet = TRUE)
-            # Note: The "system.file" part of the call means "go to where the
-            # package is installed, search for the file listed, and return its
-            # full path.
-            
+         # Format the file name appropriately, including making the extension be
+         # docx, even if they specified something else.
+         save_table <- ifelse(str_detect(save_table, "\\..*$"), 
+                              sub("\\..*", ".docx", save_table), 
+                              paste0(save_table, ".docx"))
+         
+         # Now that the file should have an appropriate extension, check what
+         # the path and basename should be.
+         OutPath <- dirname(save_table)
+         
+         if(OutPath == "."){
+            OutPath <- getwd()
          }
          
-         return(FT)
+         save_table <- basename(save_table)
          
+         rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
+                                       package="SimcypConsultancy"), 
+                           output_format = rmarkdown::word_document(reference_docx = TemplatePath), 
+                           output_dir = OutPath, 
+                           output_file = save_table, 
+                           quiet = TRUE)
+         # Note: The "system.file" part of the call means "go to where the
+         # package is installed, search for the file listed, and return its
+         # full path.
       }
+      
+      return(FT)
+      
    }
    
    
