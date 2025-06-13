@@ -517,13 +517,17 @@ elimFit <- function(DF,
       CurveData <- CurveData %>%
          dplyr::mutate(TIME = Time.offset + tmax)
       
+      TimeRange <- c(round_down_unit(min(DFinit2$TIME), 1), 
+                     round_up_unit(max(DFinit2$TIME), 1))
+      
       Graph <- ggplot2::ggplot(DFinit2, ggplot2::aes(x = TIME, y = CONC)) +
          ggplot2::geom_point(size = ifelse(nrow(DF) > 50, 0.5, 1.5)) +
          ggplot2::geom_line(data = CurveData, color = "blue") +
          ggplot2::scale_y_log10() +
          ggplot2::ylab(rlang::as_label(concentration)) +
-         scale_x_time(time_range = c(round_down_unit(min(DFinit2$TIME), 1), 
-                                     round_up_unit(max(DFinit2$TIME), 1))) + 
+         scale_x_time(time_range = TimeRange, 
+                      impose_limits = F) + 
+         coord_cartesian(xlim = TimeRange) +
          theme_consultancy()
       
       if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DFinit))){

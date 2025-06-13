@@ -1658,13 +1658,13 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    if(str_detect(figure_type, "ribbon")){
-      # There's a known glitch w/ggplot2 with coord_cartesian and
-      # geom_ribbon. Hacking around that.
       A <- A +
          scale_x_time(time_range = time_range_relative, 
                       x_axis_interval = x_axis_interval, 
                       time_units = TimeUnits,
-                      pad_x_axis = pad_x_axis)
+                      pad_x_axis = pad_x_axis, 
+                      impose_limits = F) +
+         coord_cartesian(xlim = time_range_relative)
       
       if(EnzPlot){
          A <- A +
@@ -1685,14 +1685,15 @@ ct_plot <- function(ct_dataframe = NA,
       
    } else {
       A <- A +
-         coord_cartesian(xlim = time_range_relative, 
-                         ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                         0, y_axis_limits_lin[1]),
-                                  YmaxRnd)) +
          scale_x_time(time_range = time_range_relative, 
                       x_axis_interval = x_axis_interval, 
                       time_units = TimeUnits,
-                      pad_x_axis = pad_x_axis)
+                      pad_x_axis = pad_x_axis, 
+                      impose_limits = F) +
+         coord_cartesian(xlim = time_range_relative, 
+                         ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                         0, y_axis_limits_lin[1]),
+                                  YmaxRnd))
       
       if(EnzPlot){
          A <- A +

@@ -133,7 +133,7 @@ checkSS <- function(ct_dataframe,
                   length(sort(unique(ct_dataframe$File))), 
                   " simulator files. An example of how to rectify this without re-extracting any data, where `CT` is the data.frame of concentration-time data you've already got:
 checkSS(ct_dataframe = CT %>% filter(File == `mysim-01.xlsx`))"),
-call. = FALSE)
+           call. = FALSE)
    }
    
    
@@ -255,6 +255,11 @@ call. = FALSE)
                     color = LineAES_inhibitor2[1], linetype = LineAES_inhibitor2[2])
    }
    
+   TimeRange <- c(0, 
+                  max(ct_dataframe$Time[
+                     ct_dataframe$CompoundID %in% c(accum_compoundID, 
+                                                    overlay_compoundID)]))
+   
    G <- G +
       geom_point(size = 2) + 
       labs(color = paste(str_to_title(accum_compoundID),
@@ -263,10 +268,9 @@ call. = FALSE)
            shape = NULL) +
       xlab("Time (h)") +
       scale_x_time(x_axis_interval = x_axis_interval, 
-                   time_range = c(0, 
-                                  max(ct_dataframe$Time[
-                                     ct_dataframe$CompoundID %in% c(accum_compoundID, 
-                                                                    overlay_compoundID)]))) +
+                   time_range = TimeRange, 
+                   impose_limits = F) +
+      coord_cartesian(xlim = TimeRange) +
       scale_color_brewer(palette = "Set1") +
       theme_consultancy()
    

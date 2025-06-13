@@ -662,13 +662,17 @@ sensitivity_plot <- function(SA_file,
       if(str_detect(dependent_variable, "plasma|blood|conc")){
          
          G <- G + 
-            coord_cartesian(ylim = c(round_down(LinYRange[1]),
-                                     round_up_nice(LinYRange[2]))) +
-            scale_x_time(time_range = x_axis_limits_lin)
+            scale_x_time(time_range = x_axis_limits_lin, 
+                         impose_limits = F) + 
+            coord_cartesian(xlim = x_axis_limits_lin, 
+                            ylim = c(round_down(LinYRange[1]),
+                                     round_up_nice(LinYRange[2])))
          
          Glog <- Glog +
-            coord_cartesian(ylim = LogYBreaks$axis_limits_log) + 
-            scale_x_time(time_range = x_axis_limits_lin)
+            scale_x_time(time_range = x_axis_limits_lin, 
+                         impose_limits = F) +
+            coord_cartesian(ylim = LogYBreaks$axis_limits_log, 
+                            xlim = x_axis_limits_lin) 
          
       } else {
          

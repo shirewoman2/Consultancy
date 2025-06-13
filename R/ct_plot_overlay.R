@@ -2744,25 +2744,30 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    if(FacetOptions$Scales == "free_y"){
-      A <- A + coord_cartesian(xlim = time_range_relative) +
+      A <- A + 
          scale_x_time(time_units = TimeUnits, 
                       time_range = time_range_relative,
                       x_axis_interval = x_axis_interval, 
-                      pad_x_axis = pad_x_axis)
+                      pad_x_axis = pad_x_axis, 
+                      impose_limits = F) +
+         coord_cartesian(xlim = time_range_relative)
       
    } else if(FacetOptions$Scales == "free_x"){
-      A <- A + coord_cartesian(ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                               0, y_axis_limits_lin[1]),
-                                        YmaxRnd))
+      A <- A + 
+         coord_cartesian(ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                         0, y_axis_limits_lin[1]),
+                                  YmaxRnd))
    } else if(FacetOptions$Scales == "fixed"){
-      A <- A + coord_cartesian(ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                               0, y_axis_limits_lin[1]),
-                                        YmaxRnd), 
-                               xlim = time_range_relative) +
+      A <- A + 
          scale_x_time(time_units = TimeUnits, 
                       time_range = time_range_relative,
                       x_axis_interval = x_axis_interval, 
-                      pad_x_axis = pad_x_axis)
+                      pad_x_axis = pad_x_axis, 
+                      impose_limits = F) +
+         coord_cartesian(ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                         0, y_axis_limits_lin[1]),
+                                  YmaxRnd), 
+                         xlim = time_range_relative)
    }
    # NB: If FacetOptions$Scales == "free", then we can't set any axis limits
    # or intervals b/c they will vary as needed for all facets.

@@ -308,13 +308,14 @@ dosing_regimen_plot <- function(existing_exp_details,
       G <- G + 
          scale_y_continuous(limits = c(0, max(Dosing$Dose)),
                             expand = expansion(mult = c(0, 0.05))) +
-         scale_x_continuous(limits = Xlim) +
          xlab("Time (h)") +
          ylab("Dose (mg)") +
          ggtitle("Dosing regimens") +
          scale_x_time(
             time_range = Xlim, 
-            x_breaks = XBreaks) +
+            x_breaks = XBreaks, 
+            impose_limits = F) +
+         coord_cartesian(xlim = Xlim) +
          theme_consultancy(border = TRUE) +
          theme(legend.position = "bottom", 
                legend.justification = c(0, 0), 

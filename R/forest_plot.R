@@ -11,7 +11,9 @@
 #'   name and, optionally, along the x axis by anything you specify for
 #'   \code{facet_column_x}. Since file names do not generally make the most
 #'   lovely of y axis labels, please use the argument \code{y_axis_labels} to
-#'   specify how you'd like your y axis to look. \emph{If you're a little
+#'   specify how you'd like your y axis to look.
+#'
+#'   \strong{If you're a little
 #'   confused here or you're just the kind of person who prefers to wing it
 #'   rather than, say, reading the instructions when assembling furniture, we
 #'   recommend skipping to the end of this help file and trying out the examples
@@ -24,7 +26,6 @@
 #'   saved forest-plot data, supply a csv or Excel file with the same data. (If
 #'   it's an Excel file, it must have only one tab.) The following columns are
 #'   required:
-#'
 #'   \describe{\item{File}{Simulation file name. You can hack this and set the values to
 #'   whatever you want rather than simulation file names, but this column is
 #'   what will be used for grouping simulations on the y axis.}
@@ -33,7 +34,7 @@
 #'   \emph{must} be one of the standardized, coded options that you can see by
 #'   running \code{view(PKParameterDefinitions)} and looking in the column
 #'   "PKparameter".}
-#'
+#'   
 #'   \item{at least one of "mean", "median", or "geomean" (not case sensitive)}{This
 #'   column will be used for the center statistic.}
 #'
@@ -45,10 +46,9 @@
 #'   \item{any column you want to facet by}{If you want to break up your graphs
 #'   along the x axis, you must include the column you want to use to do that.}
 #'   
-#'   \item{If you have both simulated and observed data, a column titled "SorO" 
-#'   and the values "Sim" or "Obs" for each type of data.}
-#'   }
-#'
+#'   \item{If you have both simulated and observed data, a column titled 
+#'   "SorO"}{This should contain "Sim" or "Obs" for each type of data.}}
+#'   
 #' @param y_axis_labels a column in \code{forest_dataframe} (unquoted) or a
 #'   named character vector (each item in quotes) to use for labeling the
 #'   simulations on the y axis. In all forest plots, the y axis will be broken
