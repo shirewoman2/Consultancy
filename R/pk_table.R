@@ -729,6 +729,8 @@ pk_table <- function(PKparameters = NA,
                                   PKparameters$CompoundID, 
                                   PKparameters$Tissue))
    
+   MyWarnings <- list()
+   
    for(i in names(PKparameters)){
       
       if(nrow(PKparameters[[i]]) == 0){next}
@@ -785,8 +787,8 @@ pk_table <- function(PKparameters = NA,
             paste0("There were no possible PK parameters to be extracted for the ",
                    unique(PKparameters[[i]]$CompoundID),
                    " in ", unique(PKparameters[[i]]$Tissue), 
-                   " for the simulation `", unique(PKparameters[[i]]$File),
-                   "` on the ", 
+                   " for the simulation '", unique(PKparameters[[i]]$File),
+                   "' on the ", 
                    ifelse(is.na(unique(PKparameters[[i]]$Sheet)) || 
                              unique(PKparameters[[i]]$Sheet) == "default", 
                           "regular sheet for the 1st or last-dose PK", 
@@ -795,6 +797,8 @@ pk_table <- function(PKparameters = NA,
             "\n"), call. = FALSE)
          next
       }
+      
+      MyWarnings[[i]] <- temp$Warnings
       
       # tmax variability stats need to be set differently b/c user will get
       # range if they have requested any variability stats at all.
@@ -896,6 +900,13 @@ pk_table <- function(PKparameters = NA,
                            unlist(), 
                         "interval" = purrr::map(CheckDoseInt, "interval") %>%
                            bind_rows())
+   
+   # Making only unique warnings
+   MyWarnings <- list_transpose(MyWarnings) %>% unlist() %>% sort() %>% unique()
+   
+   for(w in 1:length(MyWarnings)){
+      warning(MyWarnings[w], call. = F)
+   }
    
    # Formatting --------------------------------------------------------------
    

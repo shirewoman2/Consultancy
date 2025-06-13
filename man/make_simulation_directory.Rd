@@ -86,8 +86,7 @@ saying when it has started and when it has finished reading workspaces, and
 setting this to "no" will give no progress messages.}
 
 \item{save_table}{optionally specify an Excel file name for saving your
-simulation directory. If you don't include the file extension ".xlsx",
-we'll add it.}
+simulation directory.}
 
 \item{overwrite}{Should we overwrite if your Excel file already exists and
 already has a tab named "Simulation directory"? Options are "yes" to always

@@ -33,6 +33,9 @@ pk_table_subfun <- function(sim_data_file,
                             use_median_for_tmax, 
                             extract_forest_data){
    
+   # Collecting all warnings so that user doesn't get replicates. 
+   MyWarnings <- list()
+   
    ## extracting PK ------------------------------------------------------------
    
    existing_exp_details <- filter_sims(existing_exp_details,
@@ -110,10 +113,10 @@ pk_table_subfun <- function(sim_data_file,
       stop_or_warn_missing_file = "warn")
    
    if(str_detect(CheckDoseInt$message, "mismatch")){
-      warning(wrapn(paste0("For the simulation '", 
-                           sim_data_file, "', ",
-                           CheckDoseInt$message, "'.")), 
-              call. = FALSE)
+      MyWarnings[["CheckDoseInt"]] <- 
+         wrapn(paste0("For the simulation '", 
+                      sim_data_file, "', ",
+                      CheckDoseInt$message, "'."))
    } 
    
    # Addressing parameters s/a fa, Fg, that don't apply to specific intervals
@@ -162,8 +165,8 @@ pk_table_subfun <- function(sim_data_file,
    
    # Changing units if user wants. 
    if(complete.cases(conc_units) & is.na(Deets$Units_Cmax)){
-      warning(wrapn("You requested that we convert the concentration units, but we can't find what units were used in your simulation. (This is often the case for Discovery simulations in particular.) We won't be able to convert the concentration units."), 
-              call. = FALSE)
+      MyWarnings[["MissingUnits"]] <- 
+         wrapn("You requested that we convert the concentration units, but we can't find what units were used in your simulation. (This is often the case for Discovery simulations in particular.) We won't be able to convert the concentration units.")
       conc_units <- NA
    }
    
@@ -272,10 +275,10 @@ pk_table_subfun <- function(sim_data_file,
    if(any(str_detect(PKrequested, "AUCinf")) & 
       any(str_detect(PKpulled, "AUCinf")) == FALSE & 
       MyPKResults_all$WarnAUCinf == TRUE){
-      warning(wrapn(paste0("AUCinf included NA values in the file `", 
-                           sim_data_file, 
-                           "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt instead.")),
-              call. = FALSE)
+      MyWarnings[["AUCinfextrap"]] <- 
+         wrapn(paste0("AUCinf included NA values in the file `", 
+                      sim_data_file, 
+                      "`, meaning that the Simulator had trouble extrapolating to infinity and thus making the AUCinf summary data unreliable. We will supply AUCt instead."))
       PKparameters <- PKparameters %>% 
          filter(!str_detect(PKparameter, "AUCinf"))
    }
@@ -288,11 +291,11 @@ pk_table_subfun <- function(sim_data_file,
    Missing <- setdiff(Missing, "AUCinf_dose1")
    
    if(length(Missing) > 0){
-      warning(wrapn(paste0("The following parameters were requested for the simulation '", 
-                           sim_data_file, 
-                           "' but not found in your simulator output file: ",
-                           str_comma(Missing))),
-              call. = FALSE)
+      MyWarnings[["MissingPKparams"]] <- 
+         wrapn(paste0("The following parameters were requested for the simulation '", 
+                      sim_data_file, 
+                      "' but not found in your simulator output file: ",
+                      str_comma(Missing)))
    }
    
    MyPKResults <- MyPKResults_all$aggregate
@@ -553,13 +556,13 @@ pk_table_subfun <- function(sim_data_file,
             # by 100 and labels it as "CV". HACK FOR NOW: I'm adding rows for SD
             # and telling the user to select which it actually is.
             if(any(ObsPK_var$Stat %in% c("CV")) & MeanType != "geometric"){
-               warning(wrapn(paste0(
-                  "You've included some variability for the observed data that we're including in your table, but, tbh, we have not yet set up anything to detect what *kind* of variability it is. You've given us one number per PK parameter for this variability and you've requested ", 
-                  case_match(MeanType, 
-                             "arithmetic" ~ "arithmetic means", 
-                             "median" ~ "medians"), 
-                  ", so it could be a CV or it could be a standard deviation. We're going to add rows for both in your table. Please remove whichever does not apply. Please also note that CVs will be multiplied by 100.")), 
-                  call. = FALSE)
+               MyWarnings[["ObsVariability"]] <- 
+                  wrapn(paste0(
+                     "You've included some variability for the observed data that we're including in your table, but, tbh, we have not yet set up anything to detect what *kind* of variability it is. You've given us one number per PK parameter for this variability and you've requested ", 
+                     case_match(MeanType, 
+                                "arithmetic" ~ "arithmetic means", 
+                                "median" ~ "medians"), 
+                     ", so it could be a CV or it could be a standard deviation. If you requested both with the includeSD and includeCV arguments, we'll add rows for both in your table. Please remove whichever does not apply. Please also note that CVs will be multiplied by 100."))
                ObsPK_var <- bind_rows(ObsPK_var, 
                                       ObsPK_var %>% mutate(Stat = "SD"))
             }
@@ -679,8 +682,8 @@ pk_table_subfun <- function(sim_data_file,
          c("substrate", "primary metabolite 1", 
            "primary metabolite 2", "secondary metabolite") == FALSE){
          if(extract_forest_data == TRUE){
-            warning(wrapn("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped."), 
-                    call. = FALSE)
+            MyWarnings[["Forest_BadCompoundID"]] <- 
+               wrapn("This function is currently only set up to extract forest data for the substrate or a substrate metabolite, so any other compounds will be skipped.")
          }
          FD <- list()
          
@@ -761,7 +764,9 @@ pk_table_subfun <- function(sim_data_file,
       
       "ForestData" = FD, 
       
-      "CheckDoseInt" = CheckDoseInt))
+      "CheckDoseInt" = CheckDoseInt, 
+      
+      "Warnings" = MyWarnings))
    
 }
 

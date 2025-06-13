@@ -71,8 +71,7 @@
 #'   \item{"relative"}{Show the path relative to the project folder}}
 #'
 #' @param save_table optionally specify an Excel file name for saving your
-#'   simulation directory. If you don't include the file extension ".xlsx",
-#'   we'll add it.
+#'   simulation directory. 
 #' @param overwrite Should we overwrite if your Excel file already exists and
 #'   already has a tab named "Simulation directory"? Options are "yes" to always
 #'   overwrite, "no" to never overwrite, or "ask" (default), which means that we
