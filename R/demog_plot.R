@@ -46,7 +46,9 @@
 #'
 #'   \item{"Creatinine_umolL" (creatinine in umol/L; "Creatinine" is fine)}
 #'
-#'   \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/m2; "GFR" is fine)}
+#'   \item{"GFR_mLmin" (glomerular filtration rate in mL/min; "GFR" is fine)}
+#'
+#'   \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/m2)}
 #'
 #'   \item{"Haematocrit" (haematocrit)}
 #'
@@ -281,12 +283,21 @@ demog_plot <- function(demog_dataframe,
    
    if("data.frame" %in% class(obs_demog_dataframe)){
       demog_dataframe <- demog_dataframe %>% 
-         mutate(SorO = "simulated") %>% 
+         mutate(SorO = "simulated", 
+                Individual = as.character(Individual)) %>% 
          bind_rows(obs_demog_dataframe %>% 
                       select(any_of(intersect(names(obs_demog_dataframe), 
                                               names(demog_dataframe)))) %>% 
                       mutate(SorO = "observed", 
-                             File = "observed")) %>% 
+                             File = "observed", 
+                             across(.cols = any_of("Individual"), 
+                                    .fns = as.character), 
+                             across(.cols = any_of("Sex"), 
+                                    .fns = \(x) case_when(
+                                       tolower(x) == "m" ~ "M", 
+                                       tolower(x) == "f" ~ "F", 
+                                       tolower(x) == "male" ~ "M", 
+                                       tolower(x) == "female" ~ "F")))) %>% 
          unique()
    } else {
       if("SorO" %in% names(demog_dataframe) == FALSE){

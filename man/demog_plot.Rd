@@ -68,7 +68,9 @@ must be included in \code{demog_dataframe} in the column "File".}
 
   \item{"Creatinine_umolL" (creatinine in umol/L; "Creatinine" is fine)}
 
-  \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/m2; "GFR" is fine)}
+  \item{"GFR_mLmin" (glomerular filtration rate in mL/min; "GFR" is fine)}
+
+  \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/m2)}
 
   \item{"Haematocrit" (haematocrit)}
 

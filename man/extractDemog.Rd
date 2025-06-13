@@ -53,11 +53,12 @@ a data.frame of demographic data for simulated subjects. Columns
   BMI_kgm2 (body mass index in kg/meter squared), CardiacOut (cardiac output
   in L/h), Haematocrit (percent), HSA_gL (human serum albumin in g/L), AGP_gL
   (alpha-1-acid glycoprotein in g/L), Other_uM (user-defined value in uM),
-  Creatinine_umolL (creatinine in umol/L), GFR_mLminm2 (glomerular filtration
-  rate in mL/min/m squared of body surface area), RenalFunction (the GFR
-  divided by the reference GFR, which is 130 mL/min/m2 for male subjects and
-  120 mL/min/m2 for female subjects), AllometricScalar (allometric scalar
-  used), and Simulated (TRUE for simulated data).
+  Creatinine_umolL (creatinine in umol/L), GFR_mLmin (glomerular filtration
+  rate in mL/min), GFR_mLminm2 (glomerular filtration rate in mL/min/m
+  squared of body surface area), RenalFunction (the GFR divided by the
+  reference GFR, which is 130 mL/min/m2 for male subjects and 120 mL/min/m2
+  for female subjects), AllometricScalar (allometric scalar used), and
+  Simulated (TRUE for simulated data).
 }
 \description{
 Extract simulated demographic data from the "Demographic Data" tab of a

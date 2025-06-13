@@ -37,11 +37,12 @@
 #'   BMI_kgm2 (body mass index in kg/meter squared), CardiacOut (cardiac output
 #'   in L/h), Haematocrit (percent), HSA_gL (human serum albumin in g/L), AGP_gL
 #'   (alpha-1-acid glycoprotein in g/L), Other_uM (user-defined value in uM),
-#'   Creatinine_umolL (creatinine in umol/L), GFR_mLminm2 (glomerular filtration
-#'   rate in mL/min/m squared of body surface area), RenalFunction (the GFR
-#'   divided by the reference GFR, which is 130 mL/min/m2 for male subjects and
-#'   120 mL/min/m2 for female subjects), AllometricScalar (allometric scalar
-#'   used), and Simulated (TRUE for simulated data).
+#'   Creatinine_umolL (creatinine in umol/L), GFR_mLmin (glomerular filtration
+#'   rate in mL/min), GFR_mLminm2 (glomerular filtration rate in mL/min/m
+#'   squared of body surface area), RenalFunction (the GFR divided by the
+#'   reference GFR, which is 130 mL/min/m2 for male subjects and 120 mL/min/m2
+#'   for female subjects), AllometricScalar (allometric scalar used), and
+#'   Simulated (TRUE for simulated data).
 #' @export
 #'
 #' @examples
@@ -242,6 +243,21 @@ extractDemog <- function(sim_data_files = NA,
                          Individual = as.character(Individual), 
                          Trial = as.character(Trial))
             )
+            
+            # Calculating whichever variation of GFR is missing
+            if(all(c("GFR_mLmin", "BSA_m2") %in% names(Demog[[ff]])) & 
+               "GFR_mLminm2" %in% names(Demog[[ff]]) == FALSE){
+               
+               Demog[[ff]] <- Demog[[ff]] %>% 
+                  mutate(GFR_mLminm2 = GFR_mLmin / BSA_m2)
+            }
+            
+            if(all(c("GFR_mLmin2", "BSA_m2") %in% names(Demog[[ff]])) & 
+               "GFR_mLmin" %in% names(Demog[[ff]]) == FALSE){
+               
+               Demog[[ff]] <- Demog[[ff]] %>% 
+                  mutate(GFR_mLmin = GFR_mLminm2 * BSA_m2)
+            }
             
             rm(Demog.xl, LastRow, ColNames)
             
