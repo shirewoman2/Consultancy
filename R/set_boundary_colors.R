@@ -522,7 +522,8 @@ make_gmr_highlight_key <- function(highlight_gmr_colors,
          flextable::flextable() %>%
          flextable::delete_part(part = "header") %>%
          flextable::width(width = 1.6) %>%
-         flextable::hline_top() %>% 
+         flextable::hline_top(border = officer::fp_border(color = "#666666", 
+                                                          width = 0.75)) %>% 
          flextable::align(align = "center", part = "all")
       
       for(j in 1:length(highlight_gmr_colors)){
@@ -652,7 +653,8 @@ make_so_highlight_key <- function(highlight_so_cutoffs,
          flextable::flextable() %>%
          flextable::delete_part(part = "header") %>%
          flextable::width(width = 1.6) %>%
-         flextable::hline_top() %>% 
+         flextable::hline_top(border = officer::fp_border(color = "#666666", 
+                                                          width = 0.75)) %>% 
          flextable::align(align = "center", part = "all")
       
       for(j in 1:length(highlight_so_cutoffs)){
