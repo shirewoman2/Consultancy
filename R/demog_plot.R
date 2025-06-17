@@ -48,7 +48,7 @@
 #'
 #'   \item{"GFR_mLmin" (glomerular filtration rate in mL/min; "GFR" is fine)}
 #'
-#'   \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/m2)}
+#'   \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/1.73 m2)}
 #'
 #'   \item{"Haematocrit" (haematocrit)}
 #'
@@ -65,7 +65,7 @@
 #'   \item{"Weight_kg" (weight in kg; "Weight" is fine)}
 #'
 #'   \item{"RenalFunction" (renal function as calculated by the GFR in
-#'   mL/min/m squared body surface area divided by the reference GFR for that
+#'   mL/min/1.73 m2 body surface area divided by the reference GFR for that
 #'   sex: 120 for female subjects and 130 for male subjects as of V23 of the
 #'   Simcyp Simulator)}
 #'   

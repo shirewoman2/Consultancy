@@ -40,9 +40,9 @@
 #'   Creatinine_umolL (creatinine in umol/L), GFR_mLmin (glomerular filtration
 #'   rate in mL/min), GFR_mLminm2 (glomerular filtration rate in mL/min/m
 #'   squared of body surface area), RenalFunction (the GFR divided by the
-#'   reference GFR, which is 130 mL/min/m2 for male subjects and 120 mL/min/m2
-#'   for female subjects), AllometricScalar (allometric scalar used), and
-#'   Simulated (TRUE for simulated data).
+#'   reference GFR, which is 130 mL/min/1.73 m2 for male subjects and 120
+#'   mL/min/1.73 m2 for female subjects), AllometricScalar (allometric scalar
+#'   used), and Simulated (TRUE for simulated data).
 #' @export
 #'
 #' @examples
@@ -169,11 +169,24 @@ extractDemog <- function(sim_data_files = NA,
    # Main body of function --------------------------------------------------
    
    Demog <- list()
+   Population <- list()
    CYPs <- list()
    UGTs <- list()
    DrugPop <- list()
    
    for(ff in sim_data_files_topull){
+      
+      ## Population ---------------------------------------------------------
+      
+      suppressMessages(Summary.xl <- readxl::read_xlsx(ff, sheet = "Summary"))
+      
+      Population[[ff]] <- tibble(
+         File = ff, 
+         Population = tidyPop(t(Summary.xl[, 2])[
+            which(Summary.xl[, 1] == "Population Name")])$Population)
+      
+      rm(Summary.xl)
+      
       
       ## demog --------------------------------------------------------------
       
@@ -192,7 +205,7 @@ extractDemog <- function(sim_data_files = NA,
          } else {
             
             ColNames <- c("Index" = "Individual", 
-                          "Population" = "Population", 
+                          "Population" = "PopulationNumber", 
                           "Trial" = "Trial", 
                           "Sex" = "Sex", 
                           "Sex Code" = "SexCode", 
@@ -239,7 +252,6 @@ extractDemog <- function(sim_data_files = NA,
                                 .fns = as.numeric), 
                          File = ff, 
                          Simulated = TRUE, 
-                         Population = as.character(Population), 
                          Individual = as.character(Individual), 
                          Trial = as.character(Trial))
             )
@@ -249,7 +261,7 @@ extractDemog <- function(sim_data_files = NA,
                "GFR_mLminm2" %in% names(Demog[[ff]]) == FALSE){
                
                Demog[[ff]] <- Demog[[ff]] %>% 
-                  mutate(GFR_mLminm2 = GFR_mLmin / BSA_m2)
+                  mutate(GFR_mLminm2 = GFR_mLmin / (1.73/BSA_m2))
             }
             
             if(all(c("GFR_mLmin2", "BSA_m2") %in% names(Demog[[ff]])) & 
@@ -460,7 +472,6 @@ extractDemog <- function(sim_data_files = NA,
                         .cols = DrugPopnames[
                            str_detect(DrugPopnames, "BP|fu|PercBound|Qgut|Dose")], 
                         .fns = as.numeric), 
-                     Population = as.character(Population), 
                      File = ff,
                      simulated = TRUE, 
                      Individual = as.character(Individual), 
@@ -494,7 +505,10 @@ extractDemog <- function(sim_data_files = NA,
    
    Out <- bind_rows(demog_dataframe, AllDemog) %>% 
       filter(complete.cases(File)) %>% 
-      select(File, Trial, Individual, Population, everything())
+      left_join(bind_rows(Population), 
+                by = "File") %>% 
+      select(any_of(c("File", "Population", "Trial", "Individual")), 
+             everything())
    
    return(Out)
    

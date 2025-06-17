@@ -130,7 +130,7 @@ harmonize_demog <- function(demog_dataframe,
                 NA, 
                 "Percent female", 
                 NA, 
-                "renalfunction" = "Renal function", 
+                "Renal function", 
                 
                 "HPGL (organ scalar)", "MPPGL (organ scalar)", 
                 "CPPGL (organ scalar)", "S9PPGL (organ scalar)", "MPPI (organ scalar)", 
@@ -244,16 +244,15 @@ harmonize_demog <- function(demog_dataframe,
                                     "cardiac" ~ "cardiacout", 
                                     "creatinine" ~ "creatinine_umoll", 
                                     "creatinine_um"  ~ "creatinine_umoll", 
-                                    "gfr" ~ "gfr_mlminm2", 
+                                    "gfr" ~ "gfr_mlmin", 
+                                    "gfr_mlmin1.73m2" ~ "gfr_mlminm2", 
                                     "hematocrit" ~ "haematocrit", 
                                     "kidney" ~ "kidneywt_g", 
                                     "kidneywt" ~ "kidneywt_g", 
                                     "liverwt" ~ "liverwt_g", 
                                     "liver" ~ "liverwt_g", 
-                                    .default = Parameter), 
-             Parameter = case_when("gfr_mlmin" %in% names(demog_dataframe) & 
-                                      Parameter == "gfr_mlminm2" ~ "gfr_mlmin", 
-                                   .default = Parameter))
+                                    "renal function" ~ "renalfunction", 
+                                    .default = Parameter))
    
    BadVar <- setdiff(DemogParams$Parameter, 
                      tolower(PossDemogParams$Parameter))

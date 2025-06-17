@@ -56,9 +56,9 @@ a data.frame of demographic data for simulated subjects. Columns
   Creatinine_umolL (creatinine in umol/L), GFR_mLmin (glomerular filtration
   rate in mL/min), GFR_mLminm2 (glomerular filtration rate in mL/min/m
   squared of body surface area), RenalFunction (the GFR divided by the
-  reference GFR, which is 130 mL/min/m2 for male subjects and 120 mL/min/m2
-  for female subjects), AllometricScalar (allometric scalar used), and
-  Simulated (TRUE for simulated data).
+  reference GFR, which is 130 mL/min/1.73 m2 for male subjects and 120
+  mL/min/1.73 m2 for female subjects), AllometricScalar (allometric scalar
+  used), and Simulated (TRUE for simulated data).
 }
 \description{
 Extract simulated demographic data from the "Demographic Data" tab of a
