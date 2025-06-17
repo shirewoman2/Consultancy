@@ -783,6 +783,16 @@ pk_table <- function(PKparameters = NA,
             extract_forest_data = extract_forest_data)
       
       if(length(temp) == 0){
+         
+         MyRegimen <- existing_exp_details$MainDetails %>% 
+            filter(File == unique(PKparameters[[i]]$File)) %>% 
+            select(any_of(paste0("Regimen", 
+                                 AllCompounds$DosedCompoundSuffix[
+                                    AllCompounds$CompoundID == 
+                                       unique(PKparameters[[i]]$CompoundID)])))
+         MyRegimen <- ifelse(MyRegimen[[1]][1] == "custom dosing", 
+                             "Multiple Dose", MyRegimen[[1]][1])
+         
          warning(paste0(str_wrap(
             paste0("There were no possible PK parameters to be extracted for the ",
                    unique(PKparameters[[i]]$CompoundID),
@@ -791,9 +801,12 @@ pk_table <- function(PKparameters = NA,
                    "' on the ", 
                    ifelse(is.na(unique(PKparameters[[i]]$Sheet)) || 
                              unique(PKparameters[[i]]$Sheet) == "default", 
-                          "regular sheet for the 1st or last-dose PK", 
+                          "regular sheet for the ",
                           paste0("sheet `", unique(PKparameters[[i]]$Sheet), "`")), 
-                   ". Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")),
+                   case_match(MyRegimen, 
+                              "Single Dose" ~ "first-dose ", 
+                              "Multiple Dose" ~ "last-dose "), 
+                   "PK. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")),
             "\n"), call. = FALSE)
          next
       }
