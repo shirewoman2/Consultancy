@@ -618,7 +618,7 @@ calc_PK_ratios <- function(PKparameters = NA,
       filter(PKparameter %in% GoodPKparam$Numerator_PKparameter)
    
    
-   # !!! IMPORTANT PKPARAMETER NAME CHANGE STEP HERE !!! ----------------------
+   # !!! IMPORTANT PKPARAMETER NAME-CHANGE STEP HERE !!! ----------------------
    
    # Setting this up to match things later. This is a hack to make PKparameter
    # match even if it doesn't really b/c user wanted to compare, e.g.,
@@ -784,10 +784,16 @@ calc_PK_ratios <- function(PKparameters = NA,
       
    } else {
       
+      if(mean_type == "arithmetic"){
+         warning(wrapn("This function has been set up to calculate geometric mean ratios and has not been set up for arithmetic mean ratios. We will return geometric mean ratios only."),
+                 call. = FALSE)
+      }
+      
       # Using calculations recommended by Frederic Bois for the confidence
       # interval for UNPAIRED comparisons. (Note to self: See email from March
       # 3, 2023. -LSh)
-      geomratio_stats <- function(x_num, x_denom, 
+      geomratio_stats <- function(x_num, 
+                                  x_denom, 
                                   distribution_type = distribution_type, 
                                   rounding = rounding, 
                                   conf_int = conf_int){
@@ -842,18 +848,29 @@ calc_PK_ratios <- function(PKparameters = NA,
       
       MyPKResults <- list()
       for(param in unique(PKnumerator$individual$PKparameter)){
-         MyPKResults[[param]] <- 
-            geomratio_stats(
-               x_num = PKnumerator$individual$NumeratorSim[
-                  PKnumerator$individual$PKparameter == param], 
-               
-               x_denom = PKdenominator$individual$DenominatorSim[
-                  PKdenominator$individual$PKparameter == param],
-               
-               distribution_type = distribution_type, 
-               rounding = rounding, 
-               conf_int = conf_int)
+         if(str_detect(param, "tmax")){
+            # We generally want medians for tmax, so not calculating ratios. 
+            MyPKResults[[param]] <- c(
+               "Mean" = NA, 
+               "CI90_lower" = NA, 
+               "CI90_upper" = NA)
+            
+         } else {
+            
+            MyPKResults[[param]] <- 
+               geomratio_stats(
+                  x_num = PKnumerator$individual$NumeratorSim[
+                     PKnumerator$individual$PKparameter == param], 
+                  
+                  x_denom = PKdenominator$individual$DenominatorSim[
+                     PKdenominator$individual$PKparameter == param],
+                  
+                  distribution_type = distribution_type, 
+                  rounding = rounding, 
+                  conf_int = conf_int)
+         }
       }
+      
       MyPKResults <- bind_rows(MyPKResults, .id = "PKparameter")
       
       if(concatVariability){
@@ -887,7 +904,8 @@ calc_PK_ratios <- function(PKparameters = NA,
             select(-any_of(c("File", "CompoundID", "Compound", "Inhibitor",
                              "Tissue", "Simulated", "Dose"))) %>% 
             pivot_longer(cols = -PKparameter, 
-                         names_to = "Statistic", values_to = "Value") %>% 
+                         names_to = "Statistic",
+                         values_to = "Value") %>% 
             mutate(ValType = "NumeratorSim", 
                    Value = round_opt(Value, rounding))
          
@@ -899,11 +917,13 @@ calc_PK_ratios <- function(PKparameters = NA,
             select(-any_of(c("File", "CompoundID", "Compound", "Inhibitor",
                              "Tissue", "Simulated", "Dose"))) %>% 
             pivot_longer(cols = -PKparameter, 
-                         names_to = "Statistic", values_to = "Value") %>% 
+                         names_to = "Statistic",
+                         values_to = "Value") %>% 
             mutate(ValType = "DenominatorSim", 
                    Value = round_opt(Value, rounding)) %>% 
             left_join(Comparisons %>%
-                         select(Numerator_PKparameter, Denominator_PKparameter) %>% 
+                         select(Numerator_PKparameter,
+                                Denominator_PKparameter) %>% 
                          rename(PKparameter = Numerator_PKparameter), 
                       by = "PKparameter") %>% 
             mutate(PKparameter = Denominator_PKparameter) %>% 
@@ -912,17 +932,51 @@ calc_PK_ratios <- function(PKparameters = NA,
          # Binding the numerator and denominator data together and
          # formatting to match ratio data
          PKnum_denom_agg <- bind_rows(PKnum_agg, PKdenom_agg) %>% 
-            filter(Statistic %in% 
-                      switch(mean_type,
-                             "geometric" = c("Geomean", 
-                                             "CI90_lower", 
-                                             "CI90_upper"),
-                             # I'm not even sure the arithmetic means
-                             # would ever come up for the ratios for
-                             # the way I've set things up, so this is
-                             # probably mooot.
-                             "arithmetic" = c("Mean"))) %>% 
-            mutate(PKparameter = paste(PKparameter, ValType)) 
+            mutate(
+               Keep = 
+                  (str_detect(PKparameter, "tmax") & 
+                      Statistic %in% c("Median", "Minimum", "Maximum")) |
+                  
+                  (!str_detect(PKparameter, "tmax") & 
+                      Statistic %in% switch(mean_type,
+                                            "geometric" = c("Geomean", 
+                                                            "CI90_lower", 
+                                                            "CI90_upper"),
+                                            # I'm not even sure the arithmetic means
+                                            # would ever come up for the ratios for
+                                            # the way I've set things up, so this is
+                                            # probably moot.
+                                            "arithmetic" = c("Mean", 
+                                                             "CI90_lower", 
+                                                             "CI90_upper")))) %>% 
+            filter(Keep == TRUE) %>% select(-Keep) %>% 
+            mutate(PKparameter = paste(PKparameter, ValType), 
+                   Statistic = case_when(
+                      str_detect(PKparameter, "tmax") & 
+                         mean_type == "geometric" & 
+                         Statistic == "Median" ~ "Geomean", 
+                      
+                      str_detect(PKparameter, "tmax") & 
+                         mean_type == "geometric" & 
+                         Statistic == "Minimum" ~ "CI90_lower", 
+                      
+                      str_detect(PKparameter, "tmax") & 
+                         mean_type == "geometric" & 
+                         Statistic == "Maximum" ~ "CI90_upper", 
+                      
+                      str_detect(PKparameter, "tmax") & 
+                         mean_type == "arithmetic" & 
+                         Statistic == "Median" ~ "Mean", 
+                      
+                      str_detect(PKparameter, "tmax") & 
+                         mean_type == "arithmetic" & 
+                         Statistic == "Minimum" ~ "CI90_lower", 
+                      
+                      str_detect(PKparameter, "tmax") & 
+                         mean_type == "arithmetic" & 
+                         Statistic == "Maximum" ~ "CI90_upper",
+                      
+                      .default = Statistic))
          
          if(concatVariability){
             PKnum_denom_agg <- PKnum_denom_agg %>% 
@@ -984,7 +1038,7 @@ calc_PK_ratios <- function(PKparameters = NA,
    # Only including the variability measurements user requested
    if(includeCV == FALSE){
       MyPKResults <- MyPKResults %>% 
-         filter(!Statistic %in% c("CV"))
+         filter(!Statistic %in% c("CV%", "GCV%"))
    }
    
    if(includeConfInt == FALSE){

@@ -513,6 +513,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                                        "Tissue", "File", "Sheet")), 
                       names_to = "PKparameter", 
                       values_to = "Value") %>% 
+         filter(complete.cases(Value)) %>% 
          mutate(Value = round_opt(Value,  
                                   round_fun = rounding)) %>% 
          pivot_wider(names_from = Statistic, 
@@ -533,11 +534,38 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                      values_from = Value)
    } else {
       MyPKResults <- MyPKResults %>% 
-         mutate(across(.cols = where(is.numeric), 
-                       .fns = round_opt, 
-                       round_fun = ifelse(complete.cases(rounding) & 
-                                             rounding == "Word only", 
-                                          "none", rounding)))
+         # Pivoting longer to remove empty cells, get things in order, and more
+         # easily round.
+         pivot_longer(cols = -any_of(c("File", "Statistic", "Tissue",
+                                       "CompoundID")), 
+                      names_to = "PKparameter", 
+                      values_to = "Value") %>% 
+         separate_wider_delim(cols = PKparameter, delim = " ", 
+                              names = c("PKparameter", "Type")) %>% 
+         mutate(
+            Value = round_opt(x = Value, 
+                              round_fun = ifelse(complete.cases(rounding) & 
+                                                    rounding == "Word only", 
+                                                 "none", rounding)), 
+            Type = factor(Type, 
+                          levels = c("DenominatorSim", "NumeratorSim",
+                                     "Ratio")), 
+            PKparameter = factor(PKparameter, 
+                                 levels = unique(c(
+                                    AllPKParameters %>% 
+                                       arrange(SortOrder) %>% 
+                                       pull(PKparameter)), 
+                                    AllPKParameters %>% 
+                                       arrange(SortOrder) %>% 
+                                       pull(PKparameter_nodosenum)))) %>% 
+         arrange(File, Type, PKparameter) %>% 
+         mutate(PKparameter_Type = paste(PKparameter, Type), 
+                PKparameter_Type = factor(PKparameter_Type, 
+                                          levels = unique(PKparameter_Type))) %>% 
+         filter(complete.cases(Value)) %>% 
+         select(-PKparameter, -Type) %>% 
+         pivot_wider(names_from = PKparameter_Type, 
+                     values_from = Value)
    }
    
    # Setting column order
@@ -716,10 +744,10 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          select(File, Statistic,
                 any_of(c(
                    "Dose_sub", "Inhibitor1", "Dose_inhib",
-                         "Numerator_CompoundID", "Denominator_CompoundID", 
-                         "Numerator_Compound", "Denominator_Compound", 
-                         "Numerator_File", "Denominator_File",
-                         "Numerator_Tissue", "Denominator_Tissue")), 
+                   "Numerator_CompoundID", "Denominator_CompoundID", 
+                   "Numerator_Compound", "Denominator_Compound", 
+                   "Numerator_File", "Denominator_File",
+                   "Numerator_Tissue", "Denominator_Tissue")), 
                 matches(" / | Ratio")) %>% 
          filter(str_detect(Statistic, "Ratio|^Simulated$|Lower|Upper")) %>% 
          pivot_longer(cols = -any_of(c("Statistic", "File", "Dose_sub", "Dose_inhib", 
