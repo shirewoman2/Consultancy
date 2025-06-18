@@ -77,8 +77,8 @@ make_ct_caption <- function(ct_dataframe,
                           plot_type %in% c("enzyme-abundance", "fm") &
                              InhibPresent == FALSE ~ "victim", 
                           
-                          .default = str_c(sort(unique(AllRegCompounds$DDIrole[
-                             AllRegCompounds$CompoundID %in% CompoundID])), collapse = "-"))
+                          .default = str_c(sort(unique(AllCompounds$DDIrole[
+                             AllCompounds$CompoundID %in% CompoundID])), collapse = "-"))
    
    # Adding one more plot_type to account for ADAM model data where it's not
    # really "concentration" but "amount".
@@ -272,6 +272,7 @@ make_ct_caption <- function(ct_dataframe,
                                "release-profile" = " release profiles of ",
                                "dissolution-profile" = " dissolution profiles of ",
                                "concentration-time" = " concentration-time profiles of ", 
+                               "PD" = " profiles of ", 
                                "mass-time" = " profiles of "), 
                         MyCompound, " ", DDItext1, "in ", 
                         Pop, ".")
@@ -296,13 +297,23 @@ make_ct_caption <- function(ct_dataframe,
             "Depicted are ", 
             case_when(plot_type == "fm" ~ "", 
                       .default = Tissue),
-            switch(plot_type, 
-                   "enzyme-abundance" = " enzyme-abundance profiles of ",
-                   "fm" = "time-dependent fm values for ", 
-                   "release-profile" = " release profiles of ",
-                   "dissolution-profile" = " dissolution profiles of ",
-                   "concentration-time" = " concentration-time profiles of "), 
-            MyCompound, " following ", 
+            switch(
+               plot_type, 
+               "enzyme-abundance" =
+                  paste0(" enzyme-abundance profiles of ", MyCompound), 
+               
+               "fm" = paste0("time-dependent fm values for ", MyCompound),
+               
+               "release-profile" = paste0(" release profiles of ", MyCompound), 
+               
+               "dissolution-profile" = paste0(" dissolution profiles of ", MyCompound), 
+               
+               "mass-time" = paste0(" profiles of ", MyCompound), 
+               
+               "PD" = " profiles", 
+               
+               "concentration-time" = paste0(" concentration-time profiles of ", MyCompound)), 
+            " following ", 
             
             switch(CmpdRoles, 
                    
@@ -348,15 +359,25 @@ make_ct_caption <- function(ct_dataframe,
                       .default = "simulated "), 
             case_when(plot_type == "fm" ~ "", 
                       .default = Tissue), 
-            switch(plot_type, 
-                   "enzyme-abundance" = " enzyme-abundance profiles of ",
-                   "fm" = "time-dependent fm values for ", 
-                   "release-profile" = " release profiles of ",
-                   "dissolution-profile" = " dissolution profiles of ",
-                   "concentration-time" = " concentration-time profiles of "), 
-            MyCompound, " following ", 
-            case_when(CompoundID %in% AllRegCompounds$CompoundID[
-               AllRegCompounds$DDIrole == "victim"] ~ DosingText_sub_lower, 
+            switch(
+               plot_type, 
+               "enzyme-abundance" =
+                  paste0(" enzyme-abundance profiles of ", MyCompound), 
+               
+               "fm" = paste0("time-dependent fm values for ", MyCompound),
+               
+               "release-profile" = paste0(" release profiles of ", MyCompound), 
+               
+               "dissolution-profile" = paste0(" dissolution profiles of ", MyCompound), 
+               
+               "mass-time" = paste0(" profiles of ", MyCompound), 
+               
+               "PD" = " profiles", 
+               
+               "concentration-time" = paste0(" concentration-time profiles of ", MyCompound)), 
+            " following ",  
+            case_when(CompoundID %in% AllCompounds$CompoundID[
+               AllCompounds$DDIrole == "victim"] ~ DosingText_sub_lower, 
                .default = DosingText_inhib_lower), 
             ".") 
       }
@@ -366,6 +387,10 @@ make_ct_caption <- function(ct_dataframe,
       figure_type_mod <- case_when(figure_type %in% c("compound summary", 
                                                       "Freddy") &
                                       DDI == TRUE ~ "percentiles", 
+                                   figure_type == "means only" & 
+                                      DDI == TRUE ~ "means only DDI", 
+                                   figure_type == "means only" & 
+                                      DDI == FALSE ~ "means only baseline", 
                                    .default = figure_type)
       
       CapText2 <- switch(
@@ -384,8 +409,12 @@ make_ct_caption <- function(ct_dataframe,
             paste0("The shaded regions represent the 5^th^ to the 95^th^ percentiles and the solid darker line the ",
                    mean_type, 
                    " mean data for the simulated population (n = ", N_indiv, ")."), 
-         "means only" = 
-            paste0("The solid line represents the ", 
+         "means only DDI" = 
+            paste0("The lines represent the ", 
+                   mean_type, 
+                   " mean data for the simulated population (n = ", N_indiv, ")."), 
+         "means only baseline" = 
+            paste0("The line represents the ", 
                    mean_type, 
                    " mean data for the simulated population (n = ", N_indiv, ")."), 
          "Freddy" = 
@@ -469,6 +498,12 @@ make_ct_caption <- function(ct_dataframe,
                                                  MyCompound, "."),
                       "dissolution-profile" = paste0(" dissolution profiles of ",
                                                      MyCompound, "."),
+                      "PD" = " profiles.", 
+                      
+                      "mass-time" = paste0(" ", 
+                                           str_comma(unique(ct_dataframe$Tissue)), 
+                                           " profiles of ", 
+                                           MyCompound, "."), 
                       "concentration-time" = paste0(" ", 
                                                     str_comma(unique(ct_dataframe$Tissue)), 
                                                     " simulated concentration-time profiles of ", # keep 1st and last spaces here

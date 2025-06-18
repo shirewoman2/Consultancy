@@ -68,7 +68,9 @@ must be included in \code{demog_dataframe} in the column "File".}
 
   \item{"Creatinine_umolL" (creatinine in umol/L; "Creatinine" is fine)}
 
-  \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/m2; "GFR" is fine)}
+  \item{"GFR_mLmin" (glomerular filtration rate in mL/min; "GFR" is fine)}
+
+  \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/1.73 m2)}
 
   \item{"Haematocrit" (haematocrit)}
 
@@ -85,9 +87,12 @@ must be included in \code{demog_dataframe} in the column "File".}
   \item{"Weight_kg" (weight in kg; "Weight" is fine)}
 
   \item{"RenalFunction" (renal function as calculated by the GFR in
-  mL/min/m squared body surface area divided by the reference GFR for that
+  mL/min/1.73 m2 body surface area divided by the reference GFR for that
   sex: 120 for female subjects and 130 for male subjects as of V23 of the
-  Simcyp Simulator)}}}
+  Simcyp Simulator)}
+  
+  \item{Any other column name in demog_dataframe that contains numeric data.}
+  }}
 
   \itemize{Comparisons of two parameters, which will create a scatter
   plot: \itemize{
@@ -102,7 +107,10 @@ must be included in \code{demog_dataframe} in the column "File".}
 
   If you want only a subset
   of those, list them in a character vector, e.g., \code{demog_parameters = c("Age",
-  "Height_cm", "Weight_kg")}. Plots will be in the order you list.}
+  "Height_cm", "Weight_kg")}. Plots will be in the order you list. NB: If 
+  you have extracted demographic data from the "Enzymatic Status CYPs",  
+  "Enzymatic Status UGTs", or "Drug-Population Parameters" tabs, this is a LOT
+  of possible parameters, so please check what you're asking for.}
 
 \item{variability_display}{How should the variability be shown? Options are
 "kernel density" (default, a type of smoothed histogram) or "boxplot". Any

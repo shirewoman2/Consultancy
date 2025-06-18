@@ -299,7 +299,7 @@ extractExpDetails <- function(sim_data_file,
             filter(Deet == deet) %>% pull(Regex_row)
          NameCol <- SumDeets$NameCol[which(SumDeets$Deet == deet)]
          Row <- which(str_detect(SummaryTab[, NameCol] %>% pull(), ToDetect))
-         if(length(Row) == 0 || is.null(Row) || is.na(Row)){
+         if(length(Row) == 0 || all(is.null(Row)) || all(is.na(Row))){
             return(NA)
          }
          Val <- SummaryTab[Row, SumDeets$ValueCol[SumDeets$Deet == deet]] %>%
@@ -320,7 +320,7 @@ extractExpDetails <- function(sim_data_file,
          )
          
          if(length(Val) > 1){
-            Val <- str_comma(Val)
+            Val <- str_comma(unique(Val))
          }
          
          # Tidying up some specific idiosyncracies of simulator output
@@ -354,10 +354,6 @@ extractExpDetails <- function(sim_data_file,
       
       for(i in MySumDeets){
          Out[[i]] <- pullValue(i)
-         
-         if(str_detect(i, "^StartDayTime") & is.na(Out[[i]])){
-            CustomDosing <- c(CustomDosing, TRUE)
-         }
          
          if(i == "Population" & is.na(Out[[i]])){
             # This can happen when the simulator output is actually from Simcyp
@@ -423,7 +419,10 @@ extractExpDetails <- function(sim_data_file,
                                    sheet = "Input Sheet", 
                                    CustomDosing = CustomDosing)
       
-      Out <- c(Out, InputInfo[setdiff(names(InputInfo), names(Out))])
+      CustomDosing <- InputInfo$CustomDosing
+      
+      Out <- c(Out, InputInfo[setdiff(c(names(InputInfo), "CustomDosing"),
+                                      names(Out))])
       
    }
    
@@ -433,7 +432,7 @@ extractExpDetails <- function(sim_data_file,
       any(CustomDosing, na.rm = TRUE)){
       
       # When there's custom dosing for any of the substrate or inhibitors,
-      # then the dosing start time should be pulled from a "Custom CustomDosing"
+      # then the dosing start time should be pulled from a "Custom Dosing"
       # tab. Pulling any custom dosing sheets here.
       
       CustomDoseSheets <- SheetNames[str_detect(SheetNames, "Custom Dosing")]
@@ -459,22 +458,22 @@ extractExpDetails <- function(sim_data_file,
          GoodCols <- t(CustomDose_xl[3, ]) %>% as.character()
          GoodCols <- which(complete.cases(GoodCols))
          
-         CustomDosing <- CustomDose_xl[4:nrow(CustomDose_xl), GoodCols]
-         names(CustomDosing) <- make.names(CustomDose_xl[3, GoodCols])
-         CustomDosing <- CustomDosing %>% 
+         CustomDosing_DF <- CustomDose_xl[4:nrow(CustomDose_xl), GoodCols]
+         names(CustomDosing_DF) <- make.names(CustomDose_xl[3, GoodCols])
+         CustomDosing_DF <- CustomDosing_DF %>% 
             rename(DoseNum = Dose.Number, 
                    Time1 = Time,
                    Dose_units = Dose.Units, 
                    DoseRoute = Route.of.Administration) %>% 
             mutate(Day = as.numeric(Day))
          
-         TimeUnits <- names(CustomDosing)[str_detect(names(CustomDosing), "Offset")]
-         names(CustomDosing)[str_detect(names(CustomDosing), "Offset")] <- "Time"
+         TimeUnits <- names(CustomDosing_DF)[str_detect(names(CustomDosing_DF), "Offset")]
+         names(CustomDosing_DF)[str_detect(names(CustomDosing_DF), "Offset")] <- "Time"
          
          MyCompoundID <- AllRegCompounds$CompoundID[AllRegCompounds$Suffix == Suffix]
          MyCompound <- as.character(Out[AllRegCompounds$DetailNames[AllRegCompounds$Suffix == Suffix]])
          
-         CustomDosing <- CustomDosing %>% 
+         CustomDosing_DF <- CustomDosing_DF %>% 
             # Removing any rows where Time is NA b/c those are likely places
             # where people have added some comments, etc. and not the main data
             # we want. The NA values mess up things downstream.
@@ -493,15 +492,15 @@ extractExpDetails <- function(sim_data_file,
                    Time, Time_units, DoseNum, 
                    Dose, Dose_units, DoseRoute)
          
-         Out[[paste0("CustomDosing", Suffix)]] <- CustomDosing
+         Out[[paste0("CustomDosing", Suffix)]] <- CustomDosing_DF
          Out[[paste0("Dose", Suffix)]] <- "custom dosing"
          Out[[paste0("StartDayTime", Suffix)]] <- "custom dosing"
-         Out[[paste0("StartHr", Suffix)]] <- CustomDosing$Time[CustomDosing$DoseNum == 1]
+         Out[[paste0("StartHr", Suffix)]] <- CustomDosing_DF$Time[CustomDosing_DF$DoseNum == 1]
          Out[[paste0("DoseRoute", Suffix)]] <- "custom dosing"
          Out[[paste0("DoseInt", Suffix)]] <- "custom dosing"
          Out[[paste0("Regimen", Suffix)]] <- "Multiple Dose"
          
-         rm(CustomDosing, Suffix, CustomDose_xl, MyCompoundID, MyCompound, TimeUnits)
+         rm(CustomDosing_DF, Suffix, CustomDose_xl, MyCompoundID, MyCompound, TimeUnits)
          
       }
    }
@@ -526,81 +525,88 @@ extractExpDetails <- function(sim_data_file,
          
       }
       
-      # If user has requested that the population tab be annotated, which is an
-      # option!, then there will be 2 matches to the population sheet name. We
-      # want the 1st one.
-      PopSheet <- SheetNames[str_detect(tolower(SheetNames),
-                                        str_sub(tolower(Out$Population), 1, 20))][1]
-      
-      PopTab <- suppressMessages(tryCatch(
-         readxl::read_excel(path = sim_data_file, sheet = PopSheet,
-                            col_names = FALSE),
-         error = openxlsx::read.xlsx(sim_data_file, sheet = PopSheet,
-                                     colNames = FALSE)))
-      # If openxlsx read the file, the names are different. Fixing.
-      if(names(PopTab)[1] == "X1"){
-         names(PopTab) <- paste0("...", 1:ncol(PopTab))
-      }
-      
-      MyPopDeets <- intersect(exp_details, PopDeets$Deet)
-      
-      # User can change the name of user-defined cytosolic phenotypes for GI
-      # tract, kidney, and liver. Changing this back to "Cyt1" to work for
-      # regex, though. For now, only extracting data for Cyt1 and not any more
-      # user-defined cytosolic phenotype parameters, so ignoring the others.
-      # If name is changed in one, it's changed in all. Columns are 3, 5, and
-      # 9.
-      if(any(str_detect(PopTab$...3, "Cyt1"), na.rm = T) == FALSE){
-         StartCytRow <- which(str_detect(PopTab$...3, "^User Cyt$"))[1]
+      # Skipping this for now if it's multiple populations. 
+      # FIXME: Set up something for dealing with multiple populations. 
+      if(Out$Population != "Multiple populations"){
          
-         NewName <- gsub("Abundance : | Population Scalar", "", PopTab[StartCytRow + 1, 3])
+         # If user has requested that the population tab be annotated, which is an
+         # option!, then there will be 2 matches to the population sheet name. We
+         # want the 1st one.
+         PopSheet <- SheetNames[str_detect(tolower(SheetNames),
+                                           str_sub(tolower(Out$Population), 1, 20))][1]
          
-         PopTab$...3 <- sub(NewName, "User Cyt1", PopTab$...3)
-         PopTab$...5 <- sub(NewName, "User Cyt1", PopTab$...5)
-         PopTab$...9 <- sub(NewName, "User Cyt1", PopTab$...9)
-         
-      }
-      
-      # sub function for finding correct cell
-      pullValue <- function(deet){
-         
-         # Setting up regex to search
-         ToDetect <- AllExpDetails %>% 
-            filter(Detail == deet & DataSource == "population") %>% pull(Regex_row)
-         NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
-         
-         if(ncol(PopTab) < NameCol){
-            # This happens when it's an animal simulation.
-            return(NA)
-         }
-         Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
-         if(length(Row) == 0){
-            Val <- NA
-         } else {
-            Val <- PopTab[Row, PopDeets$ValueCol[PopDeets$Deet == deet]] %>%
-               pull()
-            Val <- sort(unique(Val))
+         PopTab <- suppressMessages(tryCatch(
+            readxl::read_excel(path = sim_data_file, sheet = PopSheet,
+                               col_names = FALSE),
+            error = openxlsx::read.xlsx(sim_data_file, sheet = PopSheet,
+                                        colNames = FALSE)))
+         # If openxlsx read the file, the names are different. Fixing.
+         if(names(PopTab)[1] == "X1"){
+            names(PopTab) <- paste0("...", 1:ncol(PopTab))
          }
          
-         suppressWarnings(
-            Val <- switch(PopDeets$Class[PopDeets$Deet == deet], 
-                          "character" = as.character(Val),
-                          "numeric" = as.numeric(Val))
-         )
+         MyPopDeets <- intersect(exp_details, PopDeets$Deet)
          
-         # Tidying up some specific idiosyncracies of simulator output
-         Val <- ifelse(complete.cases(Val) & Val == "n/a",
-                       NA, Val)
+         # User can change the name of user-defined cytosolic phenotypes for GI
+         # tract, kidney, and liver. Changing this back to "Cyt1" to work for
+         # regex, though. For now, only extracting data for Cyt1 and not any more
+         # user-defined cytosolic phenotype parameters, so ignoring the others.
+         # If name is changed in one, it's changed in all. Columns are 3, 5, and
+         # 9.
+         if(any(str_detect(PopTab$...3, "Cyt1"), na.rm = T) == FALSE){
+            StartCytRow <- which(str_detect(PopTab$...3, "^User Cyt$"))[1]
+            
+            NewName <- gsub("Abundance : | Population Scalar", "", PopTab[StartCytRow + 1, 3])
+            
+            PopTab$...3 <- sub(NewName, "User Cyt1", PopTab$...3)
+            PopTab$...5 <- sub(NewName, "User Cyt1", PopTab$...5)
+            PopTab$...9 <- sub(NewName, "User Cyt1", PopTab$...9)
+            
+         }
          
-         Val <- case_when(deet == "GFR_pred_method" & Val == "Scripted" ~
-                             "user defined", 
-                          .default = as.character(Val))
+         # sub function for finding correct cell
+         pullValue <- function(deet){
+            
+            # Setting up regex to search
+            ToDetect <- AllExpDetails %>% 
+               filter(Detail == deet & DataSource == "population") %>% pull(Regex_row)
+            NameCol <- PopDeets$NameCol[which(PopDeets$Deet == deet)]
+            
+            if(ncol(PopTab) < NameCol){
+               # This happens when it's an animal simulation.
+               return(NA)
+            }
+            Row <- which(str_detect(PopTab[, NameCol] %>% pull(), ToDetect))
+            if(length(Row) == 0){
+               Val <- NA
+            } else {
+               Val <- PopTab[Row, PopDeets$ValueCol[PopDeets$Deet == deet]] %>%
+                  pull()
+               Val <- sort(unique(Val))
+            }
+            
+            suppressWarnings(
+               Val <- switch(PopDeets$Class[PopDeets$Deet == deet], 
+                             "character" = as.character(Val),
+                             "numeric" = as.numeric(Val))
+            )
+            
+            if(length(Val) == 0){Val <- NA}
+            
+            # Tidying up some specific idiosyncracies of simulator output
+            Val <- ifelse(complete.cases(Val) & Val == "n/a",
+                          NA, Val)
+            
+            Val <- case_when(deet == "GFR_pred_method" & Val == "Scripted" ~
+                                "user defined", 
+                             .default = as.character(Val))
+            
+            return(Val)
+         }
          
-         return(Val)
-      }
-      
-      for(i in MyPopDeets){
-         Out[[i]] <- pullValue(i)
+         for(i in MyPopDeets){
+            Out[[i]] <- pullValue(i)
+         }
       }
    }
    
@@ -640,6 +646,11 @@ extractExpDetails <- function(sim_data_file,
                         names(TEMP$MainDetails) != "Workspace"], 
                         names(Out))])
          
+         if(is.na(Out$ObsOverlayFile) &
+            "ObsOverlayFile" %in% names(TEMP$MainDetails)){
+            Out$ObsOverlayFile <- TEMP$MainDetails$ObsOverlayFile
+         }
+         
          UserIntervals <- TEMP$UserAUCIntervals
          
          rm(TEMP)
@@ -652,6 +663,28 @@ extractExpDetails <- function(sim_data_file,
    
    
    # Calculated details & data cleanup ----------------------------------------
+   
+   # Other functions call on "Inhibitor1", etc., so we need those objects to
+   # exist, even if they were not used in this simulation. Setting them to NA if
+   # they don't exist.
+   MissingCmpd <- setdiff(AllRegCompounds$DetailNames, names(Out))
+   MissingCmpd_list <- as.list(rep(NA, length(MissingCmpd)))
+   names(MissingCmpd_list) <- MissingCmpd
+   Out <- c(Out, MissingCmpd_list)
+   
+   # There is a bug in at least V23 of the Simulator that can make the start
+   # time of the substrate incorrect. If you had a workspace where you had a
+   # perpetrator drug and the substrate did not start at t0 but then you remove
+   # the perp and have just the substrate, the starting time from when there was
+   # a perp present is sometimes still what is listed in the Summary and Input
+   # tabs, even though that's NOT what is in the workspace and NOT what gets
+   # simulated. Catching this and fixing it. The start time when it's a
+   # substrate alone will ALWAYS be the simulation start time.
+   if(is.na(Out$Inhibitor1) & 
+      Out$StartDayTime_sub != Out$SimStartDayTime){
+      Out$StartDayTime_sub <- Out$SimStartDayTime
+      Out$StartHr_sub <- 0
+   }
    
    if("StartHr_sub" %in% exp_details && 
       "StartDayTime_sub" %in% names(Out) &&
@@ -674,14 +707,6 @@ extractExpDetails <- function(sim_data_file,
       Out[["StartHr_inhib2"]] <- difftime_sim(time1 = Out$SimStartDayTime,
                                               time2 = Out$StartDayTime_inhib2)
    }
-   
-   # Other functions call on "Inhibitor1", etc., so we need those objects to
-   # exist, even if they were not used in this simulation. Setting them to NA if
-   # they don't exist.
-   MissingCmpd <- setdiff(AllRegCompounds$DetailNames, names(Out))
-   MissingCmpd_list <- as.list(rep(NA, length(MissingCmpd)))
-   names(MissingCmpd_list) <- MissingCmpd
-   Out <- c(Out, MissingCmpd_list)
    
    # Always including the file name. 
    Out$File <- sim_data_file
@@ -855,7 +880,8 @@ extractExpDetails <- function(sim_data_file,
    
    return(Out)
    
-}
-
-
-
+   }
+   
+   
+   
+   

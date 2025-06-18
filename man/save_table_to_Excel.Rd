@@ -9,8 +9,9 @@ save_table_to_Excel(
   save_table,
   output_tab_name = "Sheet1",
   overwrite = "yes",
-  freeze_top_row = TRUE,
   center_top_row = TRUE,
+  freeze_top_row = TRUE,
+  freeze_first_col = TRUE,
   wrap_text = TRUE,
   column_widths = NA,
   highlight_cells = NA,
@@ -35,11 +36,14 @@ has a tab of the same name that you're trying to save? Options are "yes"
 means that we will ask you whether to overwrite and give you a chance to
 supply a different file name.}
 
+\item{center_top_row}{TRUE (default) or FALSE for whether to center the text
+in the top row}
+
 \item{freeze_top_row}{TRUE (default) or FALSE for whether to freeze the view
 in Excel so that the top row will always be visible}
 
-\item{center_top_row}{TRUE (default) or FALSE for whether to center the text
-in the top row}
+\item{freeze_first_col}{TRUE (default) or FALSE for whether to freeze the
+view in Excel so that the first column will always be visible}
 
 \item{wrap_text}{TRUE (default) or FALSE for whether to wrap text}
 

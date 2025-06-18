@@ -582,7 +582,7 @@ annotateDetails <- function(existing_exp_details,
                                    "Transport", SimulatorSection), 
          
          Enzyme = str_extract(Detail, 
-                              "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+                              "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp"), 
          
          DetailType = case_when(str_detect(Detail, "^CL|Vmax|Km|Jmax|HalfLife") ~ "CL", 
                                 str_detect(Detail, "MBI") ~ "MBI", 
@@ -605,7 +605,7 @@ annotateDetails <- function(existing_exp_details,
                                .default = "(uL/min/pmol)")),
             
             str_detect(Detail, "^Transporter") ~ 
-               paste0(str_extract(Detail, "ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"),
+               paste0(str_extract(Detail, "ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp"),
                       " ", 
                       case_when(str_detect(Detail, "Apical") ~ "apical ", 
                                 str_detect(Detail, "Basolateral") ~ "basolateral ", 
@@ -662,24 +662,24 @@ annotateDetails <- function(existing_exp_details,
                                 str_detect(Detail, "^Ki") ~ "competitive inhibition of ",
                                 .default = ""), 
                       
-                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")),
+                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")),
             
             # enzyme kinetics 
             str_detect(Detail, "^Km_") ~ 
-               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
                       " Km", 
                       case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (uM)", 
                                 .default = "")), 
             
             str_detect(Detail, "^Vmax_") ~ 
-               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
                       " Vmax", 
                       case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (pmol/min/pmol)"), 
                       .default = ""), 
             
             # inhibition
             str_detect(Detail, "^Ki_") ~ 
-               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp"), 
                       " competitive inhibition constant", 
                       case_when(str_detect(Detail, "Gut|Kidney|Liver") ~
                                    paste0(" in ", 
@@ -688,11 +688,11 @@ annotateDetails <- function(existing_exp_details,
             
             str_detect(Detail, "MBI_Kapp") ~ 
                paste("Kapp for mechanism-based inactivation of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")), 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp")), 
             
             str_detect(Detail, "MBI_kinact") ~ 
                paste("kinact for mechanism-based inactivation of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")), 
+                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp")), 
             
             # Induction
             str_detect(Detail, "^Ind") ~ 
@@ -700,12 +700,13 @@ annotateDetails <- function(existing_exp_details,
                                 str_detect(Detail, "Ind_gamma") ~ "induction Hill coefficient (gamma)", 
                                 str_detect(Detail, "slope") ~ "induction slope"), 
                       " for ", 
-                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")),
+                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp")),
             
             TRUE ~ Notes),
          
          # Doing a little more cleanup of Notes
          Notes = gsub("MATE2_K", "MATE2-K", Notes), 
+         Notes = gsub("P_gp", "P-gp", Notes), 
          
          # Setting factors for sorting
          SimulatorSection = factor(SimulatorSection, 
@@ -744,7 +745,7 @@ annotateDetails <- function(existing_exp_details,
       left_join(MainDetails %>% select(Notes, Detail), by = "Notes") %>% 
       unique() %>% 
       mutate(Enzyme = str_extract(Detail, 
-                                  "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+                                  "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
              Pathway = str_extract(Detail, pattern = paste0(Enzyme, ".*_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)")), 
              Pathway = str_remove(Pathway, paste0(Enzyme, "_")), 
              Pathway = str_remove(Pathway, "_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)"), 
@@ -1241,7 +1242,7 @@ annotateDetails <- function(existing_exp_details,
                      "pH_dependent_LuminalDegradation", 
                      "pH_dependent_solubility")){
          
-         DF <- DF %>% 
+         DF <- DF %>% unique() %>% 
             pivot_wider(names_from = "File", 
                         # values_from calls on the dependent variable listed 
                         values_from = switch(
@@ -1280,6 +1281,7 @@ annotateDetails <- function(existing_exp_details,
          # differences from template or which are unique.
          if(length(intersect(FileOrder, 
                              unique(existing_exp_details[[item]]$File))) > 1){
+            
             # Checking for details that are the SAME across all files
             GroupingDetails <- switch(item, 
                                       "MainDetails" = "Detail", 
@@ -1510,9 +1512,9 @@ annotateDetails <- function(existing_exp_details,
                                output_tab_name){
          
          if(nchar(output_tab_name) > 31){
-            warning(wrapn(paste0("The tab `", 
+            warning(wrapn(paste0("The tab '", 
                                  output_tab_name, 
-                                 "` has more than 31 characters, which is the maximum. This tab will be shortened to `", 
+                                 "' has more than 31 characters, which is the maximum. This tab will be shortened to `", 
                                  str_sub(output_tab_name, 1, 31), "`.")), 
                     call. = FALSE)
          }
@@ -1522,7 +1524,12 @@ annotateDetails <- function(existing_exp_details,
                              "CustomDosing" = "custom-dosing information", 
                              "ConcDependent_fup" = "concentration-dependent fup information", 
                              "ConcDependent_BP" = "concentration-dependent B/P information", 
-                             "pH_dependent_solubility" = "pH-dependent solubility information")
+                             "DissolutionProfiles" = "dissolution profiles", 
+                             "Dosing" = "dosing information", 
+                             "pH_dependent_LuminalDegradation" = "pH-dependent luminal degredation", 
+                             "pH_dependent_solubility" = "pH-dependent solubility information", 
+                             "ReleaseProfiles" = "release profiles", 
+                             "UserAUCIntervals" = "user-defined AUC intervals")
          
          MyStyles <- list()
          
@@ -1538,7 +1545,8 @@ annotateDetails <- function(existing_exp_details,
          # and then wants information that would not have been extracted. For
          # example, extractExpDetails pulls only the "Summary" tab by default, so
          # it won't have a LOT of useful information.
-         if(nrow(Out[[item]][["DF"]]) == 1){
+         if(nrow(Out[[item]][["DF"]]) == 1 & 
+            item %in% c("Dosing", "CustomDosing", "UserAUCIntervals") == FALSE){
             warning(wrapn(paste0(
                "There is only 1 row in your output for the ",
                item_char, 
@@ -1796,12 +1804,12 @@ annotateDetails <- function(existing_exp_details,
                
                suppressMessages(
                   plot(dosing_regimen_plot(existing_exp_details = existing_exp_details, 
-                                   facet1_column = CompoundID, 
-                                   colorBy_column = File, 
-                                   color_set = "rainbow", 
-                                   bar_width = 1) +
-                  ggtitle("Dosing regimens", 
-                          subtitle = "Lines will overlap perfectly when all simulations have the same dosing regimens.\nIf you have a lot of files and want to see a more-informative version of this graph,\nplease try running dosing_regimen_plot(...) separately."))
+                                           facet1_column = CompoundID, 
+                                           colorBy_column = File, 
+                                           color_set = "rainbow", 
+                                           bar_width = 1) +
+                          ggtitle("Dosing regimens", 
+                                  subtitle = "Lines will overlap perfectly when all simulations have the same dosing regimens.\nIf you have a lot of files and want to see a more-informative version of this graph,\nplease try running dosing_regimen_plot(...) separately."))
                )
                
                # Seems like ggplot makes not more than 20 items in the legend

@@ -4,6 +4,7 @@
 # Overview
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 The SimcypConsultancy R package provides tools for analyzing and
@@ -919,7 +920,8 @@ listed first in each section.
 - purples() - Create a vector of purples
 - chartreuse() - Create a vector of yellow-greens
 - rainbow() - Create a vector of a rainbow of colors
-- SimcypColors() - Simcyp colors used in the PowerPoint template
+- CertaraColors() - colors used in the Certara-branded PowerPoint
+  template
 - log10_breaks() - Create nice breaks for graphs of log-transformed data
 - make_log_breaks() - Make pretty breaks and labels for a log axis
 - theme_consultancy() - Apply the standard Consultancy Team graphing

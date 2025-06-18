@@ -6,7 +6,7 @@
 file}
 \usage{
 extractFmFe(
-  sim_data_file,
+  sim_data_files,
   static_or_dynamic = "dynamic",
   returnOnlyMaxMin = TRUE,
   returnAggregateOrIndiv = "both",
@@ -14,7 +14,7 @@ extractFmFe(
 )
 }
 \arguments{
-\item{sim_data_file}{name of the Excel file containing the simulated dynamic
+\item{sim_data_files}{names of the Excel files containing the simulated
 fm and fe data, in quotes}
 
 \item{static_or_dynamic}{get "static" or "dynamic" (default) fm values.

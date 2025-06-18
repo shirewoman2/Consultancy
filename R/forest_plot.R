@@ -11,7 +11,9 @@
 #'   name and, optionally, along the x axis by anything you specify for
 #'   \code{facet_column_x}. Since file names do not generally make the most
 #'   lovely of y axis labels, please use the argument \code{y_axis_labels} to
-#'   specify how you'd like your y axis to look. \emph{If you're a little
+#'   specify how you'd like your y axis to look.
+#'
+#'   \strong{If you're a little
 #'   confused here or you're just the kind of person who prefers to wing it
 #'   rather than, say, reading the instructions when assembling furniture, we
 #'   recommend skipping to the end of this help file and trying out the examples
@@ -24,7 +26,6 @@
 #'   saved forest-plot data, supply a csv or Excel file with the same data. (If
 #'   it's an Excel file, it must have only one tab.) The following columns are
 #'   required:
-#'
 #'   \describe{\item{File}{Simulation file name. You can hack this and set the values to
 #'   whatever you want rather than simulation file names, but this column is
 #'   what will be used for grouping simulations on the y axis.}
@@ -33,18 +34,21 @@
 #'   \emph{must} be one of the standardized, coded options that you can see by
 #'   running \code{view(PKParameterDefinitions)} and looking in the column
 #'   "PKparameter".}
-#'
+#'   
 #'   \item{at least one of "mean", "median", or "geomean" (not case sensitive)}{This
 #'   column will be used for the center statistic.}
 #'
 #'   \item{at least one pair of "CI90_lower" and "CI90_upper", "Per5" and
 #'   "Per95", "Minimum" and "Maximum", or at least one of "GCV" (geometric
 #'   coefficient of variation), "CV" (arithmetic CV), or "SD" (standard
-#'   deviation)}{These columns will be used for the whiskers. Not case sensitive.}
+#'   deviation)}{These columns will be used for the error bars. Not case sensitive.}
 #'
 #'   \item{any column you want to facet by}{If you want to break up your graphs
-#'   along the x axis, you must include the column you want to use to do that.}}
-#'
+#'   along the x axis, you must include the column you want to use to do that.}
+#'   
+#'   \item{If you have both simulated and observed data, a column titled 
+#'   "SorO"}{This should contain "Sim" or "Obs" for each type of data.}}
+#'   
 #' @param y_axis_labels a column in \code{forest_dataframe} (unquoted) or a
 #'   named character vector (each item in quotes) to use for labeling the
 #'   simulations on the y axis. In all forest plots, the y axis will be broken
@@ -172,8 +176,9 @@
 #'   co-administered with Drug X"}. Default ("none") leaves off any y-axis title.
 #' @param PK_labels optionally specify what you would like to have appear on the
 #'   y axis for labels for each PK parameter with a named list of expressions,
-#'   e.g., \code{PK_labels = list("AUCinf_dose1" = expression("Dose 1" ~ AUC[infinity] ~ (ng/mL %\*% h)),
-#'   "Cmax_dose1" ~ expression("Dose 1" ~ C[max] ~ (ng/mL))}. Please
+#'   e.g., \code{PK_labels = list(
+#'   "AUCinf_dose1" = expression("Dose 1"~AUC[infinity]~(ng/mL\%*\%h)),
+#'   "Cmax_dose1" = expression("Dose 1"~C[max]~(ng/mL))}. Please
 #'   particularly note that it must be a \strong{list} rather than a vector. To
 #'   see examples of PK parameters set up as expressions for use in graph
 #'   labels, try running \code{PKexpressions}.
@@ -1357,8 +1362,22 @@ forest_plot <- function(forest_dataframe,
       }
    }
    
-   if((length(color_set) == 1 &&
-       color_set %in% c("none", "grays", "yellow to red", "green to red") == FALSE) |
+   if(length(color_set) == 1){
+      color_set <- tolower(color_set)
+      color_set <- case_when(str_detect(color_set, "yellow") & 
+                             str_detect(color_set, "red") ~ "yellow to red", 
+                             
+                             str_detect(color_set, "green") & 
+                             str_detect(color_set, "red") ~ "green to red", 
+                             
+                             str_detect(color_set, "gray|grey") ~ "grays", 
+                             
+                             .default = color_set)
+   } 
+   
+   if((length(color_set) == 1 && 
+       color_set %in% c("none", "grays", "yellow to red", 
+                        "green to red") == FALSE) |
       (length(color_set) > 1 && length(color_set) != 4)){
       warning(wrapn("Acceptable input for `color_set` is `grays`, `yellow to red`, `green to red`, `none`, or a named character vector of the colors you want for each interaction level (see examples in help file), and your input was not among those options. We'll use the default, `grays`, for now."), 
               call. = FALSE)
@@ -1470,24 +1489,37 @@ forest_plot <- function(forest_dataframe,
    forest_dataframe <- forest_dataframe %>% 
       # Graphing this is easiest if the levels start with the item we want on
       # the bottom of the y axis and work upwards.
-      mutate(PKparameter = factor(PKparameter, levels = c("Cmax_ratio",
-                                                          "Cmax_ratio_last", 
-                                                          "Cmax_nounits",
-                                                          "Cmax_last_nounits", 
-                                                          "AUCtau_ratio",
-                                                          "AUCtau_ratio_last", 
-                                                          "AUCtau_nounits",
-                                                          "AUCtau_last_nounits",
-                                                          "Cmax_ratio_dose1", 
-                                                          "Cmax_dose1_nounits",
-                                                          "AUC_ratio",
-                                                          "AUCt_ratio",
-                                                          "AUCt_ratio_dose1", 
-                                                          "AUCt_nounits",
-                                                          "AUCinf_nounits", 
-                                                          "AUCinf_dose1_nounits",
-                                                          "AUCinf_ratio",
-                                                          "AUCinf_ratio_dose1"))) %>% 
+      mutate(PKparameter = factor(PKparameter, 
+                                  levels = c("Cmin_ratio",
+                                             "Cmin_ratio_last", 
+                                             "Cmin_nounits",
+                                             "Cmin_last_nounits", 
+                                             
+                                             "Cmax_ratio",
+                                             "Cmax_ratio_last", 
+                                             "Cmax_nounits",
+                                             "Cmax_last_nounits", 
+                                             
+                                             "AUCtau_ratio",
+                                             "AUCtau_ratio_last", 
+                                             "AUCtau_nounits",
+                                             "AUCtau_last_nounits",
+                                             
+                                             "Cmin_ratio_dose1", 
+                                             "Cmin_dose1_nounits",
+                                             
+                                             "Cmax_ratio_dose1", 
+                                             "Cmax_dose1_nounits",
+                                             
+                                             "AUC_ratio",
+                                             "AUCt_ratio",
+                                             "AUCt_ratio_dose1", 
+                                             "AUCt_nounits",
+                                             
+                                             "AUCinf_nounits", 
+                                             "AUCinf_dose1_nounits",
+                                             "AUCinf_ratio",
+                                             "AUCinf_ratio_dose1"))) %>% 
       filter(complete.cases(PKparameter))
    
    # Only use PK parameters where there are all complete cases. 
@@ -1632,14 +1664,8 @@ forest_plot <- function(forest_dataframe,
                                       "weak" = "gray95", 
                                       "moderate" = "gray90",
                                       "strong" = "gray75"), 
-                          "green to red" = c("negligible" = "#C7FEAC", 
-                                             "weak" = "#FFFF95",
-                                             "moderate" = "#FFDA95",
-                                             "strong" = "#FF9595"),
-                          "yellow to red" = c("negligible" = "white", 
-                                              "weak" = "#FFFF95",
-                                              "moderate" = "#FFDA95",
-                                              "strong" = "#FF9595"), 
+                          "green to red" = green_to_red(), 
+                          "yellow to red" = yellow_to_red(), 
                           "none" = c("negligible" = "white", 
                                      "weak" = "white",
                                      "moderate" = "white",

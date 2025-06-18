@@ -272,12 +272,12 @@
 
 
 
-#' Simcyp colors used in the PowerPoint template
+#' Colors used in the Certara PowerPoint template
 #'
 #' @format A named character vector of colors
 #' @examples
-#' scales::show_col(SimcypColors)
-"SimcypColors"
+#' scales::show_col(CertaraColors)
+"CertaraColors"
 
 
 

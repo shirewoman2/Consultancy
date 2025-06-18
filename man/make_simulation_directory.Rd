@@ -9,6 +9,7 @@ those simulation files}
 make_simulation_directory(
   project_folder = NA,
   sim_data_files = "recursive",
+  simfile_path_option = "relative",
   existing_exp_details = NA,
   search_workspaces_for_obsfile = FALSE,
   include_possible_obsfiles = TRUE,
@@ -22,7 +23,7 @@ make_simulation_directory(
 \item{project_folder}{location of the project folder to search. Please note
 that R requires forward slashes ("/") in file paths rather than the back
 slashes Microsoft uses. If left as NA (default), we'll assume your current
-working directory is the top level of your project folders.}
+working directory is the top level of your project folder.}
 
 \item{sim_data_files}{which files to include in the directory of simulations.
   This only applies when you don't supply anything for the argument
@@ -41,6 +42,13 @@ working directory is the top level of your project folders.}
   c("abc.xlsx", "def.xlsx")}}{only include the files listed. We'll figure
   out which folder they're in.}}}
 
+\item{simfile_path_option}{How would you like to see the path for each
+  simulation file? Options are: \describe{
+
+  \item{"full path" ("full" also works)}{Show the entire path}
+
+  \item{"relative" (default)}{Show the path relative to the project folder}}}
+
 \item{existing_exp_details}{optionally supply the output from running
 \code{\link{extractExpDetails_mult}} to get only the simulation files
 included there in your simulation directory. If you supply something here,
@@ -57,8 +65,7 @@ this to TRUE.}
 \item{obsfile_path_option}{How would you like to see the observed overlay XML
   file path? Options are: \describe{
 
-  \item{"full path" (default, "full" also works)}{Show the entire path to the XML
-  observed overlay file}
+  \item{"full path" (default, "full" also works)}{Show the entire path}
 
   \item{"basename"}{Only show the file name (the basename)
   of the XML overlay file and NOT any of the path. Why would you want
@@ -79,8 +86,7 @@ saying when it has started and when it has finished reading workspaces, and
 setting this to "no" will give no progress messages.}
 
 \item{save_table}{optionally specify an Excel file name for saving your
-simulation directory. If you don't include the file extension ".xlsx",
-we'll add it.}
+simulation directory.}
 
 \item{overwrite}{Should we overwrite if your Excel file already exists and
 already has a tab named "Simulation directory"? Options are "yes" to always

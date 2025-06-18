@@ -42,13 +42,13 @@
 #'   corresponding Excel files in the \emph{same} location, we can use that
 #'   information to figure out which observed Excel file should go with which
 #'   simulation. Note that this \strong{does} require you to supply something
-#'   for the argument \code{existing_exp_details} to work. This has been set up 
-#'   to look for that location even if the user who ran the simulation is 
+#'   for the argument \code{existing_exp_details} to work. This has been set up
+#'   to look for that location even if the user who ran the simulation is
 #'   different from the user extracting the data, e.g., if the original path was
-#'   something like "C:/Users/FridaKahlo/Rose project simulations" and the 
-#'   current username (the result from running Sys.info()["user"]) is 
-#'   "DiegoRivera", this will look in the folder 
-#'   "C:/Users/DiegoRivera/Rose project simulations" for your XML files. This is 
+#'   something like "C:/Users/FridaKahlo/Rose project simulations" and the
+#'   current username (the result from running Sys.info()["user"]) is
+#'   "DiegoRivera", this will look in the folder
+#'   "C:/Users/DiegoRivera/Rose project simulations" for your XML files. This is
 #'   assuming that the file path starts with "C:/Users/CurrentUserName/..." and
 #'   will fail to change the username if that is not the case.}
 #'
@@ -127,27 +127,36 @@
 #' @param tissues From which tissue(s) should the desired concentrations be
 #'   extracted? Default is plasma for typical plasma concentration-time data.
 #'   Other options are "blood" or any tissues included in "Sheet Options",
-#'   "Tissues" in the simulator. All possible options:\describe{
+#'   "Tissues" in the simulator. All possible options:
+#'   \describe{
 #'   \item{First-order absorption models}{"plasma", "blood", "unbound blood",
 #'   "unbound plasma", "additional organ", "adipose", "bone", "brain",
 #'   "feto-placenta", "gut tissue", "heart", "kidney", "liver", "lung", "muscle",
 #'   "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
 #'   blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 #'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
-#'   or "spleen".} \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
-#'   "jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only 
+#'   or "spleen".}
+#'
+#'   \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
+#'   "jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only
 #'   applies to rodents), "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 #'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
-#'   released", or "cumulative dissolution".} \item{ADC simulations}{NOT YET
-#'   SET UP. If you need this, please contact Laura Shireman.}} Not case sensitive. Acceptable
+#'   released", or "cumulative dissolution".}}
+#'
+#'   Not case sensitive. Acceptable
 #'   input is all tissues desired as a character vector, e.g., \code{tissues =
 #'   c("plasma", "blood", "liver")} or, if you want all possible tissues and
 #'   you've got some time to kill, "all". That will make R check for all sorts
-#'   of possible permutations of tab names, so it does take a while.
+#'   of possible permutations of tab names, so it does take a while. NOTE: If
+#'   you want PD input or PD response for the compoundsToExtract, tissue will be
+#'   ignored.
 #' @param compoundsToExtract For which compounds do you want to extract
 #'   concentration-time data? Options are:
 #'
-#'   \itemize{\item{"substrate" (default)}
+#'   \itemize{
+#'   \item{"all" (default) for all the typical compounds in a simulation: 
+#'   substrate, perpetrators, metabolites, etc.}
+#'   \item{"substrate"}
 #'   \item{"primary metabolite 1"}
 #'   \item{"primary metabolite 2"}
 #'   \item{"secondary metabolite"}
@@ -155,15 +164,21 @@
 #'   suppresesor, but it's labeled as "Inhibitor 1" in the simulator}
 #'   \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation}
 #'   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
-#'   \item{NOT SET UP YET --> "intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
+#'   \item{"PD input"}
+#'   \item{"PD response"}
+#'   \item{"intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
 #'   observed data with DV listed as "Conjugated Protein Plasma Total" will
 #'   match these simulated data}
+#'   \item{"conjugated payload"; observed data with DV listed as
+#'   "Conjugated Drug Plasma Total" will match these simulated data}
 #'   \item{"total antibody" for DAR0-DARmax for an ADC; observed data with DV
 #'   listed as "Total Protein Conjugate Plasma Total" will match these simulated data}
-#'   \item{"conjugated payload"; observed data with DV listed as 
-#'   "Conjugated Drug Plasma Total" will match these simulated data}
 #'   \item{"released payload" for the released drug from an ADC, which shows up
-#'   as "Sub Pri Met1" in Simulator output files.}}
+#'   as "Sub Pri Met1" in Simulator output files.}
+#'   \item{"therapeutic protein" for mAb concentrations alone}
+#'   \item{"therapeutic protein and TMDD complex" for mAb concentrations
+#'   including when bound to the target}
+#'   }
 #'
 #'   \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
 #'   tested this very thoroughly, so please be extra careful to check that
@@ -254,21 +269,15 @@ extractConcTime_mult <- function(sim_data_files = NA,
    compoundsToExtract <- sub("released payload", "primary metabolite 1", 
                              compoundsToExtract)
    
-   MainCompoundIDs <- c("substrate", 
-                        "primary metabolite 1", 
-                        "primary metabolite 2",
-                        "secondary metabolite",
-                        "inhibitor 1",
-                        "inhibitor 2",
-                        "inhibitor 1 metabolite",
-                        "inhibitor 2 metabolite")
+   MainCompoundIDs <- AllRegCompounds$CompoundID
    
-   ADCCompoundIDs <- c("total antibody", 
-                       # "intact adc",
-                       "conjugated payload")
+   ADCCompoundIDs <- AllCompounds %>% 
+      filter(CompoundType == "ADC") %>% 
+      pull(CompoundID)
    # NB: Released payload included w/MainCompoundIDs as primary metabolite 1
    
-   PossCmpd <- c(MainCompoundIDs, ADCCompoundIDs, "all")
+   PossCmpd <- c(MainCompoundIDs, ADCCompoundIDs,
+                 "pd response", "pd input", "all")
    
    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
       
@@ -285,6 +294,11 @@ extractConcTime_mult <- function(sim_data_files = NA,
          call. = FALSE)
       
       compoundsToExtract <- intersect(compoundsToExtract, PossCmpd)
+   }
+   
+   if(length(compoundsToExtract) == 0){
+      stop(wrapn("You have not supplied any valid compounds to extract. Please check your input and try again."), 
+           call. = FALSE)
    }
    
    if(any(complete.cases(obs_data_files))){
@@ -817,7 +831,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
                          "primary metabolite 2" = ifelse("PrimaryMetabolite2" %in% names(Deets), 
                                                          Deets$PrimaryMetabolite2, NA),
                          "secondary metabolite" = ifelse("SecondaryMetabolite" %in% names(Deets), 
-                                                         Deets$SecondaryMetabolite, NA))
+                                                         Deets$SecondaryMetabolite, NA), 
+                         "pd input" = "pd input", 
+                         "pd response" = "pd response")
       
       # NB: Asking whether it's an ADCSimulation or an ADCSimulation_sub, the
       # former for back compatibility w/package versions < 2.6.0
@@ -831,17 +847,22 @@ extractConcTime_mult <- function(sim_data_files = NA,
       }
       
       if(any(Deets$ADCSimulation_sub, na.rm = TRUE)){
+         ToAdd <- AllCompounds %>% 
+            filter(CompoundType == "ADC" & 
+                      CompoundID != "primary metabolite 1") %>% 
+            pull(CompoundID)
+         names(ToAdd) <- ToAdd
          CompoundCheck <- c(CompoundCheck,
-                            "total antibody" = "total antibody",
-                            "total payload" = "total payload", 
-                            # "intact adc" = "intact adc",
-                            "conjugated payload" = "conjugated payload")
+                            ToAdd)
          # NB: NOT including "released payload" here b/c it's coded as primary
          # metabolite 1 in the outputs. Will change this at the end.
+         rm(ToAdd)
       }
       
       if(compoundsToExtract_orig[1] == "all"){
-         compoundsToExtract_n <- names(CompoundCheck)[complete.cases(CompoundCheck)]
+         compoundsToExtract_n <- intersect(
+            names(CompoundCheck)[complete.cases(CompoundCheck)], 
+            compoundsToExtract)
       } else {
          # If the requested compound is not present in the Excel file, remove
          # it from consideration.
@@ -1025,15 +1046,22 @@ extractConcTime_mult <- function(sim_data_files = NA,
             # concs are elsewhere.
             CompoundTypes <-
                data.frame(PossCompounds = PossCmpd) %>%
-               mutate(Type = ifelse(PossCompounds %in%
-                                       c("substrate", "inhibitor 1",
-                                         "inhibitor 2",
-                                         "inhibitor 1 metabolite", 
-                                         "total antibody", 
-                                         # "intact ADC",
-                                         "conjugated payload"
-                                       ),
-                                    "substrate", PossCompounds)) %>%
+               mutate(Type = case_when(
+                  
+                  PossCompounds %in%
+                     c("substrate", "inhibitor 1",
+                       "inhibitor 2",
+                       "inhibitor 1 metabolite", 
+                       AllCompounds %>% 
+                          filter(CompoundType == "ADC" & 
+                                    CompoundID != "released payload") %>% 
+                          pull(CompoundID)) ~ "substrate",
+                  
+                  PossCompounds == "released payload" ~ "primary metabolite 1", 
+                  
+                  PossCompounds %in% c("pd input", "pd response") ~ "PD", 
+                  
+                  .default = PossCompounds)) %>%
                filter(PossCompounds %in% compoundsToExtract_n)
             
             MultData[[ff]][[j]] <- list()
@@ -1044,11 +1072,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
                compoundsToExtract_k <-
                   CompoundTypes %>% filter(Type == k) %>%
                   pull(PossCompounds)
-               
-               if(any(Deets$ADCSimulation_sub, na.rm = T)){
-                  compoundsToExtract_k <- setdiff(compoundsToExtract_k, 
-                                                  "substrate")
-               }
                
                if(str_detect(ff, "\\.db$")){
                   for(l in compoundsToExtract_k){
@@ -1075,6 +1098,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
                         returnAggregateOrIndiv = returnAggregateOrIndiv, 
                         fromMultFunction = TRUE, 
                         existing_exp_details = existing_exp_details)
+               }
+               
+               if(nrow(MultData[[ff]][[j]][[k]]) == 0){
+                  warning(wrapn(paste0("No data could be found in the simulation '", 
+                                       ff, 
+                                       "' for the ", k, " (or the other compounds that are on that same tab) in ", 
+                                       j, ".")), 
+                          call. = FALSE)
                }
                
                rm(compoundsToExtract_k)
@@ -1110,46 +1141,48 @@ extractConcTime_mult <- function(sim_data_files = NA,
                      dimnames = list(NULL, MissingCols))))
             }
             
-            # Need to handle ADAM and AdvBrainModel data specially
-            ADAMtissue <- c("stomach", "duodenum", "jejunum I",
-                            "jejunum II", "ileum I", "ileum II",
-                            "ileum III", "ileum IV", "colon", "faeces", 
-                            "gut tissue", "cumulative absorption", 
-                            "cumulative fraction released",
-                            "cumulative dissolution")
+            # Need to handle ADAM, AdvBrainModel, and PD data differently b/c
+            # different units
+            SpecialTissue <- c("stomach", "duodenum", "jejunum I",
+                               "jejunum II", "ileum I", "ileum II",
+                               "ileum III", "ileum IV", "colon", "faeces", 
+                               "gut tissue", "cumulative absorption", 
+                               "cumulative fraction released",
+                               "cumulative dissolution", 
+                               "PD")
             
-            ADAMsubsection <- c("undissolved compound", 
-                                "dissolution rate of solid state", 
-                                "free compound in lumen", 
-                                "total compound in lumen", 
-                                "Heff", 
-                                "absorption rate", 
-                                "unreleased compound in faeces", 
-                                "dissolved compound", 
-                                "luminal CLint", 
-                                "cumulative fraction of compound absorbed", 
-                                "cumulative fraction of compound dissolved", 
-                                "enterocyte concentration", 
-                                # Below are technically AdvBrainModel but
-                                # using ADAMtissue b/c that object name is
-                                # already set up. Note that this omits
-                                # AdvBrainModel tissues that just have mass
-                                # per volume units.
-                                "Kp,uu,brain", 
-                                "Kp,uu,ICF", 
-                                "Kp,uu,ISF")
+            SpecialSubsection <- c("undissolved compound", 
+                                   "dissolution rate of solid state", 
+                                   "free compound in lumen", 
+                                   "total compound in lumen", 
+                                   "Heff", 
+                                   "absorption rate", 
+                                   "unreleased compound in faeces", 
+                                   "dissolved compound", 
+                                   "luminal CLint", 
+                                   "cumulative fraction of compound absorbed", 
+                                   "cumulative fraction of compound dissolved", 
+                                   "enterocyte concentration", 
+                                   # Below are technically AdvBrainModel but
+                                   # using SpecialTissue b/c that object name is
+                                   # already set up. Note that this omits
+                                   # AdvBrainModel tissues that just have mass
+                                   # per volume units.
+                                   "Kp,uu,brain", 
+                                   "Kp,uu,ICF", 
+                                   "Kp,uu,ISF")
             
-            # Not adjusting ADAM model concs b/c not set up yet.
-            CT_adam <- MultData[[ff]][[j]] %>% 
-               filter(Tissue %in% ADAMtissue |
-                         Tissue_subtype %in% ADAMsubsection)
+            MultData[[ff]][[j]] <- MultData[[ff]][[j]] %>% 
+               mutate(SpecialUnits = (Tissue %in% SpecialTissue & 
+                                         CompoundID != "PD input") |
+                         Tissue_subtype %in% SpecialSubsection)
             
-            CT_nonadam <- MultData[[ff]][[j]] %>% 
-               filter(!(Tissue %in% ADAMtissue |
-                           Tissue_subtype %in% ADAMsubsection))
+            MultData[[ff]][[j]] <- split(MultData[[ff]][[j]], 
+                                         MultData[[ff]][[j]]$SpecialUnits)
             
-            if(nrow(CT_nonadam) > 0){
-               CT_nonadam <- CT_nonadam %>% 
+            if("FALSE" %in% names(MultData[[ff]][[j]]) &&
+               nrow(MultData[[ff]][[j]][["FALSE"]]) > 0){
+               MultData[[ff]][[j]][["FALSE"]] <- MultData[[ff]][[j]][["FALSE"]] %>% 
                   convert_units(
                      DF_with_good_units = NA, 
                      conc_units = conc_units_to_use,
@@ -1167,7 +1200,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                             "released payload" = Deets$MW_met1))
             }
             
-            MultData[[ff]][[j]] <- bind_rows(CT_adam, CT_nonadam)
+            MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
             
          }
          

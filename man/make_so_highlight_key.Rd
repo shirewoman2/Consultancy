@@ -4,7 +4,11 @@
 \alias{make_so_highlight_key}
 \title{Make a key for highlighted S/O values in a table or graph}
 \usage{
-make_so_highlight_key(highlight_so_cutoffs, highlight_so_colors)
+make_so_highlight_key(
+  highlight_so_cutoffs,
+  highlight_so_colors,
+  orientation = "long"
+)
 }
 \arguments{
 \item{highlight_so_cutoffs}{cutoffs for highlighting simulated-to-observed
@@ -39,6 +43,9 @@ c("green", "red")}}
   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
+
+\item{orientation}{orientation of the key; options are "long" (default) or
+"wide"}
 }
 \value{
 a flextable for use as a key for which colors mean what S/O cutoff

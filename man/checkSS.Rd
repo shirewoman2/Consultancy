@@ -129,14 +129,25 @@ whether everything important is at steady state.
 }
 \examples{
 
-checkSS(ct_dataframe = MDZ_Keto)
+# Setting up some example data
+DDI <- MDZ_Keto \%>\% filter(Tissue == "plasma")
 
-checkSS(ct_dataframe = MDZ_Keto, conc_point = "Cmax")
+checkSS(ct_dataframe = DDI)
 
-checkSS(ct_dataframe = MDZ_Keto, conc_point = "Cmax",
-   accum_compoundID = "inhibitor 1", overlay_compoundID = "none",
-   mark_dosing_substrate = "pink dotted", diff_cutoff = 0.01,
-   save_graph = "MDZ keto accumulation check.png")
+checkSS(ct_dataframe = DDI, 
+        conc_point = "Cmax")
+
+checkSS(ct_dataframe = DDI, 
+        conc_point = "Cmin")
+
+
+checkSS(ct_dataframe = DDI, 
+        conc_point = "Cmax",
+        accum_compoundID = "inhibitor 1", 
+        overlay_compoundID = "none",
+        mark_dosing_substrate = "purple dotted", 
+        diff_cutoff = 0.01,
+        save_graph = "MDZ keto accumulation check.png")
 
 
 }

@@ -30,7 +30,7 @@ make_example_PK_input <- function(){
    Opts_main <- c("1" = "typical dose 1", 
                   "2" = "typical last dose",
                   "3" = "typical DDI", 
-                  "4" = "specifying the sheet to use", 
+                  "4" = "user-defined intervals", 
                   "5" = "specifying the compounds to use", 
                   "6" = "specifying the tissues to use", 
                   "7" = "all possible AUCs", 
@@ -45,7 +45,7 @@ make_example_PK_input <- function(){
                     "5" = wrapn("different tissues, e.g., you want to compare blood vs. plasma (this will probably be the same simulation for both)"), 
                     "6" = wrapn("get the data from different sheets for the numerator and denominator sims, e.g., you want to compare the last-dose PK between two simulations but one simulation included a washout period and the other did not, which means you need a user-specified interval sheet for one and the regular last-dose sheet for the other"))
    
-   message(str_wrap("Would you like examples for standard PK parameters, e.g., for the function 'pk_table', or for ratios of PK parameters from diferent simulations, e.g., for the function 'calc_PK_ratios?"))
+   message(str_wrap("Would you like examples for standard PK parameters, e.g., for the function 'pk_table', or for ratios of PK parameters from diferent simulations, e.g., for the functions 'calc_PK_ratios' or 'estimate_sample_size'?"))
    message("  1) standard PK parameters\n  2) ratios of PK parameters\n")
    MainOrRatios <- switch(readline("   "), 
                           "1" = "main",

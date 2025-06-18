@@ -1156,7 +1156,7 @@ ct_plot <- function(ct_dataframe = NA,
       time_range_relative <- time_range
    }
    
-   # Separating the data by type and calculating trial means
+   # Separating the data by type 
    sim_data_trial <- Data %>%
       filter(Simulated == TRUE &
                 Trial %in% switch(mean_type, 
@@ -1658,13 +1658,13 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    if(str_detect(figure_type, "ribbon")){
-      # There's a known glitch w/ggplot2 with coord_cartesian and
-      # geom_ribbon. Hacking around that.
       A <- A +
          scale_x_time(time_range = time_range_relative, 
                       x_axis_interval = x_axis_interval, 
                       time_units = TimeUnits,
-                      pad_x_axis = pad_x_axis)
+                      pad_x_axis = pad_x_axis, 
+                      impose_limits = F) +
+         coord_cartesian(xlim = time_range_relative)
       
       if(EnzPlot){
          A <- A +
@@ -1685,14 +1685,15 @@ ct_plot <- function(ct_dataframe = NA,
       
    } else {
       A <- A +
-         coord_cartesian(xlim = time_range_relative, 
-                         ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
-                                         0, y_axis_limits_lin[1]),
-                                  YmaxRnd)) +
          scale_x_time(time_range = time_range_relative, 
                       x_axis_interval = x_axis_interval, 
                       time_units = TimeUnits,
-                      pad_x_axis = pad_x_axis)
+                      pad_x_axis = pad_x_axis, 
+                      impose_limits = F) +
+         coord_cartesian(xlim = time_range_relative, 
+                         ylim = c(ifelse(is.na(y_axis_limits_lin[1]), 
+                                         0, y_axis_limits_lin[1]),
+                                  YmaxRnd))
       
       if(EnzPlot){
          A <- A +
@@ -1949,10 +1950,12 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Setting up figure caption --------------------------------------------
    
-   PlotType <- case_when(EnzPlot == TRUE ~ "enzyme-abundance", 
-                         # ReleaseProfPlot == TRUE ~ "release-profile",
-                         # DissolutionProfPlot == TRUE ~ "dissolution-profile", 
-                         TRUE ~ "concentration-time")
+   PlotType <- case_when(
+      EnzPlot == TRUE ~ "enzyme-abundance", 
+      all(unique(ct_dataframe$Tissue) %in% c("PD response", "PD input")) ~ "PD", 
+      # ReleaseProfPlot == TRUE ~ "release-profile",
+      # DissolutionProfPlot == TRUE ~ "dissolution-profile", 
+      TRUE ~ "concentration-time")
    
    FigText <- make_ct_caption(ct_dataframe = Data, 
                               single_or_multiple_profiles = "single", 

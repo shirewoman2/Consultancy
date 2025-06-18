@@ -52,12 +52,25 @@ if(any(complete.cases(highlight_gmr_colors))){
 
 if(any(complete.cases(highlight_gmr_colors))){
    
-   make_gmr_highlight_key(highlight_gmr_colors = highlight_gmr_colors)
+   make_gmr_highlight_key(highlight_gmr_colors = highlight_gmr_colors, 
+                          orientation = "long")
    
 } 
 
 ```
 
+<br/>
+
+```{r}
+
+if(any(complete.cases(highlight_gmr_colors))){
+   
+   make_gmr_highlight_key(highlight_gmr_colors = highlight_gmr_colors, 
+                          orientation = "wide")
+   
+} 
+
+```
 
 ```{r}
 
@@ -76,12 +89,25 @@ if(any(complete.cases(highlight_so_cutoffs))){
 if(any(complete.cases(highlight_so_cutoffs))){
    
    make_so_highlight_key(highlight_so_cutoffs = highlight_so_cutoffs, 
-                         highlight_so_colors = highlight_so_colors)
+                         highlight_so_colors = highlight_so_colors, 
+                         orientation = "long")
    
 } 
 
 ```
 
+<br/>
 
+```{r}
+
+if(any(complete.cases(highlight_so_cutoffs))){
+   
+   make_so_highlight_key(highlight_so_cutoffs = highlight_so_cutoffs, 
+                         highlight_so_colors = highlight_so_colors, 
+                         orientation = "wide")
+   
+} 
+
+```
 
 

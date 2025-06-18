@@ -16,6 +16,7 @@
 #' @param sim_data_xl sim_data_xl
 #' @param ADC T or F
 #' @param SimTimeUnits time units
+#' @param PD T or F
 #'
 #' @return data.frame of conc time data
 #'
@@ -30,6 +31,7 @@ eCT_pulldata <- function(sim_data_xl,
                          Deets,
                          ADAM, 
                          ADC = FALSE, 
+                         PD = FALSE, 
                          ss, 
                          AdvBrainModel, 
                          tissue, 
@@ -64,7 +66,7 @@ eCT_pulldata <- function(sim_data_xl,
    
    if(ADC & !cmpd %in% c("primary metabolite 1")){
       
-      MyCompound <- cmpd
+      MyCompound <- Deets$Substrate
       
       if(length(AllPerpsPresent) == 0){
          
@@ -72,14 +74,27 @@ eCT_pulldata <- function(sim_data_xl,
             str_detect(sim_data_xl$...1,
                        switch(cmpd,
                               "total antibody" = "PROTEINTOTAL",
-                              # "intact adc" = "conjugated protein .dar1", # ??
-                              "total antibody" = "cantibody total", # ??
+                              "intact adc" = "INTACTADC", 
+                              "therapeutic protein" = "THERPROTEIN", 
+                              "therapeutic protein and tmdd complex" = "TMDDCOMPLEX", 
+                              "total antibody" = "TOTALAB", 
                               "conjugated payload" = "PROTEINCONJDRUG" # CHECK THIS ONE with an example; just guessing for now
                        )))
          CompoundIndices <- CompoundIndices[
             which(CompoundIndices > which(str_detect(sim_data_xl$...1, "Population Statistics")))]
          
       }
+   } else if(PD){
+      
+      MyCompound <- cmpd
+      CompoundIndices <- which(
+         str_detect(sim_data_xl$...1,
+                    switch(cmpd,
+                           "pd response" = "PDRESPONSE",
+                           "pd input" = "PDINPUT")))
+      CompoundIndices <- CompoundIndices[
+         which(CompoundIndices > which(str_detect(sim_data_xl$...1, "Population Statistics")))]
+      
    } else {
       
       MyCompound <-

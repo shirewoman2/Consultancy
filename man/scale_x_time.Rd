@@ -71,25 +71,48 @@ a ggplot2 graph scale for the x axis (replaces scale_x_continuous in
   a graph)
 }
 \description{
-\code{scale_x_time} formats a ggplot graph x axis to have breaks that make
-sense for the user-specified time units and adds a minor tick between the
-labels. It optionally adds padding to the left and right sides of the x axis.
+\code{scale_x_time} formats a ggplot graph x axis to have breaks
+  that make sense for the user-specified time units and adds a minor tick
+  between the labels. It optionally adds padding to the left and right sides
+  of the x axis.
+}
+\details{
+\strong{Notes for ggplot2 users:} Like other ggplot2
+  \code{scale_...} functions, \code{scale_x_time} clips the underlying data
+  rather than zooming in on a specific x-axis range as
+  \code{coord_cartesian(...)} does. If you do not want that data-clipping
+  behavior, you can set the time range with \code{scale_x_time} but set the
+  argument "impose_limits" to FALSE and then follow the call on
+  \code{scale_x_time} with a call to \code{coord_cartesian(xlim = ...)}. This
+  will avoid the clipping behavior while still getting you good time
+  intervals on your x axis.
 }
 \examples{
+# scale_x_time will make nice time intervals on your x axis
 MyData <- data.frame(Time = 0:168,
                      Conc = rnorm(n = 169, mean = 100))
 ggplot(MyData, aes(x = Time, y = Conc)) +
-    geom_point() + scale_x_time()
+       geom_line() +
+       scale_x_time()
+
+# scale_x_time works the same way that other ggplot2 scale_... functions do,
+# though, in that it will clip your data. Here, we're intentionally creating
+# some data with breaks across typical time intervals to demonstrate:
+MyData <- data.frame(Time = seq(0, 168, by = 5),
+                     Conc = rnorm(n = 34, mean = 100))
 
 ggplot(MyData, aes(x = Time, y = Conc)) +
-    geom_point() + scale_x_time(time_range = c(24, 48))
+    geom_point() +
+    scale_x_time(time_range = c(24, 48))
+# Data are clipped.
 
-# You don't have to name the column with your x-axis data "Time".
-MyAltData <- data.frame(Mango = 0:24,
-                        Conc = rnorm(n = 25, mean = 100))
-
-ggplot(MyAltData, aes(x = Mango, y = Conc)) +
-    geom_point() + scale_x_time()
+# To avoid clipping while still getting good time intervals, set
+# impose_limits to F and add a call to coord_cartesian.
+ggplot(MyData, aes(x = Time, y = Conc)) +
+    geom_point() +
+    scale_x_time(time_range = c(24, 48),
+                 impose_limits = FALSE) +
+    coord_cartesian(xlim = c(24, 48))
 
 
 }

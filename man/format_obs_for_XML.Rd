@@ -22,7 +22,7 @@ format_obs_for_XML(
   num_doses = NA,
   end_time = NA,
   custom_dosing_schedule = NA,
-  simulator_version = 22,
+  simulator_version = 23,
   compoundID = "Substrate",
   demog_dataframe,
   age_column,

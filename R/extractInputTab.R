@@ -245,6 +245,30 @@ extractInputTab <- function(deets = "all",
       }
    }
    
+   # Adjusting a few parameters after pulling b/c correct value depends on a
+   # different parameter value
+   for(suffix in AllRegCompounds$Suffix){
+      if(all(paste0(
+         c("DisintegrationProfile_alpha", 
+           "DisintegrationProfile_beta", 
+           "DisintegrationProfile_Input"), suffix) %in% names(Out)) &&
+         complete.cases(Out[[paste0("DisintegrationProfile_Input", suffix)]]) &&
+         Out[[paste0("DisintegrationProfile_Input", suffix)]] != "Weibull"){
+            
+         Out[[paste0("DisintegrationProfile_alpha")]] <- NA
+         Out[[paste0("DisintegrationProfile_beta")]] <- NA
+      }
+      
+      if(all(paste0(
+         c("DisintegrationProfile_Kd1", 
+           "DisintegrationProfile_Input"), suffix) %in% names(Out)) && 
+         complete.cases(Out[[paste0("DisintegrationProfile_Input", suffix)]]) &&
+         Out[[paste0("DisintegrationProfile_Input", suffix)]] != "First Order"){
+         
+         Out[[paste0("DisintegrationProfile_Kd1")]] <- NA
+      }
+   }
+   
    
    ## Some overall simulation details -----------------------------------
    
@@ -1332,6 +1356,7 @@ extractInputTab <- function(deets = "all",
    Out[["ConcDependent_BP"]] <- CDBPProfs
    Out[["pH_dependent_solubility"]] <- pHSol
    Out[["pH_dependent_LumindalDegradation"]] <- pHLumDeg
+   Out[["CustomDosing"]] <- any(CustomDosing, na.rm = T)
    
    
    # Returning --------------------------------------------------------------

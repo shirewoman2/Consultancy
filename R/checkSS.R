@@ -87,14 +87,25 @@
 #'
 #' @examples
 #'
-#' checkSS(ct_dataframe = MDZ_Keto)
-#'
-#' checkSS(ct_dataframe = MDZ_Keto, conc_point = "Cmax")
-#'
-#' checkSS(ct_dataframe = MDZ_Keto, conc_point = "Cmax",
-#'    accum_compoundID = "inhibitor 1", overlay_compoundID = "none",
-#'    mark_dosing_substrate = "pink dotted", diff_cutoff = 0.01,
-#'    save_graph = "MDZ keto accumulation check.png")
+#' # Setting up some example data
+#' DDI <- MDZ_Keto %>% filter(Tissue == "plasma")
+#' 
+#' checkSS(ct_dataframe = DDI)
+#' 
+#' checkSS(ct_dataframe = DDI, 
+#'         conc_point = "Cmax")
+#' 
+#' checkSS(ct_dataframe = DDI, 
+#'         conc_point = "Cmin")
+#' 
+#' 
+#' checkSS(ct_dataframe = DDI, 
+#'         conc_point = "Cmax",
+#'         accum_compoundID = "inhibitor 1", 
+#'         overlay_compoundID = "none",
+#'         mark_dosing_substrate = "purple dotted", 
+#'         diff_cutoff = 0.01,
+#'         save_graph = "MDZ keto accumulation check.png")
 #'
 #' 
 checkSS <- function(ct_dataframe,
@@ -133,7 +144,7 @@ checkSS <- function(ct_dataframe,
                   length(sort(unique(ct_dataframe$File))), 
                   " simulator files. An example of how to rectify this without re-extracting any data, where `CT` is the data.frame of concentration-time data you've already got:
 checkSS(ct_dataframe = CT %>% filter(File == `mysim-01.xlsx`))"),
-call. = FALSE)
+           call. = FALSE)
    }
    
    
@@ -173,8 +184,7 @@ call. = FALSE)
    # suppressMessages(
    SScheck <- ct_dataframe %>% 
       filter(Trial == MyMeanType & 
-                DoseNum > 0 & 
-                CompoundID == accum_compoundID) %>%  
+                DoseNum > 0) %>%  
       group_by(CompoundID, DoseNum, Inhibitor) %>% 
       # switch doesn't seem to work with summarize. Calculating each value.
       summarize(t0 = min(Time),
@@ -196,6 +206,13 @@ call. = FALSE)
                            "Cmax" = tmax,
                            "C0" = t0, 
                            "Clast" = tlast))
+   
+   t0s <- SScheck %>% 
+      filter(DoseNum == 1) %>% 
+      select(CompoundID, Inhibitor, t0)
+   
+   SScheck <- SScheck %>% 
+      filter(CompoundID == accum_compoundID)
    
    SScheck <- split(SScheck, f = list(SScheck$CompoundID, 
                                       SScheck$Inhibitor))
@@ -236,24 +253,35 @@ call. = FALSE)
    
    if(mark_dosing_substrate != "none"){
       G <- G + 
-         geom_vline(xintercept = SScheck$t0[SScheck$CompoundID == "substrate" &
-                                               SScheck$DoseNum != 0], 
-                    color = LineAES_substrate[1], linetype = LineAES_substrate[2])
+         geom_vline(xintercept = unique(t0s$t0[t0s$CompoundID == "substrate"]), 
+                    color = LineAES_substrate[1], 
+                    linetype = LineAES_substrate[2], 
+                    linewidth = ifelse(is.na(LineAES_substrate[3]), 
+                                       1, as.numeric(LineAES_substrate[3])))
    }
    
    if(mark_dosing_inhibitor1 != "none"){
       G <- G + 
-         geom_vline(xintercept = SScheck$t0[SScheck$CompoundID == "inhibitor 1" &
-                                               SScheck$DoseNum != 0], 
-                    color = LineAES_inhibitor1[1], linetype = LineAES_inhibitor1[2])
+         geom_vline(xintercept = unique(t0s$t0[t0s$CompoundID == "inhibitor 1"]), 
+                    color = LineAES_inhibitor1[1], 
+                    linetype = LineAES_inhibitor1[2], 
+                    linewidth = ifelse(is.na(LineAES_inhibitor1[3]), 
+                                       1, as.numeric(LineAES_inhibitor1[3])))
    }
    
    if(mark_dosing_inhibitor2 != "none"){
       G <- G + 
-         geom_vline(xintercept = SScheck$t0[SScheck$CompoundID == "inhibitor 2" &
-                                               SScheck$DoseNum != 0], 
-                    color = LineAES_inhibitor2[1], linetype = LineAES_inhibitor2[2])
+         geom_vline(xintercept = unique(t0s$t0[t0s$CompoundID == "inhibitor 2"]), 
+                    color = LineAES_inhibitor2[1], 
+                    linetype = LineAES_inhibitor2[2], 
+                    linewidth = ifelse(is.na(LineAES_inhibitor2[3]), 
+                                       1, as.numeric(LineAES_inhibitor2[3])))
    }
+   
+   TimeRange <- c(0, 
+                  max(ct_dataframe$Time[
+                     ct_dataframe$CompoundID %in% c(accum_compoundID, 
+                                                    overlay_compoundID)]))
    
    G <- G +
       geom_point(size = 2) + 
@@ -263,10 +291,9 @@ call. = FALSE)
            shape = NULL) +
       xlab("Time (h)") +
       scale_x_time(x_axis_interval = x_axis_interval, 
-                   time_range = c(0, 
-                                  max(ct_dataframe$Time[
-                                     ct_dataframe$CompoundID %in% c(accum_compoundID, 
-                                                                    overlay_compoundID)]))) +
+                   time_range = TimeRange, 
+                   impose_limits = F) +
+      coord_cartesian(xlim = TimeRange) +
       scale_color_brewer(palette = "Set1") +
       theme_consultancy()
    

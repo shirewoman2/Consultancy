@@ -285,13 +285,9 @@ formatTable_Simcyp <- function(DF,
       FT <- DF
       
       if(complete.cases(save_table)){
-         # May need to change the working directory temporarily, so
-         # determining what it is now
-         CurrDir <- getwd()
          
          # Format the file name appropriately, including making the extension be
          # docx, even if they specified something else.
-         save_table <- as.character(save_table)
          save_table <- ifelse(str_detect(save_table, "\\..*$"), 
                               sub("\\..*", ".docx", save_table), 
                               paste0(save_table, ".docx"))
@@ -305,7 +301,6 @@ formatTable_Simcyp <- function(DF,
          }
          
          save_table <- basename(save_table)
-         setwd(OutPath)
          
          rmarkdown::render(system.file("rmarkdown/templates/savetablesimcyp/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 
@@ -316,13 +311,12 @@ formatTable_Simcyp <- function(DF,
          # Note: The "system.file" part of the call means "go to where the
          # package is installed, search for the file listed, and return its
          # full path.
-         
-         setwd(CurrDir)
       }
       
       return(FT)
       
    }
+   
    
    ## Making DF into a flextable ----------------------------------------------
    

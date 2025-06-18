@@ -157,14 +157,13 @@ set_boundary_colors <- function(color_set,
    # If the user has requested "yellow to red", the break_type is "SO
    # HIGHLIGHT", and 1 is included in boundaries, then switch the color set to
    # "green to red". If the user has requested "yellow to red" and NOT included
-   # 1 in the boundaries, leave the color set as is but add a 1 so that the
-   # middle will be white.
+   # 1 in the boundaries, leave the color set as is.
    if(length(color_set) == 1 &&
       (color_set == "yellow to red" & break_type == "SO HIGHLIGHT")){
       if(1 %in% boundaries){
          color_set <- "green to red"
       } else {
-         boundaries <- sort(unique(c(1, boundaries)))
+         boundaries <- sort(unique(boundaries))
       }
    }
    
@@ -331,11 +330,6 @@ set_boundary_colors <- function(color_set,
                 
                 # yellow to red ---------------------------------------------------
                 
-                # Note that it is not possible to have a color set of "yellow to
-                # red" without 1 among the boundaries. That is why there is only
-                # one set of colors here and not a similar, near replicate set that
-                # don't have 1 included.
-                
                 # Just highlight everything white. This would be weird and
                 # probably not what the user wants, but is among the possible
                 # choices for inputs.
@@ -355,6 +349,23 @@ set_boundary_colors <- function(color_set,
                    c("white",
                      colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
                         length(boundaries))),
+                
+                
+                
+                # 1 boundary 
+                "yellow to red SO HIGHLIGHT (0,1]" = c("#FF9595"),
+                
+                # 2 boundaries 
+                "yellow to red SO HIGHLIGHT (1,2]" = c("#FFFF95", "#FF9595"),
+                
+                # 3 boundaries 
+                "yellow to red SO HIGHLIGHT (2,3]" = c("#FFFF95", "#FFDA95", "#FF9595"),
+                
+                # >3 boundaries 
+                "yellow to red SO HIGHLIGHT (3,Inf]" =
+                   colorRampPalette(c("#FFFF95", "#FFDA95", "#FF9595"))(
+                      length(boundaries)),
+                
                 
                 
                 # green to red --------------------------------------------------
@@ -453,6 +464,8 @@ set_boundary_colors <- function(color_set,
 #'   ratios for DDIs. Options are "yellow to red", "green to red", "traffic" (a
 #'   more vivid version of "green to red"), or a vector of 4 colors of your
 #'   choosing. 
+#' @param orientation orientation of the key; options are "long" (default) or
+#'   "wide"
 #'
 #' @return a flextable for use as a key for which colors mean what GMR cutoff
 #' @export
@@ -460,7 +473,8 @@ set_boundary_colors <- function(color_set,
 #' @examples
 #' make_gmr_highlight_key("yellow to red")
 #' 
-make_gmr_highlight_key <- function(highlight_gmr_colors){
+make_gmr_highlight_key <- function(highlight_gmr_colors, 
+                                   orientation = "long"){
    
    # Error catching --------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -468,26 +482,58 @@ make_gmr_highlight_key <- function(highlight_gmr_colors){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
+   orientation <- tolower(orientation[1])
+   if(orientation %in% c("wide", "long") == FALSE){
+      warning(wrapn("You requested something for the key orientation other than 'wide' or 'long', so we'll use the default value of 'long'."), 
+              call. = FALSE)
+      
+      orientation <- "long"
+   }
+   
+   
    # Main body of function ---------------------------------------------------
    
    highlight_gmr_colors <- set_boundary_colors(color_set = highlight_gmr_colors, 
                                                boundaries = c(1, 1.25, 2, 5), 
                                                break_type = "GMR")
    
-   tibble(`Interaction level` = names(highlight_gmr_colors)) %>% 
-      flextable::flextable() %>% 
-      flextable::bold(part = "header") %>% 
-      flextable::bg(i = 1, 
-                    bg = highlight_gmr_colors["negligible"]) %>% 
-      flextable::bg(i = 2, 
-                    bg = highlight_gmr_colors["weak"]) %>% 
-      flextable::bg(i = 3, 
-                    bg = highlight_gmr_colors["moderate"]) %>% 
-      flextable::bg(i = 4, 
-                    bg = highlight_gmr_colors["strong"]) %>% 
-      flextable::width(width = 1.5) %>% 
-      flextable::align(align = "center", part = "all")
+   if(orientation == "long"){
+      
+      GMRkey <- tibble(`Interaction level` = names(highlight_gmr_colors)) %>% 
+         flextable::flextable() %>% 
+         flextable::bold(part = "header") %>% 
+         flextable::bg(i = 1, 
+                       bg = highlight_gmr_colors["negligible"]) %>% 
+         flextable::bg(i = 2, 
+                       bg = highlight_gmr_colors["weak"]) %>% 
+         flextable::bg(i = 3, 
+                       bg = highlight_gmr_colors["moderate"]) %>% 
+         flextable::bg(i = 4, 
+                       bg = highlight_gmr_colors["strong"]) %>% 
+         flextable::width(width = 1.5) %>% 
+         flextable::align(align = "center", part = "all")
+      
+   } else if(orientation == "wide"){
+      
+      GMRkey <- tibble(A = "negligible", 
+                       B = "weak", 
+                       C = "moderate", 
+                       D = "strong") %>% 
+         flextable::flextable() %>%
+         flextable::delete_part(part = "header") %>%
+         flextable::width(width = 1.6) %>%
+         flextable::hline_top(border = officer::fp_border(color = "#666666", 
+                                                          width = 0.75)) %>% 
+         flextable::align(align = "center", part = "all")
+      
+      for(j in 1:length(highlight_gmr_colors)){
+         GMRkey <- GMRkey %>%
+            flextable::bg(j = j, 
+                          bg = highlight_gmr_colors[j])
+      }
+   }
    
+   return(GMRkey)
 }
 
 
@@ -524,6 +570,8 @@ make_gmr_highlight_key <- function(highlight_gmr_colors){
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
 #'   If you do specify your own bespoke colors, you'll need to make sure that
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
+#' @param orientation orientation of the key; options are "long" (default) or
+#'   "wide"
 #'
 #' @return a flextable for use as a key for which colors mean what S/O cutoff
 #' @export
@@ -533,12 +581,21 @@ make_gmr_highlight_key <- function(highlight_gmr_colors){
 #'                       highlight_so_cutoffs = c(1, 1.25, 1.5, 2))
 #' 
 make_so_highlight_key <- function(highlight_so_cutoffs, 
-                                  highlight_so_colors){
+                                  highlight_so_colors, 
+                                  orientation = "long"){
    
    # Error catching --------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+   }
+   
+   orientation <- tolower(orientation[1])
+   if(orientation %in% c("wide", "long") == FALSE){
+      warning(wrapn("You requested something for the key orientation other than 'wide' or 'long', so we'll use the default value of 'long'."), 
+              call. = FALSE)
+      
+      orientation <- "long"
    }
    
    # Main body of function ---------------------------------------------------
@@ -572,16 +629,39 @@ make_so_highlight_key <- function(highlight_so_cutoffs,
                                     "fold or >", SOkey$UpperB[nrow(SOkey)], "fold")
    
    SOkey <- SOkey %>% select(Text) %>%
-      rename(`S/O cutoff` = Text) %>%
-      flextable::flextable() %>%
-      flextable::bold(part = "header") %>%
-      flextable::width(width = 3.5) %>%
-      flextable::align(align = "center", part = "all")
+      rename(`S/O cutoff` = Text) 
    
-   for(i in 1:length(highlight_so_cutoffs)){
+   if(orientation == "long"){
       SOkey <- SOkey %>%
-         flextable::bg(i = i,
-                       bg = highlight_so_colors[i])
+         flextable::flextable() %>%
+         flextable::bold(part = "header") %>%
+         flextable::width(width = 3.5) %>%
+         flextable::align(align = "center", part = "all")
+      
+      for(i in 1:length(highlight_so_cutoffs)){
+         SOkey <- SOkey %>%
+            flextable::bg(i = i,
+                          bg = highlight_so_colors[i])
+      }
+      
+   } else if(orientation == "wide"){
+      
+      SOkey <- SOkey %>% 
+         mutate(`S/O cutoff` = sub("or ", "or\n", `S/O cutoff`))
+      
+      SOkey <- as.data.frame(t(SOkey)) %>% 
+         flextable::flextable() %>%
+         flextable::delete_part(part = "header") %>%
+         flextable::width(width = 1.6) %>%
+         flextable::hline_top(border = officer::fp_border(color = "#666666", 
+                                                          width = 0.75)) %>% 
+         flextable::align(align = "center", part = "all")
+      
+      for(j in 1:length(highlight_so_cutoffs)){
+         SOkey <- SOkey %>%
+            flextable::bg(j = j, 
+                          bg = highlight_so_colors[j])
+      }
    }
    
    SOkey

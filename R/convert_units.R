@@ -322,6 +322,13 @@ convert_conc_units <- function(DF_to_convert,
       
    }
    
+   # If both DF to convert and DF w/good units have NA for Conc_units, then pass
+   # through.
+   if(length(unique(DF_with_good_units$Conc_units[
+      complete.cases(DF_with_good_units$Conc_units)])) == 0){
+      return(DF_to_convert)
+   }
+   
    # Note to self: Invisible differences in glyphs has tripped me up repeatedly.
    # What looks like the mu character sometimes is translated to the mu
    # character (unicode: U+00B5) and sometimes is translated to something that
@@ -330,7 +337,8 @@ convert_conc_units <- function(DF_to_convert,
    # that might be what's causing this issue. The mu's in this script were
    # copied and pasted to match the mu symbol that R had read from Excel, so
    # here's hoping this works.
-   if(unique(DF_with_good_units$Conc_units) %in% ConvTable_conc$RevUnits == FALSE |
+   if(unique(DF_with_good_units$Conc_units) %in% 
+      ConvTable_conc$RevUnits == FALSE |
       unique(DF_to_convert$Conc_units) %in% ConvTable_conc$OrigUnits == FALSE){
       stop(wrapn("Our apologies, but we have not yet set up this function to deal with your concentration units. If that seems weird because you've got pretty typical units here, it's probably that you have a mu symbol somewhere -- maybe in your observed data, maybe in the Simulator Excel outputs we're trying to read -- and there's a problem with how that's encoded. Please tell Laura Sh. because this is a particularly thorny issue to resolve. If you can, please try using some other unit because, honestly, we're really struggling with how to fix this problem."),
            call. = FALSE)
@@ -462,6 +470,7 @@ convert_time_units <- function(DF_to_convert,
    }
    
    DF_to_convert <- DF_to_convert %>%
+      select(-any_of(c("Factor", "RevUnits"))) %>% 
       left_join(ConvTable_time %>% 
                    rename(Time_units = OrigUnits) %>% 
                    filter(RevUnits %in% DF_with_good_units$Time_units), 

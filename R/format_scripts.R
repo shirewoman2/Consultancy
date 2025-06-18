@@ -181,6 +181,24 @@ format_scripts <- function(DF,
                                flextable::as_sup("-6"), 
                                " cm/s)")) %>% 
          
+         flextable::compose(i = which(DF$Parameter == "Particle size distribution D10 (um)"),
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "Particle size distribution D10 (\u03BCm)")) %>% 
+         
+         flextable::compose(i = which(DF$Parameter == "Particle size distribution D50 (um)"),
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "Particle size distribution D50 (\u03BCm)")) %>% 
+         
+         flextable::compose(i = which(DF$Parameter == "Particle size distribution D90 (um)"),
+                            j = which(names(DF) == "Parameter"), 
+                            part = "body", 
+                            value = flextable::as_paragraph(
+                               "Particle size distribution D90 (\u03BCm)")) %>% 
+         
          flextable::compose(i = which(DF$Parameter == "Peff,human (10^-4 cm/s)"),
                             j = which(names(DF) == "Parameter"), 
                             part = "body", 
@@ -242,7 +260,7 @@ format_scripts <- function(DF,
       MultPieceVars <- c("Additional HLM CLint (uL/min/mg protein)", 
                          "fu,gut", "^fu,mic", "^fu,inc", "^Ki fu,mic", "^Ki",
                          "uM", # NB: "uM" MUST come before "Km \\(uM" or it will overwrite the latter.
-                         "Km \\(uM", "Vmax", 
+                         "Km \\(uM", "Vmax", "Jmax", 
                          "^IndC50", "^IndMax", "^Ind gamma", 
                          "^Ind fu,inc", "uL", "Qgut", 
                          "^Kapp", "^kinact", "uL/min/10\\^6")
@@ -354,6 +372,12 @@ format_scripts <- function(DF,
                                         flextable::as_paragraph(
                                            Snips[1], 
                                            "V", flextable::as_sub("max"), 
+                                           Snips[2]), 
+                                    
+                                     "Jmax" = 
+                                        flextable::as_paragraph(
+                                           Snips[1], 
+                                           "J", flextable::as_sub("max"), 
                                            Snips[2]), 
                                      
                                      "uL/min/10\\^6" = 

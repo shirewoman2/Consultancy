@@ -9,7 +9,7 @@ ontogeny_plot(
   enzyme_type = NA,
   ask_if_multiple_enzymes = TRUE,
   ontogeny_equations_to_use = NA,
-  simulator_version = 23,
+  simulator_version = 24,
   compare_to_no_ontogeny = FALSE,
   age_range = c(0, 18),
   x_axis_interval = 3,
@@ -20,6 +20,8 @@ ontogeny_plot(
   colorBy_column,
   color_set = "default",
   legend_position = "right",
+  graph_title = NA,
+  graph_title_size = 14,
   save_graph = NA,
   fig_height = NA,
   fig_width = NA
@@ -55,8 +57,7 @@ OntogenyEquations. If you supply something here, the arguments
 \code{enzyme} and \code{enzyme_type} will be ignored.}
 
 \item{simulator_version}{Simcyp Simulator version to display. Options are 21,
-22, 23 (default), or, once it's available on Simcyp Consultancy Team VDIs,
-24.}
+22, 23, or 24 (default).}
 
 \item{compare_to_no_ontogeny}{TRUE or FALSE (default) for whether to show a
 line on the graph for no ontogeny, which would be a horizontal line at 1.}
@@ -158,6 +159,12 @@ unquoted, e.g., \code{colorBy_column = Tissue}.}
 "left", "right" (default in most scenarios), "bottom", "top", or "none" if
 you don't want one at all.}
 
+\item{graph_title}{optionally specify a title that will be centered across
+your graph or set of graphs}
+
+\item{graph_title_size}{the font size for the graph title if it's included;
+default is 14. This also determines the font size of the graph labels.}
+
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "My ontogeny graph.png"If you leave off ".png", the
 graph will be saved as a png file, but if you specify a different graphical
@@ -179,6 +186,45 @@ a ggplot2 graph
   in the Simulator.
 }
 \examples{
-# none yet
+# If there's only one possible profile, using
+the ontogeny_plot function is straightforward.
+ontogeny_plot(enzyme = "UGT1A4")
+
+# If there are multiple profiles, you'll be asked
+# which you would like interactively. 
+ontogeny_plot(enzyme = "CYP3A4")
+
+# If you don't want to be asked, you can turn this off.
+ontogeny_plot(enzyme = "CYP3A4",
+              ask_if_multiple_enzymes = F)
+# ...but you might want to color the lines by the 
+# enzyme description because otherwise, you won't
+# know which is which. 
+ontogeny_plot(enzyme = "CYP3A4",
+              ask_if_multiple_enzymes = F, 
+              colorBy_column = EnzymeDescription)
+
+# You can change the colors
+ontogeny_plot(enzyme = "CYP3A4",
+              ask_if_multiple_enzymes = F, 
+              colorBy_column = EnzymeDescription, 
+              color_set = "viridis")
+
+# You can use regular expressions to get multiple 
+# possible enzymes. 
+ontogeny_plot(enzyme = "CYP|UGT", 
+              ask_if_multiple_enzymes = F, 
+              colorBy_column = EnzymeDescription, 
+              facet1_column = EnzymeType)
+
+# Any ontogeny profile included in the Simcyp Simulator
+# may be plotted. 
+ontogeny_plot(enzyme = "P-gp", 
+              colorBy_column = EnzymeDescription)
+
+# To see what the possibilities are and the equations 
+# being used:
+view(OntogenyEquations)
+
 
 }

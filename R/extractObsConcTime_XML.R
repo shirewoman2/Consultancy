@@ -57,7 +57,12 @@ extractObsConcTime_XML <- function(obs_data_file){
       dose_data$Compound <- "substrate" # just guessing here!!!
    }
    if("Dose_units" %in% names(dose_data) == FALSE){
-      dose_data$Dose_units <- "mg" # just guessing here!!!
+      if("DoseUnit" %in% names(dose_data)){
+         dose_data$Dose_units <- dose_data$DoseUnit
+         dose_data$DoseUnit <- NULL
+      } else {
+         dose_data$Dose_units <- "mg" # just guessing here!!!
+      }
    }
    
    # Need to rename things but account for the fact that some columns might not

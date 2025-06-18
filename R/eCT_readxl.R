@@ -24,10 +24,16 @@ eCT_readxl <- function(sim_data_file,
    
    CompoundToFind <- case_when(
       TissueType == "systemic" & 
-         compoundToExtract %in% c("substrate",
-                                  "inhibitor 1", 
-                                  "inhibitor 1 metabolite", 
-                                  "inhibitor 2") ~ "substrate", 
+         compoundToExtract %in% 
+         c("substrate",
+           "inhibitor 1", 
+           "inhibitor 1 metabolite", 
+           "inhibitor 2", 
+           AllCompounds %>% 
+              filter(CompoundType == "ADC" &
+                        CompoundID != "conjugated payload") %>% 
+              pull(CompoundID) %>% 
+              tolower()) ~ "substrate", 
       
       TissueType == "systemic" & 
          compoundToExtract %in% c("substrate",
@@ -38,7 +44,9 @@ eCT_readxl <- function(sim_data_file,
       Deets$SimulatorUsed == "Simcyp Discovery" & 
          TissueType == "liver" ~ compoundToExtract, 
       
-      TissueType %in% c("faeces", "tissue") ~ "substrate") %>% 
+      TissueType %in% c("faeces", "tissue") ~ "substrate", 
+      
+      TissueType == "PD" ~ "pd response") %>% 
       unique()
    
    if("SimulatorUsed" %in% names(Deets) && 
@@ -47,8 +55,8 @@ eCT_readxl <- function(sim_data_file,
       
       # Already took care of this situation elsewhere, so we can probably delete this.
       if(all(compoundToExtract %in% c("substrate", "primary metabolite 1")) == FALSE){
-         warning(paste0("This seems to be a Simcyp Discovery simulation, and the only compunds you can extract from that are `substrate` or `primary metabolite 1`, and you requested `", 
-                        compoundToExtract, "`. We'll return substrate concentrations instead.\n"), 
+         warning(wrapn(paste0("This seems to be a Simcyp Discovery simulation, and the only compunds you can extract from that are `substrate` or `primary metabolite 1`, and you requested `", 
+                        compoundToExtract, "`. We'll return substrate concentrations instead.")), 
                  call. = FALSE)
          compoundToExtract <- "substrate"
       }
@@ -65,7 +73,7 @@ eCT_readxl <- function(sim_data_file,
                                 "liver" = "Sub Pri Metab Liver Conc"))
       
       if(is.null(Sheet)){
-         warning("The combination of compound ID and tissue you requested is not availble for Simcyp Discovery files. Please contact the R Working Group if you think it should be.\n", 
+         warning(wrapn("The combination of compound ID and tissue you requested is not availble for Simcyp Discovery files. Please contact the R Working Group if you think it should be."), 
                  call. = FALSE)
          
          return(data.frame())
@@ -94,6 +102,9 @@ eCT_readxl <- function(sim_data_file,
                                 case_match(tissue, 
                                            "plasma" ~ "Conc Profiles C[Ss]ys|Protein Conc Trials", 
                                            "lymph" ~ "Lymph Conc Profiles")))]
+            
+         } else if(any(compoundToExtract %in% c("pd response", "pd input"))){
+            PossSheets <- "PD Profiles (Sub)"
             
          } else {
             
@@ -213,7 +224,7 @@ eCT_readxl <- function(sim_data_file,
          
          PossSheets <- SheetNames[str_detect(SheetNames, PossSheets)]
          
-      }
+      } 
       
       Sheet <- PossSheets[1]
       

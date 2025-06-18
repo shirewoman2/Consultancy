@@ -525,7 +525,8 @@ pk_table <- function(PKparameters = NA,
    
    ## Misc arg error catching -------------------------------------------------
    
-   PKorder <- tolower(PKorder)
+   PKorder <- tolower(PKorder)[1]
+   PKorder <- ifelse(str_detect(PKorder, "user"), "user specified", PKorder)
    if(PKorder %in% c("default", "user specified") == FALSE){
       warning("You have not supplied a permissible value for the order of PK parameters. Options are `default` or `user specified`. The default PK parameter order will be used.", 
               call. = FALSE)
@@ -729,6 +730,8 @@ pk_table <- function(PKparameters = NA,
                                   PKparameters$CompoundID, 
                                   PKparameters$Tissue))
    
+   MyWarnings <- list()
+   
    for(i in names(PKparameters)){
       
       if(nrow(PKparameters[[i]]) == 0){next}
@@ -777,23 +780,39 @@ pk_table <- function(PKparameters = NA,
             MeanType = MeanType, 
             GMR_mean_type = GMR_mean_type, 
             includeTrialMeans = includeTrialMeans, 
-            use_median_for_tmax = use_median_for_tmax)
+            use_median_for_tmax = use_median_for_tmax, 
+            extract_forest_data = extract_forest_data)
       
       if(length(temp) == 0){
+         
+         MyRegimen <- existing_exp_details$MainDetails %>% 
+            filter(File == unique(PKparameters[[i]]$File)) %>% 
+            select(any_of(paste0("Regimen", 
+                                 AllCompounds$DosedCompoundSuffix[
+                                    AllCompounds$CompoundID == 
+                                       unique(PKparameters[[i]]$CompoundID)])))
+         MyRegimen <- ifelse(MyRegimen[[1]][1] == "custom dosing", 
+                             "Multiple Dose", MyRegimen[[1]][1])
+         
          warning(paste0(str_wrap(
             paste0("There were no possible PK parameters to be extracted for the ",
                    unique(PKparameters[[i]]$CompoundID),
                    " in ", unique(PKparameters[[i]]$Tissue), 
-                   " for the simulation `", unique(PKparameters[[i]]$File),
-                   "` on the ", 
+                   " for the simulation '", unique(PKparameters[[i]]$File),
+                   "' on the ", 
                    ifelse(is.na(unique(PKparameters[[i]]$Sheet)) || 
                              unique(PKparameters[[i]]$Sheet) == "default", 
-                          "regular sheet for the 1st or last-dose PK", 
+                          "regular sheet for the ",
                           paste0("sheet `", unique(PKparameters[[i]]$Sheet), "`")), 
-                   ". Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")),
+                   case_match(MyRegimen, 
+                              "Single Dose" ~ "first-dose ", 
+                              "Multiple Dose" ~ "last-dose "), 
+                   "PK. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")),
             "\n"), call. = FALSE)
          next
       }
+      
+      MyWarnings[[i]] <- temp$Warnings
       
       # tmax variability stats need to be set differently b/c user will get
       # range if they have requested any variability stats at all.
@@ -895,6 +914,15 @@ pk_table <- function(PKparameters = NA,
                            unlist(), 
                         "interval" = purrr::map(CheckDoseInt, "interval") %>%
                            bind_rows())
+   
+   # Making only unique warnings
+   MyWarnings <- list_transpose(MyWarnings) %>% unlist() %>% sort() %>% unique()
+   
+   if(length(MyWarnings) > 0){
+      for(w in 1:length(MyWarnings)){
+         warning(MyWarnings[w], call. = F)
+      }
+   }
    
    # Formatting --------------------------------------------------------------
    
@@ -1146,7 +1174,10 @@ pk_table <- function(PKparameters = NA,
       ColNames <- prettify_column_names(MyPKResults,
                                         return_which_are_PK = TRUE) %>% 
          mutate(# Checking position of columns with custom intervals.
-            CustomInt = ColName %in% AllPKParameters$PKparameter_nodosenum)
+            CustomInt = ColName %in% 
+               (AllPKParameters %>% 
+                   filter(AppliesToAllDoses == FALSE) %>% 
+                   pull(PKparameter_nodosenum)))
       
       # Adding time interval to any data that came from custom AUC interval
       # sheets.
@@ -1185,6 +1216,7 @@ pk_table <- function(PKparameters = NA,
                         values_from = Value)
          
          ColNames <- ColNames %>% 
+            select(-any_of("Interval")) %>% 
             left_join(expand_grid(Interval = unique(IntToAdd$Interval), 
                                   ColName = ColNames$ColName) %>% 
                          mutate(ColName_int = paste(ColName, Interval)) %>% 
@@ -1343,11 +1375,6 @@ pk_table <- function(PKparameters = NA,
    
    # Saving --------------------------------------------------------------
    
-   # May need to change the working directory temporarily, so
-   # determining what it is now
-   CurrDir <- getwd()
-   
-   
    if(complete.cases(save_table)){
       
       # Checking whether they have specified just "docx" or just "csv" for
@@ -1386,7 +1413,6 @@ pk_table <- function(PKparameters = NA,
       }
       
       save_table <- basename(save_table)
-      setwd(OutPath)
       
       if(str_detect(save_table, "docx")){ 
          # This is when they want a Word file as output
@@ -1424,9 +1450,6 @@ pk_table <- function(PKparameters = NA,
          write.csv(bind_rows(MyPKResults, WarningDF),
                    paste0(OutPath, "/", save_table), row.names = F)
       }
-      
-      setwd(CurrDir)
-      
    }
    
    if(checkDataSource){

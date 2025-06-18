@@ -46,7 +46,9 @@
 #'
 #'   \item{"Creatinine_umolL" (creatinine in umol/L; "Creatinine" is fine)}
 #'
-#'   \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/m2; "GFR" is fine)}
+#'   \item{"GFR_mLmin" (glomerular filtration rate in mL/min; "GFR" is fine)}
+#'
+#'   \item{"GFR_mLminm2" (glomerular filtration rate in mL/min/1.73 m2)}
 #'
 #'   \item{"Haematocrit" (haematocrit)}
 #'
@@ -63,9 +65,12 @@
 #'   \item{"Weight_kg" (weight in kg; "Weight" is fine)}
 #'
 #'   \item{"RenalFunction" (renal function as calculated by the GFR in
-#'   mL/min/m squared body surface area divided by the reference GFR for that
+#'   mL/min/1.73 m2 body surface area divided by the reference GFR for that
 #'   sex: 120 for female subjects and 130 for male subjects as of V23 of the
-#'   Simcyp Simulator)}}}
+#'   Simcyp Simulator)}
+#'   
+#'   \item{Any other column name in demog_dataframe that contains numeric data.}
+#'   }}
 #'
 #'   \itemize{Comparisons of two parameters, which will create a scatter
 #'   plot: \itemize{
@@ -80,7 +85,10 @@
 #'
 #'   If you want only a subset
 #'   of those, list them in a character vector, e.g., \code{demog_parameters = c("Age",
-#'   "Height_cm", "Weight_kg")}. Plots will be in the order you list.
+#'   "Height_cm", "Weight_kg")}. Plots will be in the order you list. NB: If 
+#'   you have extracted demographic data from the "Enzymatic Status CYPs",  
+#'   "Enzymatic Status UGTs", or "Drug-Population Parameters" tabs, this is a LOT
+#'   of possible parameters, so please check what you're asking for. 
 #' @param variability_display How should the variability be shown? Options are
 #'   "kernel density" (default, a type of smoothed histogram) or "boxplot". Any
 #'   demographic parameters requested in the form of "X vs Y", e.g., "weight vs
@@ -275,12 +283,21 @@ demog_plot <- function(demog_dataframe,
    
    if("data.frame" %in% class(obs_demog_dataframe)){
       demog_dataframe <- demog_dataframe %>% 
-         mutate(SorO = "simulated") %>% 
+         mutate(SorO = "simulated", 
+                Individual = as.character(Individual)) %>% 
          bind_rows(obs_demog_dataframe %>% 
                       select(any_of(intersect(names(obs_demog_dataframe), 
                                               names(demog_dataframe)))) %>% 
                       mutate(SorO = "observed", 
-                             File = "observed")) %>% 
+                             File = "observed", 
+                             across(.cols = any_of("Individual"), 
+                                    .fns = as.character), 
+                             across(.cols = any_of("Sex"), 
+                                    .fns = \(x) case_when(
+                                       tolower(x) == "m" ~ "M", 
+                                       tolower(x) == "f" ~ "F", 
+                                       tolower(x) == "male" ~ "M", 
+                                       tolower(x) == "female" ~ "F")))) %>% 
          unique()
    } else {
       if("SorO" %in% names(demog_dataframe) == FALSE){
@@ -433,7 +450,7 @@ demog_plot <- function(demog_dataframe,
    # Adding padding if user requests it
    if(class(pad_y_axis) == "logical"){ # class is logical if pad_y_axis unspecified
       if(pad_y_axis){
-         pad_y_num <-  c(0.02, 0.02)
+         pad_y_num <-  c(0.04, 0.04)
       } else {
          pad_y_num <- c(0, 0)
       }
