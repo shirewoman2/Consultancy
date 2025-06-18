@@ -17,7 +17,33 @@ extractObsConcTime_XML <- function(obs_data_file){
       return()
    }
    
-   obs_data_xml <- Simcyp::ReadPEData(path = obs_data_file)
+   readobs.xl_subfun <- function(obs_data_file_from_error){
+      if(file.exists(sub("\\.xml$", ".xlsx", obs_data_file))){
+         Out <- extractObsConcTime_xlsx(obs_data_file = obs_data_file)
+      } else {
+         Out <- NULL
+      }
+      return(Out)
+   }
+   
+   suppressWarnings(
+      obs_data_xml <- tryCatch(Simcyp::ReadPEData(path = obs_data_file), 
+                               error = readobs.xl_subfun))
+   
+   if(is.null(obs_data_xml)){
+      
+      if(packageVersion("Simcyp") >= "24"){
+         warning(wrapn(paste0("The observed data file, '", 
+                              obs_data_file, "', has non-numeric data for the subject IDs. Currently, a bug in version 24 of the Simcyp package, which we use to extract observed concentration-time data from an XML file, throws an error when this is the case, and that might be the problem here. We have tried to instead extract data from the .xlsx version of the observed data file, but we cannot find it. We will not be able to extract the observed data.")), 
+                 call. = FALSE)
+      } else {
+         warning(wrapn(paste0("We're having trouble for some reason with extacting observed concentration-time data from '", 
+                              obs_data_file, "'. If your observed data file does exist and is a typical PE data Excel file, please tell Laura Shireman you saw this message. We will not be able to return any observed data for now.")), 
+                 call. = FALSE)
+      }
+      
+      return(obs_data_xml)
+   }
    
    obs_data <- obs_data_xml$Observations
    
