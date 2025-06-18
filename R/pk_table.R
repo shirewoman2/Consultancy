@@ -525,7 +525,8 @@ pk_table <- function(PKparameters = NA,
    
    ## Misc arg error catching -------------------------------------------------
    
-   PKorder <- tolower(PKorder)
+   PKorder <- tolower(PKorder)[1]
+   PKorder <- ifelse(str_detect(PKorder, "user"), "user specified", PKorder)
    if(PKorder %in% c("default", "user specified") == FALSE){
       warning("You have not supplied a permissible value for the order of PK parameters. Options are `default` or `user specified`. The default PK parameter order will be used.", 
               call. = FALSE)
@@ -917,8 +918,10 @@ pk_table <- function(PKparameters = NA,
    # Making only unique warnings
    MyWarnings <- list_transpose(MyWarnings) %>% unlist() %>% sort() %>% unique()
    
-   for(w in 1:length(MyWarnings)){
-      warning(MyWarnings[w], call. = F)
+   if(length(MyWarnings) > 0){
+      for(w in 1:length(MyWarnings)){
+         warning(MyWarnings[w], call. = F)
+      }
    }
    
    # Formatting --------------------------------------------------------------

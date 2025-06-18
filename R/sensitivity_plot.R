@@ -661,6 +661,14 @@ sensitivity_plot <- function(SA_file,
       
       if(str_detect(dependent_variable, "plasma|blood|conc")){
          
+         if(any(is.na(x_axis_limits_lin))){
+            XLim <- range(c(SAdata$Time, ObsData$Time), na.rm = T)
+            x_axis_limits_lin[1] <- ifelse(is.na(x_axis_limits_lin[1]), 
+                                           XLim[1], x_axis_limits_lin[1])
+            x_axis_limits_lin[2] <- ifelse(is.na(x_axis_limits_lin[2]), 
+                                           XLim[2], x_axis_limits_lin[2])
+         }
+         
          G <- G + 
             scale_x_time(time_range = x_axis_limits_lin, 
                          impose_limits = F) + 
