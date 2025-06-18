@@ -262,7 +262,8 @@ match_obs_to_sim <- function(ct_dataframe,
          
          ObsData_j[[k]] <- calc_dosenumber(
             ct_dataframe = ObsData_j[[k]], 
-            existing_exp_details = filter_sims(existing_exp_details, k, "include"))
+            existing_exp_details = filter_sims(existing_exp_details, k, "include")) %>% 
+            mutate(Species = Deets$Species)
          
          # Matching units. Need to do this one compound at a time. 
          ObsData_j[[k]] <- split(ObsData_j[[k]], f = ObsData_j[[k]]$CompoundID)

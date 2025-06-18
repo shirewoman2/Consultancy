@@ -229,6 +229,21 @@ sensitivity_plot <- function(SA_file,
       linear_or_log <- "linear"
    }
    
+   if(str_detect(dependent_variable, "plasma|blood|conc")){
+      if(any(complete.cases(time_range))){
+         if("numeric" %in% class(time_range) == FALSE){
+            warning(wrapn("You have specified something other than numeric data for the time range. For the sensitivity_plot function, you must specify two numbers for your time range or leave the agument time_range as NA. We'll use the full time range for now."), 
+                    call. = FALSE)
+            time_range <- NA
+         } else if(length(time_range) != 2){
+            warning(wrapn("You have specified something other than a start and a stop time for the x axis range. We'll use the full time range for now."), 
+                    call. = FALSE)
+            time_range <- NA
+         }
+      }
+   }
+   
+   
    # Get data ------------------------------------------------------------
    AllSheets <- readxl::excel_sheets(path = SA_file)
    
@@ -626,55 +641,71 @@ sensitivity_plot <- function(SA_file,
             "TRUE" = range(SAdata$Conc[SAdata$Conc > 0], na.rm = T), 
             "FALSE" = range(SAdata$DV[SAdata$DV > 0], na.rm = T))))
    
-   LinXRange <- switch(
-      as.character(all(complete.cases(x_axis_limits_lin))), 
-      "TRUE" = x_axis_limits_lin, 
-      "FALSE" = switch(
-         as.character(str_detect(dependent_variable, "plasma|blood|conc")), 
-         "TRUE" = range(SAdata$Time, na.rm = T), 
+   if(str_detect(dependent_variable, "plasma|blood|conc")){
+      
+      x_axis_limits_lin <- c(NA, NA)
+      
+   } else {
+      
+      LinXRange <- switch(
+         as.character(all(complete.cases(x_axis_limits_lin))), 
+         "TRUE" = x_axis_limits_lin, 
          "FALSE" = switch(as.character(complete.cases(SensParam2)), 
                           "TRUE" = switch(color_by_which_indvar, 
                                           "1st" = range(SAdata$SensValue2), 
                                           "2nd" = range(SAdata$SensValue)), 
-                          "FALSE" = range(SAdata$SensValue))))
-   
-   # LogXBreaks will only apply when they have requested log-transformed x axis,
-   # which is not among the options when the DV is plasma or blood
-   # concentrations. For that reason, it does not matter that the range does not
-   # consider the range of time included.
-   LogXBreaks <- make_log_breaks(
-      data_range = switch(
-         as.character(all(complete.cases(x_axis_limits_log))), 
-         "TRUE" = x_axis_limits_log, 
-         "FALSE" = switch(as.character(complete.cases(SensParam2)), 
-                          "TRUE" = switch(color_by_which_indvar, 
-                                          "1st" = range(SAdata$SensValue2[SAdata$SensValue2 > 0]), 
-                                          "2nd" = range(SAdata$SensValue[SAdata$SensValue > 0])), 
-                          "FALSE" = range(SAdata$SensValue[SAdata$SensValue > 0]))))
+                          "FALSE" = range(SAdata$SensValue)))
+      
+      # LogXBreaks will only apply when they have requested log-transformed x
+      # axis, which is not among the options when the DV is plasma or blood
+      # concentrations. For that reason, it does not matter that the range does
+      # not consider the range of time included.
+      LogXBreaks <- make_log_breaks(
+         data_range = switch(
+            as.character(all(complete.cases(x_axis_limits_log))), 
+            "TRUE" = x_axis_limits_log, 
+            "FALSE" = switch(as.character(complete.cases(SensParam2)), 
+                             "TRUE" = switch(color_by_which_indvar, 
+                                             "1st" = range(SAdata$SensValue2[SAdata$SensValue2 > 0]), 
+                                             "2nd" = range(SAdata$SensValue[SAdata$SensValue > 0])), 
+                             "FALSE" = range(SAdata$SensValue[SAdata$SensValue > 0]))))
+   }
    
    Glog <- G +
       scale_y_log10(breaks = LogYBreaks$breaks, 
                     labels = LogYBreaks$labels) 
    
+   if(str_detect(dependent_variable, "plasma|blood|conc")){
+      
+      if(any(is.na(time_range))){
+         XLim <- range(c(SAdata$Time, ObsData$Time), na.rm = T)
+         x_axis_limits_lin[1] <- ifelse(is.na(time_range[1]), 
+                                        XLim[1], time_range[1])
+         x_axis_limits_lin[2] <- ifelse(is.na(time_range[2]), 
+                                        XLim[2], time_range[2])
+      } else {
+         x_axis_limits_lin <- time_range[1:2]
+      }
+      
+      G <- G + 
+         scale_x_time(time_range = x_axis_limits_lin, 
+                      impose_limits = F) + 
+         coord_cartesian(xlim = x_axis_limits_lin, 
+                         ylim = c(round_down(LinYRange[1]),
+                                  round_up_nice(LinYRange[2])))
+      
+   } else {
+      G <- G + 
+         coord_cartesian(ylim = c(round_down(LinYRange[1]),
+                                  round_up_nice(LinYRange[2])), 
+                         xlim = c(round_down(LinXRange[1]),
+                                  round_up_nice(LinXRange[2])))
+   }
+   
    if(linear_or_log %in% c("both", "both vertical", "both horizontal",
                            "semi-log", "log", "log y")){
       
       if(str_detect(dependent_variable, "plasma|blood|conc")){
-         
-         if(any(is.na(x_axis_limits_lin))){
-            XLim <- range(c(SAdata$Time, ObsData$Time), na.rm = T)
-            x_axis_limits_lin[1] <- ifelse(is.na(x_axis_limits_lin[1]), 
-                                           XLim[1], x_axis_limits_lin[1])
-            x_axis_limits_lin[2] <- ifelse(is.na(x_axis_limits_lin[2]), 
-                                           XLim[2], x_axis_limits_lin[2])
-         }
-         
-         G <- G + 
-            scale_x_time(time_range = x_axis_limits_lin, 
-                         impose_limits = F) + 
-            coord_cartesian(xlim = x_axis_limits_lin, 
-                            ylim = c(round_down(LinYRange[1]),
-                                     round_up_nice(LinYRange[2])))
          
          Glog <- Glog +
             scale_x_time(time_range = x_axis_limits_lin, 
@@ -684,12 +715,6 @@ sensitivity_plot <- function(SA_file,
          
       } else {
          
-         G <- G + 
-            coord_cartesian(ylim = c(round_down(LinYRange[1]),
-                                     round_up_nice(LinYRange[2])), 
-                            xlim = c(round_down(LinXRange[1]),
-                                     round_up_nice(LinXRange[2])))
-         
          Glog <- Glog +
             coord_cartesian(ylim = c(round_down(LinYRange[1]),
                                      round_up_nice(LinYRange[2])), 
@@ -698,8 +723,8 @@ sensitivity_plot <- function(SA_file,
          
       }
    } 
-   # Situation where both or just x are log transformed is covered below. 
    
+   # Situation where both or just x are log transformed is covered below. 
    if(linear_or_log %in% c("both", "both vertical")){
       G <- ggpubr::ggarrange(G, Glog, nrow = 2, align = "hv", common.legend = TRUE)
    } else if(linear_or_log %in% c("both horizontal")){
