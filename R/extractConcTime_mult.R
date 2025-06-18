@@ -1180,7 +1180,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
             MultData[[ff]][[j]] <- split(MultData[[ff]][[j]], 
                                          MultData[[ff]][[j]]$SpecialUnits)
             
-            if(nrow(MultData[[ff]][[j]][["FALSE"]]) > 0){
+            if("FALSE" %in% names(MultData[[ff]][[j]]) &&
+               nrow(MultData[[ff]][[j]][["FALSE"]]) > 0){
                MultData[[ff]][[j]][["FALSE"]] <- MultData[[ff]][[j]][["FALSE"]] %>% 
                   convert_units(
                      DF_with_good_units = NA, 
