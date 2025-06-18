@@ -81,7 +81,7 @@ extractObsConcTime_mult <- function(obs_data_files = NA,
    # recursive.
    if(length(obs_data_files) == 1 &&
       (is.na(obs_data_files_input) | obs_data_files_input == "recursive")){
-      obs_data_files <- list.files(pattern = "xlsx$",
+      obs_data_files <- list.files(pattern = "xlsx$|xml$",
                                    recursive = (complete.cases(obs_data_files_input) &&
                                                    obs_data_files == "recursive"))
       obs_data_files <- obs_data_files[!str_detect(obs_data_files, "^~")]

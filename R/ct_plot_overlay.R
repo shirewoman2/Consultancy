@@ -1619,7 +1619,7 @@ ct_plot_overlay <- function(ct_dataframe,
       if(mean_type == "none"){
          ObsLevels <- levels(obs_dataframe$Individual)
       } else {
-         ObsLevels <- c(levels(obs_dataframe$Individual), MyMeanType)
+         ObsLevels <- unique(c(levels(obs_dataframe$Individual), MyMeanType))
       }
       
       ct_dataframe <- ct_dataframe %>% 

@@ -928,36 +928,34 @@ extractInputTab <- function(deets = "all",
                      rm(Enzyme, Pathway, CLType)
                      next
                   }
-               } 
-               
-               # Biliary CL
-               if(str_detect(as.character(InputTab[i, NameCol]), "^Biliary (CLint|Clearance)")){
+                  
+               } else if(str_detect(as.character(InputTab[i, NameCol]), "^Biliary (CLint|Clearance)")){
                   suppressWarnings(
+                     # Biliary CL
                      Out[[paste0("CLint_biliary", Suffix)]] <-
                         as.numeric(InputTab[i, NameCol + 1])
                   )
-               }
-               
-               # Other HLM CL
-               if(str_detect(as.character(InputTab[i, NameCol]), "^Additional HLM CLint")){
-                  suppressWarnings(
-                     Out[[paste0("CLint_AddHLM", Suffix)]] <-
-                        as.numeric(InputTab[i, NameCol + 1])
-                  )
-               }
-               
-               # Other HKM CL
-               if(str_detect(as.character(InputTab[i, NameCol]), "^Additional HKM CLint")){
-                  suppressWarnings(
-                     Out[[paste0("CLint_AddHKM", Suffix)]] <-
-                        as.numeric(InputTab[i, NameCol + 1])
-                  )
-               }
-               
-               # in vivo CL
-               if(str_detect(as.character(InputTab[i, ValueCol]),
-                             "In Vivo Clearance")){
                   
+               } else if(str_detect(as.character(InputTab[i, NameCol]), "^Additional HLM CLint")){
+               # Other HLM CL
+                  suppressWarnings(
+                     Out[[paste0("CLint_additional_HLM", Suffix)]] <-
+                        as.numeric(InputTab[i, NameCol + 1])
+                  )
+               } else if(str_detect(as.character(InputTab[i, NameCol]), "^Additional HKM CLint")){
+               # Other HKM CL
+                  suppressWarnings(
+                     Out[[paste0("CLint_additional_HKM", Suffix)]] <-
+                        as.numeric(InputTab[i, NameCol + 1])
+                  )
+               } else if(str_detect(as.character(InputTab[i, NameCol]), "^Additional Systemic Clearance \\(L/h\\)")){
+                  suppressWarnings(
+                     Out[[paste0("CL_additional_systemic", Suffix)]] <-
+                        as.numeric(InputTab[i, NameCol + 1])
+                  )
+               } else if(str_detect(as.character(InputTab[i, ValueCol]),
+                                    "In Vivo Clearance")){
+                  # in vivo CL
                   MyNames <- as.character(t(
                      InputTab[i:min(
                         c(IntRowStart, CLRows[which(CLRows == i) + 1] - 1, 
