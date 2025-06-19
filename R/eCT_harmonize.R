@@ -35,7 +35,7 @@ eCT_harmonize <- function(sim_data_xl,
    
    PD <- tissue == "pd"
    
-   if(any(ADAM, PD, ADC) == FALSE |
+   if(any(ADAM, PD, ADC, AdvBrainModel) == FALSE |
       (ADC == TRUE & any(compoundToExtract %in% c("primary metabolite 1")))){
       # Here's what we're trying to overcome with this function: If
       # "interaction" or "Csys" or other similar strings are part of the name of
@@ -273,7 +273,7 @@ eCT_harmonize <- function(sim_data_xl,
             compoundToExtract <- setdiff(compoundToExtract, cmpd)
          }
       }
-   } else if(ADAM){
+   } else if(ADAM|AdvBrainModel){
       # ADAM and AdvBrainModel data have different requirements and generally
       # only have a more limited set of compounds available. 
       
