@@ -218,6 +218,7 @@ make_simulation_directory <- function(project_folder = NA,
             
             figure_and_table_assignment <- figure_and_table_assignment %>% 
                as_tibble() 
+            names(figure_and_table_assignment) <- tolower(names(figure_and_table_assignment))
             
             names(figure_and_table_assignment)[
                names(figure_and_table_assignment) == FigTabNames$Orig[FigTabNames$Rev == "Filename"]] <- "Filename"
