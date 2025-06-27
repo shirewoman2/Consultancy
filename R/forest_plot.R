@@ -1294,7 +1294,7 @@ forest_plot <- function(forest_dataframe,
                 all(names(y_axis_labels) %in% forest_dataframe$File) == FALSE){
          warning(paste0(wrapn("It looks like you're trying to provide a named character vector for `y_axis_labels`, but these file names are not present in forest_dataframe:"), 
                         str_c(paste0("   ", setdiff(names(y_axis_labels), forest_dataframe$File)), 
-                              collapse = "\n"), 
+                              collapse = "\n"), "\n", 
                         wrapn("For now, we'll list the file names along the y axis rather than using what you specified with `y_axis_labels`.")),
                  call. = FALSE)
          y_axis_labels <- NA
@@ -1303,15 +1303,17 @@ forest_plot <- function(forest_dataframe,
       if(any(complete.cases(y_axis_labels))){
          
          forest_dataframe <- forest_dataframe %>% 
-            mutate(YCol = switch(prettify_ylabel, 
-                                 # If user didn't specify whether they wanted
-                                 # prettification but did use specific values
-                                 # for y_axis_labels, they probably don't want
-                                 # those to change. If not set, then here, DON'T
-                                 # prettify.
-                                 "not set" = y_axis_labels[File],
-                                 "TRUE" = prettify_compound_name(y_axis_labels[File]),
-                                 "FALSE" = y_axis_labels[File]))
+            mutate(YCol = switch(
+               prettify_ylabel, 
+               # If user didn't specify whether they wanted
+               # prettification but did use specific values
+               # for y_axis_labels, they probably don't want
+               # those to change. If not set, then here, DON'T
+               # prettify.
+               "not set" = y_axis_labels[as.character(File)],
+               "TRUE" = prettify_compound_name(y_axis_labels[as.character(File)]),
+               "FALSE" = y_axis_labels[as.character(File)]))
+         
       } else {
          forest_dataframe$YCol <- forest_dataframe$File
       }
@@ -1409,7 +1411,7 @@ forest_plot <- function(forest_dataframe,
          ProbID <- NULL
       }
       
-      ExtrapProbs <- ExtrapProbs %>% pull(YCol)
+      ExtrapProbs <- ExtrapProbs %>% pull(YCol) %>% as.character()
       
       ExtrapProbs <- sort(unique(c(
          ExtrapProbs, 
@@ -1418,7 +1420,7 @@ forest_plot <- function(forest_dataframe,
                  forest_dataframe %>% 
                     filter(PKparameter %in% c("AUCinf_ratio_dose1", 
                                               "AUCinf_ratio")) %>% 
-                    pull(YCol)))))
+                    pull(YCol) %>% as.character()))))
       
       AUCt_swap <- forest_dataframe %>% 
          filter(YCol %in% ExtrapProbs & 
@@ -1443,12 +1445,11 @@ forest_plot <- function(forest_dataframe,
       }
       
       warning(paste0(wrapn("The following simulations (really, the following y axis labels) had missing values for the AUCinf ratio for dose 1 and, by request, have had those values replaced with the AUCt ratio for dose 1:"), 
-                     "\n", str_c(paste0("     ", ExtrapProbs), collapse = "\n"), 
+                     str_c(paste0("     ", ExtrapProbs), collapse = "\n"), 
                      "\nPLEASE NOTE THIS IN YOUR FIGURE CAPTION.\n"), 
               call. = FALSE)
       
    }
-   
    
    
    # Main body of function -------------------------------------------------
