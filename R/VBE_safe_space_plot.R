@@ -205,23 +205,24 @@ VBE_safe_space_plot <- function(VBE_dataframe,
                                num_colors = Ncol)
    
    # Reshaping data to add a ribbon
-   RibbonLimits <- VBE_dataframe %>% 
+   SSPolygon <- VBE_dataframe %>% 
       filter(complete.cases(Limit)) %>% 
-      select(Time, SorO, Limit, Dissolution) %>% unique() %>% 
-      pivot_wider(names_from = Limit, values_from = Dissolution)
+      select(Time, SorO, Limit, Dissolution) %>% unique()
+   
+   SSPolygon <- split(SSPolygon, f = SSPolygon$Limit)
+   SSPolygon$lower <- SSPolygon$lower %>% arrange(Time)
+   SSPolygon$upper <- SSPolygon$upper %>% arrange(desc(Time))
+   SSPolygon <- bind_rows(SSPolygon)
    
    G <- ggplot(data = VBE_dataframe, 
           aes(x = Time, y = Dissolution, 
               color = Type, shape = SorO, linetype = SorO, 
               linewidth = SorO, size = SorO)) +
-      # NB: ggplot graphs are stacked layer upon layer, so, if we want the
-      # shading to be underneath the points and lines, we will add the shading
-      # first and the lines and points second and third.
-      geom_ribbon(data = RibbonLimits, 
-                  aes(x = Time, ymin = lower, ymax = upper), 
-                  inherit.aes = FALSE, 
-                  alpha = safe_space_trans, 
-                  fill = safe_space_color, color = NA) +
+      geom_polygon(data = SSPolygon, 
+                   aes(x = Time, y = Dissolution), 
+                   fill = safe_space_color, 
+                   alpha = safe_space_trans, 
+                   inherit.aes = F) +
       geom_line() +
       geom_point() +
       scale_color_manual(values = color_set) +

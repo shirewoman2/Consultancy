@@ -908,7 +908,10 @@ so_graph <- function(PKtable,
          
       } else if(VarType %in% c("5th to 95th Percentile", 
                                "Observed 5th to 95th Percentile", 
-                               "90% CI", "95% CI", "Observed CI", 
+                               "90% CI", "95% CI", 
+                               "Observed 90% CI", 
+                               "Observed 95% CI", 
+                               "Observed CI", 
                                "Observed range", "Range")){
          # VarType must be split to get high and low
          
@@ -965,12 +968,14 @@ so_graph <- function(PKtable,
                                       "90% CI", 
                                       "Observed CI - Lower", 
                                       "Observed CI - Upper", 
-                                      "Observed CI"),
+                                      "Observed CI", 
+                                      "Observed 90% CI"),
                          "95% CI" = c("95% CI - Lower", 
                                       "95% CI - Upper", 
                                       "95% CI", 
                                       "Observed CI - Lower", 
                                       "Observed CI - Upper", 
+                                      "Observed 95% CI",
                                       "Observed CI"), 
                          "CV%" = c("CV%", "Observed CV%"), 
                          "percentiles" = c("5th Percentile", 
@@ -1682,7 +1687,10 @@ so_graph <- function(PKtable,
                        # specified neither
                        "TRUE TRUE" = NULL),
          legend = legend_position, 
-         common.legend = TRUE) # FIXME - Switch to patchwork and collect the legends. This makes it so that legend items ONLY include what was in the 1st graph. 
+         common.legend = TRUE) + # FIXME - Switch to patchwork and collect the legends. This makes it so that legend items ONLY include what was in the 1st graph. 
+         ggpubr::bgcolor("white") +
+         ggpubr::border(color = NA)
+      
    }
    
    # Collecting error bar warnings

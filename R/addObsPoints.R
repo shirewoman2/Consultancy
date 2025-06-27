@@ -43,11 +43,16 @@ addObsPoints <- function(obs_dataframe,
    
    # Need to adjust some code based on whether the obs_shape was solid, outline
    # only, or a mix. 
-   OutlineOnly <- all(obs_shape %in% c(0:14))
-   SolidOnly <- all(obs_shape %in% c(15:20))
-   MixShape <- all(obs_shape %in% c(0:14) == FALSE) & 
-      all(obs_shape %in% c(15:20) == FALSE)
+   OutlineOnly <- all(obs_shape %in% 0:14)
+   SolidOnly <- all(obs_shape %in% 15:20)
+   OutlineSolid <- all(obs_shape %in% 21:25)
+   MixShape <- all(obs_shape %in% 0:14 == FALSE) & 
+      all(obs_shape %in% 15:20 == FALSE) & 
+      all(obs_shape %in% 21:25 == FALSE)
    
+   # FIXME: Should I continue to fix the bit below for people? I'm not so sure
+   # now. I can see where this might "fix" something that someone actually
+   # wants.
    # Adjusting shapes for when user wants only outlines and no fill for
    # observed data points but may not have set the correct shape for that
    if(complete.cases(obs_fill_trans_user) &&

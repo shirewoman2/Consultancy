@@ -732,11 +732,18 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    # Now that figure type is set, adjusting the number of observed data colors
-   # and shapes to 1 if the figure type is anything other than "compound
-   # summary".
+   # and shapes to 1 -- when there is no perpetrator and the figure type is
+   # anything other than "compound summary" -- or 2 -- when there IS a
+   # perpetrator and the figure type is anything other than "compound summary"
+   # -- or unlimited when the figure type is "compound summary".
    if(figure_type != "compound summary"){
-      obs_color <- obs_color[1]
-      obs_shape  <- obs_shape[1]
+      if(any(ct_dataframe$Inhibitor != "none", na.rm = T)){
+         obs_color <- rep(obs_color, 2)[1:2]
+         obs_shape  <- rep(obs_shape, 2)[1:2]
+      } else {
+         obs_color <- obs_color[1]
+         obs_shape  <- obs_shape[1]
+      }
    }
    
    if(("Compound" %in% names(ct_dataframe) && length(unique(ct_dataframe$Compound)) > 1) | 
@@ -1059,31 +1066,35 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Error catching for when user specifies linetype, color or shape and
    # doesn't include enough values when perpetrator present
-   if(complete.cases(obs_shape[1]) && length(MyPerpetrator) > 0 &&
+   if(any(complete.cases(obs_shape)) && length(MyPerpetrator) > 0 &&
       complete.cases(MyPerpetrator) &&
       MyCompoundID != "inhibitor 1" &&
       length(complete.cases(obs_shape)) < 2 & 
       figure_type != "compound summary"){
-      warning(wrapn("There is an inhibitor or perpetrator present, but you have specified only one shape for the observed data. The same shape will be used for both."),
-              call. = FALSE)
+      
+      if(length(obs_color_user) < 2){
+         warning(wrapn("There is an inhibitor or perpetrator present, but you have specified only one shape and one color for the observed data. The same shape and color will be used for both."),
+                 call. = FALSE)
+      }
+      
       obs_shape <- rep(obs_shape, 2)
    }
    
-   if(complete.cases(line_color[1]) && length(MyPerpetrator) > 0 &&
+   if((any(complete.cases(line_color)) && length(MyPerpetrator) > 0 &&
       complete.cases(MyPerpetrator) &&
       MyCompoundID != "inhibitor 1" &&
-      length(complete.cases(line_color)) < 2){
-      warning(wrapn("There is an inhibitor or perpetrator present, but you have specified only one line color. The same line color will be used for both."),
-              call. = FALSE)
+      length(complete.cases(line_color)) < 2) | (
+         any(complete.cases(line_type)) && length(MyPerpetrator) > 0 &&
+         complete.cases(MyPerpetrator) &&
+         MyCompoundID != "inhibitor 1" &&
+         length(complete.cases(line_type)) < 2)){
+      
+      if(length(line_type) < 2 & length(line_color) < 2){
+         warning(wrapn("There is an inhibitor or perpetrator present, but you have specified only one line color and one line type. The same line type and color will be used for both."),
+                 call. = FALSE)
+      }
+      
       line_color <- rep(line_color, 2)
-   }
-   
-   if(complete.cases(line_type[1]) && length(MyPerpetrator) > 0 &&
-      complete.cases(MyPerpetrator) &&
-      MyCompoundID != "inhibitor 1" &&
-      length(complete.cases(line_type)) < 2){
-      warning(wrapn("There is an inhibitor or perpetrator present, but you have specified only one line type. The same line type will be used for both."),
-              call. = FALSE)
       line_type <- rep(line_type, 2)
    }
    
@@ -1594,8 +1605,9 @@ ct_plot <- function(ct_dataframe = NA,
    
    if(nrow(obs_dataframe) > 0 & obs_on_top){
       
-      MapObsData <- all(is.na(obs_color_user)) & 
-         figure_type %in% c("freddy") == FALSE
+      MapObsData <- (all(is.na(obs_color_user)) & 
+                        figure_type %in% c("freddy") == FALSE) |
+         length(unique(ct_dataframe$Inhibitor)) > 1
       
       A <- addObsPoints(obs_dataframe = obs_dataframe, 
                         A = A, 
