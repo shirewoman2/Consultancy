@@ -7,7 +7,7 @@
 #' @param ncolors number of colors desired
 #' @param shade the shade of colors to use, which can be "regular" (default),
 #'   "darker", "lighter", or "muted" (although "muted" in this case is the same
-#'   as "darker")
+#'   as "darker"). 
 #'
 #' @return a character vector of colors
 #' @export
@@ -28,27 +28,28 @@ rainbow <- function(ncolors,
               call. = F)
    }
    
-   if(ncolors <= 7){
-      colRainbow <- colorRampPalette(c("#B91E02FF", "#F66D19FF", "#B8F735FF",
-                                       "#22C4E3FF", "#434DB9FF"))
-      
-   } else {
-      colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
-                                       "darkorange", "green3", "seagreen3",
-                                       "cadetblue", "dodgerblue3", "royalblue4",
-                                       "darkorchid4"))
-      
+   if(shade %in% c("darker", "regular")){
+      if(ncolors <= 7){
+         colRainbow <- colorRampPalette(c("#B91E02FF", "#F66D19FF", "#B8F735FF",
+                                          "#22C4E3FF", "#434DB9FF"))
+         
+      } else {
+         colRainbow <- colorRampPalette(c("gray20", "antiquewhite4", "firebrick3",
+                                          "darkorange", "green3", "seagreen3",
+                                          "cadetblue", "dodgerblue3", "royalblue4",
+                                          "darkorchid4"))
+      }
+   } else if(shade == "lighter"){
+      colRainbow <- colorRampPalette(c("#FF0000", "#FF9900", "#FFFF00",
+                                       "#33FF00", "#3300FF", "#A30DD0"))
    }
    
    MyColors <- colRainbow(ncolors)
    
-   if(shade == "darker"){
+   if(shade %in% c("darker", "muted")){
       MyColors <- scales::muted(MyColors, l = 30, c = 70)
    } else if(shade == "lighter"){
-      MyColors <- scales::muted(MyColors, l = 90, c = 100)
-   } else if(shade == "muted"){
-      MyColors <- scales::muted(MyColors)
-   }
+   } 
    
    return(MyColors)
 }

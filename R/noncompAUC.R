@@ -168,283 +168,286 @@ noncompAUC <- function(DF, concentration = Concentration,
                        extrap_inf_times = c(NA, NA),
                        reportTermFit = FALSE,
                        reportFractExtrap = FALSE,
-
+                       
                        extrap_t0 = FALSE,
                        extrap_t0_coefs = NULL,
                        extrap_t0_model = "monoexponential",
                        extrap_t0_times = c(NA, NA),
                        reportBackExtrapFit = FALSE,
                        reportC0 = FALSE) {
-
-
-      # Defining pipe operator and bang bang
-      `%>%` <- magrittr::`%>%`
-      `!!` <- rlang::`!!`
-
-
-      if(type %in% c("linear", "LULD") == FALSE){
-            stop("The only options for type of AUC calculation are 'LULD' for 'linear up, log down' or 'linear'.")
+   
+   
+   # Defining pipe operator and bang bang
+   `%>%` <- magrittr::`%>%`
+   `!!` <- rlang::`!!`
+   
+   
+   if(type %in% c("linear", "LULD") == FALSE){
+      stop("The only options for type of AUC calculation are 'LULD' for 'linear up, log down' or 'linear'.")
+   }
+   
+   if(extrap_t0_model %in% c("monoexponential", "biexponential") == FALSE){
+      stop("The only options for models to automatically extrapolate back to t0 are 'monoexponential' or 'biexponential'. Please select one of those.")
+   }
+   
+   if(is.null(extrap_t0_coefs) == FALSE &
+      all(c("coefs", "tmax") %in% names(extrap_t0_coefs)) == FALSE){
+      stop("If you supply coefficients and tmax in a list for back-extrapolating to t0, the names of those items must be 'coefs' and 'tmax'. Please check the names of the items in your supplied list.")
+   }
+   
+   concentration <- rlang::enquo(concentration)
+   time <- rlang::enquo(time)
+   
+   DF <- DF %>% dplyr::select(!! time, !! concentration) %>%
+      dplyr::rename(TIME = !! time,
+                    CONC = !! concentration)
+   
+   DF <- DF %>%  dplyr::filter(complete.cases(TIME))
+   
+   DFmean <- DF %>%
+      dplyr::filter(complete.cases(CONC)) %>%
+      dplyr::group_by(TIME) %>%
+      dplyr::summarize(CONC = mean(CONC), .groups = "drop_last") %>%
+      dplyr::arrange(TIME)
+   
+   if(extrap_inf){
+      
+      Tmax <- extrap_inf_times[1]
+      
+      if(is.na(extrap_inf_times[1])){
+         extrap_inf_times[1] <- min(DFmean$TIME, na.rm = TRUE)
       }
-
-      if(extrap_t0_model %in% c("monoexponential", "biexponential") == FALSE){
-            stop("The only options for models to automatically extrapolate back to t0 are 'monoexponential' or 'biexponential'. Please select one of those.")
+      
+      if(is.na(extrap_inf_times[2])){
+         extrap_inf_times[2] <- max(DFmean$TIME, na.rm = TRUE)
       }
-
-      if(is.null(extrap_t0_coefs) == FALSE &
-         all(c("coefs", "tmax") %in% names(extrap_t0_coefs)) == FALSE){
-            stop("If you supply coefficients and tmax in a list for back-extrapolating to t0, the names of those items must be 'coefs' and 'tmax'. Please check the names of the items in your supplied list.")
-      }
-
-      concentration <- rlang::enquo(concentration)
-      time <- rlang::enquo(time)
-
-      DF <- DF %>% dplyr::select(!! time, !! concentration) %>%
-            dplyr::rename(TIME = !! time,
-                          CONC = !! concentration)
-
-      DF <- DF %>%  dplyr::filter(complete.cases(TIME))
-
-      DFmean <- DF %>%
-            dplyr::filter(complete.cases(CONC)) %>%
-            dplyr::group_by(TIME) %>%
-            dplyr::summarize(CONC = mean(CONC), .groups = "drop_last") %>%
-            dplyr::arrange(TIME)
-
-      if(extrap_inf){
-
-            Tmax <- extrap_inf_times[1]
-
-            if(is.na(extrap_inf_times[1])){
-                  extrap_inf_times[1] <- min(DFmean$TIME, na.rm = TRUE)
-            }
-
-            if(is.na(extrap_inf_times[2])){
-                  extrap_inf_times[2] <- max(DFmean$TIME, na.rm = TRUE)
-            }
-
-            if(is.null(extrap_inf_coefs)){
-                  StartTime <- DFmean %>%  dplyr::filter(TIME >= extrap_inf_times[1]) %>%
-                        dplyr::pull(TIME) %>% min
-                  EndTime <- DFmean %>%  dplyr::filter(TIME <= extrap_inf_times[2]) %>%
-                        dplyr::pull(TIME) %>% max
-
-                  Fit_inf <- elimFit(DFmean %>%  dplyr::filter(TIME >= StartTime &
-                                                                     TIME <= EndTime),
-                                     concentration = CONC,
-                                     time = TIME,
-                                     tmax = Tmax,
-                                     modelType = "monoexponential")
-
-                  if(Fit_inf[[1]][1] == "Cannot fit to model"){
-                        stop("Attempts to fit a monoexponential decay equation to the data failed to converge. Try a different time range.")
-                  }
-
-                  rm(StartTime, EndTime)
-
-            } else {
-
-                  Fit_inf <- as.data.frame(extrap_inf_coefs)
-                  Fit_inf$Beta <- c("A", "k")
-
-            }
-
-            Clast <- DFmean %>%  dplyr::filter(complete.cases(CONC)) %>%
-                  dplyr::summarize(Clast = CONC[which.max(TIME)],
-                                   .groups = "drop_last") %>%  dplyr::pull(Clast)
-
-            AUClast_inf <- Clast / Fit_inf$Estimate[Fit_inf$Beta == "k"]
-
-            rm(Tmax)
-
+      
+      if(is.null(extrap_inf_coefs)){
+         StartTime <- DFmean %>%  dplyr::filter(TIME >= extrap_inf_times[1]) %>%
+            dplyr::pull(TIME) %>% min
+         EndTime <- DFmean %>%  dplyr::filter(TIME <= extrap_inf_times[2]) %>%
+            dplyr::pull(TIME) %>% max
+         
+         Fit_inf <- elimFit(DFmean %>%  dplyr::filter(TIME >= StartTime &
+                                                         TIME <= EndTime),
+                            concentration = CONC,
+                            time = TIME,
+                            tmax = Tmax,
+                            modelType = "monoexponential")
+         
+         if(Fit_inf[[1]][1] == "Cannot fit to model"){
+            stop("Attempts to fit a monoexponential decay equation to the data failed to converge. Try a different time range.")
+         }
+         
+         rm(StartTime, EndTime)
+         
       } else {
-            AUClast_inf <- 0
+         
+         Fit_inf <- as.data.frame(extrap_inf_coefs)
+         if(nrow(Fit_inf) == 1){
+            Fit_inf <- bind_rows(Fit_inf, 
+                                 Fit_inf)
+         }
+         Fit_inf$Beta <- c("A", "k")
       }
-
-      if(extrap_t0){
-
-            Tmax <- extrap_t0_times[1]
-
-            if(is.na(extrap_t0_times[1])){
-                  extrap_t0_times[1] <- min(DFmean$TIME, na.rm = TRUE)
-            }
-
-            if(is.na(extrap_t0_times[2])){
-                  extrap_t0_times[2] <- max(DFmean$TIME, na.rm = TRUE)
-            }
-
-            if(is.null(extrap_t0_coefs)){
-                  StartTime <- DFmean %>%  dplyr::filter(TIME >= extrap_t0_times[1]) %>%
-                        dplyr::pull(TIME) %>% min
-                  EndTime <- DFmean %>%  dplyr::filter(TIME <= extrap_t0_times[2]) %>%
-                        dplyr::pull(TIME) %>% max
-
-                  Fit_t0 <- elimFit(DFmean %>%  dplyr::filter(TIME >= StartTime &
-                                                                    TIME <= EndTime),
-                                    concentration = CONC,
-                                    time = TIME,
-                                    tmax = Tmax,
-                                    modelType = extrap_t0_model)
-
-                  Tmax <- ifelse(complete.cases(Tmax), Tmax,
-                                 DFmean$TIME[which.max(DFmean$CONC)])
-
-                  if(Fit_t0[[1]][1] == "Cannot fit to model"){
-                        stop(paste("Attempts to fit a",
-                                   extrap_t0_model,
-                                   "decay equation to the data failed to converge. Try a different model."))
-                  }
-
-                  if(extrap_t0_model == "monoexponential"){
-                        C0 <- Fit_t0$Estimate[Fit_t0$Beta == "A"] *
-                              exp(-Fit_t0$Estimate[Fit_t0$Beta == "k"] * -Tmax)
-                  } else {
-                        C0 <- Fit_t0$Estimate[Fit_t0$Beta == "A"] *
-                              exp(-Fit_t0$Estimate[Fit_t0$Beta == "alpha"] * -Tmax) +
-                              Fit_t0$Estimate[Fit_t0$Beta == "B"] *
-                              exp(-Fit_t0$Estimate[Fit_t0$Beta == "beta"] * -Tmax)
-                  }
-
-                  rm(StartTime, EndTime)
-
-            } else {
-
-                  MyCoefs <- as.data.frame(extrap_t0_coefs[["coefs"]])
-                  tmax <- extrap_t0_coefs[["tmax"]]
-
-                  if(nrow(MyCoefs) == 2){
-                        C0 <- MyCoefs$Estimate[1] *
-                              exp(-MyCoefs$Estimate[2] * -tmax)
-                  }
-
-                  if(nrow(MyCoefs) == 4){
-                        C0 <- MyCoefs$Estimate[1] *
-                              exp(-MyCoefs$Estimate[2] * -tmax) +
-                              MyCoefs$Estimate[3] *
-                              exp(-MyCoefs$Estimate[4] * -tmax)
-                  }
-
-                  if(nrow(MyCoefs) == 6){
-                        C0 <- MyCoefs$Estimate[1] *
-                              exp(-MyCoefs$Estimate[2] * -tmax) +
-                              MyCoefs$Estimate[3] *
-                              exp(-MyCoefs$Estimate[4] * -tmax) +
-                              MyCoefs$Estimate[5] *
-                              exp(-MyCoefs$Estimate[6] * -tmax)
-                  }
-
-            }
-
-            if(any(DFmean$TIME == 0)){
-                  DFmean$CONC[DFmean$TIME == 0] <- C0
-            } else {
-                  DFmean <- dplyr::bind_rows(DFmean,
-                                             data.frame(CONC = C0, TIME = 0)) %>%
-                        dplyr::arrange(TIME) %>% unique()
-            }
-
-            rm(Tmax)
+      
+      Clast <- DFmean %>%  dplyr::filter(complete.cases(CONC)) %>%
+         dplyr::summarize(Clast = CONC[which.max(TIME)],
+                          .groups = "drop_last") %>%  dplyr::pull(Clast)
+      
+      AUClast_inf <- Clast / Fit_inf$Estimate[Fit_inf$Beta == "k"]
+      
+      rm(Tmax)
+      
+   } else {
+      AUClast_inf <- 0
+   }
+   
+   if(extrap_t0){
+      
+      Tmax <- extrap_t0_times[1]
+      
+      if(is.na(extrap_t0_times[1])){
+         extrap_t0_times[1] <- min(DFmean$TIME, na.rm = TRUE)
       }
-
-      # function for linear trapezoidal rule
-      lintrap <- function(DFmean){
-            sum(0.5*((DFmean$TIME[2:length(DFmean$TIME)] -
-                            DFmean$TIME[1:(length(DFmean$TIME)-1)]) *
-                           (DFmean$CONC[2:length(DFmean$CONC)] +
-                                  DFmean$CONC[1:(length(DFmean$CONC)-1)])))
+      
+      if(is.na(extrap_t0_times[2])){
+         extrap_t0_times[2] <- max(DFmean$TIME, na.rm = TRUE)
       }
-
-      if(type == "linear"){
-            AUClast <- lintrap(DFmean)
-
+      
+      if(is.null(extrap_t0_coefs)){
+         StartTime <- DFmean %>%  dplyr::filter(TIME >= extrap_t0_times[1]) %>%
+            dplyr::pull(TIME) %>% min
+         EndTime <- DFmean %>%  dplyr::filter(TIME <= extrap_t0_times[2]) %>%
+            dplyr::pull(TIME) %>% max
+         
+         Fit_t0 <- elimFit(DFmean %>%  dplyr::filter(TIME >= StartTime &
+                                                        TIME <= EndTime),
+                           concentration = CONC,
+                           time = TIME,
+                           tmax = Tmax,
+                           modelType = extrap_t0_model)
+         
+         Tmax <- ifelse(complete.cases(Tmax), Tmax,
+                        DFmean$TIME[which.max(DFmean$CONC)])
+         
+         if(Fit_t0[[1]][1] == "Cannot fit to model"){
+            stop(paste("Attempts to fit a",
+                       extrap_t0_model,
+                       "decay equation to the data failed to converge. Try a different model."))
+         }
+         
+         if(extrap_t0_model == "monoexponential"){
+            C0 <- Fit_t0$Estimate[Fit_t0$Beta == "A"] *
+               exp(-Fit_t0$Estimate[Fit_t0$Beta == "k"] * -Tmax)
+         } else {
+            C0 <- Fit_t0$Estimate[Fit_t0$Beta == "A"] *
+               exp(-Fit_t0$Estimate[Fit_t0$Beta == "alpha"] * -Tmax) +
+               Fit_t0$Estimate[Fit_t0$Beta == "B"] *
+               exp(-Fit_t0$Estimate[Fit_t0$Beta == "beta"] * -Tmax)
+         }
+         
+         rm(StartTime, EndTime)
+         
       } else {
-            TMAX <- DFmean$TIME[which.max(DFmean$CONC)]
-
-            DFup <- DFmean %>% dplyr::filter(TIME <= TMAX)
-            DFdown <- DFmean %>% dplyr::filter(TIME >= TMAX)
-
-            AUCup <- lintrap(DFup)
-
-            # function for log trapezoidal rule
-            logtrap <- function(DFdown){
-                  sum(# C1 - C2
-                        ((DFdown$CONC[1:(length(DFdown$CONC)-1)] -
-                                DFdown$CONC[2:length(DFdown$CONC)]) /
-                               # ln(C1) - ln(C2)
-                               (log(DFdown$CONC[1:(length(DFdown$CONC)-1)]) -
-                                      log(DFdown$CONC[2:length(DFdown$CONC)])) ) *
-                              # t2 - t1
-                              (DFdown$TIME[2:length(DFdown$TIME)] -
-                                     DFdown$TIME[1:(length(DFdown$TIME)-1)]) )
-            }
-
-            # If any values for concentration are the same for two time points,
-            # which WILL happen randomly sometimes due to inherent limitations
-            # in measurements, use the linear trapezoidal rule to add that
-            # trapezoid to the total AUC. To do that, I'll need to break those
-            # up into multiple DFs.
-            if(any(DFdown$CONC[1:(length(DFdown$CONC)-1)] ==
-                   DFdown$CONC[2:length(DFdown$CONC)])){
-
-                  # Noting which are problematic.
-                  ProbPoints <- which(DFdown$CONC[1:(length(DFdown$CONC)-1)] ==
-                                            DFdown$CONC[2:length(DFdown$CONC)])
-                  AUCsToAdd <- c()
-                  RowsToUse <- sort(unique(c(1, ProbPoints, ProbPoints + 1,
-                                             nrow(DFdown))))
-                  for(k in 1:(length(RowsToUse) - 1)){
-
-                        if(RowsToUse[k] %in% ProbPoints){
-                              tempDF <- DFdown[RowsToUse[k]:(RowsToUse[k] + 1), ]
-                              AUCsToAdd[k] <- lintrap(tempDF)
-                        } else {
-                              tempDF <- DFdown[RowsToUse[k]:RowsToUse[k + 1], ]
-                              AUCsToAdd[k] <- logtrap(tempDF)
-                        }
-                        rm(tempDF)
-                  }
-
-                  AUCdown <- sum(AUCsToAdd)
-
+         
+         MyCoefs <- as.data.frame(extrap_t0_coefs[["coefs"]])
+         tmax <- extrap_t0_coefs[["tmax"]]
+         
+         if(nrow(MyCoefs) == 2){
+            C0 <- MyCoefs$Estimate[1] *
+               exp(-MyCoefs$Estimate[2] * -tmax)
+         }
+         
+         if(nrow(MyCoefs) == 4){
+            C0 <- MyCoefs$Estimate[1] *
+               exp(-MyCoefs$Estimate[2] * -tmax) +
+               MyCoefs$Estimate[3] *
+               exp(-MyCoefs$Estimate[4] * -tmax)
+         }
+         
+         if(nrow(MyCoefs) == 6){
+            C0 <- MyCoefs$Estimate[1] *
+               exp(-MyCoefs$Estimate[2] * -tmax) +
+               MyCoefs$Estimate[3] *
+               exp(-MyCoefs$Estimate[4] * -tmax) +
+               MyCoefs$Estimate[5] *
+               exp(-MyCoefs$Estimate[6] * -tmax)
+         }
+         
+      }
+      
+      if(any(DFmean$TIME == 0)){
+         DFmean$CONC[DFmean$TIME == 0] <- C0
+      } else {
+         DFmean <- dplyr::bind_rows(DFmean,
+                                    data.frame(CONC = C0, TIME = 0)) %>%
+            dplyr::arrange(TIME) %>% unique()
+      }
+      
+      rm(Tmax)
+   }
+   
+   # function for linear trapezoidal rule
+   lintrap <- function(DFmean){
+      sum(0.5*((DFmean$TIME[2:length(DFmean$TIME)] -
+                   DFmean$TIME[1:(length(DFmean$TIME)-1)]) *
+                  (DFmean$CONC[2:length(DFmean$CONC)] +
+                      DFmean$CONC[1:(length(DFmean$CONC)-1)])))
+   }
+   
+   if(type == "linear"){
+      AUClast <- lintrap(DFmean)
+      
+   } else {
+      TMAX <- DFmean$TIME[which.max(DFmean$CONC)]
+      
+      DFup <- DFmean %>% dplyr::filter(TIME <= TMAX)
+      DFdown <- DFmean %>% dplyr::filter(TIME >= TMAX)
+      
+      AUCup <- lintrap(DFup)
+      
+      # function for log trapezoidal rule
+      logtrap <- function(DFdown){
+         sum(# C1 - C2
+            ((DFdown$CONC[1:(length(DFdown$CONC)-1)] -
+                 DFdown$CONC[2:length(DFdown$CONC)]) /
+                # ln(C1) - ln(C2)
+                (log(DFdown$CONC[1:(length(DFdown$CONC)-1)]) -
+                    log(DFdown$CONC[2:length(DFdown$CONC)])) ) *
+               # t2 - t1
+               (DFdown$TIME[2:length(DFdown$TIME)] -
+                   DFdown$TIME[1:(length(DFdown$TIME)-1)]) )
+      }
+      
+      # If any values for concentration are the same for two time points,
+      # which WILL happen randomly sometimes due to inherent limitations
+      # in measurements, use the linear trapezoidal rule to add that
+      # trapezoid to the total AUC. To do that, I'll need to break those
+      # up into multiple DFs.
+      if(any(DFdown$CONC[1:(length(DFdown$CONC)-1)] ==
+             DFdown$CONC[2:length(DFdown$CONC)])){
+         
+         # Noting which are problematic.
+         ProbPoints <- which(DFdown$CONC[1:(length(DFdown$CONC)-1)] ==
+                                DFdown$CONC[2:length(DFdown$CONC)])
+         AUCsToAdd <- c()
+         RowsToUse <- sort(unique(c(1, ProbPoints, ProbPoints + 1,
+                                    nrow(DFdown))))
+         for(k in 1:(length(RowsToUse) - 1)){
+            
+            if(RowsToUse[k] %in% ProbPoints){
+               tempDF <- DFdown[RowsToUse[k]:(RowsToUse[k] + 1), ]
+               AUCsToAdd[k] <- lintrap(tempDF)
             } else {
-                  AUCdown <- logtrap(DFdown)
+               tempDF <- DFdown[RowsToUse[k]:RowsToUse[k + 1], ]
+               AUCsToAdd[k] <- logtrap(tempDF)
             }
-
-            # Adding up and down portions of the curve
-
-            # If AUCup is NA, e.g., when it's an IV bolus so there's no
-            # point where the concentration is increasing, then AUCup will
-            # be NA. Need to account for that with na.rm = T.
-            AUClast <- sum(AUCup, AUCdown, na.rm = TRUE)
+            rm(tempDF)
+         }
+         
+         AUCdown <- sum(AUCsToAdd)
+         
+      } else {
+         AUCdown <- logtrap(DFdown)
       }
-
-      # Total AUC will be AUClast + AUClast_inf. Note that if extrap_inf ==
-      # FALSE, then AUClast_inf is 0.
-      AUC <- AUClast + AUClast_inf
-
-      if(reportFractExtrap | reportC0 | reportTermFit | reportBackExtrapFit){
-            AUC <- list(AUC = AUC)
-
-            if(reportC0 & extrap_t0){
-                  AUC[["C0"]] <- C0
-            }
-
-            if(reportBackExtrapFit & extrap_t0){
-                  AUC[["Back-extrapolation to t0 fit"]] <- Fit_t0
-            }
-
-            if(reportFractExtrap & extrap_inf){
-                  AUC[["Fraction extrapolated to infinity"]] <-
-                        AUClast_inf / AUC[["AUC"]]
-            }
-
-            if(reportTermFit & extrap_inf){
-                  AUC[["Terminal elimination fit"]] <- Fit_inf
-            }
-
+      
+      # Adding up and down portions of the curve
+      
+      # If AUCup is NA, e.g., when it's an IV bolus so there's no
+      # point where the concentration is increasing, then AUCup will
+      # be NA. Need to account for that with na.rm = T.
+      AUClast <- sum(AUCup, AUCdown, na.rm = TRUE)
+   }
+   
+   # Total AUC will be AUClast + AUClast_inf. Note that if extrap_inf ==
+   # FALSE, then AUClast_inf is 0.
+   AUC <- AUClast + AUClast_inf
+   
+   if(reportFractExtrap | reportC0 | reportTermFit | reportBackExtrapFit){
+      AUC <- list(AUC = AUC)
+      
+      if(reportC0 & extrap_t0){
+         AUC[["C0"]] <- C0
       }
-
-      return(AUC)
-
+      
+      if(reportBackExtrapFit & extrap_t0){
+         AUC[["Back-extrapolation to t0 fit"]] <- Fit_t0
+      }
+      
+      if(reportFractExtrap & extrap_inf){
+         AUC[["Fraction extrapolated to infinity"]] <-
+            AUClast_inf / AUC[["AUC"]]
+      }
+      
+      if(reportTermFit & extrap_inf){
+         AUC[["Terminal elimination fit"]] <- Fit_inf
+      }
+      
+   }
+   
+   return(AUC)
+   
 }
 
 
