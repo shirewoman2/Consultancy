@@ -117,7 +117,7 @@
 #'   works), or "both".
 #' @param variability_type If you're including error bars, what kind of
 #'   variability would you like to have those error bars display? Options are
-#'   "90% CI" (default), "95% CI", "CV%", "percentiles", "standard deviation",
+#'   "90\% CI" (default), "95\% CI", "CV\%", "percentiles", "standard deviation",
 #'   ("SD" will also work fine), or "range". If \code{error_bars} is set to
 #'   "none", this will be ignored.
 #' @param point_color_column (optional) the column in \code{PKtable} that should
@@ -1411,7 +1411,7 @@ so_graph <- function(PKtable,
                           aes(x = Observed, 
                               color = point_color_column, 
                               ymin = Var_lower, ymax = Var_upper),
-                          width = BarWidth)
+                          width = BarWidth, show.legend = F)
       } 
       
       if(error_bars_i %in% c("horizontal", "both")){
@@ -1420,7 +1420,7 @@ so_graph <- function(PKtable,
                            aes(y = Simulated, 
                                color = point_color_column, 
                                xmin = ObsVar_lower, xmax = ObsVar_upper), 
-                           height = BarWidth)
+                           height = BarWidth, show.legend = F)
       } 
       
       # Aesthetics for points are determined by:
@@ -1494,8 +1494,9 @@ so_graph <- function(PKtable,
          
          if(length(MyPointShapes) > 3){
             G[[i]] <- G[[i]] + 
-               guides(shape = guide_legend(ncol = ifelse(legend_position %in% c("bottom", "top"), 
-                                                         2, 1)))
+               guides(shape = guide_legend(
+                  ncol = ifelse(legend_position %in% c("bottom", "top"), 
+                                2, 1)))
          }
       }
       

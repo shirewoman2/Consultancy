@@ -151,7 +151,7 @@ works), or "both".}
 
 \item{variability_type}{If you're including error bars, what kind of
 variability would you like to have those error bars display? Options are
-"90% CI" (default), "95% CI", "CV%", "percentiles", "standard deviation",
+"90\% CI" (default), "95\% CI", "CV\%", "percentiles", "standard deviation",
 ("SD" will also work fine), or "range". If \code{error_bars} is set to
 "none", this will be ignored.}
 
