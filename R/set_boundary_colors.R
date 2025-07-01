@@ -490,7 +490,6 @@ make_gmr_highlight_key <- function(highlight_gmr_colors,
       orientation <- "long"
    }
    
-   
    # Main body of function ---------------------------------------------------
    
    highlight_gmr_colors <- set_boundary_colors(color_set = highlight_gmr_colors, 
@@ -596,6 +595,12 @@ make_so_highlight_key <- function(highlight_so_cutoffs,
               call. = FALSE)
       
       orientation <- "long"
+   }
+   
+   if(length(highlight_so_cutoffs) == 1){
+      warning(wrapn("You have only 1 S/O cutoff, so everything will be the same color. We will not make a S/O highlight key for you."), 
+              call. = FALSE)
+      return()
    }
    
    # Main body of function ---------------------------------------------------
