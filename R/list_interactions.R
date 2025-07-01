@@ -51,12 +51,16 @@ list_interactions <- function(sim_data_file,
    
    # Main body of function ---------------------------------------------------
    
+   EnzRegex <- "(CYP|UGT)[0-9]{1,2}[A-Z][0-9]{1,2}|CES[12]|ENZ.USER[1-9]"
+   TranspRegex <- "ASBT|BCRP|BSEP|ENT[12]|GLUT1|MATE1|MATE2_K|MCTC1|MDR1|MRP[1-9]|NTCP|OCT(N)?[123]|OAT[1-9]|OATP[124][BC][1-3]|PEPT1|P(_)?gp"
+   EnzTranspRegex <- paste0(EnzRegex, "|", TranspRegex)
+   
    details_subset <- annotateDetails(existing_exp_details, 
                                      sims_to_include = sim_data_file, 
                                      simulator_section = c("elimination", 
                                                            "transport", 
                                                            "interaction")) %>% 
-      mutate(Pathway = str_extract(Detail, "(CYP|UGT)[0-9]{1,2}[A-Z][0-9]{1,3}|BCRP|Pgp|OAT[237]|OCT(N)?[123]|MATE[12](K)?|OATP[124][BC][13]|MRP[2346]|ASBT|PEPT1|MCT1|ENT[12]|NTCP|MDR1|GLUT1")) %>% 
+      mutate(Pathway = str_extract(Detail, EnzTranspRegex)) %>% 
       rename(Value = {{sim_data_file}}) %>% 
       filter(complete.cases(Pathway) & Value != "0")
    
