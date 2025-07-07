@@ -350,10 +350,15 @@ noncompAUC <- function(DF, concentration = Concentration,
    
    # function for linear trapezoidal rule
    lintrap <- function(DFmean){
-      sum(0.5*((DFmean$TIME[2:length(DFmean$TIME)] -
-                   DFmean$TIME[1:(length(DFmean$TIME)-1)]) *
-                  (DFmean$CONC[2:length(DFmean$CONC)] +
-                      DFmean$CONC[1:(length(DFmean$CONC)-1)])))
+      
+      if(nrow(DFmean) < 2){
+         0
+      } else {
+         sum(0.5*((DFmean$TIME[2:length(DFmean$TIME)] -
+                      DFmean$TIME[1:(length(DFmean$TIME)-1)]) *
+                     (DFmean$CONC[2:length(DFmean$CONC)] +
+                         DFmean$CONC[1:(length(DFmean$CONC)-1)])))
+      }
    }
    
    if(type == "linear"){

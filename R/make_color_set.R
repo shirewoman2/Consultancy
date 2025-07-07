@@ -2,7 +2,8 @@
 #'
 #' @param color_set the set of colors to use. Options: \describe{
 #'
-#'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
+#'   \item{"default" or "Brewer dark 2" or "dark 2"}{a set of colors from Cynthia 
+#'   Brewer et al. from Penn State
 #'   that are friendly to those with red-green colorblindness. The first three
 #'   colors are green, orange, and purple. This can also be referred to as
 #'   "Brewer set 2". If there are only two unique values in the colorBy_column,
@@ -137,7 +138,7 @@ make_color_set <- function(color_set,
       # using scale_color_manual instead of scale_color_x. -LSh
       
       color_set <- ifelse(str_detect(tolower(color_set), 
-                                     "default|brewer.*2|set.*2"), 
+                                     "default|brewer.*2|set.*2|dark.*2"), 
                           "set2", color_set)
       color_set <- ifelse(str_detect(tolower(color_set),
                                      "brewer.*1|set.*1"), 
@@ -160,6 +161,9 @@ make_color_set <- function(color_set,
                # Using "Dark2" b/c "Set2" is just really,
                # really light.
                color_set == "set2" ~ RColorBrewer::brewer.pal(num_colors, "Dark2")[
+                  1:num_colors], 
+               
+               color_set == "dark2" ~ RColorBrewer::brewer.pal(num_colors, "Dark2")[
                   1:num_colors], 
                
                color_set == "blue-green" ~ blueGreens(num_colors, shade = shade),
