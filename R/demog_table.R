@@ -360,7 +360,8 @@ demog_table <- function(demog_dataframe,
                                               "parentheses" = paste0("(", Min, ", ", Max, ")")), 
                              # placeholder
                              "none" = SD), 
-                Var = ifelse(Var == "NA to NA", NA, Var)) 
+                Var = ifelse(Var == "NA to NA", NA, Var)) %>% 
+         select(-any_of(v))
       
       names(Out)[names(Out) == "Var"] <- v
       
