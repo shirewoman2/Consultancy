@@ -503,12 +503,14 @@ extractDemog <- function(sim_data_files = NA,
       )
    }
    
-   Out <- bind_rows(demog_dataframe, AllDemog) %>% 
-      filter(complete.cases(File)) %>% 
-      left_join(bind_rows(Population), 
-                by = "File") %>% 
-      select(any_of(c("File", "Population", "Trial", "Individual")), 
-             everything())
+   suppressMessages(
+      Out <- AllDemog %>% 
+         filter(complete.cases(File)) %>% 
+         left_join(bind_rows(Population)) %>% 
+         bind_rows(demog_dataframe) %>% 
+         select(any_of(c("File", "Population", "Trial", "Individual")), 
+                everything())
+   )
    
    return(Out)
    
