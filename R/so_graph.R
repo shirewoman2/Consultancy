@@ -1134,6 +1134,22 @@ so_graph <- function(PKtable,
       }
    }
    
+   # Checking for any missing values in point_shape_column or point_color_column
+   # b/c that will mess things up.
+   if(any(is.na(SO$point_shape_column))){
+      warning(wrapn(paste0("You have missing values in the column '", 
+                           as_label(point_shape_column), "', which messes up assigning point shapes, so we will use the same point shape for everything.")), 
+              call. = FALSE)
+      SO$point_shape_column <- "A" # placeholder
+   }
+   
+   if(any(is.na(SO$point_color_column))){
+      warning(wrapn(paste0("You have missing values in the column '", 
+                           as_label(point_color_column), "', which messes up assigning point colors, so we will use the same point color for everything.")), 
+              call. = FALSE)
+      SO$point_color_column <- "A" # placeholder
+   }
+   
    if(as_label(point_shape_column) != "<empty>" | 
       all_intervals_together){
       
@@ -1167,8 +1183,39 @@ so_graph <- function(PKtable,
       MyPointShapes <- ifelse(is.na(MyPointShapes), 16, MyPointShapes)
    }
    
-   names(MyPointShapes) <- unique(SO$point_shape_column)
-   names(MyPointColors) <- unique(SO$point_color_column)
+   if(length(MyPointShapes) != length(unique(SO$point_shape_column))){
+      warning(wrapn(paste0("The number of point shapes you requested is not equal to the number of unique values in the column '", 
+                           as_label(point_shape_column), 
+                           "', so we will recycle or remove shapes to get as many as we need.")), 
+              call. = FALSE)
+      
+      if(length(MyPointShapes) > length(unique(SO$point_shape_column))){
+         MyPointShapes <- MyPointShapes[1:length(unique(SO$point_shape_column))]
+      } else {
+         MyPointShapes <- rep(MyPointShapes, 
+                              length(unique(SO$point_shape_column)))[1:length(unique(SO$point_shape_column))]
+         names(MyPointShapes) <- unique(SO$point_shape_column)
+      }
+   } else {
+      names(MyPointShapes) <- unique(SO$point_shape_column)
+   }
+   
+   if(length(MyPointColors) != length(unique(SO$point_color_column))){
+      warning(wrapn(paste0("The number of point colors you requested is not equal to the number of unique values in the column '", 
+                           as_label(point_color_column), 
+                           "', so we will recycle or remove colors to get as many as we need.")), 
+              call. = FALSE)
+      
+      if(length(MyPointColors) > length(unique(SO$point_color_column))){
+         MyPointColors <- MyPointColors[1:length(unique(SO$point_color_column))]
+      } else {
+         MyPointColors <- rep(MyPointColors, 
+                              length(unique(SO$point_color_column)))[1:length(unique(SO$point_color_column))]
+         names(MyPointColors) <- unique(SO$point_color_column)
+      }
+   } else {
+      names(MyPointColors) <- unique(SO$point_color_column)
+   }
    
    SO <- SO %>% 
       mutate(Shape = MyPointShapes[point_shape_column], 
