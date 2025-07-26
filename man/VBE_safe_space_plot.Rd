@@ -36,8 +36,9 @@ e.g., 0.5 for 50\%.}
 the upper and lower limits of the safe space. Data sets that do \emph{not}
 describe the upper or lower limits should have NA in this column, and the
 upper- and lower-limit datasets should be specified as "upper" and "lower".}
-} For an example, please view the object "VBE_disso_example" and set up
-your data like that.}
+} For an example, please view the object "VBE_disso_example" by running
+this in your console: \code{view(VBE_disso_example)} and set up your data
+like that.}
 
 \item{color_set}{the set of colors to use. Options: \describe{
 
@@ -134,14 +135,14 @@ a ggplot2 graph
   indicate the safe space for bioequivalence.
 }
 \examples{
-# Using example data included in the package 
+# Using example data included in the package
 VBE_safe_space_plot(VBE_dataframe = VBE_disso_example)
 
 # Setting some colors for actual and hypothetical datasets
 MyColors_actual <- reds(4)
 names(MyColors_actual) <- c("Formulation A",
                             "Formulation B",
-                            "Formulation C", 
+                            "Formulation C",
                             "Formulation D")
 
 MyColors_hyp <- blues(6)

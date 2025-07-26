@@ -705,8 +705,8 @@ recalc_PK <- function(ct_dataframe,
             )
             
             if(omit_0_concs){
-               # NB: It's appropriate to set this to 0 rather t0 b/c we have
-               # already subtracted t0. t0 = 0 now.
+               # NB: It's appropriate to set this to 0 rather than t0 b/c we
+               # have already subtracted t0. t0 = 0 now.
                CT_temp <- CT_temp %>%
                   filter((Time != 0 & Conc > 0) | Time == 0)
             }
@@ -726,6 +726,13 @@ recalc_PK <- function(ct_dataframe,
                Omit <- NA
             } else {
                Omit <- 1:(nrow(CT_temp) - fit_last_x_number_of_points)
+            }
+            
+            if(nrow(CT_temp) < 2){
+               warning(paste0("There are not enough data to calculate PK for this ID:\n", 
+                              j, "\n"), 
+                       call. = FALSE)
+               next
             }
             
             if(effort_to_get_elimination_rate != "don't try"){

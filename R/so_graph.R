@@ -117,7 +117,7 @@
 #'   works), or "both".
 #' @param variability_type If you're including error bars, what kind of
 #'   variability would you like to have those error bars display? Options are
-#'   "90% CI" (default), "95% CI", "CV%", "percentiles", "standard deviation",
+#'   "90\% CI" (default), "95\% CI", "CV\%", "percentiles", "standard deviation",
 #'   ("SD" will also work fine), or "range". If \code{error_bars} is set to
 #'   "none", this will be ignored.
 #' @param point_color_column (optional) the column in \code{PKtable} that should
@@ -908,7 +908,10 @@ so_graph <- function(PKtable,
          
       } else if(VarType %in% c("5th to 95th Percentile", 
                                "Observed 5th to 95th Percentile", 
-                               "90% CI", "95% CI", "Observed CI", 
+                               "90% CI", "95% CI", 
+                               "Observed 90% CI", 
+                               "Observed 95% CI", 
+                               "Observed CI", 
                                "Observed range", "Range")){
          # VarType must be split to get high and low
          
@@ -965,12 +968,14 @@ so_graph <- function(PKtable,
                                       "90% CI", 
                                       "Observed CI - Lower", 
                                       "Observed CI - Upper", 
-                                      "Observed CI"),
+                                      "Observed CI", 
+                                      "Observed 90% CI"),
                          "95% CI" = c("95% CI - Lower", 
                                       "95% CI - Upper", 
                                       "95% CI", 
                                       "Observed CI - Lower", 
                                       "Observed CI - Upper", 
+                                      "Observed 95% CI",
                                       "Observed CI"), 
                          "CV%" = c("CV%", "Observed CV%"), 
                          "percentiles" = c("5th Percentile", 
@@ -1129,6 +1134,22 @@ so_graph <- function(PKtable,
       }
    }
    
+   # Checking for any missing values in point_shape_column or point_color_column
+   # b/c that will mess things up.
+   if(any(is.na(SO$point_shape_column))){
+      warning(wrapn(paste0("You have missing values in the column '", 
+                           as_label(point_shape_column), "', which messes up assigning point shapes, so we will use the same point shape for everything.")), 
+              call. = FALSE)
+      SO$point_shape_column <- "A" # placeholder
+   }
+   
+   if(any(is.na(SO$point_color_column))){
+      warning(wrapn(paste0("You have missing values in the column '", 
+                           as_label(point_color_column), "', which messes up assigning point colors, so we will use the same point color for everything.")), 
+              call. = FALSE)
+      SO$point_color_column <- "A" # placeholder
+   }
+   
    if(as_label(point_shape_column) != "<empty>" | 
       all_intervals_together){
       
@@ -1162,8 +1183,39 @@ so_graph <- function(PKtable,
       MyPointShapes <- ifelse(is.na(MyPointShapes), 16, MyPointShapes)
    }
    
-   names(MyPointShapes) <- unique(SO$point_shape_column)
-   names(MyPointColors) <- unique(SO$point_color_column)
+   if(length(MyPointShapes) != length(unique(SO$point_shape_column))){
+      warning(wrapn(paste0("The number of point shapes you requested is not equal to the number of unique values in the column '", 
+                           as_label(point_shape_column), 
+                           "', so we will recycle or remove shapes to get as many as we need.")), 
+              call. = FALSE)
+      
+      if(length(MyPointShapes) > length(unique(SO$point_shape_column))){
+         MyPointShapes <- MyPointShapes[1:length(unique(SO$point_shape_column))]
+      } else {
+         MyPointShapes <- rep(MyPointShapes, 
+                              length(unique(SO$point_shape_column)))[1:length(unique(SO$point_shape_column))]
+         names(MyPointShapes) <- unique(SO$point_shape_column)
+      }
+   } else {
+      names(MyPointShapes) <- unique(SO$point_shape_column)
+   }
+   
+   if(length(MyPointColors) != length(unique(SO$point_color_column))){
+      warning(wrapn(paste0("The number of point colors you requested is not equal to the number of unique values in the column '", 
+                           as_label(point_color_column), 
+                           "', so we will recycle or remove colors to get as many as we need.")), 
+              call. = FALSE)
+      
+      if(length(MyPointColors) > length(unique(SO$point_color_column))){
+         MyPointColors <- MyPointColors[1:length(unique(SO$point_color_column))]
+      } else {
+         MyPointColors <- rep(MyPointColors, 
+                              length(unique(SO$point_color_column)))[1:length(unique(SO$point_color_column))]
+         names(MyPointColors) <- unique(SO$point_color_column)
+      }
+   } else {
+      names(MyPointColors) <- unique(SO$point_color_column)
+   }
    
    SO <- SO %>% 
       mutate(Shape = MyPointShapes[point_shape_column], 
@@ -1406,7 +1458,7 @@ so_graph <- function(PKtable,
                           aes(x = Observed, 
                               color = point_color_column, 
                               ymin = Var_lower, ymax = Var_upper),
-                          width = BarWidth)
+                          width = BarWidth, show.legend = F)
       } 
       
       if(error_bars_i %in% c("horizontal", "both")){
@@ -1415,7 +1467,7 @@ so_graph <- function(PKtable,
                            aes(y = Simulated, 
                                color = point_color_column, 
                                xmin = ObsVar_lower, xmax = ObsVar_upper), 
-                           height = BarWidth)
+                           height = BarWidth, show.legend = F)
       } 
       
       # Aesthetics for points are determined by:
@@ -1489,8 +1541,9 @@ so_graph <- function(PKtable,
          
          if(length(MyPointShapes) > 3){
             G[[i]] <- G[[i]] + 
-               guides(shape = guide_legend(ncol = ifelse(legend_position %in% c("bottom", "top"), 
-                                                         2, 1)))
+               guides(shape = guide_legend(
+                  ncol = ifelse(legend_position %in% c("bottom", "top"), 
+                                2, 1)))
          }
       }
       
@@ -1682,7 +1735,10 @@ so_graph <- function(PKtable,
                        # specified neither
                        "TRUE TRUE" = NULL),
          legend = legend_position, 
-         common.legend = TRUE) # FIXME - Switch to patchwork and collect the legends. This makes it so that legend items ONLY include what was in the 1st graph. 
+         common.legend = TRUE) + # FIXME - Switch to patchwork and collect the legends. This makes it so that legend items ONLY include what was in the 1st graph. 
+         ggpubr::bgcolor("white") +
+         ggpubr::border(color = NA)
+      
    }
    
    # Collecting error bar warnings

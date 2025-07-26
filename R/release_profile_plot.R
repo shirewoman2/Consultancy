@@ -538,7 +538,8 @@ release_profile_plot <- function(existing_exp_details,
          }
       }
       
-      Release[[ff]] <- bind_rows(Release[[ff]])
+      Release[[ff]] <- bind_rows(Release[[ff]]) %>% 
+         mutate(File = ff)
       
    }
    
@@ -580,8 +581,6 @@ release_profile_plot <- function(existing_exp_details,
    ct_plot_overlay(
       ct_dataframe = Release, 
       figure_type = figure_type, 
-      # NSE trouble: not enquo alone, not quo, not
-      # substitute, but enquo plus !! here
       colorBy_column = !!colorBy_column,
       linetype_column = !!linetype_column,
       facet1_column = !!facet1_column,

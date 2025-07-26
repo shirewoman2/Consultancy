@@ -130,20 +130,43 @@ checkSS <- function(ct_dataframe,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
-           call. = FALSE)
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
    if(nrow(ct_dataframe) == 0){
-      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+      stop(wrapn("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows."), 
            call. = FALSE)
    }
    
    if(length(sort(unique(ct_dataframe$File))) > 1){
-      stop(paste0("The checkSS function is for graphing only one simulator file at a time, but you have ",
-                  length(sort(unique(ct_dataframe$File))), 
-                  " simulator files. An example of how to rectify this without re-extracting any data, where `CT` is the data.frame of concentration-time data you've already got:
-checkSS(ct_dataframe = CT %>% filter(File == `mysim-01.xlsx`))"),
+      stop(paste0(wrapn(paste0("The checkSS function is for graphing only one simulator file at a time, but you have ",
+                               length(sort(unique(ct_dataframe$File))), 
+                               " simulator files. An example of how to rectify this without re-extracting any data, where `CT` is the data.frame of concentration-time data you've already got:")),
+                  "\n   checkSS(ct_dataframe = CT %>% filter(File == 'mysim-01.xlsx'))"),
+           call. = FALSE)
+   }
+   
+   accum_compoundID <- tolower(accum_compoundID)
+   if(accum_compoundID %in% c(AllRegCompounds$CompoundID, "none") == FALSE){
+      stop(wrapn("You have requested something for accum_compoundID that is not among the permissible options. Please check the help file and try again."), 
+           call. = FALSE)
+   }
+   
+   overlay_compoundID <- tolower(overlay_compoundID)
+   if(overlay_compoundID %in% c(AllRegCompounds$CompoundID, "none") == FALSE){
+      stop(wrapn("You have requested something for overlay_compoundID that is not among the permissible options. Please check the help file and try again."), 
+           call. = FALSE)
+   }
+   
+   if(accum_compoundID != "none" &&
+      nrow(ct_dataframe %>% filter(CompoundID == accum_compoundID)) == 0){
+      stop(wrapn("Please check your input. What you supplied for ct_dataframe doesn't include the compound you wanted to monitor for accumulation."), 
+           call. = FALSE)
+   }
+   
+   if(overlay_compoundID != "none" &&
+      nrow(ct_dataframe %>% filter(CompoundID == overlay_compoundID)) == 0){
+      stop(wrapn("Please check your input. What you supplied for ct_dataframe doesn't include the compound you wanted to show overlaid with the accumulation compound."), 
            call. = FALSE)
    }
    
@@ -179,7 +202,9 @@ checkSS(ct_dataframe = CT %>% filter(File == `mysim-01.xlsx`))"),
    # Adjusting conc units to ng/mL. At some point, we could make this detect
    # the units and then adjust the graph titles to whatever is in the data, but
    # for now, just making everything be ng/mL for convenience.
-   ct_dataframe <- convert_units(ct_dataframe, conc_units = "ng/mL")
+   if(any(ct_dataframe$Conc_units != "ng/mL", na.rm = T)){
+      ct_dataframe <- convert_units(ct_dataframe, conc_units = "ng/mL")
+   }
    
    # suppressMessages(
    SScheck <- ct_dataframe %>% 

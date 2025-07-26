@@ -14,6 +14,7 @@ make_simulation_directory(
   search_workspaces_for_obsfile = FALSE,
   include_possible_obsfiles = TRUE,
   obsfile_path_option = "full path",
+  figure_and_table_assignment = NA,
   report_progress = "no",
   save_table = NA,
   overwrite = "ask"
@@ -62,6 +63,12 @@ an additional 2 seconds per simulation. If you have supplied something for
 'existing_exp_details', you don't need this and we'll ignore it if you set
 this to TRUE.}
 
+\item{include_possible_obsfiles}{TRUE (default) or FALSE for whether to
+include in the output simulation directory possible XML
+observed-data-overlay files. This will be ignored if you have supplied
+something for the argument \code{existing_exp_details} because we'll just
+figure out which observed files you have from that.}
+
 \item{obsfile_path_option}{How would you like to see the observed overlay XML
   file path? Options are: \describe{
 
@@ -76,6 +83,23 @@ this to TRUE.}
   confusion of including the original path.}
 
   \item{"relative"}{Show the path relative to the project folder}}}
+
+\item{figure_and_table_assignment}{optionally supply a data.frame of which
+simulation file matches which figure and table in a report. We won't do
+anything with this beyond use this information to fill in the column
+"Table/Figure" in the simulation directory. To supply this information,
+make a data.frame with a column titled "Filename", which must contain the
+simulation file names (file extensions are optional and will ultimately be
+ignored anyway) and a column titled "Table/Figure", which should contain
+the name of any table or figure in a report that shows data from that
+simulation file. Please use one row per simulation. If there are multiple
+figures or tables for each simulation, you can either list one figure or
+table per row or you can list them together, separated by commas. Here is
+an example: \code{data.frame(File = c("01-abc.xlsx", "02-abc.xlsx",
+"03-abc.xlsx", "03-abc.xlsx"), `Table/Figure` = c("Figure 1, Figure 2,
+Table 1", "Figure 3", "Figure 4", "Table 2"))} The output from running
+\code{\link{find_report_files}} will work great here. Any simulations that
+are not present in your simulation directory will be ignored.}
 
 \item{report_progress}{"yes", "no" (default), or "some" for whether to report
 progress on reading workspaces to find observed XML overlay files. This
@@ -113,5 +137,7 @@ The function \code{make_simulation_directory} will create a
   takes about 2 seconds per simulation.
 }
 \examples{
-# none yet
+make_simulation_directory(
+   project_folder = "C:/Users/Buffy/Project ABC/Modelling",
+   save_table = "Simulation directory for project ABC.xlsx")
 }

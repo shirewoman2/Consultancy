@@ -16,12 +16,24 @@
 #'   want listed in the output table? Options are "arithmetic" or "geometric"
 #'   (default).
 #' @param variability_type What statistic would you like to use for reporting
-#'   the variability? Options are: \describe{\item{"90\% CI" (default)}{90\% confidence
+#'   the variability? Options are:
+#'
+#'   \describe{\item{"90\% CI" (default)}{90\% confidence
 #'   interval; this will be geometric or arithmetic based on your choice for
-#'   \code{mean_type}} \item{"CV"}{coefficient of variation; this will be
+#'   \code{mean_type}}
+#'
+#'   \item{"CV"}{coefficient of variation; this will be
 #'   geometric or arithmetic based on your choice for \code{mean_type}}
-#'   \item{"SD"}{arithmetic standard deviation} \item{"none"}{to get no
+#'
+#'   \item{"SD"}{arithmetic standard deviation}
+#'
+#'   \item{"range"}{range of the data}
+#'
+#'   \item{"none"}{to get no
 #'   variability stats included in the table}}
+#'
+#'   To gt more than one type of variability, use a character vector to specify,
+#'   e.g., \code{variability_type = c("90\% CI", "range")}
 #' @param variability_format formatting used to indicate the variability When
 #'   the variability is concatenated. Options are "to" (default) to get output
 #'   like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
@@ -151,11 +163,30 @@ demog_table <- function(demog_dataframe,
       mean_type <- "geometric"
    }
    
-   # In other functions, for varous reasons, need to convert mean_type to
+   # In other functions, for various reasons, need to convert mean_type to
    # MeanType, so doing that here, too, for consistency.
    MeanType <- mean_type
    
-   variability_type <- ifelse(variability_type == "GCV", "CV", variability_type)
+   variability_type[variability_type == "GCV"] <- "CV"
+   variability_type[tolower(variability_type) == "90ci"] <- "90% CI"
+   variability_type[tolower(variability_type) == "90%ci"] <- "90% CI"
+   variability_type[tolower(variability_type) == "sd"] <- "SD"
+   variability_type[tolower(variability_type) == "cv"] <- "CV"
+   variability_type[tolower(variability_type) == "range"] <- "range"
+   variability_type[tolower(variability_type) == "none"] <- "none"
+   variability_type <- unique(variability_type)
+   
+   if(all(variability_type %in% c("none", "CV", "SD", "90% CI", "range")) == FALSE){
+      warning(wrapn("You have requested at least one item for variability_type that is not among the possible options, so we'll only use the legit variability types and ignore the rest. Please see the help file for acceptable input for variability_type."), 
+              call. = FALSE)
+      variability_type <- intersect(variability_type, c("none", "CV", "SD", "90% CI", "range"))
+   }
+   
+   if(length(variability_type) > 1 & any(variability_type == "none")){
+      warning(wrapn("It appears that you've requested a variability_type other than 'none' but then also requested 'none', so we're not sure what you want. We'll ignore the 'none' bit."), 
+              call. = FALSE)
+      variability_type <- setdiff(variability_type, "none")
+   }
    
    # Checking rounding
    rounding <- tolower(rounding[1])
@@ -229,6 +260,9 @@ demog_table <- function(demog_dataframe,
    
    # Tidying inputs ----------------------------------------------------------
    
+   # FIXME: demog_plot has a column titled "SorO" w/values "simulated" or
+   # "observed" whereas demog_table has a column "Simulated" w/values of T or F.
+   # Need to harmonize this.
    names(demog_dataframe)[
       !names(demog_dataframe) %in% c("File", "Trial", "Individual", "Population", 
                                      "Simulated")] <-
@@ -300,29 +334,46 @@ demog_table <- function(demog_dataframe,
                                "arithmetic" = sd(Value, na.rm = T) / 
                                   mean(Value, na.rm = T),
                                "median" = sd(Value, na.rm = T) / 
-                                  mean(Value, na.rm = T)))
+                                  mean(Value, na.rm = T)), 
+                   Min = min(Value, na.rm = T), 
+                   Max = max(Value, na.rm = T))
    ))
    
    Out <- Out %>% ungroup() %>% 
       mutate(across(.cols = -GroupCols, 
-                    .fns = function(x) round_opt(x, round_fun = rounding)),  
-             Var = switch(variability_type, 
-                          "90% CI" = switch(variability_format, 
-                                            "to" = paste(CI90_l, "to", CI90_u), 
-                                            "hyphen" = paste(CI90_l, "-", CI90_u), 
-                                            "brackets" = paste0("[", CI90_l, ", ", CI90_u, "]"),
-                                            "parentheses" = paste0("(", CI90_l, ", ", CI90_u, ")")), 
-                          "CV" = CV, 
-                          "SD" = SD, 
-                          # placeholder
-                          "none" = SD), 
-             Var = ifelse(Var == "NA to NA", NA, Var), 
-             Value = switch(mean_type, 
+                    .fns = function(x) round_opt(x, round_fun = rounding)))
+   
+   for(v in variability_type){
+      Out <- Out %>% 
+         mutate(Var = switch(v, 
+                             "90% CI" = switch(variability_format, 
+                                               "to" = paste(CI90_l, "to", CI90_u), 
+                                               "hyphen" = paste(CI90_l, "-", CI90_u), 
+                                               "brackets" = paste0("[", CI90_l, ", ", CI90_u, "]"),
+                                               "parentheses" = paste0("(", CI90_l, ", ", CI90_u, ")")), 
+                             "CV" = CV, 
+                             "SD" = SD,
+                             "range" = switch(variability_format, 
+                                              "to" = paste(Min, "to", Max), 
+                                              "hyphen" = paste(Min, "-", Max), 
+                                              "brackets" = paste0("[", Min, ", ", Max, "]"),
+                                              "parentheses" = paste0("(", Min, ", ", Max, ")")), 
+                             # placeholder
+                             "none" = SD), 
+                Var = ifelse(Var == "NA to NA", NA, Var)) %>% 
+         select(-any_of(v))
+      
+      names(Out)[names(Out) == "Var"] <- v
+      
+   }
+   
+   Out <- Out %>% 
+      mutate(Value = switch(mean_type, 
                             "geometric" = Geomean, 
                             "arithmetic" = Mean, 
                             "median" = Median)) %>% 
-      select(any_of(c(GroupCols, "Value", "Var"))) %>% 
-      pivot_longer(cols = c(Value, Var), 
+      select(any_of(c(GroupCols, "Value", variability_type))) %>% 
+      pivot_longer(cols = c(Value, any_of(variability_type)), 
                    names_to = "Statistic", 
                    values_to = "Val") %>% 
       mutate(Statistic = case_when(Statistic == "Value" & 
@@ -331,17 +382,15 @@ demog_table <- function(demog_dataframe,
                                       {{mean_type}} == "arithmetic" ~ "mean", 
                                    Statistic == "Value" & 
                                       {{mean_type}} == "median" ~ "median", 
-                                   Statistic == "Var" & 
-                                      {{variability_type}} == "90% CI" ~ "90% confidence interval", 
-                                   Statistic == "Var" & 
-                                      {{variability_type}} == "CV" ~ "coefficient of variation", 
-                                   Statistic == "Var" & 
-                                      {{variability_type}} == "SD" ~ "standard deviation", 
-                                   Statistic == "Var" & 
-                                      {{variability_type}} == "none" ~ "REMOVE THIS ROW"), 
+                                   Statistic == "90% CI" ~ "90% confidence interval", 
+                                   Statistic == "CV" ~ "coefficient of variation", 
+                                   Statistic == "SD" ~ "standard deviation", 
+                                   Statistic ==  "none" ~ "REMOVE THIS ROW", 
+                                   .default = Statistic), 
              `Simulated or observed` = ifelse(Simulated == TRUE, "simulated", "observed"), 
              Parameter = DemogLabs[Parameter]) %>% 
-      select(-Simulated)
+      select(-Simulated) %>% 
+      filter(!Statistic == "REMOVE THIS ROW")
    
    # Adjusting capitalization of column for sex if present
    names(Out)[which(names(Out) == "sex")] <- "Sex"
@@ -354,10 +403,6 @@ demog_table <- function(demog_dataframe,
          mutate(Population = sim_file_labels[File]) %>% 
          select(-File) %>% 
          select(Population, everything())
-   }
-   
-   if(variability_type == "none"){
-      Out <- Out %>% filter(!Statistic == "REMOVE THIS ROW")
    }
    
    if(include_SorO_column == FALSE & 

@@ -9,7 +9,8 @@ make_color_set(color_set, num_colors, shade = NA)
 \arguments{
 \item{color_set}{the set of colors to use. Options: \describe{
 
-  \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
+  \item{"default" or "Brewer dark 2" or "dark 2"}{a set of colors from Cynthia 
+  Brewer et al. from Penn State
   that are friendly to those with red-green colorblindness. The first three
   colors are green, orange, and purple. This can also be referred to as
   "Brewer set 2". If there are only two unique values in the colorBy_column,

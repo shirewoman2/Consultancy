@@ -228,9 +228,34 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
    # Main function ------------------------------------------------------------
    
    if(any(sims_to_include != "all")){
+      
+      MissingSims <- setdiff(sims_to_include, 
+                             existing_exp_details$MainDetails$File)
+      
+      if(length(MissingSims) > 0){
+         
+         if(all(sims_to_include %in% MissingSims)){
+            stop(paste0(
+               wrapn("You requested that we use the following simulation(s) for making your Simcyp inputs table:"),
+               str_c(paste0("   '", sims_to_include, "'"), collapse = "\n"), "\n",  
+               wrapn("but that/those simulation(s) are not present in your data, so we cannot generate your table.")), 
+               call. = FALSE)
+         } else {
+            warning(paste0(
+               wrapn("The following simulation(s), which were included in 'sims_to_include', are not present in your data and will be ignored:"),
+               str_c(paste0("   '", sims_to_include, "'"), collapse = "\n")), 
+               call. = FALSE)
+         }
+      }
+      
       existing_exp_details <- filter_sims(existing_exp_details, 
                                           sims_to_include, 
                                           "include")
+   }
+   
+   if(nrow(existing_exp_details$MainDetails) == 0){
+      stop(wrapn("There are no data present for making a Simcyp inputs table. Please check your input for 'existing_exp_details' and try again."), 
+           call. = FALSE)
    }
    
    FT <- annotateDetails(existing_exp_details = existing_exp_details, 
@@ -357,7 +382,7 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
                select(Detail, ReportTableText) %>% 
                mutate(Detail = sub(str_c(AllRegCompounds$Suffix, collapse = "|"), 
                                    "", Detail)) %>% unique(), 
-                   by = "Detail") %>% 
+            by = "Detail") %>% 
          mutate(Parameter = 
                    case_when(
                       is.na(Notes) ~ Detail,

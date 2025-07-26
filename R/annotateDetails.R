@@ -558,9 +558,14 @@ annotateDetails <- function(existing_exp_details,
          left_join(CompoundNames)
    )
    
-   # Metabolism and interaction parameters won't match input details, so
-   # adding which sheet they came from and what simulator section they
-   # were. Also adding some notes explaining what detail is.
+   # Metabolism and interaction parameters won't match input details, so adding
+   # which sheet they came from and what simulator section they were. Also
+   # adding some notes explaining what detail is.
+   
+   EnzRegex <- "(CYP|UGT)[0-9]{1,2}[A-Z][0-9]{1,2}|CES[12]|ENZ.USER[1-9]"
+   TranspRegex <- "ASBT|BCRP|BSEP|ENT[12]|GLUT1|MATE1|MATE2_K|MCTC1|MDR1|MRP[1-9]|NTCP|OCT(N)?[123]|OAT[1-9]|OATP[124][BC][1-3]|PEPT1|P(_)?gp"
+   EnzTranspRegex <- paste0(EnzRegex, "|", TranspRegex)
+   
    MainDetails <- MainDetails %>% unique() %>% 
       mutate(
          # Elimination details
@@ -581,8 +586,7 @@ annotateDetails <- function(existing_exp_details,
          SimulatorSection = ifelse(str_detect(Detail, "^Transport"), 
                                    "Transport", SimulatorSection), 
          
-         Enzyme = str_extract(Detail, 
-                              "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp"), 
+         Enzyme = str_extract(Detail, EnzTranspRegex), 
          
          DetailType = case_when(str_detect(Detail, "^CL|Vmax|Km|Jmax|HalfLife") ~ "CL", 
                                 str_detect(Detail, "MBI") ~ "MBI", 
@@ -599,13 +603,13 @@ annotateDetails <- function(existing_exp_details,
             str_detect(Detail, "CLint_biliary") ~ "Additional biliary CLint (uL/min/10^6)",
             
             str_detect(Detail, "CLint_CYP|CLint_UGT|CLint_ENZ.USER[1-9]|CLint_Intestine|CLint_Liver") ~ 
-               paste(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|Intestine|Liver"),
+               paste(str_extract(Detail, EnzRegex), 
                      "CLint", 
                      case_when(str_detect(Detail, "Intestine|Liver") ~ "(uL/min/mg protein)", 
                                .default = "(uL/min/pmol)")),
             
             str_detect(Detail, "^Transporter") ~ 
-               paste0(str_extract(Detail, "ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp"),
+               paste0(str_extract(Detail, TranspRegex),
                       " ", 
                       case_when(str_detect(Detail, "Apical") ~ "apical ", 
                                 str_detect(Detail, "Basolateral") ~ "basolateral ", 
@@ -662,24 +666,30 @@ annotateDetails <- function(existing_exp_details,
                                 str_detect(Detail, "^Ki") ~ "competitive inhibition of ",
                                 .default = ""), 
                       
-                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP")),
+                      str_extract(Detail, EnzTranspRegex)),
             
             # enzyme kinetics 
             str_detect(Detail, "^Km_") ~ 
-               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+               paste0(str_extract(Detail, EnzTranspRegex), 
                       " Km", 
                       case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (uM)", 
                                 .default = "")), 
             
             str_detect(Detail, "^Vmax_") ~ 
-               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+               paste0(str_extract(Detail, EnzRegex), 
                       " Vmax", 
+                      case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (pmol/min/pmol)"), 
+                      .default = ""), 
+            
+            str_detect(Detail, "^Jmax_") ~ 
+               paste0(str_extract(Detail, TranspRegex), 
+                      " Jmax", 
                       case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (pmol/min/pmol)"), 
                       .default = ""), 
             
             # inhibition
             str_detect(Detail, "^Ki_") ~ 
-               paste0(str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp"), 
+               paste0(str_extract(Detail, EnzTranspRegex), 
                       " competitive inhibition constant", 
                       case_when(str_detect(Detail, "Gut|Kidney|Liver") ~
                                    paste0(" in ", 
@@ -688,21 +698,23 @@ annotateDetails <- function(existing_exp_details,
             
             str_detect(Detail, "MBI_Kapp") ~ 
                paste("Kapp for mechanism-based inactivation of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp")), 
+                     str_extract(Detail, EnzTranspRegex)), 
             
             str_detect(Detail, "MBI_kinact") ~ 
                paste("kinact for mechanism-based inactivation of", 
-                     str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp")), 
+                     str_extract(Detail, EnzTranspRegex)), 
             
             # Induction
             str_detect(Detail, "^Ind") ~ 
-               paste0(case_when(str_detect(Detail, "IndMax|IndC50") ~ str_extract(Detail, "IndMax|IndC50"), 
-                                str_detect(Detail, "Ind_gamma") ~ "induction Hill coefficient (gamma)", 
-                                str_detect(Detail, "slope") ~ "induction slope"), 
-                      " for ", 
-                      str_extract(Detail, "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP|P_gp")),
+               paste0(
+                  case_when(
+                     str_detect(Detail, "IndMax|IndC50") ~ str_extract(Detail, "IndMax|IndC50"), 
+                     str_detect(Detail, "Ind_gamma") ~ "induction Hill coefficient (gamma)", 
+                     str_detect(Detail, "slope") ~ "induction slope"), 
+                  " for ", 
+                  str_extract(Detail, EnzTranspRegex)),
             
-            TRUE ~ Notes),
+            .default = Notes),
          
          # Doing a little more cleanup of Notes
          Notes = gsub("MATE2_K", "MATE2-K", Notes), 
@@ -744,13 +756,15 @@ annotateDetails <- function(existing_exp_details,
       select(-N) %>% 
       left_join(MainDetails %>% select(Notes, Detail), by = "Notes") %>% 
       unique() %>% 
-      mutate(Enzyme = str_extract(Detail, 
-                                  "(CYP|UGT)[1-3][ABCDEJ][1-9]{1,2}|ENZ.USER[1-9]|BCRP|BSEP|OCT[12]|OAT[1-3]|OATP[12]B[1-3]|MATE1|MATE2_K|MRP[1-4]|NTCP"), 
+      mutate(Enzyme = str_extract(Detail, EnzTranspRegex), 
              Pathway = str_extract(Detail, pattern = paste0(Enzyme, ".*_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)")), 
              Pathway = str_remove(Pathway, paste0(Enzyme, "_")), 
              Pathway = str_remove(Pathway, "_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)"), 
              Pathway = sub("OH", "-OH", Pathway), 
              Pathway = sub("^-", "", Pathway), 
+             Pathway = str_replace(Pathway, "Gut", "gut"), 
+             Pathway = str_replace(Pathway, "Liver", "liver"), 
+             Pathway = str_replace(Pathway, "Kidney", "kidney"), 
              Pathway = str_replace(Notes, Enzyme, paste0(Enzyme, " (", Pathway, " pathway)"))) %>% 
       # Removing some things that wind up being duplicates here b/c the
       # Simulator codes them oddly
@@ -758,7 +772,7 @@ annotateDetails <- function(existing_exp_details,
    
    if(nrow(PathwayCheck) > 0){
       MainDetails <- MainDetails %>% 
-         left_join(PathwayCheck %>% select(Detail, Pathway), by = "Detail") %>% 
+         left_join(PathwayCheck %>% select(Detail, Pathway) %>% unique(), by = "Detail") %>% 
          mutate(Notes = case_when(complete.cases(Pathway) ~ Pathway,
                                   .default = Notes))
    }

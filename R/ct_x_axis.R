@@ -33,9 +33,10 @@ ct_x_axis <- function(Data, time_range, t0,
                              "all obs", "all observed", "last obs", 
                              "last observed", "last to last obs", 
                              "last dose to last observed", 
-                             "last to end", "last dose to end")) &
+                             "last to end", "last dose to end", 
+                             "last day", "first day")) &
       !any(str_detect(tolower(time_range), "^dose|^day"))){
-      warning(wrapn("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), day number(s) (this option must start with 'day'), 'all observed', 'last observed', 'last dose to end', or a numeric time range, e.g., c(12, 24). For now, we'll use the full time range."),
+      warning(wrapn("time_range must be 'first dose', 'last dose', 'penultimate dose', dose number(s) (this option must start with 'dose'), day number(s) (this option must start with 'day'), 'last day', 'all observed', 'last observed', 'last dose to end', or a numeric time range, e.g., c(12, 24). For now, we'll use the full time range."),
               call. = FALSE)
       time_range <- NA
    }
@@ -50,34 +51,6 @@ ct_x_axis <- function(Data, time_range, t0,
    }
    
    TimeUnits <- sort(unique(Data$Time_units))
-   
-   # Changing my mind about this b/c if user specifies a time range, they should
-   # be able to GET that time range. Using this error catch can lead to
-   # weird-looking x axes w/intervals s/a 1.003, 49.003, etc. 
-   
-   # # A little more error catching
-   # if(all(complete.cases(time_range))){
-   #    if(class(time_range) == "numeric" &&
-   #       (any(time_range < switch(as.character(EnzPlot), 
-   #                                "TRUE" = min(Data$Time), 
-   #                                "FALSE" = min(Data$Time[Data$Simulated == TRUE]))) |
-   #        any(time_range > switch(as.character(EnzPlot), 
-   #                                "TRUE" = max(Data$Time), 
-   #                                "FALSE" = max(Data$Time[Data$Simulated == TRUE]))))){
-   #       warning(paste0(
-   #          "Both of the values entered for the time range must be within the range of time simulated. The range of time in your simulation was ",
-   #          switch(as.character(EnzPlot), 
-   #                 "TRUE" = str_c(range(Data$Time), collapse = " to "), 
-   #                 "FALSE" = str_c(range(Data$Time[Data$Simulated == TRUE]), collapse = " to ")),
-   #          " ", TimeUnits,
-   #          ". We'll use that range instead."),
-   #          call. = FALSE)
-   #       
-   #       time_range <- switch(as.character(EnzPlot), 
-   #                            "TRUE" = range(Data$Time), 
-   #                            "FALSE" = range(Data$Time[Data$Simulated == TRUE]))
-   #    }
-   # }
    
    # Adjusting graph labels as appropriate for the observed data
    xlab <- switch(TimeUnits,
@@ -99,6 +72,12 @@ ct_x_axis <- function(Data, time_range, t0,
          # Things work most consistently if "first dose" becomes "dose 1". 
          time_range <- sub("first dose", "dose 1", time_range)
          time_range_input <- "dose 1"
+      }
+      
+      if(complete.cases(time_range) && str_detect(time_range, "first day")){
+         # Things work most consistently if "first day" becomes "day 1". 
+         time_range <- sub("first day", "day 1", time_range)
+         time_range_input <- "day 1"
       }
       
       if(EnzPlot){
@@ -168,6 +147,18 @@ ct_x_axis <- function(Data, time_range, t0,
                                        filter(DoseNum == MaxNumDoses - 1) %>% pull(t0),
                                     LastDoseStart = DoseTimes1 %>% 
                                        filter(DoseNum == MaxNumDoses) %>% pull(t0))
+            
+            DoseDays <- Data %>% 
+               mutate(Day = Time %/% 24 + 1) %>% 
+               filter(CompoundID == MyCompoundID) %>%
+               group_by(Day) %>%
+               summarize(t0 = round(min(Time)), 
+                         tlast = ceiling(max(Time))) %>% 
+               ungroup() %>% 
+               # removing from consideration the last time point if it's the
+               # ONLY time point for that day, which can often happen
+               filter(t0 != tlast)
+            
          }
          
          if(all(complete.cases(time_range_input)) && 
@@ -200,15 +191,22 @@ ct_x_axis <- function(Data, time_range, t0,
             time_range <- c(DoseTimes$LastDoseStart, max(Data$Time))
          }
          
+         if(all(complete.cases(time_range_input)) &&
+            str_detect(time_range_input, "last day")){
+            time_range <- DoseDays %>% 
+               filter(Day == max(Day)) %>% 
+               select(t0, tlast) %>% t() %>% as.numeric()
+         }
+         
          if(all(complete.cases(time_range_input)) && 
             str_detect(tolower(time_range_input), "^dose")){
             
-            if(str_detect(time_range_input, "to")){
+            if(str_detect(time_range_input, "to|-")){
                
                DoseNumToPull <- as.numeric(
                   str_trim(str_split(
                      gsub("dose(s)?|substrate|inhibitor [12]", "", 
-                          time_range_input), "to")[[1]]))
+                          time_range_input), "to|-")[[1]]))
                
             } else {
                
@@ -299,7 +297,7 @@ ct_x_axis <- function(Data, time_range, t0,
       }
    }
    
-   # Setting the time range if it's not already set 
+   # Setting the time range if it's NA
    if(is.na(time_range_input[1])){
       
       TEMP_range <- switch(as.character(EnzPlot), 

@@ -86,7 +86,8 @@ if(any(complete.cases(highlight_so_cutoffs))){
 
 ```{r}
 
-if(any(complete.cases(highlight_so_cutoffs))){
+if(any(complete.cases(highlight_so_cutoffs)) & 
+   all(highlight_so_cutoffs == 1) == FALSE){
    
    make_so_highlight_key(highlight_so_cutoffs = highlight_so_cutoffs, 
                          highlight_so_colors = highlight_so_colors, 
@@ -100,7 +101,8 @@ if(any(complete.cases(highlight_so_cutoffs))){
 
 ```{r}
 
-if(any(complete.cases(highlight_so_cutoffs))){
+if(any(complete.cases(highlight_so_cutoffs)) & 
+   all(highlight_so_cutoffs == 1) == FALSE){
    
    make_so_highlight_key(highlight_so_cutoffs = highlight_so_cutoffs, 
                          highlight_so_colors = highlight_so_colors, 

@@ -22,8 +22,9 @@
 #'   the upper and lower limits of the safe space. Data sets that do \emph{not}
 #'   describe the upper or lower limits should have NA in this column, and the
 #'   upper- and lower-limit datasets should be specified as "upper" and "lower".}
-#'   } For an example, please view the object "VBE_disso_example" and set up
-#'   your data like that.
+#'   } For an example, please view the object "VBE_disso_example" by running
+#'   this in your console: \code{view(VBE_disso_example)} and set up your data
+#'   like that.
 #' @param color_set the set of colors to use. Options: \describe{
 #'
 #'   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
@@ -106,28 +107,28 @@
 #' @export
 #'
 #' @examples
-#' # Using example data included in the package 
+#' # Using example data included in the package
 #' VBE_safe_space_plot(VBE_dataframe = VBE_disso_example)
-#' 
+#'
 #' # Setting some colors for actual and hypothetical datasets
 #' MyColors_actual <- reds(4)
 #' names(MyColors_actual) <- c("Formulation A",
 #'                             "Formulation B",
-#'                             "Formulation C", 
+#'                             "Formulation C",
 #'                             "Formulation D")
-#' 
+#'
 #' MyColors_hyp <- blues(6)
 #' names(MyColors_hyp) <- paste("Test", 1:6)
-#' 
+#'
 #' MyColors <- c(MyColors_actual, MyColors_hyp)
-#' 
+#'
 #' VBE_safe_space_plot(VBE_dataframe = VBE_disso_example,
 #'                     color_set = MyColors,
 #'                     safe_space_color = "gray80",
 #'                     linetypes = c("solid", "longdash"),
 #'                     save_graph = "VBE safe space.png",
 #'                     fig_height = 4, fig_width = 6)
-#' 
+#'
 #' 
 VBE_safe_space_plot <- function(VBE_dataframe, 
                                 color_set = NA, 
@@ -205,23 +206,24 @@ VBE_safe_space_plot <- function(VBE_dataframe,
                                num_colors = Ncol)
    
    # Reshaping data to add a ribbon
-   RibbonLimits <- VBE_dataframe %>% 
+   SSPolygon <- VBE_dataframe %>% 
       filter(complete.cases(Limit)) %>% 
-      select(Time, SorO, Limit, Dissolution) %>% unique() %>% 
-      pivot_wider(names_from = Limit, values_from = Dissolution)
+      select(Time, SorO, Limit, Dissolution) %>% unique()
+   
+   SSPolygon <- split(SSPolygon, f = SSPolygon$Limit)
+   SSPolygon$lower <- SSPolygon$lower %>% arrange(Time)
+   SSPolygon$upper <- SSPolygon$upper %>% arrange(desc(Time))
+   SSPolygon <- bind_rows(SSPolygon)
    
    G <- ggplot(data = VBE_dataframe, 
           aes(x = Time, y = Dissolution, 
               color = Type, shape = SorO, linetype = SorO, 
               linewidth = SorO, size = SorO)) +
-      # NB: ggplot graphs are stacked layer upon layer, so, if we want the
-      # shading to be underneath the points and lines, we will add the shading
-      # first and the lines and points second and third.
-      geom_ribbon(data = RibbonLimits, 
-                  aes(x = Time, ymin = lower, ymax = upper), 
-                  inherit.aes = FALSE, 
-                  alpha = safe_space_trans, 
-                  fill = safe_space_color, color = NA) +
+      geom_polygon(data = SSPolygon, 
+                   aes(x = Time, y = Dissolution), 
+                   fill = safe_space_color, 
+                   alpha = safe_space_trans, 
+                   inherit.aes = F) +
       geom_line() +
       geom_point() +
       scale_color_manual(values = color_set) +

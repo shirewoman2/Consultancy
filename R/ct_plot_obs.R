@@ -491,14 +491,9 @@ ct_plot_obs <- function(ct_dataframe,
       
       # For calculating means, grouping by everything except conc and columns
       # that would be just for one individual. 
-      GroupingCols <- c("Compound", "CompoundID", "Inhibitor", "Simulated",
-                        "Tissue", "Time", "Time_units", "Conc_units",
-                        "Dose_sub", "Dose_inhib", "Dose_inhib2", 
-                        "InfDuration_sub", "InfDuration_inhib", 
-                        "InfDuration_inhib2", "Dose_units", "DoseNum", 
-                        "ObsFile", "Period", "Species", 
-                        setdiff(NSEcols, "Individual"))
-      
+      GroupingCols <- setdiff(names(ct_dataframe), 
+                              c("Individual", "SD_SE", "Conc"))
+
       suppressMessages(
          CTagg <- ct_dataframe %>% 
             group_by(across(.cols = any_of(GroupingCols))) %>% 
@@ -516,6 +511,15 @@ ct_plot_obs <- function(ct_dataframe,
       
       ct_dataframe <- bind_rows(ct_dataframe, CTagg)
       
+   } else {
+      # If "obs mean", etc., are included in Trial column, need to change those
+      # to just, e.g., "mean" to hack this to work w/ct_plot_overlay.
+      ct_dataframe <- ct_dataframe %>% 
+         mutate(Trial = sub("obs ", "", Trial), 
+                IndivOrAgg = case_when(
+                   Trial %in% c("mean", "geomean", "median", "per5",
+                                "per95") ~ "aggregate", 
+                   .default = "individual"))
    }
    
    # DoseNum column might not be present. Setting to NA in that case.
@@ -533,69 +537,70 @@ ct_plot_obs <- function(ct_dataframe,
    ct_dataframe$Compound[is.na(ct_dataframe$Compound)] <- "UNKNOWN COMPOUND"
    
    # Including hacks to make this work
-   ct_plot_overlay(ct_dataframe %>% 
-                      mutate(Tissue_subtype = NA, 
-                             File = ObsFile, 
-                             Simulated = ifelse(
-                                Trial %in% c("mean", "geomean", "median"), TRUE, FALSE)), 
-                   normalize_by_dose = normalize_by_dose, 
-                   colorBy_column = !!colorBy_column,
-                   linetype_column = !!linetype_column,
-                   facet1_column = !!facet1_column,
-                   facet1_title = facet1_title, 
-                   facet2_column = !!facet2_column,
-                   facet2_title = facet2_title, 
-                   obs_to_sim_assignment = NA,
-                   mean_type = mean_type,
-                   figure_type = "means only", 
-                   linear_or_log = linear_or_log,
-                   color_labels = color_labels, 
-                   legend_label_color = legend_label_color,
-                   color_set = color_set,
-                   obs_shape = obs_shape,
-                   obs_color = obs_color,
-                   obs_size = obs_size,
-                   obs_fill_trans = obs_fill_trans, 
-                   obs_line_trans = obs_line_trans, 
-                   obs_on_top = indiv_on_top,
-                   connect_obs_points = connect_obs_points,
-                   include_errorbars = include_errorbars, 
-                   errorbar_width = errorbar_width,
-                   linetype_labels = linetype_labels, 
-                   linetypes = linetypes,
-                   line_width = line_width,
-                   line_transparency = line_transparency,
-                   legend_label_linetype = legend_label_linetype,
-                   facet_ncol = facet_ncol, 
-                   facet_nrow = facet_nrow,
-                   floating_facet_scale = floating_facet_scale,
-                   facet_spacing = facet_spacing,
-                   time_range = time_range, 
-                   time_units_to_use = time_units_to_use, 
-                   x_axis_interval = x_axis_interval,
-                   x_axis_label = x_axis_label,
-                   pad_x_axis = pad_x_axis,
-                   pad_y_axis = pad_y_axis,
-                   y_axis_limits_lin = y_axis_limits_lin,
-                   y_axis_limits_log = y_axis_limits_log, 
-                   y_axis_interval = y_axis_interval,
-                   y_axis_label = y_axis_label,
-                   hline_position = hline_position, 
-                   hline_style = hline_style, 
-                   vline_position = vline_position, 
-                   vline_style = vline_style,
-                   name_clinical_study = name_clinical_study, 
-                   graph_labels = graph_labels,
-                   graph_title = graph_title,
-                   graph_title_size = graph_title_size, 
-                   legend_position = legend_position,
-                   legend_orientation = legend_orientation, 
-                   prettify_compound_names = prettify_compound_names,
-                   qc_graph = FALSE,
-                   existing_exp_details = NA,
-                   save_graph = save_graph,
-                   fig_height = fig_height,
-                   fig_width = fig_width)  
+   ct_plot_overlay(
+      ct_dataframe %>% 
+         mutate(Tissue_subtype = NA, 
+                File = ObsFile, 
+                Simulated = ifelse(
+                   Trial %in% c("mean", "geomean", "median"), TRUE, FALSE)), 
+      normalize_by_dose = normalize_by_dose, 
+      colorBy_column = !!colorBy_column,
+      linetype_column = !!linetype_column,
+      facet1_column = !!facet1_column,
+      facet1_title = facet1_title, 
+      facet2_column = !!facet2_column,
+      facet2_title = facet2_title, 
+      obs_to_sim_assignment = NA,
+      mean_type = mean_type,
+      figure_type = "means only", 
+      linear_or_log = linear_or_log,
+      color_labels = color_labels, 
+      legend_label_color = legend_label_color,
+      color_set = color_set,
+      obs_shape = obs_shape,
+      obs_color = obs_color,
+      obs_size = obs_size,
+      obs_fill_trans = obs_fill_trans, 
+      obs_line_trans = obs_line_trans, 
+      obs_on_top = indiv_on_top,
+      connect_obs_points = connect_obs_points,
+      include_errorbars = include_errorbars, 
+      errorbar_width = errorbar_width,
+      linetype_labels = linetype_labels, 
+      linetypes = linetypes,
+      line_width = line_width,
+      line_transparency = line_transparency,
+      legend_label_linetype = legend_label_linetype,
+      facet_ncol = facet_ncol, 
+      facet_nrow = facet_nrow,
+      floating_facet_scale = floating_facet_scale,
+      facet_spacing = facet_spacing,
+      time_range = time_range, 
+      time_units_to_use = time_units_to_use, 
+      x_axis_interval = x_axis_interval,
+      x_axis_label = x_axis_label,
+      pad_x_axis = pad_x_axis,
+      pad_y_axis = pad_y_axis,
+      y_axis_limits_lin = y_axis_limits_lin,
+      y_axis_limits_log = y_axis_limits_log, 
+      y_axis_interval = y_axis_interval,
+      y_axis_label = y_axis_label,
+      hline_position = hline_position, 
+      hline_style = hline_style, 
+      vline_position = vline_position, 
+      vline_style = vline_style,
+      name_clinical_study = name_clinical_study, 
+      graph_labels = graph_labels,
+      graph_title = graph_title,
+      graph_title_size = graph_title_size, 
+      legend_position = legend_position,
+      legend_orientation = legend_orientation, 
+      prettify_compound_names = prettify_compound_names,
+      qc_graph = FALSE,
+      existing_exp_details = NA,
+      save_graph = save_graph,
+      fig_height = fig_height,
+      fig_width = fig_width)  
    
 }
 

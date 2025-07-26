@@ -65,12 +65,24 @@ want listed in the output table? Options are "arithmetic" or "geometric"
 (default).}
 
 \item{variability_type}{What statistic would you like to use for reporting
-the variability? Options are: \describe{\item{"90\% CI" (default)}{90\% confidence
-interval; this will be geometric or arithmetic based on your choice for
-\code{mean_type}} \item{"CV"}{coefficient of variation; this will be
-geometric or arithmetic based on your choice for \code{mean_type}}
-\item{"SD"}{arithmetic standard deviation} \item{"none"}{to get no
-variability stats included in the table}}}
+  the variability? Options are:
+
+  \describe{\item{"90\% CI" (default)}{90\% confidence
+  interval; this will be geometric or arithmetic based on your choice for
+  \code{mean_type}}
+
+  \item{"CV"}{coefficient of variation; this will be
+  geometric or arithmetic based on your choice for \code{mean_type}}
+
+  \item{"SD"}{arithmetic standard deviation}
+
+  \item{"range"}{range of the data}
+
+  \item{"none"}{to get no
+  variability stats included in the table}}
+
+  To gt more than one type of variability, use a character vector to specify,
+  e.g., \code{variability_type = c("90\% CI", "range")}}
 
 \item{variability_format}{formatting used to indicate the variability When
 the variability is concatenated. Options are "to" (default) to get output

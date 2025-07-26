@@ -71,7 +71,7 @@
 #'   \item{"relative"}{Show the path relative to the project folder}}
 #'
 #' @param save_table optionally specify an Excel file name for saving your
-#'   simulation directory. 
+#'   simulation directory.
 #' @param overwrite Should we overwrite if your Excel file already exists and
 #'   already has a tab named "Simulation directory"? Options are "yes" to always
 #'   overwrite, "no" to never overwrite, or "ask" (default), which means that we
@@ -84,12 +84,35 @@
 #'   workspace as it is read. Setting this to "some" will report a message
 #'   saying when it has started and when it has finished reading workspaces, and
 #'   setting this to "no" will give no progress messages.
+#' @param include_possible_obsfiles TRUE (default) or FALSE for whether to
+#'   include in the output simulation directory possible XML
+#'   observed-data-overlay files. This will be ignored if you have supplied
+#'   something for the argument \code{existing_exp_details} because we'll just
+#'   figure out which observed files you have from that.
+#' @param figure_and_table_assignment optionally supply a data.frame of which
+#'   simulation file matches which figure and table in a report. We won't do
+#'   anything with this beyond use this information to fill in the column
+#'   "Table/Figure" in the simulation directory. To supply this information,
+#'   make a data.frame with a column titled "Filename", which must contain the
+#'   simulation file names (file extensions are optional and will ultimately be
+#'   ignored anyway) and a column titled "Table/Figure", which should contain
+#'   the name of any table or figure in a report that shows data from that
+#'   simulation file. Please use one row per simulation. If there are multiple
+#'   figures or tables for each simulation, you can either list one figure or
+#'   table per row or you can list them together, separated by commas. Here is
+#'   an example: \code{data.frame(File = c("01-abc.xlsx", "02-abc.xlsx",
+#'   "03-abc.xlsx", "03-abc.xlsx"), `Table/Figure` = c("Figure 1, Figure 2,
+#'   Table 1", "Figure 3", "Figure 4", "Table 2"))} The output from running
+#'   \code{\link{find_report_files}} will work great here. Any simulations that
+#'   are not present in your simulation directory will be ignored.
 #'
 #' @return a data.frame of simulation files and their respective file paths
 #' @export
 #'
 #' @examples
-#' # none yet
+#' make_simulation_directory(
+#'    project_folder = "C:/Users/Buffy/Project ABC/Modelling",
+#'    save_table = "Simulation directory for project ABC.xlsx")
 
 make_simulation_directory <- function(project_folder = NA, 
                                       sim_data_files = "recursive", 
@@ -98,6 +121,7 @@ make_simulation_directory <- function(project_folder = NA,
                                       search_workspaces_for_obsfile = FALSE, 
                                       include_possible_obsfiles = TRUE, 
                                       obsfile_path_option = "full path", 
+                                      figure_and_table_assignment = NA, 
                                       report_progress = "no", 
                                       save_table = NA, 
                                       overwrite = "ask"){
@@ -164,6 +188,50 @@ make_simulation_directory <- function(project_folder = NA,
       # and I don't want to overwhelm people w/warnings.
       report_progress <- "no"
    }
+   
+   if(any(complete.cases(figure_and_table_assignment))){
+      
+      if(all(c("File name", "File type", "Table/Figure") %in% 
+             names(figure_and_table_assignment))){
+         figure_and_table_assignment <- figure_and_table_assignment %>% 
+            rename(Filename = "File name") %>% 
+            select(Filename, `Table/Figure`)
+      } else {
+         
+         FigTabNames <- 
+            tibble(Orig = tolower(names(figure_and_table_assignment))) %>% 
+            mutate(Rev = case_when(
+               str_detect(Orig, "file|workspace|sim") ~ "Filename", 
+               str_detect(Orig, "table|fig") ~ "Table/Figure"))
+         
+         if(length(which(FigTabNames$Rev == "Filename")) > 1){
+            warning(wrapn("In what you have provided for 'figure_and_table_assignment', you have more than one column that looks like it contains the file name. We don't know which to use, so we'll have to ignore your input for 'figure_and_table_assignment'."), 
+                    call. = FALSE)
+            
+            figure_and_table_assignment <- NA
+         } else if(length(which(FigTabNames$Rev == "Table/Figure")) > 1){
+            warning(wrapn("In what you have provided for 'figure_and_table_assignment', you have more than one column that looks like it contains the table and figure names. We don't know which to use, so we'll have to ignore your input for 'figure_and_table_assignment'."), 
+                    call. = FALSE)
+            
+            figure_and_table_assignment <- NA
+         } else {
+            
+            figure_and_table_assignment <- figure_and_table_assignment %>% 
+               as_tibble() 
+            names(figure_and_table_assignment) <- tolower(names(figure_and_table_assignment))
+            
+            names(figure_and_table_assignment)[
+               names(figure_and_table_assignment) == FigTabNames$Orig[FigTabNames$Rev == "Filename"]] <- "Filename"
+            
+            names(figure_and_table_assignment)[
+               names(figure_and_table_assignment) == FigTabNames$Orig[FigTabNames$Rev == "Table/Figure"]] <- "Table/Figure"
+            
+            figure_and_table_assignment %>% 
+               select(Filename, `Table/Figure`)
+         }
+      }
+   }
+   
    
    # Main body of function ---------------------------------------------------
    
@@ -293,7 +361,7 @@ make_simulation_directory <- function(project_folder = NA,
    if(length(Directory$Filename[Directory$Folder != "FILE NOT FOUND"]) == 0){
       # This will happen if they have supplied something for
       # existing_exp_details but those files aren't in the project folder.
-      stop(wrapn(paste0("We can't find any of the files in 'existing_exp_details'. Are you in the main folder for this project or have you set the argument 'project_folder' to that folder? We need to know the project folder to figure out where your files are. Please set the project folder and try again.")), 
+      stop(wrapn(paste0("We can't find any of the files in your project folder. Are you in the main folder for this project or have you set the argument 'project_folder' to that folder? Please set the project folder and try again.")), 
            call. = FALSE)
    }
    
@@ -557,7 +625,46 @@ make_simulation_directory <- function(project_folder = NA,
       
    }
    
-   # Setting column order 
+   ## Adding any known figure and table assignments -------------------------
+   
+   if(any(complete.cases(figure_and_table_assignment))){
+      
+      figure_and_table_assignment <- figure_and_table_assignment %>% 
+         mutate(
+            Filename = basename(str_trim(Filename)), 
+            Filename = sub("\\.xlsx|\\.wksz|\\.db", "", Filename), 
+            # Cleaning up possible punctuation issues
+            `Table/Figure` = gsub(" and| or| \\&", "", str_trim(`Table/Figure`)), 
+            `Table/Figure` = gsub("  {1,}", " ", `Table/Figure`), 
+            `Table/Figure` = gsub(",T", ", T", `Table/Figure`), 
+            `Table/Figure` = gsub(",F", ", F", `Table/Figure`), 
+            `Table/Figure` = gsub("table", "Table", `Table/Figure`), 
+            `Table/Figure` = gsub("figure", "Figure", `Table/Figure`), 
+            `Table/Figure` = gsub(" ", ", ", `Table/Figure`), 
+            `Table/Figure` = gsub("Figure, ", "Figure ", `Table/Figure`), 
+            `Table/Figure` = gsub("Table, ", "Table ", `Table/Figure`), 
+            `Table/Figure` = gsub(",, ", ", ", `Table/Figure`)) %>% 
+         separate_longer_delim(cols = `Table/Figure`, 
+                               delim = ", ") %>% 
+         mutate(Num = as.numeric(str_extract(`Table/Figure`, "[0-9]{1,}$")), 
+                `Table/Figure` = str_extract(`Table/Figure`, "Table|Figure")) %>% 
+         arrange(Filename, `Table/Figure`, Num) %>% 
+         mutate(`Table/Figure` = paste(`Table/Figure`, Num)) %>% 
+         group_by(Filename) %>% 
+         # summarize(`Table/Figure` = length(unique(`Table/Figure`)))
+         summarize(`Table/Figure` = str_c(unique(`Table/Figure`), collapse = ", ")) %>% 
+         ungroup() 
+      
+      Directory <- Directory %>% 
+         select(-`Table/Figure`) %>% 
+         left_join(figure_and_table_assignment, 
+                   by = "Filename")
+      
+   }
+   
+   
+   ## Setting column order --------------------------------------------------
+   
    Directory <- Directory %>% 
       select(any_of(c("Filename", "Filetype", "Folder", 
                       "XML file used", "Table/Figure",
