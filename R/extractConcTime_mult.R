@@ -1141,47 +1141,31 @@ extractConcTime_mult <- function(sim_data_files = NA,
                      dimnames = list(NULL, MissingCols))))
             }
             
-            # Need to handle ADAM, AdvBrainModel, and PD data differently b/c
-            # different units
-            SpecialTissue <- c("stomach", "duodenum", "jejunum I",
-                               "jejunum II", "ileum I", "ileum II",
-                               "ileum III", "ileum IV", "colon", "faeces", 
-                               "gut tissue", "cumulative absorption", 
-                               "cumulative fraction released",
-                               "cumulative dissolution", 
-                               "PD")
-            
-            SpecialSubsection <- c("undissolved compound", 
-                                   "dissolution rate of solid state", 
-                                   "free compound in lumen", 
-                                   "total compound in lumen", 
-                                   "Heff", 
-                                   "absorption rate", 
-                                   "unreleased compound in faeces", 
-                                   "dissolved compound", 
-                                   "luminal CLint", 
-                                   "cumulative fraction of compound absorbed", 
-                                   "cumulative fraction of compound dissolved", 
-                                   "enterocyte concentration", 
-                                   # Below are technically AdvBrainModel but
-                                   # using SpecialTissue b/c that object name is
-                                   # already set up. Note that this omits
-                                   # AdvBrainModel tissues that just have mass
-                                   # per volume units.
-                                   "Kp,uu,brain", 
-                                   "Kp,uu,ICF", 
-                                   "Kp,uu,ISF")
-            
+            # Dealing w/tissues that will have non-concentration units or no
+            # units at all.
             MultData[[ff]][[j]] <- MultData[[ff]][[j]] %>% 
-               mutate(SpecialUnits = (Tissue %in% SpecialTissue & 
-                                         CompoundID != "PD input") |
-                         Tissue_subtype %in% SpecialSubsection)
+               mutate(Conc_units = case_when(
+                  Tissue_subtype %in% 
+                     (AllTissues %>% 
+                         filter(NoConcUnits == TRUE & 
+                                   complete.cases(Tissue_subtype)) %>% 
+                         pull(Tissue_subtype) %>% as.character() %>% 
+                         unique()) ~ "MAKE THIS NA", 
+                  Tissue %in% 
+                     (AllTissues %>% 
+                         filter(NoConcUnits == TRUE & 
+                                   is.na(Tissue_subtype)) %>% 
+                         pull(Tissue) %>% as.character() %>% 
+                         unique()) ~ "MAKE THIS NA", 
+                  .default = Conc_units))
             
             MultData[[ff]][[j]] <- split(MultData[[ff]][[j]], 
-                                         MultData[[ff]][[j]]$SpecialUnits)
+                                         MultData[[ff]][[j]]$Conc_units)
             
-            if("FALSE" %in% names(MultData[[ff]][[j]]) &&
+            if("FALSE" %in% setdiff(names(MultData[[ff]][[j]]), 
+                                    "MAKE THIS NA") &&
                nrow(MultData[[ff]][[j]][["FALSE"]]) > 0){
+               
                MultData[[ff]][[j]][["FALSE"]] <- MultData[[ff]][[j]][["FALSE"]] %>% 
                   convert_units(
                      DF_with_good_units = NA, 

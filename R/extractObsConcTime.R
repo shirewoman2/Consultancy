@@ -216,7 +216,7 @@ extractObsConcTime <- function(obs_data_file,
                          by = join_by(CompoundID, Individual, Interval)) %>% 
                mutate(DoseNum = as.numeric(Interval), 
                       Dose_sub = ifelse("substrate" %in% DoseInts[[j]]$CompoundID, 
-                                           DoseInts[[j]]$DoseAmount_sub, NA), 
+                                        DoseInts[[j]]$DoseAmount_sub, NA), 
                       Dose_inhib = ifelse("inhibitor 1" %in% DoseInts[[j]]$CompoundID, 
                                           DoseInts[[j]]$DoseAmount_inhib, NA), 
                       Dose_inhib2 = ifelse("inhibitor 2" %in% DoseInts[[j]]$CompoundID, 
@@ -240,7 +240,8 @@ extractObsConcTime <- function(obs_data_file,
                                      "PlacentaVol_L", "FetalWt_kg")), 
                     .fns = as.numeric)) %>% 
       select(any_of(c(NonDoseCols, "Species", 
-                      "Inhibitor", "Simulated", "Trial", "Tissue", "ObsFile", 
+                      "Inhibitor", "Simulated", "Trial", 
+                      "Tissue", "Tissue_subtype", "ObsFile", 
                       "Time_units", "Conc_units", "Dose_sub", "Dose_inhib", 
                       "Dose_inhib2", "DoseNum"))) 
    
@@ -290,7 +291,7 @@ extractObsConcTime <- function(obs_data_file,
       mutate(IndivOrAgg = NA) %>% 
       select(any_of(c("Compound", "CompoundID", "Inhibitor", "IndivOrAgg", 
                       "Simulated", 
-                      "Tissue", "Individual", "Trial",
+                      "Tissue", "Tissue_subtype", "Individual", "Trial",
                       "Time", "Conc", "SD_SE", "Time_units", "Conc_units")), 
              everything())
    

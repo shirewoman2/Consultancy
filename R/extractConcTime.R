@@ -318,15 +318,15 @@ extractConcTime <- function(sim_data_file,
       "aggregate" %in% returnAggregateOrIndiv){
       
       if(all(returnAggregateOrIndiv == "aggregate")){
-         warning(paste0("The simulator file supplied, `", 
-                        sim_data_file, 
-                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. Since you requested only aggregate data, there are no data to return.\n"), 
+         warning(wrapn(paste0("The simulator file supplied, '", 
+                              sim_data_file, 
+                              "', is for a population-representative simulation and thus doesn't have any aggregate data. Since you requested only aggregate data, there are no data to return.")), 
                  call. = FALSE)
          return(data.frame())
       } else {
-         warning(paste0("The simulator file supplied, `", 
-                        sim_data_file, 
-                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
+         warning(wrapn(paste0("The simulator file supplied, '", 
+                              sim_data_file, 
+                              "', is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.")),
                  call. = FALSE)
       }
    }
@@ -523,9 +523,7 @@ extractConcTime <- function(sim_data_file,
    
    ## Checking units ---------------------------------------------------------
    
-   # Determining concentration and time units. This will be NA for most ADAM
-   # tissues, but we'll fix it in a sec. For ADC compounds, this will be NA and
-   # then we need to fix that here.
+   # Determining concentration and time units. 
    SimConcUnits <- as.character(
       sim_data_xl[2, which(str_detect(as.character(sim_data_xl[2, ]),
                                       "CMax"))])[1]
@@ -837,265 +835,283 @@ extractConcTime <- function(sim_data_file,
    AllPerps_comma <- ifelse(length(AllPerpsPresent) == 0,
                             NA, str_comma(AllPerpsPresent))
    
-   # Use the supplied obs file here if a) tissue is systemic and b) the
-   # function was NOT called from the mult function OR the function WAS
-   # called from the mult function but the user supplied an obs data file.
-   
-   if(TissueType %in% c("systemic", "PD")){
+   # If the user did not specify a file to use for observed data, use the
+   # observed data that they included for the simulation. Note that this will
+   # NOT pull the observed data if the user asked for an inhibitor-related
+   # compound b/c it's unlikely that that's what observed data they supplied
+   # when they set up their simulation.
+   if(is.na(obs_data_file)){
       
-      # If the user did not specify a file to use for observed data, use the
-      # observed data that they included for the simulation. Note that this will
-      # NOT pull the observed data if the user asked for an inhibitor-related
-      # compound b/c it's unlikely that that's what observed data they supplied
-      # when they set up their simulation.
-      if(is.na(obs_data_file)){
+      if(any(str_detect(compoundToExtract, "inhibitor") == FALSE)){ # FIXME - check on this
          
-         if(any(str_detect(compoundToExtract, "inhibitor") == FALSE)){ # FIXME - check on this
+         StartRow_obs <- which(sim_data_xl$...1 == "Observed Data") + 1
+         
+         if(length(StartRow_obs) != 0 &&
+            StartRow_obs - 1 != nrow(sim_data_xl)){
             
-            StartRow_obs <- which(sim_data_xl$...1 == "Observed Data") + 1
+            # Need to get ONLY the obs data rows in case people have added
+            # more data to cells below there
+            Cols <- which(complete.cases(t(sim_data_xl[StartRow_obs, ])))
+            EndRow_obs <- which(is.na(sim_data_xl[, 1]))
+            EndRow_obs <- EndRow_obs[which(EndRow_obs > StartRow_obs)][1] - 1
+            EndRow_obs <- ifelse(is.na(EndRow_obs), 
+                                 nrow(sim_data_xl), EndRow_obs)
             
-            if(length(StartRow_obs) != 0 &&
-               StartRow_obs - 1 != nrow(sim_data_xl)){
+            obs_data <-
+               sim_data_xl[StartRow_obs:EndRow_obs, Cols] %>%
+               t() %>%
+               as.data.frame()
+            
+            if(all(is.na(obs_data[,1]))){
                
-               # Need to get ONLY the obs data rows in case people have added
-               # more data to cells below there
-               Cols <- which(complete.cases(t(sim_data_xl[StartRow_obs, ])))
-               EndRow_obs <- which(is.na(sim_data_xl[, 1]))
-               EndRow_obs <- EndRow_obs[which(EndRow_obs > StartRow_obs)][1] - 1
-               EndRow_obs <- ifelse(is.na(EndRow_obs), 
-                                    nrow(sim_data_xl), EndRow_obs)
+               # Sometimes, there will be a single cell that says
+               # "Observed Data" but then nothing else for obs
+               # data. Removing the basically empty data.frame of
+               # obs data in that situation.
+               rm(obs_data)
                
-               obs_data <-
-                  sim_data_xl[StartRow_obs:EndRow_obs, Cols] %>%
-                  t() %>%
-                  as.data.frame()
+            } else {
                
-               if(all(is.na(obs_data[,1]))){
-                  
-                  # Sometimes, there will be a single cell that says
-                  # "Observed Data" but then nothing else for obs
-                  # data. Removing the basically empty data.frame of
-                  # obs data in that situation.
-                  rm(obs_data)
-                  
-               } else {
-                  
-                  warning(wrapn("This function is extracting observed data from Simulator Excel output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of a perpetrator. The safer way to include observed data is to supply a separate file for 'obs_data_file'"),
-                          call. = FALSE)
-                  
-                  # If subject names include special characters s/a "_", that
-                  # messes up the regex below. Dealing with that here. Also,
-                  # note that we're ignoring any numbers associated w/DV b/c
-                  # simulator output file doesn't include any information
-                  # about that. Everything will be assumed to be for the same
-                  # compound and tissue as the simulated data and will be
-                  # assumed to NOT have an inhibitor present.
-                  NewNamesObs <- sim_data_xl[StartRow_obs:EndRow_obs, 1] %>%
-                     rename("OrigName" = 1) %>%
-                     mutate(Individual =
-                               as.character(sapply(OrigName,
-                                                   FUN = function(x)
-                                                      str_split(x, pattern = "Subject ")[[1]][2])),
-                            Individual = sub(" : DV [0-9]{1,}", "", Individual),
-                            Indiv_code = paste0("Subject", 1:nrow(.)),
-                            Indiv_code = ifelse(str_detect(OrigName, "Time"),
-                                                NA, Indiv_code)) %>%
-                     fill(Indiv_code, .direction = "up") %>%
-                     fill(Individual, .direction = "up") %>%
-                     mutate(TempName = ifelse(str_detect(OrigName, "Time"),
-                                              paste0(Indiv_code, "_Time"),
-                                              paste0(Indiv_code, "_Conc")))
-                  
-                  names(obs_data) <- NewNamesObs$TempName
-                  
-                  suppressMessages(
-                     suppressWarnings(
-                        obs_data <- obs_data[2:nrow(obs_data), ] %>%
-                           mutate_all(as.numeric) %>%
-                           mutate(ID = 1:nrow(.)) %>%
-                           pivot_longer(cols = -c(ID),
-                                        names_to = "Param",
-                                        values_to = "Val") %>%
-                           separate(col = Param,
-                                    into = c("Indiv_code", "TimeConc"),
-                                    sep = "_") %>%
-                           filter(complete.cases(Val)) %>%
-                           pivot_wider(names_from = TimeConc,
-                                       values_from = Val) %>%
-                           left_join(NewNamesObs %>% select(Indiv_code, Individual)) %>%
-                           mutate(Trial = "obs",
-                                  Inhibitor = "none",
-                                  CompoundID = ifelse(tissue == "plasma" &
-                                                         all(compoundToExtract == "substrate") &
-                                                         all(AllRegCompoundsID == "substrate"),
-                                                      cmpd, "UNKNOWN"),
-                                  Compound = ifelse(tissue == "plasma" &
-                                                       all(compoundToExtract == "substrate") &
-                                                       all(AllRegCompoundsID == "substrate"),
-                                                    AllRegCompoundsPresent["substrate"], "UNKNOWN"),
-                                  ObsFile = NA,
-                                  Species = ifelse(is.na(Deets$Species),
-                                                   "human",
-                                                   sub("sim-", "",
-                                                       tolower(Deets$Species))),
-                                  Time_units = SimTimeUnits,
-                                  Conc_units = SimConcUnits) %>%
-                           select(-ID, -Indiv_code) %>%
-                           unique()
-                     ))
-               }
+               warning(wrapn("This function is extracting observed data from Simulator Excel output, which does not contain information about the observed compound ID or whether the observed compound was in the presence of a perpetrator. The safer way to include observed data is to supply a separate file for 'obs_data_file'"),
+                       call. = FALSE)
+               
+               # If subject names include special characters s/a "_", that
+               # messes up the regex below. Dealing with that here. Also,
+               # note that we're ignoring any numbers associated w/DV b/c
+               # simulator output file doesn't include any information
+               # about that. Everything will be assumed to be for the same
+               # compound and tissue as the simulated data and will be
+               # assumed to NOT have an inhibitor present.
+               NewNamesObs <- sim_data_xl[StartRow_obs:EndRow_obs, 1] %>%
+                  rename("OrigName" = 1) %>%
+                  mutate(Individual =
+                            as.character(sapply(OrigName,
+                                                FUN = function(x)
+                                                   str_split(x, pattern = "Subject ")[[1]][2])),
+                         Individual = sub(" : DV [0-9]{1,}", "", Individual),
+                         Indiv_code = paste0("Subject", 1:nrow(.)),
+                         Indiv_code = ifelse(str_detect(OrigName, "Time"),
+                                             NA, Indiv_code)) %>%
+                  fill(Indiv_code, .direction = "up") %>%
+                  fill(Individual, .direction = "up") %>%
+                  mutate(TempName = ifelse(str_detect(OrigName, "Time"),
+                                           paste0(Indiv_code, "_Time"),
+                                           paste0(Indiv_code, "_Conc")))
+               
+               names(obs_data) <- NewNamesObs$TempName
+               
+               suppressMessages(
+                  suppressWarnings(
+                     obs_data <- obs_data[2:nrow(obs_data), ] %>%
+                        mutate_all(as.numeric) %>%
+                        mutate(ID = 1:nrow(.)) %>%
+                        pivot_longer(cols = -c(ID),
+                                     names_to = "Param",
+                                     values_to = "Val") %>%
+                        separate(col = Param,
+                                 into = c("Indiv_code", "TimeConc"),
+                                 sep = "_") %>%
+                        filter(complete.cases(Val)) %>%
+                        pivot_wider(names_from = TimeConc,
+                                    values_from = Val) %>%
+                        left_join(NewNamesObs %>% select(Indiv_code, Individual)) %>%
+                        mutate(Trial = "obs",
+                               Inhibitor = "none",
+                               CompoundID = ifelse(tissue == "plasma" &
+                                                      all(compoundToExtract == "substrate") &
+                                                      all(AllRegCompoundsID == "substrate"),
+                                                   cmpd, "UNKNOWN"),
+                               Compound = ifelse(tissue == "plasma" &
+                                                    all(compoundToExtract == "substrate") &
+                                                    all(AllRegCompoundsID == "substrate"),
+                                                 AllRegCompoundsPresent["substrate"], "UNKNOWN"),
+                               ObsFile = NA,
+                               Species = ifelse(is.na(Deets$Species),
+                                                "human",
+                                                sub("sim-", "",
+                                                    tolower(Deets$Species))),
+                               Time_units = SimTimeUnits,
+                               Conc_units = SimConcUnits) %>%
+                        select(-ID, -Indiv_code) %>%
+                        unique()
+                  ))
             }
          }
-         
+      }
+      
+   } else {
+      # If the user did specify an observed data file, read in
+      # observed data.
+      
+      if(obs_data_file == "use existing_exp_details"){
+         obs_data_file <- Deets$ObsOverlayFile
+      }
+      
+      obs_data <- extractObsConcTime(obs_data_file)
+      
+      if(nrow(obs_data) > 0){
+         obs_data <- obs_data %>% 
+            mutate(
+               Conc_units = case_match(
+                  Conc_units, 
+                  "PD Response" ~ "PD response", 
+                  .default = Conc_units))
+      }
+      
+      if(ADC){
+         # NB: Keeping everything lower case until the very end
+         obs_data <- obs_data %>% 
+            mutate(
+               CompoundID = 
+                  case_when(
+                     # FIXME: Not sure this is how I should set this up. Need
+                     # clarity on all the Obs DV options for ADC sims.
+                     CompoundID == "substrate" & 
+                        "intact adc" %in% sim_data$CompoundID ~ 
+                        "intact adc", 
+                     
+                     CompoundID == "substrate" & 
+                        "conjugated payload" %in% sim_data$CompoundID ~ 
+                        "conjugated payload", 
+                     
+                     CompoundID == "substrate" & 
+                        "therapeutic protein" %in% sim_data$CompoundID ~ 
+                        "therapeutic protein", 
+                     
+                     CompoundID == "substrate" & 
+                        "therapeutic protein and tmdd complex" %in% sim_data$CompoundID ~ 
+                        "therapeutic protein and tmdd complex", 
+                     
+                     CompoundID == "substrate" & 
+                        "total antibody" %in% sim_data$CompoundID ~ 
+                        "total antibody", 
+                     
+                     CompoundID == "primary metabolite 1" ~ 
+                        "released payload", 
+                     .default = CompoundID))
+      }
+      
+      if("CompoundID" %in% names(obs_data)){
+         # NB: names(ObsCompounds) is lower case to match cmpd but values in
+         # ObsCompounds are regular case.
+         obs_data <- obs_data %>% 
+            # Need to include the "as.character" bit b/c sometimes it could
+            # be a named character vector, which messes up the next step.
+            mutate(CompoundID = tolower(as.character(CompoundID))) %>% 
+            filter(CompoundID %in% compoundToExtract) %>%
+            mutate(Compound = ObsCompounds[CompoundID],
+                   Inhibitor = ifelse(Inhibitor == "inhibitor" &
+                                         complete.cases(AllPerps_comma),
+                                      AllPerps_comma, Inhibitor))
+      }
+      
+      if("Tissue" %in% names(obs_data)){
+         obs_data <- obs_data %>% 
+            filter(Tissue %in% tissue)
+      }
+      
+      if(nrow(obs_data) == 0){
+         rm(obs_data)
       } else {
-         # If the user did specify an observed data file, read in
-         # observed data.
          
-         if(obs_data_file == "use existing_exp_details"){
-            obs_data_file <- Deets$ObsOverlayFile
+         # If obs_data_file included compounds that were not present in
+         # the simulation, don't include those and give the user a
+         # warning.
+         Missing <- setdiff(unique(obs_data$CompoundID),
+                            c(names(ObsCompounds[complete.cases(ObsCompounds)]), 
+                              # FIXME: This warning is not set up correctly
+                              # for ADC compounds.
+                              AllCompounds$CompoundID[
+                                 AllCompounds$CompoundType == "ADC"]))
+         
+         if(length(Missing) > 0){
+            warning(wrapn(paste0(
+               "The observed data file includes ",
+               str_comma(Missing),
+               ", which is/are not present in the simulated data. Observed data for ",
+               str_comma(Missing),
+               " will not be included in the output.")),
+               call. = FALSE)
+            obs_data <- obs_data %>%
+               filter(!CompoundID %in% Missing)
          }
          
-         obs_data <- extractObsConcTime(obs_data_file)
+         # As necessary, convert simulated data units to match the
+         # observed data
          
-         if(nrow(obs_data) > 0){
-            obs_data <- obs_data %>% 
-               mutate(
-                  Conc_units = case_match(
-                     Conc_units, 
-                     "PD Response" ~ "PD response", 
-                     .default = Conc_units))
-         }
+         # Only including MWs for compounds that are relevant; otherwise, we
+         # get useless and confusing warnings.
+         GoodMW <-
+            Deets %>% select(matches("^MW_")) %>% 
+            pivot_longer(cols = everything(), 
+                         names_to = "Suffix", 
+                         values_to = "MW") %>% 
+            mutate(Suffix = sub("MW", "", Suffix)) %>% 
+            left_join(AllCompounds %>% select(CompoundID, Suffix, CompoundType),
+                      by = "Suffix")
          
          if(ADC){
-            # NB: Keeping everything lower case until the very end
-            obs_data <- obs_data %>% 
-               mutate(
-                  CompoundID = 
-                     case_when(
-                        # FIXME: Not sure this is how I should set this up. Need
-                        # clarity on all the Obs DV options for ADC sims.
-                        CompoundID == "substrate" & 
-                           "intact adc" %in% sim_data$CompoundID ~ 
-                           "intact adc", 
-                        
-                        CompoundID == "substrate" & 
-                           "conjugated payload" %in% sim_data$CompoundID ~ 
-                           "conjugated payload", 
-                        
-                        CompoundID == "substrate" & 
-                           "therapeutic protein" %in% sim_data$CompoundID ~ 
-                           "therapeutic protein", 
-                        
-                        CompoundID == "substrate" & 
-                           "therapeutic protein and tmdd complex" %in% sim_data$CompoundID ~ 
-                           "therapeutic protein and tmdd complex", 
-                        
-                        CompoundID == "substrate" & 
-                           "total antibody" %in% sim_data$CompoundID ~ 
-                           "total antibody", 
-                        
-                        CompoundID == "primary metabolite 1" ~ 
-                           "released payload", 
-                        .default = CompoundID))
-         }
-         
-         if("CompoundID" %in% names(obs_data)){
-            # NB: names(ObsCompounds) is lower case to match cmpd but values in
-            # ObsCompounds are regular case.
-            obs_data <- obs_data %>% 
-               # Need to include the "as.character" bit b/c sometimes it could
-               # be a named character vector, which messes up the next step.
-               mutate(CompoundID = tolower(as.character(CompoundID))) %>% 
-               filter(CompoundID %in% compoundToExtract) %>%
-               mutate(Compound = ObsCompounds[CompoundID],
-                      Inhibitor = ifelse(Inhibitor == "inhibitor" &
-                                            complete.cases(AllPerps_comma),
-                                         AllPerps_comma, Inhibitor))
-         }
-         
-         if("Tissue" %in% names(obs_data)){
-            obs_data <- obs_data %>% 
-               mutate(Tissue = tolower(Tissue)) %>% 
-               filter(Tissue %in% tissue)
-         }
-         
-         if(nrow(obs_data) == 0){
-            rm(obs_data)
+            GoodMW <- GoodMW %>% 
+               filter(CompoundType == "ADC") %>% 
+               select(-CompoundType)
          } else {
-            
-            # If obs_data_file included compounds that were not present in
-            # the simulation, don't include those and give the user a
-            # warning.
-            Missing <- setdiff(unique(obs_data$CompoundID),
-                               c(names(ObsCompounds[complete.cases(ObsCompounds)]), 
-                                 # FIXME: This warning is not set up correctly
-                                 # for ADC compounds.
-                                 AllCompounds$CompoundID[
-                                    AllCompounds$CompoundType == "ADC"]))
-            
-            if(length(Missing) > 0){
-               warning(wrapn(paste0(
-                  "The observed data file includes ",
-                  str_comma(Missing),
-                  ", which is/are not present in the simulated data. Observed data for ",
-                  str_comma(Missing),
-                  " will not be included in the output.")),
-                  call. = FALSE)
-               obs_data <- obs_data %>%
-                  filter(!CompoundID %in% Missing)
-            }
-            
-            # As necessary, convert simulated data units to match the
-            # observed data
-            
-            # Only including MWs for compounds that are relevant; otherwise, we
-            # get useless and confusing warnings.
-            GoodMW <-
-               Deets %>% select(matches("^MW_")) %>% 
-               pivot_longer(cols = everything(), 
-                            names_to = "Suffix", 
-                            values_to = "MW") %>% 
-               mutate(Suffix = sub("MW", "", Suffix)) %>% 
-               left_join(AllCompounds %>% select(CompoundID, Suffix), 
-                         by = "Suffix")
-            
-            MW <- GoodMW$MW
-            names(MW) <- GoodMW$CompoundID
-            
-            # Need to split this by tissue if any are PD b/c PD response and PD
-            # input will have different units. No need to check for other
-            # tissues, which *would* have different units b/c this function will
-            # either have PD response alone or with PD input and with no other
-            # tissues.
-            if("pd" %in% sim_data$Tissue){
-               SetAside <- sim_data %>% 
-                  filter(Tissue %in% "pd" & CompoundID == "pd response")
-               
-               ToConvert <- sim_data %>% 
-                  filter((Tissue %in% "pd" & CompoundID == "pd input") |
-                            Tissue %in% "pd" == FALSE)
-               
-               SetAside_obs <- obs_data %>% 
-                  filter(Tissue %in% "pd" & CompoundID == "pd response")
-               
-               ToConvert_obs <- obs_data %>% 
-                  filter((Tissue %in% "pd" & CompoundID == "pd input") |
-                            Tissue %in% "pd" == FALSE)
-               
-               if(nrow(ToConvert_obs) > 0){
-                  ToConvert <- convert_units(DF_to_convert = ToConvert,
-                                             DF_with_good_units = ToConvert_obs, 
-                                             MW = MW)
-                  
-                  sim_data <- bind_rows(SetAside, ToConvert)
-                  obs_data <- bind_rows(SetAside_obs, ToConvert_obs)
-               } 
-            } else if("pd" %in% sim_data$Tissue == FALSE){
-               sim_data <- convert_units(DF_to_convert = sim_data,
-                                         DF_with_good_units = obs_data, 
-                                         MW = MW)
-            }
+            GoodMW <- GoodMW %>% 
+               filter(CompoundType == "regular") %>% 
+               select(-CompoundType)
          }
+         
+         MW <- GoodMW$MW
+         names(MW) <- GoodMW$CompoundID
+         
+         # Need to split this by original value for Conc_units b/c need to
+         # remove NAs. 
+         sim_data <- sim_data %>% 
+            mutate(Conc_units = case_when(
+               Tissue_subtype %in% 
+                  (AllTissues %>% 
+                      filter(NoConcUnits == TRUE & 
+                                complete.cases(Tissue_subtype)) %>% 
+                      pull(Tissue_subtype) %>% as.character() %>% 
+                      unique()) ~ NA, 
+               Tissue %in% 
+                  (AllTissues %>% 
+                      filter(NoConcUnits == TRUE & 
+                                is.na(Tissue_subtype)) %>% 
+                      pull(Tissue) %>% as.character() %>% 
+                      unique()) ~ NA, 
+               .default = Conc_units))
+         
+         obs_data <- obs_data %>% 
+            mutate(Conc_units = case_when(
+               Tissue_subtype %in% 
+                  (AllTissues %>% 
+                      filter(NoConcUnits == TRUE & 
+                                complete.cases(Tissue_subtype)) %>% 
+                      pull(Tissue_subtype) %>% as.character() %>% 
+                      unique()) ~ NA, 
+               Tissue %in% 
+                  (AllTissues %>% 
+                      filter(NoConcUnits == TRUE & 
+                                is.na(Tissue_subtype)) %>% 
+                      pull(Tissue) %>% as.character() %>% 
+                      unique()) ~ NA, 
+               .default = Conc_units))
+         
+         SetAside <- sim_data %>% filter(is.na(Conc_units))
+         ToConvert <- sim_data %>% filter(complete.cases(Conc_units))
+         
+         SetAside_obs <- obs_data %>% filter(is.na(Conc_units))
+         ToConvert_obs <- obs_data %>% filter(complete.cases(Conc_units))
+         
+         if(nrow(ToConvert) > 0){
+            sim_data <- convert_units(DF_to_convert = ToConvert,
+                                      DF_with_good_units = ToConvert_obs, 
+                                      MW = MW)
+         }
+         
+         sim_data <- bind_rows(SetAside, ToConvert)
+         obs_data <- bind_rows(SetAside_obs, ToConvert_obs)
+         
       }
    }
    
