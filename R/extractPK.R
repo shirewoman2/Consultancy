@@ -545,6 +545,17 @@ extractPK <- function(sim_data_file,
       }
    }
    
+   # There is a bug w/at least V24 where, depending on exactly what you request
+   # for outputs, it's possible to NOT have a regularly named tab for dose 1 PK.
+   # In those cases, there *will* be tab that looks like a regularly named
+   # last-dose PK tab, even though it's a single-dose simulation. Catching this
+   # error.
+   if(is.na(Deets$NumDoses_sub) & # this will happen when it's a single-dose sim
+      is.na(Tab_first) & complete.cases(Tab_last)){
+      Tab_first <- Tab_last
+      Tab_last <- NA
+   }
+   
    # Need to keep track of the original PK parameters requested so that we
    # don't waste time reading more sheets than necessary
    PKparameters_orig <- PKparameters
