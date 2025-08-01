@@ -737,71 +737,35 @@ so_graph <- function(PKtable,
       }
    }
    
-   # Will need to figure out what PK parameters are and will need deprettified
-   # names when reshaping and organizing data here and lower in function. 
+   # Noting which columns are PK parameters
    PKCols <- prettify_column_names(PKtable, return_which_are_PK = TRUE)
    
    # Need to check when concs are molar b/c changes graph title
    ConcType <- ifelse(any(str_detect(PKCols$PrettifiedNames, "µM")), 
                       "molar", "mass per volume")
    
-   # Find all the parameters that were for a user-defined AUC interval and
-   # adjust those.
-   WhichUserInt <- which(str_detect(PKCols$ColName, " for interval from"))
-   UserInt <- PKCols$ColName[WhichUserInt]
-   
-   # Can't just change the name of each user int column b/c that column name may
-   # already exist. Need to remove and then join w/original PK table, keeping
-   # all necessary columns when joining.
-   for(col in UserInt){
-      
-      ToJoin <- PKtable %>% 
-         select(File, col, Statistic, 
-                any_of(c("Compound", "CompoundID", "Tissue", 
-                         as_label(point_color_column), 
-                         as_label(point_shape_column)))) 
-      ToJoin <- ToJoin[which(complete.cases(ToJoin[, col])), ]
-      
-      StartCh <- as.data.frame(str_locate(col, " for interval"))
-      newcol <- str_sub(col, start = 1, end = StartCh$start - 1)
-      
-      names(ToJoin)[which(names(ToJoin) == col)] <- newcol
-      
-      suppressMessages(
-         PKtable <- PKtable %>% 
-            full_join(ToJoin) %>% select(-any_of(col))
-      )
-      
-      rm(newcol, ToJoin)
-      
-   }
-   
-   # Redetermining which are PK now that interval column names have been changed
-   PKCols <- prettify_column_names(PKtable, return_which_are_PK = TRUE)
-   
+   # Noting PK parameters
    if(any(is.na(PKparameters))){
-      PKparameters <- PKCols$PKparameter[PKCols$IsPKParam]
+      PKparameters <- unique(PKCols$PKparameter[PKCols$IsPKParam])
    }
    
    # Arranging and tidying input data. First, de-prettifying column names.
    SO <- PKtable %>% 
       mutate(Statistic = as.character(Statistic), 
              Statistic = ifelse(str_detect(Statistic, "^Simulated"),
-                                "Simulated", Statistic))
-   
-   names(SO) <- PKCols$PKparameter
-   
-   # Removing additional columns since they mess up pivoting.
-   SO <- SO %>% 
+                                "Simulated", Statistic)) %>% 
+      # Removing additional columns since they mess up pivoting.
       select(Statistic, File,
-             any_of(c(PKparameters, "CompoundID", "Tissue", "Sheet", 
+             any_of(c(PKCols$ColName[PKCols$IsPKParam], 
+                      "CompoundID", "Tissue", "Sheet", 
                       as_label(point_color_column), 
-                      as_label(point_shape_column))))%>% 
+                      as_label(point_shape_column)))) %>% 
       unique() %>% 
-      pivot_longer(names_to = "PKparameter", 
+      pivot_longer(names_to = "ColName", 
                    values_to = "Value", 
-                   cols = PKparameters) %>% 
-      filter(complete.cases(Value))
+                   cols = PKCols$ColName[PKCols$IsPKParam]) %>% 
+      left_join(PKCols, by = "ColName") %>% 
+      filter(complete.cases(Value) & PKparameter %in% PKparameters)
    
    ## Tidying input data further now that format is long by parameter -------------
    
@@ -814,7 +778,8 @@ so_graph <- function(PKtable,
    # also where I'm making everything in the Value column numeric.
    
    # Adding placeholder columns as needed
-   MissingCols <- setdiff(c("File", "CompoundID", "Tissue", "Sheet"), 
+   MissingCols <- setdiff(c("File", "CompoundID", "Tissue", "Sheet", 
+                            "Interval"), 
                           names(SO))
    for(mm in MissingCols){
       SO[, mm] <- "default"
@@ -832,10 +797,12 @@ so_graph <- function(PKtable,
                         SO$CompoundID, 
                         SO$Tissue, 
                         SO$Sheet, 
+                        SO$Interval, 
                         SO$PKparameter))
    
    for(i in names(SO)){
       
+      # This allows for row binding later.
       if(nrow(SO[[i]]) == 0){
          suppressWarnings(
             SO[[i]]$Value <- as.numeric(SO[[i]]$Value)
@@ -845,7 +812,7 @@ so_graph <- function(PKtable,
       
       # NB: Values in the column Statistic should ONLY be among those listed
       # in AllStats$ReportNames.
-      VarType <- SO[[i]]$Statistic
+      VarType <- unique(SO[[i]]$Statistic)
       
       # Need to skip central stats, need to split any concatenated
       # variability and need to calculate any variability that would only be
@@ -865,7 +832,7 @@ so_graph <- function(PKtable,
          # VarType must be calculated to get high and low - simulated
          
          CentralValue <- as.numeric(SO[[sub(VarType, "Simulated", i)]]$Value)
-         
+         if(length(CentralValue) > 1 | length(VarType) > 1){browser()}
          SO[[i]] <- SO[[i]] %>% 
             mutate(
                Value = as.numeric(Value), 
@@ -1007,7 +974,7 @@ so_graph <- function(PKtable,
    }
    
    DupCheck <- SO %>% select(any_of(
-      c("File", "CompoundID", "Tissue", "Sheet", "Statistic", "PKparameter")))
+      c("File", "CompoundID", "Tissue", "Sheet", "Interval", "Statistic", "PKparameter")))
    DupCheck <- DupCheck[which(duplicated(DupCheck)), ] %>% as.data.frame()
    
    if(nrow(DupCheck) > 0){
