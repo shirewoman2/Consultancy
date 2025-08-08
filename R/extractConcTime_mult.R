@@ -374,7 +374,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    # data are already present in ct_dataframe.
    if(compoundsToExtract[1] == "all"){
       compoundsToExtract_orig <- "all"
-      compoundsToExtract <- c(MainCompoundIDs, ADCCompoundIDs)
+      compoundsToExtract <- c(MainCompoundIDs, ADCCompoundIDs, "pd input", "pd")
    } else {
       compoundsToExtract_orig <- compoundsToExtract
    }
@@ -945,7 +945,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                   sim_data_file = ff,
                   obs_data_file = MyObsFile, 
                   compoundToExtract = intersect(compoundsToExtract_n,
-                                                c("substrate", "inhibitor 1")),
+                                                c("substrate", "inhibitor 1", 
+                                                  "pd input", "pd response")),
                   tissue = j,
                   returnAggregateOrIndiv = returnAggregateOrIndiv, 
                   fromMultFunction = TRUE, 

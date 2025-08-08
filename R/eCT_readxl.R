@@ -44,9 +44,9 @@ eCT_readxl <- function(sim_data_file,
       Deets$SimulatorUsed == "Simcyp Discovery" & 
          TissueType == "liver" ~ compoundToExtract, 
       
-      TissueType %in% c("faeces", "tissue") ~ "substrate", 
+      TissueType %in% c("PD") ~ "pd response", 
       
-      TissueType == "PD" ~ "pd response") %>% 
+      TissueType %in% c("faeces", "tissue") ~ "substrate") %>% 
       unique()
    
    if("SimulatorUsed" %in% names(Deets) && 
@@ -186,45 +186,46 @@ eCT_readxl <- function(sim_data_file,
          
          PossSheets <-
             switch(tissue,
-                   "gi tissue" = "Gut Tissue Conc",
-                   "gut tissue" = "Gut Tissue Conc", 
-                   "git" = "Gut Tissue Conc",
-                   "lung" = "Lung Conc",
                    "additional organ" = "Additional Organ Conc",
                    "adipose" = "Adipose Conc",
-                   "heart" = "Heart Conc",
-                   "muscle" = "Muscle Conc",
                    "bone" = "Bone Conc",
-                   "kidney" = "Kidney Conc",
-                   "skin" = "Skin Conc",
-                   "pancreas" = "Pancreas Conc",
                    "brain" = "Brain Conc",
-                   "spleen" = "Spleen Conc",
-                   "feto-placenta" = "Feto-Placenta", # Need to check this one. I don't have an example output file for this yet!
-                   "stomach" = "Stomach Prof",
-                   "duodenum" = "Duodenum Prof",
-                   "jejunum i" = "Jejunum I Prof",
-                   "jejunum ii" = "Jejunum II Prof",
-                   "jejunum iii" = "Jejunum III Prof", 
-                   "jejunum iv" = "Jejunum IV Prof", 
-                   "ileum i" = "Ileum I Prof",
-                   "ileum ii" = "Ileum II Prof",
-                   "ileum iii" = "Ileum III Prof",
-                   "ileum iv" = "Ileum IV Prof",
                    "colon" = "Colon Prof",
-                   "faeces" = "Faeces Prof",
-                   "feces" = "Faeces Prof",
                    "cumulative absorption" = "Cumulative Abs",
                    "cumulative fraction released" = "CR Profile",
                    "cumulative dissolution" = paste0("Cum.*Dissolution.*",
                                                      switch(CompoundToFind, # FIXME - I don't know where this info is or what sheet names to expect.
                                                             "substrate" = "Sub",
-                                                            "inhibitor 1" = "Inhib")) # Need to check this for inhibitor 1 ADAM model data. This is just my guess as to what the sheet name will be!
-            )
+                                                            "inhibitor 1" = "Inhib")), # Need to check this for inhibitor 1 ADAM model data. This is just my guess as to what the sheet name will be!
+                   "duodenum" = "Duodenum Prof",
+                   "faeces" = "Faeces Prof",
+                   "feces" = "Faeces Prof", 
+                   "feto-placenta" = "Feto-Placenta", # Need to check this one. I don't have an example output file for this yet!
+                   "gi tissue" = "Gut Tissue Conc",
+                   "git" = "Gut Tissue Conc",
+                   "gut tissue" = "Gut Tissue Conc", 
+                   "heart" = "Heart Conc",
+                   "ileum i" = "Ileum I Prof",
+                   "ileum ii" = "Ileum II Prof",
+                   "ileum iii" = "Ileum III Prof",
+                   "ileum iv" = "Ileum IV Prof",
+                   "jejunum i" = "Jejunum I Prof",
+                   "jejunum ii" = "Jejunum II Prof",
+                   "jejunum iii" = "Jejunum III Prof", 
+                   "jejunum iv" = "Jejunum IV Prof", 
+                   "kidney" = "Kidney Conc",
+                   "lung" = "Lung Conc",
+                   "muscle" = "Muscle Conc",
+                   "pancreas" = "Pancreas Conc",
+                   "skin" = "Skin Conc",
+                   "spleen" = "Spleen Conc",
+                   "stomach" = "Stomach Prof")
          
          PossSheets <- SheetNames[str_detect(SheetNames, PossSheets)]
          
-      } 
+      } else if(TissueType == "PD"){
+         PossSheets <- SheetNames[str_detect(SheetNames, "PD Profiles \\(Sub\\)")]
+      }
       
       Sheet <- PossSheets[1]
       

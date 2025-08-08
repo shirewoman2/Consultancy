@@ -238,6 +238,11 @@ extractConcTime <- function(sim_data_file,
    }
    
    tissue <- tolower(tissue)
+   
+   if(compoundToExtract %in% c("pd response", "pd input")){
+      tissue <- compoundToExtract
+   }
+   
    PossTiss <- c("additional organ", "adipose", "blood", "bone", "brain",
                  "colon", "csf", "cumulative absorption",
                  "cumulative dissolution", "cumulative fraction released",
@@ -247,7 +252,7 @@ extractConcTime <- function(sim_data_file,
                  "jejunum i", "jejunum ii", "jejunum iii", "jejunum iv", 
                  "kidney", "liver", "lung",
                  "milk", "muscle", "pancreas",
-                 "pd", 
+                 "pd input", "pd response", 
                  "peripheral blood", "peripheral plasma", 
                  "peripheral unbound blood", 
                  "peripheral unbound plasma", 
@@ -260,7 +265,6 @@ extractConcTime <- function(sim_data_file,
                  "unbound blood", "unbound plasma", "urine")
    
    if(tissue %in% PossTiss == FALSE){
-      browser()
       stop(wrapn("The requested tissue must be plasma, blood, or one of the options listed in the help file description for the 'tissue' argument, and what you have provided is not. We cannot return any data."),
            call. = FALSE)
    }
@@ -443,7 +447,7 @@ extractConcTime <- function(sim_data_file,
       str_detect(tissue, "plasma|blood|peripheral") ~ "systemic",
       str_detect(tissue, "portal|liver") ~ "liver",
       str_detect(tissue, "faeces") ~ "faeces", 
-      tissue == "pd" ~ "PD", 
+      tissue %in% c("pd input", "pd response") ~ "PD", 
       TRUE ~ "tissue")
    
    if(any(str_detect(compoundToExtract, "metabolite|inhibitor 2")) &

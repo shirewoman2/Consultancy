@@ -13,7 +13,7 @@ make_Simcyp_inputs_table(
   references = NA,
   parameters_to_omit = NA,
   parameters_to_add = NA,
-  separate_column_for_ADME = TRUE,
+  separate_column_for_ADME = FALSE,
   font = "Palatino Linotype",
   fontsize = 11,
   column_widths = NA,
@@ -80,7 +80,7 @@ by default. Acceptable input is a data.frame with the following columns:
 \item{separate_column_for_ADME}{In the table, do you want a separate column
 for ADME headings -- "Absoprtion", "Distribution", etc. -- or would you
 like the ADME headings to be included in the "Parameter" column in the
-table? Default is TRUE for having a separate column.}
+table? Default is FALSE for not having a separate column.}
 
 \item{font}{font to use. Default is "Arial" and any fonts available on your
 machine in either Word or PowerPoint should be acceptable. If you get Times

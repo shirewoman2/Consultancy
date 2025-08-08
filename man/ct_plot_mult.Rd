@@ -375,8 +375,14 @@ This function was designed for making nicely arranged
   to make these graphs, so it will automatically break up your supplied
   concentration-time data into datasets by a) file, b) compound ID, c)
   tissue, and d) tissue subtype for any ADAM- or brain-model data.
-
-  \strong{A note on the order of the graphs:} This function arranges graphs
+  For detailed instructions and examples, please see the SharePoint file
+  "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+  function examples and instructions/Concentration-time plots 2 - multiple
+  plots at once/Concentration-time-plot-examples-2.docx". (Sorry, we are
+  unable to include a link to it here.)
+}
+\details{
+\strong{A note on the order of the graphs:} This function arranges graphs
   first by file, then by compound ID, then by tissue, and then by tissue
   subtype, and all sorting is alphabetical. However, since sorting
   alphabetically might not be the optimal graph arrangement for \emph{your}
@@ -387,12 +393,6 @@ This function was designed for making nicely arranged
   unfamiliar with setting factor levels in R and setting \code{graph_titles}
   isn't achieving what you want, please ask a member of the R Working Group
   for assistance.
-
-  For detailed instructions and examples, please see the SharePoint file
-  "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
-  function examples and instructions/Concentration-time plots 2 - multiple
-  plots at once/Concentration-time-plot-examples-2.docx". (Sorry, we are
-  unable to include a link to it here.)
 }
 \examples{
 
