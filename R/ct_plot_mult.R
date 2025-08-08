@@ -1,13 +1,5 @@
 #' Make graphs for multiple Simulator output files at once
 #'
-#' @description This function was designed for making nicely arranged
-#'   concentration-time graphs from several Simcyp Simulator output files all
-#'   together \emph{or} for making multiple files -- one for each Simulator file
-#' -- all at once. Behind the scenes, it uses the function \code{\link{ct_plot}}
-#'   to make these graphs, so it will automatically break up your supplied
-#'   concentration-time data into datasets by a) file, b) compound ID, c)
-#'   tissue, and d) tissue subtype for any ADAM- or brain-model data.
-#'
 #'   \strong{A note on the order of the graphs:} This function arranges graphs
 #'   first by file, then by compound ID, then by tissue, and then by tissue
 #'   subtype, and all sorting is alphabetical. However, since sorting
@@ -20,6 +12,13 @@
 #'   isn't achieving what you want, please ask a member of the R Working Group
 #'   for assistance.
 #'
+#' @description This function was designed for making nicely arranged
+#'   concentration-time graphs from several Simcyp Simulator output files all
+#'   together \emph{or} for making multiple files -- one for each Simulator file
+#' -- all at once. Behind the scenes, it uses the function \code{\link{ct_plot}}
+#'   to make these graphs, so it will automatically break up your supplied
+#'   concentration-time data into datasets by a) file, b) compound ID, c)
+#'   tissue, and d) tissue subtype for any ADAM- or brain-model data.
 #'   For detailed instructions and examples, please see the SharePoint file
 #'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
 #'   function examples and instructions/Concentration-time plots 2 - multiple
