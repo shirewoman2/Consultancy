@@ -1093,6 +1093,16 @@ recalc_PK <- function(ct_dataframe,
                   # the user requested.
                   CTsubset[[i]][[j]] <- CTsubset[[i]][[j]] %>%
                      filter(Conc > 0)
+                  
+                  # Check again for sufficient data
+                  if(nrow(CTsubset[[i]][[j]]) == 0){
+                     warning(wrapn(paste0("There are no non-zero concentrations for the last dose for dataset '", 
+                                          j, "'. This dataset will be skipped.")), 
+                             call. = FALSE)
+                     
+                     next
+                  }
+                  
                }
                
                # Make a graph of the last-dose data so that user can check that
