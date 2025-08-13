@@ -2,12 +2,12 @@
 #'
 #' \code{formatTable_Simcyp} makes a nicely formatted table from a data.frame or
 #' tibble. It was primarily designed to work with output from
-#' \code{\link{pk_table}} and \code{\link{pk_table}}, so, by
-#' default, it formats tables so that the column headings and the first column
-#' are bold, and the second through the last columns are centered. Column
-#' headings with, e.g., "AUCinf" or "Cmax" will have the "inf" or the "max"
-#' subscripted, and the table will automatically expand to fit the contents. You
-#' can save the output to a Word file with the argument \code{save_table}.
+#' \code{\link{pk_table}} and \code{\link{pk_table}}, so, by default, it formats
+#' tables so that the column headings and the first column are bold, and the
+#' second through the last columns are centered. Column headings with, e.g.,
+#' "AUCinf" or "Cmax" will have the "inf" or the "max" subscripted, and the
+#' table will automatically expand to fit the contents. You can save the output
+#' to a Word file with the argument \code{save_table}.
 #'
 #' @param DF a data.frame or a flextable, usually output from
 #'   \code{\link{pk_table}} or \code{\link{pk_table}}
@@ -113,6 +113,10 @@
 #' @param highlight_color color to use for highlighting; default is yellow.
 #'   Color can be specified using any R-friendly color name or hex code, e.g.,
 #'   "red" or "#D8212D".
+#' @param hlines optionally add horizontal lines at the bottom of any rows
+#'   specified. For example, \code{hlines = c(3, 5)} will put a black line on
+#'   the bottom of rows 3 and 5 of the main part of your table not counting the
+#'   heading.
 #' @param font font to use. Default is "Arial" and any fonts available on your
 #'   machine in either Word or PowerPoint should be acceptable. If you get Times
 #'   New Roman in your table when you asked for something else, it means that
@@ -241,6 +245,7 @@ formatTable_Simcyp <- function(DF,
                                highlight_so_colors = "yellow to red",
                                highlight_cells = NA, 
                                highlight_color = "yellow",
+                               hlines = NA, 
                                font = "Arial", 
                                fontsize = 11, 
                                borders = TRUE, 
@@ -270,6 +275,7 @@ formatTable_Simcyp <- function(DF,
       str_detect(font, "Calibri") ~ "Calibri", 
       .default = font)
    
+   suppressMessages(hlines <- unique(as.numeric(hlines)))
    
    # Main body of function ----------------------------------------------------
    
@@ -325,7 +331,6 @@ formatTable_Simcyp <- function(DF,
            call. = FALSE)
    }
    
-   
    if(nrow(DF) == 0){
       stop("Please check your input. The data.frame you supplied doesn't have any rows.", 
            call. = FALSE)
@@ -342,7 +347,6 @@ formatTable_Simcyp <- function(DF,
          column_widths <- rep(column_widths, ncol(DF))
       }
    } 
-   
    
    if(any(complete.cases(highlight_cells))){
       if(class(highlight_cells) == "numeric"){
@@ -433,6 +437,9 @@ formatTable_Simcyp <- function(DF,
          merge_columns <- merge_columns[merge_columns %in% names(DF)]
       }
    }
+   
+   hlines <- hlines[which(hlines <= nrow(DF))]
+   if(any(is.null(hlines))){hlines <- NA}
    
    
    ### Setting things up for nonstandard evaluation ----------------------------
@@ -864,6 +871,13 @@ formatTable_Simcyp <- function(DF,
                                  border = officer::fp_border(width = 0.5)) %>% 
          flextable::fix_border_issues()
    } 
+   
+   if(any(complete.cases(hlines))){
+      FT <- FT %>% 
+         flextable::hline(part = "body",
+                          i = hlines, 
+                          border = officer::fp_border(width = 0.5))
+   }
    
    # Do not include this if user sets col widths
    if(all(is.na(column_widths))){

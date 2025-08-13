@@ -85,12 +85,14 @@ prettify_column_names <- function(PKtable,
                                     "character" = 1:length(PKtable))) %>% 
       mutate(
          # Adjusting for output that includes NumeratorSim and DenominatorSim,
-         # ratios, or user-defined intervals
+         # ratios, user-defined intervals, or includes the name of the
+         # perpetrator.
          ColNamesNoDecorations = str_replace(OrigColNames, " NumeratorSim| DenominatorSim", ""), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_dose1 Ratio|_dose1_withInhib Ratio", "_ratio_dose1"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_last Ratio|_last_withInhib Ratio", "_ratio_last"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_withInhib Ratio", "_ratio"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "for interval from.*to [0-9]{1,} h ", ""), 
+         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "with .* \\(", "with perpetrator ("), 
          
          # Also changing any instances of "steady-state" that the user may have
          # added to "last dose" just for the purposes of determining which are

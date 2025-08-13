@@ -355,7 +355,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                                DoseFreq_inhib)
       
       NumDaysInhib <- suppressWarnings(
-         Deets$NumDoses_inhib*as.numeric(Deets$DoseInt_inhib)/24)
+         as.numeric(Deets$NumDoses_inhib) * as.numeric(Deets$DoseInt_inhib)/24)
       NumDaysInhib <- ifelse(is.na(NumDaysInhib), "**CUSTOM DOSING - FILL IN MANUALLY**",
                              NumDaysInhib)
       

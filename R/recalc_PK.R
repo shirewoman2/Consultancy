@@ -260,7 +260,7 @@ recalc_PK <- function(ct_dataframe,
       SpecialInterval <- lapply(SpecialInterval,
                                 FUN = function(x) as.numeric(str_split_1(x, "to")))
       if(any(lapply(SpecialInterval, length) != 2)){
-         warning("Something is amiss with how you have specified a specific interval to integrate because we're not sure what the start and end times should be. We'll have to ignore the requested specific interval.\n", 
+         warning(wrapn("Something is amiss with how you have specified a specific interval to integrate because we're not sure what the start and end times should be. We'll have to ignore the requested specific interval."), 
                  call. = FALSE)
          
          SpecialInterval <- SpecialInterval[which(lapply(SpecialInterval, length) == 2)]
@@ -269,23 +269,23 @@ recalc_PK <- function(ct_dataframe,
    
    report_progress <- tolower(report_progress)
    if(report_progress %in% c("yes", "no", "some") == FALSE){
-      warning("The options for report_progress are `yes`, `no`, or `some`, and you've entered something else. We'll set this to the default value of `some`.\n", 
+      warning(wrapn("The options for report_progress are `yes`, `no`, or `some`, and you've entered something else. We'll set this to the default value of `some`."), 
               call. = FALSE)
    }
    
    if(complete.cases(fit_points_after_x_time) & complete.cases(fit_last_x_number_of_points)){
-      warning("You requested that we fit both all points after time = X and also the last X number of points. You only get to use one of these options, so we'll use all points after time = X.\n", 
+      warning(wrapn("You requested that we fit both all points after time = X and also the last X number of points. You only get to use one of these options, so we'll use all points after time = X."), 
               call. = FALSE)
    }
    
    if(is.na(first_dose_time) & "logical" %in% class(existing_exp_details)){
-      warning("IMPORTANT: You have not specified the time of the 1st dose. We'll assume it's the minimum time included in your data. Please make SURE that this is correct as incorrect t0 specification can mess up calculations.\n", 
+      warning(wrapn("IMPORTANT: You have not specified the time of the 1st dose. We'll assume it's the minimum time included in your data. Please make SURE that this is correct as incorrect t0 specification can mess up calculations."), 
               call. = FALSE)
    }
    
    if(is.na(last_dose_time) & any(ct_dataframe$DoseNum > 1) & 
       "logical" %in% class(existing_exp_details) & "last" %in% which_dose){
-      warning("You have not specified the time of the last dose. We'll assume it's the minimum time for the maxmimum dose number in your data.\n", 
+      warning(wrapn("You have not specified the time of the last dose. We'll assume it's the minimum time for the maxmimum dose number in your data."), 
               call. = FALSE)
    }
    
@@ -299,7 +299,7 @@ recalc_PK <- function(ct_dataframe,
       all(is.na(ct_dataframe$Compound))){
       if(any(complete.cases(compound_name)) &&
          any(names(compound_name) %in% AllRegCompounds$CompoundID) == FALSE){
-         warning("Some of the compound IDs used for naming the values for `compound_name` are not among the permissible compound IDs, so we won't be able to supply a compound name for any of the compound IDs listed. Please check the help file for what values are acceptable.\n", 
+         warning(wrapn("Some of the compound IDs used for naming the values for `compound_name` are not among the permissible compound IDs, so we won't be able to supply a compound name for any of the compound IDs listed. Please check the help file for what values are acceptable."), 
                  call. = FALSE)
          
          compound_name <- rep(NA, each = nrow(AllRegCompounds))
@@ -688,7 +688,9 @@ recalc_PK <- function(ct_dataframe,
             
             if(nrow(CT1st[[j]]) == 0){next}
             
-            if(report_progress == "yes"){message(paste0("   Calculating PK for dataset ", j))}
+            if(report_progress == "yes"){
+               message(paste0("   Calculating PK for dataset ", j))
+            }
             
             MyDose <- switch(unique(CT1st[[j]]$CompoundID), 
                              "substrate" = unique(CT1st[[j]]$Dose_sub), 
@@ -920,242 +922,255 @@ recalc_PK <- function(ct_dataframe,
       
       if("last" %in% which_dose & length(CTsubset) > 0){
          
-         if(report_progress %in% c("yes", "some")){message("Calculating last-dose PK")}
-         
-         # NB: There may be more than one maximum dose number b/c CTsubset could
-         # include multiple sets of data, and that should be fine. 
-         
-         if("logical" %in% class(existing_exp_details) == FALSE){
-            suppressMessages(
-               LastDoseTime <- existing_exp_details$MainDetails %>% 
-                  select(File, SimDuration, StartHr_sub, StartHr_inhib, StartHr_inhib2,
-                         DoseInt_sub, DoseInt_inhib, DoseInt_inhib2, 
-                         NumDoses_sub, NumDoses_inhib, NumDoses_inhib2) %>% 
-                  left_join(ct_dataframe %>% select(File, CompoundID) %>% unique()) %>% 
-                  mutate(t0 = 
-                            case_when(CompoundID %in% c("substrate", 
-                                                        "primary metabolite 1", 
-                                                        "primary metabolite 2", 
-                                                        "secondary metabolite") ~ 
-                                         StartHr_sub + DoseInt_sub * NumDoses_sub, 
-                                      
-                                      CompoundID %in% c("inhibitor 1", 
-                                                        "inhibitor 1 metabolite") ~ 
-                                         StartHr_inhib + DoseInt_inhib * NumDoses_inhib, 
-                                      
-                                      CompoundID %in% "inhibitor 2" ~ 
-                                         StartHr_inhib2 + DoseInt_inhib2 * NumDoses_inhib2), 
-                         t0 = 
-                            case_when(t0 == SimDuration & 
-                                         CompoundID %in% c("substrate", 
-                                                           "primary metabolite 1", 
-                                                           "primary metabolite 2", 
-                                                           "secondary metabolite") ~ 
-                                         StartHr_sub + DoseInt_sub * NumDoses_sub - DoseInt_sub, 
-                                      
-                                      t0 == SimDuration & 
-                                         CompoundID %in% c("inhibitor 1", 
-                                                           "inhibitor 1 metabolite") ~ 
-                                         StartHr_inhib + DoseInt_inhib * NumDoses_inhib - DoseInt_inhib, 
-                                      
-                                      t0 == SimDuration & 
-                                         CompoundID %in% "inhibitor 2" ~ 
-                                         StartHr_inhib2 + DoseInt_inhib2 * NumDoses_inhib2 - DoseInt_inhib2, 
-                                      
-                                      TRUE ~ t0))
-            )
-            
-            # NB: Will get MaxTime from the step where we check dose intervals.
-            
+         if(nrow(CTsubset) == 0){
+            warning(wrapn("You requested PK for the last dose in your data, but we cannot find any last-dose concentration-time data, so we will not be able to return any PK data."), 
+                    call. = FALSE)
          } else {
             
-            suppressMessages(suppressWarnings(
-               LastDoseTime <- CTsubset %>% 
-                  ungroup() %>%
-                  filter(complete.cases(Conc)) %>%
-                  group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial,
-                           Simulated, File, ObsFile, DoseNum, ID) %>%
-                  summarize(t0 = min(Time, na.rm = T),
-                            MaxTime = max(Time, na.rm = T),
-                            # For reasons that utterly baffle and infuriate me,
-                            # dplyr will invisibly DROP the last grouping
-                            # variable if the result would have only one row.
-                            # (See help file for dplyr::summarize.) Why THAT
-                            # would EVER be what people really want since the
-                            # function that groups the data is NOT summarize and
-                            # that this occurs even when they have specified
-                            # .drop = FALSE in the function that DOES perform
-                            # the grouping is *beyond me*.
-                            .groups = "keep") %>%
-                  mutate(MaxTime =
-                            switch(as.character(complete.cases(dosing_interval)),
-                                   "TRUE" = t0 + dosing_interval,
-                                   "FALSE" = MaxTime)) %>% 
-                  filter(complete.cases(File))
-            ))
+            if(report_progress %in% c("yes", "some")){message("Calculating last-dose PK")}
             
-            if(complete.cases(last_dose_time)){
-               LastDoseTime$t0 <- last_dose_time
-            }
+            # NB: There may be more than one maximum dose number b/c CTsubset could
+            # include multiple sets of data, and that should be fine. 
             
-            if(complete.cases(dosing_interval)){
-               LastDoseTime$MaxTime <- LastDoseTime$t0 + dosing_interval
-            }
-         }
-         
-         DoseIntChecks <- list()
-         DoseIntWarnings <- list()
-         
-         # Checking for any mismatches w/dosing interval. 
-         if("logical" %in% class(existing_exp_details) == FALSE){
-            for(file in unique(CTsubset$File)){
-               
-               DoseIntChecks[[file]] <- list()
-               DoseIntWarnings[[file]] <- list()
-               
-               for(cmpd in unique(CTsubset$CompoundID[CTsubset$File == file])){
-                  
-                  TEMP <- check_doseint(sim_data_file = file, 
-                                        existing_exp_details = existing_exp_details, 
-                                        compoundID = cmpd, 
-                                        stop_or_warn_missing_file = "warn")
-                  
-                  DoseIntWarnings[[file]][[cmpd]] <- TEMP$message
-                  DoseIntChecks[[file]][[cmpd]] <- TEMP$interval
-               }
-               
-               DoseIntChecks[[file]] <- bind_rows(DoseIntChecks[[file]])
-            }
-         }
-         
-         DoseIntChecks <- bind_rows(DoseIntChecks)
-         
-         if("data.frame" %in% class(DoseIntChecks)){
-            
-            suppressMessages(
-               LastDoseTime <- LastDoseTime %>% 
-                  left_join(DoseIntChecks %>% 
-                               mutate(MaxTime = case_when(IntEndMatch == TRUE ~ EndHr,
-                                                          IntEndMatch == FALSE & Interval != "dose1" ~ StartHr + DoseInt, 
-                                                          .default = NA)) %>% 
-                               select(File, CompoundID, MaxTime))
-            )
-            
-         } else {
-            # custom dosing intervals, etc. 
-            suppressMessages(
-               LastDoseTime <- LastDoseTime %>% 
-                  left_join(existing_exp_details$MainDetails %>% 
-                               select(File, SimDuration)) %>% 
-                  rename(MaxTime = SimDuration)
-            )
-         }
-         
-         CTsubset <- split(CTsubset, list(CTsubset$MaxDoseNum))
-         
-         for(i in names(CTsubset)){
-            
-            CTsubset[[i]] <- split(CTsubset[[i]], 
-                                   CTsubset[[i]]$ID)
-            
-            for(j in names(CTsubset[[i]])){
-               
-               MyDose <- switch(unique(CTsubset[[i]][[j]]$CompoundID), 
-                                "substrate" = unique(CTsubset[[i]][[j]]$Dose_sub), 
-                                "primary metabolite 1" = NA, 
-                                "primary metabolite 2" = NA, 
-                                "secondary metabolite" = NA,
-                                "inhibitor 1" = unique(CTsubset[[i]][[j]]$Dose_inhib), 
-                                "inhibitor 2" = unique(CTsubset[[i]][[j]]$Dose_inhib2),
-                                "inhibitor 1 metabolite" = NA)
-               
-               suppressMessages(
-                  CTsubset[[i]][[j]] <- CTsubset[[i]][[j]] %>% 
-                     select(-any_of(c("t0", "MaxTime"))) %>% 
-                     left_join(LastDoseTime) %>% 
-                     filter(Time >= t0 & Time <= MaxTime) %>% 
-                     # Setting t0 to 0 for ease of remaining PK calculations
-                     mutate(Time = Time - t0)
+            if("logical" %in% class(existing_exp_details) == FALSE){
+               suppressMessages(suppressWarnings(
+                  LastDoseTime <- existing_exp_details$MainDetails %>% 
+                     select(File, SimDuration, StartHr_sub, StartHr_inhib, StartHr_inhib2,
+                            DoseInt_sub, DoseInt_inhib, DoseInt_inhib2, 
+                            NumDoses_sub, NumDoses_inhib, NumDoses_inhib2) %>% 
+                     left_join(ct_dataframe %>% select(File, CompoundID) %>% unique()) %>% 
+                     mutate(
+                        across(.cols = c(StartHr_sub, DoseInt_sub, NumDoses_sub, 
+                                         StartHr_inhib, DoseInt_inhib, NumDoses_inhib, 
+                                         StartHr_inhib2, DoseInt_inhib2, NumDoses_inhib2, 
+                                         SimDuration), 
+                               .fns = as.numeric), 
+                        t0 = 
+                           case_when(CompoundID %in% c("substrate", 
+                                                       "primary metabolite 1", 
+                                                       "primary metabolite 2", 
+                                                       "secondary metabolite") ~ 
+                                        StartHr_sub + DoseInt_sub * NumDoses_sub, 
+                                     
+                                     CompoundID %in% c("inhibitor 1", 
+                                                       "inhibitor 1 metabolite") ~ 
+                                        StartHr_inhib + DoseInt_inhib * NumDoses_inhib, 
+                                     
+                                     CompoundID %in% "inhibitor 2" ~ 
+                                        StartHr_inhib2 + DoseInt_inhib2 * NumDoses_inhib2), 
+                        t0 = 
+                           case_when(t0 == SimDuration & 
+                                        CompoundID %in% c("substrate", 
+                                                          "primary metabolite 1", 
+                                                          "primary metabolite 2", 
+                                                          "secondary metabolite") ~ 
+                                        StartHr_sub + DoseInt_sub * NumDoses_sub - DoseInt_sub, 
+                                     
+                                     t0 == SimDuration & 
+                                        CompoundID %in% c("inhibitor 1", 
+                                                          "inhibitor 1 metabolite") ~ 
+                                        StartHr_inhib + DoseInt_inhib * NumDoses_inhib - DoseInt_inhib, 
+                                     
+                                     t0 == SimDuration & 
+                                        CompoundID %in% "inhibitor 2" ~ 
+                                        StartHr_inhib2 + DoseInt_inhib2 * NumDoses_inhib2 - DoseInt_inhib2, 
+                                     
+                                     TRUE ~ t0)
+                     ))
                )
                
-               # There could be 0 rows if there are different maximum dose
-               # numbers for different simulations, so check, skip if there are
-               # no rows here b/c it's probably fine, and then give message
-               # about what dataset is being checked.
-               if(nrow(CTsubset[[i]][[j]]) == 0){next}
+               # NB: Will get MaxTime from the step where we check dose intervals.
                
-               if(report_progress == "yes"){message(paste0("   Calculating PK for dataset ", j))}
+            } else {
                
-               if(omit_0_concs){
-                  # NB: Here, since this will NOT include any true t0 data (t =
-                  # 0 for dose 1 b/c  CTsubset[[i]][[j]] does not include dose 1
-                  # data), all concentrations should be above 0 if that's what
-                  # the user requested.
-                  CTsubset[[i]][[j]] <- CTsubset[[i]][[j]] %>%
-                     filter(Conc > 0)
-                  
-                  # Check again for sufficient data
-                  if(nrow(CTsubset[[i]][[j]]) == 0){
-                     warning(wrapn(paste0("There are no non-zero concentrations for the last dose for dataset '", 
-                                          j, "'. This dataset will be skipped.")), 
-                             call. = FALSE)
-                     
-                     next
-                  }
-                  
+               suppressMessages(suppressWarnings(
+                  LastDoseTime <- CTsubset %>% 
+                     ungroup() %>%
+                     filter(complete.cases(Conc)) %>%
+                     group_by(Compound, CompoundID, Inhibitor, Tissue, Individual, Trial,
+                              Simulated, File, ObsFile, DoseNum, ID) %>%
+                     summarize(t0 = min(Time, na.rm = T),
+                               MaxTime = max(Time, na.rm = T),
+                               # For reasons that utterly baffle and infuriate me,
+                               # dplyr will invisibly DROP the last grouping
+                               # variable if the result would have only one row.
+                               # (See help file for dplyr::summarize.) Why THAT
+                               # would EVER be what people really want since the
+                               # function that groups the data is NOT summarize and
+                               # that this occurs even when they have specified
+                               # .drop = FALSE in the function that DOES perform
+                               # the grouping is *beyond me*.
+                               .groups = "keep") %>%
+                     mutate(MaxTime =
+                               switch(as.character(complete.cases(dosing_interval)),
+                                      "TRUE" = t0 + dosing_interval,
+                                      "FALSE" = MaxTime)) %>% 
+                     filter(complete.cases(File))
+               ))
+               
+               if(complete.cases(last_dose_time)){
+                  LastDoseTime$t0 <- last_dose_time
                }
                
-               # Make a graph of the last-dose data so that user can check that
-               # they're integrating what they *think* they're integrating.
-               ElimFitGraphs[[j]] <- 
-                  ggplot(CTsubset[[i]][[j]], aes(x = Time, y = Conc)) + 
-                  geom_line() + 
-                  ggtitle(sub("observed ", "observed\n", 
-                              sub("simulated ", "simulated\n", j))) +
-                  theme_consultancy() +
-                  theme(text = element_text(size = 6), 
-                        plot.title = element_text(size = 6))
+               if(complete.cases(dosing_interval)){
+                  LastDoseTime$MaxTime <- LastDoseTime$t0 + dosing_interval
+               }
+            }
+            
+            DoseIntChecks <- list()
+            DoseIntWarnings <- list()
+            
+            # Checking for any mismatches w/dosing interval. 
+            if("logical" %in% class(existing_exp_details) == FALSE){
+               for(file in unique(CTsubset$File)){
+                  
+                  DoseIntChecks[[file]] <- list()
+                  DoseIntWarnings[[file]] <- list()
+                  
+                  for(cmpd in unique(CTsubset$CompoundID[CTsubset$File == file])){
+                     
+                     TEMP <- check_doseint(sim_data_file = file, 
+                                           existing_exp_details = existing_exp_details, 
+                                           compoundID = cmpd, 
+                                           stop_or_warn_missing_file = "warn")
+                     
+                     DoseIntWarnings[[file]][[cmpd]] <- TEMP$message
+                     DoseIntChecks[[file]][[cmpd]] <- TEMP$interval
+                  }
+                  
+                  DoseIntChecks[[file]] <- bind_rows(DoseIntChecks[[file]])
+               }
+            }
+            
+            DoseIntChecks <- bind_rows(DoseIntChecks)
+            
+            if("data.frame" %in% class(DoseIntChecks)){
                
-               AUCt_temp <- noncompAUC(DF = CTsubset[[i]][[j]], 
-                                       concentration = Conc, 
-                                       time = Time, 
-                                       type = trapezoidal_method, 
-                                       extrap_inf = FALSE)
+               suppressMessages(
+                  LastDoseTime <- LastDoseTime %>% 
+                     left_join(DoseIntChecks %>% 
+                                  mutate(MaxTime = case_when(IntEndMatch == TRUE ~ EndHr,
+                                                             IntEndMatch == FALSE & Interval != "dose1" ~ StartHr + DoseInt, 
+                                                             .default = NA)) %>% 
+                                  select(File, CompoundID, MaxTime))
+               )
                
-               CmaxTmax_temp <- CTsubset[[i]][[j]] %>% 
-                  summarize(Cmax = max(Conc, na.rm = T), 
-                            tmax = Time[which.max(Conc)], 
-                            Cmin = min(Conc, na.rm = T), 
-                            Clast = Conc[which.max(Time)])
+            } else {
+               # custom dosing intervals, etc. 
+               suppressMessages(
+                  LastDoseTime <- LastDoseTime %>% 
+                     left_join(existing_exp_details$MainDetails %>% 
+                                  select(File, SimDuration)) %>% 
+                     rename(MaxTime = SimDuration)
+               )
+            }
+            
+            CTsubset <- split(CTsubset, list(CTsubset$MaxDoseNum))
+            
+            for(i in names(CTsubset)){
                
-               PKtemp[[paste("last", j)]] <- 
-                  data.frame(
-                     ID = j,
-                     WhichDose = "last", 
-                     Compound = unique(CTsubset[[i]][[j]]$Compound), 
-                     CompoundID = unique(CTsubset[[i]][[j]]$CompoundID), 
-                     Inhibitor = unique(CTsubset[[i]][[j]]$Inhibitor),
-                     Tissue = unique(CTsubset[[i]][[j]]$Tissue),
-                     Individual = unique(CTsubset[[i]][[j]]$Individual), 
-                     Trial = unique(CTsubset[[i]][[j]]$Trial), 
-                     Simulated = unique(CTsubset[[i]][[j]]$Simulated), 
-                     File = unique(CTsubset[[i]][[j]]$File), 
-                     ObsFile = unique(CTsubset[[i]][[j]]$ObsFile), 
-                     DoseNum = unique(CTsubset[[i]][[j]]$DoseNum), 
-                     AUCinf = NA,
-                     AUCinf_fraction_extrapolated = NA, 
-                     ExtrapProbs = FALSE,
-                     k = NA) %>% 
-                  mutate(HalfLife = NA,
-                         AUCt = AUCt_temp, 
-                         Cmax = CmaxTmax_temp$Cmax, 
-                         tmax = CmaxTmax_temp$tmax, 
-                         Cmin = CmaxTmax_temp$Cmin, 
-                         Clast = CmaxTmax_temp$Clast,
-                         CL = MyDose / AUCt * 1000, 
-                         Dose = MyDose)
+               CTsubset[[i]] <- split(CTsubset[[i]], 
+                                      CTsubset[[i]]$ID)
                
-               suppressWarnings(rm(AUCt_temp, CmaxTmax_temp))
+               for(j in names(CTsubset[[i]])){
+                  
+                  MyDose <- switch(unique(CTsubset[[i]][[j]]$CompoundID), 
+                                   "substrate" = unique(CTsubset[[i]][[j]]$Dose_sub), 
+                                   "primary metabolite 1" = NA, 
+                                   "primary metabolite 2" = NA, 
+                                   "secondary metabolite" = NA,
+                                   "inhibitor 1" = unique(CTsubset[[i]][[j]]$Dose_inhib), 
+                                   "inhibitor 2" = unique(CTsubset[[i]][[j]]$Dose_inhib2),
+                                   "inhibitor 1 metabolite" = NA)
+                  
+                  suppressMessages(
+                     CTsubset[[i]][[j]] <- CTsubset[[i]][[j]] %>% 
+                        select(-any_of(c("t0", "MaxTime"))) %>% 
+                        left_join(LastDoseTime) %>% 
+                        filter(Time >= t0 & Time <= MaxTime) %>% 
+                        # Setting t0 to 0 for ease of remaining PK calculations
+                        mutate(Time = Time - t0)
+                  )
+                  
+                  # There could be 0 rows if there are different maximum dose
+                  # numbers for different simulations, so check, skip if there are
+                  # no rows here b/c it's probably fine, and then give message
+                  # about what dataset is being checked.
+                  if(nrow(CTsubset[[i]][[j]]) == 0){next}
+                  
+                  if(report_progress == "yes"){message(paste0("   Calculating PK for dataset ", j))}
+                  
+                  if(omit_0_concs){
+                     # NB: Here, since this will NOT include any true t0 data (t =
+                     # 0 for dose 1 b/c  CTsubset[[i]][[j]] does not include dose 1
+                     # data), all concentrations should be above 0 if that's what
+                     # the user requested.
+                     CTsubset[[i]][[j]] <- CTsubset[[i]][[j]] %>%
+                        filter(Conc > 0)
+                     
+                     # Check again for sufficient data
+                     if(nrow(CTsubset[[i]][[j]]) == 0){
+                        warning(wrapn(paste0("There are no non-zero concentrations for the last dose for dataset '", 
+                                             j, "'. This dataset will be skipped.")), 
+                                call. = FALSE)
+                        
+                        next
+                     }
+                     
+                  }
+                  
+                  # Make a graph of the last-dose data so that user can check that
+                  # they're integrating what they *think* they're integrating.
+                  ElimFitGraphs[[j]] <- 
+                     ggplot(CTsubset[[i]][[j]], aes(x = Time, y = Conc)) + 
+                     geom_line() + 
+                     ggtitle(sub("observed ", "observed\n", 
+                                 sub("simulated ", "simulated\n", j))) +
+                     theme_consultancy() +
+                     theme(text = element_text(size = 6), 
+                           plot.title = element_text(size = 6))
+                  
+                  AUCt_temp <- noncompAUC(DF = CTsubset[[i]][[j]], 
+                                          concentration = Conc, 
+                                          time = Time, 
+                                          type = trapezoidal_method, 
+                                          extrap_inf = FALSE)
+                  
+                  CmaxTmax_temp <- CTsubset[[i]][[j]] %>% 
+                     summarize(Cmax = max(Conc, na.rm = T), 
+                               tmax = Time[which.max(Conc)], 
+                               Cmin = min(Conc, na.rm = T), 
+                               Clast = Conc[which.max(Time)])
+                  
+                  PKtemp[[paste("last", j)]] <- 
+                     data.frame(
+                        ID = j,
+                        WhichDose = "last", 
+                        Compound = unique(CTsubset[[i]][[j]]$Compound), 
+                        CompoundID = unique(CTsubset[[i]][[j]]$CompoundID), 
+                        Inhibitor = unique(CTsubset[[i]][[j]]$Inhibitor),
+                        Tissue = unique(CTsubset[[i]][[j]]$Tissue),
+                        Individual = unique(CTsubset[[i]][[j]]$Individual), 
+                        Trial = unique(CTsubset[[i]][[j]]$Trial), 
+                        Simulated = unique(CTsubset[[i]][[j]]$Simulated), 
+                        File = unique(CTsubset[[i]][[j]]$File), 
+                        ObsFile = unique(CTsubset[[i]][[j]]$ObsFile), 
+                        DoseNum = unique(CTsubset[[i]][[j]]$DoseNum), 
+                        AUCinf = NA,
+                        AUCinf_fraction_extrapolated = NA, 
+                        ExtrapProbs = FALSE,
+                        k = NA) %>% 
+                     mutate(HalfLife = NA,
+                            AUCt = AUCt_temp, 
+                            Cmax = CmaxTmax_temp$Cmax, 
+                            tmax = CmaxTmax_temp$tmax, 
+                            Cmin = CmaxTmax_temp$Cmin, 
+                            Clast = CmaxTmax_temp$Clast,
+                            CL = MyDose / AUCt * 1000, 
+                            Dose = MyDose)
+                  
+                  suppressWarnings(rm(AUCt_temp, CmaxTmax_temp))
+               }
             }
          }
       }
