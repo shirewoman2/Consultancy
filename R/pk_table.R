@@ -916,7 +916,8 @@ pk_table <- function(PKparameters = NA,
                            bind_rows())
    
    # Making only unique warnings
-   MyWarnings <- list_transpose(MyWarnings) %>% unlist() %>% sort() %>% unique()
+   MyWarnings <- MyWarnings[which(lapply(MyWarnings, length) > 0)] %>% 
+      list_transpose() %>% unlist() %>% sort() %>% unique()
    
    if(length(MyWarnings) > 0){
       for(w in 1:length(MyWarnings)){
