@@ -22,6 +22,7 @@ formatTable_Simcyp(
   highlight_so_colors = "yellow to red",
   highlight_cells = NA,
   highlight_color = "yellow",
+  hlines = NA,
   font = "Arial",
   fontsize = 11,
   borders = TRUE,
@@ -167,6 +168,11 @@ vectors. Please see the examples at the bottom of the help file.}
 Color can be specified using any R-friendly color name or hex code, e.g.,
 "red" or "#D8212D".}
 
+\item{hlines}{optionally add horizontal lines at the bottom of any rows
+specified. For example, \code{hlines = c(3, 5)} will put a black line on
+the bottom of rows 3 and 5 of the main part of your table not counting the
+heading.}
+
 \item{font}{font to use. Default is "Arial" and any fonts available on your
 machine in either Word or PowerPoint should be acceptable. If you get Times
 New Roman in your table when you asked for something else, it means that
@@ -208,12 +214,12 @@ a formatted table
 \description{
 \code{formatTable_Simcyp} makes a nicely formatted table from a data.frame or
 tibble. It was primarily designed to work with output from
-\code{\link{pk_table}} and \code{\link{pk_table}}, so, by
-default, it formats tables so that the column headings and the first column
-are bold, and the second through the last columns are centered. Column
-headings with, e.g., "AUCinf" or "Cmax" will have the "inf" or the "max"
-subscripted, and the table will automatically expand to fit the contents. You
-can save the output to a Word file with the argument \code{save_table}.
+\code{\link{pk_table}} and \code{\link{pk_table}}, so, by default, it formats
+tables so that the column headings and the first column are bold, and the
+second through the last columns are centered. Column headings with, e.g.,
+"AUCinf" or "Cmax" will have the "inf" or the "max" subscripted, and the
+table will automatically expand to fit the contents. You can save the output
+to a Word file with the argument \code{save_table}.
 }
 \examples{
 MyPKTable <- tibble(Statistic = c("Simulated", "CV\%", "Observed", "S/O"),
