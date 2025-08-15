@@ -76,14 +76,16 @@ contains only the digitized time and concentration data.}
   including when bound to the target}
   }
 
-  \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
-  tested this very thoroughly, so please be extra careful to check that
-  you're getting the correct data.}
+  \strong{Note:} If your compound is a therapeutic protein or ADC, we are in
+  the process of testing this and expanding on the options here, so please be
+  extra careful to check that you're getting the correct data.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are "aggregate", "individual", or "both"
 (default). Aggregated data are not calculated here but are pulled from the
-simulator output rows labeled as "Population Statistics".}
+simulator output rows labeled as "Population Statistics". One exception: If
+you did not request the geometric mean data, we will calculate those and
+add them to your data.frame.}
 
 \item{adjust_obs_time}{TRUE or FALSE (default) for whether to adjust the time
 listed in the observed data file to match the last dose administered. This

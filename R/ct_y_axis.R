@@ -152,6 +152,7 @@ ct_y_axis <- function(ADAMorAdvBrain,
                                "µg/mL" = "Concentration (µg/mL)",
                                "mL" = "Volume (mL)",
                                "PD response" = "PD response",
+                               "PD input" = "PD input",
                                "Relative abundance" = "Relative abundance")
       }
       
@@ -165,16 +166,18 @@ ct_y_axis <- function(ADAMorAdvBrain,
    AdjustGraphBorder <- "expression" %in% class(ylab1) == FALSE &&
       complete.cases(ylab1) && str_detect(ylab1, "\\\n")
    
-   # If there are observed data included in the simulation, setting the y axis
-   # limits to show those data well. To do this, when observed data are present,
-   # filtering Ylim_data to only include concentrations >= 0.8*min(observed
-   # conc). t0 point isn't included in this calculation.
-   if(EnzPlot == FALSE && nrow(Ylim_data %>% filter(Simulated == FALSE)) > 0){
-      ObsMin <- Ylim_data %>% filter(Simulated == FALSE & Conc > 0) %>% 
-         pull(Conc) %>% min(na.rm = TRUE) 
-      
-      Ylim_data <- Ylim_data %>% filter(Conc >= ObsMin)
-   }
+   # FIXME: This was not working well; it was cutting off too much of the
+   # simulated data.
+   # # If there are observed data included in the simulation, setting the y axis
+   # # limits to show those data well. To do this, when observed data are present,
+   # # filtering Ylim_data to only include concentrations >= 0.8*min(observed
+   # # conc). t0 point isn't included in this calculation.
+   # if(EnzPlot == FALSE && nrow(Ylim_data %>% filter(Simulated == FALSE)) > 0){
+   #    ObsMin <- Ylim_data %>% filter(Simulated == FALSE & Conc > 0) %>% 
+   #       pull(Conc) %>% min(na.rm = TRUE) 
+   #    
+   #    Ylim_data <- Ylim_data %>% filter(Conc >= ObsMin)
+   # }
    
    # One option LS discussed w/MBK and FC: We could also limit the semi-log y
    # axis when there are no observed data to show Cmax * 1.25 then round up to

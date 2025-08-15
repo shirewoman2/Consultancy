@@ -345,10 +345,14 @@ extractPK <- function(sim_data_file,
    # tab in V21 listed 1st dose PK data instead of last-dose PK data, like I've
    # seen *everywhere else but here*. For this reason, we're NOT going to pull
    # data from Tab_AUC when it's a custom-dosing regimen. It's unreliable.
-   CustomDosing <- existing_exp_details$CustomDosing %>% 
-      filter(File == sim_data_file & 
-                CompoundID == compoundToExtract) %>% 
-      nrow() > 0
+   if(nrow(existing_exp_details$CustomDosing) > 0){
+      CustomDosing <- existing_exp_details$CustomDosing %>% 
+         filter(File == sim_data_file & 
+                   CompoundID == compoundToExtract) %>% 
+         nrow() > 0
+   } else {
+      CustomDosing <- FALSE
+   }
    
    if(CustomDosing){
       Tab_AUC <- NULL

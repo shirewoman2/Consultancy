@@ -91,13 +91,15 @@
 #'   including when bound to the target}
 #'   }
 #'
-#'   \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
-#'   tested this very thoroughly, so please be extra careful to check that
-#'   you're getting the correct data.
+#'   \strong{Note:} If your compound is a therapeutic protein or ADC, we are in
+#'   the process of testing this and expanding on the options here, so please be
+#'   extra careful to check that you're getting the correct data.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   concentration-time data? Options are "aggregate", "individual", or "both"
 #'   (default). Aggregated data are not calculated here but are pulled from the
-#'   simulator output rows labeled as "Population Statistics".
+#'   simulator output rows labeled as "Population Statistics". One exception: If
+#'   you did not request the geometric mean data, we will calculate those and
+#'   add them to your data.frame.
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
 #'   get all the details from the "Input Sheet" (e.g., when you ran
@@ -238,10 +240,6 @@ extractConcTime <- function(sim_data_file,
    }
    
    tissue <- tolower(tissue)
-   
-   if(compoundToExtract %in% c("pd response", "pd input")){
-      tissue <- compoundToExtract
-   }
    
    PossTiss <- c("additional organ", "adipose", "blood", "bone", "brain",
                  "colon", "csf", "cumulative absorption",
