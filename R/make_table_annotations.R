@@ -25,7 +25,7 @@
 #' @param name_clinical_study optionally specify the name(s) of the clinical
 #'   study or studies for any observed data. This only affects the caption of
 #'   the graph. For example, specifying \code{name_clinical_study = "101, fed
-#'   cohort"} will result in a figure caption that reads in part "clinical study
+#'   cohort"} will result in a figure caption that reads in part "Clinical Study
 #'   101, fed cohort". If you have more than one study, that's fine; we'll take
 #'   care of stringing them together appropriately. Just list them as a
 #'   character vector, e.g., \code{name_clinical_study = c("101",
@@ -138,9 +138,9 @@ make_table_annotations <- function(MyPKResults, # only PK table
    if(length(name_clinical_study) > 1){
       MyClinStudies <- str_comma(name_clinical_study)
    } else if(complete.cases(name_clinical_study)){
-      MyClinStudies <- paste("clinical study", name_clinical_study)
+      MyClinStudies <- paste("Clinical Study", name_clinical_study)
    } else {
-      MyClinStudies <- "clinical study **XXX**"
+      MyClinStudies <- "Clinical Study **XXX**"
    }
    
    
