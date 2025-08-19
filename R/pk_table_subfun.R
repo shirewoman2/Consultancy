@@ -220,7 +220,7 @@ pk_table_subfun <- function(sim_data_file,
                MyPKResults_all$aggregate[[param]] %>% 
                pivot_longer(cols = -any_of(c(
                   "File", "CompoundID", "Compound", "Inhibitor", "Tissue",
-                  "Simulated", "Dose", "N", "PKparameter")), 
+                  "Simulated", "Dose", "N", "CV", "GCV", "PKparameter")), 
                   names_to = "Stat", 
                   values_to = "Conc") %>% 
                mutate(Conc_units = Deets$Units_Cmax)
