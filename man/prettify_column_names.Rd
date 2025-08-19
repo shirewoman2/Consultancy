@@ -9,7 +9,8 @@ prettify_column_names(
   PKtable,
   prettify_compound_names = TRUE,
   pretty_or_ugly_cols = "pretty",
-  return_which_are_PK = FALSE
+  return_which_are_PK = FALSE,
+  fix_col_names = TRUE
 )
 }
 \arguments{
@@ -47,6 +48,11 @@ AUCinf (ng/mL.h)" or do you want "ugly" but R friendly column names such as
 prettifying, return a data.frame saying which column names are PK
 parameters and which are not. This will also include some other info s/a
 the PK parameter coded name.}
+
+\item{fix_col_names}{TRUE (default) or FALSE for whether to fix any
+duplicated column names by appending a number to the replicates. No need
+for this if you're not actually making column names, though, but just
+prettifying a character vector, for example.}
 }
 \value{
 a PK table with prettier column names
