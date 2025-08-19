@@ -597,9 +597,12 @@ tidy_input_PK <- function(PKparameters,
       
       names(PKparameters)[tolower(names(PKparameters)) == "sheet"] <- "Sheet"
       
-      if("Sheet" %in% names(PKparameters) == FALSE & 
-         "useraucsheet" %in% tolower(names(PKparameters))){
-         names(PKparameters)[tolower(names(PKparameters)) == "useraucsheet"] <- "Sheet"
+      if("Sheet" %in% names(PKparameters) == FALSE){
+         if("useraucsheet" %in% tolower(names(PKparameters))){
+            names(PKparameters)[tolower(names(PKparameters)) == "useraucsheet"] <- "Sheet"
+         } else if("customaucsheet" %in% tolower(names(PKparameters))){
+            names(PKparameters)[tolower(names(PKparameters)) == "customaucsheet"] <- "Sheet"
+         }
       }
       
       if("Sheet" %in% names(PKparameters) == FALSE & 

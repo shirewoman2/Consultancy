@@ -30,7 +30,7 @@ make_example_PK_input <- function(){
    Opts_main <- c("1" = "typical dose 1", 
                   "2" = "typical last dose",
                   "3" = "typical DDI", 
-                  "4" = "user-defined intervals", 
+                  "4" = "user-defined AUC intervals", 
                   "5" = "specifying the compounds to use", 
                   "6" = "specifying the tissues to use", 
                   "7" = "all possible AUCs", 
@@ -170,20 +170,20 @@ make_example_PK_input <- function(){
          }
       }
       
-      #### Sheet ------------------------------------------------------------------
+      #### UserAUCsheet ------------------------------------------------------------------
       
       if("4" %in% Q1){ # specific sheet
          ExistingIDs <- bind_rows(Examples)
          if("ID" %in% names(ExistingIDs)){ExistingIDs <- ExistingIDs$ID}
          
          Examples[["A4"]] <- 
-            PKexamples %>% filter(complete.cases(Sheet)) %>% 
+            PKexamples %>% filter(complete.cases(UserAUCsheet)) %>% 
             filter(!ID %in% ExistingIDs) %>% 
             mutate(Notes = "")
          
          if(nrow(Examples[["A4"]]) > 0){
             Examples[["A4"]]$Notes[1] <- 
-               "Only fill in the `Sheet` column when you have a specific sheet you want and not when it's the standard first or last dose PK. You can specify more than one user-defined tab for the same simulation; put them in separate rows, though."
+               "Only fill in the `UserAUCsheet` column when you have a specific sheet you want and not when it's the standard first or last dose PK. You can specify more than one user-defined tab for the same simulation; put them in separate rows, though."
          }
       } 
       
@@ -287,7 +287,7 @@ make_example_PK_input <- function(){
       #### Assembling ------------------------------------------------------------
       Examples <- bind_rows(Examples) %>% unique() %>% 
          arrange(SortOrder) %>% 
-         select(File, CompoundID, Tissue, Sheet, PKparameter, ObsValue, ObsVariability,
+         select(File, CompoundID, Tissue, UserAUCsheet, PKparameter, ObsValue, ObsVariability,
                 any_of("Notes")) %>% 
          mutate(across(.cols = any_of("Notes"), 
                        .fns = \(x) ifelse(is.na(x), "", x)))
@@ -299,7 +299,7 @@ make_example_PK_input <- function(){
       
       # If they didn't request specific sheets, only include NA for sheet. 
       if("4" %in% Q1 == FALSE){
-         Examples <- Examples %>% filter(is.na(Sheet))
+         Examples <- Examples %>% filter(is.na(UserAUCsheet))
       }
       
       # If they didn't request specific tissues, only include plasma. 
@@ -382,7 +382,7 @@ make_example_PK_input <- function(){
                               indent = 3, exdent = 5), "\n"))
       message(paste0(str_wrap("- We recommend saving the results from running pk_table to a Word file rather than csv because csv files drop trailing zeroes, so they mess up your rounding in that manner.", 
                               indent = 3, exdent = 5), "\n"))
-      message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the `Sheet` column blank; you should only list the sheet when it's a user-defined AUC interval.",
+      message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the `UserAUCsheet` column blank; you should only list the sheet when it's a user-defined AUC interval.",
                               indent = 3, exdent = 5), "\n"))
       
    }
@@ -473,7 +473,7 @@ make_example_PK_input <- function(){
                               indent = 3, exdent = 5), "\n"))
       message(paste0(str_wrap("- We recommend saving the results from running calc_PK_ratios to a Word file rather than csv because csv files drop trailing zeroes, so they mess up your rounding in that manner.", 
                               indent = 3, exdent = 5), "\n"))
-      message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the `Sheet` column blank; you should only list the sheet when it's a user-defined AUC interval.",
+      message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the `UserAUCsheet` column blank; you should only list the sheet when it's a user-defined AUC interval.",
                               indent = 3, exdent = 5), "\n"))
       
    }
