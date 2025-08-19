@@ -1,36 +1,47 @@
-#' Pull concentration-time data from multiple Simcyp Simulator output files
+#' Pull concentration-time data for multiple Simcyp Simulator output files,
+#' compounds, or tissues
 #'
-#' \code{extractConcTime_mult} is meant to be used in conjunction with
-#' \code{\link{ct_plot_overlay}} or \code{\link{ct_plot_mult}} to create graphs
-#' from multiple Simcyp Simulator output files. If you list multiple files,
-#' multiple tissues, and/or multiple compounds to extract (see options below),
-#' this will extract \emph{all} possible variations of them. For example, if you
-#' ask for data from the files "sim1.xlsx" and "sim2.xlsx" and then also ask for
-#' "substrate" and "primary metabolite 1", you will get the substrate and
-#' primary metabolite 1 data from \emph{both} files. \strong{NOTE:} If ANY of
-#' the Excel files you wish to extract data from are open, this WILL CRASH and
-#' WILL NOT save whatever progress it has made so far. Be sure to close all of
-#' the source Excel files.
+#' @description \code{extractConcTime_mult} is meant to be used in conjunction
+#'   with \code{\link{ct_plot_overlay}} or \code{\link{ct_plot_mult}} to create
+#'   graphs from multiple Simcyp Simulator output files. If you list multiple
+#'   files, multiple tissues, and/or multiple compounds to extract (see options
+#'   below), this will extract \emph{all} possible variations of them. For
+#'   example, if you ask for data from the files "sim1.xlsx" and "sim2.xlsx" and
+#'   then also ask for "substrate" and "primary metabolite 1", you will get the
+#'   substrate and primary metabolite 1 data from \emph{both} files.
 #'
-#' \strong{Regarding dose intervals for observed data:} The observed data files
-#' don't include information on dosing intervals or dose numbers, which makes it
-#' a little tricky to figure out which dose number a given time in an observed
-#' data file should have. If the compound IDs in the simulated data match those
-#' in the observed data, we will assume that the dosing intervals are the same.
-#' This was coded with the assumption that the dosing interval would be a round
-#' number (subjects aren't getting dosed on the half hour, for example), so if
-#' that's not the case, these dose number assignments will be off.
+#'   \strong{NOTE:} If ANY of the Excel files you wish to extract data from are
+#'   open, this WILL CRASH and WILL NOT save whatever progress it has made so
+#'   far. Be sure to close all of the source Excel files.
 #'
-#' @param sim_data_files a character vector of simulator output files, each in
-#'   quotes and encapsulated with \code{c(...)}, NA to extract
+#' @details \strong{Regarding dose intervals for observed data:} The observed
+#'   data files don't include information on dosing intervals or dose numbers,
+#'   which makes it a little tricky to figure out which dose number a given time
+#'   in an observed data file should have. If the compound IDs in the simulated
+#'   data match those in the observed data, we will assume that the dosing
+#'   intervals are the same. This was coded with the assumption that the dosing
+#'   interval would be a round number (subjects aren't getting dosed on the half
+#'   hour, for example), so if that's not the case, these dose number
+#'   assignments will be off.
+#'
+#' @param sim_data_files the simulation files you want data from. Options for
+#'   specifying these: \itemize{
+#'
+#'   \item{a character vector of simulator output files, each in
+#'   quotes and encapsulated with \code{c(...)},}
+#'
+#'   \item{NA to extract
 #'   concentration-time data for \emph{all} the Excel files in the current
-#'   folder, or "recursive" to extract concentration-time data for \emph{all}
-#'   the Excel files in the current folder and \emph{all} subfolders. Example of
-#'   acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. The path should be
-#'   included with the file names if they are located somewhere other than your
-#'   working directory. If some of your Excel files are not regular simulator
-#'   output, e.g. they are sensitivity analyses or a file where you were doing
-#'   some calculations, those files will be skipped.
+#'   folder,}
+#'
+#'   \item{or "recursive" to extract concentration-time data for \emph{all}
+#'   the Excel files in the current folder and \emph{all} subfolders.}}
+#'
+#'   Example of acceptable input: \code{c("sim1.xlsx", "sim2.xlsx")}. The path
+#'   should be included with the file names if they are located somewhere other
+#'   than your working directory. If some of your Excel files are not regular
+#'   simulator output, e.g. they are sensitivity analyses or a file where you
+#'   were doing some calculations, those files will be skipped.
 #' @param obs_to_sim_assignment the assignment of which observed files go with
 #'   which simulated files. (NA, which is the default, means no observed data
 #'   will be extracted.) There are four ways to supply this:
@@ -91,11 +102,8 @@
 #'
 #'   For whichever option you choose, the observed files' paths should be
 #'   included if they are located somewhere other than your working directory.
-#'   The observed data files should be for the Excel file that it is
-#'   \emph{ready} to be converted to an XML file, not the file that contains
-#'   only the digitized time and concentration data. This function assumes that
-#'   the dosing intervals for the observed data match those in the simulated
-#'   data. See "Details" for more info.
+#'   This function assumes that the dosing intervals for the observed data match
+#'   those in the simulated data. See "Details" for more info.
 #' @param ct_dataframe (optional) a data.frame that contains previously
 #'   extracted concentration-time data. This should NOT be in quotes. Because we
 #'   can see scenarios where you might want to extract some concentration-time
@@ -148,13 +156,14 @@
 #'   c("plasma", "blood", "liver")} or, if you want all possible tissues and
 #'   you've got some time to kill, "all". That will make R check for all sorts
 #'   of possible permutations of tab names, so it does take a while. NOTE: If
-#'   you want PD input or PD response for the compoundsToExtract, tissue will be
-#'   ignored.
+#'   "PD input" or "PD response" are among the requested compoundsToExtract,
+#'   tissue will be ignored for those, so don't worry about the tissue in that
+#'   case.
 #' @param compoundsToExtract For which compounds do you want to extract
 #'   concentration-time data? Options are:
 #'
 #'   \itemize{
-#'   \item{"all" (default) for all the typical compounds in a simulation: 
+#'   \item{"all" (default) for all the typical compounds in a simulation:
 #'   substrate, perpetrators, metabolites, etc.}
 #'   \item{"substrate"}
 #'   \item{"primary metabolite 1"}
@@ -374,7 +383,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
    # data are already present in ct_dataframe.
    if(compoundsToExtract[1] == "all"){
       compoundsToExtract_orig <- "all"
-      compoundsToExtract <- c(MainCompoundIDs, ADCCompoundIDs, "pd input", "pd")
+      compoundsToExtract <- c(MainCompoundIDs, ADCCompoundIDs,
+                              "pd input", "pd response")
    } else {
       compoundsToExtract_orig <- compoundsToExtract
    }
@@ -882,6 +892,14 @@ extractConcTime_mult <- function(sim_data_files = NA,
       MyObsFile <- ObsAssign$ObsFile[ObsAssign$File == ff]
       if(length(MyObsFile) == 0){MyObsFile <- NA}
       
+      # Setting aside PD data b/c it's just *different* from all the other
+      # compounds but also similar enough that I want to include it in this
+      # function.
+      PDCmpds <- intersect(compoundsToExtract_n, 
+                           c("pd response", "pd input"))
+      compoundsToExtract_n <- setdiff(compoundsToExtract_n, 
+                                      c("pd response", "pd input"))
+      
       # Each tissue will be on its own sheet in the Excel file, so each
       # will need their own iterations of the loop for reading different
       # sheets.
@@ -1060,7 +1078,8 @@ extractConcTime_mult <- function(sim_data_files = NA,
                   
                   PossCompounds == "released payload" ~ "primary metabolite 1", 
                   
-                  PossCompounds %in% c("pd input", "pd response") ~ "PD", 
+                  # NB: Moving PD compounds elsewhere
+                  # PossCompounds %in% c("pd input", "pd response") ~ "PD", 
                   
                   .default = PossCompounds)) %>%
                filter(PossCompounds %in% compoundsToExtract_n)
@@ -1188,17 +1207,74 @@ extractConcTime_mult <- function(sim_data_files = NA,
             MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
             
          }
-         
-         MultData[[ff]][[j]] <- bind_rows(MultData[[ff]][[j]])
-         
       }
+      
+      # Extracting any PD data. This code will be somewhat redundant w/code
+      # above, so I may change this at some point to use more subfuns. For now,
+      # though, just trying to make a separate place where I'm only dealing with
+      # PD data.
+      if(length(PDCmpds) > 0){
+         
+         # # Have not set this up for database extraction yet. 
+         # if(str_detect(ff, "\\.db$")){
+         #    for(l in compoundsToExtract_k){
+         #       
+         #       MultData[[ff]][[j]][[k]][[l]] <-
+         #          extractConcTime_DB(
+         #             sim_data_file = ff,
+         #             # obs_data_file = MyObsFile, 
+         #             compoundToExtract = l,
+         #             tissue = j,
+         #             returnAggregateOrIndiv = returnAggregateOrIndiv, 
+         #             existing_exp_details = existing_exp_details) 
+         #    }
+         #    
+         #    MultData[[ff]][[j]][[k]] <- bind_rows(MultData[[ff]][[j]][[k]])
+         #    
+         # } 
+         
+         SheetNames <- gsub("`", "", str_split_1(Deets$SheetNames, "` `"))
+         PossSheets <- SheetNames[str_detect(SheetNames, "PD Profiles \\(Sub\\)")]
+         
+         if(length(PossSheets) == 0){
+            if(compoundsToExtract_orig != "all"){
+               warning(wrapn(paste0(
+                  "You requested ", 
+                  gsub("pd", "PD", str_comma(sort(PDCmpds))), 
+                  " data from the file '",
+                  ff, "', but there is no PD profile tab available, so no PD data can be returned.")),
+                  call. = FALSE)
+            }
+         } else {
+            
+            for(pd in PDCmpds){
+               
+               MultData[[ff]][[pd]] <-
+                  extractConcTime(
+                     sim_data_file = ff,
+                     compoundToExtract = pd,
+                     returnAggregateOrIndiv = returnAggregateOrIndiv, 
+                     fromMultFunction = TRUE, 
+                     existing_exp_details = existing_exp_details)
+               
+               if(nrow(MultData[[ff]][[pd]]) == 0){
+                  warning(wrapn(paste0("No data could be found in the simulation '", 
+                                       ff, 
+                                       "' for the ", 
+                                       sub("pd", "PD", pd), 
+                                       ".")), 
+                          call. = FALSE)
+               }
+            }
+         }
+      }  
       
       MultData[[ff]] <- bind_rows(MultData[[ff]])
       
       # MUST remove Deets or you can get the wrong info for each file!!!
       rm(Deets, CompoundCheck, compoundsToExtract_n) 
       
-   }  
+   }
    
    MultData <- bind_rows(MultData)
    

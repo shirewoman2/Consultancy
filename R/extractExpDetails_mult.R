@@ -263,8 +263,8 @@ extractExpDetails_mult <- function(sim_data_files = NA,
    # If MyDeets was length 0, which will happen if there are no new simulations
    # to extract, then skip the class check b/c it won't work.
    if(length(MyDeets) > 0){
-      # Tried EVERYTHING I COULD THINK OF to avoid doing this next bit as multiple
-      # loops, but NOTHING worked.
+      # Tried EVERYTHING I COULD THINK OF to avoid doing this next bit as
+      # multiple loops, but NOTHING worked.
       Classes <- list()
       
       for(i in names(Out)){
@@ -276,7 +276,7 @@ extractExpDetails_mult <- function(sim_data_files = NA,
       }
       
       Classes <- bind_rows(Classes) %>% 
-         mutate(Class = ifelse(Class == "logical", NA, Class)) %>% 
+         # mutate(Class = ifelse(Class == "logical", NA, Class)) %>%
          group_by(Detail) %>% 
          summarize(Problem = length(sort(unique(Class))) > 1) %>% 
          filter(Problem)

@@ -579,7 +579,7 @@ talking about here or if you get error messages that aren't terribly clear
 SimcypConsultancy package authors), try setting this to FALSE.}
 }
 \value{
-a ggplot2 graphs or a set of arranged ggplot2 graphs
+a ggplot2 graph or a set of arranged ggplot2 graphs
 }
 \description{
 \code{ct_plot_overlay} is meant to be used in conjunction with
@@ -595,29 +595,42 @@ To make an overlaid graph, the ct_plot_overlay function will ask you to
   (column in ct_dataframe: Tissue) or set the line type based on whether a
   DDI perpetrator drug is present (column in ct_dataframe: Inhibitor) or
   break up the graphs into small multiples based on which simulation it is
-  (column in ct_dataframe: File). When you run this function, two of the
-  messages you'll see will be "Columns that vary in your data: ..." and
-  "Graphing aesthetics you've assigned: ..." We set up these messages to try
-  to let you know what columns in your source data -- the object you supplied
-  for \code{ct_dataframe} -- have multiple unique values that might be useful
-  for mapping aesthetics in your graphs. If you have a problem with your
-  graphs such as multiple lines that are the same color or multiple lines
-  that are the same line type and that's not what you expected and it's not
-  clear why you're getting that graph, this pair of messages is meant to help
-  you figure out what groups are present in your data and which of them you
-  have mapped to an aesthetic aspect of your graph.
+  (column in ct_dataframe: File).
 
-  The faceting arguments may take a little playing around to understand and
-  will probably be clearest if you're already a ggplot2 user. (This and all
-  graphing functions in the SimcypConsultancy package use the package ggplot2
-  to make graphs.) Here's what's going on under the hood with the faceting
-  arguments: If you set \code{floating_facet_scale = FALSE}, the default,
-  then \code{ct_plot_overlay} will use facet_grid to break up your graphs and
-  set \code{facet1_column} to the rows and \code{facet2_column} to the
-  columns. If you set \code{floating_facet_scale = TRUE}, then
-  \code{ct_plot_overlay} will use facet_wrap to break up your data and
-  \code{facet1_column} will be the first variable it uses and
-  \code{facet2_column} will be the second.
+  When you run this function, two of the messages you'll see will be "Columns
+  that vary in your data: ..." and "Graphing aesthetics you've assigned: ..."
+  We set up these messages to try to let you know what columns in your source
+  data -- the object you supplied for \code{ct_dataframe} -- have multiple
+  unique values that might be useful for mapping aesthetics in your graphs.
+  If you have a problem with your graphs such as multiple lines that are the
+  same color or multiple lines that are the same line type and that's not
+  what you expected and it's not clear why you're getting that graph, this
+  pair of messages is meant to help you figure out what groups are present in
+  your data and which of them you have mapped to an aesthetic aspect of your
+  graph.
+
+  To break up your graphs into small multiples, e.g., little graphs right
+  next to each other to make comparisons easier, you'll want to use one or
+  both of the arguments facet1_column and facet2_column. They will break up
+  your graphs based on what data are present in those columns. For example,
+  if you've got both plasma and blood listed in the column "Tissue", you can
+  facet your graph by that column and get one graph for plasma and one for
+  blood. You would do that with, e.g., \code{facet1_column = Tissue}. Please
+  note that column names are NOT enclosed in quotes when they're supplied to
+  function arguments most of the time. (We'll let you know when that's not
+  the case.)
+
+  How these faceting arguments work may take a little playing around to
+  understand and will probably be clearest if you're already a ggplot2 user.
+  (This and all graphing functions in the SimcypConsultancy package use the
+  package ggplot2 to make graphs.) For ggplot2 users, here's what's going on
+  under the hood with the faceting arguments: If you set
+  \code{floating_facet_scale = FALSE}, the default, then
+  \code{ct_plot_overlay} will use facet_grid to break up your graphs and set
+  \code{facet1_column} to the rows and \code{facet2_column} to the columns.
+  If you set \code{floating_facet_scale = TRUE}, then \code{ct_plot_overlay}
+  will use facet_wrap to break up your data and \code{facet1_column} will be
+  the first variable it uses and \code{facet2_column} will be the second.
 
   \strong{A note reqgarding observed data:} There are some nuances to
   overlaying observed data. For detailed instructions and examples, please
@@ -632,7 +645,9 @@ To make an overlaid graph, the ct_plot_overlay function will ask you to
   extract your data. Something has likely gone wrong in the data extraction.
 }
 \examples{
-data(MDZct)
+# We'll use some example data that are saved with the package: MDZct. First,
+# let's use mostly default settings and color the concentration-time profiles
+# based on the values in the column File. 
 ct_plot_overlay(ct_dataframe = MDZct, colorBy_column = File)
 
 # Setting the legend labels for color to be more interpretable. Note
@@ -643,13 +658,6 @@ ct_plot_overlay(ct_dataframe = MDZct, colorBy_column = File,
                                  "mdz-5mg-sd-fa0_8.xlsx" = "fa 0.8",
                                  "mdz-5mg-sd-fa0_6.xlsx" = "fa 0.6",
                                  "mdz-5mg-sd-fa0_4.xlsx" = "fa 0.4"))
-
-# An example of how you might set the column "File" for a specific
-# observed data file:
-MyData <- MyData \%>\%
-   mutate(File = case_when(ObsFile == "ObservedData1.xlsx" ~ "SimFileA.xlsx",
-                           ObsFile == "ObservedData2.xlsx" ~ "SimFileB.xlsx"))
-
 
 
 }

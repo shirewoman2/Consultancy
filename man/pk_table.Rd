@@ -15,7 +15,7 @@ pk_table(
   use_median_for_tmax = TRUE,
   includeCV = TRUE,
   includeSD = FALSE,
-  includeConfInt = TRUE,
+  includeConfInt = FALSE,
   includeMedian = FALSE,
   includeRange = FALSE,
   includePerc = FALSE,
@@ -192,7 +192,7 @@ in the table}
 \item{includeSD}{TRUE or FALSE (default) for whether to include rows for the
 standard deviation in the table}
 
-\item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
+\item{includeConfInt}{TRUE or FALSE (default) for whether to include whatever
 confidence intervals were included in the simulator output file. Note that
 the confidence intervals are geometric since that's what the simulator
 outputs (see an AUC tab and the summary statistics; these values are the
@@ -215,9 +215,7 @@ individual values rather than being pulled directly from the output.}
 \item{concatVariability}{TRUE (default) or FALSE for whether to concatenate
 the variability. If "TRUE", the output will be formatted into a single row
 and listed as the lower confidence interval or percentile to the upper CI
-or percentile, e.g., "2400 to 2700". Please note that the current
-SimcypConsultancy template lists one row for each of the upper and lower
-values, so this should be set to FALSE for official reports.}
+or percentile, e.g., "2400 to 2700".}
 
 \item{variability_format}{formatting used to indicate the variability When
 the variability is concatenated. Options are "to" (default) to get output

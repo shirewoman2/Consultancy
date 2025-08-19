@@ -32,6 +32,7 @@ so_graph(
   include_dose_num = NA,
   facet_title_size = NA,
   title_adjustments = c(),
+  graph_labels = FALSE,
   all_intervals_together = FALSE,
   all_AUCs_together = FALSE,
   grid_color = NA,
@@ -151,9 +152,9 @@ works), or "both".}
 
 \item{variability_type}{If you're including error bars, what kind of
 variability would you like to have those error bars display? Options are
-"90\% CI" (default), "95\% CI", "CV\%", "percentiles", "standard deviation",
-("SD" will also work fine), or "range". If \code{error_bars} is set to
-"none", this will be ignored.}
+"90\% CI" (default), "95\% CI", "CV\%", "percentiles", "standard
+deviation", ("SD" will also work fine), or "range". If \code{error_bars} is
+set to "none", this will be ignored.}
 
 \item{point_color_column}{(optional) the column in \code{PKtable} that should
 be used for determining which color the points will be. This should be
@@ -291,6 +292,9 @@ facet titles. If left as NA, a reasonable guess will be used.}
   \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other
   substitutions people might want. Instead of the using AUCinf, graph titles will
   use AUC0 to inf}}}
+
+\item{graph_labels}{TRUE or FALSE (default) for whether to include labels (A,
+B, C, etc.) for each of the small graphs.}
 
 \item{all_intervals_together}{TRUE or FALSE (default) for whether to combine
 all of a single type of PK parameter into a single graph. For example,

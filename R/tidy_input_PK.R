@@ -596,7 +596,14 @@ tidy_input_PK <- function(PKparameters,
       # 1.
       
       names(PKparameters)[tolower(names(PKparameters)) == "sheet"] <- "Sheet"
-      if(any(c("tab", "sheets", "sheet_pkparameter", "sheet_pkparameters") %in% 
+      
+      if("Sheet" %in% names(PKparameters) == FALSE & 
+         "useraucsheet" %in% tolower(names(PKparameters))){
+         names(PKparameters)[tolower(names(PKparameters)) == "useraucsheet"] <- "Sheet"
+      }
+      
+      if("Sheet" %in% names(PKparameters) == FALSE & 
+         any(c("tab", "sheets", "sheet_pkparameter", "sheet_pkparameters") %in% 
              tolower(names(PKparameters)))){
          
          ColToUse <- c(which(tolower(names(PKparameters)) == "tab"), 
@@ -604,9 +611,9 @@ tidy_input_PK <- function(PKparameters,
                        which(tolower(names(PKparameters)) == "sheet_pkparameter"), 
                        which(tolower(names(PKparameters)) == "sheet_pkparameters"))[1]
          
-         warning(wrapn(paste0("We were looking for a column named `Sheet` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
+         warning(wrapn(paste0("We were looking for a column named `UserAUCSheet` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
                               names(PKparameters)[ColToUse],
-                              "`, which we think is what you might want. We'll use the data that column for the sheet names for any user-defined intervals.")), 
+                              "`, which we think is what you might want. We'll use that column to determine the sheet names for any user-defined intervals.")), 
                  call. = FALSE)
          
          names(PKparameters)[ColToUse] <- "Sheet"

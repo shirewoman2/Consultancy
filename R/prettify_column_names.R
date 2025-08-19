@@ -38,6 +38,10 @@
 #'   prettifying, return a data.frame saying which column names are PK
 #'   parameters and which are not. This will also include some other info s/a
 #'   the PK parameter coded name.
+#' @param fix_col_names TRUE (default) or FALSE for whether to fix any
+#'   duplicated column names by appending a number to the replicates. No need
+#'   for this if you're not actually making column names, though, but just
+#'   prettifying a character vector, for example.
 #'
 #' @return a PK table with prettier column names
 #' @export
@@ -48,13 +52,15 @@
 prettify_column_names <- function(PKtable, 
                                   prettify_compound_names = TRUE, 
                                   pretty_or_ugly_cols = "pretty", 
-                                  return_which_are_PK = FALSE){
+                                  return_which_are_PK = FALSE, 
+                                  fix_col_names = TRUE){
    
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again."), 
+           call. = FALSE)
    }
    
    # Check for appropriate input for arguments
@@ -63,7 +69,7 @@ prettify_column_names <- function(PKtable,
    } else if("character" %in% class(PKtable)){
       PKtable_class <- "character"
    } else {
-      stop("PKtable must be a data.frame for this to work, and it doesn't appear to be.", 
+      stop(wrapn("PKtable must be a data.frame or character vector for this to work, and it doesn't appear to be."), 
            call. = FALSE)
    }
    
@@ -135,11 +141,10 @@ prettify_column_names <- function(PKtable,
    # Dealing w/multiple conc or time units
    ConcUnits <- sort(unique(TableNames$Conc))
    if(length(ConcUnits) > 1){
-      message(paste0(str_wrap(paste0(
+      message(wrapn(paste0(
          "You have more than one concentration unit in your PK table; specifically, you have units of ", 
          str_comma(paste0("`", ConcUnits, "`")), 
-         ". Just fyi, if you're running a function for making a PK table, and you see this message, we can adjust concentration units for you if you request that with the argument convert_conc_units.")), 
-         "\n"))
+         ". Just fyi, if you're running a function for making a PK table, and you see this message, we can adjust concentration units for you if you request that with the argument convert_conc_units.")))
    }   
    
    OtherConcUnits <- setdiff(ConcUnits, "ng/mL")
@@ -220,10 +225,10 @@ prettify_column_names <- function(PKtable,
    if(any(str_detect(TableNames$OrigColNames, "[Ss]teady[- ]state"))){
       TableNames <- TableNames %>% 
          mutate(PrettifiedNames = case_when(
-         str_detect(OrigColNames, "[Ss]teady[- ]state") ~
-            str_replace(PrettifiedNames, "Last dose", 
-                        str_extract(OrigColNames, "[Ss]teady[- ]state")), 
-         .default = PrettifiedNames))
+            str_detect(OrigColNames, "[Ss]teady[- ]state") ~
+               str_replace(PrettifiedNames, "Last dose", 
+                           str_extract(OrigColNames, "[Ss]teady[- ]state")), 
+            .default = PrettifiedNames))
    }
    
    # Putting time interval back into col names
@@ -261,18 +266,18 @@ prettify_column_names <- function(PKtable,
       if(any(duplicated(ColNamesNoDecorations)) |
          any(str_detect(TableNames$FinalNames[duplicated(TableNames$OrigOrder)], 
                         "CL")) == FALSE){
-         warning(paste0("There's something ambiguous about the input table column names that means that we don't know what value(s) to use for the final column names, so we cannot ", 
-                        switch(pretty_or_ugly_cols, 
-                               "pretty" = "prettify", 
-                               "ugly" = "uglify"), 
-                        " your columns. Please check your input and tell a member of the R Working Group if you're uncertain what the problem might be.\n"), 
+         warning(wrapn(paste0("There's something ambiguous about the input table column names that means that we don't know what value(s) to use for the final column names, so we cannot ", 
+                              switch(pretty_or_ugly_cols, 
+                                     "pretty" = "prettify", 
+                                     "ugly" = "uglify"), 
+                              " your columns. Please check your input and tell a member of the R Working Group if you're uncertain what the problem might be.")), 
                  call. = FALSE)
          TableNames <- TableNames %>% 
             mutate(FinalNames = ColNamesNoDecorations) %>% unique()
       } else {
          # This is when there's a duplicate b/c of CLinf vs. CLt vs. CLtau. Just
          # remove the duplicate CL names.
-         warning("At least one column was ambiguous and could have been CLinf_dose1, CLtau_last, or CLt_dose1, but we're not sure which. We are calling it CLinf_dose1 as a placeholder.\n", 
+         warning(wrapn("At least one column was ambiguous and could have been CLinf_dose1, CLtau_last, or CLt_dose1, but we're not sure which. We are calling it CLinf_dose1 as a placeholder."), 
                  call. = FALSE)
          
          TableNames$Duplicated <- FALSE
@@ -284,13 +289,14 @@ prettify_column_names <- function(PKtable,
    }
    
    # Check that all column names would be unique.
-   if(any(duplicated(TableNames$FinalNames))){
-      warning(paste0(str_wrap(paste0("Some table names would be duplicated after ",
-                                     ifelse(pretty_or_ugly_cols == "pretty", 
-                                            "prettification", "uglification"), 
-                                     ". Please check the output. For now, we're adding a number to the end of each replicate column name.")), 
-                     "\n"), 
-              call. = FALSE)
+   if(any(duplicated(TableNames$FinalNames)) & 
+      fix_col_names == TRUE){
+      warning(wrapn(paste0(
+         "Some table names would be duplicated after ",
+         ifelse(pretty_or_ugly_cols == "pretty", 
+                "prettification", "uglification"), 
+         ". Please check the output. For now, we're adding a number to the end of each replicate column name.")), 
+         call. = FALSE)
       TableNames$FinalNames[duplicated(TableNames$FinalNames)] <- 
          paste(TableNames$FinalNames[duplicated(TableNames$FinalNames)], 
                1:length(TableNames$FinalNames[duplicated(TableNames$FinalNames)]))
