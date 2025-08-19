@@ -105,6 +105,8 @@
 #'   \code{ggpubr::show_line_types()} into the console.
 #' @param boundary_line_width line width; default is 0.7. This only applies when
 #'   \code{boundary_indicator} is set to "lines", the default.
+#' @param graph_labels TRUE or FALSE (default) for whether to include labels (A,
+#'   B, C, etc.) for each of the small graphs.
 #' @param axis_title_x title for the x axis; default is "Observed"
 #' @param axis_title_y title for the y axis; default is "Simulated"
 #' @param axis_titles SOON TO BE DEPRECATED in favor of \code{axis_title_x} and
@@ -117,9 +119,9 @@
 #'   works), or "both".
 #' @param variability_type If you're including error bars, what kind of
 #'   variability would you like to have those error bars display? Options are
-#'   "90\% CI" (default), "95\% CI", "CV\%", "percentiles", "standard deviation",
-#'   ("SD" will also work fine), or "range". If \code{error_bars} is set to
-#'   "none", this will be ignored.
+#'   "90\% CI" (default), "95\% CI", "CV\%", "percentiles", "standard
+#'   deviation", ("SD" will also work fine), or "range". If \code{error_bars} is
+#'   set to "none", this will be ignored.
 #' @param point_color_column (optional) the column in \code{PKtable} that should
 #'   be used for determining which color the points will be. This should be
 #'   unquoted. For example, if you have a column named "Study" in the data.frame
@@ -305,6 +307,7 @@ so_graph <- function(PKtable,
                      include_dose_num = NA,
                      facet_title_size = NA, 
                      title_adjustments = c(), 
+                     graph_labels = FALSE, 
                      all_intervals_together = FALSE, 
                      all_AUCs_together = FALSE, 
                      grid_color = NA, 
@@ -787,7 +790,7 @@ so_graph <- function(PKtable,
    
    SO <- SO %>% 
       mutate(across(.cols = c(Statistic, File, CompoundID, Tissue, Sheet,
-                              PKparameter), 
+                              PKparameter, Interval), 
                     .fns = \(x) ifelse(is.na(x), "default", x)), 
              Value = gsub("\\(|\\)|\\[|\\]", "", Value), 
              Value = sub(", | - ", " to ", Value))
@@ -982,7 +985,7 @@ so_graph <- function(PKtable,
       Problem <- capture.output(print(DupCheck, row.names = FALSE))
       message(str_c(Problem, collapse = "\n"))
       
-      stop("We're sorry, but we cannot make your graphs as long as these duplicates are present.", 
+      stop(wrapn("We're sorry, but we cannot make your graphs as long as these duplicates are present."), 
            call. = FALSE)
       
    }
@@ -1669,11 +1672,17 @@ so_graph <- function(PKtable,
          G <- G[GoodOrder]
       }
       
+      if(graph_labels & length(G) > 1){
+         labels <- LETTERS[1:length(G)]
+      } else {
+         labels <- NULL
+      }
+      
       if(return_list_of_graphs){
          PlotList <- G
       }
       
-      G <-  ggpubr::ggarrange(
+      G <- ggpubr::ggarrange(
          plotlist = G, align = "hv", 
          nrow = switch(NumCR, 
                        
@@ -1701,8 +1710,11 @@ so_graph <- function(PKtable,
                        
                        # specified neither
                        "TRUE TRUE" = NULL),
+         labels = labels, 
          legend = legend_position, 
-         common.legend = TRUE) + # FIXME - Switch to patchwork and collect the legends. This makes it so that legend items ONLY include what was in the 1st graph. 
+         # FIXME - Switch to patchwork and collect the legends. This makes it so
+         # that legend items ONLY include what was in the 1st graph.
+         common.legend = TRUE) + 
          ggpubr::bgcolor("white") +
          ggpubr::border(color = NA)
       
