@@ -821,8 +821,9 @@ extractExpDetails <- function(sim_data_file,
    Main$File <- sim_data_file 
    
    # Adding package version and R version
-   Main$SimcypConsultancyVersion <- packageVersion("SimcypConsultancy")
-   # Main$RVersion <- sessionInfo()[[1]]$version.string
+   Out$SimcypConsultancy_version <- packageVersion("SimcypConsultancy")
+   Out$RVersion <- sessionInfo()[[1]]$version.string
+   
    
    ## Dosing -----------------------------------------------------------------
    # Setting up Dosing data.frame to include ALL dosing info, so custom dosing
@@ -880,8 +881,7 @@ extractExpDetails <- function(sim_data_file,
    
    return(Out)
    
-   }
-   
-   
-   
-   
+}
+
+
+
