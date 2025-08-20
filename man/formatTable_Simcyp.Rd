@@ -171,7 +171,10 @@ Color can be specified using any R-friendly color name or hex code, e.g.,
 \item{hlines}{optionally add horizontal lines at the bottom of any rows
 specified. For example, \code{hlines = c(3, 5)} will put a black line on
 the bottom of rows 3 and 5 of the main part of your table not counting the
-heading.}
+heading. If you would like to add a horizontal line every time the data set
+changes, e.g., this is a PK table and you want a line every time there's a
+different simulation, tissue, compound, etc. but not every time there's a
+different statistic, set this to "when dataset changes".}
 
 \item{font}{font to use. Default is "Arial" and any fonts available on your
 machine in either Word or PowerPoint should be acceptable. If you get Times

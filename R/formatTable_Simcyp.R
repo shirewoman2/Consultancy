@@ -116,7 +116,10 @@
 #' @param hlines optionally add horizontal lines at the bottom of any rows
 #'   specified. For example, \code{hlines = c(3, 5)} will put a black line on
 #'   the bottom of rows 3 and 5 of the main part of your table not counting the
-#'   heading.
+#'   heading. If you would like to add a horizontal line every time the data set
+#'   changes, e.g., this is a PK table and you want a line every time there's a
+#'   different simulation, tissue, compound, etc. but not every time there's a
+#'   different statistic, set this to "when dataset changes". 
 #' @param font font to use. Default is "Arial" and any fonts available on your
 #'   machine in either Word or PowerPoint should be acceptable. If you get Times
 #'   New Roman in your table when you asked for something else, it means that
@@ -274,6 +277,31 @@ formatTable_Simcyp <- function(DF,
       # "Calibri (Body)" dosen't work; just "Calibri" does.
       str_detect(font, "Calibri") ~ "Calibri", 
       .default = font)
+   
+   # Figuring out which columns contain PK data
+   PKCols <- prettify_column_names(DF, return_which_are_PK = TRUE)
+   
+   # Noting whether any columns are pretty. Need this for hlines and for lower
+   # in function where we note which columns are pretty. 
+   PrettyCols <- any(PKCols$ColName[PKCols$IsPKParam] == 
+                        PKCols$PrettifiedNames[PKCols$IsPKParam])
+   PKCols <- which(PKCols$IsPKParam)
+   
+   # Need hlines to be a number, so adjusting if they requested "when dataset
+   # changes"
+   if(any(complete.cases(hlines)) &&
+      any(str_detect(tolower(hlines), "data.*change"))){
+      
+      DF <- DF %>% 
+         unite(col = "ID", 
+               setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
+               remove = FALSE)
+      
+      hlines <- which(duplicated(DF$ID))
+      
+      DF$ID <- NULL
+      
+   }
    
    suppressMessages(hlines <- unique(as.numeric(hlines)))
    
@@ -452,14 +480,6 @@ formatTable_Simcyp <- function(DF,
    }
    
    ### Figuring out formatting -------------------------------------------------
-   
-   # Figuring out which columns contain PK data
-   PKCols <- prettify_column_names(DF, return_which_are_PK = TRUE)
-   
-   # Noting whether any columns are pretty
-   PrettyCols <- any(PKCols$ColName[PKCols$IsPKParam] == 
-                        PKCols$PrettifiedNames[PKCols$IsPKParam])
-   PKCols <- which(PKCols$IsPKParam)
    
    if(prettify_columns){
       DF <- prettify_column_names(DF)

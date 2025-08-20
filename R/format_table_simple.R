@@ -72,6 +72,10 @@
 #'   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
 #'   If you do specify your own bespoke colors, you'll need to make sure that
 #'   you supply one color for every value in \code{highlight_so_cutoffs}.}
+#' @param hlines optionally add horizontal lines at the bottom of any rows
+#'   specified. For example, \code{hlines = c(3, 5)} will put a black line on
+#'   the bottom of rows 3 and 5 of the main part of your table not counting the
+#'   heading.
 #' @param font font to use. Default is "Palatino Linotype" and any fonts
 #'   available on your machine in either Word or PowerPoint should be
 #'   acceptable. If you get Times New Roman in your table when you asked for
@@ -129,6 +133,7 @@ format_table_simple <- function(DF,
                                 highlight_gmr_colors = NA, 
                                 highlight_so_cutoffs = NA, 
                                 highlight_so_colors = "yellow to red",
+                                hlines = NA, 
                                 font = "Palatino Linotype", 
                                 fontsize = 11, 
                                 column_widths = NA, 
@@ -182,6 +187,7 @@ format_table_simple <- function(DF,
                             highlight_so_colors = highlight_so_colors, 
                             highlight_so_cutoffs = highlight_so_cutoffs, 
                             font = font, 
+                            hlines = hlines, 
                             fontsize = fontsize, 
                             column_widths = column_widths, 
                             save_table = NA) %>% 

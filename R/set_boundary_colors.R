@@ -514,20 +514,23 @@ make_gmr_highlight_key <- function(highlight_gmr_colors,
       
    } else if(orientation == "wide"){
       
-      GMRkey <- tibble(A = "negligible", 
-                       B = "weak", 
-                       C = "moderate", 
-                       D = "strong") %>% 
+      GMRkey <- tibble(
+         Z = "Interaction level", 
+         A = "negligible", 
+         B = "weak", 
+         C = "moderate", 
+         D = "strong") %>% 
          flextable::flextable() %>%
          flextable::delete_part(part = "header") %>%
          flextable::width(width = 1.6) %>%
          flextable::hline_top(border = officer::fp_border(color = "#666666", 
                                                           width = 0.75)) %>% 
-         flextable::align(align = "center", part = "all")
+         flextable::align(align = "center", part = "all") %>% 
+         flextable::bold(j = 1, bold = TRUE)
       
       for(j in 1:length(highlight_gmr_colors)){
          GMRkey <- GMRkey %>%
-            flextable::bg(j = j, 
+            flextable::bg(j = j + 1, 
                           bg = highlight_gmr_colors[j])
       }
    }
@@ -616,6 +619,7 @@ make_so_highlight_key <- function(highlight_so_cutoffs,
    if(tolower(highlight_so_colors_orig[1]) %in% 
       c("yellow to red", "traffic", "lisa")){
       highlight_so_cutoffs <- sort(unique(c(highlight_so_cutoffs, 1)))
+      highlight_so_colors <- c("white", highlight_so_colors)
    }
    
    SOkey <- data.frame(UpperA = highlight_so_cutoffs[1:(length(highlight_so_cutoffs)-1)],
@@ -651,7 +655,7 @@ make_so_highlight_key <- function(highlight_so_cutoffs,
       
    } else if(orientation == "wide"){
       
-      SOkey <- SOkey %>% 
+      SOkey <- bind_rows(tibble(`S/O cutoff` = "S/O cutoff"), SOkey) %>% 
          mutate(`S/O cutoff` = sub("or ", "or\n", `S/O cutoff`))
       
       SOkey <- as.data.frame(t(SOkey)) %>% 
@@ -660,11 +664,12 @@ make_so_highlight_key <- function(highlight_so_cutoffs,
          flextable::width(width = 1.6) %>%
          flextable::hline_top(border = officer::fp_border(color = "#666666", 
                                                           width = 0.75)) %>% 
-         flextable::align(align = "center", part = "all")
+         flextable::align(align = "center", part = "all") %>% 
+         flextable::bold(j = 1, bold = TRUE)
       
       for(j in 1:length(highlight_so_cutoffs)){
          SOkey <- SOkey %>%
-            flextable::bg(j = j, 
+            flextable::bg(j = j + 1, 
                           bg = highlight_so_colors[j])
       }
    }
