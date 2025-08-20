@@ -780,6 +780,20 @@ extractExpDetails <- function(sim_data_file,
       Out$Regimen_inhib2 <- "Single Dose" 
    }
    
+   # Simulator output makes NumDoses NA if single dose; setting to 1 in that
+   # scenario
+   Out$NumDoses_sub <- case_when(
+      is.na(Out$NumDoses_sub) & tolower(Out$Regimen_sub) == "single dose" ~ 1, 
+      .default = Out$NumDoses_sub)
+   
+   Out$NumDoses_inhib <- case_when(
+      is.na(Out$NumDoses_inhib) & tolower(Out$Regimen_inhib) == "single dose" ~ 1, 
+      .default = Out$NumDoses_inhib)
+   
+   Out$NumDoses_inhib2 <- case_when(
+      is.na(Out$NumDoses_inhib2) & tolower(Out$Regimen_inhib2) == "single dose" ~ 1, 
+      .default = Out$NumDoses_inhib2)
+   
    # Making DoseInt_x and Dose_x numeric all the time. We'll get custom dosing
    # info from Regimen_x and DoseRoute_x.
    suppressWarnings(Out$DoseInt_sub <- as.numeric(Out$DoseInt_sub))
