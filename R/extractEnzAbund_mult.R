@@ -275,7 +275,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
          }
       }
       
-      if(nrow(Deets) == 0){
+      if(is.null(Deets) || nrow(Deets) == 0){
          # Using "warning" instead of "stop" here b/c I want this to be able to
          # pass through to other functions and just skip any files that
          # aren't simulator output.

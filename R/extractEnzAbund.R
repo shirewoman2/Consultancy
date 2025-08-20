@@ -173,6 +173,17 @@ extractEnzAbund <- function(sim_data_file,
       }
    }
    
+   if(is.null(Deets) || nrow(Deets) == 0){
+      # Using "warning" instead of "stop" here b/c I want this to be able to
+      # pass through to other functions and just skip any files that
+      # aren't simulator output.
+      warning(wrapn(paste0("The file '", sim_data_file,
+                           "' does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.")), 
+              call. = FALSE)
+      return()
+   }
+   
+   
    if(Deets$PopRepSim == "Yes"){
       warning(paste0("The simulator file supplied, `", 
                      sim_data_file, 

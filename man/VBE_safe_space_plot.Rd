@@ -34,7 +34,7 @@ the column "SorO".}
 e.g., 0.5 for 50\%.}
 \item{Limit}{This column will be used for specifying which data sets are
 the upper and lower limits of the safe space. Data sets that do \emph{not}
-describe the upper or lower limits should have NA in this column, and the
+describe the upper or lower limits should have NA in this column or be blank in the .csv file, and the
 upper- and lower-limit datasets should be specified as "upper" and "lower".}
 } For an example, please view the object "VBE_disso_example" by running
 this in your console: \code{view(VBE_disso_example)} and set up your data

@@ -20,7 +20,7 @@
 #'   e.g., 0.5 for 50\%.}
 #'   \item{Limit}{This column will be used for specifying which data sets are
 #'   the upper and lower limits of the safe space. Data sets that do \emph{not}
-#'   describe the upper or lower limits should have NA in this column, and the
+#'   describe the upper or lower limits should have NA in this column or be blank in the .csv file, and the
 #'   upper- and lower-limit datasets should be specified as "upper" and "lower".}
 #'   } For an example, please view the object "VBE_disso_example" by running
 #'   this in your console: \code{view(VBE_disso_example)} and set up your data
@@ -148,7 +148,6 @@ VBE_safe_space_plot <- function(VBE_dataframe,
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
    
-   
    if(all(is.na(color_set))){
       color_set <- "rainbow"
    }
@@ -181,6 +180,22 @@ VBE_safe_space_plot <- function(VBE_dataframe,
       warning(wrapn("The values for the argument 'point_sizes' must be numeric, and what you supplied is not. We will set the point sizes to the default values of 2 (observed) and 1 (predicted)."), 
               call. = FALSE)
       point_sizes <- c(2, 1)
+   }
+   
+   if("character" %in% class(VBE_dataframe) && 
+      str_detect(VBE_dataframe[1], "csv")){
+      VBE_dataframe <- read.csv(VBE_dataframe, 
+                                na.strings = c("N/A", "NA", "", "na", "n/a"))
+   }
+   
+   if("data.frame" %in% class(VBE_dataframe) == FALSE){
+      stop(wrapn("We're having trouble with your input for the argument 'VBE_dataframe', which should be either a csv file name that we'll read or a data.frame. This is something else. Please check your input and try again."), 
+           call. = FALSE)
+   }
+   
+   if(nrow(VBE_dataframe) == 0){
+      stop(wrapn("There are no data in what you supplied for VBE_dataframe. Please check your input and try again."), 
+           call. = FALSE)
    }
    
    

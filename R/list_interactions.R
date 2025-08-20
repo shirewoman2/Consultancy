@@ -60,7 +60,9 @@ list_interactions <- function(sim_data_file,
                                      simulator_section = c("elimination", 
                                                            "transport", 
                                                            "interaction")) %>% 
-      mutate(Pathway = str_extract(Detail, EnzTranspRegex)) %>% 
+      mutate(Pathway = str_extract(Detail, EnzTranspRegex), 
+             Pathway = sub("P(_)?gp", "P-gp", Pathway), 
+             Pathway = sub("MATE2_K", "MATE2-K", Pathway)) %>% 
       rename(Value = {{sim_data_file}}) %>% 
       filter(complete.cases(Pathway) & Value != "0")
    
