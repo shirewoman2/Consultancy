@@ -109,7 +109,7 @@ tidy_input_PK <- function(PKparameters,
          
          PKparameters <- switch(
             str_extract(PKparameters, "csv|xlsx"), 
-            "csv" = read.csv(PKparameters, na.strings = c("NA", "")), 
+            "csv" = read.csv(PKparameters, na.strings = c("NA", "", "N/A", "na", "n/a")), 
             "xlsx" = tryCatch(
                openxlsx::read.xlsx(PKparameters, 
                                    sheet = "PKparameters"), 

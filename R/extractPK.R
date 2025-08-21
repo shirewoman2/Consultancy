@@ -558,7 +558,7 @@ extractPK <- function(sim_data_file,
    # In those cases, there *will* be tab that looks like a regularly named
    # last-dose PK tab, even though it's a single-dose simulation. Catching this
    # error.
-   if(is.na(Deets$NumDoses_sub) & # this will happen when it's a single-dose sim
+   if(tolower(Deets$Regimen_sub) == "single dose" & 
       is.na(Tab_first) & complete.cases(Tab_last)){
       Tab_first <- Tab_last
       Tab_last <- NA
@@ -2190,8 +2190,20 @@ extractPK <- function(sim_data_file,
                 Individual = ifelse(is.na(StartRow_ind), NA, Individual)) %>% 
          filter(complete.cases(PKparam)) %>% unique()
       
-      StatNames <- c("Geomean", "GCV", "CI90_lower", "CI90_upper", 
-                     "Mean", "SD", "Median", "Minimum", "Maximum")
+      StatNames <- c("Mean", 
+                     "Median",
+                     "Geomean",
+                     "GCV",
+                     "CI90_lower", 
+                     "CI90_upper", 
+                     "Per5", 
+                     "Per95", 
+                     "Skewness", 
+                     "CV", 
+                     "Minimum",
+                     "Maximum", 
+                     "Fold", 
+                     "SD")
       StatNum <- 1:length(StatNames)
       names(StatNum) <- StatNames
       
