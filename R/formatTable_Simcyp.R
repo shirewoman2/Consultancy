@@ -292,12 +292,24 @@ formatTable_Simcyp <- function(DF,
    if(any(complete.cases(hlines)) &&
       any(str_detect(tolower(hlines), "data.*change"))){
       
+      IDs <- DF %>% 
+         select(any_of(setdiff(names(DF), c("Statistic", names(DF)[PKCols])))) %>% 
+         unite(col = "ID", 
+               setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
+               remove = FALSE) %>% 
+         unique() %>% 
+         mutate(Row = as.numeric(NA))
+      
       DF <- DF %>% 
          unite(col = "ID", 
                setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
                remove = FALSE)
       
-      hlines <- which(duplicated(DF$ID))
+      for(i in 1:nrow(IDs)){
+         IDs$Row[i] <- max(which(DF$ID == IDs$ID[i]))
+      }
+
+      hlines <- IDs$Row
       
       DF$ID <- NULL
       
