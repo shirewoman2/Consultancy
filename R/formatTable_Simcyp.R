@@ -713,7 +713,7 @@ formatTable_Simcyp <- function(DF,
       # Finding each cell that should be colored according to each level of interaction
       for(j in which(str_detect(tolower(names(DF)), "ratio"))){
          
-         RowsToShade <- which(str_detect(DF$Statistic,"CV%") == FALSE)
+         RowsToShade <- which(str_detect(DF$Statistic,"CV%|S/O|sim.*obs*") == FALSE)
          
          # NOTE TO CODERS: I was thinking about trying to change this to
          # highlight a other rows of stats based on what the value is in the
