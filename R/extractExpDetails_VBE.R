@@ -314,7 +314,7 @@ extractExpDetails_VBE <- function(sim_data_files,
          InputInfo <- extractInputTab(deets = "all",
                                       sim_data_file = sim_data_file, 
                                       sheet = tx, 
-                                      CustomDosing = CustomDosing)
+                                      CustomDosing = FALSE)
          
          for(i in setdiff(ExpDetailListItems, "MainDetails")){
             if("data.frame" %in% class(InputInfo[[i]]) &&
