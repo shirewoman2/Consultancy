@@ -1081,13 +1081,13 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    if((any(complete.cases(line_color)) && length(MyPerpetrator) > 0 &&
-      complete.cases(MyPerpetrator) &&
-      MyCompoundID != "inhibitor 1" &&
-      length(complete.cases(line_color)) < 2) | (
-         any(complete.cases(line_type)) && length(MyPerpetrator) > 0 &&
-         complete.cases(MyPerpetrator) &&
-         MyCompoundID != "inhibitor 1" &&
-         length(complete.cases(line_type)) < 2)){
+       complete.cases(MyPerpetrator) &&
+       MyCompoundID != "inhibitor 1" &&
+       length(complete.cases(line_color)) < 2) | (
+          any(complete.cases(line_type)) && length(MyPerpetrator) > 0 &&
+          complete.cases(MyPerpetrator) &&
+          MyCompoundID != "inhibitor 1" &&
+          length(complete.cases(line_type)) < 2)){
       
       if(length(line_type) < 2 & length(line_color) < 2){
          warning(wrapn("There is an inhibitor or perpetrator present, but you have specified only one line color and one line type. The same line type and color will be used for both."),
@@ -1317,10 +1317,6 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Figure types ---------------------------------------------------------
    
-   obs_line_trans_user <- obs_line_trans
-   obs_fill_trans_user <- obs_fill_trans
-   obs_color_user <- obs_color_user
-   
    AesthetStuff <- set_aesthet(line_type = line_type, 
                                figure_type = figure_type,
                                MyPerpetrator = MyPerpetrator, 
@@ -1342,10 +1338,36 @@ ct_plot <- function(ct_dataframe = NA,
    # figures.
    if(figure_type == "compound summary"){
       obs_color <- rep(obs_color, 
-                       length(unique(obs_dataframe$Study)))
+                       length(unique(obs_dataframe$Study)))[
+                          1:length(unique(obs_dataframe$Study))]
       obs_shape <- rep(obs_shape, 
-                       length(unique(obs_dataframe$Study)))
+                       length(unique(obs_dataframe$Study)))[
+                          1:length(unique(obs_dataframe$Study))]
    }
+   
+   # Determining whether the color and or shape of the observed data should be
+   # mapped to specific columns. In the case of ct_plot, mapping both color and
+   # shape to Inhibitor column for most plots but to Study column when figure
+   # type is compound summary.
+   
+   # FIXME
+   # map_obs_color <- case_when(
+   #    
+   #    figure_type %in% c("compound summary") == FALSE & 
+   #    all(is.na(obs_color_user))
+   # )
+   #    
+   #    ( |
+   #                      any(complete.cases(obs_color_user)) & length(obs_color == 1))
+   
+   map_obs_color <- (all(is.na(obs_color_user)) & 
+                        figure_type %in% c("freddy") == FALSE) |
+      length(unique(ct_dataframe$Inhibitor)) > 1
+   
+   map_obs_shape <- (all(is.na(obs_color_user)) & 
+                        figure_type %in% c("freddy") == FALSE) |
+      length(unique(ct_dataframe$Inhibitor)) > 1
+   
    
    # Warning for a figure type that's not recommended
    
@@ -1433,7 +1455,7 @@ ct_plot <- function(ct_dataframe = NA,
    
    if(nrow(obs_dataframe) > 0 & obs_on_top == FALSE){
       
-      MapObsData <- all(is.na(obs_color_user)) & figure_type != "freddy"
+      map_obs_color <- all(is.na(obs_color_user)) & figure_type != "freddy"
       
       A <- addObsPoints(obs_dataframe = obs_dataframe, 
                         A = A, 
@@ -1452,7 +1474,7 @@ ct_plot <- function(ct_dataframe = NA,
                         connect_obs_points = connect_obs_points,
                         line_width = line_width,
                         figure_type = figure_type,
-                        MapObsData = MapObsData, 
+                        map_obs_color = map_obs_color, 
                         LegCheck = TRUE)
    }
    
@@ -1580,9 +1602,6 @@ ct_plot <- function(ct_dataframe = NA,
    if(length(unique(Data$Inhibitor)) > 1){
       names(line_type) <- levels(Data$Inhibitor)
       names(line_color) <- levels(Data$Inhibitor)
-   } else if(figure_type == "compound summary"){
-      names(obs_color) <- unique(obs_dataframe$Study)
-      names(obs_shape) <- unique(obs_dataframe$Study)
    } else {
       names(line_type) <- unique(Data$Inhibitor)
       names(line_color) <- unique(Data$Inhibitor)
@@ -1593,21 +1612,12 @@ ct_plot <- function(ct_dataframe = NA,
          scale_linetype_manual(values = line_type) +
          scale_color_manual(values = line_color) +
          scale_fill_manual(values = line_color)
-   } else {
-      A <- A +
-         scale_color_manual(values = obs_color) +
-         scale_shape_manual(values = obs_shape) +
-         scale_fill_manual(values = obs_color)
-   }
+   } 
    
    
    # Observed data on top ------------------------------------------------------
    
    if(nrow(obs_dataframe) > 0 & obs_on_top){
-      
-      MapObsData <- (all(is.na(obs_color_user)) & 
-                        figure_type %in% c("freddy") == FALSE) |
-         length(unique(ct_dataframe$Inhibitor)) > 1
       
       A <- addObsPoints(obs_dataframe = obs_dataframe, 
                         A = A, 
@@ -1630,7 +1640,7 @@ ct_plot <- function(ct_dataframe = NA,
                         connect_obs_points = connect_obs_points,
                         line_width = line_width,
                         figure_type = figure_type,
-                        MapObsData = MapObsData, 
+                        map_obs_color = map_obs_color, 
                         LegCheck = TRUE)
    }
    

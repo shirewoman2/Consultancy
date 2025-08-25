@@ -2442,7 +2442,7 @@ ct_plot_overlay <- function(ct_dataframe,
                            obs_fill_trans = obs_fill_trans,
                            obs_fill_trans_user = obs_fill_trans_user,
                            figure_type = figure_type,
-                           MapObsData = MapObsData, 
+                           # MapObsData = MapObsData, 
                            LegCheck = LegCheck)
       }
    }
@@ -2812,11 +2812,8 @@ ct_plot_overlay <- function(ct_dataframe,
             pull(linetype_column) %>% unique() %>% length()
       } else {
          NumlinetypesNeeded <-
-            # ifelse(MapObsData,
             bind_rows(sim_dataframe, obs_dataframe) %>% 
-            pull(linetype_column) %>% unique() %>% length()#,
-         # sim_dataframe %>% 
-         #    pull(linetype_column) %>% unique() %>% length())
+            pull(linetype_column) %>% unique() %>% length()
          
       }
       

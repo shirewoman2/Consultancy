@@ -2,7 +2,7 @@
 % Please edit documentation in R/set_aesthet.R
 \name{set_aesthet}
 \alias{set_aesthet}
-\title{Set up certain aesthetics a conc-time plot}
+\title{INTERNAL PACKAGE USE: Set up certain aesthetics for a conc-time plot}
 \usage{
 set_aesthet(
   line_type,
@@ -35,6 +35,7 @@ set_aesthet(
 several objects to use with setting graph aesthetics
 }
 \description{
-This function is specifically for setting certain aesthetic options for a
-concentration-time graph and is NOT meant to be called on its own.
+First (not last) step in determinining line colors, line types, point shapes,
+and point colors. Subsequent steps will adjust the exact number of all
+shapes, linetypes, colors, etc. in the graph.
 }

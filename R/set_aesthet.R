@@ -1,8 +1,8 @@
-#' Set up certain aesthetics a conc-time plot
+#' INTERNAL PACKAGE USE: Set up certain aesthetics for a conc-time plot
 #'
-#' This function is specifically for setting certain aesthetic options for a
-#' concentration-time graph and is NOT meant to be called on its own.
-#'
+#' First (not last) step in determinining line colors, line types, point shapes,
+#' and point colors. Subsequent steps will adjust the exact number of all
+#' shapes, linetypes, colors, etc. in the graph.
 #'
 #' @param line_type user-specified line type
 #' @param figure_type user-specified figure type
@@ -65,6 +65,10 @@ set_aesthet <- function(line_type, figure_type, MyPerpetrator, MyCompoundID,
       obs_color <- "#3030FE"
    } else if(length(obs_color) == 1 && is.na(obs_color)){
       obs_color = "black"
+   }
+   
+   if(all(is.na(obs_color))){
+      obs_color <- line_color
    }
    
    obs_fill_trans <- ifelse(is.na(obs_fill_trans), 
