@@ -18,6 +18,8 @@ addObsPoints(
   obs_fill_trans,
   obs_fill_trans_user,
   figure_type,
+  map_obs_color,
+  map_obs_shape,
   connect_obs_points,
   line_width,
   LegCheck
@@ -28,17 +30,41 @@ addObsPoints(
 
 \item{A}{the existing ggplot2 graph to which the observed data will be added}
 
+\item{AES}{aesthetics}
+
+\item{obs_shape}{shape}
+
+\item{obs_shape_user}{original input for shape}
+
+\item{obs_size}{size}
+
+\item{obs_color}{color}
+
+\item{obs_color_user}{original input for color}
+
+\item{obs_line_trans}{line transparency}
+
+\item{obs_line_trans_user}{original input for line transparency}
+
+\item{obs_fill_trans}{fill transparency}
+
+\item{obs_fill_trans_user}{original input for fill transparency}
+
+\item{figure_type}{figure type}
+
+\item{map_obs_color}{TRUE or FALSE for whether to map the observed data color
+to specific columns.}
+
+\item{map_obs_shape}{TRUE or FALSE for whether to map the observed data shape
+to specific columns.}
+
 \item{connect_obs_points}{TRUE or FALSE (default) for whether to add
 connecting lines between observed data points from the same individual}
 
+\item{line_width}{line width}
+
 \item{LegCheck}{TRUE or FALSE for whether to include the legend. From
 ct_plot_overlay originally and should always be TRUE for ct_plot.}
-
-\item{map_obs_color}{TRUE or FALSE for whether to map the observed data
-color to specific columns.}
-
-\item{map_obs_shape}{TRUE or FALSE for whether to map the observed data
-shape to specific columns.}
 }
 \value{
 a ggplot2 layer with observed data

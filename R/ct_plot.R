@@ -11,7 +11,7 @@
 #'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
 #'   function examples and instructions/Concentration-time plots 1 - one sim at
 #'   a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
-#'   include a link to it here.) 
+#'   include a link to it here.)
 #'
 #' \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 #' inhibitors, or inhibitor metabolites are available in all tissues. If it's
@@ -92,7 +92,14 @@
 #'   to your data. (And yes, it \emph{must} be titled "Study" exactly.)
 #'   Everything else in these graphs will be gray or black, but
 #'   you can specify the color of the observed points with the argument
-#'   "obs_color" and the shape of the points with the argument "obs_shape".}}
+#'   "obs_color" and the shape of the points with the argument "obs_shape". If
+#'   you have a perpetrator present in your data, the points will change shape
+#'   based on whether the data shown are baseline or with perpetrator. Honestly, 
+#'   though, we would not recommend making a single "compound summary" style 
+#'   graph with both the baseline and DDI conditions in one because there will 
+#'   be so many lines that things will be confusing. We'd recommend running this 
+#'   function once for each scenario and just putting those two graphs side by 
+#'   side instead.}}
 #'
 #' @param mean_type graph "arithmetic" (default) or "geometric" means or
 #'   "median" for median concentrations. If that option was not included in the
@@ -1348,30 +1355,25 @@ ct_plot <- function(ct_dataframe = NA,
    # Determining whether the color and or shape of the observed data should be
    # mapped to specific columns. In the case of ct_plot, mapping both color and
    # shape to Inhibitor column for most plots but to Study column when figure
-   # type is compound summary.
+   # type is compound summary. For compound summary figure types, if there's an
+   # inhibitor present, mapping color to study and shape to Inhibitor.
    
-   # FIXME
-   # map_obs_color <- case_when(
-   #    
-   #    figure_type %in% c("compound summary") == FALSE & 
-   #    all(is.na(obs_color_user))
-   # )
-   #    
-   #    ( |
-   #                      any(complete.cases(obs_color_user)) & length(obs_color == 1))
+   map_obs_color <- case_when(
+      figure_type %in% c("compound summary") ~ "Study", 
+      length(unique(obs_dataframe$Inhibitor)) > 1 ~ "Inhibitor", 
+      .default = "none")
    
-   map_obs_color <- (all(is.na(obs_color_user)) & 
-                        figure_type %in% c("freddy") == FALSE) |
-      length(unique(ct_dataframe$Inhibitor)) > 1
-   
-   map_obs_shape <- (all(is.na(obs_color_user)) & 
-                        figure_type %in% c("freddy") == FALSE) |
-      length(unique(ct_dataframe$Inhibitor)) > 1
+   map_obs_shape <- case_when(
+      figure_type %in% c("compound summary") & 
+         length(unique(obs_dataframe$Inhibitor)) == 1 ~ "Study", 
+      figure_type %in% c("compound summary") & 
+         length(unique(obs_dataframe$Inhibitor)) > 1 ~ "Inhibitor", 
+      length(unique(obs_dataframe$Inhibitor)) > 1 ~ "Inhibitor", 
+      .default = "none")
    
    
-   # Warning for a figure type that's not recommended
-   
-   # Is this a graph showing substrate +/- perpetrator?
+   # Warning for a figure type that's not recommended: Is this a graph showing
+   # substrate +/- perpetrator?
    Eff_plusminus <- length(MyPerpetrator) > 0 && 
       complete.cases(MyPerpetrator[1]) &&
       MyPerpetrator[1] != "none" &
@@ -1432,7 +1434,8 @@ ct_plot <- function(ct_dataframe = NA,
                                          aes(x = Time, y = Conc, group = Group,
                                              linetype = Inhibitor, shape = Inhibitor)), 
                          "FALSE" = ggplot(sim_data_trial,
-                                          aes(x = Time, y = Conc, group = Group))
+                                          aes(x = Time, y = Conc, group = Group, 
+                                              shape = Study))
                   ), 
                
                "means only" = ggplot(sim_data_mean %>%
@@ -1459,9 +1462,13 @@ ct_plot <- function(ct_dataframe = NA,
       
       A <- addObsPoints(obs_dataframe = obs_dataframe, 
                         A = A, 
-                        # Needed the argument AES for ct_plot_overlay, but
-                        # it's only ever going to be "linetype" for ct_plot.
-                        AES = "linetype", 
+                        AES = switch(figure_type, 
+                                     "percentiles" = "linetype", 
+                                     "trial means" = "linetype", 
+                                     "percentile ribbon" = "linetype", 
+                                     "compound summary" = "color", 
+                                     "freddy" = "linetype", 
+                                     "means only" = "linetype"), 
                         obs_shape = obs_shape,
                         obs_shape_user = obs_shape_user,
                         obs_size = obs_size, 
@@ -1475,6 +1482,7 @@ ct_plot <- function(ct_dataframe = NA,
                         line_width = line_width,
                         figure_type = figure_type,
                         map_obs_color = map_obs_color, 
+                        map_obs_shape = map_obs_shape, 
                         LegCheck = TRUE)
    }
    
@@ -1641,6 +1649,7 @@ ct_plot <- function(ct_dataframe = NA,
                         line_width = line_width,
                         figure_type = figure_type,
                         map_obs_color = map_obs_color, 
+                        map_obs_shape = map_obs_shape, 
                         LegCheck = TRUE)
    }
    

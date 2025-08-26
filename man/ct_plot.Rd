@@ -112,7 +112,14 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   to your data. (And yes, it \emph{must} be titled "Study" exactly.)
   Everything else in these graphs will be gray or black, but
   you can specify the color of the observed points with the argument
-  "obs_color" and the shape of the points with the argument "obs_shape".}}}
+  "obs_color" and the shape of the points with the argument "obs_shape". If
+  you have a perpetrator present in your data, the points will change shape
+  based on whether the data shown are baseline or with perpetrator. Honestly, 
+  though, we would not recommend making a single "compound summary" style 
+  graph with both the baseline and DDI conditions in one because there will 
+  be so many lines that things will be confusing. We'd recommend running this 
+  function once for each scenario and just putting those two graphs side by 
+  side instead.}}}
 
 \item{Tissue_subtype}{Certain types of models have additional subtypes of
 tissues. Currently, the SimcypConsultancy package supports ADAM-model and
@@ -552,7 +559,7 @@ Using observed and simulated concentration-time data generated
   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
   function examples and instructions/Concentration-time plots 1 - one sim at
   a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
-  include a link to it here.) 
+  include a link to it here.)
 
 \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 inhibitors, or inhibitor metabolites are available in all tissues. If it's

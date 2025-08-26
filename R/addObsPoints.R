@@ -6,14 +6,26 @@
 #'
 #' @param obs_dataframe observed data as a data.frame
 #' @param A the existing ggplot2 graph to which the observed data will be added
-#' @param map_obs_color TRUE or FALSE for whether to map the observed data
-#'   color to specific columns. 
-#' @param map_obs_shape TRUE or FALSE for whether to map the observed data
-#'   shape to specific columns. 
+#' @param map_obs_color TRUE or FALSE for whether to map the observed data color
+#'   to specific columns.
+#' @param map_obs_shape TRUE or FALSE for whether to map the observed data shape
+#'   to specific columns.
 #' @param LegCheck TRUE or FALSE for whether to include the legend. From
 #'   ct_plot_overlay originally and should always be TRUE for ct_plot.
 #' @param connect_obs_points TRUE or FALSE (default) for whether to add
 #'   connecting lines between observed data points from the same individual
+#' @param AES aesthetics
+#' @param obs_shape shape
+#' @param obs_shape_user original input for shape
+#' @param obs_size size
+#' @param obs_color color
+#' @param obs_color_user original input for color
+#' @param obs_line_trans line transparency
+#' @param obs_line_trans_user original input for line transparency
+#' @param obs_fill_trans fill transparency
+#' @param obs_fill_trans_user original input for fill transparency
+#' @param figure_type figure type
+#' @param line_width line width
 #'
 #' @return a ggplot2 layer with observed data
 
@@ -30,7 +42,8 @@ addObsPoints <- function(obs_dataframe,
                          obs_fill_trans, 
                          obs_fill_trans_user, 
                          figure_type,
-                         # map_obs_color, 
+                         map_obs_color,
+                         map_obs_shape,
                          connect_obs_points,
                          line_width, 
                          LegCheck){
@@ -71,16 +84,74 @@ addObsPoints <- function(obs_dataframe,
    # MixShape --> Use the above options specifically for each of those shapes,
    # i.e., when it is a solid shape, use obs_color to determine fill color. When
    # it is an OutlineSolid shape, use obs_color to determine fill but make
-   # outline balck. When it is an outline only or any other shape (b/c they
+   # outline black. When it is an outline only or any other shape (b/c they
    # *could* use something nonstandard s/a a letter), then use obs_color to
    # determine outline color.
    
    # Really, since we're going to deal w/each shape type differently, add the
    # obs points in layers: 1) add any filled shapes, 2) add any outlines.
    
-   # Determining the number of shapes required
+   # Determining the number of shapes and colors required and specifying shape
+   # values in obs_dataframe.
    
-   obs_color_4realsies <- X
+   # FIXME - Need to deal w/situation where they have specified a named
+   # character vector for obs colors!
+   
+   if(figure_type == "compound summary"){
+      obs_color <- obs_color[1:length(unique(obs_dataframe$Study))]
+      
+      if(any(obs_dataframe$Inhibitor != "none")){
+         obs_shape <- obs_shape[1:2]
+         names(obs_shape) <- c("none", 
+                               unique(obs_dataframe$Inhibitor)[
+                                  unique(obs_dataframe$Inhibitor != "none")])
+         
+      } else {
+         obs_shape <- obs_shape[1:length(unique(obs_dataframe$Study))]
+         names(obs_shape) <- unique(obs_dataframe$Study)
+      }
+   } else {
+      obs_color <- obs_color[1:length(unique(obs_dataframe$Inhibitor))]
+      names(obs_color) <- c("none", 
+                            unique(obs_dataframe$Inhibitor)[
+                               unique(obs_dataframe$Inhibitor != "none")])
+      
+      obs_shape <- obs_shape[1:length(unique(obs_dataframe$Inhibitor))]
+      names(obs_shape) <- c("none", 
+                            unique(obs_dataframe$Inhibitor)[
+                               unique(obs_dataframe$Inhibitor != "none")])
+      
+   }
+   
+   # Assigning shape to data
+   obs_dataframe %>% 
+      mutate(Shape = Inhibitor[obs_shape])
+   # FIXME - left off here. having trouble w/factors.
+   
+   
+   if(figure_type == "compound summary" & 
+      any(obs_dataframe$Inhibitor != "none")){
+      
+      A + 
+      geom_point(data = obs_dataframe, aes(shape = Study, color = Inhibitor))
+      
+   } else if(figure_type == "compound summary" & 
+             all(obs_dataframe$Inhibitor == "none")){
+      
+      A + 
+         geom_point(data = obs_dataframe, aes(shape = Study, color = Inhibitor))
+      
+   } else {
+      A + 
+         geom_point(data = obs_dataframe, aes(shape = Inhibitor, color = Inhibitor))
+   }
+   
+   
+   
+   
+   
+   
+   
    
    if(figure_type == "compound summary"){
       A <-  A +
