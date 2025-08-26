@@ -2427,6 +2427,9 @@ ct_plot_overlay <- function(ct_dataframe,
       
       if(obs_on_top == FALSE){
          
+         # FIXME: Study and Inhibitor columns MUST be factor here. Also make any
+         # columns obs aesthetics are mapped to be factor. Fill is NOT mapped yet.
+         
          A <- addObsPoints(obs_data = obs_dataframe, 
                            A = A, 
                            AES = AES,
@@ -2512,6 +2515,9 @@ ct_plot_overlay <- function(ct_dataframe,
    # Observed data on top -----------------------------------------------
    
    if(nrow(obs_dataframe) > 0 & obs_on_top){
+      
+      # FIXME: Study and Inhibitor columns MUST be factor here. Also make any
+      # columns obs aesthetics are mapped to be factor. Fill is NOT mapped yet.
       
       A <- addObsPoints(obs_data = obs_dataframe, 
                         A = A, 

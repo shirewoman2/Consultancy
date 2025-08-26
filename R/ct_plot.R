@@ -1040,7 +1040,7 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    
-   # Dealing with possible inhibitor 1 data ---------------------------------
+   # Dealing with possible inhibitor 1 or Study data --------------------------
    # Adding a grouping variable to data and also making the inhibitor 1 name
    # prettier for the graphs.
    MyPerpetrator <- unique(Data$Inhibitor) %>% as.character()
@@ -1112,6 +1112,14 @@ ct_plot <- function(ct_dataframe = NA,
    if(length(MyPerpetrator) > 0){
       Data <- Data %>%
          mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
+   }
+   
+   # If it's a compound summary figure type, set the column "Study" to be factor
+   # if it's not already.
+   if("Study" %in% names(ct_dataframe) &&
+      "factor" %in% class(ct_dataframe$Study) == FALSE){
+      ct_dataframe <- ct_dataframe %>% 
+         mutate(Study = factor(Study, levels = sort(unique(Study))))
    }
    
    # Setting up data.frames to graph ---------------------------------------
@@ -1397,34 +1405,34 @@ ct_plot <- function(ct_dataframe = NA,
    A <- switch(figure_type, 
                "trial means" = ggplot(sim_data_trial,
                                       aes(x = Time, y = Conc, group = Group,
-                                          linetype = Inhibitor, shape = Inhibitor,
-                                          color = Inhibitor, fill = Inhibitor)),
+                                          linetype = Inhibitor, 
+                                          color = Inhibitor)),
                
                "percentiles" = ggplot(sim_data_mean %>%
                                          filter(Trial %in% c("per5", "per95")) %>%
                                          mutate(Group = paste(Group, Trial)),
                                       aes(x = Time, y = Conc,
-                                          linetype = Inhibitor, shape = Inhibitor,
-                                          color = Inhibitor, fill = Inhibitor, 
+                                          linetype = Inhibitor, 
+                                          color = Inhibitor, 
                                           group = Group)),
                
                "percentile ribbon" = ggplot(RibbonDF, 
                                             aes(x = Time, y = MyMean, 
                                                 ymin = per5, ymax = per95, 
-                                                linetype = Inhibitor, shape = Inhibitor,
-                                                color = Inhibitor, fill = Inhibitor)), 
+                                                linetype = Inhibitor,
+                                                color = Inhibitor)), 
                
                "freddy" = 
                   switch(as.character(Eff_plusminus), 
                          "TRUE" = ggplot(data = sim_data_mean %>%
                                             filter(Trial == MyMeanType),
                                          aes(x = Time, y = Conc, group = Group,
-                                             linetype = Inhibitor, shape = Inhibitor,
-                                             color = Inhibitor, fill = Inhibitor)), 
+                                             linetype = Inhibitor, 
+                                             color = Inhibitor)), 
                          "FALSE" = ggplot(sim_data_trial,
                                           aes(x = Time, y = Conc, group = Group,
-                                              linetype = Inhibitor, shape = Inhibitor,
-                                              color = Inhibitor, fill = Inhibitor))
+                                              linetype = Inhibitor, 
+                                              color = Inhibitor))
                   ), 
                
                "compound summary" = 
@@ -1432,17 +1440,16 @@ ct_plot <- function(ct_dataframe = NA,
                          "TRUE" = ggplot(data = sim_data_mean %>%
                                             filter(Trial == MyMeanType),
                                          aes(x = Time, y = Conc, group = Group,
-                                             linetype = Inhibitor, shape = Inhibitor)), 
+                                             linetype = Inhibitor)), 
                          "FALSE" = ggplot(sim_data_trial,
-                                          aes(x = Time, y = Conc, group = Group, 
-                                              shape = Study))
+                                          aes(x = Time, y = Conc, group = Group))
                   ), 
                
                "means only" = ggplot(sim_data_mean %>%
                                         filter(Trial == MyMeanType), 
                                      aes(x = Time, y = Conc,
-                                         linetype = Inhibitor, shape = Inhibitor, 
-                                         color = Inhibitor, fill = Inhibitor)))
+                                         linetype = Inhibitor, 
+                                         color = Inhibitor)))
    
    # Adding optional horizontal line(s)
    if(any(complete.cases(hline_position))){
@@ -1618,8 +1625,7 @@ ct_plot <- function(ct_dataframe = NA,
    if(figure_type != "compound summary"){
       A <- A +
          scale_linetype_manual(values = line_type) +
-         scale_color_manual(values = line_color) +
-         scale_fill_manual(values = line_color)
+         scale_color_manual(values = line_color)
    } 
    
    
@@ -1651,6 +1657,7 @@ ct_plot <- function(ct_dataframe = NA,
                         map_obs_color = map_obs_color, 
                         map_obs_shape = map_obs_shape, 
                         LegCheck = TRUE)
+      
    }
    
    # Making linear graph -------------------------------------------------
