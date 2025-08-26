@@ -166,7 +166,18 @@ eCT_pulldata <- function(sim_data_xl,
             which(str_detect(NamesToCheck, temp_regex)), 
             CompoundIndices)
          
-      } 
+      } else {
+         CompoundIndices <- which(str_detect(NamesToCheck,
+                                             switch(cmpd, 
+                                                    "intact ADC" = "INTACTADC",
+                                                    "conjugated payload" = "PROTEINCONJDRUG", # FIXME: Check this
+                                                    "total antibody" = "TOTALAB", 
+                                                    "therapeutic protein" = "THERPROTEIN", 
+                                                    "therapeutic protein and TMDD complex" = "TMDDCOMPLEX", 
+                                                    "released payload" = "PRIMET1", # Not sure that this will show up here 
+                                                    "protein total" = "PROTEINTOTAL" # FIXME: Add this as an option
+                                                    )))
+      }
    } 
    
    if(pull_interaction_data){
