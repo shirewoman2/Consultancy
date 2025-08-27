@@ -114,11 +114,11 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   you can specify the color of the observed points with the argument
   "obs_color" and the shape of the points with the argument "obs_shape". If
   you have a perpetrator present in your data, the points will change shape
-  based on whether the data shown are baseline or with perpetrator. Honestly, 
-  though, we would not recommend making a single "compound summary" style 
-  graph with both the baseline and DDI conditions in one because there will 
-  be so many lines that things will be confusing. We'd recommend running this 
-  function once for each scenario and just putting those two graphs side by 
+  based on whether the data shown are baseline or with perpetrator. Honestly,
+  though, we would not recommend making a single "compound summary" style
+  graph with both the baseline and DDI conditions in one because there will
+  be so many lines that things will be confusing. We'd recommend running this
+  function once for each scenario and just putting those two graphs side by
   side instead.}}}
 
 \item{Tissue_subtype}{Certain types of models have additional subtypes of
@@ -550,16 +550,16 @@ Output is a ggplot2 graph or two ggplot2 graphs arranged with
 \description{
 Using observed and simulated concentration-time data generated
   from the function \code{\link{extractConcTime}}, make publication-quality
-  graphs that comply with the Simcyp Consultancy Team's standards. We've
-  tried to include a fair number of options here for flexibility, but many of
-  the function arguments are optional; most of the time, you'll get
-  decent-looking graphs while only setting a minimal number of arguments.
-
-  For detailed instructions and examples, please see the SharePoint file
-  "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
-  function examples and instructions/Concentration-time plots 1 - one sim at
-  a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+  graphs that comply with the Simcyp Consultancy Team's standards. For
+  detailed instructions and examples, please see the SharePoint file "Simcyp
+  PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
+  examples and instructions/Concentration-time plots 1 - one sim at a
+  time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
   include a link to it here.)
+
+  We've tried to include a fair number of options here for flexibility, but
+  many of the function arguments are optional; most of the time, you'll get
+  nice-looking graphs while only setting a minimal number of arguments.
 }
 \details{
 \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,

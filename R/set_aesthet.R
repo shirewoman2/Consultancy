@@ -1,6 +1,6 @@
 #' INTERNAL PACKAGE USE: Set up certain aesthetics for a conc-time plot
 #'
-#' First (not last) step in determinining line colors, line types, point shapes,
+#' First (not last) step in determining line colors, line types, point shapes,
 #' and point colors. Subsequent steps will adjust the exact number of all
 #' shapes, linetypes, colors, etc. in the graph.
 #'
@@ -24,7 +24,6 @@ set_aesthet <- function(line_type, figure_type, MyPerpetrator, MyCompoundID,
    # summary figure types.
    
    # The column Inhibitor and the column Study, if it exists, are factor. 
-   
    
    
    # Setting user specifications for shape, linetype, and color where
@@ -67,7 +66,7 @@ set_aesthet <- function(line_type, figure_type, MyPerpetrator, MyCompoundID,
                               22 ~ 15, 
                               23 ~ 18, 
                               24 ~ 17, 
-                              25 ~ 6, 
+                              25 ~ 6, # no filled upside down triangle available so using outline version here
                               .default = obs_shape)
       
    }
@@ -75,7 +74,6 @@ set_aesthet <- function(line_type, figure_type, MyPerpetrator, MyCompoundID,
    if(is.na(line_color[1])){
       if(str_detect(figure_type, "ribbon") & 
          length(MyPerpetrator) > 0 && complete.cases(MyPerpetrator[1]) &&
-         MyPerpetrator[1] != "none" & 
          ("inhibitor 1" %in% MyCompoundID == FALSE)){
          line_color <- c("#377EB8", "#E41A1C")
       } else {
@@ -90,8 +88,9 @@ set_aesthet <- function(line_type, figure_type, MyPerpetrator, MyCompoundID,
    }
    
    if(length(obs_color) == 1 &&
-      (complete.cases(obs_color[1]) & obs_color == "default") | 
-      (is.na(obs_color[1]) & figure_type %in% c("freddy", "compound summary"))){
+      (complete.cases(obs_color) && obs_color == "default") | 
+      (is.na(obs_color[1]) & 
+       figure_type %in% c("freddy", "compound summary"))){
       obs_color <- "#3030FE"
    } else if(length(obs_color) == 1 && is.na(obs_color)){
       obs_color = "black"

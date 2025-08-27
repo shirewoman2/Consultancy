@@ -1028,18 +1028,6 @@ ct_plot_overlay <- function(ct_dataframe,
    colorBy_column <- rlang::enquo(colorBy_column)
    linetype_column <- rlang::enquo(linetype_column)
    
-   # I *would* be doing this whole function with nonstandard evaluation except
-   # that I CANNOT figure out how to use NSE to redefine a user-supplied
-   # column, so I'm going to have to rename all of them. This makes the rest of
-   # checking and developing this function easier, too, though.
-   
-   # ct_dataframe <- ct_dataframe %>%
-   #     mutate(colorBy_column = ifelse(as_label(colorBy_column) == "<empty>", NA, {{colorBy_column}}),
-   #            FC1 = ifelse(as_label(facet1_column) == "<empty>", NA, {{facet1_column}}),
-   #            FC2 = ifelse(as_label(facet2_column) == "<empty>", NA, {{facet2_column}}))
-   
-   ### NOT THE ABOVE. This causes everything to be the same value. Below code works. 
-   
    # If user filled in color_labels but not colorBy_column, give a warning.
    if(as_label(colorBy_column) == "<empty>" & any(complete.cases(color_labels))){
       warning(wrapn("You have specified something for `color_labels` but nothing for `colorBy_column`. Since R doesn't know which column contains the data to use for your color labels, they will be ignored."), 
