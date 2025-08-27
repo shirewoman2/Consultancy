@@ -2,18 +2,19 @@
 #'
 #' @description Using observed and simulated concentration-time data generated
 #'   from the function \code{\link{extractConcTime}}, make publication-quality
-#'   graphs that comply with the Simcyp Consultancy Team's standards. We've
-#'   tried to include a fair number of options here for flexibility, but many of
-#'   the function arguments are optional; most of the time, you'll get
-#'   decent-looking graphs while only setting a minimal number of arguments.
-#'
-#'   For detailed instructions and examples, please see the SharePoint file
-#'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
-#'   function examples and instructions/Concentration-time plots 1 - one sim at
-#'   a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+#'   graphs that comply with the Simcyp Consultancy Team's standards. For
+#'   detailed instructions and examples, please see the SharePoint file "Simcyp
+#'   PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
+#'   examples and instructions/Concentration-time plots 1 - one sim at a
+#'   time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
 #'   include a link to it here.)
 #'
-#' \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
+#'   We've tried to include a fair number of options here for flexibility, but
+#'   many of the function arguments are optional; most of the time, you'll get
+#'   nice-looking graphs while only setting a minimal number of arguments.
+#'
+#' @details
+#'  \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 #' inhibitors, or inhibitor metabolites are available in all tissues. If it's
 #' not present in your output, we can't graph it here.}
 #'
@@ -94,11 +95,11 @@
 #'   you can specify the color of the observed points with the argument
 #'   "obs_color" and the shape of the points with the argument "obs_shape". If
 #'   you have a perpetrator present in your data, the points will change shape
-#'   based on whether the data shown are baseline or with perpetrator. Honestly, 
-#'   though, we would not recommend making a single "compound summary" style 
-#'   graph with both the baseline and DDI conditions in one because there will 
-#'   be so many lines that things will be confusing. We'd recommend running this 
-#'   function once for each scenario and just putting those two graphs side by 
+#'   based on whether the data shown are baseline or with perpetrator. Honestly,
+#'   though, we would not recommend making a single "compound summary" style
+#'   graph with both the baseline and DDI conditions in one because there will
+#'   be so many lines that things will be confusing. We'd recommend running this
+#'   function once for each scenario and just putting those two graphs side by
 #'   side instead.}}
 #'
 #' @param mean_type graph "arithmetic" (default) or "geometric" means or
@@ -574,9 +575,9 @@ ct_plot <- function(ct_dataframe = NA,
    EnzPlot  <- all(c("Enzyme", "Abundance") %in% names(ct_dataframe))
    
    if(nrow(ct_dataframe) == 0){
-      stop(paste0("Please check your input. The data.frame you supplied for ",
-                  ifelse(EnzPlot, "sim_enz_dataframe", "ct_dataframe"),
-                  " doesn't have any rows."), 
+      stop(wrapn(paste0("Please check your input. The data.frame you supplied for ",
+                        ifelse(EnzPlot, "sim_enz_dataframe", "ct_dataframe"),
+                        " doesn't have any rows.")), 
            call. = FALSE)
    }
    
@@ -587,9 +588,9 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    if(length(sort(unique(ct_dataframe$File[ct_dataframe$Simulated == TRUE]))) > 1){
-      stop(paste0("The ct_plot function is for graphing only one simulator file at a time, but you have ",
-                  length(sort(unique(ct_dataframe$File))), 
-                  " simulator files. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
+      stop(wrapn(paste0("The ct_plot function is for graphing only one simulator file at a time, but you have ",
+                        length(sort(unique(ct_dataframe$File))), 
+                        " simulator files. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame.")),
            call. = FALSE)
    }
    # NB: Allowing more than one file for observed data here so that the user
@@ -597,9 +598,9 @@ ct_plot <- function(ct_dataframe = NA,
    
    
    if(length(sort(unique(ct_dataframe$Tissue))) > 1){
-      stop(paste0("The ct_plot function is for graphing only one tissue at a time, but you have ",
-                  length(sort(unique(ct_dataframe$Tissue))), 
-                  " tissues. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
+      stop(wrapn(paste0("The ct_plot function is for graphing only one tissue at a time, but you have ",
+                        length(sort(unique(ct_dataframe$Tissue))), 
+                        " tissues. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame.")),
            call. = FALSE)
    }
    
@@ -654,9 +655,9 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    if(EnzPlot == FALSE && length(sort(unique(ct_dataframe$CompoundID))) > 1){
-      stop(paste0("The ct_plot function is for graphing only one compound at a time, but you have ",
-                  length(sort(unique(ct_dataframe$CompoundID))), 
-                  " compounds. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame."),
+      stop(wrapn(paste0("The ct_plot function is for graphing only one compound at a time, but you have ",
+                        length(sort(unique(ct_dataframe$CompoundID))), 
+                        " compounds. Please use ct_plot_overlay or ct_plot_mult for making graphs with this data.frame.")),
            call. = FALSE)
    }
    
@@ -729,6 +730,15 @@ ct_plot <- function(ct_dataframe = NA,
    figure_type <- ifelse(str_detect(figure_type, "ribbon"), 
                          "percentile ribbon", figure_type)
    
+   # If they want a compound summary figure type, no DDIs allowed for now.
+   if(figure_type == "compound summary" & 
+      length(unique(ct_dataframe$Inhibitor)) > 1){
+      warning(wrapn("You requested the 'compound summary' figure type but you appear to have a simulation with both baseline and DDI data; sorry, but we have not set up the compound summary figures to accomodate this. We'll switch the figure type to 'Freddy'."), 
+              call. = FALSE)
+      
+      figure_type <- "freddy"
+   }
+   
    # Checking that data include Study column if the figure_type is "compound
    # summary" b/c otherwise won't know how to color obs points.
    if(figure_type == "compound summary" & 
@@ -738,28 +748,33 @@ ct_plot <- function(ct_dataframe = NA,
       figure_type <- "freddy"
    }
    
-   # Now that figure type is set, adjusting the number of observed data colors
-   # and shapes to 1 -- when there is no perpetrator and the figure type is
-   # anything other than "compound summary" -- or 2 -- when there IS a
-   # perpetrator and the figure type is anything other than "compound summary"
-   # -- or unlimited when the figure type is "compound summary".
-   if(figure_type != "compound summary"){
-      if(any(ct_dataframe$Inhibitor != "none", na.rm = T)){
-         obs_color <- rep(obs_color, 2)[1:2]
-         obs_shape  <- rep(obs_shape, 2)[1:2]
-      } else {
-         obs_color <- obs_color[1]
-         obs_shape  <- obs_shape[1]
-      }
-   }
+   
+   # FIXME: Moving this to the set_aesthet subfun i think
+   
+   # # Now that figure type is set, adjusting the number of observed data colors
+   # # and shapes to 1 -- when there is no perpetrator and the figure type is
+   # # anything other than "compound summary" -- or 2 -- when there IS a
+   # # perpetrator and the figure type is anything other than "compound summary"
+   # # -- or unlimited when the figure type is "compound summary".
+   # if(figure_type != "compound summary"){
+   #    if(any(ct_dataframe$Inhibitor != "none", na.rm = T)){
+   #       obs_color <- rep(obs_color, 2)[1:2]
+   #       obs_shape  <- rep(obs_shape, 2)[1:2]
+   #    } else {
+   #       obs_color <- obs_color[1]
+   #       obs_shape  <- obs_shape[1]
+   #    }
+   # }
    
    if(("Compound" %in% names(ct_dataframe) && length(unique(ct_dataframe$Compound)) > 1) | 
       ("CompoundID" %in% names(ct_dataframe) && length(unique(ct_dataframe$CompoundID)) > 1)){
-      stop("It looks like you have more than one kind of data here because you have multiple compounds. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+      stop(wrapn("It looks like you have more than one kind of data here because you have multiple compounds. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time."), 
+           call. = FALSE)
    }
    
    if(length(unique(ct_dataframe$Inhibitor)) > 2){
-      stop("It looks like you have more than one kind of data here because you have multiple sets of inhibitors. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time.")
+      stop(wrapn("It looks like you have more than one kind of data here because you have multiple sets of inhibitors. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time."), 
+           call. = FALSE)
    }
    
    # If user wanted hline or vline added, check that they have specified
@@ -769,6 +784,15 @@ ct_plot <- function(ct_dataframe = NA,
       warning(wrapn("You requested that a horizontal line be added to the graph, but you've supplied input that doesn't work for `hline_style`. We'll set this to `red dotted` for now, but please check the help file to get what you want."), 
               call. = FALSE)
       HLineAES <- c("red", "dotted")
+      
+      ColorCheck <- try(expr = col2rgb(HLineAES[1]), silent = TRUE)
+      if(is.matrix(ColorCheck) == FALSE){
+         warning(wrapn(paste0("You requested a color of '", 
+                              HLineAES[1], 
+                              "' for the horizontal-line color, but that is not a legit color in R. Setting this to red.")), 
+                 call. = FALSE)
+         HLineAES[1] <- "red"
+      }
    }
    
    VLineAES <- str_split(vline_style, pattern = " ")[[1]]
@@ -776,9 +800,18 @@ ct_plot <- function(ct_dataframe = NA,
       warning(wrapn("You requested that a vertical line be added to the graph, but you've supplied input that doesn't work for `vline_style`. We'll set this to `red dotted` for now, but please check the help file to get what you want."), 
               call. = FALSE)
       VLineAES <- c("red", "dotted")
+      
+      ColorCheck <- try(expr = col2rgb(VLineAES[1]), silent = TRUE)
+      if(is.matrix(ColorCheck) == FALSE){
+         warning(wrapn(paste0("You requested a color of '", 
+                              VLineAES[1], 
+                              "' for the horizontal-line color, but that is not a legit color in R. Setting this to red.")), 
+                 call. = FALSE)
+         VLineAES[1] <- "red"
+      }
    }
-   # This doesn't check that they've specified legit colors or linetypes, but
-   # I'm hoping that ggplot2 errors will cover that.
+   # This doesn't check that they've specified legit linetypes, but I'm hoping
+   # that ggplot2 errors will cover that.
    
    # Harmonizing details if they'd supplied them and also getting experimental
    # details if they didn't supply them and want to have a QC graph.
@@ -885,19 +918,19 @@ ct_plot <- function(ct_dataframe = NA,
    # data. Dealing with that and harmonizing data. 
    
    # Adding info for IndivOrAgg for data that were extracted w/older version
-   # of package. Uncomment the if statement at some point? 
+   # of package.
    
-   # if("IndivOrAgg" %in% names(ct_dataframe) == FALSE){
-   ct_dataframe <- ct_dataframe %>% 
-      mutate(IndivOrAgg = case_when(Simulated == FALSE ~ NA, 
-                                    Simulated == TRUE & Trial %in% 
-                                       c("mean", "median",
-                                         "geomean", 
-                                         "per5", "per95", "per10", "per90", 
-                                         "trial mean", "trial geomean", 
-                                         "trial median") ~ "aggregate", 
-                                    .default = "individual"))
-   # }
+   if("IndivOrAgg" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe <- ct_dataframe %>% 
+         mutate(IndivOrAgg = case_when(Simulated == FALSE ~ NA, 
+                                       Simulated == TRUE & Trial %in% 
+                                          c("mean", "median",
+                                            "geomean", 
+                                            "per5", "per95", "per10", "per90", 
+                                            "trial mean", "trial geomean", 
+                                            "trial median") ~ "aggregate", 
+                                       .default = "individual"))
+   }
    
    ct_dataframe <- ct_dataframe %>% 
       filter(Simulated == FALSE |
@@ -952,9 +985,13 @@ ct_plot <- function(ct_dataframe = NA,
       MyMeanType <- MyMeanType[1] %>% as.character()
       
    } else {
-      MyMeanType <- switch(mean_type, "arithmetic" = "mean", "geometric" = "geomean",
+      MyMeanType <- switch(mean_type, 
+                           "arithmetic" = "mean", 
+                           "geometric" = "geomean",
                            "median" = "median")
    }
+   
+   ## Making the object Data here ------------------------------------------
    
    Data <- ct_dataframe %>% 
       # Making sure we only have one summary aggregate measurement
@@ -964,6 +1001,7 @@ ct_plot <- function(ct_dataframe = NA,
    # Set MyCompoundID to whatever compound was included.
    MyCompoundID <- ifelse(EnzPlot, unique(Data$Enzyme), 
                           unique(Data$CompoundID))
+   
    if(EnzPlot){
       Data <- Data %>% 
          rename(Conc = Abundance) %>%
@@ -976,7 +1014,7 @@ ct_plot <- function(ct_dataframe = NA,
                 Conc = Conc / 100) 
       
       # Since the y axis is now scaled by 1/100, need to also scale y axis
-      # limits.
+      # limits and hline_position.
       y_axis_limits_lin <- y_axis_limits_lin / 100
       y_axis_limits_log <- y_axis_limits_log / 100
       hline_position <- hline_position / 100
@@ -984,8 +1022,8 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    # We've discovered that, sometimes, an ADAM model can return negative
-   # concentrations, which causes this function to essentially freeze.
-   # Removing negative concs.
+   # concentrations, which causes this function to essentially freeze. Removing
+   # negative concs.
    Data <- Data %>% filter(Conc >= 0)
    
    # Noting whether the tissue was from an ADAM model
@@ -1041,6 +1079,7 @@ ct_plot <- function(ct_dataframe = NA,
    
    
    # Dealing with possible inhibitor 1 or Study data --------------------------
+   
    # Adding a grouping variable to data and also making the inhibitor 1 name
    # prettier for the graphs.
    MyPerpetrator <- unique(Data$Inhibitor) %>% as.character()
@@ -1071,6 +1110,20 @@ ct_plot <- function(ct_dataframe = NA,
          select(-CompoundIsPerp)
    }
    
+   # Always want "none" to be the 1st item on the legend for DDI sims, and we
+   # need there to be some value present for "Inhibitor" for function to work
+   # correctly.
+   Data <- Data %>%
+      mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor), 
+             Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
+   
+   # If it's a compound summary figure type, set the column "Study" to be factor
+   # if it's not already.
+   if("Study" %in% names(Data) && "factor" %in% class(Data$Study) == FALSE){
+      Data <- Data %>% 
+         mutate(Study = factor(Study, levels = sort(unique(Study))))
+   }
+   
    # Error catching for when user specifies linetype, color or shape and
    # doesn't include enough values when perpetrator present
    if(any(complete.cases(obs_shape)) && length(MyPerpetrator) > 0 &&
@@ -1080,7 +1133,7 @@ ct_plot <- function(ct_dataframe = NA,
       figure_type != "compound summary"){
       
       if(length(obs_color_user) < 2){
-         warning(wrapn("There is an inhibitor or perpetrator present, but you have specified only one shape and one color for the observed data. The same shape and color will be used for both."),
+         warning(wrapn("There is an inhibitor or perpetrator present, but you have specified only one shape for the observed data. The same shape will be used for both."),
                  call. = FALSE)
       }
       
@@ -1105,22 +1158,6 @@ ct_plot <- function(ct_dataframe = NA,
       line_type <- rep(line_type, 2)
    }
    
-   # Always want "none" to be the 1st item on the legend, and we need there
-   # to be some value present for "Inhibitor" for function to work correctly.
-   Data <- Data %>%
-      mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor))
-   if(length(MyPerpetrator) > 0){
-      Data <- Data %>%
-         mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
-   }
-   
-   # If it's a compound summary figure type, set the column "Study" to be factor
-   # if it's not already.
-   if("Study" %in% names(ct_dataframe) &&
-      "factor" %in% class(ct_dataframe$Study) == FALSE){
-      ct_dataframe <- ct_dataframe %>% 
-         mutate(Study = factor(Study, levels = sort(unique(Study))))
-   }
    
    # Setting up data.frames to graph ---------------------------------------
    
@@ -1182,7 +1219,7 @@ ct_plot <- function(ct_dataframe = NA,
       time_range_relative <- time_range
    }
    
-   # Separating the data by type 
+   ## Separating the data by type -----------------------------------------
    sim_data_trial <- Data %>%
       filter(Simulated == TRUE &
                 Trial %in% switch(mean_type, 
@@ -1269,7 +1306,8 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    # If there are no observed data and they requested a figure type of "compound
-   # summary", then just set the figure type to "Freddy" b/c it's the same.
+   # summary", then just set the figure type to "Freddy" for simplicity b/c it's
+   # the same.
    if(nrow(obs_dataframe) == 0 & figure_type == "compound summary"){
       figure_type <- "freddy"
    }
@@ -1278,15 +1316,16 @@ ct_plot <- function(ct_dataframe = NA,
    # Setting up the y axis using the subfunction ct_y_axis -------------------
    
    # Setting Y axis limits for both linear and semi-log plots
-   Ylim_data <- switch(figure_type, 
-                       "trial means" = bind_rows(sim_data_trial, obs_dataframe), 
-                       "percentiles" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe), 
-                       "freddy" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe),
-                       "compound summary" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe),
-                       "percentile ribbon" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe), 
-                       "means only" = bind_rows(sim_data_mean, obs_dataframe) %>%
-                          filter(as.character(Trial) == MyMeanType |
-                                    str_detect(as.character(Trial), "obs")) 
+   Ylim_data <- switch(
+      figure_type, 
+      "trial means" = bind_rows(sim_data_trial, obs_dataframe), 
+      "percentiles" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe), 
+      "freddy" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe),
+      "compound summary" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe),
+      "percentile ribbon" = bind_rows(sim_data_trial, sim_data_mean, obs_dataframe), 
+      "means only" = bind_rows(sim_data_mean, obs_dataframe) %>%
+         filter(as.character(Trial) == MyMeanType |
+                   str_detect(as.character(Trial), "obs")) 
    )
    
    if("SD_SE" %in% names(Ylim_data) && 
@@ -1305,17 +1344,18 @@ ct_plot <- function(ct_dataframe = NA,
       Ylim_data <- bind_rows(sim_data_trial, obs_dataframe, sim_data_mean)
    }
    
-   YStuff <- ct_y_axis(ADAMorAdvBrain = any(ADAM, AdvBrainModel),
-                       Tissue_subtype = Tissue_subtype,
-                       EnzPlot = EnzPlot,
-                       time_range_relative = time_range_relative,
-                       Ylim_data = Ylim_data,
-                       prettify_compound_names = prettify_compound_names,
-                       pad_y_axis = pad_y_axis,
-                       y_axis_limits_lin = y_axis_limits_lin,
-                       time_range = time_range,
-                       y_axis_limits_log = y_axis_limits_log, 
-                       y_axis_interval = y_axis_interval
+   YStuff <- ct_y_axis(
+      ADAMorAdvBrain = any(ADAM, AdvBrainModel),
+      Tissue_subtype = Tissue_subtype,
+      EnzPlot = EnzPlot,
+      time_range_relative = time_range_relative,
+      Ylim_data = Ylim_data,
+      prettify_compound_names = prettify_compound_names,
+      pad_y_axis = pad_y_axis,
+      y_axis_limits_lin = y_axis_limits_lin,
+      time_range = time_range,
+      y_axis_limits_log = y_axis_limits_log, 
+      y_axis_interval = y_axis_interval
    )
    
    ObsConcUnits <- YStuff$ObsConcUnits
@@ -1332,15 +1372,16 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Figure types ---------------------------------------------------------
    
-   AesthetStuff <- set_aesthet(line_type = line_type, 
-                               figure_type = figure_type,
-                               MyPerpetrator = MyPerpetrator, 
-                               MyCompoundID = MyCompoundID, 
-                               obs_shape = obs_shape, 
-                               obs_color = obs_color, 
-                               obs_fill_trans = obs_fill_trans,
-                               obs_line_trans = obs_line_trans,
-                               line_color = line_color)
+   AesthetStuff <- set_aesthet(
+      line_type = line_type, 
+      figure_type = figure_type,
+      MyPerpetrator = MyPerpetrator, 
+      MyCompoundID = MyCompoundID, 
+      obs_shape = obs_shape, 
+      obs_color = obs_color, 
+      obs_fill_trans = obs_fill_trans,
+      obs_line_trans = obs_line_trans,
+      line_color = line_color)
    
    line_type <- AesthetStuff$line_type
    line_color <-  AesthetStuff$line_color
@@ -1359,6 +1400,8 @@ ct_plot <- function(ct_dataframe = NA,
                        length(unique(obs_dataframe$Study)))[
                           1:length(unique(obs_dataframe$Study))]
    }
+   
+   # FIXME: Probably don't need this
    
    # Determining whether the color and or shape of the observed data should be
    # mapped to specific columns. In the case of ct_plot, mapping both color and
@@ -1403,24 +1446,27 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    A <- switch(figure_type, 
-               "trial means" = ggplot(sim_data_trial,
-                                      aes(x = Time, y = Conc, group = Group,
-                                          linetype = Inhibitor, 
-                                          color = Inhibitor)),
+               "trial means" = 
+                  ggplot(sim_data_trial,
+                         aes(x = Time, y = Conc, group = Group,
+                             linetype = Inhibitor, 
+                             color = Inhibitor)),
                
-               "percentiles" = ggplot(sim_data_mean %>%
-                                         filter(Trial %in% c("per5", "per95")) %>%
-                                         mutate(Group = paste(Group, Trial)),
-                                      aes(x = Time, y = Conc,
-                                          linetype = Inhibitor, 
-                                          color = Inhibitor, 
-                                          group = Group)),
+               "percentiles" = 
+                  ggplot(sim_data_mean %>%
+                            filter(Trial %in% c("per5", "per95")) %>%
+                            mutate(Group = paste(Group, Trial)),
+                         aes(x = Time, y = Conc,
+                             linetype = Inhibitor, 
+                             color = Inhibitor, 
+                             group = Group)),
                
-               "percentile ribbon" = ggplot(RibbonDF, 
-                                            aes(x = Time, y = MyMean, 
-                                                ymin = per5, ymax = per95, 
-                                                linetype = Inhibitor,
-                                                color = Inhibitor)), 
+               "percentile ribbon" = 
+                  ggplot(RibbonDF, 
+                         aes(x = Time, y = MyMean, 
+                             ymin = per5, ymax = per95, 
+                             linetype = Inhibitor,
+                             color = Inhibitor)), 
                
                "freddy" = 
                   switch(as.character(Eff_plusminus), 
@@ -1436,20 +1482,15 @@ ct_plot <- function(ct_dataframe = NA,
                   ), 
                
                "compound summary" = 
-                  switch(as.character(Eff_plusminus), 
-                         "TRUE" = ggplot(data = sim_data_mean %>%
-                                            filter(Trial == MyMeanType),
-                                         aes(x = Time, y = Conc, group = Group,
-                                             linetype = Inhibitor)), 
-                         "FALSE" = ggplot(sim_data_trial,
-                                          aes(x = Time, y = Conc, group = Group))
-                  ), 
+                  ggplot(sim_data_trial,
+                         aes(x = Time, y = Conc, group = Group)),
                
-               "means only" = ggplot(sim_data_mean %>%
-                                        filter(Trial == MyMeanType), 
-                                     aes(x = Time, y = Conc,
-                                         linetype = Inhibitor, 
-                                         color = Inhibitor)))
+               "means only" = 
+                  ggplot(sim_data_mean %>%
+                            filter(Trial == MyMeanType), 
+                         aes(x = Time, y = Conc,
+                             linetype = Inhibitor, 
+                             color = Inhibitor)))
    
    # Adding optional horizontal line(s)
    if(any(complete.cases(hline_position))){

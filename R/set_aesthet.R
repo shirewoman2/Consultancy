@@ -18,6 +18,15 @@ set_aesthet <- function(line_type, figure_type, MyPerpetrator, MyCompoundID,
                         obs_shape, line_color, obs_color, 
                         obs_line_trans, obs_fill_trans){
    
+   # Notes on things that should be going into this function: 
+   
+   # There should be only one obs_color for ct_plot graphs that are not compound
+   # summary figure types.
+   
+   # The column Inhibitor and the column Study, if it exists, are factor. 
+   
+   
+   
    # Setting user specifications for shape, linetype, and color where
    # applicable.
    if(is.na(line_type[1])){
@@ -40,6 +49,27 @@ set_aesthet <- function(line_type, figure_type, MyPerpetrator, MyCompoundID,
       } else {
          obs_shape <- c(1, 2)
       }
+   }
+   
+   # It's really hard to have a mix of shapes with solid plus outline and then
+   # also shapes that are just outline or just solid. If people have requested a
+   # mix, give them a warning and set all the shapes to their solid version.
+   SolidShapes <- which(obs_shape %in% 15:20)
+   MixShapes <- which(obs_shape %in% 21:25)
+   OutlineShapes <- setdiff(1:length(obs_shape), c(SolidShapes, MixShapes))
+   
+   if(length(MixShapes) > 1 & length(c(SolidShapes, OutlineShapes)) > 1){
+      warning(wrapn("You have requested a mixture of shapes with a fill color and then a black outline plus other shapes that have just an outline or just a solid fill color. This is hard to get to look right on your graph, so we're only going to use the solid versions of those mixed shapes."), 
+              call. = FALSE)
+      
+      obs_shape <- case_match(obs_shape, 
+                              21 ~ 19, 
+                              22 ~ 15, 
+                              23 ~ 18, 
+                              24 ~ 17, 
+                              25 ~ 6, 
+                              .default = obs_shape)
+      
    }
    
    if(is.na(line_color[1])){

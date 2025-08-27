@@ -560,7 +560,8 @@ Using observed and simulated concentration-time data generated
   function examples and instructions/Concentration-time plots 1 - one sim at
   a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
   include a link to it here.)
-
+}
+\details{
 \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 inhibitors, or inhibitor metabolites are available in all tissues. If it's
 not present in your output, we can't graph it here.}
