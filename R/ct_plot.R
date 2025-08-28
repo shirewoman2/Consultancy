@@ -1137,6 +1137,10 @@ ct_plot <- function(ct_dataframe = NA,
          mutate(Study = factor(Study, levels = sort(unique(Study))))
    }
    
+   Data <- Data %>% 
+      mutate(colorBy_column = factor(colorBy_column), 
+             linetype_column = factor(linetype_column))
+   
    if(figure_type == "compound summary"){
       levels(Data$colorBy_column) <- levels(Data$Study)
       levels(Data$linetype_column) <- levels(Data$Study)
@@ -1443,7 +1447,7 @@ ct_plot <- function(ct_dataframe = NA,
                        length(unique(obs_dataframe$Study)))[
                           1:length(unique(obs_dataframe$Study))]
    }
-
+   
    # Warning for a figure type that's not recommended: Is this a graph showing
    # substrate +/- perpetrator?
    Eff_plusminus <- length(MyPerpetrator) > 0 && 
@@ -1457,6 +1461,27 @@ ct_plot <- function(ct_dataframe = NA,
       warning(wrapn("When there is a perpetrator present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'."),
               call. = FALSE)
    }
+   
+   
+   # Setting colors, linetypes, etc. -------------------------------------
+   
+   # Naming the linetypes, colors, and shapes b/c otherwise having trouble with
+   # order changing between when lines are plotted and when observed data are
+   # added. I think this is a ggplot2 bug.
+   if(length(unique(Data$Inhibitor)) > 1){
+      names(line_type) <- levels(Data$Inhibitor)
+      names(line_color) <- levels(Data$Inhibitor)
+   } else {
+      names(line_type) <- unique(Data$Inhibitor)
+      names(line_color) <- unique(Data$Inhibitor)
+   }
+   
+   # if(figure_type != "compound summary"){
+   #    A <- A +
+   #       scale_linetype_manual(values = line_type) +
+   #       scale_color_manual(values = line_color)
+   # } 
+   
    
    ## Setting up ggplot and aes bases for the graph -----------------------
    
@@ -1533,6 +1558,7 @@ ct_plot <- function(ct_dataframe = NA,
                           color = VLineAES[1], linetype = VLineAES[2])
    }
    
+   ## Observed data on bottom ----------------------------
    if(nrow(obs_dataframe) > 0 & obs_on_top == FALSE){
       
       A <- addObsPoints(obs_dataframe = obs_dataframe, 
@@ -1693,26 +1719,6 @@ ct_plot <- function(ct_dataframe = NA,
       A <- A +
          geom_line(linewidth = ifelse(is.na(line_width), 1, line_width))
    }
-   
-   # Setting colors, linetypes, etc. -------------------------------------
-   
-   # Naming the linetypes, colors, and shapes b/c otherwise having trouble with
-   # order changing between when lines are plotted and when observed data are
-   # added. I think this is a ggplot2 bug.
-   if(length(unique(Data$Inhibitor)) > 1){
-      names(line_type) <- levels(Data$Inhibitor)
-      names(line_color) <- levels(Data$Inhibitor)
-   } else {
-      names(line_type) <- unique(Data$Inhibitor)
-      names(line_color) <- unique(Data$Inhibitor)
-   }
-   
-   if(figure_type != "compound summary"){
-      A <- A +
-         scale_linetype_manual(values = line_type) +
-         scale_color_manual(values = line_color)
-   } 
-   
    
    # Observed data on top ------------------------------------------------------
    

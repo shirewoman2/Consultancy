@@ -65,10 +65,12 @@ addObsPoints <- function(obs_dataframe,
    # instead). I just could NOT get this to work with a mix where you'd need to
    # sometimes map fill and sometimes map color.
    
-   obs_color <- obs_color[1:length(levels(obs_dataframe$colorBy_column))]
+   obs_color <- rep(obs_color, length(levels(obs_dataframe$colorBy_column)))[
+      1:length(levels(obs_dataframe$colorBy_column))]
    names(obs_color) <- levels(obs_dataframe$colorBy_column)
    
-   obs_shape <- obs_shape[1:length(levels(obs_dataframe$linetype_column))]
+   obs_shape <- rep(obs_shape, length(levels(obs_dataframe$linetype_column)))[
+      1:length(levels(obs_dataframe$linetype_column))]
    names(obs_shape) <- levels(obs_dataframe$linetype_column)
    
    if(all(obs_shape %in% 21:25)){
