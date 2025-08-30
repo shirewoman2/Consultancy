@@ -233,10 +233,10 @@ extractInputTab <- function(deets = "all",
    }
    
    # pullValue doesn't work for CL, so those are separate. Also need
-   # to do StartDayTime_x, SimulatorVersion, and ADCSimulation separately.
+   # to do StartDayTime_x and SimulatorVersion separately.
    MyInputDeets1 <-
       MyInputDeets[!str_detect(MyInputDeets, 
-                               "CLint_|Interaction_|^StartDayTime|Transport_|ADCSimulation|SimulatorVersion|OrganTissue")]
+                               "CLint_|Interaction_|^StartDayTime|Transport_|SimulatorVersion|OrganTissue")]
    
    if(length(MyInputDeets1) > 0){
       for(i in MyInputDeets1){
@@ -271,14 +271,6 @@ extractInputTab <- function(deets = "all",
    
    
    ## Some overall simulation details -----------------------------------
-   
-   # Checking whether this was an ADC sim. 
-   if("ADCSimulation_sub" %in% MyInputDeets){
-      Out[["ADCSimulation_sub"]] <- 
-         any(str_detect(as.character(InputTab[, 1]), 
-                        InputDeets_DF %>% filter(Detail == "ADCSimulation_sub") %>%
-                           pull(Regex_row)), na.rm = T)
-   }
    
    # Checking simulator version
    Out[["SimulatorVersion"]] <- ifelse(str_detect(InputTab[1, 1], "Discovery"), 
@@ -650,7 +642,7 @@ extractInputTab <- function(deets = "all",
    }
    
    
-   ## Pulling CL info ----------------------------------------------------
+      ## Pulling CL info ----------------------------------------------------
    MyInputDeets2 <- MyInputDeets[str_detect(MyInputDeets, "CLint_")]
    
    if(length(MyInputDeets2) > 0){
@@ -667,7 +659,7 @@ extractInputTab <- function(deets = "all",
                           "^Biliary (CLint|Clearance)") |
                str_detect(InputTab[ , NameCol] %>%
                              pull(),
-                          "^Additional HLM CLint|^Additional Systemic Clearance|^Additional HKM CLint") |
+                          "^Additional HLM CLint|^Additional Systemic Clearance|^CLcat \\(L/h|^Lymphatic Clearance \\(L/h|^Additional HKM CLint") |
                str_detect(InputTab[ , ValueCol] %>%
                              pull(),
                           "In Vivo Clear") |
@@ -946,6 +938,16 @@ extractInputTab <- function(deets = "all",
                # Other HKM CL
                   suppressWarnings(
                      Out[[paste0("CLint_additional_HKM", Suffix)]] <-
+                        as.numeric(InputTab[i, NameCol + 1])
+                  )
+               } else if(str_detect(as.character(InputTab[i, NameCol]), "^CLcat \\(L/h")){
+                  suppressWarnings(
+                     Out[[paste0("CL_cat_nonspecific", Suffix)]] <-
+                        as.numeric(InputTab[i, NameCol + 1])
+                  )
+               } else if(str_detect(as.character(InputTab[i, NameCol]), "^Lymphatic Clearance \\(L/h")){
+                  suppressWarnings(
+                     Out[[paste0("CL_lymphatic", Suffix)]] <-
                         as.numeric(InputTab[i, NameCol + 1])
                   )
                } else if(str_detect(as.character(InputTab[i, NameCol]), "^Additional Systemic Clearance \\(L/h\\)")){
@@ -1345,19 +1347,54 @@ extractInputTab <- function(deets = "all",
          }
       }
    }
+
    
-   Out <- Out[sort(names(Out))]
-   Out[["pH_dependent_solubility"]] <- pHSol
-   Out[["DissolutionProfiles"]] <- DissoProfs
-   Out[["ReleaseProfiles"]] <- ReleaseProfs
-   Out[["ConcDependent_fup"]] <- CDfupProfs 
-   Out[["ConcDependent_BP"]] <- CDBPProfs
-   Out[["pH_dependent_solubility"]] <- pHSol
-   Out[["pH_dependent_LumindalDegradation"]] <- pHLumDeg
-   Out[["CustomDosing"]] <- any(CustomDosing, na.rm = T)
+   # Paediatric age bins --------------------------------------------------
    
+   # This only applies when subjects are redefined over the course of the
+   # simulation. 
    
+   if(any(c("Bin 1 start", "Bin 1 frequency") %in%
+          t(InputTab[, ColLocations["Trial Design"]]))){
+      
+      Out$Redefine_subjects_over_time <- "yes"
+      
+      StartRow <- which(t(InputTab[, ColLocations["Trial Design"]]) == "Bin 1 start")
+      EndRow <- max(which(str_detect(
+         t(InputTab[, ColLocations["Trial Design"]]), "Bin [0-9]{1,}")))
+      
+      AgeBins <- InputTab[StartRow:EndRow, c(ColLocations["Trial Design"], 
+                                             ColLocations["Trial Design"] + 1)] 
+      names(AgeBins) <- c("Orig", "Value")
+      
+      AgeBins <- AgeBins %>% 
+         separate_wider_delim(cols = Orig, delim = " ", 
+                              names = c(NA, "Bin", "Type")) %>% 
+         pivot_wider(names_from = Type, 
+                     values_from = Value) %>% 
+         mutate(File = sim_data_file, 
+                Bin = as.numeric(Bin), 
+                Start = as.numeric(start), 
+                End = as.numeric(end)) %>% 
+         rename(Frequency = frequency) %>% 
+         select(File, Bin, Start, End, Frequency)
+      
+   } else {
+      Out$Redefine_subjects_over_time <- "no"
+      AgeBins <- NULL
+   }
+   
+      
    # Returning --------------------------------------------------------------
+   Out <- Out[sort(names(Out))]
+   Out[["ConcDependent_BP"]] <- CDBPProfs
+   Out[["ConcDependent_fup"]] <- CDfupProfs 
+   Out[["CustomDosing"]] <- any(CustomDosing, na.rm = T)
+   Out[["DissolutionProfiles"]] <- DissoProfs
+   Out[["Age_bins_redef_over_time"]] <- AgeBins
+   Out[["pH_dependent_LumindalDegradation"]] <- pHLumDeg
+   Out[["pH_dependent_solubility"]] <- pHSol
+   Out[["ReleaseProfiles"]] <- ReleaseProfs
    
    return(Out)
    

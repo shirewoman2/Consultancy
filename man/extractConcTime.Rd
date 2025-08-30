@@ -16,16 +16,16 @@ extractConcTime(
 )
 }
 \arguments{
-\item{sim_data_file}{name of the Excel file containing the simulated
-concentration-time data, in quotes; must be an output file from the Simcyp
-simulator}
+\item{sim_data_file}{name of the Simcyp Simulator results Excel file
+containing the simulated concentration-time data, in quotes}
 
 \item{obs_data_file}{name of the Excel file containing the observed
 concentration-time data for the substrate or metabolite you're extracting,
 in quotes. If the observed data you want to plot were already included in
-the Excel output from the simulator, leave this as NA. Otherwise, this is
-the file that it is ready to be converted to an XML file, not the file that
-contains only the digitized time and concentration data.}
+the Excel output from the simulator and those data only included baseline
+substrate concentrations, leave this as NA. Otherwise, this is the
+observed-data XML overlay file or the Excel version (the PE template) that
+it is ready to be converted to that.}
 
 \item{tissue}{From which tissue should the desired concentrations be
   extracted? Default is plasma for typical plasma concentration-time data.
@@ -52,7 +52,8 @@ contains only the digitized time and concentration data.}
 \item{compoundToExtract}{For which compound do you want to extract
   concentration-time data? Options are:
 
-  \itemize{\item{"substrate" (default)}
+  \itemize{
+  \item{"substrate" (default)}
   \item{"primary metabolite 1"}
   \item{"primary metabolite 2"}
   \item{"secondary metabolite"}
@@ -62,23 +63,19 @@ contains only the digitized time and concentration data.}
   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
   \item{"PD input"}
   \item{"PD response"}
-  \item{"intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
+  \item{"protein-conjugated drug" for DAR1-DARmax for an antibody-drug conjugate;
   observed data with DV listed as "Conjugated Protein Plasma Total" will
   match these simulated data}
   \item{"conjugated payload"; observed data with DV listed as
   "Conjugated Drug Plasma Total" will match these simulated data}
-  \item{"total antibody" for DAR0-DARmax for an ADC; observed data with DV
+  \item{"protein total" for DAR0-DARmax for an ADC; observed data with DV
   listed as "Total Protein Conjugate Plasma Total" will match these simulated data}
   \item{"released payload" for the released drug from an ADC, which shows up
   as "Sub Pri Met1" in Simulator output files.}
   \item{"therapeutic protein" for mAb concentrations alone}
   \item{"therapeutic protein and TMDD complex" for mAb concentrations
   including when bound to the target}
-  }
-
-  \strong{Note:} If your compound is a therapeutic protein or ADC, we are in
-  the process of testing this and expanding on the options here, so please be
-  extra careful to check that you're getting the correct data.}
+  }}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 concentration-time data? Options are "aggregate", "individual", or "both"
@@ -144,7 +141,8 @@ A data.frame of concentration-time data with the following columns:
 
   \item{Tissue_subtype}{the subtype of tissue, which only applies in special
   situations, mainly ADAM-model tissues and brain-compartment tissues.
-  Examples of ADAM-model tissues you can get: "undissolved compound", "free compound in lumen",
+  Examples of ADAM-model tissues you can get: "undissolved compound",
+  "free compound in lumen",
   "Heff", "absorption rate", "unreleased compound in faeces", "dissolved
   compound", "luminal CLint", "cumulative fraction of compound dissolved",
   "cumulative fraction of compound released", "cumulative fraction of
@@ -161,51 +159,49 @@ A data.frame of concentration-time data with the following columns:
   these data} }
 }
 \description{
-Extracts concentration-time data from simulator output Excel files and,
-optionally, a separately specified observed data file, and puts all data into
-a single, tidy data.frame. There are some nuances to how it deals with
-observed data; please see the details at the bottom of this help file. Not
-all substrate metabolites, inhibitors, or inhibitor metabolites are available
-in all tissues. If it's not present in your Excel output, we can't extract it
-here. For detailed instructions and examples, please see the SharePoint file
-"Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
-function examples and instructions/Concentration-time plots 1 - one sim at a
-time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
-include a link to it here.)
+Extracts concentration-time data from simulator output Excel
+  files and, optionally, a separately specified observed data file, and puts
+  all data into a single, tidy data.frame. There are some nuances to how it
+  deals with observed data; please see the details at the bottom of this help
+  file. Not all substrate metabolites, inhibitors, or inhibitor metabolites
+  are available in all tissues. If it's not present in your Excel output, we
+  can't extract it here. For detailed instructions and examples, please see
+  the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
+  Files/SimcypConsultancy function examples and
+  instructions/Concentration-time plots 1 - one sim at a
+  time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+  include a link to it here.)
 }
 \details{
-\strong{A note on observed data:} When observed data are included in a
-simulator output file, because the simulator output does not explicitly say
-whether those observed data were in the presence of an inhibitor or
-perpetrator, this function cannot tell the difference and will thus assume
-all observed data included in the simulator output were for the substrate in
-the \emph{absence} of any perpetrator. It will further assume that the
-compound -- substrate or inhibitor 1 or primary metabolite 1 or whatever --
-is the same as \code{compoundToExtract}. If \code{compoundToExtract} was an
-inhibitor or inhibitor metabolite, the observed data from the simulator
-output will NOT be pulled since it is unlikely to be inhibitor
-concentrations.
+\strong{A note on observed data:} When observed data are included in
+  a simulator output file, because the simulator output does not explicitly
+  say whether those observed data were in the presence of a precipitant, this
+  function cannot tell the difference and will thus assume all observed data
+  included in the simulator output were for the substrate in the
+  \emph{absence} of any perpetrator. It will further assume that the compound
+  -- substrate or inhibitor 1 or primary metabolite 1 or whatever -- is the
+  same as \code{compoundToExtract}. If \code{compoundToExtract} was an
+  inhibitor or inhibitor metabolite, the observed data from the simulator
+  output will NOT be pulled since it is unlikely to be inhibitor
+  concentrations.
 
-For best results, we recommend supplying an observed data file here, which
-contains more information, to make sure the data are what you're expecting.
+  For best results, we recommend supplying an observed data file here, which
+  contains more information, to make sure the data are what you're expecting.
 }
 \examples{
-extractConcTime(sim_data_file = "../Example simulator output MD.xlsx")
+extractConcTime(sim_data_file = "abc-5mg-sd.xlsx")
 
-extractConcTime(sim_data_file = "../Example simulator output MD.xlsx",
+extractConcTime(sim_data_file = "abc-5mg-sd.xlsx",
                 returnAggregateOrIndiv = "individual")
 
-extractConcTime(sim_data_file = "../Example simulator output MD.xlsx",
-                obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx")
+extractConcTime(sim_data_file = "abc-5mg-sd.xlsx",
+                obs_data_file = "fig1-242-06-001-MD.xlsx")
 
-extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
+extractConcTime(sim_data_file = "abc-5mg-sd-rifampicin-qd.xlsx",
+                obs_data_file = "fig1-242-06-001-MD.xlsx",
                 returnAggregateOrIndiv = c("aggregate", "individual"))
 
-extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
-                obs_data_file = "../fig1-242-06-001-MD - for XML conversion.xlsx",
-                returnAggregateOrIndiv = c("aggregate", "individual"))
-
-extractConcTime(sim_data_file = "../Example simulator output MD + inhibitor.xlsx",
+extractConcTime(sim_data_file = "abc-5mg-sd-rifampicin-qd.xlsx",
                 tissue = "lung")
 
 

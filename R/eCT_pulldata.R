@@ -14,7 +14,7 @@
 #' @param SimConcUnits SimConcUnits
 #' @param returnAggregateOrIndiv returnAggregateOrIndiv
 #' @param sim_data_xl sim_data_xl
-#' @param ADC T or F
+#' @param LgMolSim T or F
 #' @param SimTimeUnits time units
 #' @param PD T or F
 #'
@@ -30,7 +30,7 @@ eCT_pulldata <- function(sim_data_xl,
                          fromMultFunction, 
                          Deets,
                          ADAM, 
-                         ADC = FALSE, 
+                         LgMolSim = FALSE, 
                          PD = FALSE, 
                          ss, 
                          AdvBrainModel, 
@@ -64,26 +64,34 @@ eCT_pulldata <- function(sim_data_xl,
       }
    }
    
-   if(ADC & !cmpd %in% c("primary metabolite 1")){
+   # NB: primary metabolite 1 concs are on a different tab and are the same
+   # thing as released payload.
+   
+   # Another note: For large-molecule DDI simulations, note that the perpetrator
+   # does not affect the large molecule -- only the released payload. For this
+   # reason, there is no difference in the large-molecule concentrations with
+   # vs. without perpetrator.
+   
+   if(LgMolSim & cmpd %in% 
+      setdiff((AllCompounds %>%
+               filter(CompoundType == "large molecule") %>%
+               pull(CompoundID) %>% tolower()), 
+              "primary metabolite 1")){
       
       MyCompound <- Deets$Substrate
       
-      if(length(AllPerpsPresent) == 0){
-         
-         CompoundIndices <- which(
-            str_detect(sim_data_xl$...1,
-                       switch(cmpd,
-                              "total antibody" = "PROTEINTOTAL",
-                              "intact adc" = "INTACTADC", 
-                              "therapeutic protein" = "THERPROTEIN", 
-                              "therapeutic protein and tmdd complex" = "TMDDCOMPLEX", 
-                              "total antibody" = "TOTALAB", 
-                              "conjugated payload" = "PROTEINCONJDRUG" # CHECK THIS ONE with an example; just guessing for now
-                       )))
-         CompoundIndices <- CompoundIndices[
-            which(CompoundIndices > which(str_detect(sim_data_xl$...1, "Population Statistics")))]
-         
-      }
+      CompoundIndices <- which(
+         str_detect(sim_data_xl$...1,
+                    switch(cmpd,
+                           "protein-conjugated drug" = "PROTCONJDRUG", 
+                           "conjugated protein" = "CONJPROTEIN", 
+                           "protein total" = "PROTEINTOTAL",
+                           "therapeutic protein" = "THERPROTEIN", 
+                           "therapeutic protein and tmdd complex" = "TMDDCOMPLEX")))
+      
+      CompoundIndices <- CompoundIndices[
+         which(CompoundIndices > which(str_detect(sim_data_xl$...1, "Population Statistics")))]
+      
    } else if(PD){
       
       MyCompound <- cmpd
@@ -108,9 +116,13 @@ eCT_pulldata <- function(sim_data_xl,
                 "secondary metabolite" = Deets$SecondaryMetabolite) %>%
          as.character()
       
-      MainCompoundIDs <- c("substrate", "primary metabolite 1", "primary metabolite 2",
+      MainCompoundIDs <- c("substrate", 
+                           "primary metabolite 1",
+                           "primary metabolite 2",
                            "secondary metabolite",
-                           "inhibitor 1", "inhibitor 2", "inhibitor 1 metabolite",
+                           "inhibitor 1", 
+                           "inhibitor 2",
+                           "inhibitor 1 metabolite",
                            "inhibitor 2 metabolite")
       
       
@@ -126,7 +138,7 @@ eCT_pulldata <- function(sim_data_xl,
          # cmpd is one of main compounds is not ADAM or AdvBrainModel 
          
          # released payload looks like primary metabolite 1, so extracting
-         # those data here rather than with the rest of the ADC data
+         # those data here rather than with the rest of the LgMolSim data
          
          CompoundIndices <- which(str_detect(NamesToCheck,
                                              switch(cmpd, 
@@ -166,18 +178,7 @@ eCT_pulldata <- function(sim_data_xl,
             which(str_detect(NamesToCheck, temp_regex)), 
             CompoundIndices)
          
-      } else {
-         CompoundIndices <- which(str_detect(NamesToCheck,
-                                             switch(cmpd, 
-                                                    "intact ADC" = "INTACTADC",
-                                                    "conjugated payload" = "PROTEINCONJDRUG", # FIXME: Check this
-                                                    "total antibody" = "TOTALAB", 
-                                                    "therapeutic protein" = "THERPROTEIN", 
-                                                    "therapeutic protein and TMDD complex" = "TMDDCOMPLEX", 
-                                                    "released payload" = "PRIMET1", # Not sure that this will show up here 
-                                                    "protein total" = "PROTEINTOTAL" # FIXME: Add this as an option
-                                                    )))
-      }
+      } 
    } 
    
    if(pull_interaction_data){

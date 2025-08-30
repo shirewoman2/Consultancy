@@ -22,15 +22,14 @@ extractConcTime_mult(
 )
 }
 \arguments{
-\item{sim_data_files}{the simulation files you want data from. Options for
-  specifying these: \itemize{
+\item{sim_data_files}{the Simcyp Simulator files you want data from. Options
+  for specifying these: \itemize{
 
-  \item{a character vector of simulator output files, each in
-  quotes and encapsulated with \code{c(...)},}
+  \item{a character vector of simulator Excel results files, each in
+  quotes and encapsulated with \code{c(...)}}
 
-  \item{NA to extract
-  concentration-time data for \emph{all} the Excel files in the current
-  folder,}
+  \item{NA to extract concentration-time data for \emph{all} the Excel
+  files in the current folder}
 
   \item{or "recursive" to extract concentration-time data for \emph{all}
   the Excel files in the current folder and \emph{all} subfolders.}}
@@ -45,19 +44,17 @@ extractConcTime_mult(
   which simulated files. (NA, which is the default, means no observed data
   will be extracted.) There are four ways to supply this:
 
-  \describe{\item{"use existing_exp_details"}{If you have already
-  extracted the simulation experimental details with the function
-  \code{\link{extractExpDetails_mult}} and you included observed data overlay
-  files in your simulations, as long as those XML files have their
-  corresponding Excel files in the \emph{same} location, we can use that
-  information to figure out which observed Excel file should go with which
+  \describe{\item{"use existing_exp_details"}{If included observed data overlay
+  files in your simulations, as long as those XML files are in the
+  \emph{same} location as when the simulations were run, we can use the
+  information in the workspace file, which must be present in the same
+  folder, to figure out which observed Excel file should go with which
   simulation. Note that this \strong{does} require you to supply something
   for the argument \code{existing_exp_details} to work. This has been set up
   to look for that location even if the user who ran the simulation is
   different from the user extracting the data, e.g., if the original path was
   something like "C:/Users/FridaKahlo/Rose project simulations" and the
-  current username (the result from running Sys.info()["user"]) is
-  "DiegoRivera", this will look in the folder
+  current username is "DiegoRivera", this will look in the folder
   "C:/Users/DiegoRivera/Rose project simulations" for your XML files. This is
   assuming that the file path starts with "C:/Users/CurrentUserName/..." and
   will fail to change the username if that is not the case.}
@@ -132,15 +129,17 @@ input parameters for simulations and re-run them.}
   Other options are "blood" or any tissues included in "Sheet Options",
   "Tissues" in the simulator. All possible options:
   \describe{
-  \item{First-order absorption models}{"plasma", "blood", "unbound blood",
-  "unbound plasma", "additional organ", "adipose", "bone", "brain",
+  \item{all models}{"plasma", "blood", "unbound blood", "unbound plasma"}
+
+  \item{full-distribution models}{"additional organ", "adipose", "bone",
+   "brain" (will also retrieve brain compartment tissues),
   "feto-placenta", "gut tissue", "heart", "kidney", "liver", "lung", "muscle",
   "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
   blood", "peripheral unbound plasma", "portal vein blood", "portal vein
   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
   or "spleen".}
 
-  \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
+  \item{ADAM models}{"stomach", "duodenum", "jejunum I",
   "jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only
   applies to rodents), "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
@@ -171,23 +170,19 @@ input parameters for simulations and re-run them.}
   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
   \item{"PD input"}
   \item{"PD response"}
-  \item{"intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
+  \item{"protein-conjugated drug" for DAR1-DARmax for an antibody-drug conjugate;
   observed data with DV listed as "Conjugated Protein Plasma Total" will
   match these simulated data}
   \item{"conjugated payload"; observed data with DV listed as
   "Conjugated Drug Plasma Total" will match these simulated data}
-  \item{"total antibody" for DAR0-DARmax for an ADC; observed data with DV
+  \item{"protein total" for DAR0-DARmax for an ADC; observed data with DV
   listed as "Total Protein Conjugate Plasma Total" will match these simulated data}
   \item{"released payload" for the released drug from an ADC, which shows up
   as "Sub Pri Met1" in Simulator output files.}
   \item{"therapeutic protein" for mAb concentrations alone}
   \item{"therapeutic protein and TMDD complex" for mAb concentrations
   including when bound to the target}
-  }
-
-  \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
-  tested this very thoroughly, so please be extra careful to check that
-  you're getting the correct data.}
+  }}
 
 \item{conc_units_to_use}{concentration units to use so that all data will be
 comparable. Options are the same as the ones in the Excel form for PE data

@@ -112,7 +112,14 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   to your data. (And yes, it \emph{must} be titled "Study" exactly.)
   Everything else in these graphs will be gray or black, but
   you can specify the color of the observed points with the argument
-  "obs_color" and the shape of the points with the argument "obs_shape".}}}
+  "obs_color" and the shape of the points with the argument "obs_shape". If
+  you have a perpetrator present in your data, the points will change shape
+  based on whether the data shown are baseline or with perpetrator. Honestly,
+  though, we would not recommend making a single "compound summary" style
+  graph with both the baseline and DDI conditions in one because there will
+  be so many lines that things will be confusing. We'd recommend running this
+  function once for each scenario and just putting those two graphs side by
+  side instead.}}}
 
 \item{Tissue_subtype}{Certain types of models have additional subtypes of
 tissues. Currently, the SimcypConsultancy package supports ADAM-model and
@@ -233,16 +240,19 @@ concentration and your source data were in mass per volume units or vice
 versa, you'll need to provide something for the argument
 \code{existing_exp_details}.}
 
-\item{obs_color}{If you would like the observed data points to be in color,
-  either specify a color here or leave this as NA to get all black points for
-  most graph types or, if you set something for \code{line_color}, whatever
-  colors were used for that, semi-transparent blue-purple for a figure_type
-  of "Freddy", or a different color for each study (you must have a column
-  titled "Study" in ct_dataframe for this to work) for a figure_type of
-  "compound summary". Setting this to "none" will remove observed data from
-  the graph. Hex color codes are also ok to use. If you've got a figure_type
-  of "compound summary", then you can specify each color you want or you can
-  call on one of the possible color sets: Options: \describe{
+\item{obs_color}{If your figure type is anything other than "compound
+  summary", here's how this will work: Specify a single color (hex codes or
+  just standard R names of colors are fine) and all your points will be that
+  color in the graph. Leave this as NA and the point color will match
+  whatever you specified for the argument \code{line_color} (black if
+  line_color is not specified) or a lovely blue shade if your figure_type is
+  "Freddy".
+
+  If you have a figure_type of "compound summary", that's set up so that the
+  color of the points will vary with the study, so you'll need a column
+  titled "Study" in your data. If you have that scenario, then you can
+  specify whatever colors you want here for each of the studies you have in
+  your data or you can specify a set of colors. Options: \describe{
 
   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
   that are friendly to those with red-green colorblindness. The first three
@@ -309,7 +319,9 @@ presence of a perpetrator. Input should look like this, for example:
 possible shapes and what number corresponds to which shape, type
 \code{ggpubr::show_point_shapes()} into the console. If left as NA,
 substrate alone will be an open circle and substrate + inhibitor 1 will be
-an open triangle.}
+an open triangle. If you choose one of the shapes that is filled with an
+outline (shapes 21 to 25), the outline will be black and the fill will be
+whatever you set for the observed data color.}
 
 \item{obs_size}{optionally specify the size of the points to use for the
 observed data. If left as NA, the size will be 2.}
@@ -543,17 +555,18 @@ Output is a ggplot2 graph or two ggplot2 graphs arranged with
 \description{
 Using observed and simulated concentration-time data generated
   from the function \code{\link{extractConcTime}}, make publication-quality
-  graphs that comply with the Simcyp Consultancy Team's standards. We've
-  tried to include a fair number of options here for flexibility, but many of
-  the function arguments are optional; most of the time, you'll get
-  decent-looking graphs while only setting a minimal number of arguments.
+  graphs that comply with the Simcyp Consultancy Team's standards. For
+  detailed instructions and examples, please see the SharePoint file "Simcyp
+  PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
+  examples and instructions/Concentration-time plots 1 - one sim at a
+  time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+  include a link to it here.)
 
-  For detailed instructions and examples, please see the SharePoint file
-  "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
-  function examples and instructions/Concentration-time plots 1 - one sim at
-  a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
-  include a link to it here.) 
-
+  We've tried to include a fair number of options here for flexibility, but
+  many of the function arguments are optional; most of the time, you'll get
+  nice-looking graphs while only setting a minimal number of arguments.
+}
+\details{
 \strong{A few notes:} \enumerate{\item{Not all substrate metabolites,
 inhibitors, or inhibitor metabolites are available in all tissues. If it's
 not present in your output, we can't graph it here.}
