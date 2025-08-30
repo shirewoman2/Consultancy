@@ -1421,19 +1421,45 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Figure types ---------------------------------------------------------
    
-   # NB: set_aesthet is only the 1st step in determining the correct
-   # colors/shapes/linetypes, etc. It does NOT set the correct numbers of each
-   # of these b/c that's more easily dealt with individually in later code.
+   # Warning for a figure type that's not recommended: Is this a graph showing
+   # substrate +/- perpetrator?
+   Eff_plusminus <- length(MyPerpetrator) > 0 && 
+      complete.cases(MyPerpetrator[1]) &&
+      MyPerpetrator[1] != "none" &
+      MyCompoundID %in% c("inhibitor 1", "inhibitor 2", 
+                          "inhibitor 1 metabolite") == FALSE
+   if(Eff_plusminus & EnzPlot == FALSE & figure_type != "means only"){
+      # This is when there is a perpetrator present and the graph is of the
+      # substrate or a substrate metabolite
+      warning(wrapn("When there is a perpetrator present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'."),
+              call. = FALSE)
+   }
+   
+   
+   # Setting colors, linetypes, etc. -------------------------------------
+   
+   DDI <- unique(Data$CompoundID) %in% AllCompounds$CompoundID[
+      AllCompounds$DDIrole == "victim"] & 
+      all(unique(Data$Inhibitor) %in% "none") == FALSE
+   
    AesthetStuff <- set_aesthet(
-      line_type = line_type, 
       figure_type = figure_type,
-      MyPerpetrator = MyPerpetrator, 
-      MyCompoundID = MyCompoundID, 
+      from_ct_plot = T, 
+      AESCols = AESCols, 
+      DDI = DDI, 
+      line_type = line_type, 
+      n_line_type = ifelse(DDI, 2, 1), 
+      line_color = line_color, 
+      n_line_color = ifelse(DDI, 2, 1), 
       obs_shape = obs_shape, 
+      n_obs_shape = ifelse(DDI, 2, 1), 
       obs_color = obs_color, 
+      n_obs_color = case_when(
+         figure_type == "compound summary" ~ length(unique(obs_dataframe$Study)), 
+         DDI == TRUE ~ 2, 
+         DDI == FALSE ~ 1), 
       obs_fill_trans = obs_fill_trans,
-      obs_line_trans = obs_line_trans,
-      line_color = line_color)
+      obs_line_trans = obs_line_trans)
    
    line_type <- AesthetStuff$line_type
    line_color <-  AesthetStuff$line_color
@@ -1453,22 +1479,6 @@ ct_plot <- function(ct_dataframe = NA,
                           1:length(unique(obs_dataframe$Study))]
    }
    
-   # Warning for a figure type that's not recommended: Is this a graph showing
-   # substrate +/- perpetrator?
-   Eff_plusminus <- length(MyPerpetrator) > 0 && 
-      complete.cases(MyPerpetrator[1]) &&
-      MyPerpetrator[1] != "none" &
-      MyCompoundID %in% c("inhibitor 1", "inhibitor 2", 
-                          "inhibitor 1 metabolite") == FALSE
-   if(Eff_plusminus & EnzPlot == FALSE & figure_type != "means only"){
-      # This is when there is a perpetrator present and the graph is of the
-      # substrate or a substrate metabolite
-      warning(wrapn("When there is a perpetrator present in the simulation, as is the case here, the Simcyp Consultancy report template recommends only showing the means. You may want to change figure_type to 'means only'."),
-              call. = FALSE)
-   }
-   
-   
-   # Setting colors, linetypes, etc. -------------------------------------
    
    # Naming the linetypes, colors, and shapes b/c otherwise having trouble with
    # order changing between when lines are plotted and when observed data are
