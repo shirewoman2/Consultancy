@@ -998,6 +998,11 @@ ct_plot <- function(ct_dataframe = NA,
    
    ## Making the object Data here ------------------------------------------
    
+   # Need "Study" column even if empty.
+   if("Study" %in% names(ct_dataframe) == FALSE){
+      ct_dataframe$Study <- NA
+   }
+   
    Data <- ct_dataframe %>% 
       # Making sure we only have one summary aggregate measurement
       filter(!Trial %in% setdiff(c("mean", "geomean", "median"), 
