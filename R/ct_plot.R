@@ -78,11 +78,7 @@
 #'   gray, the overall mean in thicker black, the 5th and 95th percentiles in
 #'   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
 #'   with a perpetrator present lose the trial means, and the percentiles switch
-#'   to solid, gray lines. \strong{An editorial comment:} While this does not
-#'   align with the officially sanctioned template at this time, this looks
-#'   \emph{sharp}, makes it easy to see the defining characteristics of the
-#'   data, and I recommend checking it out, even just for your own purposes of
-#'   examining your data. If the color is too much for you but you like the
+#'   to solid, gray lines. If the color is too much for you but you like the
 #'   rest, try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}
 #'
 #'   \item{"compound summary"}{matches the concentration-time plots in Simcyp
@@ -93,14 +89,12 @@
 #'   to your data. (And yes, it \emph{must} be titled "Study" exactly.)
 #'   Everything else in these graphs will be gray or black, but
 #'   you can specify the color of the observed points with the argument
-#'   "obs_color" and the shape of the points with the argument "obs_shape". If
-#'   you have a perpetrator present in your data, the points will change shape
-#'   based on whether the data shown are baseline or with perpetrator. Honestly,
-#'   though, we would not recommend making a single "compound summary" style
-#'   graph with both the baseline and DDI conditions in one because there will
-#'   be so many lines that things will be confusing. We'd recommend running this
+#'   "obs_color" and the shape of the points with the argument "obs_shape". 
+#'   A limitation: This figure type only works when there are only baseline or 
+#'   only DDI data present because there would be so many lines that things 
+#'   would be confusing otherwise. If you want both, we recommend running this
 #'   function once for each scenario and just putting those two graphs side by
-#'   side instead.}}
+#'   side.}}
 #'
 #' @param mean_type graph "arithmetic" (default) or "geometric" means or
 #'   "median" for median concentrations. If that option was not included in the
@@ -1402,8 +1396,6 @@ ct_plot <- function(ct_dataframe = NA,
    pad_y_axis <- YStuff$pad_y_axis
    
    
-   # Figure types ---------------------------------------------------------
-   
    # Warning for a figure type that's not recommended: Is this a graph showing
    # substrate +/- perpetrator?
    Eff_plusminus <- length(MyPerpetrator) > 0 && 
@@ -1425,6 +1417,20 @@ ct_plot <- function(ct_dataframe = NA,
       AllCompounds$DDIrole == "victim"] & 
       all(unique(Data$Inhibitor) %in% "none") == FALSE
    
+   # The only two ways that observed data color can be mapped: 
+   
+   # 1. This is any figure type except "compound summary" and line_color is set
+   # to 2 colors and there's a perpetrator. In that case, the obs_color will
+   # match line_color and also be mapped to perpetrator.
+   
+   # 2. This is a "compound summary" figure type, so obs_color is mapped to the
+   # column "Study".
+   
+   # In any other scenario, e.g., not a "compound summary" figure and there's no
+   # DDI or there IS a DDI but the line color is black, then obs_color will have
+   # length one and be either the default or will only be the 1st value
+   # specified by the user.
+   
    AesthetStuff <- set_aesthet(
       figure_type = figure_type,
       from_ct_plot = T, 
@@ -1439,8 +1445,8 @@ ct_plot <- function(ct_dataframe = NA,
       obs_color = obs_color, 
       n_obs_color = case_when(
          figure_type == "compound summary" ~ length(unique(obs_dataframe$Study)), 
-         DDI == TRUE ~ 2, 
-         DDI == FALSE ~ 1), 
+         DDI == TRUE ~ 2,
+         .default = 1), 
       obs_fill_trans = obs_fill_trans,
       obs_line_trans = obs_line_trans)
    
@@ -1475,13 +1481,16 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    
+   # Figure types ---------------------------------------------------------
+   
    ## Setting up ggplot and aes bases for the graph -----------------------
    
    # NB: Columns Inhibitor and, when it is present, Study, are now factor and
    # are used for mapping color, linetype, and shape.
    
    if(figure_type == "percentile ribbon"){
-      RibbonDF <- sim_data_mean %>% select(-any_of(c("Group", "Individual"))) %>% 
+      RibbonDF <- sim_data_mean %>% 
+         select(-any_of(c("Group", "Individual"))) %>% 
          pivot_wider(names_from = Trial, values_from = Conc) %>% 
          rename("MyMean" = {MyMeanType})
    }
@@ -1491,24 +1500,24 @@ ct_plot <- function(ct_dataframe = NA,
                   ggplot(sim_data_trial,
                          aes(x = Time, y = Conc, 
                              group = Group,
-                             linetype = Inhibitor, 
-                             color = Inhibitor)),
+                             linetype = linetype_column, 
+                             color = colorBy_column)),
                
                "percentiles" = 
                   ggplot(sim_data_mean %>%
                             filter(Trial %in% c("per5", "per95")) %>%
                             mutate(Group = paste(Group, Trial)),
                          aes(x = Time, y = Conc,
-                             linetype = Inhibitor, 
-                             color = Inhibitor, 
+                             linetype = linetype_column, 
+                             color = colorBy_column, 
                              group = Group)),
                
                "percentile ribbon" = 
                   ggplot(RibbonDF, 
                          aes(x = Time, y = MyMean, 
                              ymin = per5, ymax = per95, 
-                             linetype = Inhibitor,
-                             color = Inhibitor)), 
+                             linetype = linetype_column,
+                             color = colorBy_column)), 
                
                "freddy" = 
                   switch(as.character(Eff_plusminus), 
@@ -1516,14 +1525,14 @@ ct_plot <- function(ct_dataframe = NA,
                                             filter(Trial == MyMeanType),
                                          aes(x = Time, y = Conc, 
                                              group = Group,
-                                             linetype = Inhibitor, 
-                                             color = Inhibitor)), 
+                                             linetype = linetype_column, 
+                                             color = colorBy_column)), 
                          
                          "FALSE" = ggplot(sim_data_trial,
                                           aes(x = Time, y = Conc, 
                                               group = Group,
-                                              linetype = Inhibitor, 
-                                              color = Inhibitor))
+                                              linetype = linetype_column, 
+                                              color = colorBy_column))
                   ), 
                
                "compound summary" = 
@@ -1535,8 +1544,8 @@ ct_plot <- function(ct_dataframe = NA,
                             filter(Trial == MyMeanType), 
                          aes(x = Time, y = Conc,
                              group = Group, 
-                             linetype = Inhibitor, 
-                             color = Inhibitor)))
+                             linetype = linetype_column, 
+                             color = colorBy_column)))
    
    # Adding optional horizontal line(s)
    if(any(complete.cases(hline_position))){
@@ -1858,8 +1867,14 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    # Applying aesthetics
+   if(figure_type == "percentile ribbon"){
+      FillColor <- line_color
+   } else {
+      FillColor <- obs_color
+   }
+   
    A <- A + 
-      scale_fill_manual(values = line_color) +
+      scale_fill_manual(values = FillColor) +
       scale_shape_manual(values = obs_shape) +
       scale_color_manual(values = line_color) +
       scale_linetype_manual(values = line_type)

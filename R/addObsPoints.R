@@ -92,8 +92,7 @@ addObsPoints <- function(obs_dataframe,
                     size = obs_size,
                     fill = NA,
                     color = "black",
-                    show.legend = LegCheck) + 
-         scale_fill_manual(values = obs_color) 
+                    show.legend = LegCheck)
       
    } else {
       # any other point shape but solid fill w/black outline

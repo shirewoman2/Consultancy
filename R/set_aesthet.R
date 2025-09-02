@@ -102,13 +102,38 @@ set_aesthet <- function(figure_type,
    
    line_color <- rep(line_color, n_line_color)[1:n_line_color]
    
-   if(is.na(obs_color[1]) & n_obs_color == 1){
-      if(figure_type %in% c("freddy", "compound summary")){
-         obs_color <- "#3030FE"
+   # FIXME: left off here with this mess
+   if(from_ct_plot == FALSE){
+      if(all(is.na(obs_color))){
+         obs_color <- line_color
       } else {
+         
+      }
+   }
+   
+   if(any(line_color != "black") & 
+      from_ct_plot == TRUE &
+      AESCols["line_color"] == "Inhibitor" & 
+      DDI == TRUE){
+      
+      obs_color <- line_color
+      
+   } else if(is.na(obs_color[1])){
+      
+      if(figure_type %in% c("freddy")){
+         obs_color <- "#3030FE"
+      } else if(figure_type == "compound summary"){
+         if(n_obs_color == 1){
+            obs_color <- "#3030FE"
+         } else {
+            obs_color <- make_color_set(color_set = "default", 
+                                        num_colors = n_obs_color)
+         }
+      } else {
+         if(n_obs_color > 1)
          obs_color <- "black"
       }
-   } else if(is.na(obs_color[1]) & n_obs_color > 1){
+   } else if(is.na(obs_color[1]) & ){
       obs_color <- line_color
    } else if(any(complete.cases(line_color_orig)) & 
              any(complete.cases(obs_color_orig))){

@@ -97,11 +97,7 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   gray, the overall mean in thicker black, the 5th and 95th percentiles in
   dashed lines, and the observed data in semi-transparent purple-blue. Graphs
   with a perpetrator present lose the trial means, and the percentiles switch
-  to solid, gray lines. \strong{An editorial comment:} While this does not
-  align with the officially sanctioned template at this time, this looks
-  \emph{sharp}, makes it easy to see the defining characteristics of the
-  data, and I recommend checking it out, even just for your own purposes of
-  examining your data. If the color is too much for you but you like the
+  to solid, gray lines. If the color is too much for you but you like the
   rest, try setting \code{obs_color = "black", obs_shape = c(1, 2)}. -LSh}
 
   \item{"compound summary"}{matches the concentration-time plots in Simcyp
@@ -112,14 +108,12 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   to your data. (And yes, it \emph{must} be titled "Study" exactly.)
   Everything else in these graphs will be gray or black, but
   you can specify the color of the observed points with the argument
-  "obs_color" and the shape of the points with the argument "obs_shape". If
-  you have a perpetrator present in your data, the points will change shape
-  based on whether the data shown are baseline or with perpetrator. Honestly,
-  though, we would not recommend making a single "compound summary" style
-  graph with both the baseline and DDI conditions in one because there will
-  be so many lines that things will be confusing. We'd recommend running this
+  "obs_color" and the shape of the points with the argument "obs_shape". 
+  A limitation: This figure type only works when there are only baseline or 
+  only DDI data present because there would be so many lines that things 
+  would be confusing otherwise. If you want both, we recommend running this
   function once for each scenario and just putting those two graphs side by
-  side instead.}}}
+  side.}}}
 
 \item{Tissue_subtype}{Certain types of models have additional subtypes of
 tissues. Currently, the SimcypConsultancy package supports ADAM-model and
@@ -240,16 +234,19 @@ concentration and your source data were in mass per volume units or vice
 versa, you'll need to provide something for the argument
 \code{existing_exp_details}.}
 
-\item{obs_color}{If you would like the observed data points to be in color,
-  either specify a color here or leave this as NA to get all black points for
-  most graph types or, if you set something for \code{line_color}, whatever
-  colors were used for that, semi-transparent blue-purple for a figure_type
-  of "Freddy", or a different color for each study (you must have a column
-  titled "Study" in ct_dataframe for this to work) for a figure_type of
-  "compound summary". Setting this to "none" will remove observed data from
-  the graph. Hex color codes are also ok to use. If you've got a figure_type
-  of "compound summary", then you can specify each color you want or you can
-  call on one of the possible color sets: Options: \describe{
+\item{obs_color}{If your figure type is anything other than "compound
+  summary", here's how this will work: Specify a single color (hex codes or
+  just standard R names of colors are fine) and all your points will be that
+  color in the graph. Leave this as NA and the point color will match
+  whatever you specified for the argument \code{line_color} (black if
+  line_color is not specified) or a lovely blue shade if your figure_type is
+  "Freddy".
+
+  If you have a figure_type of "compound summary", that's set up so that the
+  color of the points will vary with the study, so you'll need a column
+  titled "Study" in your data. If you have that scenario, then you can
+  specify whatever colors you want here for each of the studies you have in
+  your data or you can specify a set of colors. Options: \describe{
 
   \item{"default"}{a set of colors from Cynthia Brewer et al. from Penn State
   that are friendly to those with red-green colorblindness. The first three
@@ -316,7 +313,9 @@ presence of a perpetrator. Input should look like this, for example:
 possible shapes and what number corresponds to which shape, type
 \code{ggpubr::show_point_shapes()} into the console. If left as NA,
 substrate alone will be an open circle and substrate + inhibitor 1 will be
-an open triangle.}
+an open triangle. If you choose one of the shapes that is filled with an
+outline (shapes 21 to 25), the outline will be black and the fill will be
+whatever you set for the observed data color.}
 
 \item{obs_size}{optionally specify the size of the points to use for the
 observed data. If left as NA, the size will be 2.}

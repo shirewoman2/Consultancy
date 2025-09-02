@@ -5,37 +5,56 @@
 \title{INTERNAL PACKAGE USE: Set up certain aesthetics for a conc-time plot}
 \usage{
 set_aesthet(
-  line_type,
   figure_type,
-  MyPerpetrator,
-  MyCompoundID,
-  obs_shape,
+  from_ct_plot,
+  DDI,
+  AESCols,
+  line_type,
+  n_line_type,
   line_color,
+  n_line_color,
+  obs_shape,
+  n_obs_shape,
   obs_color,
+  n_obs_color,
   obs_line_trans,
   obs_fill_trans
 )
 }
 \arguments{
-\item{line_type}{user-specified line type}
-
 \item{figure_type}{user-specified figure type}
 
-\item{MyPerpetrator}{concatenated string of all perpetrators involved}
+\item{from_ct_plot}{T or F on whether this is from ct_plot (alternative is
+ct_plot_overlay). Using this to determine whether line color is black or
+colors.}
 
-\item{MyCompoundID}{compound user wants}
+\item{DDI}{T or F - only applies to ct_plot; might not even need this}
 
-\item{obs_shape}{user-specified observed data shape}
+\item{AESCols}{AESCols}
+
+\item{line_type}{user-specified line type}
+
+\item{n_line_type}{number of line types needed}
 
 \item{line_color}{user-specified line color}
 
+\item{n_line_color}{number line colors needed}
+
+\item{obs_shape}{user-specified observed data shape}
+
+\item{n_obs_shape}{number obs shapes needed}
+
 \item{obs_color}{user-specified observed-data color}
+
+\item{n_obs_color}{number obs colors needed}
+
+\item{obs_line_trans}{obs line alpha}
+
+\item{obs_fill_trans}{obs fill alpha}
 }
 \value{
 several objects to use with setting graph aesthetics
 }
 \description{
-First (not last) step in determinining line colors, line types, point shapes,
-and point colors. Subsequent steps will adjust the exact number of all
-shapes, linetypes, colors, etc. in the graph.
+Determine line colors, line types, point shapes, and point colors.
 }
