@@ -107,8 +107,6 @@ addObsPoints <- function(obs_dataframe,
    }
    
    A <- A  +
-      scale_color_manual(values = obs_color) + 
-      scale_shape_manual(values = obs_shape) +
       labs(fill = as.character(AESCols["color"]), 
            shape = as.character(AESCols["linetype"]))
    

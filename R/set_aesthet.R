@@ -92,11 +92,11 @@ set_aesthet <- function(figure_type,
          line_color <- rep("black", n_line_color)
       } else {
          line_color <- make_color_set(color_set = "default", num_colors = n_line_color)
-      }
-      
-      if(DDI & AESCols["color"] == "Inhibitor" & n_line_color == 2){
-         # Making baseline blue, DDI red
-         line_color <- c("#377EB8", "#E41A1C")
+         
+         if(DDI & AESCols["color"] == "Inhibitor" & n_line_color == 2){
+            # Making baseline blue, DDI red
+            line_color <- c("#377EB8", "#E41A1C")
+         }
       }
    }
    

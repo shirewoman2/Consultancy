@@ -754,23 +754,6 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    
-   # FIXME: Moving this to the set_aesthet subfun i think
-   
-   # # Now that figure type is set, adjusting the number of observed data colors
-   # # and shapes to 1 -- when there is no perpetrator and the figure type is
-   # # anything other than "compound summary" -- or 2 -- when there IS a
-   # # perpetrator and the figure type is anything other than "compound summary"
-   # # -- or unlimited when the figure type is "compound summary".
-   # if(figure_type != "compound summary"){
-   #    if(any(ct_dataframe$Inhibitor != "none", na.rm = T)){
-   #       obs_color <- rep(obs_color, 2)[1:2]
-   #       obs_shape  <- rep(obs_shape, 2)[1:2]
-   #    } else {
-   #       obs_color <- obs_color[1]
-   #       obs_shape  <- obs_shape[1]
-   #    }
-   # }
-   
    if(("Compound" %in% names(ct_dataframe) && length(unique(ct_dataframe$Compound)) > 1) | 
       ("CompoundID" %in% names(ct_dataframe) && length(unique(ct_dataframe$CompoundID)) > 1)){
       stop(wrapn("It looks like you have more than one kind of data here because you have multiple compounds. Did you perhaps mean to use the function ct_plot_overlay instead? Because this function has been set up to deal with only one dataset at a time, no graph can be made. Please check your data and try this function with only one dataset at a time."), 
@@ -1491,12 +1474,6 @@ ct_plot <- function(ct_dataframe = NA,
       names(line_color) <- unique(Data$Inhibitor)
    }
    
-   # if(figure_type != "compound summary"){
-   #    A <- A +
-   #       scale_linetype_manual(values = line_type) +
-   #       scale_color_manual(values = line_color)
-   # } 
-   
    
    ## Setting up ggplot and aes bases for the graph -----------------------
    
@@ -1587,19 +1564,6 @@ ct_plot <- function(ct_dataframe = NA,
                         obs_fill_trans = obs_fill_trans,
                         connect_obs_points = connect_obs_points,
                         line_width = line_width,
-                        # AES = switch(figure_type, 
-                        #              "percentiles" = "linetype", 
-                        #              "trial means" = "linetype", 
-                        #              "percentile ribbon" = "linetype", 
-                        #              "compound summary" = "color", 
-                        #              "freddy" = "linetype", 
-                        #              "means only" = "linetype"), 
-                        # obs_shape_user = obs_shape_user,
-                        # obs_color_user = obs_color_user,
-                        # obs_line_trans_user = obs_line_trans_user,
-                        # obs_fill_trans_user = obs_fill_trans_user,
-                        # map_obs_color = map_obs_color, 
-                        # map_obs_shape = map_obs_shape, 
                         LegCheck = TRUE)
    }
    
@@ -1752,19 +1716,6 @@ ct_plot <- function(ct_dataframe = NA,
                         obs_fill_trans = obs_fill_trans,
                         connect_obs_points = connect_obs_points,
                         line_width = line_width,
-                        # AES = switch(figure_type, 
-                        #              "percentiles" = "linetype", 
-                        #              "trial means" = "linetype", 
-                        #              "percentile ribbon" = "linetype", 
-                        #              "compound summary" = "color", 
-                        #              "freddy" = "linetype", 
-                        #              "means only" = "linetype"), 
-                        # obs_shape_user = obs_shape_user,
-                        # obs_color_user = obs_color_user,
-                        # obs_line_trans_user = obs_line_trans_user,
-                        # obs_fill_trans_user = obs_fill_trans_user,
-                        # map_obs_color = map_obs_color, 
-                        # map_obs_shape = map_obs_shape, 
                         LegCheck = TRUE)
       
    }
@@ -1905,6 +1856,13 @@ ct_plot <- function(ct_dataframe = NA,
       A <- A + theme(axis.title.y = element_text(size = A$theme$text$size * 1.25), 
                      axis.title.x = element_text(face = "plain"))
    }
+   
+   # Applying aesthetics
+   A <- A + 
+      scale_fill_manual(values = line_color) +
+      scale_shape_manual(values = obs_shape) +
+      scale_color_manual(values = line_color) +
+      scale_linetype_manual(values = line_type)
    
    # Making semi-log graph ------------------------------------------------
    
