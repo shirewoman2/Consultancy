@@ -271,59 +271,12 @@ formatTable_Simcyp <- function(DF,
       page_orientation <- "portrait"
    }
    
-   # Catching instances where the font name isn't *exactly* the same as what's
-   # in Word or PowerPoint. Will have to slowly gather examples of this.
-   font <- case_when(
-      # "Calibri (Body)" dosen't work; just "Calibri" does.
-      str_detect(font, "Calibri") ~ "Calibri", 
-      .default = font)
-   
-   # Figuring out which columns contain PK data
-   PKCols <- prettify_column_names(DF, return_which_are_PK = TRUE)
-   
-   # Noting whether any columns are pretty. Need this for hlines and for lower
-   # in function where we note which columns are pretty. 
-   PrettyCols <- any(PKCols$ColName[PKCols$IsPKParam] == 
-                        PKCols$PrettifiedNames[PKCols$IsPKParam])
-   PKCols <- which(PKCols$IsPKParam)
-   
-   # Need hlines to be a number, so adjusting if they requested "when dataset
-   # changes"
-   if(any(complete.cases(hlines)) &&
-      any(str_detect(tolower(hlines), "data.*change"))){
-      
-      IDs <- DF %>% 
-         select(any_of(setdiff(names(DF), c("Statistic", names(DF)[PKCols])))) %>% 
-         unite(col = "ID", 
-               setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
-               remove = FALSE) %>% 
-         unique() %>% 
-         mutate(Row = as.numeric(NA))
-      
-      DF <- DF %>% 
-         unite(col = "ID", 
-               setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
-               remove = FALSE)
-      
-      for(i in 1:nrow(IDs)){
-         IDs$Row[i] <- max(which(DF$ID == IDs$ID[i]))
-      }
-
-      hlines <- IDs$Row
-      
-      DF$ID <- NULL
-      
-   }
-   
-   suppressMessages(hlines <- unique(as.numeric(hlines)))
-   
-   # Main body of function ----------------------------------------------------
-   
    TemplatePath <- switch(page_orientation, 
                           "landscape" = system.file("Word/landscape_report_template.dotx",
                                                     package="SimcypConsultancy"), 
                           "portrait" = system.file("Word/report_template.dotx",
                                                    package="SimcypConsultancy"))
+   
    
    ## Pass-through for if DF is already a flextable ---------------------------
    if("flextable" %in% class(DF)){
@@ -363,6 +316,56 @@ formatTable_Simcyp <- function(DF,
       
    }
    
+   ## Error catching for non-flextables --------------------------------------
+   
+   # Catching instances where the font name isn't *exactly* the same as what's
+   # in Word or PowerPoint. Will have to slowly gather examples of this.
+   font <- case_when(
+      # "Calibri (Body)" dosen't work; just "Calibri" does.
+      str_detect(font, "Calibri") ~ "Calibri", 
+      .default = font)
+   
+   # Figuring out which columns contain PK data
+   PKCols <- prettify_column_names(DF, return_which_are_PK = TRUE)
+   
+   # Noting whether any columns are pretty. Need this for hlines and for lower
+   # in function where we note which columns are pretty. 
+   PrettyCols <- any(PKCols$ColName[PKCols$IsPKParam] == 
+                        PKCols$PrettifiedNames[PKCols$IsPKParam])
+   PKCols <- which(PKCols$IsPKParam)
+   
+   # Need hlines to be a number, so adjusting if they requested "when dataset
+   # changes"
+   if(any(complete.cases(hlines)) &&
+      any(str_detect(tolower(hlines), "data.*change"))){
+      
+      IDs <- DF %>% 
+         select(any_of(setdiff(names(DF), c("Statistic", names(DF)[PKCols])))) %>% 
+         unite(col = "ID", 
+               setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
+               remove = FALSE) %>% 
+         unique() %>% 
+         mutate(Row = as.numeric(NA))
+      
+      DF <- DF %>% 
+         unite(col = "ID", 
+               setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
+               remove = FALSE)
+      
+      for(i in 1:nrow(IDs)){
+         IDs$Row[i] <- max(which(DF$ID == IDs$ID[i]))
+      }
+      
+      hlines <- IDs$Row
+      
+      DF$ID <- NULL
+      
+   }
+   
+   suppressMessages(hlines <- unique(as.numeric(hlines)))
+   
+   
+   # Main body of function ----------------------------------------------------
    
    ## Making DF into a flextable ----------------------------------------------
    
