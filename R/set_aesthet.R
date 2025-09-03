@@ -42,16 +42,31 @@ set_aesthet <- function(figure_type,
    
    # Setting user specifications for shape, linetype, and color where
    # applicable.
+   
+   # Noting original preferences
+   line_color_orig <- line_color
+   line_type_orig <- line_type
+   obs_color_orig <- obs_color
+   obs_shape_orig <- obs_shape
+   
+   
+   # line_type ---------------------------------------------------------------
+   
    if(is.na(line_type[1])){
       line_type <- rep(c("solid", "dashed"), n_line_type)
    }
    
    line_type <- rep(line_type, n_line_type)[1:n_line_type]
    
+   
+   # obs_shape --------------------------------------------------------------
+   
    if(is.na(obs_shape[1])){
       if(figure_type == "compound summary"){
          obs_shape <- rep(c(16, 17, 15, 18, 1, 2, 0, 5, 6, 8, 7, 9, 10, 
                             12, 13, 3, 4, 14), n_obs_shape)
+      } else if(figure_type == "freddy"){
+         obs_shape <- c(1, 2)
       } else {
          obs_shape <- rep(c(1, 2, 0, 5, 6, 8, 7, 9, 10, 
                             12, 13, 3, 4, 14), n_obs_shape)
@@ -81,76 +96,107 @@ set_aesthet <- function(figure_type,
       
    }
    
-   # Noting original preferences 
-   line_color_orig <- line_color
-   line_type_orig <- line_type
-   obs_color_orig <- obs_color
-   obs_shape_orig <- obs_shape
+   
+   # line_color --------------------------------------------------------------
    
    if(is.na(line_color[1])){
       if(from_ct_plot | AESCols["color"] == "<empty>"){
          line_color <- rep("black", n_line_color)
+         
       } else {
-         line_color <- make_color_set(color_set = "default", num_colors = n_line_color)
+         line_color <- make_color_set(color_set = "default", 
+                                      num_colors = n_line_color)
          
          if(DDI & AESCols["color"] == "Inhibitor" & n_line_color == 2){
             # Making baseline blue, DDI red
             line_color <- c("#377EB8", "#E41A1C")
          }
       }
+      
+   } else {
+      # If they did specify any line colors, still use make_color_set with those
+      # colors to check that they have specified legit colors and to make the
+      # exact colors needed if they specified a color set.
+      line_color <- make_color_set(color_set = line_color, 
+                                   num_colors = n_line_color)
    }
    
+   # Just making absolutely sure we have enough colors
    line_color <- rep(line_color, n_line_color)[1:n_line_color]
    
-   # FIXME: left off here with this mess
-   if(from_ct_plot == FALSE){
+   
+   # obs_color ----------------------------------------------------------------
+   
+   if(from_ct_plot){
+      # If it's from ct_plot and they did not specify obs_color, then the line
+      # color should match line_color UNLESS the figure type is compound summary
+      # or Freddy.
+      
+      if(all(is.na(obs_color)) & 
+         figure_type %in% c("freddy", "compound summary") == FALSE){
+         obs_color <- line_color
+         
+      } else if(all(is.na(obs_color)) & 
+                figure_type == "freddy"){
+         obs_color <- "#3030FE"
+         
+      } else if(all(is.na(obs_color)) & 
+                figure_type == "compound summary"){
+         obs_color <- make_color_set(color_set = "default", 
+                                     num_colors = n_obs_color)
+         
+      } else if((length(unique(line_color)) == 1 &&
+                 line_color[1] == "black") &
+                all(complete.cases(obs_color))){
+         
+         if(figure_type == "compound summary"){
+            obs_color <- make_color_set(color_set = obs_color, 
+                                        num_colors = n_obs_color)   
+         } else {
+            # This is when it's from ct_plot and line_color doesn't change based on
+            # Inhibitor column.
+            obs_color <- make_color_set(color_set = obs_color, 
+                                        num_colors = 1)
+         }
+         
+      } else if((length(unique(line_color)) > 1)){
+         
+         if(length(unique(obs_color)) == 1){
+            # nothing should happen here. Obs color will remain the same.
+         } else {
+            # This is when it's from ct_plot and line_color DOES change based on
+            # Inhibitor column.
+            obs_color <- line_color
+         }
+      }
+      
+   } else {
+      # from ct_plot_overlay here
       if(all(is.na(obs_color))){
          obs_color <- line_color
       } else {
-         
-      }
+         obs_color <- make_color_set(color_set = obs_color[1], 
+                                     num_colors = 1)
+      } 
    }
    
-   if(any(line_color != "black") & 
-      from_ct_plot == TRUE &
-      AESCols["line_color"] == "Inhibitor" & 
-      DDI == TRUE){
-      
-      obs_color <- line_color
-      
-   } else if(is.na(obs_color[1])){
-      
-      if(figure_type %in% c("freddy")){
-         obs_color <- "#3030FE"
-      } else if(figure_type == "compound summary"){
-         if(n_obs_color == 1){
-            obs_color <- "#3030FE"
-         } else {
-            obs_color <- make_color_set(color_set = "default", 
-                                        num_colors = n_obs_color)
-         }
-      } else {
-         if(n_obs_color > 1)
-         obs_color <- "black"
-      }
-   } else if(is.na(obs_color[1]) & ){
-      obs_color <- line_color
-   } else if(any(complete.cases(line_color_orig)) & 
-             any(complete.cases(obs_color_orig))){
+   if(any(complete.cases(line_color_orig)) & 
+      any(complete.cases(obs_color_orig)) && 
+      length(obs_color) > 1){
       warning(wrapn(paste0("You have requested one set of colors for the lines in your graph, which are mapped to the values in the column '", 
                            AESCols["color"], 
                            "' and a different set of colors for your observed data points, which are mapped to the same column. We can only do one set of colors per mapped column, so we will use the values you specified for line color for the observed data points as well.")), 
               call. = FALSE)
-      obs_color <- line_color
    }
    
+   # Making sure we have enough colors
    obs_color <- rep(obs_color, n_obs_color)[1:n_obs_color]
    
-   obs_fill_trans <- ifelse(is.na(obs_fill_trans), 
-                            0.5, obs_fill_trans)
+   obs_fill_trans <- ifelse(is.na(as.numeric(obs_fill_trans)), 
+                            0.5, as.numeric(obs_fill_trans))
    
-   obs_line_trans <- ifelse(is.na(obs_line_trans), 
-                            1, obs_line_trans)
+   obs_line_trans <- ifelse(is.na(as.numeric(obs_line_trans)), 
+                            1, as.numeric(obs_line_trans))
    
    # returning
    Out <- list("line_type" = line_type, 

@@ -89,9 +89,9 @@
 #'   to your data. (And yes, it \emph{must} be titled "Study" exactly.)
 #'   Everything else in these graphs will be gray or black, but
 #'   you can specify the color of the observed points with the argument
-#'   "obs_color" and the shape of the points with the argument "obs_shape". 
-#'   A limitation: This figure type only works when there are only baseline or 
-#'   only DDI data present because there would be so many lines that things 
+#'   "obs_color" and the shape of the points with the argument "obs_shape".
+#'   A limitation: This figure type only works when there are only baseline or
+#'   only DDI data present because there would be so many lines that things
 #'   would be confusing otherwise. If you want both, we recommend running this
 #'   function once for each scenario and just putting those two graphs side by
 #'   side.}}
@@ -186,13 +186,13 @@
 #'   are generally reasonable guesses as to aesthetically pleasing intervals.
 #' @param y_axis_label optionally supply a character vector or an expression to
 #'   use for the y axis label
-#' @param obs_color If your figure type is anything other than "compound
-#'   summary", here's how this will work: Specify a single color (hex codes or
-#'   just standard R names of colors are fine) and all your points will be that
-#'   color in the graph. Leave this as NA and the point color will match
-#'   whatever you specified for the argument \code{line_color} (black if
-#'   line_color is not specified) or a lovely blue shade if your figure_type is
-#'   "Freddy".
+#' @param obs_color color for any observed data points. This will be just one
+#'   color unless your figure type is "compound summary", in which case you can
+#'   specify which colors you want individual studies to be. You can specify the
+#'   color with standard R color names or with hex codes. Leave this as NA and
+#'   the point color will match whatever you specified for the argument
+#'   \code{line_color} (black if line_color is not specified) or a lovely blue
+#'   shade if your figure_type is "Freddy".
 #'
 #'   If you have a figure_type of "compound summary", that's set up so that the
 #'   color of the points will vary with the study, so you'll need a column
@@ -267,7 +267,9 @@
 #'   substrate alone will be an open circle and substrate + inhibitor 1 will be
 #'   an open triangle. If you choose one of the shapes that is filled with an
 #'   outline (shapes 21 to 25), the outline will be black and the fill will be
-#'   whatever you set for the observed data color.
+#'   whatever you set for the observed data color. If your figure type is
+#'   "compound summary" and you specify multiple shapes, the point shape will
+#'   change with the study its depicting.
 #' @param obs_size optionally specify the size of the points to use for the
 #'   observed data. If left as NA, the size will be 2.
 #' @param obs_fill_trans optionally specify the transparency for the fill of the
@@ -983,15 +985,7 @@ ct_plot <- function(ct_dataframe = NA,
    Data <- ct_dataframe %>% 
       # Making sure we only have one summary aggregate measurement
       filter(!Trial %in% setdiff(c("mean", "geomean", "median"), 
-                                 MyMeanType)) %>% 
-      # Making columns for mapping color/fill and linetype/shape
-      mutate(
-         colorBy_column = case_when(
-            figure_type == "compound summary" ~ Study, 
-            .default = Inhibitor), 
-         linetype_column = case_when(
-            figure_type == "compound summary" ~ Study, 
-            .default = Inhibitor))
+                                 MyMeanType))
    
    # Set MyCompoundID to whatever compound was included.
    MyCompoundID <- ifelse(EnzPlot, unique(Data$Enzyme), 
@@ -1112,6 +1106,16 @@ ct_plot <- function(ct_dataframe = NA,
       mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor), 
              Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
    
+   Data <- Data %>% 
+      # Making columns for mapping color/fill and linetype/shape
+      mutate(
+         colorBy_column = case_when(
+            figure_type == "compound summary" ~ Study, 
+            .default = Inhibitor), 
+         linetype_column = case_when(
+            figure_type == "compound summary" ~ Study, 
+            .default = Inhibitor))
+   
    # If it's a compound summary figure type, set the column "Study" to be factor
    # if it's not already.
    if("Study" %in% names(Data) && "factor" %in% class(Data$Study) == FALSE){
@@ -1119,9 +1123,13 @@ ct_plot <- function(ct_dataframe = NA,
          mutate(Study = factor(Study, levels = sort(unique(Study))))
    }
    
-   Data <- Data %>% 
-      mutate(colorBy_column = factor(colorBy_column), 
-             linetype_column = factor(linetype_column))
+   if("factor" %in% class(Data$colorBy_column) == FALSE){
+      Data <- Data %>% mutate(colorBy_column = factor(colorBy_column))
+   }
+   
+   if("factor" %in% class(Data$linetype_column) == FALSE){
+      Data <- Data %>% mutate(linetype_column = factor(linetype_column))
+   }
    
    if(figure_type == "compound summary"){
       levels(Data$colorBy_column) <- levels(Data$Study)
@@ -1131,7 +1139,7 @@ ct_plot <- function(ct_dataframe = NA,
       levels(Data$linetype_column) <- levels(Data$Inhibitor)
    }
    
-   # Error catching for when user specifies linetype, color or shape and
+   # Error catching for when user specifies linetype, color, or shape and
    # doesn't include enough values when perpetrator present
    if(any(complete.cases(obs_shape)) && length(MyPerpetrator) > 0 &&
       complete.cases(MyPerpetrator) &&
@@ -1441,12 +1449,15 @@ ct_plot <- function(ct_dataframe = NA,
       line_color = line_color, 
       n_line_color = ifelse(DDI, 2, 1), 
       obs_shape = obs_shape, 
-      n_obs_shape = ifelse(DDI, 2, 1), 
+      n_obs_shape = case_when(
+         figure_type == "compound summary" ~ length(unique(obs_dataframe$Study)), 
+         figure_type != "compound summary" & DDI == TRUE ~ 2, 
+         figure_type != "compound summary" & DDI == FALSE ~ 1), 
       obs_color = obs_color, 
       n_obs_color = case_when(
          figure_type == "compound summary" ~ length(unique(obs_dataframe$Study)), 
-         DDI == TRUE ~ 2,
-         .default = 1), 
+         figure_type != "compound summary" & DDI == TRUE ~ 2, 
+         figure_type != "compound summary" & DDI == FALSE ~ 1), 
       obs_fill_trans = obs_fill_trans,
       obs_line_trans = obs_line_trans)
    
@@ -1517,7 +1528,8 @@ ct_plot <- function(ct_dataframe = NA,
                          aes(x = Time, y = MyMean, 
                              ymin = per5, ymax = per95, 
                              linetype = linetype_column,
-                             color = colorBy_column)), 
+                             color = colorBy_column, 
+                             fill = colorBy_column)), 
                
                "freddy" = 
                   switch(as.character(Eff_plusminus), 
@@ -1559,6 +1571,40 @@ ct_plot <- function(ct_dataframe = NA,
                           color = VLineAES[1], linetype = VLineAES[2])
    }
    
+   ## Dealing with error bars and whether to include shape in legend ----------
+   if(nrow(obs_dataframe) == 0){
+      A <- A + guides(shape = "none")
+   } else {
+      if("SD_SE" %in% names(obs_dataframe) & include_errorbars){
+         
+         if(figure_type == "percentile ribbon"){
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            obs_dataframe <- obs_dataframe %>% 
+               mutate(Ymax = MyMean + SD_SE, 
+                      Ymin = MyMean - SD_SE, 
+                      Ymin = case_when(Ymin < 0 ~ 0, 
+                                       .default = Ymin))
+            
+            A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
+                                   width = errorbar_width)
+         } else {
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            obs_dataframe <- obs_dataframe %>% 
+               mutate(Ymax = Conc + SD_SE, 
+                      Ymin = Conc - SD_SE, 
+                      Ymin = case_when(Ymin < 0 ~ 0, 
+                                       .default = Ymin))
+            
+            A <- A + geom_errorbar(data = obs_dataframe, 
+                                   aes(ymin = Ymin, ymax = Ymax), 
+                                   width = errorbar_width)
+         }
+      }
+   }
+   
    ## Observed data on bottom ----------------------------
    if(nrow(obs_dataframe) > 0 & obs_on_top == FALSE){
       
@@ -1567,8 +1613,10 @@ ct_plot <- function(ct_dataframe = NA,
                         figure_type = figure_type,
                         AESCols = AESCols, 
                         obs_shape = obs_shape,
-                        obs_size = obs_size, 
+                        line_type = line_type, 
                         obs_color = obs_color,
+                        line_color = line_color, 
+                        obs_size = obs_size, 
                         obs_line_trans = obs_line_trans,
                         obs_fill_trans = obs_fill_trans,
                         connect_obs_points = connect_obs_points,
@@ -1730,39 +1778,6 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    # Making linear graph -------------------------------------------------
-   
-   if(nrow(obs_dataframe) == 0){
-      A <- A + guides(shape = "none")
-   } else {
-      if("SD_SE" %in% names(obs_dataframe) & include_errorbars){
-         
-         if(figure_type == "percentile ribbon"){
-            # If error bars are below 0, that's nonsensical. Setting anything <
-            # 0 to 0 for graphing.
-            obs_dataframe <- obs_dataframe %>% 
-               mutate(Ymax = MyMean + SD_SE, 
-                      Ymin = MyMean - SD_SE, 
-                      Ymin = case_when(Ymin < 0 ~ 0, 
-                                       .default = Ymin))
-            
-            A <- A + geom_errorbar(data = obs_dataframe %>% rename(MyMean = Conc), 
-                                   aes(ymin = Ymin, ymax = Ymax), 
-                                   width = errorbar_width)
-         } else {
-            # If error bars are below 0, that's nonsensical. Setting anything <
-            # 0 to 0 for graphing.
-            obs_dataframe <- obs_dataframe %>% 
-               mutate(Ymax = Conc + SD_SE, 
-                      Ymin = Conc - SD_SE, 
-                      Ymin = case_when(Ymin < 0 ~ 0, 
-                                       .default = Ymin))
-            
-            A <- A + geom_errorbar(data = obs_dataframe, 
-                                   aes(ymin = Ymin, ymax = Ymax), 
-                                   width = errorbar_width)
-         }
-      }
-   }
    
    if(str_detect(figure_type, "ribbon")){
       A <- A +

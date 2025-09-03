@@ -93,9 +93,13 @@ make_color_set <- function(color_set,
    
    # Main body of function ----------------------------------------------------
    
+   # Checking whether the single-length string they provided is already a
+   # color. None of the color sets actually are.
+   ColorCheck <- try(expr = col2rgb(color_set), silent = TRUE)
+   
    # This is when the user wants specific user-specified colors rather
    # that one of the pre-made sets.
-   if(length(color_set) > 1){
+   if(length(color_set) > 1 | is.matrix(ColorCheck)){
       
       if(length(color_set) < num_colors){
          warning(paste("There are", num_colors,
@@ -192,18 +196,9 @@ make_color_set <- function(color_set,
                
                color_set == "viridis" ~ viridis::viridis_pal()(num_colors))
       )
-      # NB: For the RColorBrewer palettes, the minimum number of
-      # colors you can get is 3. Since sometimes we might only want 1
-      # or 2 colors, though, we have to add the [1:num_colors]
-      # bit.
-      
-      # Checking whetehr the single-length string they provided is already a
-      # color. None of the color sets actually are.
-      ColorCheck <- try(expr = col2rgb(MyColors), silent = TRUE)
-      
-      if(is.null(MyColors) & is.matrix(ColorCheck)){
-         MyColors <- color_set
-      }
+      # NB: For the RColorBrewer palettes, the minimum number of colors you can
+      # get is 3. Since sometimes we might only want 1 or 2 colors, though, we
+      # have to add the [1:num_colors] bit.
       
       if(any(is.na(MyColors))){
          warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.\n", 
@@ -211,6 +206,14 @@ make_color_set <- function(color_set,
          
          MyColors <- rainbow(num_colors)
       }
+   }
+   
+   # Checking whether the single-length string they provided is already a
+   # color. None of the color sets actually are.
+   ColorCheck <- try(expr = col2rgb(MyColors), silent = TRUE)
+   
+   if(is.null(MyColors) & is.matrix(ColorCheck)){
+      MyColors <- color_set
    }
    
    if(length(MyColors) < num_colors){

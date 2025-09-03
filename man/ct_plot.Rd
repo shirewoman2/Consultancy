@@ -108,9 +108,9 @@ the function \code{\link{extractConcTime}}. Not quoted.}
   to your data. (And yes, it \emph{must} be titled "Study" exactly.)
   Everything else in these graphs will be gray or black, but
   you can specify the color of the observed points with the argument
-  "obs_color" and the shape of the points with the argument "obs_shape". 
-  A limitation: This figure type only works when there are only baseline or 
-  only DDI data present because there would be so many lines that things 
+  "obs_color" and the shape of the points with the argument "obs_shape".
+  A limitation: This figure type only works when there are only baseline or
+  only DDI data present because there would be so many lines that things
   would be confusing otherwise. If you want both, we recommend running this
   function once for each scenario and just putting those two graphs side by
   side.}}}
@@ -234,13 +234,13 @@ concentration and your source data were in mass per volume units or vice
 versa, you'll need to provide something for the argument
 \code{existing_exp_details}.}
 
-\item{obs_color}{If your figure type is anything other than "compound
-  summary", here's how this will work: Specify a single color (hex codes or
-  just standard R names of colors are fine) and all your points will be that
-  color in the graph. Leave this as NA and the point color will match
-  whatever you specified for the argument \code{line_color} (black if
-  line_color is not specified) or a lovely blue shade if your figure_type is
-  "Freddy".
+\item{obs_color}{color for any observed data points. This will be just one
+  color unless your figure type is "compound summary", in which case you can
+  specify which colors you want individual studies to be. You can specify the
+  color with standard R color names or with hex codes. Leave this as NA and
+  the point color will match whatever you specified for the argument
+  \code{line_color} (black if line_color is not specified) or a lovely blue
+  shade if your figure_type is "Freddy".
 
   If you have a figure_type of "compound summary", that's set up so that the
   color of the points will vary with the study, so you'll need a column
@@ -315,7 +315,9 @@ possible shapes and what number corresponds to which shape, type
 substrate alone will be an open circle and substrate + inhibitor 1 will be
 an open triangle. If you choose one of the shapes that is filled with an
 outline (shapes 21 to 25), the outline will be black and the fill will be
-whatever you set for the observed data color.}
+whatever you set for the observed data color. If your figure type is
+"compound summary" and you specify multiple shapes, the point shape will
+change with the study its depicting.}
 
 \item{obs_size}{optionally specify the size of the points to use for the
 observed data. If left as NA, the size will be 2.}

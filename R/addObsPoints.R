@@ -65,51 +65,225 @@ addObsPoints <- function(obs_dataframe,
    # instead). I just could NOT get this to work with a mix where you'd need to
    # sometimes map fill and sometimes map color.
    
-   obs_color <- rep(obs_color, length(levels(obs_dataframe$colorBy_column)))[
-      1:length(levels(obs_dataframe$colorBy_column))]
-   names(obs_color) <- levels(obs_dataframe$colorBy_column)
-   
-   obs_shape <- rep(obs_shape, length(levels(obs_dataframe$linetype_column)))[
-      1:length(levels(obs_dataframe$linetype_column))]
-   names(obs_shape) <- levels(obs_dataframe$linetype_column)
-   
-   if(all(obs_shape %in% 21:25)){
-      # solid fill w/black outline
-      A <- A + 
-         # filled shapes added here
-         geom_point(data = obs_dataframe,
-                    aes(shape = linetype_column,
-                        fill = colorBy_column),
-                    alpha = obs_fill_trans,
-                    # color = NA,
-                    size = obs_size,
-                    show.legend = LegCheck) +
-         
-         # only black outlines added here
-         geom_point(data = obs_dataframe,
-                    aes(shape = linetype_column),
-                    alpha = obs_line_trans,
-                    size = obs_size,
-                    fill = NA,
-                    color = "black",
-                    show.legend = LegCheck)
-      
-   } else {
-      # any other point shape but solid fill w/black outline
-      A <- A + 
-         geom_point(data = obs_dataframe,
-                    aes(shape = linetype_column,
-                        color = colorBy_column),
-                    alpha = obs_fill_trans,
-                    size = obs_size,
-                    show.legend = LegCheck)
+   if("colorBy_column" %in% names(obs_dataframe) &&
+      "factor" %in% class(obs_dataframe$colorBy_column)){
+      obs_color <- rep(obs_color, length(levels(obs_dataframe$colorBy_column)))[
+         1:length(levels(obs_dataframe$colorBy_column))]
+      names(obs_color) <- levels(obs_dataframe$colorBy_column)
    }
    
-   A <- A  +
-      labs(fill = as.character(AESCols["color"]), 
-           shape = as.character(AESCols["linetype"]))
+   if("linetype_column" %in% names(obs_dataframe) &&
+      "factor" %in% class(obs_dataframe$linetype_column)){
+      obs_shape <- rep(obs_shape, length(levels(obs_dataframe$linetype_column)))[
+         1:length(levels(obs_dataframe$linetype_column))]
+      names(obs_shape) <- levels(obs_dataframe$linetype_column)
+   }
    
-   return(A)
+   
+   if(all(c(AESCols["color"], AESCols["linetype"]) != "<empty>")){
+      
+      # Scenario: linetype and color are mapped ---------------------------------
+      
+      if(all(obs_shape %in% 21:25)){
+         # solid fill w/black outline
+         
+         if(all(obs_color == line_color) | 
+            figure_type == "compound summary"){
+            A <- A + 
+               # filled shapes added here
+               geom_point(data = obs_dataframe,
+                          aes(shape = linetype_column,
+                              fill = colorBy_column),
+                          alpha = obs_fill_trans,
+                          # color = NA,
+                          size = obs_size,
+                          show.legend = LegCheck) +
+               
+               # only black outlines added here
+               geom_point(data = obs_dataframe,
+                          aes(shape = linetype_column),
+                          alpha = obs_line_trans,
+                          size = obs_size,
+                          fill = NA,
+                          color = "black",
+                          show.legend = LegCheck)
+            
+         } else {
+            # e.g., Freddy figure types or other instances where all the
+            # observed points should have the same single color
+            A <- A + 
+               # filled shapes added here
+               geom_point(data = obs_dataframe,
+                          aes(shape = linetype_column),
+                          fill = unique(obs_color), 
+                          alpha = obs_fill_trans,
+                          # color = NA,
+                          size = obs_size,
+                          show.legend = LegCheck) +
+               
+               # only black outlines added here
+               geom_point(data = obs_dataframe,
+                          aes(shape = linetype_column),
+                          alpha = obs_line_trans,
+                          size = obs_size,
+                          fill = NA,
+                          color = "black",
+                          show.legend = LegCheck)
+         }
+         
+      } else {
+         # any other point shape other than solid fill w/black outline
+         if(all(obs_color == line_color) | 
+            figure_type == "compound summary"){
+            A <- A + 
+               geom_point(data = obs_dataframe,
+                          aes(shape = linetype_column,
+                              color = colorBy_column),
+                          alpha = obs_fill_trans,
+                          size = obs_size,
+                          show.legend = LegCheck) 
+            
+         } else {
+            # e.g., Freddy figure types or other instances where all the
+            # observed points should have the same single color
+            A <- A + 
+               geom_point(data = obs_dataframe,
+                          aes(shape = linetype_column),
+                          color = unique(obs_color), 
+                          alpha = obs_fill_trans,
+                          size = obs_size,
+                          show.legend = LegCheck) 
+         }
+      }
+      
+      A <- A  +
+         labs(fill = as.character(AESCols["color"]), 
+              shape = as.character(AESCols["linetype"]))
+      
+      return(A)
+      
+   } else if(AESCols["color"] =="<empty>" &
+             AESCols["linetype"] != "<empty>" & length(unique(obs_shape)) != 1){
+      
+      # Scenario: only linetype is mapped ---------------------------------------
+      
+      if(all(obs_shape %in% 21:25)){
+         A <- A + 
+            # filled shapes added here
+            geom_point(data = obs_dataframe,
+                       aes(shape = linetype_column),
+                       alpha = obs_fill_trans,
+                       fill = unique(obs_color), 
+                       size = obs_size,
+                       show.legend = LegCheck) +
+            
+            # only black outlines added here
+            geom_point(data = obs_dataframe,
+                       aes(shape = linetype_column),
+                       alpha = obs_line_trans,
+                       size = obs_size,
+                       fill = NA,
+                       color = "black",
+                       show.legend = LegCheck)
+         
+      } else {
+         # any other point shape other than solid fill w/black outline
+         A <- A + 
+            geom_point(data = obs_dataframe,
+                       aes(shape = linetype_column),
+                       color = unique(obs_color), 
+                       alpha = obs_fill_trans,
+                       size = obs_size,
+                       show.legend = LegCheck) 
+      }
+      
+      A <- A  +
+         labs(shape = as.character(AESCols["linetype"]))
+      
+      return(A)
+      
+   } else if(AESCols["color"] !="<empty>" & length(unique(obs_color)) != 1 &
+             AESCols["linetype"] == "<empty>"){
+      
+      # Scenario: only color is mapped -------------------------------------------
+      
+      if(all(obs_shape %in% 21:25)){
+         A <- A + 
+            # filled shapes added here
+            geom_point(data = obs_dataframe,
+                       aes(fill = colorBy_column),
+                       alpha = obs_fill_trans,
+                       shape = unique(obs_shape), 
+                       size = obs_size,
+                       show.legend = LegCheck) +
+            
+            # only black outlines added here
+            geom_point(data = obs_dataframe,
+                       fill = NA,
+                       color = "black",
+                       alpha = obs_line_trans,
+                       shape = unique(obs_shape), 
+                       size = obs_size,
+                       show.legend = LegCheck)
+         
+      } else {
+         # any other point shape other than solid fill w/black outline
+         A <- A + 
+            geom_point(data = obs_dataframe,
+                       aes(color = colorBy_column),
+                       shape = unique(obs_shape), 
+                       alpha = obs_fill_trans,
+                       size = obs_size,
+                       show.legend = LegCheck) 
+      }
+      
+      A <- A  +
+         labs(fill = as.character(AESCols["color"]))
+      
+      return(A)
+      
+   } else {
+      
+      # No color or shape mapping --------------------------------------------
+      
+      # Really, this is when neither color nor linetype are mapped or when color
+      # is mapped but obs_color has length 1 (same for all datasets) or when
+      # linetype (really, shape) is mapped but obs_shape has length 1 (same for
+      # all datasets).
+      
+      if(all(obs_shape %in% 21:25)){
+         A <- A + 
+            # filled shapes added here
+            geom_point(data = obs_dataframe,
+                       fill = unique(obs_color),
+                       alpha = obs_fill_trans,
+                       shape = unique(obs_shape), 
+                       size = obs_size,
+                       show.legend = LegCheck) +
+            
+            # only black outlines added here
+            geom_point(data = obs_dataframe,
+                       fill = NA,
+                       color = "black",
+                       alpha = obs_line_trans,
+                       shape = unique(obs_shape), 
+                       size = obs_size,
+                       show.legend = LegCheck)
+         
+      } else {
+         # any other point shape other than solid fill w/black outline
+         A <- A + 
+            geom_point(data = obs_dataframe,
+                       color = unique(obs_color), 
+                       shape = unique(obs_shape), 
+                       alpha = obs_fill_trans,
+                       size = obs_size,
+                       show.legend = LegCheck) 
+      }
+      
+      return(A)
+      
+   }
    
 }
 
