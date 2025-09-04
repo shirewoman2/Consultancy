@@ -362,13 +362,18 @@ copy_report_files <- function(draft_simulation_directory,
    names(draft_simulation_directory) <- tolower(names(draft_simulation_directory))
    
    DraftSimDirNames <- 
-      tibble(Orig = names(draft_simulation_directory)) %>% 
-      mutate(Rev = case_when(
-         str_detect(Orig, "file|workspace|sim") & 
-            !str_detect(Orig, "type|xml") ~ "File name", 
-         str_detect(Orig, "xml") ~ "XML file used",
-         str_detect(Orig, "folder") ~ "Folder",  
-         .default = Orig))
+      tibble(Orig = names(draft_simulation_directory), 
+             Rev = Orig)
+   
+   DraftSimDirNames$Rev[which(
+      str_detect(DraftSimDirNames$Orig, "file|workspace|sim") & 
+         !str_detect(DraftSimDirNames$Orig, "type|xml|check"))][1] <- "File name"
+   
+   DraftSimDirNames$Rev[which(
+      str_detect(DraftSimDirNames$Orig, "xml"))][1] <- "XML file used"
+
+   DraftSimDirNames$Rev[which(
+      str_detect(DraftSimDirNames$Orig, "folder"))][1] <- "Folder"
    
    draft_simulation_directory <- draft_simulation_directory[, DraftSimDirNames$Orig]
    names(draft_simulation_directory) <- DraftSimDirNames$Rev

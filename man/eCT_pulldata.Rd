@@ -12,7 +12,7 @@ eCT_pulldata(
   fromMultFunction,
   Deets,
   ADAM,
-  ADC = FALSE,
+  LgMolSim = FALSE,
   PD = FALSE,
   ss,
   AdvBrainModel,
@@ -37,7 +37,7 @@ eCT_pulldata(
 
 \item{ADAM}{T or F}
 
-\item{ADC}{T or F}
+\item{LgMolSim}{T or F}
 
 \item{PD}{T or F}
 

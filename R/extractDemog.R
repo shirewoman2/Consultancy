@@ -333,7 +333,7 @@ extractDemog <- function(sim_data_files = NA,
                            str_detect(CYPnames, "abundance|scalar")], 
                         .fns = as.numeric), 
                      File = ff,
-                     simulated = TRUE, 
+                     Simulated = TRUE, 
                      Individual = as.character(Individual), 
                      Trial = as.character(Trial))
             )
@@ -407,7 +407,7 @@ extractDemog <- function(sim_data_files = NA,
                            str_detect(UGTnames, "abundance")], 
                         .fns = as.numeric), 
                      File = ff,
-                     simulated = TRUE, 
+                     Simulated = TRUE, 
                      Individual = as.character(Individual), 
                      Trial = as.character(Trial))
             )
@@ -473,7 +473,7 @@ extractDemog <- function(sim_data_files = NA,
                            str_detect(DrugPopnames, "BP|fu|PercBound|Qgut|Dose")], 
                         .fns = as.numeric), 
                      File = ff,
-                     simulated = TRUE, 
+                     Simulated = TRUE, 
                      Individual = as.character(Individual), 
                      Trial = as.character(Trial))
             )

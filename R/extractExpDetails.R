@@ -345,13 +345,6 @@ extractExpDetails <- function(sim_data_file,
          return(Val)
       }
       
-      # Checking whether this was an ADC sim b/c have to do this differently. 
-      MySumDeets <- setdiff(MySumDeets, "ADCSimulation_sub")
-      Out[["ADCSimulation_sub"]] <- 
-         any(str_detect(as.character(SummaryTab[, 1]), 
-                        SumDeets %>% filter(Deet == "ADCSimulation_sub") %>% 
-                           pull(Regex_row)), na.rm = T)
-      
       for(i in MySumDeets){
          Out[[i]] <- pullValue(i)
          
@@ -420,9 +413,13 @@ extractExpDetails <- function(sim_data_file,
                                    CustomDosing = CustomDosing)
       
       CustomDosing <- InputInfo$CustomDosing
+      Age_bins_redef_over_time <- InputInfo$Age_bins_redef_over_time
       
-      Out <- c(Out, InputInfo[setdiff(c(names(InputInfo), "CustomDosing"),
-                                      names(Out))])
+      Out <- c(Out, 
+               InputInfo[setdiff(c(names(InputInfo), 
+                                   "Age_bins_redef_over_time", 
+                                   "CustomDosing"),
+                                 names(Out))])
       
    }
    
@@ -610,6 +607,7 @@ extractExpDetails <- function(sim_data_file,
       }
    }
    
+   
    # Pulling from workspace file -------------------------------------------
    if(any(c("workspace", "all") %in% exp_details_input)){
       
@@ -624,12 +622,12 @@ extractExpDetails <- function(sim_data_file,
       
       if(length(WkspFile) > 0){
          
-         TEMP <- extractExpDetails_XML(
+         WkSpDeets <- extractExpDetails_XML(
             sim_workspace_files = WkspFile, 
             compoundsToExtract = "all",
             exp_details = "all")
          
-         TEMP$MainDetails <- TEMP$MainDetails %>% 
+         WkSpDeets$MainDetails <- WkSpDeets$MainDetails %>% 
             # This currently removes anything that we already have from the
             # Excel file. May change that later to verify that Excel and
             # workspace match.
@@ -641,24 +639,28 @@ extractExpDetails <- function(sim_data_file,
                                       "_met1", "_met2", "_secmet")))))
          
          Out <- c(Out,
-                  TEMP$MainDetails[
-                     setdiff(names(TEMP$MainDetails)[
-                        names(TEMP$MainDetails) != "Workspace"], 
+                  WkSpDeets$MainDetails[
+                     setdiff(names(WkSpDeets$MainDetails)[
+                        names(WkSpDeets$MainDetails) != "Workspace"], 
                         names(Out))])
          
          if(is.na(Out$ObsOverlayFile) &
-            "ObsOverlayFile" %in% names(TEMP$MainDetails)){
-            Out$ObsOverlayFile <- TEMP$MainDetails$ObsOverlayFile
+            "ObsOverlayFile" %in% names(WkSpDeets$MainDetails)){
+            Out$ObsOverlayFile <- WkSpDeets$MainDetails$ObsOverlayFile
          }
          
-         UserIntervals <- TEMP$UserAUCIntervals
+         UserIntervals <- WkSpDeets$UserAUCIntervals
          
-         rm(TEMP)
       } else {
          UserIntervals <- list()
       }
    } else {
       UserIntervals <- list()
+   }
+   
+   if("Redefine_subjects_over_time_units" %in% names(Out) & 
+      length(Age_bins_redef_over_time) > 0){
+      Age_bins_redef_over_time$Time_units <- WkSpDeets$MainDetails$Redefine_subjects_over_time_units
    }
    
    
@@ -739,6 +741,17 @@ extractExpDetails <- function(sim_data_file,
       if(is.na(Out$Species)){
          Out$Species <- "human"
       }
+   }
+   
+   # Noting whether the simulation involved a large molecule
+   if("ADCSimulation_sub" %in% names(Out) &&
+      tolower(Out$ADCSimulation_sub) == "yes"){
+      Out$LgMol_simulation <- TRUE
+   } else if("MoleculeType_sub" %in% names(Out) && 
+             tolower(Out$MoleculeType_sub) == "biologics integrated"){
+      Out$LgMol_simulation <- TRUE
+   } else {
+      Out$LgMol_simulation <- FALSE
    }
    
    Out <- Out[sort(names(Out))]
@@ -846,6 +859,7 @@ extractExpDetails <- function(sim_data_file,
    # etc.
    
    Out <- list(MainDetails = Main, 
+               Age_bins_redef_over_time = Age_bins_redef_over_time, 
                CustomDosing = bind_rows(Out$CustomDosing_sub, 
                                         Out$CustomDosing_inhib, 
                                         Out$CustomDosing_inhib2), 

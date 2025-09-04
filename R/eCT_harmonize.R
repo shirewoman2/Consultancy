@@ -11,7 +11,7 @@
 #' @param Deets 1 row for existing_exp_details$MainDetails
 #' @param ADAM T or F
 #' @param AdvBrainModel T or F
-#' @param ADC T or F
+#' @param LgMolSim T or F
 #'
 #' @return a data.frame of sim_data_xl with compound names and compound codes
 #'   switched to, e.g., SUBSTRATE
@@ -26,7 +26,7 @@ eCT_harmonize <- function(sim_data_xl,
                           Deets, 
                           ADAM,
                           AdvBrainModel, 
-                          ADC = FALSE){
+                          LgMolSim = FALSE){
    
    # Renaming compounds -------------------------------------------------------
    
@@ -35,8 +35,9 @@ eCT_harmonize <- function(sim_data_xl,
    
    PD <- tissue == "pd"
    
-   if(any(ADAM, PD, ADC, AdvBrainModel) == FALSE |
-      (ADC == TRUE & any(compoundToExtract %in% c("primary metabolite 1")))){
+   if(any(ADAM, PD, LgMolSim, AdvBrainModel) == FALSE |
+      (LgMolSim == TRUE & 
+       any(compoundToExtract == "primary metabolite 1"))){
       # Here's what we're trying to overcome with this function: If
       # "interaction" or "Csys" or other similar strings are part of the name of
       # any of the compounds, that messes up the regex, so we need to remove
@@ -297,39 +298,31 @@ eCT_harmonize <- function(sim_data_xl,
                                                                     "95th ptile")])
       }
       
-   } else if(ADC){
+   } else if(LgMolSim){
       
       # PopStatRow <- which(str_detect(sim_data_xl$...1, "Population Statistics"))
       # NArows <- which(is.na(sim_data_xl$...1))
       # CmpdRows <- sim_data_xl$...1[(PopStatRow + 2):
       #                                 (NArows[which(NArows > PopStatRow)][1] - 1)]
       
-      # FIXME: I previously found an instance where "Protein Total" at the top
-      # of the Excel sheet was listed as "Therapeutic Protein" lower down. I
-      # originally made them all be "PROTEINTOTAL", but that means that I can't
-      # discriminate between therapeutic protein concentrations and the protein
-      # of an ADC. Returning to making ONLY "protein total" be "PROTEINTOTAL" so
-      # that I get ONLY that and not any therapeutic protein concentrations. Not
-      # sure how to get around that if I encounter that scenario again, though.
-      # I just don't know enough about when it will occur.
       sim_data_xl$...1 <- sub("^Protein [Tt]otal",
                               "PROTEINTOTAL", 
+                              sim_data_xl$...1)
+      
+      sim_data_xl$...1 <- sub("^Conjugated Protein",
+                              "CONJPROTEIN", 
                               sim_data_xl$...1)
       
       # Protein Conjugated Drug seems to consistent throughout but making it
       # consistent to be sure. Same with therapeutic protein but also need to
       # discriminate between therapeutic protein and TMDD complex.
       sim_data_xl$...1 <- sub("^Protein [Cc]onjugated [Dd]rug",
-                              "PROTEINCONJDRUG", 
+                              "PROTCONJDRUG", 
                               sim_data_xl$...1)
       
-      sim_data_xl$...1 <- sub("conjugated protein .dar1", # FIXME: Check this. 
-                              "INTACTADC", 
-                              sim_data_xl$...1)
-      
-      sim_data_xl$...1 <- sub("cantibody total", # FIXME: Check this. 
-                              "TOTALAB", 
-                              sim_data_xl$...1)
+      # sim_data_xl$...1 <- sub("conjugated protein .dar1", # FIXME: Check this. 
+      #                         "PROTCONJDRUG", 
+      #                         sim_data_xl$...1)
       
       sim_data_xl$...1 <- sub("^Therapeutic [Pp]rotein.*TMDD complex",
                               "TMDDCOMPLEX", 

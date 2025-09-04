@@ -189,11 +189,9 @@ want \emph{out} of this function most of the time is a single data.frame
 with the main information annotated. If you want more than that, set this
 to TRUE.}
 
-\item{save_output}{optionally save the output by supplying a csv or Excel
-file name in quotes here, e.g., "Simulation details.csv" or "Simulation
-details.xlsx".  Do not include any slashes, dollar signs, or periods in the
-file name. If you leave off the file extension, it will be saved as a csv
-file.}
+\item{save_output}{optionally save the output by supplying an Excel file name
+in quotes here, e.g., "Simulation details.xlsx".  Do not include any
+slashes, dollar signs, or periods in the file name.}
 
 \item{output_tab_name}{the tab name to use when saving the output as an Excel
 file. If you specify a tab that does not already exist in the Excel file

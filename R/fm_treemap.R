@@ -260,58 +260,21 @@ fm_treemap <- function(fm_dataframe,
       # Adding options for colors
       NumColors <- length(unique(fm_dataframe$Label))
       
-      if(length(color_set) > 1){
-         
-         MyColors <- color_set
-         
-         if(length(MyColors) != NumColors){
-            warning(paste("You supplied", length(color_set), "colors, but we need", 
-                          NumColors, "colors. We will have to use the default color set instead.\n"), 
-                    call. = FALSE)
-            
-            color_set <- "default"
-         }
-      } 
-      
-      if(length(color_set) == 1){
-         
-         if(color_set == "default" & NumColors > 5){
-            color_set <- "viridis"
-            warning("You requested the color_set 'default', which has 5 possible colors, but your graph requires more colors than that. The color set 'viridis' will be used instead.", 
-                    call. = FALSE)
-         }
-         
-         MyColors <- switch(color_set, 
-                            "default" = CertaraColors, 
-                            "set 1" = RColorBrewer::brewer.pal(NumColors, "Set1"),
-                            "set 2" = RColorBrewer::brewer.pal(NumColors, "Dark2"),
-                            "rainbow" = rainbow(NumColors), 
-                            "blue-green" = blueGreens(NumColors),
-                            "blues" = blues(NumColors),
-                            "viridis" = viridis::viridis(NumColors))
-         
-         # Adjusting default colors based on number of levels to the combos I like
-         # best. :-)
-         if(color_set == "default" & NumColors > 1 & NumColors < 5){
-            MyColors <- switch(as.character(NumColors), 
-                               "2" = CertaraColors[2:3], 
-                               "3" = CertaraColors[2:4], 
-                               "4" = CertaraColors[2:5])
-         }
-         
-      }
-      
+      MyColors <- make_color_set(color_set = color_set, 
+                                 num_colors = NumColors)
       names(MyColors) <- unique(fm_dataframe$LabelLegend)
       
       # Putting into the legend any fm's that are below the threshold
       G <- ggplot(fm_dataframe, aes(label = Label, area = fm, fill = LabelLegend)) +
          treemapify::geom_treemap(start = sub(" ", "", biggest_box_position)) +
-         treemapify::geom_treemap_text(fontface = "bold", colour = "white", place = "centre", 
+         treemapify::geom_treemap_text(fontface = "bold", 
+                                       colour = "white", 
+                                       place = "centre", 
                                        min.size = 6, 
                                        start = sub(" ", "", biggest_box_position)) +
          scale_fill_manual(
             # FIXME - Fiddle with this to get only the legend entries that are not
-            # already labeled in hte graph
+            # already labeled in the graph
             # breaks = fm_dataframe$LabelLegend[which(fm_dataframe$fm < label_fm_cutoff)],
             values = MyColors) +
          theme(legend.title = element_blank(),

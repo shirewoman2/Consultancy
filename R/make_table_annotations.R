@@ -444,7 +444,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
                          Deets$Dose_inhib, " ", 
                          MyDoseUnits, " ", 
                          MyPerpetrator), 
-                   paste0("multiple doses of", 
+                   paste0("multiple doses of ", 
                           Deets$Dose_inhib, " ", 
                           MyDoseUnits, " ", 
                           MyPerpetrator, 

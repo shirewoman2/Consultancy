@@ -23,7 +23,8 @@ rainbow <- function(ncolors,
                     shade = "regular"){
    
    shade <- tolower(shade)[1]
-   if(shade %in% c("lighter", "darker", "regular", "muted") == FALSE){
+   if(shade %in% c("lighter", "darker", "regular", "muted", 
+                   "lighter muted") == FALSE){
       warning(wrapn("You have supplied something for 'shade' that is not among the possible options; we'll set the shade to 'regular'."), 
               call. = F)
    }
@@ -39,16 +40,18 @@ rainbow <- function(ncolors,
                                           "cadetblue", "dodgerblue3", "royalblue4",
                                           "darkorchid4"))
       }
-   } else if(shade == "lighter"){
+   } else if(shade %in% c("lighter")){
       colRainbow <- colorRampPalette(c("#FF0000", "#FF9900", "#FFFF00",
                                        "#33FF00", "#3300FF", "#A30DD0"))
+   } else if(shade == "lighter muted"){
+      colRainbow <- colorRampPalette(c("#E76363", "#FFCF57", "#FFFF57", 
+                                       "#83FF79", "#668EFE", "#B069FF"))
    }
    
    MyColors <- colRainbow(ncolors)
    
    if(shade %in% c("darker", "muted")){
       MyColors <- scales::muted(MyColors, l = 30, c = 70)
-   } else if(shade == "lighter"){
    } 
    
    return(MyColors)

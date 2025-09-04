@@ -9,6 +9,7 @@
 #' @param TissueType systemic or tissue
 #' @param SheetNames all sheets in sim_data_file
 #' @param sim_data_file sim_data_file
+#' @param LgMolSim T or F
 #'
 #' @return sim_data_xl - the entire, unedited contents of the sheet. 
 #'
@@ -20,7 +21,8 @@ eCT_readxl <- function(sim_data_file,
                        compoundToExtract, 
                        tissue, 
                        TissueType,
-                       SheetNames){
+                       SheetNames, 
+                       LgMolSim){
    
    CompoundToFind <- case_when(
       TissueType == "systemic" & 
@@ -30,7 +32,7 @@ eCT_readxl <- function(sim_data_file,
            "inhibitor 1 metabolite", 
            "inhibitor 2", 
            AllCompounds %>% 
-              filter(CompoundType == "ADC" &
+              filter(CompoundType == "large molecule" &
                         CompoundID != "conjugated payload") %>% 
               pull(CompoundID) %>% 
               tolower()) ~ "substrate", 
@@ -56,7 +58,7 @@ eCT_readxl <- function(sim_data_file,
       # Already took care of this situation elsewhere, so we can probably delete this.
       if(all(compoundToExtract %in% c("substrate", "primary metabolite 1")) == FALSE){
          warning(wrapn(paste0("This seems to be a Simcyp Discovery simulation, and the only compunds you can extract from that are `substrate` or `primary metabolite 1`, and you requested `", 
-                        compoundToExtract, "`. We'll return substrate concentrations instead.")), 
+                              compoundToExtract, "`. We'll return substrate concentrations instead.")), 
                  call. = FALSE)
          compoundToExtract <- "substrate"
       }
@@ -225,6 +227,23 @@ eCT_readxl <- function(sim_data_file,
          
       } else if(TissueType == "PD"){
          PossSheets <- SheetNames[str_detect(SheetNames, "PD Profiles \\(Sub\\)")]
+      }
+      
+      if(LgMolSim & 
+         all(compoundToExtract %in% 
+         (AllCompounds %>% 
+              filter(CompoundType == "large molecule") %>% pull(CompoundID) %>% 
+              tolower()))){
+         
+         # the regular sheet name will only include perpetrator concs. Not
+         # entirely sure how to remove all the possible "regular" sheet names,
+         # but listing the tabs that most reliably include large-molecule concs
+         # first.
+         PossSheets <- c(PossSheets[PossSheets == "Protein Conc Trials(CPlasma)"], 
+                         PossSheets[PossSheets == "Conc Profiles Csys(CPlasma)"], 
+                         setdiff(PossSheets, c("Conc Profiles Csys(CPlasma)", 
+                                               "Protein Conc Trials(CPlasma)")))
+         
       }
       
       Sheet <- PossSheets[1]
