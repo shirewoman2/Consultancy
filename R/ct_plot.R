@@ -1421,8 +1421,9 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Setting colors, linetypes, etc. -------------------------------------
    
-   DDI <- unique(Data$CompoundID) %in% AllCompounds$CompoundID[
-      AllCompounds$DDIrole == "victim"] & 
+   DDI <- (unique(Data$CompoundID) %in% AllCompounds$CompoundID[
+      AllCompounds$DDIrole == "victim"] | 
+         EnzPlot) & 
       all(unique(Data$Inhibitor) %in% "none") == FALSE
    
    # The only two ways that observed data color can be mapped: 
