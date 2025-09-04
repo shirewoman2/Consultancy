@@ -1758,8 +1758,9 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # Some of the options inherited from ct_plot depend on there being just one
    # compound that the user is plotting. Using whatever is the compoundID that
-   # has the base level for the factor. <--- This may not be necessary, now
-   # that I think about it further...
+   # has the base level for the factor. Could probably just use the 1st instance
+   # of whatever compound ID is present here instead of this slightly more
+   # involved code, but this isn't broken so not fixing it for now.
    if(EnzPlot | ReleaseProfPlot | DissolutionProfPlot | FmPlot){
       AnchorCompound <- "substrate"
    } else if(mean_type != "none"){
@@ -1977,29 +1978,43 @@ ct_plot_overlay <- function(ct_dataframe,
       MyColNames <- NA
    }
    
+   # Setting numbers of things required separately so that user doesn't get
+   # annoying warning message about possibly uninitialized columns.
+   if(AESCols["linetype"] == "<empty>"){
+      n_line_type <- 1
+   } else {
+      n_line_type <- length(unique(c(levels(sim_dataframe$linetype_column), 
+                                     levels(obs_dataframe$linetype_column))))
+   } 
+   
+   if(AESCols["color"] == "<empty>"){
+      n_line_color <- 1
+   } else {
+      n_line_color <- length(unique(c(levels(sim_dataframe$colorBy_column), 
+                                      levels(obs_dataframe$colorBy_column))))
+   } 
+   
+   if(any(complete.cases(obs_color))){
+      n_obs_color <- 1
+   } else if(AESCols["color"] != "<empty>"){
+      n_obs_color <- length(levels(obs_dataframe$colorBy_column))
+   } else {
+      n_obs_color <- 1
+   }
+   
    AesthetStuff <- set_aesthet(
       figure_type = figure_type,
       from_ct_plot = F, 
       AESCols = AESCols, 
       DDI = DDI, 
       line_type = linetypes, 
-      n_line_type = case_when(
-         AESCols["linetype"] != "<empty>" ~ length(levels(sim_dataframe$linetype_column)), 
-         .default = 1), 
+      n_line_type = n_line_type, 
       line_color = color_set, 
-      n_line_color = case_when(
-         AESCols["color"] != "<empty>" ~ length(levels(sim_dataframe$colorBy_column)), 
-         .default = 1), 
+      n_line_color = n_line_color, 
       obs_shape = obs_shape, 
-      n_obs_shape = case_when(
-         AESCols["linetype"] != "<empty>" ~ length(levels(obs_dataframe$linetype_column)), 
-         .default = 1), 
+      n_obs_shape = n_line_type, 
       obs_color = obs_color, 
-      n_obs_color = case_when(
-         any(complete.cases(obs_color)) ~ 1, 
-         all(is.na(obs_color)) & 
-            AESCols["color"] != "<empty>" ~ length(levels(obs_dataframe$colorBy_column)), 
-         .default = 1), 
+      n_obs_color = n_obs_color, 
       obs_fill_trans = obs_fill_trans,
       obs_line_trans = obs_line_trans)
    
@@ -2420,7 +2435,9 @@ ct_plot_overlay <- function(ct_dataframe,
                            AESCols = AESCols,
                            
                            obs_shape = obs_shape,
-                           line_type = linetypes, 
+                           # NB: linetypes is what user requested; line_type is
+                           # object after processing with set_aesthet.
+                           line_type = line_type, 
                            
                            obs_color = obs_color,
                            line_color = line_color, 
@@ -2506,7 +2523,9 @@ ct_plot_overlay <- function(ct_dataframe,
                         AESCols = AESCols,
                         
                         obs_shape = obs_shape,
-                        line_type = linetypes, 
+                        # NB: linetypes is what user requested; line_type is
+                        # object after processing with set_aesthet.
+                        line_type = line_type, 
                         
                         obs_color = obs_color,
                         line_color = line_color, 
@@ -2753,7 +2772,7 @@ ct_plot_overlay <- function(ct_dataframe,
    if(AES %in% c("linetype", "color-linetype")){
       suppressWarnings(
          A <- A +
-            scale_linetype_manual(values = Mylinetypes) +
+            scale_linetype_manual(values = line_type) +
             scale_shape_manual(values = obs_shape)
       )
    }

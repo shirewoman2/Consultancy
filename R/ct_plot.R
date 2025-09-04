@@ -1445,7 +1445,10 @@ ct_plot <- function(ct_dataframe = NA,
       AESCols = AESCols, 
       DDI = DDI, 
       line_type = line_type, 
-      n_line_type = ifelse(DDI, 2, 1), 
+      n_line_type = case_when(
+         DDI ~ 2, 
+         figure_type %in% c("freddy", "compound summary") ~ 2, 
+         .default = 1), 
       line_color = line_color, 
       n_line_color = ifelse(DDI, 2, 1), 
       obs_shape = obs_shape, 
@@ -1678,6 +1681,10 @@ ct_plot <- function(ct_dataframe = NA,
                            line_transparency,
                            ifelse(NumTrials > 10, 0.05, 0.25))
       
+      # line_type is named for DDIs and needs to NOT be named for this to work
+      # correctly with scale_linetype_manual since these graphs are instead
+      # basing the linetype on whether it's the central stat or the percentiles.
+      names(line_type) <- NULL
       
       # This figure type does things differently based on whether the graph is
       # of a compound alone or a compound +/- a perpetrator. 
@@ -1717,7 +1724,7 @@ ct_plot <- function(ct_dataframe = NA,
                             filter(Trial %in% c("per5", "per95")),
                          linetype = line_type[2],
                          alpha = 1, 
-                         color = line_color[2])
+                         color = line_color)
             
          } else if(figure_type == "compound summary"){
             
