@@ -13,6 +13,7 @@ VBE_safe_space_plot(
   linewidths = NA,
   point_shapes = NA,
   point_sizes = NA,
+  show_points_on_boundaries = TRUE,
   save_graph = NA,
   fig_height = NA,
   fig_width = NA
@@ -111,10 +112,17 @@ be seen by typing \code{ggpubr::show_line_types()} into the console.}
 
 \item{linewidths}{the line widths to use (numeric)}
 
-\item{point_shapes}{the point shape(s) to use for the graph. Possible options
-can be seen by typing \code{ggpubr::show_point_shapes()} into the console.}
+\item{point_shapes}{the point shape(s) to use for the graph to indicate
+whether a given value was predicted or observed. Possible options can be
+seen by typing \code{ggpubr::show_point_shapes()} into the console. If you
+do not want points to show for one dataset, e.g., maybe you only want
+points for the observed data and just lines for the predicted, then set the
+point shape to NA.}
 
 \item{point_sizes}{the point sizes (numeric)}
+
+\item{show_points_on_boundaries}{TRUE (default) or FALSE to include points
+on the boundaries of the dissolution safe space.}
 
 \item{save_graph}{optionally save the output graph by supplying a file name
 in quotes here, e.g., "Demographics comparisons.png". Acceptable graphical
