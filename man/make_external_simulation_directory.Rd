@@ -19,10 +19,11 @@ slashes Microsoft uses. If left as NA (default), we'll assume your current
 working directory is the top level of your project folder.}
 
 \item{draft_simulation_directory}{the output from running either
-  \code{\link{make_simulation_directory}} or \code{\link{find_report_file_locations}},
-  either of which will find all of the simulation files (both workspaces and
-  Excel outputs as well as any observed XML overlay files) in a project
-  folder. This MUST include the following columns:
+  \code{\link{make_simulation_directory}} or
+  \code{\link{find_report_file_locations}}, either of which will find all of
+  the simulation files (both workspaces and Excel outputs as well as any
+  observed XML overlay files) in a project folder. This MUST include the
+  following columns:
 
   \itemize{\item{"File name" with the simulation file names}
 
@@ -41,7 +42,8 @@ simulation directory.}
 \item{overwrite}{Should we overwrite if your Excel file already exists and
 already has a tab named "Simulation directory"? Options are "yes" to always
 overwrite, "no" to never overwrite, or "ask" (default), which means that we
-will ask you whether to overwrite and give you a chance to supply a}
+will ask you whether to overwrite and give you a chance to supply a
+different file name.}
 }
 \value{
 a simulation directory as a data.frame; optionally saves that
