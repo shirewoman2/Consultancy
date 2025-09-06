@@ -187,7 +187,7 @@
 #' @param concatVariability TRUE (default) or FALSE for whether to concatenate
 #'   the variability. If "TRUE", the output will be formatted into a single row
 #'   and listed as the lower confidence interval or percentile to the upper CI
-#'   or percentile, e.g., "2400 to 2700". 
+#'   or percentile, e.g., "2400 to 2700".
 #' @param variability_format formatting used to indicate the variability When
 #'   the variability is concatenated. Options are "to" (default) to get output
 #'   like "X to Y", "hyphen" to get output like "X - Y", "brackets" to get
@@ -198,10 +198,10 @@
 #' @param conc_units What concentration units should be used in the table?
 #'   Default is NA to leave the units as is, but if you set the concentration
 #'   units to something else, this will attempt to convert the units to match
-#'   that. This only adjusts only the simulated values, since we're assuming
-#'   that that's the most likely problem and that observed units are relatively
-#'   easy to fix, and it also only affects AUC and Cmax values. If you leave
-#'   this as NA, the units in the 1st simulation will be used as the units for
+#'   that. This adjusts only the simulated values, since we're assuming that
+#'   that's the most likely problem and that observed units are relatively easy
+#'   to fix, and it also only affects AUC and Cmax values. If you leave this as
+#'   NA, the units in the 1st simulation will be used as the units for
 #'   \emph{all} the simulations for consistency and clarity. Acceptable input is
 #'   any concentration unit
 #'   listed in the Excel form for PE data entry, e.g. \code{conc_units =
@@ -805,7 +805,7 @@ pk_table <- function(PKparameters = NA,
                    case_match(MyRegimen, 
                               "Single Dose" ~ "first-dose ", 
                               "Multiple Dose" ~ "last-dose "), 
-                   "PK. Please check your input for 'PKparameters'. For example, check that you have not requested steady-state parameters for a single-dose simulation.")),
+                   "PK. Please check your input for 'PKparameters'. If you have loaded previously saved output from extractExpDetails and supplied that here, please ensure that you have re-run extractExpDetails following any updates to the simulation results so that we can find the correct data.")),
             "\n"), call. = FALSE)
          next
       }
@@ -1139,11 +1139,11 @@ pk_table <- function(PKparameters = NA,
    # extrapolation. If there were problems with extrapolation for either
    # AUCinf_dose1 OR for AUCinf_dose1_withInhib, then we want only AUCt values
    # b/c need to be able to make the correct comparison. If there were no
-   # problems, then we only want AUCinf values unless they speicifcally
+   # problems, then we only want AUCinf values unless they specifically
    # requested AUCt.
    
    # Any time AUCinf_dose1 was requested, only retain any AUCt_X that were
-   # specfically requested or when AUCinf could not be returned.
+   # specifically requested or when AUCinf could not be returned.
    if("AUCinf_dose1" %in% PKpulled$PKpulled & 
       "AUCt_dose1" %in% PKparam_tidied$PKparameters$PKparameter[
          PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){

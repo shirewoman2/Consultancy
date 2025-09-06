@@ -151,7 +151,7 @@ if(single_table){
    if(as_label(shading_column) == "<empty>"){
       
       formatTable_Simcyp(MyPKResults,
-                         shading_column = File, 
+                         hlines = "when dataset changes", 
                          merge_shaded_cells = TRUE, 
                          fontsize = fontsize,
                          prettify_columns = prettify_columns, 

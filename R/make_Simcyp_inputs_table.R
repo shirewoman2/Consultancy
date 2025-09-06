@@ -143,7 +143,7 @@ make_Simcyp_inputs_table <- function(existing_exp_details,
    }
    
    if("character" %in% class(references) && str_detect(references, "\\.csv$")){
-      references <- read.csv(references, na.strings = c("", "NA"))
+      references <- read.csv(references, na.strings = c("", "NA", "na", "N/A", "n/a"))
       # references should now be a data.frame.
    } 
    

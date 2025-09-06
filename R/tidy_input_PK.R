@@ -109,7 +109,7 @@ tidy_input_PK <- function(PKparameters,
          
          PKparameters <- switch(
             str_extract(PKparameters, "csv|xlsx"), 
-            "csv" = read.csv(PKparameters, na.strings = c("NA", "")), 
+            "csv" = read.csv(PKparameters, na.strings = c("NA", "", "N/A", "na", "n/a")), 
             "xlsx" = tryCatch(
                openxlsx::read.xlsx(PKparameters, 
                                    sheet = "PKparameters"), 
@@ -939,7 +939,12 @@ tidy_input_PK <- function(PKparameters,
    # AUCinf_dose1 b/c removing AUCt_dose1 if there were no issues with
    # extrpolating.
    
-   PKparameters$OriginallyRequested <- TRUE
+   PKparameters <- PKparameters %>% 
+      mutate(
+         Complete = complete.cases(PKparameter), 
+         OriginallyRequested = PKparameter %in% PKparameters_orig, 
+         OriginallyRequested = Complete & OriginallyRequested) %>% 
+      select(-Complete)
    
    if(any(str_detect(PKparameters$PKparameter, "AUCinf"), na.rm = T)){
       

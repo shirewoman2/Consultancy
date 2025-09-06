@@ -20,7 +20,7 @@
 #'   e.g., 0.5 for 50\%.}
 #'   \item{Limit}{This column will be used for specifying which data sets are
 #'   the upper and lower limits of the safe space. Data sets that do \emph{not}
-#'   describe the upper or lower limits should have NA in this column, and the
+#'   describe the upper or lower limits should have NA in this column or be blank in the .csv file, and the
 #'   upper- and lower-limit datasets should be specified as "upper" and "lower".}
 #'   } For an example, please view the object "VBE_disso_example" by running
 #'   this in your console: \code{view(VBE_disso_example)} and set up your data
@@ -92,8 +92,12 @@
 #' @param linetypes the line type(s) to use for the graph. Possible options can
 #'   be seen by typing \code{ggpubr::show_line_types()} into the console.
 #' @param linewidths the line widths to use (numeric)
-#' @param point_shapes the point shape(s) to use for the graph. Possible options
-#'   can be seen by typing \code{ggpubr::show_point_shapes()} into the console.
+#' @param point_shapes the point shape(s) to use for the graph to indicate
+#'   whether a given value was predicted or observed. Possible options can be
+#'   seen by typing \code{ggpubr::show_point_shapes()} into the console. If you
+#'   do not want points to show for one dataset, e.g., maybe you only want
+#'   points for the observed data and just lines for the predicted, then set the
+#'   point shape to NA.
 #' @param point_sizes the point sizes (numeric)
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "Demographics comparisons.png". Acceptable graphical
@@ -102,6 +106,8 @@
 #'   name. Leaving this as NA means the file will not be saved to disk.
 #' @param fig_height figure height in inches; default is 6
 #' @param fig_width figure width in inches; default is 8
+#' @param show_points_on_boundaries TRUE (default) or FALSE to include points
+#'   on the boundaries of the dissolution safe space.
 #'
 #' @returns a ggplot2 graph
 #' @export
@@ -138,6 +144,7 @@ VBE_safe_space_plot <- function(VBE_dataframe,
                                 linewidths = NA, 
                                 point_shapes = NA, 
                                 point_sizes = NA, 
+                                show_points_on_boundaries = TRUE, 
                                 save_graph = NA, 
                                 fig_height = NA, 
                                 fig_width = NA){
@@ -147,7 +154,6 @@ VBE_safe_space_plot <- function(VBE_dataframe,
    if("package:tidyverse" %in% search() == FALSE){
       stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
    }
-   
    
    if(all(is.na(color_set))){
       color_set <- "rainbow"
@@ -183,27 +189,24 @@ VBE_safe_space_plot <- function(VBE_dataframe,
       point_sizes <- c(2, 1)
    }
    
+   if("character" %in% class(VBE_dataframe) && 
+      str_detect(VBE_dataframe[1], "csv")){
+      VBE_dataframe <- read.csv(VBE_dataframe, 
+                                na.strings = c("N/A", "NA", "", "na", "n/a"))
+   }
+   
+   if("data.frame" %in% class(VBE_dataframe) == FALSE){
+      stop(wrapn("We're having trouble with your input for the argument 'VBE_dataframe', which should be either a csv file name that we'll read or a data.frame. This is something else. Please check your input and try again."), 
+           call. = FALSE)
+   }
+   
+   if(nrow(VBE_dataframe) == 0){
+      stop(wrapn("There are no data in what you supplied for VBE_dataframe. Please check your input and try again."), 
+           call. = FALSE)
+   }
+   
    
    # Main body of function ---------------------------------------------------
-   
-   Ncol <- unique(VBE_dataframe$Type) %>% length()
-   
-   # # Original code: 
-   # color_set <- switch(color_set, 
-   #                     "blues" = blues(Ncol), 
-   #                     "greens" = greens(ncolors = Ncol, shade = "darker"), 
-   #                     "purples" = purples(Ncol, shade = "darker"), 
-   #                     "blueGreens" = blueGreens(Ncol), 
-   #                     "rainbow" = rainbow(Ncol))
-   
-   # Revised code: The above is a good example of how to use "switch" inside a
-   # function. However, this does not allow for manually specifying each of the
-   # colors yourself and and it also does not perform any checks for whether
-   # what someone has supplied is, in fact, a color. A function that does this
-   # already exists inside the SimcypConsultancy package, so we'll use the
-   # function make_color_set to do this. 
-   color_set <- make_color_set(color_set = color_set, 
-                               num_colors = Ncol)
    
    # Reshaping data to add a ribbon
    SSPolygon <- VBE_dataframe %>% 
@@ -215,30 +218,65 @@ VBE_safe_space_plot <- function(VBE_dataframe,
    SSPolygon$upper <- SSPolygon$upper %>% arrange(desc(Time))
    SSPolygon <- bind_rows(SSPolygon)
    
+   if(show_points_on_boundaries == FALSE){
+      VBE_dataframe <- VBE_dataframe %>% 
+         filter(is.na(Limit))
+   }
+   
+   Ncol <- unique(VBE_dataframe$Type) %>% length()
+   
+   color_set <- make_color_set(color_set = color_set, 
+                               num_colors = Ncol)
+   
    G <- ggplot(data = VBE_dataframe, 
-          aes(x = Time, y = Dissolution, 
-              color = Type, shape = SorO, linetype = SorO, 
-              linewidth = SorO, size = SorO)) +
-      geom_polygon(data = SSPolygon, 
-                   aes(x = Time, y = Dissolution), 
-                   fill = safe_space_color, 
-                   alpha = safe_space_trans, 
+               aes(x = Time, 
+                   y = Dissolution, 
+                   color = Type, 
+                   fill = "Safe space", 
+                   shape = SorO, 
+                   linetype = SorO, 
+                   linewidth = SorO, 
+                   size = SorO)) +
+      geom_polygon(data = SSPolygon,
+                   aes(x = Time, y = Dissolution),
+                   fill = safe_space_color,
+                   alpha = safe_space_trans,
+                   show.legend = TRUE,
+                   key_glyph = draw_key_rect,
                    inherit.aes = F) +
       geom_line() +
       geom_point() +
+      scale_fill_manual(
+         values = safe_space_color) +
       scale_color_manual(values = color_set) +
       scale_linetype_manual(values = linetypes) +
       scale_linewidth_manual(values = linewidths) +
       scale_size_manual(values = point_sizes) +
       scale_shape_manual(values = point_shapes) +
-      labs(shape = NULL, linewidth = NULL, linetype = NULL, size = NULL) +
+      labs(shape = NULL, 
+           linewidth = NULL,
+           linetype = NULL, 
+           size = NULL, 
+           color = NULL, 
+           fill = NULL) +
+      guides(color = guide_legend(order = 1, 
+                                  override.aes=list(fill =NA)), 
+             shape = guide_legend(order = 2, 
+                                  override.aes=list(fill = NA)), 
+             linetype = guide_legend(order = 2), 
+             linewidth = guide_legend(order = 2), 
+             size = guide_legend(order = 2), 
+             fill = guide_legend(order = 3, 
+                                 override.aes = 
+                                    list(color = NA, 
+                                         alpha = safe_space_trans))) +
       xlab("Time (h)") + 
       ylab("Dissolution") +
       scale_y_continuous(labels=scales::percent) +
       theme_consultancy()
    
    if(complete.cases(save_graph)){
-
+      
       if(is.na(fig_height)){
          fig_height <- 6
       }
@@ -266,9 +304,9 @@ VBE_safe_space_plot <- function(VBE_dataframe,
          FileName <- paste0(FileName, ".png")
          Ext <- "png"
       }
-
+      
       ggsave(save_graph, plot = G, height = fig_height, width = fig_width, dpi = 300)
-
+      
    }
    
    return(G)

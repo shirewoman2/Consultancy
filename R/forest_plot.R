@@ -1004,6 +1004,19 @@ forest_plot <- function(forest_dataframe,
            call. = FALSE)
    }
    
+   # Retaining only PK parameters requested
+   if(any(complete.cases(PKparameters)) &&
+      any(PKparameters %in% forest_dataframe$PKparameter) == FALSE){
+      stop(wrapn("None of the PK parameters requested are present in the data.frame supplied for `forest_dataframe`. No graph can be made."), 
+           call. = FALSE)
+   }
+   
+   # Only including the PK parameters they requested when that's specified
+   if(any(complete.cases(PKparameters))){
+      forest_dataframe <- forest_dataframe %>% 
+         filter(PKparameter %in% {{PKparameters}})
+   }
+   
    # Noting what doses were included for use later w/the caption
    DosesIncluded <- c("Dose1" = any(str_detect(forest_dataframe$PKparameter, "_dose1")),
                       "Last" = any(str_detect(forest_dataframe$PKparameter, "_last")), 
@@ -1462,12 +1475,6 @@ forest_plot <- function(forest_dataframe,
                       as_label(point_color_column), 
                       "Tissue")))
    
-   if(any(complete.cases(PKparameters)) &&
-      any(PKparameters %in% forest_dataframe$PKparameter) == FALSE){
-      stop("None of the PK parameters requested are present in the data.frame supplied for `forest_dataframe`. No graph can be made.", 
-           call. = FALSE)
-   }
-   
    # Making the data.frame work with all the stat types we included in
    # extractForestData.
    names(forest_dataframe)[names(forest_dataframe) == CenterStat] <- "Centre"
@@ -1480,12 +1487,6 @@ forest_plot <- function(forest_dataframe,
          mutate(across(.cols = c(Centre, Lower, Upper), 
                        .fns = as.numeric))
    )
-   
-   # Only including the PK parameters they requested when that's specified
-   if(complete.cases(PKparameters[1])){
-      forest_dataframe <- forest_dataframe %>% 
-         filter(PKparameter %in% {{PKparameters}})
-   }
    
    forest_dataframe <- forest_dataframe %>% 
       # Graphing this is easiest if the levels start with the item we want on

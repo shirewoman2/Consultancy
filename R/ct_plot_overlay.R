@@ -978,7 +978,7 @@ ct_plot_overlay <- function(ct_dataframe,
       AggStats <- AggStats[AggStats %in% c("mean", "geomean")]
       
       ct_dataframe <- ct_dataframe %>% 
-         mutate(Individual = as.factor(Individual), 
+         mutate(Individual = factor(Individual), 
                 Individual = fct_relevel(Individual,
                                          AggStats, after = Inf))
    }
@@ -1027,18 +1027,6 @@ ct_plot_overlay <- function(ct_dataframe,
    facet2_column <- rlang::enquo(facet2_column)
    colorBy_column <- rlang::enquo(colorBy_column)
    linetype_column <- rlang::enquo(linetype_column)
-   
-   # I *would* be doing this whole function with nonstandard evaluation except
-   # that I CANNOT figure out how to use NSE to redefine a user-supplied
-   # column, so I'm going to have to rename all of them. This makes the rest of
-   # checking and developing this function easier, too, though.
-   
-   # ct_dataframe <- ct_dataframe %>%
-   #     mutate(colorBy_column = ifelse(as_label(colorBy_column) == "<empty>", NA, {{colorBy_column}}),
-   #            FC1 = ifelse(as_label(facet1_column) == "<empty>", NA, {{facet1_column}}),
-   #            FC2 = ifelse(as_label(facet2_column) == "<empty>", NA, {{facet2_column}}))
-   
-   ### NOT THE ABOVE. This causes everything to be the same value. Below code works. 
    
    # If user filled in color_labels but not colorBy_column, give a warning.
    if(as_label(colorBy_column) == "<empty>" & any(complete.cases(color_labels))){
@@ -1138,7 +1126,8 @@ ct_plot_overlay <- function(ct_dataframe,
    MyPerpetrator <- unique(ct_dataframe$Inhibitor) %>% as.character()
    MyPerpetrator <- MyPerpetrator[!MyPerpetrator == "none"]
    
-   if(length(MyPerpetrator) > 0 & class(ct_dataframe$Inhibitor) != "factor" &
+   if(length(MyPerpetrator) > 0 &
+      class(ct_dataframe$Inhibitor) != "factor" &
       "none" %in% ct_dataframe$Inhibitor){
       ct_dataframe <- ct_dataframe %>%
          mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
@@ -1769,8 +1758,9 @@ ct_plot_overlay <- function(ct_dataframe,
    
    # Some of the options inherited from ct_plot depend on there being just one
    # compound that the user is plotting. Using whatever is the compoundID that
-   # has the base level for the factor. <--- This may not be necessary, now
-   # that I think about it further...
+   # has the base level for the factor. Could probably just use the 1st instance
+   # of whatever compound ID is present here instead of this slightly more
+   # involved code, but this isn't broken so not fixing it for now.
    if(EnzPlot | ReleaseProfPlot | DissolutionProfPlot | FmPlot){
       AnchorCompound <- "substrate"
    } else if(mean_type != "none"){
@@ -1913,45 +1903,25 @@ ct_plot_overlay <- function(ct_dataframe,
    MyPerpetrator <- sort(MyPerpetrator)
    MyPerpetrator <- factor(MyPerpetrator, levels = MyPerpetrator)
    
-   # Making linetype_column and colorBy_column factor data. This will
-   # prevent errors w/mapping to color b/c ggplot expects only categorical data
-   # for scale_color_manual, and, if the user supplies something that looks
-   # like a number for the colorBy_column (e.g., a numerical SubjectID), it
-   # will give the error message that a continuous value was supplied to a
-   # discrete scale.
+   # Making linetype_column and colorBy_column factor data. This will prevent
+   # errors w/mapping to color b/c ggplot expects only categorical data for
+   # scale_color_manual, and, if the user supplies something that looks like a
+   # number for the colorBy_column (e.g., a numerical SubjectID), it will give
+   # the error message that a continuous value was supplied to a discrete scale.
+   # Setting this to factor will avoid that problem.
    if(as_label(linetype_column) != "<empty>" &&
       class(sim_dataframe$linetype_column) != "factor"){
       
-      sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
-      obs_dataframe$linetype_column <- as.factor(obs_dataframe$linetype_column)
+      sim_dataframe$linetype_column <- factor(sim_dataframe$linetype_column)
+      obs_dataframe$linetype_column <- factor(obs_dataframe$linetype_column)
    }
    
    if(as_label(colorBy_column) != "<empty>" &&
       class(sim_dataframe$colorBy_column) != "factor"){
       
-      sim_dataframe$colorBy_column <- as.factor(sim_dataframe$colorBy_column)
-      obs_dataframe$colorBy_column <- as.factor(obs_dataframe$colorBy_column)
+      sim_dataframe$colorBy_column <- factor(sim_dataframe$colorBy_column)
+      obs_dataframe$colorBy_column <- factor(obs_dataframe$colorBy_column)
    }
-   
-   # Taking care of linetypes and, along with that, obs_shape as needed
-   if(as_label(linetype_column) != "<empty>"){
-      NumLT <- length(sort(unique(sim_dataframe$linetype_column)))
-   } else {
-      NumLT <- 1
-   }
-   
-   if(NumLT == 1){
-      linetypes = "solid"
-   } else if(NumLT < length(linetypes)){
-      linetypes = linetypes[1:NumLT] 
-   } else if(NumLT > length(linetypes)){
-      warning(paste("There are", NumLT,
-                    "unique values in the column you have specified for the line types, but you have only specified", 
-                    length(linetypes), 
-                    "line types to use. (Note that there are only two line types used by default: solid and dashed.) We will recycle the line types to get enough to display your data, but you probably will want to supply more line types and re-graph.\n"), 
-              call. = FALSE)
-      linetypes = rep(linetypes, 100)[1:NumLT]
-   } 
    
    if(as_label(linetype_column) != "<empty>"){
       
@@ -1969,140 +1939,99 @@ ct_plot_overlay <- function(ct_dataframe,
                                                           setdiff(obs_dataframe$linetype_column, 
                                                                   sim_dataframe$linetype_column))))
          } else {
-            sim_dataframe$linetype_column <- as.factor(sim_dataframe$linetype_column)
-            obs_dataframe$linetype_column <- as.factor(obs_dataframe$linetype_column)
+            sim_dataframe$linetype_column <- factor(sim_dataframe$linetype_column)
+            obs_dataframe$linetype_column <- factor(obs_dataframe$linetype_column)
          }
       }
    }
    
-   if(str_detect(AES, "linetype")){
-      NumShapes <- length(sort(unique(c(sim_dataframe$linetype_column,
-                                        obs_dataframe$linetype_column))))
+   # If they supply a named character vector for color_set whose values are not
+   # present in the data, convert it to an unnamed character vector.
+   if(is.null(names(color_set)) == FALSE){
+      if(all(unique(sim_dataframe$colorBy_column) %in%
+             names(color_set) == FALSE)){
+         warning(wrapn(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
+                              as_label(colorBy_column),
+                              " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
+                              as_label(colorBy_column), ".")), 
+                 call. = FALSE)
+         
+         color_set <- as.character(color_set)
+         MyColNames <- NA
+      } else {
+         # This is when they have supplied a named character vector for the
+         # colors. colorBy_column must now be made into factor data and must
+         # have the levels set by the names of that vector.
+         MyColNames <- names(color_set)
+         sim_dataframe$colorBy_column <- 
+            factor(sim_dataframe$colorBy_column, 
+                   levels = MyColNames)
+         
+         if("data.frame" %in% class(obs_dataframe) && 
+            nrow(obs_dataframe) > 0){
+            obs_dataframe$colorBy_column <- 
+               factor(obs_dataframe$colorBy_column, 
+                      levels = MyColNames)
+         }
+      }
    } else {
-      NumShapes <- 1
+      MyColNames <- NA
    }
    
-   AesthetStuff <- set_aesthet(line_type = linetypes, 
-                               figure_type = figure_type,
-                               MyPerpetrator = MyPerpetrator, 
-                               MyCompoundID = switch(as.character(EnzPlot),
-                                                     "TRUE" = "substrate", 
-                                                     "FALSE" = unique(sim_dataframe$CompoundID)),
-                               obs_shape = obs_shape, obs_color = obs_color,
-                               obs_fill_trans = obs_fill_trans,
-                               obs_line_trans = obs_line_trans,
-                               # line_color is just a placeholder b/c not using it here.
-                               line_color = NA)
+   # Setting numbers of things required separately so that user doesn't get
+   # annoying warning message about possibly uninitialized columns.
+   if(AESCols["linetype"] == "<empty>"){
+      n_line_type <- 1
+   } else {
+      n_line_type <- length(unique(c(levels(sim_dataframe$linetype_column), 
+                                     levels(obs_dataframe$linetype_column))))
+   } 
+   
+   if(AESCols["color"] == "<empty>"){
+      n_line_color <- 1
+   } else {
+      n_line_color <- length(unique(c(levels(sim_dataframe$colorBy_column), 
+                                      levels(obs_dataframe$colorBy_column))))
+   } 
+   
+   if(any(complete.cases(obs_color))){
+      n_obs_color <- 1
+   } else if(AESCols["color"] != "<empty>"){
+      n_obs_color <- length(levels(obs_dataframe$colorBy_column))
+   } else {
+      n_obs_color <- 1
+   }
+   
+   AesthetStuff <- set_aesthet(
+      figure_type = figure_type,
+      from_ct_plot = F, 
+      AESCols = AESCols, 
+      DDI = DDI, 
+      line_type = linetypes, 
+      n_line_type = n_line_type, 
+      line_color = color_set, 
+      n_line_color = n_line_color, 
+      obs_shape = obs_shape, 
+      n_obs_shape = n_line_type, 
+      obs_color = obs_color, 
+      n_obs_color = n_obs_color, 
+      obs_fill_trans = obs_fill_trans,
+      obs_line_trans = obs_line_trans)
    
    line_type <- AesthetStuff$line_type
    obs_shape <- AesthetStuff$obs_shape
+   line_color <- AesthetStuff$line_color
    obs_color <- AesthetStuff$obs_color
    obs_fill_trans<- AesthetStuff$obs_fill_trans
    obs_line_trans <- AesthetStuff$obs_line_trans
    
-   if(length(obs_shape) < NumShapes){
-      # This odd syntax will work both when obs_shape is a single value
-      # and when it is multiple values.
-      obs_shape <- rep(obs_shape, NumShapes)[1:NumShapes] 
-   } else if(length(obs_shape) < NumShapes){
-      obs_shape <- obs_shape[1:NumShapes] 
-   }
-   
-   ## Setting up colors and making the colorBy_column factor if needed --------
-   
-   if(AES %in% c("color", "color-linetype")){
-      
-      # Calculating the number of colors needed
-      
-      # If the user requests the column Individual for colorBy_column, they
-      # most likely want each observed individual to be a different color but
-      # the aggregate simulated data to be the usual colors (black or gray).
-      # NumColorsNeeded should only include the obs data in that scenario.
-      if(AESCols["color"] == "Individual"){
-         # If user has omitted aggregate data here, then the length will be 1
-         # short, so that's why double checking whether data are factor (I think
-         # they always will be) or character and adding accordingly.
-         if("factor" %in% class(obs_dataframe$colorBy_column)){
-            NumColorsNeeded <- length(levels(obs_dataframe$colorBy_column))
-            if(length(color_set) != 1 & 
-               length(NumColorsNeeded) != length(color_set)){
-               color_set <- rep(color_set, 2)[1:NumColorsNeeded]
-            }
-         } else {
-            NumColorsNeeded <- obs_dataframe %>% 
-               pull(colorBy_column) %>% unique() %>% length() 
-         }
-      } else {
-         NumColorsNeeded <-
-            bind_rows(sim_dataframe, obs_dataframe) %>%
-            pull(colorBy_column) %>% unique() %>% length()
-      }
-      
-      # If they supply a named character vector whose values are not present in
-      # the data, convert it to an unnamed character vector.
-      if(is.null(names(color_set)) == FALSE){
-         if(all(unique(sim_dataframe$colorBy_column) %in%
-                names(color_set) == FALSE)){
-            warning(wrapn(paste0("You have provided a named character vector of colors, but some or all of the items in the column ", 
-                                 as_label(colorBy_column),
-                                 " are not included in the names of the vector. We will not be able to map those colors to their names and will instead assign colors in the alphabetical order of the unique values in ",
-                                 as_label(colorBy_column), ".")), 
-                    call. = FALSE)
-            
-            color_set <- as.character(color_set)
-            MyColNames <- NA
-         } else {
-            # This is when they have supplied a named character vector for the
-            # colors. colorBy_column must now be made into factor data and must
-            # have the levels set by the names of that vector.
-            MyColNames <- names(color_set)
-            sim_dataframe$colorBy_column <- 
-               factor(sim_dataframe$colorBy_column, 
-                      levels = MyColNames)
-            
-            if("data.frame" %in% class(obs_dataframe) && 
-               nrow(obs_dataframe) > 0){
-               obs_dataframe$colorBy_column <- 
-                  factor(obs_dataframe$colorBy_column, 
-                         levels = MyColNames)
-            }
-         }
-      } else {
-         MyColNames <- NA
-      }
-      
-      MyColors <- make_color_set(color_set = color_set, 
-                                 num_colors = NumColorsNeeded)
-      
-      if(any(complete.cases(MyColNames))){
-         names(MyColors) <- MyColNames
-      }
-      
-      if(MapObsFile_color){
-         names(MyColors) <- unique(bind_rows(sim_dataframe, obs_dataframe) %>% 
-                                      arrange(colorBy_column) %>% 
-                                      pull(colorBy_column))
-      } else if(length(color_set) == 1){
-         if(AESCols["color"] == "Individual"){
-            # Figuring out all the colorBy_column values
-            AllCBC <- levels(bind_rows(sim_dataframe, obs_dataframe) %>% 
-                                pull(colorBy_column))
-            
-            MyColors[which(AllCBC %in% c("mean", "geomean", "median"))] <- "black"
-            names(MyColors) <- levels(ct_dataframe$colorBy_column)
-            
-         } else {
-            # This is when the colors are NOT set by the observed file
-            # AND the user hasn't supplied a named character vector for
-            # how to assign the colors AND the colors are not assigned
-            # to the individual subject.
-            names(MyColors) <- levels(c(sim_dataframe$colorBy_column,
-                                        obs_dataframe$colorBy_column))
-            
-         }
-      }
-   }
-   
+   # if(length(obs_shape) < NumShapes){
+   #    # This odd syntax will work both when obs_shape is a single value
+   #    # and when it is multiple values.
+   #    obs_shape <- rep(obs_shape, NumShapes)[1:NumShapes] 
+   # } else if(length(obs_shape) < NumShapes){
+   #    obs_shape <- obs_shape[1:NumShapes] 
+   # }
    
    ## Setting up for faceting later -----------------------------------------
    
@@ -2406,6 +2335,79 @@ ct_plot_overlay <- function(ct_dataframe,
                           color = VLineAES[1], linetype = VLineAES[2])
    }
    
+   ## Observed error bars -------------------------------------------------
+   
+   if(include_errorbars){
+      if(nrow(obs_dataframe) > 0 && "SD_SE" %in% names(obs_dataframe)){
+         if(figure_type == "percentile ribbon"){
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            A <- A + geom_errorbar(data = obs_dataframe %>% 
+                                      rename(MyMean = Conc) %>% 
+                                      mutate(Ymax = MyMean + SD_SE, 
+                                             Ymin = MyMean - SD_SE, 
+                                             Ymin = case_when(Ymin < 0 ~ 0, 
+                                                              .default = Ymin)), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
+                                   width = errorbar_width)
+         } else {
+            # If error bars are below 0, that's nonsensical. Setting anything <
+            # 0 to 0 for graphing.
+            A <- A + geom_errorbar(data = obs_dataframe %>% 
+                                      mutate(Ymax = Conc + SD_SE, 
+                                             Ymin = Conc - SD_SE, 
+                                             Ymin = case_when(Ymin < 0 ~ 0, 
+                                                              .default = Ymin)), 
+                                   aes(ymin = Ymin, ymax = Ymax), 
+                                   width = errorbar_width)
+         }
+      } else if(ReleaseProfPlot | DissolutionProfPlot){
+         # If error bars are below 0, that's nonsensical. Setting anything < 0
+         # to 0 for graphing.
+         A <- A + geom_errorbar(data = sim_dataframe %>% 
+                                   mutate(Ymax = MyMean + SD_SE, 
+                                          Ymin = MyMean - SD_SE, 
+                                          Ymin = case_when(Ymin < 0 ~ 0, 
+                                                           .default = Ymin)), 
+                                aes(ymin = Ymin, ymax = Ymax), 
+                                width = errorbar_width)
+      }
+   }
+   
+   # Making any mapped columns factor if they aren't already.
+   if(nrow(obs_dataframe) > 0 &&
+      AESCols["color"] != "<empty>" && 
+      "factor" %in% class(obs_dataframe$colorBy_column) == FALSE){
+      obs_dataframe$colorBy_column <- 
+         factor(obs_dataframe$colorBy_column,
+                levels = unique(c(obs_dataframe$colorBy_column, 
+                                  sim_dataframe$colorBy_column)))
+   }
+   if(AESCols["color"] != "<empty>" && 
+      "factor" %in% class(sim_dataframe$colorBy_column) == FALSE){
+      sim_dataframe$colorBy_column <- 
+         factor(sim_dataframe$colorBy_column,
+                levels = unique(c(obs_dataframe$colorBy_column, 
+                                  sim_dataframe$colorBy_column)))
+   }
+   
+   if(nrow(obs_dataframe) > 0 &&
+      AESCols["linetype"] != "<empty>" && 
+      "factor" %in% class(obs_dataframe$linetype_column) == FALSE){
+      obs_dataframe$colorBy_column <- 
+         factor(obs_dataframe$linetype_column,
+                levels = unique(c(obs_dataframe$linetype_column, 
+                                  sim_dataframe$linetype_column)))
+   }
+   if(AESCols["linetype"] != "<empty>" && 
+      "factor" %in% class(sim_dataframe$linetype_column) == FALSE){
+      sim_dataframe$colorBy_column <- 
+         factor(sim_dataframe$linetype_column,
+                levels = unique(c(obs_dataframe$linetype_column, 
+                                  sim_dataframe$linetype_column)))
+   }
+   
+   
    ## Observed data on bottom -----------------------------------------------
    
    if(nrow(obs_dataframe) > 0){
@@ -2427,22 +2429,24 @@ ct_plot_overlay <- function(ct_dataframe,
       
       if(obs_on_top == FALSE){
          
-         A <- addObsPoints(obs_data = obs_dataframe, 
+         A <- addObsPoints(obs_dataframe = obs_dataframe, 
                            A = A, 
-                           AES = AES,
+                           figure_type = figure_type,
+                           AESCols = AESCols,
+                           
+                           obs_shape = obs_shape,
+                           # NB: linetypes is what user requested; line_type is
+                           # object after processing with set_aesthet.
+                           line_type = line_type, 
+                           
+                           obs_color = obs_color,
+                           line_color = line_color, 
+                           
+                           obs_size = obs_size, 
+                           obs_line_trans = obs_line_trans,
+                           obs_fill_trans = obs_fill_trans,
                            connect_obs_points = connect_obs_points,
                            line_width = line_width,
-                           obs_shape = obs_shape,
-                           obs_shape_user = obs_shape_user,
-                           obs_size = obs_size, 
-                           obs_color = obs_color,
-                           obs_color_user = obs_color_user,
-                           obs_line_trans = obs_line_trans,
-                           obs_line_trans_user = obs_line_trans_user,
-                           obs_fill_trans = obs_fill_trans,
-                           obs_fill_trans_user = obs_fill_trans_user,
-                           figure_type = figure_type,
-                           MapObsData = MapObsData, 
                            LegCheck = LegCheck)
       }
    }
@@ -2513,60 +2517,25 @@ ct_plot_overlay <- function(ct_dataframe,
    
    if(nrow(obs_dataframe) > 0 & obs_on_top){
       
-      A <- addObsPoints(obs_data = obs_dataframe, 
+      A <- addObsPoints(obs_dataframe = obs_dataframe, 
                         A = A, 
-                        AES = AES,
+                        figure_type = figure_type,
+                        AESCols = AESCols,
+                        
+                        obs_shape = obs_shape,
+                        # NB: linetypes is what user requested; line_type is
+                        # object after processing with set_aesthet.
+                        line_type = line_type, 
+                        
+                        obs_color = obs_color,
+                        line_color = line_color, 
+                        
+                        obs_size = obs_size, 
+                        obs_line_trans = obs_line_trans,
+                        obs_fill_trans = obs_fill_trans,
                         connect_obs_points = connect_obs_points,
                         line_width = line_width,
-                        obs_shape = obs_shape,
-                        obs_shape_user = obs_shape_user,
-                        obs_size = obs_size, 
-                        obs_color = obs_color,
-                        obs_color_user = obs_color_user,
-                        obs_line_trans = obs_line_trans,
-                        obs_line_trans_user = obs_line_trans_user,
-                        obs_fill_trans = obs_fill_trans,
-                        obs_fill_trans_user = obs_fill_trans_user,
-                        figure_type = figure_type,
-                        MapObsData = MapObsData, 
                         LegCheck = LegCheck)
-   }
-   
-   if(include_errorbars){
-      if(nrow(obs_dataframe) > 0 && "SD_SE" %in% names(obs_dataframe)){
-         if(figure_type == "percentile ribbon"){
-            # If error bars are below 0, that's nonsensical. Setting anything <
-            # 0 to 0 for graphing.
-            A <- A + geom_errorbar(data = obs_dataframe %>% 
-                                      rename(MyMean = Conc) %>% 
-                                      mutate(Ymax = MyMean + SD_SE, 
-                                             Ymin = MyMean - SD_SE, 
-                                             Ymin = case_when(Ymin < 0 ~ 0, 
-                                                              .default = Ymin)), 
-                                   aes(ymin = Ymin, ymax = Ymax), 
-                                   width = errorbar_width)
-         } else {
-            # If error bars are below 0, that's nonsensical. Setting anything <
-            # 0 to 0 for graphing.
-            A <- A + geom_errorbar(data = obs_dataframe %>% 
-                                      mutate(Ymax = Conc + SD_SE, 
-                                             Ymin = Conc - SD_SE, 
-                                             Ymin = case_when(Ymin < 0 ~ 0, 
-                                                              .default = Ymin)), 
-                                   aes(ymin = Ymin, ymax = Ymax), 
-                                   width = errorbar_width)
-         }
-      } else if(ReleaseProfPlot | DissolutionProfPlot){
-         # If error bars are below 0, that's nonsensical. Setting anything < 0
-         # to 0 for graphing.
-         A <- A + geom_errorbar(data = sim_dataframe %>% 
-                                   mutate(Ymax = MyMean + SD_SE, 
-                                          Ymin = MyMean - SD_SE, 
-                                          Ymin = case_when(Ymin < 0 ~ 0, 
-                                                           .default = Ymin)), 
-                                aes(ymin = Ymin, ymax = Ymax), 
-                                width = errorbar_width)
-      }
    }
    
    
@@ -2582,7 +2551,7 @@ ct_plot_overlay <- function(ct_dataframe,
       xlab <- x_axis_label
    }
    
-   A <-  A +
+   A <- A +
       xlab(xlab) +
       ylab(ylab) +
       theme(panel.border = element_rect(color = "black", fill = NA)) + # KEEP THIS
@@ -2793,66 +2762,19 @@ ct_plot_overlay <- function(ct_dataframe,
    
    if(AES %in% c("color", "color-linetype")){
       suppressWarnings(
-         A <-  A + scale_color_manual(values = MyColors, drop = FALSE) +
-            scale_fill_manual(values = MyColors, drop = FALSE)
+         A <- A + 
+            scale_color_manual(values = line_color, drop = FALSE) +
+            scale_fill_manual(values = line_color, drop = FALSE)
       )
    }
    
    # Specifying linetypes
    if(AES %in% c("linetype", "color-linetype")){
-      
-      # Calculating the number of linetypes needed
-      
-      # If the user requests the column Individual for linetype_column, they
-      # most likely want each observed individual to be a different linetype but
-      # the aggregate simulated data to be the usual linetypes (black or gray).
-      # NumlinetypesNeeded should only include the obs data in that scenario.
-      if(AESCols["linetype"] == "Individual"){
-         NumlinetypesNeeded <- obs_dataframe %>% 
-            pull(linetype_column) %>% unique() %>% length()
-      } else {
-         NumlinetypesNeeded <-
-            # ifelse(MapObsData,
-            bind_rows(sim_dataframe, obs_dataframe) %>% 
-            pull(linetype_column) %>% unique() %>% length()#,
-         # sim_dataframe %>% 
-         #    pull(linetype_column) %>% unique() %>% length())
-         
-      }
-      
-      if(all(complete.cases(linetypes))){
-         
-         # This makes sure that we definitely have enough linetypes
-         Mylinetypes <- rep(linetypes, NumlinetypesNeeded)[1:NumlinetypesNeeded]
-         names(Mylinetypes) <- levels(c(sim_dataframe$linetype_column,
-                                        obs_dataframe$linetype_column))
-         
-         suppressWarnings(
-            A <-  A + scale_linetype_manual(values = Mylinetypes)
-         )
-         
-      } else {
-         # If there's only one unique value in the linetype_column, then make that
-         # item solid. 
-         if(length(sort(unique(c(sim_dataframe$linetype_column, 
-                                 obs_dataframe$linetype_column)))) == 1){
-            A <- A + scale_linetype_manual(values = "solid")
-            
-         } else {
-            
-            # This makes sure that we definitely have enough linetypes
-            Mylinetypes <- rep(c("solid", "dashed", "dotted", "dotdash", "longdash"), 
-                               NumlinetypesNeeded)[1:NumlinetypesNeeded] 
-            
-            
-            names(Mylinetypes) <- levels(c(sim_dataframe$linetype_column,
-                                           obs_dataframe$linetype_column))
-            
-            suppressWarnings(
-               A <-  A + scale_linetype_manual(values = Mylinetypes)
-            )
-         }
-      }
+      suppressWarnings(
+         A <- A +
+            scale_linetype_manual(values = line_type) +
+            scale_shape_manual(values = obs_shape)
+      )
    }
    
    

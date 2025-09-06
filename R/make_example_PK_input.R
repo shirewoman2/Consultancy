@@ -22,7 +22,7 @@ make_example_PK_input <- function(){
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run 'library(tidyverse)' and then try again.")
    }
    
    # Main body of function ---------------------------------------------------
@@ -79,15 +79,15 @@ make_example_PK_input <- function(){
       
       repeat{
          Q2 <- readline(paste0("Any others? (Enter a number from 1 to ", 
-                               length(Opts_main), " or `n` for no)  "))
+                               length(Opts_main), " or 'n' for no)  "))
          message("\n")
          
          if((Q2 %in% as.numeric(1:length(Opts_main)) == FALSE) &
             (str_sub(tolower(Q2), 1, 2) != "n")){
             message(paste0("Please try again. You must enter a number from 1 to ",
-                           length(Opts_main), " or `n`.\n"))
+                           length(Opts_main), " or 'n'.\n"))
             
-            message("What kind of PK data do you want in your table? Options are:   \n  1) typical dose 1\n  2) typical last dose\n  3) typical DDI\n  4) PK from a specific sheet in the output\n  5) PK for specific compounds\n  6) PK for specific tissues\n  7) all possible AUCs\n  8) all possible clearance\n  9) comparing more than one simulation to the same observed PK\n  10) including variability in observed PK\nor `n` for `no more`.")
+            message("What kind of PK data do you want in your table? Options are:   \n  1) typical dose 1\n  2) typical last dose\n  3) typical DDI\n  4) PK from a specific sheet in the output\n  5) PK for specific compounds\n  6) PK for specific tissues\n  7) all possible AUCs\n  8) all possible clearance\n  9) comparing more than one simulation to the same observed PK\n  10) including variability in observed PK\nor 'n' for 'no more'.")
             
             Q2 <- readline("   ")
             message("\n")
@@ -151,7 +151,7 @@ make_example_PK_input <- function(){
          
          if(nrow(Examples[["A3"]]) > 0){
             Examples[["A3"]]$Notes[1] <- 
-               "If it's a DDI parameter, add `_withInhib` to the PKparameter name. If it's the DDI ratio, put `_ratio` before the `_dose1` or `_last` bit."
+               "If it's a DDI parameter, add '_withInhib' to the PKparameter name. If it's the DDI ratio, put '_ratio' before the '_dose1' or '_last' bit."
          }
          
          if("4" %in% Q1){ # specific sheet
@@ -165,7 +165,7 @@ make_example_PK_input <- function(){
             
             if(nrow(Examples[["A3.4"]]) > 0){
                Examples[["A3.4"]]$Notes[1] <- 
-                  "If it's a DDI parameter for a user-defined interval, still add `_withInhib` to the end of the PKparameter name, and, if it's the DDI ratio, put `_ratio` at the end."
+                  "If it's a DDI parameter for a user-defined interval, still add '_withInhib' to the end of the PKparameter name, and, if it's the DDI ratio, put '_ratio' at the end."
             }
          }
       }
@@ -183,7 +183,7 @@ make_example_PK_input <- function(){
          
          if(nrow(Examples[["A4"]]) > 0){
             Examples[["A4"]]$Notes[1] <- 
-               "Only fill in the `UserAUCsheet` column when you have a specific sheet you want and not when it's the standard first or last dose PK. You can specify more than one user-defined tab for the same simulation; put them in separate rows, though."
+               "Only fill in the 'UserAUCsheet' column when you have a specific sheet you want and not when it's the standard first or last dose PK. You can specify more than one user-defined tab for the same simulation; put them in separate rows, though."
          }
       } 
       
@@ -248,7 +248,7 @@ make_example_PK_input <- function(){
          
          if(nrow(Examples[["A8"]]) > 0){
             Examples[["A8"]]$Notes[1] <- 
-               "When dose 1 clearance was calculated as dose / AUCinf, it is `CLinf_dose1`. If it were calculated as dose / AUC to time t, it will be `CLt_dose1` for dose 1 or `CLt` for a user-defined interval. CLtau_last is for the dose for the AUCtau for the last dose."
+               "When dose 1 clearance was calculated as dose / AUCinf, it is 'CLinf_dose1'. If it were calculated as dose / AUC to time t, it will be 'CLt_dose1' for dose 1 or 'CLt' for a user-defined interval. CLtau_last is for the dose for the AUCtau for the last dose."
          }
       }
       
@@ -280,7 +280,7 @@ make_example_PK_input <- function(){
          
          if(nrow(Examples[["A10"]]) > 0){
             Examples[["A10"]]$Notes[1] <- 
-               "List variability as a fraction when it's the CV, e.g., 0.5 for `50 percent`, and as the minimum to the maximum when it's a range. CAUTION: Excel will convert things like `1-4` to a date, so list ranges as, e.g., `1 to 4`."
+               "List variability as a fraction when it's the CV, e.g., 0.5 for '50 percent', and as the minimum to the maximum when it's a range. CAUTION: Excel will convert things like '1-4' to a date, so list ranges as, e.g., '1 to 4'."
          }
       }
       
@@ -356,9 +356,9 @@ make_example_PK_input <- function(){
          
          MyFile <- "PK examples for SimcypConsultancy package.csv"
          if(file.exists(MyFile)){
-            message(str_wrap(paste0("There is already a file with the same name that we're trying to use for saving your examples (`", 
+            message(str_wrap(paste0("There is already a file with the same name that we're trying to use for saving your examples ('", 
                                     MyFile, 
-                                    "`. Please specify what you would like the file to be called instead:\n")))
+                                    "'. Please specify what you would like the file to be called instead:\n")))
             MyFile <- readline("    ")
             
             # If they supplied quotes here, that messes things up. Removing. 
@@ -370,19 +370,19 @@ make_example_PK_input <- function(){
          
          write.csv(Examples, file = MyFile, row.names = FALSE, na = "")
          message(wrapn(paste0(
-            "We've made you an example csv file called `", MyFile, 
-            "` with PK for ", OutPK, ".")))
+            "We've made you an example csv file called '", MyFile, 
+            "' with PK for ", OutPK, ".")))
          
       }
       
       message("\nA few notes:\n")
       message(paste0(str_wrap("- If you made a csv file here, we recommend replacing the numbers and the file names with your own data and using that csv file as input to the argument 'PKparameters'.", 
                               indent = 3, exdent = 5), "\n"))
-      message(paste0(str_wrap("- If you don't have any observed PK values for comparisons but you want to specify exactly what PK parameters you want from which simulation file or which tab or which tissue, etc., you can specify that information in a csv file, laid out like in this example, and supply that file for the argument `PKparameters`. For any row where the `ObsValue` column is empty, we'll supply only the simulated results.", 
+      message(paste0(str_wrap("- If you don't have any observed PK values for comparisons but you want to specify exactly what PK parameters you want from which simulation file or which tab or which tissue, etc., you can specify that information in a csv file, laid out like in this example, and supply that file for the argument 'PKparameters'. For any row where the 'ObsValue' column is empty, we'll supply only the simulated results.", 
                               indent = 3, exdent = 5), "\n"))
       message(paste0(str_wrap("- We recommend saving the results from running pk_table to a Word file rather than csv because csv files drop trailing zeroes, so they mess up your rounding in that manner.", 
                               indent = 3, exdent = 5), "\n"))
-      message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the `UserAUCsheet` column blank; you should only list the sheet when it's a user-defined AUC interval.",
+      message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the 'UserAUCsheet' column blank; you should only list the sheet when it's a user-defined AUC interval.",
                               indent = 3, exdent = 5), "\n"))
       
    }
@@ -450,9 +450,9 @@ make_example_PK_input <- function(){
          
          MyFile <- "PK ratio examples for SimcypConsultancy package.csv"
          if(file.exists(MyFile)){
-            message(str_wrap(paste0("There is already a file with the same name that we're trying to use for saving your examples (`", 
+            message(str_wrap(paste0("There is already a file with the same name that we're trying to use for saving your examples ('", 
                                     MyFile, 
-                                    "`. Please specify what you would like the file to be called instead:\n")))
+                                    "'. Please specify what you would like the file to be called instead:\n")))
             MyFile <- readline("    ")
             
             # If they supplied quotes here, that messes things up. Removing. 
@@ -464,7 +464,7 @@ make_example_PK_input <- function(){
          
          write.csv(Examples, file = MyFile, row.names = FALSE, na = "")
          message(wrapn(paste0(
-            "We've made you an example csv file called `", MyFile, ".")))
+            "We've made you an example csv file called '", MyFile, "'.")))
          
       }
       
@@ -473,7 +473,7 @@ make_example_PK_input <- function(){
                               indent = 3, exdent = 5), "\n"))
       message(paste0(str_wrap("- We recommend saving the results from running calc_PK_ratios to a Word file rather than csv because csv files drop trailing zeroes, so they mess up your rounding in that manner.", 
                               indent = 3, exdent = 5), "\n"))
-      message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the `UserAUCsheet` column blank; you should only list the sheet when it's a user-defined AUC interval.",
+      message(paste0(str_wrap("- If you want a standard PK parameter for dose 1 or the last dose, leave the 'Denominator_UserAUCsheet' or 'Numerator_UserAUCsheet' column blank; you should only list the sheet when it's a user-defined AUC interval.",
                               indent = 3, exdent = 5), "\n"))
       
    }

@@ -14,6 +14,7 @@ format_table_simple(
   highlight_gmr_colors = NA,
   highlight_so_cutoffs = NA,
   highlight_so_colors = "yellow to red",
+  hlines = NA,
   font = "Palatino Linotype",
   fontsize = 11,
   column_widths = NA,
@@ -112,6 +113,14 @@ c("green", "red")}}
   work here, e.g., \code{highlight_so_colors = c("yellow", "orange", "red")}}.
   If you do specify your own bespoke colors, you'll need to make sure that
   you supply one color for every value in \code{highlight_so_cutoffs}.}}
+
+\item{hlines}{optionally add horizontal lines at the bottom of any rows
+specified. For example, \code{hlines = c(3, 5)} will put a black line on
+the bottom of rows 3 and 5 of the main part of your table not counting the
+heading. If you would like to add a horizontal line every time the data set
+changes, e.g., this is a PK table and you want a line every time there's a
+different simulation, tissue, compound, etc. but not every time there's a
+different statistic, set this to "when dataset changes".}
 
 \item{font}{font to use. Default is "Palatino Linotype" and any fonts
 available on your machine in either Word or PowerPoint should be

@@ -24,15 +24,14 @@
 #'   hour, for example), so if that's not the case, these dose number
 #'   assignments will be off.
 #'
-#' @param sim_data_files the simulation files you want data from. Options for
-#'   specifying these: \itemize{
+#' @param sim_data_files the Simcyp Simulator files you want data from. Options
+#'   for specifying these: \itemize{
 #'
-#'   \item{a character vector of simulator output files, each in
-#'   quotes and encapsulated with \code{c(...)},}
+#'   \item{a character vector of simulator Excel results files, each in
+#'   quotes and encapsulated with \code{c(...)}}
 #'
-#'   \item{NA to extract
-#'   concentration-time data for \emph{all} the Excel files in the current
-#'   folder,}
+#'   \item{NA to extract concentration-time data for \emph{all} the Excel
+#'   files in the current folder}
 #'
 #'   \item{or "recursive" to extract concentration-time data for \emph{all}
 #'   the Excel files in the current folder and \emph{all} subfolders.}}
@@ -46,19 +45,17 @@
 #'   which simulated files. (NA, which is the default, means no observed data
 #'   will be extracted.) There are four ways to supply this:
 #'
-#'   \describe{\item{"use existing_exp_details"}{If you have already
-#'   extracted the simulation experimental details with the function
-#'   \code{\link{extractExpDetails_mult}} and you included observed data overlay
-#'   files in your simulations, as long as those XML files have their
-#'   corresponding Excel files in the \emph{same} location, we can use that
-#'   information to figure out which observed Excel file should go with which
+#'   \describe{\item{"use existing_exp_details"}{If included observed data overlay
+#'   files in your simulations, as long as those XML files are in the
+#'   \emph{same} location as when the simulations were run, we can use the
+#'   information in the workspace file, which must be present in the same
+#'   folder, to figure out which observed Excel file should go with which
 #'   simulation. Note that this \strong{does} require you to supply something
 #'   for the argument \code{existing_exp_details} to work. This has been set up
 #'   to look for that location even if the user who ran the simulation is
 #'   different from the user extracting the data, e.g., if the original path was
 #'   something like "C:/Users/FridaKahlo/Rose project simulations" and the
-#'   current username (the result from running Sys.info()["user"]) is
-#'   "DiegoRivera", this will look in the folder
+#'   current username is "DiegoRivera", this will look in the folder
 #'   "C:/Users/DiegoRivera/Rose project simulations" for your XML files. This is
 #'   assuming that the file path starts with "C:/Users/CurrentUserName/..." and
 #'   will fail to change the username if that is not the case.}
@@ -137,15 +134,17 @@
 #'   Other options are "blood" or any tissues included in "Sheet Options",
 #'   "Tissues" in the simulator. All possible options:
 #'   \describe{
-#'   \item{First-order absorption models}{"plasma", "blood", "unbound blood",
-#'   "unbound plasma", "additional organ", "adipose", "bone", "brain",
+#'   \item{all models}{"plasma", "blood", "unbound blood", "unbound plasma"}
+#'
+#'   \item{full-distribution models}{"additional organ", "adipose", "bone",
+#'    "brain" (will also retrieve brain compartment tissues),
 #'   "feto-placenta", "gut tissue", "heart", "kidney", "liver", "lung", "muscle",
 #'   "pancreas", "peripheral blood", "peripheral plasma", "peripheral unbound
 #'   blood", "peripheral unbound plasma", "portal vein blood", "portal vein
 #'   plasma", "portal vein unbound blood", "portal vein unbound plasma", "skin",
 #'   or "spleen".}
 #'
-#'   \item{ADAM-models}{"stomach", "duodenum", "jejunum I",
+#'   \item{ADAM models}{"stomach", "duodenum", "jejunum I",
 #'   "jejunum II", "jejunum III" (only applies to rodents), "jejunum IV" (only
 #'   applies to rodents), "ileum I", "ileum II", "ileum III", "ileum IV", "colon",
 #'   "faeces", "gut tissue", "cumulative absorption", "cumulative fraction
@@ -175,12 +174,12 @@
 #'   \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
 #'   \item{"PD input"}
 #'   \item{"PD response"}
-#'   \item{"intact ADC" for DAR1-DARmax for an antibody-drug conjugate;
+#'   \item{"protein-conjugated drug" for DAR1-DARmax for an antibody-drug conjugate;
 #'   observed data with DV listed as "Conjugated Protein Plasma Total" will
 #'   match these simulated data}
 #'   \item{"conjugated payload"; observed data with DV listed as
 #'   "Conjugated Drug Plasma Total" will match these simulated data}
-#'   \item{"total antibody" for DAR0-DARmax for an ADC; observed data with DV
+#'   \item{"protein total" for DAR0-DARmax for an ADC; observed data with DV
 #'   listed as "Total Protein Conjugate Plasma Total" will match these simulated data}
 #'   \item{"released payload" for the released drug from an ADC, which shows up
 #'   as "Sub Pri Met1" in Simulator output files.}
@@ -189,9 +188,6 @@
 #'   including when bound to the target}
 #'   }
 #'
-#'   \strong{Note:} If your compound is a therapeutic protein or ADC, we haven't
-#'   tested this very thoroughly, so please be extra careful to check that
-#'   you're getting the correct data.
 #' @param ... other arguments passed to the function
 #'   \code{\link{extractConcTime}}
 #' @param conc_units_to_use concentration units to use so that all data will be
@@ -280,12 +276,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    MainCompoundIDs <- AllRegCompounds$CompoundID
    
-   ADCCompoundIDs <- AllCompounds %>% 
-      filter(CompoundType == "ADC") %>% 
+   LgMolCompoundIDs <- AllCompounds %>% 
+      filter(CompoundType == "large molecule") %>% 
       pull(CompoundID)
    # NB: Released payload included w/MainCompoundIDs as primary metabolite 1
    
-   PossCmpd <- c(MainCompoundIDs, ADCCompoundIDs,
+   PossCmpd <- c(MainCompoundIDs, tolower(LgMolCompoundIDs),
                  "pd response", "pd input", "all")
    
    if(any(compoundsToExtract %in% PossCmpd == FALSE)){
@@ -327,7 +323,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    
    tissue_input <- tissues
    if(all(tissue_input == "all")){
-      tissues <- unique(AllTissues %>% filter(ModelType != "ADC") %>% 
+      tissues <- unique(AllTissues %>% filter(ModelType != "large molecule") %>% 
                            pull(Tissue))
    }
    
@@ -383,7 +379,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
    # data are already present in ct_dataframe.
    if(compoundsToExtract[1] == "all"){
       compoundsToExtract_orig <- "all"
-      compoundsToExtract <- c(MainCompoundIDs, ADCCompoundIDs,
+      compoundsToExtract <- c(MainCompoundIDs, LgMolCompoundIDs,
                               "pd input", "pd response")
    } else {
       compoundsToExtract_orig <- compoundsToExtract
@@ -845,27 +841,37 @@ extractConcTime_mult <- function(sim_data_files = NA,
                          "pd input" = "pd input", 
                          "pd response" = "pd response")
       
-      # NB: Asking whether it's an ADCSimulation or an ADCSimulation_sub, the
-      # former for back compatibility w/package versions < 2.6.0
-      
-      if("ADCSimulation_sub" %in% names(Deets) == FALSE){
-         if("ADCSimulation" %in% names(Deets)){
-            Deets$ADCSimulation_sub <- Deets$ADCSimulation
-         } else {
-            Deets$ADCSimulation_sub <- FALSE
-         }
+      # Previous versions of the package checked for whether the simulation had a
+      # large molecule present differently b/c I hadn't really come up with a good
+      # strategy for dealing with them. Hacking around data extracted from previous
+      # package versions here.
+      if("LgMol_simulation" %in% names(Deets)){
+         LgMolSim <- Deets$LgMol_simulation
+      } else if("ADCSimulation_sub" %in% names(Deets)){
+         LgMolSim <- case_when(
+            is.character(Deets$ADCSimulation_sub) ~ 
+               case_match(Deets$ADCSimulation_sub, 
+                          "yes" ~ TRUE, 
+                          "no" ~ FALSE), 
+            is.logical(Deets$ADCSimulation_sub) ~ Deets$ADCSimulation_sub)
+      } else if("ADCSimulation" %in% names(Deets)){
+         LgMolSim <- case_when(
+            is.character(Deets$ADCSimulation) ~ 
+               case_match(Deets$ADCSimulation, 
+                          "yes" ~ TRUE, 
+                          "no" ~ FALSE), 
+            is.logical(Deets$ADCSimulation) ~ Deets$ADCSimulation)
+      } else {
+         LgMolSim <- FALSE
       }
       
-      if(any(Deets$ADCSimulation_sub, na.rm = TRUE)){
+      if(LgMolSim){
          ToAdd <- AllCompounds %>% 
-            filter(CompoundType == "ADC" & 
-                      CompoundID != "primary metabolite 1") %>% 
-            pull(CompoundID)
+            filter(CompoundType == "large molecule") %>% 
+            pull(CompoundID) %>% tolower()
          names(ToAdd) <- ToAdd
          CompoundCheck <- c(CompoundCheck,
                             ToAdd)
-         # NB: NOT including "released payload" here b/c it's coded as primary
-         # metabolite 1 in the outputs. Will change this at the end.
          rm(ToAdd)
       }
       
@@ -882,9 +888,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
       
       if(compoundsToExtract_orig[1] != "all" &&
          all(compoundsToExtract %in% compoundsToExtract_n) == FALSE){
-         warning(paste0("For the file ", ff, ", the compound(s) ",
-                        str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
-                        " was/were not available.\n"),
+         warning(wrapn(paste0("For the file ", ff, ", the compound(s) ",
+                              str_comma(setdiff(compoundsToExtract, compoundsToExtract_n)),
+                              " was/were not available.")),
                  call. = FALSE)
       }
       
@@ -932,7 +938,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
          
          # e) Concentrations for parts of ADCs are available in plasma for sure
          # and maybe blood (need to check) and then "conjugated payload"
-         # and "intact ADC" are also available in lymph. 
+         # and "protein-conjugated drug" are also available in lymph. 
          
          TissueType <- case_when(
             str_detect(j, "plasma|blood|peripheral") ~ "systemic",
@@ -1060,29 +1066,57 @@ extractConcTime_mult <- function(sim_data_files = NA,
             }
             
          } else if(TissueType == "systemic"){
-            # If TissueType is systemic, then substrate and
-            # inhibitor concs are on the same sheet, but metabolite
-            # concs are elsewhere.
+            # If TissueType is systemic, then substrate and inhibitor concs are
+            # on the same sheet most of the time, but metabolite concs are
+            # elsewhere. Exception: For large-molecule sims, any variations on
+            # the large molecule will be on the same tab but inhibitor 1 will be
+            # on a separate tab.
             CompoundTypes <-
                data.frame(PossCompounds = PossCmpd) %>%
                mutate(Type = case_when(
                   
-                  PossCompounds %in%
-                     c("substrate", "inhibitor 1",
-                       "inhibitor 2",
-                       "inhibitor 1 metabolite", 
-                       AllCompounds %>% 
-                          filter(CompoundType == "ADC" & 
-                                    CompoundID != "released payload") %>% 
-                          pull(CompoundID)) ~ "substrate",
+                  LgMolSim == FALSE ~ case_when(
+                     
+                     PossCompounds %in%
+                        c("substrate", 
+                          "inhibitor 1",
+                          "inhibitor 2",
+                          "inhibitor 1 metabolite") ~ "substrate",
+                     
+                     # NB: Moving PD compounds elsewhere
+                     # PossCompounds %in% c("pd input", "pd response") ~ "PD", 
+                     
+                     .default = PossCompounds), 
                   
-                  PossCompounds == "released payload" ~ "primary metabolite 1", 
-                  
-                  # NB: Moving PD compounds elsewhere
-                  # PossCompounds %in% c("pd input", "pd response") ~ "PD", 
-                  
-                  .default = PossCompounds)) %>%
+                  LgMolSim == TRUE ~ case_when(
+                     
+                     # need a special compound type for substrate-related
+                     # compounds for LgMolSim b/c data will be on a diferent tab
+                     # than usual
+                     PossCompounds %in%
+                        c(AllCompounds %>% 
+                             filter(CompoundType == "large molecule" & 
+                                       CompoundID != "released payload") %>% 
+                             pull(CompoundID)) ~ "substrate LgMolSim",
+                     
+                     PossCompounds == "released payload" ~ "primary metabolite 1", 
+                     
+                     # need a special compound type for perpetrators w/LgMolSim
+                     # b/c data will be on what is typically the substrate tab.
+                     PossCompounds %in%
+                        c("inhibitor 1",
+                          "inhibitor 2",
+                          "inhibitor 1 metabolite") ~ "substrate",
+                     
+                     .default = PossCompounds))) %>%
                filter(PossCompounds %in% compoundsToExtract_n)
+            
+            if(LgMolSim){
+               CompoundTypes <- CompoundTypes %>% 
+                  # removing this to make sure we don't extract these data twice
+                  filter(!PossCompounds %in% c("substrate",
+                                               "primary metabolite 1"))
+            }
             
             MultData[[ff]][[j]] <- list()
             
@@ -1121,11 +1155,19 @@ extractConcTime_mult <- function(sim_data_files = NA,
                }
                
                if(nrow(MultData[[ff]][[j]][[k]]) == 0){
-                  warning(wrapn(paste0("No data could be found in the simulation '", 
-                                       ff, 
-                                       "' for the ", k, " (or the other compounds that are on that same tab) in ", 
-                                       j, ".")), 
-                          call. = FALSE)
+                  if(LgMolSim){
+                     warning(wrapn(paste0("No data could be found in the simulation '", 
+                                          ff, 
+                                          "' for the ", compoundsToExtract_k, "  in ", 
+                                          j, ".")), 
+                             call. = FALSE)
+                  } else {
+                     warning(wrapn(paste0("No data could be found in the simulation '", 
+                                          ff, 
+                                          "' for the ", k, " (or the other compounds that are on that same tab) in ", 
+                                          j, ".")), 
+                             call. = FALSE)
+                  }
                }
                
                rm(compoundsToExtract_k)
@@ -1200,7 +1242,7 @@ extractConcTime_mult <- function(sim_data_files = NA,
                             "secondary metabolite" = Deets$MW_secmet, 
                             "conjugated payload" = as.numeric(Deets$MW_sub) + 
                                as.numeric(Deets$MW_met1), 
-                            "total antibody" = Deets$MW_sub, 
+                            "protein total" = Deets$MW_sub, 
                             "released payload" = Deets$MW_met1))
             }
             
@@ -1267,9 +1309,24 @@ extractConcTime_mult <- function(sim_data_files = NA,
                }
             }
          }
+         
+         # Not all large-molecule compounds will be included every time, and
+         # we can't check for that until here. Adding a warning in that case.
+         MissingData <- setdiff(compoundsToExtract, 
+                                unique(MultData[[ff]][[j]]$CompoundID))
+         
+         if(length(MissingData) > 0 & LgMolSim){
+            warning(wrapn(paste0("For the simulation '", ff,
+                                 "', no concentrations could be found for the ", 
+                                 MissingData, " in ", j, ".")), 
+                    call. = FALSE)
+         }
       }  
       
       MultData[[ff]] <- bind_rows(MultData[[ff]])
+      
+      MultData[[ff]] <- MultData[[ff]] %>% 
+         convert_time_units(time_units = time_units_to_use)
       
       # MUST remove Deets or you can get the wrong info for each file!!!
       rm(Deets, CompoundCheck, compoundsToExtract_n) 

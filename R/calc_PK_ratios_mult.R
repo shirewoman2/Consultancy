@@ -408,6 +408,9 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       PKparameters <- sim_data_file_pairs
    }
    TEMP <- tidy_input_PK(PKparameters = PKparameters, 
+                         compoundsToExtract = compoundToExtract, 
+                         tissues = tissue, 
+                         sheet_PKparameters = sheet_PKparameters, 
                          existing_exp_details = existing_exp_details)
    PKparameters <- TEMP$PKparameters %>% unique()
    FilePairs <- TEMP$FilePairs %>% unique()
@@ -468,6 +471,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       MyTable[[i]] <- TEMP$Table
       QC[[i]] <- TEMP$QC
       
+      if(is.null(MyTable[[i]])){ next }
+      
       # Getting the name of the compound for which we have PK. Most of the time,
       # CmpdNum and CmpdDenom should be the same.
       CmpdNum <- existing_exp_details$MainDetails %>% 
@@ -501,6 +506,12 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    }
    
    MyPKResults <- bind_rows(MyTable)
+   
+   if(nrow(MyPKResults) == 0){
+      warning(wrapn("No results could be found."), 
+              call. = FALSE)
+      return()
+   }
    
    # Concatenating and rounding as requested
    if(concatVariability){

@@ -713,7 +713,12 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          # case_match for each, but that requires all the data types to be
          # the same, which they are NOT. Thus the multiple if and if else
          # statements.
-         if(m == "CYP3A4_ontogeny_profile"){
+         if(m == "Redefine_subjects_over_time_units"){
+            DeetValue <- case_match(DeetValue, 
+                                    "0" ~ "years", 
+                                    "1" ~ "months", 
+                                    "2" ~ "days")
+         } else if(m == "CYP3A4_ontogeny_profile"){
             DeetValue <- case_match(DeetValue, 
                                     "0" ~ "CYP3A4 Profile 1", 
                                     "1" ~ "CYP3A4 Profile 2")

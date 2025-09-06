@@ -14,7 +14,7 @@ eCT_harmonize(
   Deets,
   ADAM,
   AdvBrainModel,
-  ADC = FALSE
+  LgMolSim = FALSE
 )
 }
 \arguments{
@@ -34,7 +34,7 @@ eCT_harmonize(
 
 \item{AdvBrainModel}{T or F}
 
-\item{ADC}{T or F}
+\item{LgMolSim}{T or F}
 }
 \value{
 a data.frame of sim_data_xl with compound names and compound codes

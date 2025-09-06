@@ -10,7 +10,8 @@ eCT_readxl(
   compoundToExtract,
   tissue,
   TissueType,
-  SheetNames
+  SheetNames,
+  LgMolSim
 )
 }
 \arguments{
@@ -25,6 +26,8 @@ eCT_readxl(
 \item{TissueType}{systemic or tissue}
 
 \item{SheetNames}{all sheets in sim_data_file}
+
+\item{LgMolSim}{T or F}
 }
 \value{
 sim_data_xl - the entire, unedited contents of the sheet.

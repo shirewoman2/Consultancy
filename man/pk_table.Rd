@@ -228,10 +228,10 @@ that there was another name for parentheses.)}
 \item{conc_units}{What concentration units should be used in the table?
 Default is NA to leave the units as is, but if you set the concentration
 units to something else, this will attempt to convert the units to match
-that. This only adjusts only the simulated values, since we're assuming
-that that's the most likely problem and that observed units are relatively
-easy to fix, and it also only affects AUC and Cmax values. If you leave
-this as NA, the units in the 1st simulation will be used as the units for
+that. This adjusts only the simulated values, since we're assuming that
+that's the most likely problem and that observed units are relatively easy
+to fix, and it also only affects AUC and Cmax values. If you leave this as
+NA, the units in the 1st simulation will be used as the units for
 \emph{all} the simulations for consistency and clarity. Acceptable input is
 any concentration unit
 listed in the Excel form for PE data entry, e.g. \code{conc_units =
