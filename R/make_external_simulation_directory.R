@@ -167,9 +167,6 @@ find_sims_in_report <- function(report_name,
 #'    save_draft_simulation_directory = "abc-1a draft sim directory.xlsx")
 #'
 #' 
-
-# alternative name: find_report_files? Discussed on 8/5/25 and thought that
-# "find_report_file_locations" was clearer.
 find_report_file_locations <- function(sims_in_report, 
                                        project_folder = NA, 
                                        save_draft_simulation_directory = NA, 
@@ -622,11 +619,13 @@ copy_report_files <- function(draft_simulation_directory,
 #'   already has a tab named "Simulation directory"? Options are "yes" to always
 #'   overwrite, "no" to never overwrite, or "ask" (default), which means that we
 #'   will ask you whether to overwrite and give you a chance to supply a
+#'   different file name.
 #' @param draft_simulation_directory the output from running either
-#'   \code{\link{make_simulation_directory}} or \code{\link{find_report_file_locations}},
-#'   either of which will find all of the simulation files (both workspaces and
-#'   Excel outputs as well as any observed XML overlay files) in a project
-#'   folder. This MUST include the following columns:
+#'   \code{\link{make_simulation_directory}} or
+#'   \code{\link{find_report_file_locations}}, either of which will find all of
+#'   the simulation files (both workspaces and Excel outputs as well as any
+#'   observed XML overlay files) in a project folder. This MUST include the
+#'   following columns:
 #'
 #'   \itemize{\item{"File name" with the simulation file names}
 #'
