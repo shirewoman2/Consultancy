@@ -126,8 +126,8 @@
 #'   \code{\link{extractExpDetails_mult}} to get information about how the
 #'   simulations were set up, you can save some processing time by supplying
 #'   that object here, unquoted. If left as NA, this function will run
-#'   \code{extractExpDetails_mult} behind the scenes to figure out some information
-#'   about your experimental set up.
+#'   \code{extractExpDetails_mult} behind the scenes to figure out some
+#'   information about your experimental set up.
 #' @param paired TRUE (default) or FALSE for whether the study design is paired,
 #'   as in, the subjects are \emph{identical} between the two simulations.
 #'   \strong{THIS IS AN IMPORTANT DISTINCTION AND WILL AFFECT HOW THE
@@ -178,7 +178,16 @@
 #'   intervals with a t distribution.
 #' @param mean_type What kind of means and confidence intervals do you want
 #'   listed in the output table? Options are "arithmetic" or "geometric"
-#'   (default).
+#'   (default). This will give you arithmetic or geometric means for everything
+#'   but tmax values, which will be medians.
+#' @param conc_units What concentration units should be used in the table?
+#'   Default is "ng/mL", but if you set the concentration units to something
+#'   else, this will attempt to convert the units to match that. This adjusts
+#'   only the simulated values, since we're assuming that that's the most likely
+#'   problem and that observed units are relatively easy to fix, and it also
+#'   only affects AUC and Cmax values. Acceptable input is any concentration
+#'   unit listed in the Excel form for PE data entry, e.g. \code{conc_units =
+#'   "ng/mL"} or \code{conc_units = "uM"}.
 #' @param include_num_denom_columns TRUE (default) or FALSE for whether to
 #'   include columns in the output table for the numerator data alone and
 #'   columns for the denominator alone. For example, if you wanted to calculate
@@ -295,7 +304,8 @@ calc_PK_ratios <- function(PKparameters = NA,
                            paired = TRUE,
                            match_subjects_by = "individual and trial", 
                            distribution_type = "t",
-                           mean_type = "geometric", 
+                           mean_type = "geometric",
+                           conc_units = "ng/mL", 
                            include_num_denom_columns = TRUE, 
                            conf_int = 0.9, 
                            includeConfInt = TRUE,
@@ -382,6 +392,8 @@ calc_PK_ratios <- function(PKparameters = NA,
       warning(wrapn("You have entered something for the rounding argument other than the available options. We'll set this to the default, `Consultancy`. Please check the help file for details."), 
               call. = FALSE)
    }
+   
+   conc_units <- ifelse(is.na(conc_units[1]), "ng/mL", conc_units[1])
    
    
    # Main body of function -------------------------------------------------
@@ -548,7 +560,9 @@ calc_PK_ratios <- function(PKparameters = NA,
    )
    
    if(length(PKnumerator) == 0){
-      warning(wrapn("We couldn't find PK values matching the requested compound ID and tissue for the numerator simulation, so we can't return any PK comparisons."), 
+      warning(wrapn(paste0("We couldn't find PK values matching the requested compound ID and tissue for the numerator simulation '",
+                           unique(PKparameters$File[PKparameters$NorD == "Numerator"]), 
+                           "', so we can't return any PK comparisons. If you have loaded previously saved output from extractExpDetails and supplied that here, please ensure that you have re-run extractExpDetails following any updates to the simulation results so that we can find the correct data.")), 
               call. = FALSE)
       return(data.frame())
    }
@@ -565,7 +579,9 @@ calc_PK_ratios <- function(PKparameters = NA,
    )
    
    if(length(PKdenominator) == 0){
-      warning(wrapn("We couldn't find PK values matching the requested compound ID and tissue for the denominator simulation, so we can't return any PK comparisons."), 
+      warning(wrapn(paste0("We couldn't find PK values matching the requested compound ID and tissue for the denominator simulation '",
+                           unique(PKparameters$File[PKparameters$NorD == "Denominator"]), 
+                           "', so we can't return any PK comparisons. If you have loaded previously saved output from extractExpDetails and supplied that here, please ensure that you have re-run extractExpDetails following any updates to the simulation results so that we can find the correct data.")), 
               call. = FALSE)
       return(data.frame())
    }
@@ -633,26 +649,157 @@ calc_PK_ratios <- function(PKparameters = NA,
    PKdenominator$aggregate$PKparameter <- 
       PKreplace[PKdenominator$aggregate$PKparameter]
    
-   # FIXME - Need to check conc units
-   # TEMP <- convert_units(
-   #     PKnumerator$aggregate %>% 
-   #         rename(Conc = i) %>% 
-   #         mutate(CompoundID = compoundToExtract, 
-   #                Conc_units = existing_exp_details$Units_Cmax, 
-   #                Time = 1, Time_units = "hours"),
-   #     DF_with_good_units = list("Conc_units" = convert_conc_units, 
-   #                      "Time_units" = "hours"), 
-   #     MW = c(compoundToExtract = 
-   #                switch(compoundToExtract, 
-   #                       "substrate" = existing_exp_details$MW_sub, 
-   #                       "primary metabolite 1" = existing_exp_details$MW_met1, 
-   #                       "primary metabolite 2" = existing_exp_details$MW_met2, 
-   #                       "secondary metabolite" = existing_exp_details$MW_secmet, 
-   #                       "inhibitor 1" = existing_exp_details$MW_inhib, 
-   #                       "inhibitor 2" = existing_exp_details$MW_inhib2, 
-   #                       "inhibitor 1 metabolite" = existing_exp_details$MW_inhib1met)))
-   # MyPKResults_all$aggregate[, i] <- TEMP$Conc
-   # rm(TEMP)
+   # Dealing with units
+   if(existing_exp_details$MainDetails$Units_Cmax != conc_units){
+      
+      PKnumerator$aggregate <- PKnumerator$aggregate %>% 
+         mutate(ParamType = case_when(
+            str_detect(PKparameter, "AUC|Cmax") & 
+               !str_detect(PKparameter, "ratio") ~ "conc", 
+            .default = "not conc"))
+      
+      PKnumerator$aggregate <- split(PKnumerator$aggregate, 
+                                     f = list(PKnumerator$aggregate$ParamType))
+      
+      PKnumerator$individual <- PKnumerator$individual %>% 
+         mutate(ParamType = case_when(
+            str_detect(PKparameter, "AUC|Cmax") & 
+               !str_detect(PKparameter, "ratio") ~ "conc", 
+            .default = "not conc"))
+      
+      PKnumerator$individual <- split(PKnumerator$individual, 
+                                      f = list(PKnumerator$individual$ParamType))
+      
+      for(i in intersect(names(PKnumerator$aggregate$conc), 
+                         setdiff(unique(AllStats$InternalColNames), 
+                                 c("GCV", "Skewness", "CV", "Fold")))){
+         
+         TEMP <- convert_units(
+            DF_to_convert = 
+               PKnumerator$aggregate$conc %>%
+               rename(Conc = i) %>%
+               mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax,
+                      Time = 1, 
+                      Time_units = "hours"),
+            DF_with_good_units = list("Conc_units" = conc_units,
+                                      "Time_units" = "hours"),
+            MW = switch(unique(PKnumerator$aggregate$conc$CompoundID),
+                        "substrate" = existing_exp_details$MainDetails$MW_sub,
+                        "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
+                        "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
+                        "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
+                        "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
+                        "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
+                        "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met))
+         
+         PKnumerator$aggregate$conc[, i] <- TEMP$Conc
+         rm(TEMP)
+      }
+      
+      PKnumerator$aggregate <- bind_rows(PKnumerator$aggregate) %>% 
+         select(-ParamType)
+      
+      TEMP <- convert_units(
+         DF_to_convert = 
+            PKnumerator$individual$conc %>%
+            rename(Conc = Value) %>%
+            mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax,
+                   Time = 1, 
+                   Time_units = "hours"),
+         DF_with_good_units = list("Conc_units" = conc_units,
+                                   "Time_units" = "hours"),
+         MW = switch(unique(PKnumerator$individual$conc$CompoundID),
+                     "substrate" = existing_exp_details$MainDetails$MW_sub,
+                     "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
+                     "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
+                     "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
+                     "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
+                     "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
+                     "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met))
+      
+      PKnumerator$individual$conc$Value <- TEMP$Conc
+      rm(TEMP)
+      
+      PKnumerator$individual <- bind_rows(PKnumerator$individual) %>% 
+         select(-ParamType)
+      
+   }
+   
+   
+   if(existing_exp_details_denom$MainDetails$Units_Cmax != conc_units){
+      
+      PKdenominator$aggregate <- PKdenominator$aggregate %>% 
+         mutate(ParamType = case_when(
+            str_detect(PKparameter, "AUC|Cmax") & 
+               !str_detect(PKparameter, "ratio") ~ "conc", 
+            .default = "not conc"))
+      
+      PKdenominator$aggregate <- split(PKdenominator$aggregate, 
+                                       f = list(PKdenominator$aggregate$ParamType))
+      
+      PKdenominator$individual <- PKdenominator$individual %>% 
+         mutate(ParamType = case_when(
+            str_detect(PKparameter, "AUC|Cmax") & 
+               !str_detect(PKparameter, "ratio") ~ "conc", 
+            .default = "not conc"))
+      
+      PKdenominator$individual <- split(PKdenominator$individual, 
+                                        f = list(PKdenominator$individual$ParamType))
+      
+      for(i in intersect(names(PKdenominator$aggregate$conc), 
+                         setdiff(unique(AllStats$InternalColNames), 
+                                 c("GCV", "Skewness", "CV", "Fold")))){
+         
+         TEMP <- convert_units(
+            DF_to_convert = 
+               PKdenominator$aggregate$conc %>%
+               rename(Conc = i) %>%
+               mutate(Conc_units = existing_exp_details_denom$MainDetails$Units_Cmax,
+                      Time = 1, 
+                      Time_units = "hours"),
+            DF_with_good_units = list("Conc_units" = conc_units,
+                                      "Time_units" = "hours"),
+            MW = switch(unique(PKdenominator$aggregate$conc$CompoundID),
+                        "substrate" = existing_exp_details_denom$MainDetails$MW_sub,
+                        "primary metabolite 1" = existing_exp_details_denom$MainDetails$MW_met1,
+                        "primary metabolite 2" = existing_exp_details_denom$MainDetails$MW_met2,
+                        "secondary metabolite" = existing_exp_details_denom$MainDetails$MW_secmet,
+                        "inhibitor 1" = existing_exp_details_denom$MainDetails$MW_inhib,
+                        "inhibitor 2" = existing_exp_details_denom$MainDetails$MW_inhib2,
+                        "inhibitor 1 metabolite" = existing_exp_details_denom$MainDetails$MW_inhib1met))
+         
+         PKdenominator$aggregate$conc[, i] <- TEMP$Conc
+         rm(TEMP)
+      }
+      
+      PKdenominator$aggregate <- bind_rows(PKdenominator$aggregate) %>% 
+         select(-ParamType)
+      
+      TEMP <- convert_units(
+         DF_to_convert = 
+            PKdenominator$individual$conc %>%
+            rename(Conc = Value) %>%
+            mutate(Conc_units = existing_exp_details_denom$MainDetails$Units_Cmax,
+                   Time = 1, 
+                   Time_units = "hours"),
+         DF_with_good_units = list("Conc_units" = conc_units,
+                                   "Time_units" = "hours"),
+         MW = switch(unique(PKdenominator$individual$conc$CompoundID),
+                     "substrate" = existing_exp_details_denom$MainDetails$MW_sub,
+                     "primary metabolite 1" = existing_exp_details_denom$MainDetails$MW_met1,
+                     "primary metabolite 2" = existing_exp_details_denom$MainDetails$MW_met2,
+                     "secondary metabolite" = existing_exp_details_denom$MainDetails$MW_secmet,
+                     "inhibitor 1" = existing_exp_details_denom$MainDetails$MW_inhib,
+                     "inhibitor 2" = existing_exp_details_denom$MainDetails$MW_inhib2,
+                     "inhibitor 1 metabolite" = existing_exp_details_denom$MainDetails$MW_inhib1met))
+      
+      PKdenominator$individual$conc$Value <- TEMP$Conc
+      rm(TEMP)
+      
+      PKdenominator$individual <- bind_rows(PKdenominator$individual) %>% 
+         select(-ParamType)
+      
+   }
    
    # For all individual data, need to remove any columns for anything that might
    # *intentionally* not match, e.g., if they wanted to calculate ratios for
@@ -721,10 +868,11 @@ calc_PK_ratios <- function(PKparameters = NA,
          mutate(CorrectName = ifelse(is.na(CorrectName), PKparameter, CorrectName)) %>% 
          select(-PKparameter) %>% rename(PKparameter = CorrectName) %>% 
          group_by(PKparameter, ValType) %>% 
-         summarize(Mean = switch(
-            mean_type, 
-            "geometric" = round_opt(gm_mean(Value), rounding), 
-            "arithmetic" = round_opt(mean(Value, na.rm = T), rounding)), 
+         summarize(
+            Mean = switch(
+               mean_type, 
+               "geometric" = round_opt(gm_mean(Value), rounding), 
+               "arithmetic" = round_opt(mean(Value, na.rm = T), rounding)), 
             
             CV = switch(
                mean_type, 
@@ -746,7 +894,24 @@ calc_PK_ratios <- function(PKparameters = NA,
                "geometric" = round_opt(gm_conf(Value, CI = conf_int, 
                                                distribution_type = distribution_type)[2], rounding),
                "arithmetic" = round_opt(confInt(Value, CI = conf_int, 
-                                                distribution_type = distribution_type)[2], rounding)))
+                                                distribution_type = distribution_type)[2], rounding)), 
+            
+            Median = round_opt(median(Value), rounding), 
+            Minimum = round_opt(min(Value), rounding), 
+            Maximum = round_opt(max(Value), rounding)) %>% 
+         ungroup()
+      
+      # Need to deal with any tmax values since those should be medians
+      MyPKResults <- MyPKResults %>% 
+         mutate(Mean = case_when(str_detect(PKparameter, "tmax") ~ Median, 
+                                 .default = Mean), 
+                CV = case_when(str_detect(PKparameter, "tmax") ~ NA, 
+                               .default = CV), 
+                CI90_lower = case_when(str_detect(PKparameter, "tmax") ~ Minimum, 
+                                       .default = CI90_lower), 
+                CI90_upper = case_when(str_detect(PKparameter, "tmax") ~ Maximum, 
+                                       .default = CI90_upper)) %>% 
+         select(-Median, -Minimum, -Maximum)
       
       if(concatVariability){
          MyPKResults <- MyPKResults %>% 
@@ -849,9 +1014,18 @@ calc_PK_ratios <- function(PKparameters = NA,
       MyPKResults <- list()
       for(param in unique(PKnumerator$individual$PKparameter)){
          if(str_detect(param, "tmax")){
-            # We generally want medians for tmax, so not calculating ratios. 
             MyPKResults[[param]] <- c(
-               "Mean" = NA, 
+               # Calculating the ratio of medians here, but ranges would not
+               # apply. Also not calculating CIs since the observed data are
+               # censored and I don't know how to deal w/that. Not sure you
+               # *can* deal with that well, so omitting.
+               "Mean" =
+                  round_opt(
+                     median(PKnumerator$individual$NumeratorSim[
+                        PKnumerator$individual$PKparameter == param]) / 
+                        median(PKdenominator$individual$DenominatorSim[
+                           PKdenominator$individual$PKparameter == param]), 
+                     rounding), 
                "CI90_lower" = NA, 
                "CI90_upper" = NA)
             
@@ -1033,6 +1207,45 @@ calc_PK_ratios <- function(PKparameters = NA,
    
    # Tidying up names of columns, etc. ------------------------------------
    
+   # Any time AUCinf_dose1 was requested, only retain any AUCt_X that were
+   # specifically requested or when AUCinf could not be returned.
+   AUCOrigReq <- PKparameters %>% 
+      mutate(ColName = paste(PKparameter, NorD)) %>% 
+      filter(OriginallyRequested == TRUE & 
+                str_detect(ColName, "AUC.*_dose1")) %>% 
+      pull(ColName) %>% unique()
+   
+   AUCpulled <- prettify_column_names(
+      PKtable = MyPKResults, 
+      return_which_are_PK = T) %>% 
+      filter(IsPKParam == TRUE & 
+                str_detect(ColName, "AUC.*_dose1")) %>%
+      pull(ColName) %>% unique()
+   
+   if(any(str_detect(PKparameters$PKparameter, "AUCinf")) & 
+      (length(AUCOrigReq) == 0 | # this is when user left PKparameters as NA and accepted default ones 
+      any(str_detect(AUCOrigReq, "AUCinf")))){
+      
+      # If any of the AUCs requested were AUCt, then retain ALL AUCt. If any of
+      # the AUCinfs had NAs, then retain ALL AUCt.
+      AUCtreqorig <- any(str_detect(AUCOrigReq, "AUCt_dose1"))
+      ExtrapProbs_denom <-  
+         PKdenominator$aggregate %>% 
+         filter(str_detect(PKparameter, "AUCinf"))
+      ExtrapProbs_denom <- nrow(ExtrapProbs_denom) == 0 |
+         is.na(ExtrapProbs_denom$Geomean)
+      ExtrapProbs_num <-  
+         PKdenominator$aggregate %>% 
+         filter(str_detect(PKparameter, "AUCinf"))
+      ExtrapProbs_num <- nrow(ExtrapProbs_num) == 0 |
+         is.na(ExtrapProbs_num$Geomean)
+      
+      if((AUCtreqorig | ExtrapProbs_denom | ExtrapProbs_num) == FALSE){
+         MyPKResults <- MyPKResults %>% 
+            select(-matches("AUCt_dose1"))
+      }
+   }
+   
    MyPKResults$Statistic <- renameStats(MyPKResults$Statistic, use = "report")
    
    # Only including the variability measurements user requested
@@ -1180,6 +1393,18 @@ calc_PK_ratios <- function(PKparameters = NA,
                                  .default = DosesIncluded), 
       tissue = unique(MyPKResults$Tissue), 
       name_clinical_study = name_clinical_study)
+   
+   if(paired){
+      Annotations$table_caption <- 
+         sub("except for t~max~ values, which are medians and ranges.", 
+             "except for t~max~ values, which are medians and ranges. t~max~ ratios are the median of individual ratios and the range of individual ratios. No confidence intervals are calculated since t~max~ values are censored and thus do not follow a normal distribution.", 
+             Annotations$table_caption)
+   } else {
+      Annotations$table_caption <- 
+         sub("except for t~max~ values, which are medians and ranges.", 
+             "except for t~max~ values, which are medians and ranges. t~max~ ratios are the ratio of median t~max~ values for each group, and no confidence intervals are calculated since t~max~ values are censored and thus do not follow a normal distribution.", 
+             Annotations$table_caption)
+   }
    
    
    if(complete.cases(save_table)){

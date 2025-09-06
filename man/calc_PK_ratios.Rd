@@ -16,6 +16,7 @@ calc_PK_ratios(
   match_subjects_by = "individual and trial",
   distribution_type = "t",
   mean_type = "geometric",
+  conc_units = "ng/mL",
   include_num_denom_columns = TRUE,
   conf_int = 0.9,
   includeConfInt = TRUE,
@@ -157,8 +158,8 @@ in a data.frame or a csv file that you supply to the argument
 \code{\link{extractExpDetails_mult}} to get information about how the
 simulations were set up, you can save some processing time by supplying
 that object here, unquoted. If left as NA, this function will run
-\code{extractExpDetails_mult} behind the scenes to figure out some information
-about your experimental set up.}
+\code{extractExpDetails_mult} behind the scenes to figure out some
+information about your experimental set up.}
 
 \item{paired}{TRUE (default) or FALSE for whether the study design is paired,
 as in, the subjects are \emph{identical} between the two simulations.
@@ -200,7 +201,17 @@ intervals with a t distribution.}
 
 \item{mean_type}{What kind of means and confidence intervals do you want
 listed in the output table? Options are "arithmetic" or "geometric"
-(default).}
+(default). This will give you arithmetic or geometric means for everything
+but tmax values, which will be medians.}
+
+\item{conc_units}{What concentration units should be used in the table?
+Default is "ng/mL", but if you set the concentration units to something
+else, this will attempt to convert the units to match that. This adjusts
+only the simulated values, since we're assuming that that's the most likely
+problem and that observed units are relatively easy to fix, and it also
+only affects AUC and Cmax values. Acceptable input is any concentration
+unit listed in the Excel form for PE data entry, e.g. \code{conc_units =
+"ng/mL"} or \code{conc_units = "uM"}.}
 
 \item{include_num_denom_columns}{TRUE (default) or FALSE for whether to
 include columns in the output table for the numerator data alone and

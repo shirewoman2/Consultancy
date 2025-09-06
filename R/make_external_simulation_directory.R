@@ -124,7 +124,7 @@ find_sims_in_report <- function(report_name,
       
       FileName <- paste0(sub(Ext, "", save_sims_in_report), ".csv")
       
-      save(Out, FileName, row.names = F)
+      write.csv(Out, FileName, row.names = F)
    }
    
    return(Out)
@@ -252,29 +252,6 @@ find_report_file_locations <- function(sims_in_report,
       overwrite = overwrite, 
       save_table = save_draft_simulation_directory)
    
-   # FIXME: Do we want this warning below? There are already warnings from the
-   # make_simulation-directory function about problems with sims being in
-   # multiple places, having file names that don't comply w/naming standards,
-   # etc.
-   
-   # MyPath <- ifelse(is.na(project_folder), ".", project_folder)
-   # AllFiles <- tibble(
-   #    PathFile = list.files(pattern = "xlsx$", recursive = T, 
-   #                          path = MyPath), 
-   #    File = basename(PathFile))
-   # 
-   # MissingFiles <- tibble(
-   #    File = unique(TextMatching$File), 
-   #    Present = File %in% AllFiles$File) %>% 
-   #    arrange(File) %>% 
-   #    filter(Present == FALSE)
-   # 
-   # if(nrow(MissingFiles) > 0){
-   #    message(str_wrap("The following simulations listed in your report were not found in your project folder:"))
-   #    message(str_c(MissingFiles$File, collapse = "\n"))
-   # }
-   # 
-   
    return(Out)
    
 }
@@ -371,7 +348,7 @@ copy_report_files <- function(draft_simulation_directory,
    
    DraftSimDirNames$Rev[which(
       str_detect(DraftSimDirNames$Orig, "xml"))][1] <- "XML file used"
-
+   
    DraftSimDirNames$Rev[which(
       str_detect(DraftSimDirNames$Orig, "folder"))][1] <- "Folder"
    
