@@ -46,6 +46,13 @@ a specific type. Please see the options in "OntogenyEquations" in the
 column "EnzymeType". This should be supplied as a character vector, e.g.,
 \code{enzyme_type = c("transporters", "UGTs")}}
 
+\item{ask_if_multiple_enzymes}{TRUE (default) or FALSE for whether to ask
+interactively which enzymes and transporters you want to include in the
+graph. If set to TRUE and there are multiple possibilities, this will start
+an interactive session in the console where you can select which enzymes or
+transporters you want. If set to FALSE, all possible enzymes and
+transporters will be included in the graph.}
+
 \item{ontogeny_equations_to_use}{By default, the ontogeny equations are from
 the object OntogenyEquations, which is from the Simcyp Simulator help file.
 This can be useful for more-advanced R users if, for example, you want to
@@ -191,38 +198,38 @@ the ontogeny_plot function is straightforward.
 ontogeny_plot(enzyme = "UGT1A4")
 
 # If there are multiple profiles, you'll be asked
-# which you would like interactively. 
+# which you would like interactively.
 ontogeny_plot(enzyme = "CYP3A4")
 
 # If you don't want to be asked, you can turn this off.
 ontogeny_plot(enzyme = "CYP3A4",
               ask_if_multiple_enzymes = F)
-# ...but you might want to color the lines by the 
+# ...but you might want to color the lines by the
 # enzyme description because otherwise, you won't
-# know which is which. 
+# know which is which.
 ontogeny_plot(enzyme = "CYP3A4",
-              ask_if_multiple_enzymes = F, 
+              ask_if_multiple_enzymes = F,
               colorBy_column = EnzymeDescription)
 
 # You can change the colors
 ontogeny_plot(enzyme = "CYP3A4",
-              ask_if_multiple_enzymes = F, 
-              colorBy_column = EnzymeDescription, 
+              ask_if_multiple_enzymes = F,
+              colorBy_column = EnzymeDescription,
               color_set = "viridis")
 
-# You can use regular expressions to get multiple 
-# possible enzymes. 
-ontogeny_plot(enzyme = "CYP|UGT", 
-              ask_if_multiple_enzymes = F, 
-              colorBy_column = EnzymeDescription, 
+# You can use regular expressions to get multiple
+# possible enzymes.
+ontogeny_plot(enzyme = "CYP|UGT",
+              ask_if_multiple_enzymes = F,
+              colorBy_column = EnzymeDescription,
               facet1_column = EnzymeType)
 
 # Any ontogeny profile included in the Simcyp Simulator
-# may be plotted. 
-ontogeny_plot(enzyme = "P-gp", 
+# may be plotted.
+ontogeny_plot(enzyme = "P-gp",
               colorBy_column = EnzymeDescription)
 
-# To see what the possibilities are and the equations 
+# To see what the possibilities are and the equations
 # being used:
 view(OntogenyEquations)
 

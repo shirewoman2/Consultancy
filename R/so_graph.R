@@ -538,12 +538,15 @@ so_graph <- function(PKtable,
    if(boundary_line_types[1] == "default"){
       boundary_line_types_straight <- c("dashed", 
                                         rep("solid", length(boundaries) - 1))
-      boundary_line_types_Guest <- c("dashed", 
-                                     rep("solid", length(boundaries_Guest)))
-      
    } else {
       boundary_line_types_straight <- rep(boundary_line_types,
                                           length(boundaries))
+   }
+   
+   if(boundary_line_types_Guest[1] == "default"){
+      boundary_line_types_Guest <- c("dashed", 
+                                     rep("solid", length(boundaries_Guest)))
+   } else {
       boundary_line_types_Guest <- rep(boundary_line_types_Guest,
                                        length(boundaries_Guest) + 1)
    }
@@ -1300,15 +1303,16 @@ so_graph <- function(PKtable,
       
       if(str_detect(i, "ratio")){
          
-         # If it was a Guest plot, then set the limit to be < 1 and the upper to
-         # be > 1. Otherwise, that lowest/highest point is way in the corner.
+         # If it was a Guest plot, then set the lower limit to be < 1 and the
+         # upper to be > 1. Otherwise, that lowest/highest point is way in the
+         # corner.
          if(Limits[1] == 1){Limits[1] <- 2/3}
          if(Limits[2] == 1){Limits[2] <- 3}
          
          G[[i]] <- ggplot()  +
             geom_line(data = BoundariesGuest[["1"]][["Upper"]],
                       aes(x = Observed, y = Simulated),
-                      linetype = boundary_line_types_Guest[1], 
+                      linetype = boundary_line_types_Guest[1],
                       color = boundary_color_set_Guest[1],
                       linewidth = boundary_line_width)
          
