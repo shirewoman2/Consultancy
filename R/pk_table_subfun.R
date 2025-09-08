@@ -215,7 +215,8 @@ pk_table_subfun <- function(sim_data_file,
          }
          
          for(param in names(MyPKResults_all$aggregate)[
-            str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax|Cmin")]){
+            str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax|Cmin") & 
+            !str_detect(names(MyPKResults_all$aggregate), "[rR]atio")]){
             MyPKResults_all$aggregate[[param]] <- 
                MyPKResults_all$aggregate[[param]] %>% 
                pivot_longer(cols = -any_of(c(
@@ -564,7 +565,9 @@ pk_table_subfun <- function(sim_data_file,
                                 "median" ~ "medians"), 
                      ", so it could be a CV or it could be a standard deviation. If you requested both with the includeSD and includeCV arguments, we'll add rows for both in your table. Please remove whichever does not apply. Please also note that CVs will be multiplied by 100."))
                ObsPK_var <- bind_rows(ObsPK_var, 
-                                      ObsPK_var %>% mutate(Stat = "SD"))
+                                      ObsPK_var %>% 
+                                         filter(Stat == "CV") %>% 
+                                         mutate(Stat = "SD"))
             }
          }
       } else {

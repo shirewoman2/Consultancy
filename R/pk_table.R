@@ -707,7 +707,10 @@ pk_table <- function(PKparameters = NA,
    # Checking what concentration units to use. Using the same units for ALL sims
    # for consistency, clarity, and ease of coding.
    if(is.na(conc_units)){
-      conc_units <- existing_exp_details$MainDetails$Units_Cmax[1]
+      conc_units <- existing_exp_details$MainDetails %>% 
+         filter(File %in% unique(PKparam_tidied$PKparameters$File)) %>% 
+         pull(Units_Cmax)
+      conc_units <- conc_units[1]
    }
    
    ## Getting simulated data ------------------------------------------------
