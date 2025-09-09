@@ -183,19 +183,23 @@ make_text_legos <- function(sim_data_file,
                              "**CUSTOM DOSING - FILL IN MANUALLY**",
                              NumDaysInhib)
       
-      DoseDay_ordinal <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
-      # Need to round down to get that day as an integer or the rest of the
-      # string manipulation doesn't work correctly.
-      DoseDay_ordinal <- as.character(
-         round_down_unit(as.numeric(DoseDay_ordinal), 1))
-      LastDig <- as.numeric(str_sub(DoseDay_ordinal, start = -1, end = -1))
-      PenultDig <- as.numeric(str_sub(DoseDay_ordinal, start = -2, end = -2))
-      DoseDay_ordinal <- paste0(
-         DoseDay_ordinal,
-         case_when(LastDig == 1 & (PenultDig != "1" | is.na(PenultDig)) ~ "^st^",
-                   LastDig == 2 & (PenultDig != "1" | is.na(PenultDig)) ~ "^nd^",
-                   LastDig == 3 & (PenultDig != "1" | is.na(PenultDig)) ~ "^rd^", 
-                   .default = "^th^"))
+      if(Deets$StartDayTime_sub == "custom dosing"){
+         DoseDay_ordinal <- "XXX^th^"
+      } else {
+         DoseDay_ordinal <- str_split_fixed(Deets$StartDayTime_sub, "Day |, ", 3)[2]
+         # Need to round down to get that day as an integer or the rest of the
+         # string manipulation doesn't work correctly.
+         DoseDay_ordinal <- as.character(
+            round_down_unit(as.numeric(DoseDay_ordinal), 1))
+         LastDig <- as.numeric(str_sub(DoseDay_ordinal, start = -1, end = -1))
+         PenultDig <- as.numeric(str_sub(DoseDay_ordinal, start = -2, end = -2))
+         DoseDay_ordinal <- paste0(
+            DoseDay_ordinal,
+            case_when(LastDig == 1 & (PenultDig != "1" | is.na(PenultDig)) ~ "^st^",
+                      LastDig == 2 & (PenultDig != "1" | is.na(PenultDig)) ~ "^nd^",
+                      LastDig == 3 & (PenultDig != "1" | is.na(PenultDig)) ~ "^rd^", 
+                      .default = "^th^"))
+      }
       
    } else {
       DosingText_inhib_lower <- NA
