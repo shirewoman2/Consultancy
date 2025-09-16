@@ -1295,7 +1295,7 @@ tidy_input_PK <- function(PKparameters,
       
       Problem <- capture.output(print(Problem, row.names = FALSE))
       
-      message("Warning:\nThe following requested PK parameters do not apply to the following scenarios:\n")
+      message("Warning:\nThe following requested PK parameters do not apply to these simulations:\n")
       message(str_c(Problem, collapse = "\n"))
       message("\nThey will be ignored.\n")
    }

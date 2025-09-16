@@ -122,8 +122,8 @@ if(single_table){
          select(-any_of("Tissue"))
    }
    
-   # Similarly, if they only wanted 1 compoundID, don't include a column for that
-   # in the table.
+   # Similarly, if they only wanted 1 compoundID, don't include a column for
+   # that in the table.
    if(length(unique(MyPKResults$CompoundID)) == 1 &&
       str_detect(unique(MyPKResults$CompoundID), " / ") == FALSE){
       MyPKResults <- MyPKResults %>% 
@@ -145,7 +145,21 @@ if(single_table){
                                               include_dose_num)
    
    if(include_dose_num == FALSE){
-      names(MyPKResults) <- sub("Dose 1 |Last dose |_dose1|_last", "", names(MyPKResults))
+      names(MyPKResults) <- 
+         sub("Dose 1 |Last dose |_dose1|_last", "", names(MyPKResults))
+   }
+   
+   if(interval_in_columns){
+      
+      MakeBold <- list(c(0, NA), # header
+                       c(NA, 1)) # 1st col
+      
+   } else {
+      
+      MakeBold <- list(c(0, NA), # header
+                       c(NA, 1), 
+                       c(NA, 2)) # 1st 2 cols
+      
    }
    
    if(as_label(shading_column) == "<empty>"){
@@ -153,6 +167,11 @@ if(single_table){
       formatTable_Simcyp(MyPKResults,
                          hlines = "when dataset changes", 
                          merge_shaded_cells = TRUE, 
+                         bold_cells = MakeBold, 
+                         merge_columns = intersect(names(MyPKResults), 
+                                                   c("File", "Interval", 
+                                                     "Sheet", "Tissue", 
+                                                     "CompoundID")), 
                          fontsize = fontsize,
                          prettify_columns = prettify_columns, 
                          add_header_for_DDI = add_header_for_DDI, 
@@ -164,7 +183,12 @@ if(single_table){
       
       formatTable_Simcyp(MyPKResults,
                          shading_column = !!shading_column, 
+                         bold_cells = MakeBold, 
                          merge_shaded_cells = TRUE, 
+                         merge_columns = intersect(names(MyPKResults), 
+                                                   c("File", "Interval", 
+                                                     "Sheet", "Tissue", 
+                                                     "CompoundID")), 
                          fontsize = fontsize,
                          prettify_columns = prettify_columns, 
                          add_header_for_DDI = add_header_for_DDI, 

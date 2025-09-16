@@ -95,7 +95,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
       }
    } else {
       MyFileLen <- length(MyFile)
-      MyFile <- str_comma(unique(MyFile))
+      MyFile <- str_comma(unique(basename(MyFile)))
    }
    
    if(all(is.na(MyCompoundID))){
@@ -193,7 +193,7 @@ make_table_annotations <- function(MyPKResults, # only PK table
    
    Caption <- paste0("Simulated values listed are ", 
                      CapText1, ". ", CapText2, "Source simulated data: ",
-                     basename(MyFile))
+                     MyFile)
    
    
    # Pass through for more generic info ---------------------------------------

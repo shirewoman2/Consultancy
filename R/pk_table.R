@@ -353,6 +353,16 @@
 #'   "conc_units" instead.
 #' @param checkDosingInterval TRUE or FALSE (default) for whether to return
 #'   information for checking the dosing intervals
+#' @param interval_in_columns TRUE (default) or FALSE for whether to include the
+#'   dosing interval that pertains to that specific PK parameter in the columns
+#'   of the table or, if FALSE, in the rows. The default will give you a table
+#'   that is wide by AUC interval, with, for example, one column for Cmax for
+#'   dose 1 and a different column for Cmax for the last dose simulated. Setting
+#'   this to FALSE will give you all of a given PK parameter in the same column
+#'   with an additional column specifying which interval it was. For example,
+#'   you'll get a column with the interval, and then all Cmax values will be in
+#'   one column with the data for the 1st dose in one set of rows and the data
+#'   for the last dose in a different set of rows.
 #'
 #' @return a data.frame
 #' @export
@@ -378,6 +388,7 @@ pk_table <- function(PKparameters = NA,
                      concatVariability = TRUE, 
                      variability_format = "to",
                      conc_units = NA, 
+                     interval_in_columns = TRUE, 
                      include_dose_num = NA,
                      PKorder = "default", 
                      file_order = "as is", 
@@ -982,6 +993,9 @@ pk_table <- function(PKparameters = NA,
       
    }
    
+   # Optionally keeping long by interval
+   if(interval_in_columns){
+   
    MyPKResults <- MyPKResults %>% 
       pivot_wider(names_from = PKParam, values_from = Value) %>%
       mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
@@ -991,6 +1005,32 @@ pk_table <- function(PKparameters = NA,
       arrange(File, CompoundID, Tissue, SorO, Stat) %>% 
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) 
+   
+   } else {
+      
+      MyPKResults <- MyPKResults %>% 
+         mutate(Interval = str_extract(PKParam, "dose1|last")) %>% 
+         left_join(CheckDoseInt$interval %>% 
+                      select(File, Sheet, CompoundID, 
+                             Tissue, Interval, StartHr, EndHr), 
+                   by = c("File", "Sheet", "CompoundID", 
+                          "Tissue", "Interval")) %>% 
+         mutate(Interval = case_when(
+            Interval == "dose1" & is.na(EndHr) ~ "first dose", 
+            Interval == "dose1" & complete.cases(EndHr) ~ 
+               paste(StartHr, "to", EndHr, "(h)"), 
+            Interval != "dose1" ~ 
+               paste(StartHr, "to", EndHr, "(h)"))) %>% 
+         select(Stat, PKParam, Value, SorO, File, Sheet, CompoundID, 
+                Tissue, Interval) %>% 
+         # Need to make PK parameter more generic if we remove interval from name
+         mutate(PKParam = sub("_dose1|_last", "", PKParam), 
+                PKParam = case_match(PKParam, 
+                                     "AUCtau" ~ "AUCt", 
+                                     .default = PKParam)) %>% 
+         pivot_wider(names_from = PKParam, 
+                     values_from = Value)
+   }
    
    rm(GoodPKParam)
    
@@ -1113,7 +1153,7 @@ pk_table <- function(PKparameters = NA,
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
       select(-Stat, -SorO) %>%
-      select(Statistic, everything())
+      select(any_of("Interval"), Statistic, everything())
    
    # setting levels for PK parameters so that they're in a nice order. 
    PKlevels <- switch(PKorder, 
@@ -1132,7 +1172,7 @@ pk_table <- function(PKparameters = NA,
                       "user specified" = PKparameters$PKparameter)
    
    MyPKResults <- MyPKResults %>%
-      select(any_of(c("Statistic", 
+      select(any_of(c("Interval", "Statistic", 
                       unique(as.character(PKlevels)))), 
              everything()) %>% 
       relocate(File, .after = last_col())

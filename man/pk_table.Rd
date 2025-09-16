@@ -23,6 +23,7 @@ pk_table(
   concatVariability = TRUE,
   variability_format = "to",
   conc_units = NA,
+  interval_in_columns = TRUE,
   include_dose_num = NA,
   PKorder = "default",
   file_order = "as is",
@@ -238,6 +239,17 @@ listed in the Excel form for PE data entry, e.g. \code{conc_units =
 "ng/mL"} or \code{conc_units = "uM"}. Molar concentrations will be
 automatically converted using the molecular weight of whatever you set for
 \code{compoundToExtract}.}
+
+\item{interval_in_columns}{TRUE (default) or FALSE for whether to include the
+dosing interval that pertains to that specific PK parameter in the columns
+of the table or, if FALSE, in the rows. The default will give you a table
+that is wide by AUC interval, with, for example, one column for Cmax for
+dose 1 and a different column for Cmax for the last dose simulated. Setting
+this to FALSE will give you all of a given PK parameter in the same column
+with an additional column specifying which interval it was. For example,
+you'll get a column with the interval, and then all Cmax values will be in
+one column with the data for the 1st dose in one set of rows and the data
+for the last dose in a different set of rows.}
 
 \item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
 the dose number when listing the PK parameter. By default, the parameter
