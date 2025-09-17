@@ -14,11 +14,11 @@ calc_PK_ratios(
   existing_exp_details = NA,
   paired = TRUE,
   match_subjects_by = "individual and trial",
-  distribution_type = "t",
-  mean_type = "geometric",
   conc_units = "ng/mL",
   include_num_denom_columns = TRUE,
+  mean_type = "geometric",
   conf_int = 0.9,
+  distribution_type = "t",
   includeConfInt = TRUE,
   includeCV = TRUE,
   include_dose_num = NA,
@@ -195,15 +195,6 @@ setting of "individual and trial" but the trials are NOT the same between
 simulations, you'll get a warning and no results, which we think is vastly
 superior to getting \emph{incorrect} results.}
 
-\item{distribution_type}{use a "t" distribution (default) or a "Z"
-distribution. Note: The Simcyp Simulator calculates geometric confidence
-intervals with a t distribution.}
-
-\item{mean_type}{What kind of means and confidence intervals do you want
-listed in the output table? Options are "arithmetic" or "geometric"
-(default). This will give you arithmetic or geometric means for everything
-but tmax values, which will be medians.}
-
 \item{conc_units}{What concentration units should be used in the table?
 Default is "ng/mL", but if you set the concentration units to something
 else, this will attempt to convert the units to match that. This adjusts
@@ -222,7 +213,16 @@ and also a column with summary statistics on the AUC for cancer patients
 and a column with summary statistics on the AUC for healthy volunteers.
 Setting it to FALSE would give you only the ratios.}
 
+\item{mean_type}{What kind of means and confidence intervals do you want
+listed in the output table? Options are "arithmetic" or "geometric"
+(default). This will give you arithmetic or geometric means for everything
+but tmax values, which will be medians.}
+
 \item{conf_int}{confidence interval to use; default is 90\%}
+
+\item{distribution_type}{use a "t" distribution (default) or a "Z"
+distribution. Note: The Simcyp Simulator calculates geometric confidence
+intervals with a t distribution.}
 
 \item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
 confidence intervals were included in the simulator output file. Note that

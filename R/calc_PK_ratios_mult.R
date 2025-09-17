@@ -305,20 +305,21 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                                 existing_exp_details = NA,
                                 paired = TRUE,
                                 match_subjects_by = "individual and trial", 
-                                distribution_type = "t",
-                                mean_type = "geometric", 
                                 include_num_denom_columns = TRUE, 
+                                conc_units = "ng/mL", 
+                                mean_type = "geometric", 
                                 conf_int = 0.9, 
+                                distribution_type = "t",
                                 includeConfInt = TRUE,
                                 includeCV = TRUE, 
                                 include_dose_num = NA,
+                                extract_forest_data = FALSE, 
                                 concatVariability = TRUE, 
                                 variability_format = "to",
                                 prettify_columns = TRUE,
                                 prettify_compound_names = TRUE,
                                 rounding = NA,
                                 checkDataSource = TRUE, 
-                                extract_forest_data = FALSE, 
                                 save_table = NA, 
                                 name_clinical_study = NA, 
                                 shading_column, 
@@ -403,10 +404,6 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    
    # If they are *only* supplying file pairs and no PK, then use that for
    # PKparameters b/c when it's tidied in the next step, it will work better.
-   if(any(complete.cases(PKparameters)) == FALSE & 
-      any(complete.cases(sim_data_file_pairs))){
-      PKparameters <- sim_data_file_pairs
-   }
    TEMP <- tidy_input_PK(PKparameters = PKparameters, 
                          compoundsToExtract = compoundToExtract, 
                          tissues = tissue, 
@@ -463,6 +460,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          include_dose_num = TRUE, # will remove dose number at end if needed
          prettify_columns = FALSE, 
          prettify_compound_names = FALSE, 
+         conc_units = conc_units, 
          rounding = "none", # will change this later as needed
          concatVariability = FALSE, # will change this later as needed
          checkDataSource = TRUE, 
@@ -521,7 +519,9 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       # stat, concatenating, then converting back to wide.
       MyPKResults <- MyPKResults %>% 
          pivot_longer(cols = -any_of(c("Statistic", "CompoundID", "Compound", 
-                                       "Tissue", "File", "Sheet")), 
+                                       "Tissue", "File", "Sheet", 
+                                       "Interval_Numerator",
+                                       "Interval_Denominator")), 
                       names_to = "PKparameter", 
                       values_to = "Value") %>% 
          filter(complete.cases(Value)) %>% 
@@ -538,7 +538,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                       "parentheses" = paste0("(", `90% CI - Lower`, ", ", `90% CI - Upper`, ")")),
             .default = NA)) %>% 
          select(-`90% CI - Lower`, -`90% CI - Upper`) %>% 
-         pivot_longer(cols = -c(CompoundID, Tissue, File, PKparameter), 
+         pivot_longer(cols = -c(CompoundID, Tissue, File, PKparameter, 
+                                Interval_Numerator, Interval_Denominator), 
                       names_to = "Statistic", 
                       values_to = "Value") %>% 
          pivot_wider(names_from = PKparameter, 
@@ -548,7 +549,9 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          # Pivoting longer to remove empty cells, get things in order, and more
          # easily round.
          pivot_longer(cols = -any_of(c("File", "Statistic", "Tissue",
-                                       "CompoundID")), 
+                                       "CompoundID",
+                                       "Interval_Numerator",
+                                       "Interval_Denominator")), 
                       names_to = "PKparameter", 
                       values_to = "Value") %>% 
          separate_wider_delim(cols = PKparameter, delim = " ", 
@@ -581,11 +584,19 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    
    # Setting column order
    MyPKResults <- MyPKResults %>% 
-      relocate(CompoundID, Tissue, File, .after = last_col())
+      relocate(Interval_Numerator, Interval_Denominator, 
+               CompoundID, Tissue, File, .after = last_col())
    
    if(includeConfInt == FALSE){
       MyPKResults <- MyPKResults %>% 
          filter(!str_detect(Statistic, "CI|confidence"))
+   }
+   
+   if(prettify_columns){
+      names(MyPKResults) <- sub("NumeratorSim", "numerator simulation", names(MyPKResults))  
+      names(MyPKResults) <- sub("DenominatorSim", "denominator simulation", names(MyPKResults))
+      names(MyPKResults) <- sub("Interval_Denominator", "Interval denominator simulation", names(MyPKResults))  
+      names(MyPKResults) <- sub("Interval_Numerator", "Interval numerator simulation", names(MyPKResults))  
    }
    
    # Setting up table caption ------------------------------------------------
@@ -633,6 +644,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    
    Out <- list(Table = MyPKResults)
    
+   # Need to set this for saving b/c it's an option for pk_table but not here
+   interval_in_columns <- FALSE
    
    if(complete.cases(save_table)){
       

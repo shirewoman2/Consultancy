@@ -16,6 +16,7 @@ so_graph(
   boundary_line_types = "default",
   boundary_line_types_Guest = "default",
   boundary_line_width = 0.3,
+  show_boundary_legend = TRUE,
   error_bars = "none",
   variability_type = "90\% CI",
   point_color_column,
@@ -41,8 +42,7 @@ so_graph(
   save_graph = NA,
   fig_width = 8,
   fig_height = 6,
-  return_list_of_graphs = FALSE,
-  axis_titles = NA
+  return_list_of_graphs = FALSE
 )
 }
 \arguments{
@@ -144,6 +144,9 @@ c("dotted", "dashed", "solid")}. To see the possibilities, type
 
 \item{boundary_line_width}{line width; default is 0.7. This only applies when
 \code{boundary_indicator} is set to "lines", the default.}
+
+\item{show_boundary_legend}{TRUE (default) or FALSE for whether to show a
+legend indicating the meaning of the boundaries}
 
 \item{error_bars}{Which error bars should be shown on the graph? Options are
 "none" (default), "simulated" to show vertical error bars ("vertical" also
@@ -332,11 +335,6 @@ in quotes here, e.g., "My conc time graph.png"}
 
 \item{return_list_of_graphs}{TRUE or FALSE (default) for whether to return a
 list of each individual graph as its own separate ggplot2 object.}
-
-\item{axis_titles}{SOON TO BE DEPRECATED in favor of \code{axis_title_x} and
-\code{axis_title_x}. Optionally specify what you'd like for the x and y
-axis titles with a named character vector. The default is \code{axis_titles =
-c("x" = "Observed", "y" = "Simulated")}}
 }
 \value{
 a set of arranged ggplot2 graphs

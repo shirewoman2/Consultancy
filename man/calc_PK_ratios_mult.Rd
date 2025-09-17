@@ -12,20 +12,21 @@ calc_PK_ratios_mult(
   existing_exp_details = NA,
   paired = TRUE,
   match_subjects_by = "individual and trial",
-  distribution_type = "t",
-  mean_type = "geometric",
   include_num_denom_columns = TRUE,
+  conc_units = "ng/mL",
+  mean_type = "geometric",
   conf_int = 0.9,
+  distribution_type = "t",
   includeConfInt = TRUE,
   includeCV = TRUE,
   include_dose_num = NA,
+  extract_forest_data = FALSE,
   concatVariability = TRUE,
   variability_format = "to",
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   rounding = NA,
   checkDataSource = TRUE,
-  extract_forest_data = FALSE,
   save_table = NA,
   name_clinical_study = NA,
   shading_column,
@@ -189,14 +190,6 @@ setting of "individual and trial" but the trials are NOT the same between
 simulations, you'll get a warning and no results, which we think is vastly
 superior to getting \emph{incorrect} results.}
 
-\item{distribution_type}{use a "t" distribution (default) or a "Z"
-distribution. Note: The Simcyp Simulator calculates geometric confidence
-intervals with a t distribution.}
-
-\item{mean_type}{What kind of means and confidence intervals do you want
-listed in the output table? Options are "arithmetic" or "geometric"
-(default).}
-
 \item{include_num_denom_columns}{TRUE (default) or FALSE for whether to
 include columns in the output table for the numerator data alone and
 columns for the denominator alone. For example, if you wanted to calculate
@@ -206,7 +199,15 @@ and also a column with summary statistics on the AUC for cancer patients
 and a column with summary statistics on the AUC for healthy volunteers.
 Setting it to FALSE would give you only the ratios.}
 
+\item{mean_type}{What kind of means and confidence intervals do you want
+listed in the output table? Options are "arithmetic" or "geometric"
+(default).}
+
 \item{conf_int}{confidence interval to use; default is 90\%}
+
+\item{distribution_type}{use a "t" distribution (default) or a "Z"
+distribution. Note: The Simcyp Simulator calculates geometric confidence
+intervals with a t distribution.}
 
 \item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
 confidence intervals were included in the simulator output file. Note that
@@ -226,6 +227,17 @@ default, if you have data only for the first dose or only for the last
 dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
+
+\item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
+the same time. If set to TRUE, this will return a list that includes data
+formatted for use with the function \code{\link{forest_plot}}. This will
+assume that the denominator is the baseline or control scenario and the
+numerator is the comparison. In the output for this, the column "Dose_sub"
+will contain the dose of the substrate in the denominator simualtions, and
+the column "Dose_inhib" will contain the dose of the inhibitor (if there
+was one) in the numerator simulations or the dose of the substrate in the
+numerator simulations if there was not. If there was not an inhibitor, the
+column "Inhibitor 1" will contain the file names for the numerator sims.}
 
 \item{concatVariability}{TRUE (default) or FALSE for whether to concatenate
 the variability. If "TRUE", the output will be formatted into a single row
@@ -280,17 +292,6 @@ rounded to X digits}}}
 \item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
-
-\item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
-the same time. If set to TRUE, this will return a list that includes data
-formatted for use with the function \code{\link{forest_plot}}. This will
-assume that the denominator is the baseline or control scenario and the
-numerator is the comparison. In the output for this, the column "Dose_sub"
-will contain the dose of the substrate in the denominator simualtions, and
-the column "Dose_inhib" will contain the dose of the inhibitor (if there
-was one) in the numerator simulations or the dose of the substrate in the
-numerator simulations if there was not. If there was not an inhibitor, the
-column "Inhibitor 1" will contain the file names for the numerator sims.}
 
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted

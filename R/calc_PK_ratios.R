@@ -303,11 +303,11 @@ calc_PK_ratios <- function(PKparameters = NA,
                            existing_exp_details = NA,
                            paired = TRUE,
                            match_subjects_by = "individual and trial", 
-                           distribution_type = "t",
-                           mean_type = "geometric",
                            conc_units = "ng/mL", 
                            include_num_denom_columns = TRUE, 
+                           mean_type = "geometric",
                            conf_int = 0.9, 
+                           distribution_type = "t",
                            includeConfInt = TRUE,
                            includeCV = TRUE, 
                            include_dose_num = NA,
@@ -1224,7 +1224,7 @@ calc_PK_ratios <- function(PKparameters = NA,
    
    if(any(str_detect(PKparameters$PKparameter, "AUCinf")) & 
       (length(AUCOrigReq) == 0 | # this is when user left PKparameters as NA and accepted default ones 
-      any(str_detect(AUCOrigReq, "AUCinf")))){
+       any(str_detect(AUCOrigReq, "AUCinf")))){
       
       # If any of the AUCs requested were AUCt, then retain ALL AUCt. If any of
       # the AUCinfs had NAs, then retain ALL AUCt.
@@ -1361,6 +1361,27 @@ calc_PK_ratios <- function(PKparameters = NA,
    }
    
    MyPKResults$File <- Comparisons %>% pull(FilePair) %>% unique()
+   MyPKResults$Interval_Numerator <- unique(PKnumerator$TimeInterval$Interval)
+   MyPKResults$Interval_Denominator <- unique(PKdenominator$TimeInterval$Interval)
+   
+   # Setting column order 
+   MyPKResults <- MyPKResults %>% 
+      relocate(Interval_Numerator, Interval_Denominator, 
+               any_of(c("CompoundID",
+                        "CompoundID_Numerator",
+                        "CompoundID_Denominator", 
+                        "Tissue",
+                        "Tissue_Numerator", 
+                        "Tissue_Denominator", 
+                        "File")), 
+               .after = last_col())
+   
+   if(prettify_columns){
+      names(MyPKResults) <- sub("NumeratorSim", "numerator simulation", names(MyPKResults))  
+      names(MyPKResults) <- sub("DenominatorSim", "denominator simulation", names(MyPKResults))
+      names(MyPKResults) <- sub("Interval_Denominator", "Interval denominator simulation", names(MyPKResults))  
+      names(MyPKResults) <- sub("Interval_Numerator", "Interval numerator simulation", names(MyPKResults))  
+   }
    
    # Saving --------------------------------------------------------------
    
@@ -1406,16 +1427,15 @@ calc_PK_ratios <- function(PKparameters = NA,
              Annotations$table_caption)
    }
    
+   # Rounding as necessary
+   if(complete.cases(rounding)){
+      MyPKResults <- MyPKResults %>% 
+         mutate(across(.cols = where(is.numeric), 
+                       .fns = round_opt, round_fun = rounding))
+      
+   } 
    
    if(complete.cases(save_table)){
-      
-      # Rounding as necessary
-      if(complete.cases(rounding)){
-         MyPKResults <- MyPKResults %>% 
-            mutate(across(.cols = where(is.numeric), 
-                          .fns = round_opt, round_fun = rounding))
-         
-      } 
       
       FileName <- save_table
       if(str_detect(FileName, "\\.")){
@@ -1487,6 +1507,7 @@ calc_PK_ratios <- function(PKparameters = NA,
          
          add_header_for_DDI <- FALSE
          single_table <- TRUE # placeholder
+         interval_in_columns <- FALSE
          
          rmarkdown::render(system.file("rmarkdown/templates/pktable/skeleton/skeleton.Rmd",
                                        package="SimcypConsultancy"), 
