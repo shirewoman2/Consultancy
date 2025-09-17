@@ -109,10 +109,6 @@
 #'   B, C, etc.) for each of the small graphs.
 #' @param axis_title_x title for the x axis; default is "Observed"
 #' @param axis_title_y title for the y axis; default is "Simulated"
-#' @param axis_titles SOON TO BE DEPRECATED in favor of \code{axis_title_x} and
-#'   \code{axis_title_x}. Optionally specify what you'd like for the x and y
-#'   axis titles with a named character vector. The default is \code{axis_titles =
-#'   c("x" = "Observed", "y" = "Simulated")}
 #' @param error_bars Which error bars should be shown on the graph? Options are
 #'   "none" (default), "simulated" to show vertical error bars ("vertical" also
 #'   works in case that's easier to remember), "observed" ("horizontal" also
@@ -257,6 +253,8 @@
 #'   \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other
 #'   substitutions people might want. Instead of the using AUCinf, graph titles will
 #'   use AUC0 to inf}}
+#' @param show_boundary_legend TRUE (default) or FALSE for whether to show a
+#'   legend indicating the meaning of the boundaries
 #'
 #' @return a set of arranged ggplot2 graphs
 #' @export
@@ -291,6 +289,7 @@ so_graph <- function(PKtable,
                      boundary_line_types = "default",
                      boundary_line_types_Guest = "default",
                      boundary_line_width = 0.3, 
+                     show_boundary_legend = TRUE, 
                      error_bars = "none", 
                      variability_type = "90% CI", 
                      point_color_column, 
@@ -316,8 +315,7 @@ so_graph <- function(PKtable,
                      save_graph = NA, 
                      fig_width = 8, 
                      fig_height = 6, 
-                     return_list_of_graphs = FALSE, 
-                     axis_titles = NA){
+                     return_list_of_graphs = FALSE){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -557,7 +555,7 @@ so_graph <- function(PKtable,
    boundary_line_types_Guest <- boundary_line_types_Guest[1:(length(boundaries_Guest) + 1)]
    
    
-   ## Getting data arranged  ------------------------------------------------
+   ## Setting boundaries ------------------------------------------------------
    
    # Noting user's original preferences for a few things
    point_color_set_user <- point_color_set
@@ -577,13 +575,19 @@ so_graph <- function(PKtable,
    for(j in Boundaries_num){
       
       Boundaries[[as.character(j)]] <-
-         list("Upper" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
-                 mutate(LimitName = "upper", 
-                        Simulated = Observed * j), 
-              "Lower" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
-                 mutate(LimitName = "upper", 
-                        Simulated = Observed / j))
+         tibble(Observed = rep(10^seq(-4, 9, length.out = 100), 2), 
+                LimitName = rep(c("upper", "lower"), each = 100), 
+                Simulated = case_when(LimitName == "upper" ~ Observed * j, 
+                                      LimitName == "lower" ~ Observed / j), 
+                Boundary = j)
    }
+   
+   Boundaries <- bind_rows(Boundaries) %>% 
+      mutate(Group = paste(LimitName, Boundary), 
+             Boundary = paste0(Boundary, "x"), 
+             Boundary = factor(Boundary, 
+                               levels = paste0(unique(Boundaries_num), "x")))
+   
    
    # BoundariesGuest 
    for(j in Boundaries_num_Guest){
@@ -593,71 +597,106 @@ so_graph <- function(PKtable,
                                        (1 + j*(Observed - 1))/Observed,
                                        (1 + j*((1/Observed) - 1))/(1/Observed)),
                         LimitName = "upper",
-                        Simulated = Observed * Limit),
+                        Simulated = Observed * Limit, 
+                        Boundary = j),
               "Lower" = data.frame(Observed = 10^seq(-4, 9, length.out = 1000)) %>% 
                  mutate(Limit = ifelse(Observed >= 1, 
                                        (1 + j*(Observed - 1))/Observed,
                                        (1 + j*((1/Observed) - 1))/(1/Observed)),
                         LimitName = "lower", 
-                        Simulated = Observed / Limit))
+                        Simulated = Observed / Limit, 
+                        Boundary = j)) %>% 
+         bind_rows()
+      
       GuestStraight[[as.character(j)]] <- 
          list("Upper" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
                  mutate(LimitName = "upper", 
-                        Simulated = Observed * j), 
+                        Simulated = Observed * j, 
+                        Boundary = j), 
               "Lower" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
-                 mutate(LimitName = "upper", 
-                        Simulated = Observed / j))
+                 mutate(LimitName = "lower", 
+                        Simulated = Observed / j, 
+                        Boundary = j)) %>% 
+         bind_rows()
    }
+   
+   BoundariesGuest <- bind_rows(BoundariesGuest) %>% 
+      mutate(Group = paste(LimitName, Boundary), 
+             Boundary = paste0(Boundary, "x"), 
+             Boundary = factor(Boundary, 
+                               levels = paste0(unique(Boundaries_num), "x")))
+   
+   GuestStraight <- bind_rows(GuestStraight) %>% 
+      mutate(Group = paste(LimitName, Boundary), 
+             Boundary = paste0(Boundary, "x"), 
+             Boundary = factor(Boundary, 
+                               levels = paste0(unique(Boundaries_num), "x")))
+   
    
    # Setting up polygons -- This needs to be done a bit differently b/c we'll
    # need to combine each boundary w/the one before it except for the smallest
    # boundary.
-   
-   Poly[["1"]] <- Boundaries[["1"]][["Upper"]] %>% 
+   Poly[["1"]] <- Boundaries[["1"]] %>% 
+      filter(LimitName == "upper") %>% 
       arrange(Observed) %>% 
-      bind_rows(Boundaries[["1"]][["Lower"]] %>% 
+      bind_rows(Boundaries[["1"]] %>%
+                   filter(LimitName == "lower") %>% 
                    arrange(desc(Observed)))
    
    PolyGuest[["1"]] <- 
-      BoundariesGuest[["1"]][["Upper"]] %>% 
+      BoundariesGuest[["1"]] %>% 
+      filter(LimitName == "upper") %>% 
       arrange(Observed) %>% 
-      bind_rows(BoundariesGuest[["1"]][["Lower"]] %>% 
+      bind_rows(BoundariesGuest[["1"]] %>%
+                   filter(LimitName == "lower") %>% 
                    arrange(desc(Observed)))
    
    for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
       Poly[[as.character(Boundaries_num[j_index]) ]] <- 
-         Boundaries[[as.character(Boundaries_num[j_index])]][["Upper"]] %>%
+         Boundaries[[as.character(Boundaries_num[j_index])]] %>% 
+         filter(LimitName == "upper") %>%
          arrange(Observed) %>%
-         bind_rows(Boundaries[[as.character(Boundaries_num[j_index-1])]][["Upper"]] %>%
+         bind_rows(Boundaries[[as.character(Boundaries_num[j_index-1])]] %>% 
+                      filter(LimitName == "upper") %>%
                       arrange(desc(Observed))) %>%
-         bind_rows(Boundaries[[as.character(Boundaries_num[j_index-1])]][["Lower"]] %>%
+         bind_rows(Boundaries[[as.character(Boundaries_num[j_index-1])]] %>%
+                      filter(LimitName == "lower") %>%
                       arrange(Observed)) %>%
-         bind_rows(Boundaries[[as.character(Boundaries_num[j_index])]][["Lower"]] %>% 
+         bind_rows(Boundaries[[as.character(Boundaries_num[j_index])]] %>%
+                      filter(LimitName == "lower") %>% 
                       arrange(desc(Observed)))
-      
    }
+   
    
    for(j_index in 2:length(Boundaries_num_Guest)){ # <--- Note that this is by index and not name!!!!
       
       PolyGuest[[as.character(Boundaries_num_Guest[j_index])]] <- 
-         BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]][["Upper"]] %>%
+         BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]] %>%
+         filter(LimitName == "upper") %>%
          arrange(Observed) %>%
-         bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index-1])]][["Upper"]] %>%
+         bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index-1])]] %>%
+                      filter(LimitName == "upper") %>%
                       arrange(desc(Observed))) %>%
-         bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index-1])]][["Lower"]] %>%
+         bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index-1])]] %>%
+                      filter(LimitName == "lower") %>%
                       arrange(Observed)) %>%
-         bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]][["Lower"]] %>% 
+         bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]] %>%
+                      filter(LimitName == "lower") %>% 
                       arrange(desc(Observed)))
       
       if(j_index == length(Boundaries_num_Guest)){
          PolyGuest[[j_index + 1]] <- 
-            GuestStraight[[as.character(Boundaries_num_Guest[j_index])]][["Upper"]] %>%
+            GuestStraight[[as.character(Boundaries_num_Guest[j_index])]] %>%
+            filter(LimitName == "upper") %>%
             arrange(Observed) %>%
-            bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]][["Upper"]] %>%
+            bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]] %>%
+                         filter(LimitName == "upper") %>%
                          arrange(desc(Observed))) %>%
-            bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]][["Lower"]] %>%
+            bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]] %>%
+                         filter(LimitName == "lower") %>%
                          arrange(Observed)) %>%
-            bind_rows(GuestStraight[[as.character(Boundaries_num_Guest[j_index])]][["Lower"]] %>% 
+            bind_rows(GuestStraight[[as.character(Boundaries_num_Guest[j_index])]] %>%
+                         filter(LimitName == "lower") %>% 
                          arrange(desc(Observed)))
       }
    }
@@ -743,14 +782,48 @@ so_graph <- function(PKtable,
       }
    }
    
-   # Noting which columns are PK parameters
+   # Will need to figure out what PK parameters are and will need deprettified
+   # names when reshaping and organizing data here and lower in function. 
    PKCols <- prettify_column_names(PKtable, return_which_are_PK = TRUE)
    
    # Need to check when concs are molar b/c changes graph title
    ConcType <- ifelse(any(str_detect(PKCols$PrettifiedNames, "µM")), 
                       "molar", "mass per volume")
    
-   # Noting PK parameters
+   # Find all the parameters that were for a user-defined AUC interval and
+   # adjust those.
+   WhichUserInt <- which(str_detect(PKCols$ColName, " for interval from"))
+   UserInt <- PKCols$ColName[WhichUserInt]
+   
+   # Can't just change the name of each user int column b/c that column name may
+   # already exist. Need to remove and then join w/original PK table, keeping
+   # all necessary columns when joining.
+   for(col in UserInt){
+      
+      ToJoin <- PKtable %>% 
+         select(File, col, Statistic, 
+                any_of(c("Compound", "CompoundID", "Tissue", 
+                         as_label(point_color_column), 
+                         as_label(point_shape_column)))) 
+      ToJoin <- ToJoin[which(complete.cases(ToJoin[, col])), ]
+      
+      StartCh <- as.data.frame(str_locate(col, " for interval"))
+      newcol <- str_sub(col, start = 1, end = StartCh$start - 1)
+      
+      names(ToJoin)[which(names(ToJoin) == col)] <- newcol
+      
+      suppressMessages(
+         PKtable <- PKtable %>% 
+            full_join(ToJoin) %>% select(-any_of(col))
+      )
+      
+      rm(newcol, ToJoin)
+      
+   }
+   
+   # Redetermining which are PK now that interval column names have been changed
+   PKCols <- prettify_column_names(PKtable, return_which_are_PK = TRUE)
+   
    if(any(is.na(PKparameters))){
       PKparameters <- unique(PKCols$PKparameter[PKCols$IsPKParam])
    }
@@ -762,16 +835,14 @@ so_graph <- function(PKtable,
                                 "Simulated", Statistic)) %>% 
       # Removing additional columns since they mess up pivoting.
       select(Statistic, File,
-             any_of(c(PKCols$ColName[PKCols$IsPKParam], 
-                      "CompoundID", "Tissue", "Sheet", 
+             any_of(c(PKparameters, "CompoundID", "Tissue", "Sheet", 
                       as_label(point_color_column), 
-                      as_label(point_shape_column)))) %>% 
+                      as_label(point_shape_column))))%>% 
       unique() %>% 
-      pivot_longer(names_to = "ColName", 
+      pivot_longer(names_to = "PKparameter", 
                    values_to = "Value", 
-                   cols = PKCols$ColName[PKCols$IsPKParam]) %>% 
-      left_join(PKCols, by = "ColName") %>% 
-      filter(complete.cases(Value) & PKparameter %in% PKparameters)
+                   cols = any_of({{PKparameters}})) %>% 
+      filter(complete.cases(Value))
    
    ## Tidying input data further now that format is long by parameter -------------
    
@@ -838,7 +909,7 @@ so_graph <- function(PKtable,
          # VarType must be calculated to get high and low - simulated
          
          CentralValue <- as.numeric(SO[[sub(VarType, "Simulated", i)]]$Value)
-         if(length(CentralValue) > 1 | length(VarType) > 1){browser()}
+         
          SO[[i]] <- SO[[i]] %>% 
             mutate(
                Value = as.numeric(Value), 
@@ -1301,80 +1372,91 @@ so_graph <- function(PKtable,
                            SO[[i]]$Simulated), na.rm = T)))
       )
       
-      if(str_detect(i, "ratio")){
-         
-         # If it was a Guest plot, then set the lower limit to be < 1 and the
-         # upper to be > 1. Otherwise, that lowest/highest point is way in the
-         # corner.
-         if(Limits[1] == 1){Limits[1] <- 2/3}
-         if(Limits[2] == 1){Limits[2] <- 3}
-         
-         G[[i]] <- ggplot()  +
-            geom_line(data = BoundariesGuest[["1"]][["Upper"]],
-                      aes(x = Observed, y = Simulated),
-                      linetype = boundary_line_types_Guest[1],
-                      color = boundary_color_set_Guest[1],
-                      linewidth = boundary_line_width)
-         
-      } else {
-         G[[i]] <- ggplot()  +
-            geom_line(data = Boundaries[["1"]][["Upper"]],
-                      aes(x = Observed, y = Simulated),
-                      linetype = boundary_line_types_straight[1],
-                      color = boundary_color_set[1],
-                      linewidth = boundary_line_width)
-      }
-      
       if(boundary_indicator == "lines"){
          if(str_detect(i, "ratio")){
             
-            for(j_index in 2:length(Boundaries_num_Guest)){ # <--- Note that this is by index and not name!!!!
-               G[[i]] <- G[[i]] + 
-                  geom_line(data = BoundariesGuest[[j_index]][["Upper"]],
-                            aes(x = Observed, y = Simulated),
-                            color = boundary_color_set_Guest[j_index], 
-                            linewidth = boundary_line_width, 
-                            linetype = boundary_line_types_Guest[j_index]) +
-                  geom_line(data = BoundariesGuest[[j_index]][["Lower"]], 
-                            aes(x = Observed, y = Simulated),
-                            color = boundary_color_set_Guest[j_index], 
-                            linewidth = boundary_line_width, 
-                            linetype = boundary_line_types_Guest[j_index])
-               
-               if(j_index == length(Boundaries_num_Guest)){
-                  G[[i]] <- G[[i]] +
-                     geom_line(data = GuestStraight[[j_index]][["Upper"]],
-                               aes(x = Observed, y = Simulated),
-                               color = boundary_color_set_Guest[j_index + 1], 
-                               linewidth = boundary_line_width, 
-                               linetype = boundary_line_types_Guest[j_index + 1]) +
-                     geom_line(data = GuestStraight[[j_index]][["Lower"]],
-                               aes(x = Observed, y = Simulated),
-                               color = boundary_color_set_Guest[j_index + 1], 
-                               linewidth = boundary_line_width, 
-                               linetype = boundary_line_types_Guest[j_index + 1])
-               }
-            }
+            # If it was a Guest plot, then set the limit to be < 1 and the upper to
+            # be > 1. Otherwise, that lowest/highest point is way in the corner.
+            if(Limits[1] == 1){Limits[1] <- 2/3}
+            if(Limits[2] == 1){Limits[2] <- 3}
+            
+            G[[i]] <- ggplot()  +
+               geom_line(data = BoundariesGuest,
+                         aes(x = Observed, y = Simulated,
+                             color = Boundary, 
+                             group = Group,
+                             linetype = Boundary, 
+                             linewidth = Boundary), 
+                         show.legend = show_boundary_legend)
+            
             
          } else {
-            
-            for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
-               G[[i]] <- G[[i]] + 
-                  geom_line(data = Boundaries[[j_index]][["Upper"]],
-                            aes(x = Observed, y = Simulated),
-                            color = boundary_color_set[j_index], 
-                            linewidth = boundary_line_width, 
-                            linetype = boundary_line_types_straight[j_index]) +
-                  geom_line(data = Boundaries[[j_index]][["Lower"]],
-                            aes(x = Observed, y = Simulated),
-                            color = boundary_color_set[j_index], 
-                            linewidth = boundary_line_width, 
-                            linetype = boundary_line_types_straight[j_index])
-            }
+            G[[i]] <- ggplot()  +
+               geom_line(data = Boundariesaes(x = Observed, y = Simulated,
+                                              color = Boundary, 
+                                              group = Group,
+                                              linetype = Boundary, 
+                                              linewidth = Boundary), 
+                         show.legend = show_boundary_legend) 
          }
+         
+         G[[i]] <- G[[i]] + 
+            # NB: For things to work correctly with ggnewscale, the legend name
+            # MUST be specified with the scale_x_value call; it does NOT work
+            # when specified with, e.g., labs(color = ...)
+            scale_color_manual(values = boundary_color_set, 
+                               name = "Boundary") +
+            scale_linetype_manual(values = boundary_line_types_straight, 
+                                  name = "Boundary") + 
+            scale_linewidth_manual(values = boundary_line_width, 
+                                   name = "Boundary")
+         
+         
+      } else if(boundary_indicator %in% c("fill", "none")){
+         # Need to add unity line for both fill and none and then can add
+         # polygons
+         
+         if(str_detect(i, "ratio")){
+            
+            # If it was a Guest plot, then set the limit to be < 1 and the upper to
+            # be > 1. Otherwise, that lowest/highest point is way in the corner.
+            if(Limits[1] == 1){Limits[1] <- 2/3}
+            if(Limits[2] == 1){Limits[2] <- 3}
+            
+            G[[i]] <- ggplot()  +
+               geom_line(data = BoundariesGuest %>% filter(Boundary == 1),
+                         aes(x = Observed, y = Simulated,
+                             color = Boundary, 
+                             group = Group,
+                             linetype = Boundary, 
+                             linewidth = Boundary), 
+                         show.legend = show_boundary_legend)
+            
+         } else {
+            G[[i]] <- ggplot()  +
+               geom_line(data = Boundaries %>% filter(Boundary == 1),
+                         aes(x = Observed, y = Simulated,
+                             color = Boundary, 
+                             group = Group,
+                             linetype = Boundary, 
+                             linewidth = Boundary), 
+                         show.legend = show_boundary_legend)
+         }
+         
+         G[[i]] <- G[[i]] + 
+            # NB: For things to work correctly with ggnewscale, the legend name
+            # MUST be specified with the scale_x_value call; it does NOT work
+            # when specified with, e.g., labs(color = ...)
+            scale_color_manual(values = boundary_color_set, 
+                               name = "Boundary") +
+            scale_linetype_manual(values = boundary_line_types_straight, 
+                                  name = "Boundary") + 
+            scale_linewidth_manual(values = boundary_line_width, 
+                                   name = "Boundary")
       }
       
       if(boundary_indicator == "fill"){
+         
          if(str_detect(i, "ratio")){
             
             for(j_index in 2:length(Boundaries_num_Guest)){ # <--- Note that this is by index and not name!!!!
@@ -1404,6 +1486,13 @@ so_graph <- function(PKtable,
          }
       }
       
+      # Adding a new scale for colors so that the legend for the lines will look
+      # different from the legend for the points.
+      G[[i]] <- G[[i]] +
+         ggnewscale::new_scale("colour") +
+         ggnewscale::new_scale("linetype") +
+         ggnewscale::new_scale("linewidth")
+      
       PossBreaks <- sort(c(10^(-3:9),
                            3*10^(-3:9),
                            5*10^(-3:9)))
@@ -1432,7 +1521,7 @@ so_graph <- function(PKtable,
                           aes(x = Observed, 
                               color = point_color_column, 
                               ymin = Var_lower, ymax = Var_upper),
-                          width = BarWidth, show.legend = F)
+                          width = BarWidth)
       } 
       
       if(error_bars_i %in% c("horizontal", "both")){
@@ -1441,7 +1530,7 @@ so_graph <- function(PKtable,
                            aes(y = Simulated, 
                                color = point_color_column, 
                                xmin = ObsVar_lower, xmax = ObsVar_upper), 
-                           height = BarWidth, show.legend = F)
+                           height = BarWidth)
       } 
       
       # Aesthetics for points are determined by:
@@ -1470,9 +1559,12 @@ so_graph <- function(PKtable,
                        size = ifelse(is.na(point_size), 2, point_size), 
                        alpha = ifelse(is.na(point_transparency), 1, point_transparency), 
                        show.legend = TRUE) +
-            scale_color_manual(values = MyColors, drop = FALSE) +
-            scale_fill_manual(values = MyFillColors, drop = FALSE) +
-            scale_shape_manual(values = MyShapes, drop = FALSE)
+            scale_color_manual(values = MyColors, drop = FALSE, 
+                               name = legend_label_point_color) +
+            scale_fill_manual(values = MyFillColors, drop = FALSE, 
+                              name = legend_label_point_color) +
+            scale_shape_manual(values = MyShapes, drop = FALSE, 
+                               name = legend_label_point_shape)
          
          if(length(unique(SO[[i]]$point_color_column)) > 3 & 
             legend_position %in% c("bottom", "top")){
@@ -1493,24 +1585,30 @@ so_graph <- function(PKtable,
                        size = ifelse(is.na(point_size), 2, point_size), 
                        alpha = ifelse(is.na(point_transparency), 1, point_transparency), 
                        show.legend = TRUE) +
-            scale_color_manual(values = MyColors, drop = FALSE) +
-            scale_fill_manual(values = MyFillColors, drop = FALSE) +
-            scale_shape_manual(values = MyShapes, drop = FALSE)
+            scale_color_manual(values = MyColors, drop = FALSE, 
+                               name = legend_label_point_color) +
+            scale_fill_manual(values = MyFillColors, drop = FALSE, 
+                              name = legend_label_point_color) +
+            scale_shape_manual(values = MyShapes, drop = FALSE, 
+                               name = legend_label_point_shape)
          
          if(length(MyPointColors) > 3){
             if(any(MyPointShapes %in% c(21:25))){
                G[[i]] <- G[[i]] + 
-                  guides(color = guide_legend(override.aes = list(shape = 21), 
-                                              ncol = ifelse(legend_position %in% c("bottom", "top"), 
-                                                            2, 1)))
+                  guides(color = guide_legend(
+                     override.aes = list(shape = 21), 
+                     ncol = ifelse(legend_position %in% c("bottom", "top"), 
+                                   2, 1)))
             } else {
                G[[i]] <- G[[i]] + 
-                  guides(color = guide_legend(ncol = ifelse(legend_position %in% c("bottom", "top"), 
-                                                            2, 1)))
+                  guides(color = guide_legend(
+                     ncol = ifelse(legend_position %in% c("bottom", "top"), 
+                                   2, 1)))
             }
          } else if(any(MyPointShapes %in% c(21:25))){
             G[[i]] <- G[[i]] + 
-               guides(color = guide_legend(override.aes = list(shape = 21)))
+               guides(color = guide_legend(
+                  override.aes = list(shape = 21)))
          }
          
          if(length(MyPointShapes) > 3){
