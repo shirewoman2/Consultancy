@@ -58,7 +58,8 @@ calc_PK_ratios(
 
   \item{"Denominator_File"}{This is the same thing as the argument \code{sim_data_file_denominator})}
 
-  \item{"Numerator_Sheet" or "Denominator_Sheet"}{When it's a user-defined AUC interval you want,
+  \item{"Numerator_UserAUCSheet" or "Denominator_UserAUCSheet"}{When it's a
+  user-defined AUC interval you want,
   this specifies which sheet in the Simulator output Excel file to use for
   the corresponding PK parameter in the numerator or denominator,
   respectively. If it's a regular first-dose or last-dose PK parameter,
