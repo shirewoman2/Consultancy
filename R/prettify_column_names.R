@@ -78,14 +78,14 @@ prettify_column_names <- function(PKtable,
    # calc_PK_ratios columns will include "DenominatorSim" and "NumeratorSim".
    # Noting that and saving original column names.
    if(PKtable_class == "data.frame"){
-      ColNamesNoDecorations <- names(PKtable)
+      OrigColNames <- names(PKtable)
    } else {
-      ColNamesNoDecorations <- PKtable
+      OrigColNames <- PKtable
    }
    
    # Noting original names
    TableNames <-
-      data.frame(OrigColNames = ColNamesNoDecorations, 
+      data.frame(OrigColNames = OrigColNames, 
                  OrigOrder = switch(PKtable_class, 
                                     "data.frame" = 1:ncol(PKtable), 
                                     "character" = 1:length(PKtable))) %>% 
@@ -240,7 +240,8 @@ prettify_column_names <- function(PKtable,
             PrettifiedNames = case_match(
                OrigColNames, 
                "Interval_Numerator" ~ "Interval numerator simulation", 
-               "Interval_Denominator" ~ "Interval denominator simulation")) %>% 
+               "Interval_Denominator" ~ "Interval denominator simulation",
+               .default = PrettifiedNames)) %>% 
          select(-Suffix)
    }
    

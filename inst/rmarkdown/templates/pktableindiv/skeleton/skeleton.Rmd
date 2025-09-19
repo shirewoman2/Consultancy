@@ -178,27 +178,42 @@ names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
 if(as_label(shading_column) == "<empty>"){
    
    formatTable_Simcyp(TempTable,
-                      merge_shaded_cells = TRUE,
-                      perpetrator_name = MyPerpetrator, 
+                      hlines = "when dataset changes", 
+                      merge_shaded_cells = TRUE, 
+                      bold_cells = MakeBold, 
+                      merge_columns = intersect(
+                         names(MyPKResults), 
+                         c("File", "Interval", 
+                           "Sheet", "Tissue", 
+                           "CompoundID", 
+                           "Interval numerator simulation", 
+                           "Interval denominator simulation")), 
                       fontsize = fontsize,
                       prettify_columns = prettify_columns, 
                       add_header_for_DDI = add_header_for_DDI, 
+                      highlight_gmr_colors = highlight_gmr_colors, 
                       highlight_so_cutoffs = highlight_so_cutoffs, 
-                      highlight_so_colors = highlight_so_colors, 
-                      highlight_gmr_colors = highlight_gmr_colors)
+                      highlight_so_colors = highlight_so_colors)
    
 } else {
    
    formatTable_Simcyp(TempTable,
                       shading_column = !!shading_column, 
-                      merge_shaded_cells = TRUE,
-                      perpetrator_name = MyPerpetrator, 
+                      bold_cells = MakeBold, 
+                      merge_shaded_cells = TRUE, 
+                      merge_columns = intersect(
+                         names(MyPKResults), 
+                         c("File", "Interval", 
+                           "Sheet", "Tissue", 
+                           "CompoundID", 
+                           "Interval numerator simulation", 
+                           "Interval denominator simulation")), 
                       fontsize = fontsize,
                       prettify_columns = prettify_columns, 
                       add_header_for_DDI = add_header_for_DDI, 
+                      highlight_gmr_colors = highlight_gmr_colors, 
                       highlight_so_cutoffs = highlight_so_cutoffs, 
-                      highlight_so_colors = highlight_so_colors, 
-                      highlight_gmr_colors = highlight_gmr_colors)
+                      highlight_so_colors = highlight_so_colors)
    
 }
 

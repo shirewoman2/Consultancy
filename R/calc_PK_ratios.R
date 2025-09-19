@@ -1257,8 +1257,8 @@ calc_PK_ratios <- function(PKparameters = NA,
    if(prettify_columns){
       names(MyPKResults) <- sub("NumeratorSim", "numerator simulation", names(MyPKResults))  
       names(MyPKResults) <- sub("DenominatorSim", "denominator simulation", names(MyPKResults))
-      names(MyPKResults) <- sub("Interval_Denominator", "Interval denominator simulation", names(MyPKResults))  
-      names(MyPKResults) <- sub("Interval_Numerator", "Interval numerator simulation", names(MyPKResults))  
+      names(MyPKResults) <- sub("_Denominator", " denominator simulation", names(MyPKResults))  
+      names(MyPKResults) <- sub("_Numerator", " numerator simulation", names(MyPKResults))  
    }
    
    # Saving --------------------------------------------------------------

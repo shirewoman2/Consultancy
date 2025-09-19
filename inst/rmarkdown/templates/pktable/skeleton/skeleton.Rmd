@@ -112,6 +112,19 @@ if("File" %in% names(MyPKResults)){
       relocate(File, .after = last_col())
 }
 
+if(interval_in_columns){
+   
+   MakeBold <- list(c(0, NA), # header
+                    c(NA, 1)) # 1st col
+   
+} else {
+   
+   MakeBold <- list(c(0, NA), # header
+                    c(NA, 1), 
+                    c(NA, 2)) # 1st 2 cols
+   
+}
+
 if(single_table){
    
    # If they only wanted 1 tissue, don't include a column for that in the table.
@@ -136,7 +149,7 @@ if(single_table){
    # one value present for the Sheet column, remove it. 
    if(prettify_columns | 
       ("Sheet" %in% names(MyPKResults) && 
-      length(unique(MyPKResults$Sheet)) == 1)){
+       length(unique(MyPKResults$Sheet)) == 1)){
       MyPKResults <- MyPKResults %>% 
          select(-any_of("Sheet"))
    }
@@ -147,19 +160,6 @@ if(single_table){
    if(include_dose_num == FALSE){
       names(MyPKResults) <- 
          sub("Dose 1 |Last dose |_dose1|_last", "", names(MyPKResults))
-   }
-   
-   if(interval_in_columns){
-      
-      MakeBold <- list(c(0, NA), # header
-                       c(NA, 1)) # 1st col
-      
-   } else {
-      
-      MakeBold <- list(c(0, NA), # header
-                       c(NA, 1), 
-                       c(NA, 2)) # 1st 2 cols
-      
    }
    
    if(as_label(shading_column) == "<empty>"){

@@ -598,15 +598,51 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          filter(!str_detect(Statistic, "CI|confidence"))
    }
    
+   
+   ## Prettifying as needed --------------------------------------------------
+   
    if(prettify_columns){
       
       PrettyCol <- tibble(OrigName = names(MyPKResults), 
                           GoodCol = prettify_column_names(names(MyPKResults)))
       
+      # Adjusting units as needed.
+      PrettyCol <- PrettyCol %>% 
+         mutate(GoodCol = sub("ng/mL.h", 
+                              paste0(conc_units, ".", 
+                                     case_match(time_units, 
+                                                "minutes" ~ "min", 
+                                                "hours" ~ "h", 
+                                                "days" ~ "d", 
+                                                "weeks" ~ "wk")), GoodCol), 
+                GoodCol = sub("L/h", 
+                              paste0("L/", 
+                                     case_match(time_units, 
+                                                "minutes" ~ "min", 
+                                                "hours" ~ "h", 
+                                                "days" ~ "d", 
+                                                "weeks" ~ "wk")), GoodCol), 
+                GoodCol = sub("ng/mL", conc_units, GoodCol), 
+                GoodCol = sub("\\(h\\)", 
+                              paste0("(", 
+                                     case_match(time_units, 
+                                                "minutes" ~ "min", 
+                                                "hours" ~ "h", 
+                                                "days" ~ "d", 
+                                                "weeks" ~ "wk"), 
+                                     ")"), GoodCol))
+      
       # Setting prettified names.
       MyPKResults <- MyPKResults[, PrettyCol$OrigName]
       names(MyPKResults) <- PrettyCol$GoodCol
-      
+   }
+   
+   include_dose_num <- check_include_dose_num(PK = MyPKResults, 
+                                              include_dose_num = include_dose_num)
+   
+   if(include_dose_num == FALSE){
+      names(MyPKResults) <- sub("Dose 1 |Last dose |_dose1|_last", "",
+                                names(MyPKResults))
    }
    
    
