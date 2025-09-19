@@ -9,6 +9,7 @@ pk_table_subfun(
   PKparameters,
   existing_exp_details,
   conc_units,
+  time_units,
   MeanType,
   GMR_mean_type,
   includeTrialMeans,
@@ -23,7 +24,9 @@ pk_table_subfun(
 
 \item{existing_exp_details}{harmonized existing_exp_details}
 
-\item{conc_units}{how to convert conc units, if desired}
+\item{conc_units}{desired conc units}
+
+\item{time_units}{desired time units}
 
 \item{MeanType}{main mean type}
 

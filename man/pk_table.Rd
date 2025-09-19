@@ -23,6 +23,7 @@ pk_table(
   concatVariability = TRUE,
   variability_format = "to",
   conc_units = NA,
+  time_units = "hours",
   interval_in_columns = TRUE,
   include_dose_num = NA,
   PKorder = "default",
@@ -229,16 +230,17 @@ that there was another name for parentheses.)}
 \item{conc_units}{What concentration units should be used in the table?
 Default is NA to leave the units as is, but if you set the concentration
 units to something else, this will attempt to convert the units to match
-that. This adjusts only the simulated values, since we're assuming that
-that's the most likely problem and that observed units are relatively easy
-to fix, and it also only affects AUC and Cmax values. If you leave this as
-NA, the units in the 1st simulation will be used as the units for
-\emph{all} the simulations for consistency and clarity. Acceptable input is
-any concentration unit
-listed in the Excel form for PE data entry, e.g. \code{conc_units =
-"ng/mL"} or \code{conc_units = "uM"}. Molar concentrations will be
-automatically converted using the molecular weight of whatever you set for
-\code{compoundToExtract}.}
+that. This adjusts only the simulated values. If you leave this as NA, the
+units in the 1st simulation will be used as the units for \emph{all} the
+simulations for consistency and clarity. Acceptable input is any
+concentration unit listed in the Excel form for PE data entry, e.g.
+\code{conc_units = "ng/mL"} or \code{conc_units = "uM"}. Molar
+concentrations will be automatically converted using the molecular weight
+of whatever you set for \code{compoundToExtract}.}
+
+\item{time_units}{What time units should be used in the table? Default is
+"hours"; other acceptable options: "minutes", "hours", "days", or "weeks".
+This adjusts only the simulated values.}
 
 \item{interval_in_columns}{TRUE (default) or FALSE for whether to include the
 dosing interval that pertains to that specific PK parameter in the columns
@@ -342,14 +344,10 @@ information for checking the dosing intervals}
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
 the table saved as a Word or csv file.  Do not include any slashes, dollar
-signs, or periods in the file name. (You can also save the table to a Word
-file later with the function \code{\link{formatTable_Simcyp}}.) If you
-supply only the file extension, e.g., \code{save_table = "docx"}, the name
-of the file will be "PK summary table" with that extension. If you supply
-something other than just "docx" or just "csv" for the file name but you
-leave off the file extension, we'll assume you want it to be ".csv". All PK
-info will be included in a single Word or csv file, and, if
-\code{checkDataSource = TRUE}, that will be saved in a single csv file.}
+signs, or periods in the file name. While the main PK table data will be in
+whatever file format you requested, if you set \code{checkDataSource =
+TRUE}, the QC data will be in a csv file on its own and will have "- QC"
+added to the end of the file name.}
 
 \item{highlight_gmr_colors}{optionally specify a set of colors to use for
 highlighting geometric mean ratios for DDIs. Options are "yellow to red",

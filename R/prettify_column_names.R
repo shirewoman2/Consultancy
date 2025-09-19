@@ -98,12 +98,21 @@ prettify_column_names <- function(PKtable,
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_last Ratio|_last_withInhib Ratio", "_ratio_last"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_withInhib Ratio", "_ratio"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "for interval from.*to [0-9]{1,} h ", ""), 
+         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "Interval_Numerator", "Interval numerator simulation"), 
+         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, " Ratio", " ratio"), 
+         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "Interval_Denominator", "Interval denominator simulation"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "with .* \\(", "with perpetrator ("), 
          
          # Also changing any instances of "steady-state" that the user may have
          # added to "last dose" just for the purposes of determining which are
          # PK parameters
-         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "[Ss]teady[- ]state", "Last dose"), 
+         ColNamesNoDecorations = str_replace(
+            ColNamesNoDecorations, "[Ss]teady[- ]state", "Last dose"), 
+         
+         # Removing mention of numerator or denominator
+         ColNamesNoDecorations = str_replace(
+            ColNamesNoDecorations, 
+            " numerator simulation| denominator simulation", ""), 
          
          # Dealing with unit differences b/c could have units in table other
          # than the most common ng/mL and h.
@@ -116,7 +125,9 @@ prettify_column_names <- function(PKtable,
          Time = gsub("\\(L?|\\)|/|\\.", "", Time), 
          # placeholder for if we need to adjust column names to deal
          # w/nonstandard units
-         ColNamesStdUnits = ColNamesNoDecorations)
+         ColNamesStdUnits = case_when(
+            !str_detect(OrigColNames, "Interval_[ND]") ~ ColNamesNoDecorations, 
+            .default = OrigColNames))
    
    AllPKParameters_mod <- 
       AllPKParameters %>% select(PKparameter, PrettifiedNames) %>% 
@@ -213,11 +224,23 @@ prettify_column_names <- function(PKtable,
       arrange(OrigOrder)
    
    # Putting numerator and denominator back into col names
-   if(any(str_detect(TableNames$OrigColNames, "NumeratorSim|DenominatorSim"))){
+   if(any(str_detect(TableNames$OrigColNames, 
+                     "[Nn]umerator|[Dd]enominator"))){
+      
       TableNames <- TableNames %>% 
-         mutate(Suffix = str_extract(OrigColNames, "NumeratorSim|DenominatorSim"), 
-                Suffix = ifelse(is.na(Suffix), "", Suffix), 
-                PrettifiedNames = str_trim(paste(PrettifiedNames, Suffix))) %>% 
+         mutate(
+            Suffix = str_extract(OrigColNames, 
+                                 "NumeratorSim|DenominatorSim|numerator simulation|denominator simulation"), 
+            Suffix = case_when(
+               is.na(Suffix) ~ "", 
+               Suffix %in% c("NumeratorSim", "numerator simulation") ~ "numerator simulation", 
+               Suffix %in% c("DenominatorSim", "denominator simulation") ~ "denominator simulation", 
+               .default = ""), 
+            PrettifiedNames = str_trim(paste(PrettifiedNames, Suffix)), 
+            PrettifiedNames = case_match(
+               OrigColNames, 
+               "Interval_Numerator" ~ "Interval numerator simulation", 
+               "Interval_Denominator" ~ "Interval denominator simulation")) %>% 
          select(-Suffix)
    }
    

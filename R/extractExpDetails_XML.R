@@ -630,7 +630,10 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          
          # NB: Population parameters need to have level 2 be numeric rather
          # than character.
-         if(is.na(DeetInfo$Level1)){browser()}
+         if(is.na(DeetInfo$Level1)){
+            # browser()
+         }
+         
          if(DeetInfo$Level1 == "Populations"){
             DeetInfo$Level2 <- as.numeric(DeetInfo$Level2)
          }

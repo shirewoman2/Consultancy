@@ -8,7 +8,6 @@
 #' @param PKparameters whatever they have supplied for PKparameters for
 #'   pksummary_table or pksummary_mult. This can be a csv file, a character
 #'   vector, or NA.
-#' @param report_input_file probably not in use
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} to get all the details from the "Input
 #'   Sheet" (e.g., when you ran extractExpDetails you said \code{exp_details =
@@ -16,7 +15,6 @@
 #'   time by supplying that object here, unquoted. If left as NA, this function
 #'   will run \code{extractExpDetails} behind the scenes anyway to figure out
 #'   some information about your experimental set up.
-#' @param sheet_report probably not in use
 #' @param sim_data_files a character vector of file names. This should no longer
 #'   be NA or "recursive".
 #' @param compoundsToExtract the values they supplied for compoundsToExtract in
@@ -24,6 +22,12 @@
 #' @param tissues the values they supplied for tissues in the parent function
 #' @param sheet_PKparameters the values they supplied for sheet_PKparameters in
 #'   the parent function
+#' @param sim_data_file_numerator sim file for the numerator. This ONLY comes
+#'   from calc_PK_ratios and NOT calc_PK_ratios_mult and thus MUST have length
+#'   1.
+#' @param sim_data_file_denominator sim file for the denominator. This ONLY
+#'   comes from calc_PK_ratios and NOT calc_PK_ratios_mult and thus MUST have
+#'   length 1.
 #'
 #' @return a list of: 1) "PKparameters" -- a tidy data.frame of PKparameters
 #'   with standardized column names and contents, 2) "existing_exp_details",
@@ -35,6 +39,8 @@
 #' # nope 
 tidy_input_PK <- function(PKparameters, 
                           sim_data_files = NA, 
+                          sim_data_file_numerator = NA, 
+                          sim_data_file_denominator = NA, 
                           existing_exp_details = NA, 
                           compoundsToExtract = "substrate",
                           tissues = "plasma", 
@@ -172,14 +178,16 @@ tidy_input_PK <- function(PKparameters,
    }
    
    # Dealing with possible input from calc_PK_ratios
-   FromCalcPKRatios <- any(str_detect(tolower(names(PKparameters)), "numerator")) | 
+   FromCalcPKRatios <- 
+      any(str_detect(tolower(names(PKparameters)), "numerator")) | 
       any(str_detect(tolower(names(PKparameters)), "denominator")) |
       ("PKparameter" %in% names(PKparameters) && 
-          any(str_detect(PKparameters$PKparameter, "/"))) |
-      "NorD" %in% names(PKparameters)
+          any(str_detect(PKparameters$PKparameter, "/"), na.rm = T)) |
+      "NorD" %in% names(PKparameters) |
+      any(complete.cases(sim_data_file_numerator)) |
+      any(complete.cases(sim_data_file_denominator))
    
-   if(any(str_detect(tolower(names(PKparameters)), "numerator")) & 
-      any(str_detect(tolower(names(PKparameters)), "denominator"))){
+   if(FromCalcPKRatios){
       
       # Tidying column names
       
@@ -192,6 +200,35 @@ tidy_input_PK <- function(PKparameters,
          str_detect(tolower(names(PKparameters)), 
                     "^denominator$|denominator.*file|denominator.*sim")][1] <- "Denominator_File"
       
+      if(all(c("Numerator_File", "Denominator_File") %in%
+             names(PKparameters) == FALSE) & 
+         "File" %in% names(PKparameters)){
+         PKparameters <- PKparameters %>% 
+            mutate(Numerator_File = File, 
+                   Denominator_Tissue = File) %>% 
+            select(-File)
+      }
+      
+      if(all(c("Numerator_File", "Denominator_File") %in%
+             names(PKparameters) == FALSE)){
+         
+         # If they did not include Num or Denom files in PKparameters, then it
+         # must be b/c this is getting called from calc_PK_ratios (not
+         # calc_PK_ratios_mult) and each of sim_data_file_numerator and
+         # sim_data_file_denominator will have length 1, so it's safe to add
+         # them to the data as a single value.
+         
+         if(length(sim_data_file_denominator) != 1 |
+            length(sim_data_file_numerator) != 1){
+            stop(wrapn("We're having trouble figuring out which PK parameters match which simulation data files for the numerator and denominator. Please use a data.frame for the argument 'PKparameters' that includes what the numerator and denominator simulation data files should be rather than specifying them with 'sim_data_file_numerator' and 'sim_data_file_denominator'. If you're uncertain how to set this up, please run 'make_example_PK_input()' for help."), 
+                 call. = FALSE)
+         }
+         
+         PKparameters <- PKparameters %>% 
+            mutate(Numerator_File = sim_data_file_numerator,
+                   Denominator_File = sim_data_file_denominator)
+      }
+      
       # CompoundID
       names(PKparameters)[
          str_detect(tolower(names(PKparameters)), 
@@ -200,6 +237,15 @@ tidy_input_PK <- function(PKparameters,
       names(PKparameters)[
          str_detect(tolower(names(PKparameters)), 
                     "denominator.*compoundid|compoundid.*denominator")][1] <- "Denominator_CompoundID"
+      
+      if(all(c("Numerator_CompoundID", "Denominator_CompoundID") %in%
+             names(PKparameters) == FALSE) & 
+         "CompoundID" %in% names(PKparameters)){
+         PKparameters <- PKparameters %>% 
+            mutate(Numerator_CompoundID = CompoundID, 
+                   Denominator_Tissue = CompoundID) %>% 
+            select(-CompoundID)
+      }
       
       if("Numerator_CompoundID" %in% names(PKparameters) == FALSE){
          PKparameters <- PKparameters %>% 
@@ -228,6 +274,15 @@ tidy_input_PK <- function(PKparameters,
          str_detect(tolower(names(PKparameters)), 
                     "denominator.*tissue|tissue.*denominator")][1] <- "Denominator_Tissue"
       
+      if(all(c("Numerator_Tissue", "Denominator_Tissue") %in%
+             names(PKparameters) == FALSE) & 
+         "Tissue" %in% names(PKparameters)){
+         PKparameters <- PKparameters %>% 
+            mutate(Numerator_Tissue = Tissue, 
+                   Denominator_Tissue = Tissue) %>% 
+            select(-Tissue)
+      }
+      
       if("Numerator_Tissue" %in% names(PKparameters) == FALSE){
          PKparameters <- PKparameters %>% 
             left_join(expand_grid(Numerator_File = unique(PKparameters$Numerator_File), 
@@ -246,7 +301,6 @@ tidy_input_PK <- function(PKparameters,
                                                   .default = Denominator_Tissue))
       }
       
-      
       # Sheet
       names(PKparameters)[
          str_detect(tolower(names(PKparameters)), 
@@ -255,6 +309,15 @@ tidy_input_PK <- function(PKparameters,
       names(PKparameters)[
          str_detect(tolower(names(PKparameters)), 
                     "denominator.*sheet|sheet.*denominator|denominator.*tab|tab.*denominator")][1] <- "Denominator_Sheet"
+      
+      if(all(c("Numerator_Sheet", "Denominator_Sheet") %in%
+             names(PKparameters) == FALSE) & 
+         "Sheet" %in% names(PKparameters)){
+         PKparameters <- PKparameters %>% 
+            mutate(Numerator_Sheet = Sheet, 
+                   Denominator_Tissue = Sheet) %>% 
+            select(-Sheet)
+      }
       
       if("Numerator_Sheet" %in% names(PKparameters) == FALSE){
          PKparameters$Numerator_Sheet <- NA
@@ -276,14 +339,24 @@ tidy_input_PK <- function(PKparameters,
       names(PKparameters)[str_detect(tolower(names(PKparameters)), 
                                      "^pk.*param(eter)$")][1] <- "PKparameter"
       
-      if("Numerator_PKparameter" %in% names(PKparameters) == FALSE & 
-         "PKparameter" %in% names(PKparameters)){
-         PKparameters$Numerator_PKparameter <- PKparameters$PKparameter
+      if("PKparameter" %in% names(PKparameters) && 
+         any(str_detect(PKparameters$PKparameter, "/"), na.rm = T)){
+         
+         PKparameters <- PKparameters %>% 
+            separate_wider_delim(
+               cols = PKparameter, 
+               delim = " / ", 
+               names = c("Numerator_PKparameter", "Denominator_PKparameter"))
+         
       }
       
-      if("Denominator_PKparameter" %in% names(PKparameters) == FALSE & 
+      if(all(c("Numerator_PKparameter", "Denominator_PKparameter") %in%
+             names(PKparameters) == FALSE) & 
          "PKparameter" %in% names(PKparameters)){
-         PKparameters$Denominator_PKparameter <- PKparameters$PKparameter
+         PKparameters <- PKparameters %>% 
+            mutate(Numerator_PKparameter = PKparameter, 
+                   Denominator_PKparameter = PKparameter) %>% 
+            select(-PKparameter)
       }
       
       if("Numerator_PKparameter" %in% names(PKparameters) == FALSE){
@@ -315,30 +388,9 @@ tidy_input_PK <- function(PKparameters,
             rename_with(.fn = function(.) sub("Denominator_", "", .)) %>% 
             mutate(NorD = "Denominator"))
       
-   } else if(any(str_detect(PKparameters$PKparameter, "/"), na.rm = T)){
-      PKparameters <- PKparameters %>% 
-         separate_wider_delim(cols = PKparameter, delim = " / ", 
-                              names = c("Numerator_PKparameter", "Denominator_PKparameter"))
-      
-      if(all(c("Numerator_File", "Denominator_File") %in% names(PKparameters))){
-         PKparameters <- PKparameters %>% 
-            mutate(FilePair = paste(Numerator_File, "/", Denominator_File))
-      }
-      
-      FilePairs <- PKparameters
-      
-      # Getting into longer format, which is what the rest of the function is
-      # expecting
-      PKparameters <- bind_rows(
-         PKparameters %>% 
-            select(any_of("FilePair"), matches("Numerator")) %>% 
-            rename_with(.fn = function(.) sub("Numerator_", "", .)) %>% 
-            mutate(NorD = "Numerator"), 
-         
-         PKparameters %>% 
-            select(any_of("FilePair"), matches("Denominator")) %>% 
-            rename_with(.fn = function(.) sub("Denominator_", "", .)) %>% 
-            mutate(NorD = "Denominator"))
+      # Setting InputWasDF to TRUE no matter what it was originally b/c we don't
+      # want any further data tidying/clearning/harmonizing to happen.
+      InputWasDF <- TRUE
       
    } else {
       FilePairs <- NA
@@ -474,12 +526,8 @@ tidy_input_PK <- function(PKparameters,
          PKparameters$PKparameter <- NA
       }
       
-      # Standardizing input for when they want to specify PK parameters for
-      # calc_PK_ratios with "/". Making sure they always have a space.
-      PKparameters$PKparameter <- sub("( )?/( )?", " / ", PKparameters$PKparameter)
-      
       # Noting original value for PKparameters
-      PKparameters_orig <- PKparameters$PKparameter # FIXME - Add a unique here? 
+      PKparameters_orig <- unique(PKparameters$PKparameter)
       
       
       ### File -----------------------------------------------------------------
@@ -585,7 +633,7 @@ tidy_input_PK <- function(PKparameters,
       }
       
       # This needs to be character for possibly combining downstream w/other
-      # character varability s/a "1 to 2"
+      # character variability s/a "1 to 2"
       PKparameters$ObsVariability <- as.character(PKparameters$ObsVariability)
       
       
@@ -694,7 +742,7 @@ tidy_input_PK <- function(PKparameters,
          rm(ColToUse)
       }
       
-      if("File" %in% names(PKparameters) & # Just making sure this is for pk_table and not calc_PK_ratios
+      if("File" %in% names(PKparameters) & 
          "Tissue" %in% names(PKparameters) == FALSE){
          
          PKparameters <- PKparameters %>% 

@@ -1,7 +1,8 @@
 #' Graph of simulated vs. observed PK
 #'
 #' \code{so_graph} makes a graph of simulated vs. observed PK, including
-#' indicating where the predicted parameters fell within X fold of the observed.
+#' indicating where the predicted parameters fell within X fold of the observed,
+#' where "X" is whatever cutoffs you specify.
 #'
 #' @param PKtable a table in the same format as output from the function
 #'   \code{\link{pk_table}}. This should include a column titled "Statistic" and
@@ -31,10 +32,10 @@
 #' @param all_intervals_together TRUE or FALSE (default) for whether to combine
 #'   all of a single type of PK parameter into a single graph. For example,
 #'   setting this to TRUE would put all the Cmax PK -- regardless of whether it
-#'   was for the 1st dose, the last dose, or a custom interval -- into a single
-#'   graph. The default, FALSE, means that anything that was its own column in
-#'   the PK summary table would also be its own graph here. \emph{NOTE:} If you
-#'   do set this to TRUE, the shape of the points will be mapped to which
+#'   was for the 1st dose, the last dose simulated, or a custom interval -- into
+#'   a single graph. The default, FALSE, means that anything that was its own
+#'   column in the PK table would also be its own graph here. \emph{NOTE:} If
+#'   you do set this to TRUE, the shape of the points will be mapped to which
 #'   interval it is, which means that you can't \emph{also} specify something
 #'   for the argument \code{point_shape_column}. If you do, it will be ignored.
 #'   Try this out if you're uncertain what we mean.
@@ -48,26 +49,15 @@
 #' @param boundaries_Guest Numerical boundaries to show on the graph when the PK
 #'   parameter is a mean ratio of the parameter in the presence of a perpetrator
 #'   / the parameter in the absence of the perpetrator. Please see
-#'   [BoundariesGuest Galetin 2011 Drug Metab
-#'   Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/) for a reference for this
-#'   type of graph. If you'd rather show straight lines for these parameters
-#'   instead of BoundariesGuest curves, set this to NA. The default boundaries
-#'   for BoundariesGuest curves are 1 (straight line at unity; even if you don't
-#'   include 1, we'll add it back in) and 2. For all numbers > 1, you'll get a
-#'   BoundariesGuest curve that approaches that value at higher DDI ratios, and,
-#'   for the highest number you list, you'll additionally get straight line
-#'   boundaries. This matches what is described in the BoundariesGuest Galetin
-#'   2011 paper. We recommend using only 1 and 2 as BoundariesGuest boundaries
-#'   for clarity of the graph.
-#' @param boundary_indicator how to indicate the boundaries for simulated /
-#'   observed. Options are "lines" (default), "fill" to get a shaded area, or
-#'   "none" to remove any indicators of those
-#'   boundaries. \strong{NOTE: There is a known bug within RStudio that causes
-#'   filled semi-transparent areas like you get with the "fill" option to NOT
-#'   get graphed for certain versions of RStudio.} To get around this, within
-#'   RStudio, go to Tools --> Global Options --> General --> Graphics --> And
-#'   then set "Graphics device: backend" to "AGG". Honestly, this is a better
-#'   option for higher-quality graphics anyway!
+#'   https://pubmed.ncbi.nlm.nih.gov/21036951/ for a reference for this type of
+#'   graph. If you'd rather show straight lines for these parameters instead of
+#'   Guest curves, set this to NA. The default boundaries for Guest curves are 1
+#'   (straight line at unity; even if you don't include 1, we'll add it back in)
+#'   and 2. For all numbers > 1, you'll get a Guest curve that approaches that
+#'   value at higher DDI ratios, and, for the highest number you list, you'll
+#'   additionally get straight line boundaries. This matches what is described
+#'   in the Guest Galetin 2011 Drug Metab Dispos paper. We recommend using only
+#'   1 and 2 as Guest boundaries for clarity of the graph.
 #' @param boundary_color_set set of colors to use for indicating the X-fold
 #'   boundaries of the simulated / observed ratio. The default is "red black",
 #'   which, for the default boundaries, results in a black line at the 1.5-fold
@@ -81,30 +71,28 @@
 #'   interpretable.
 #' @param boundary_color_set_Guest set of colors to use for indicating the
 #'   X-fold boundaries of the simulated / observed ratio for DDI ratio graphs.
-#'   The default is "red black", which, for the default BoundariesGuest
-#'   boundaries, results in a black curved line and a red straight line at the
-#'   2-fold boundary. Other options are "red green", "muted red green" (a
-#'   lighter, more muted red and green that work well for indicating boundaries
-#'   when you're using shading instead of lines), and "black", which will result
-#'   in only black lines or shading. You also can set this to
+#'   The default is "red black", which, for the default Guest boundaries,
+#'   results in a black curved line and a red straight line at the 2-fold
+#'   boundary. Other options are "red green", "muted red green" (a lighter, more
+#'   muted red and green that work well for indicating boundaries when you're
+#'   using shading instead of lines), and "black", which will result in only
+#'   black lines or shading. You also can set this to
 #'   any set of colors you'd like, e.g., \code{boundary_color_set_Guest = c("yellow",
-#'   "blue")}. The number of colors should equal the number of BoundariesGuest boundaries
+#'   "blue")}. The number of colors should equal the number of Guest boundaries
 #'   that you've indicated or the graph won't be easily interpretable.
 #' @param boundary_line_types optionally specify the line types to use for the
-#'   boundaries (only applicable when \code{boundary_indicator = "lines"}).
-#'   Leaving this as "default" results in a dashed line at unity and solid lines
-#'   for all others, but you can specify this with any R-acceptable line types,
-#'   e.g., \code{boundary_line_types = c("dotted", "dashed", "solid")}. To see
-#'   the possibilities, type \code{ggpubr::show_line_types()} into the console.
+#'   boundaries. Leaving this as "default" results in a dashed line at unity and
+#'   solid lines for all others, but you can specify this with any R-acceptable
+#'   line types, e.g., \code{boundary_line_types = c("dotted", "dashed",
+#'   "solid")}. To see the possibilities, type \code{ggpubr::show_line_types()}
+#'   into the console.
 #' @param boundary_line_types_Guest optionally specify the line types to use for
-#'   the DDI ratio graph boundaries (only applicable when
-#'   \code{boundary_indicator = "lines"}). Leaving this as "default" results in
-#'   a dashed line at unity and solid lines for all others, but you can specify
+#'   the DDI ratio graph boundaries. Leaving this as "default" results in a
+#'   dashed line at unity and solid lines for all others, but you can specify
 #'   this with any R-acceptable line types, e.g., \code{boundary_line_types_Guest =
 #'   c("dotted", "dashed", "solid")}. To see the possibilities, type
 #'   \code{ggpubr::show_line_types()} into the console.
-#' @param boundary_line_width line width; default is 0.7. This only applies when
-#'   \code{boundary_indicator} is set to "lines", the default.
+#' @param boundary_line_width line width; default is 0.7.
 #' @param graph_labels TRUE or FALSE (default) for whether to include labels (A,
 #'   B, C, etc.) for each of the small graphs.
 #' @param axis_title_x title for the x axis; default is "Observed"
@@ -229,7 +217,7 @@
 #' @param include_dose_num Should the dose number be included? If set to TRUE,
 #'   then the dose number part of the graph title, e.g., the "Dose 1" or "Last
 #'   dose" part of "Dose 1 AUCinf" or "Last dose Cmax", will be included. If set
-#'   to FALSE, those would be come "AUCinf" and "Cmax" only with no reference to
+#'   to FALSE, those would become "AUCinf" and "Cmax" only with no reference to
 #'   which dose it was. If left as the default NA, then the dose number will be
 #'   omitted if all the data are all for dose 1 or all for the last dose, and it
 #'   will be included if you have a mix of dosing intervals.
@@ -253,35 +241,42 @@
 #'   \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other
 #'   substitutions people might want. Instead of the using AUCinf, graph titles will
 #'   use AUC0 to inf}}
-#' @param show_boundary_legend TRUE (default) or FALSE for whether to show a
-#'   legend indicating the meaning of the boundaries
 #'
 #' @return a set of arranged ggplot2 graphs
 #' @export
 #'
 #' @examples
-#' # Assuming you have run pk_table on a few files with observed data
-#' # to generate an object called MyPKOutput, then:
+#'
+#' # The object SOdata has some example PK data to work with
+#' # and is included in the package.
 #' so_graph(PKtable = SOdata)
-#' so_graph(PKtable = SOdata, boundary_indicator = "fill")
+#'
 #' so_graph(PKtable = SOdata,
-#'          axis_titles = c("y" = "Predicted", "x" = "Observed"))
-#' so_graph(PKtable = SOdata, ncol = 1)
-#' so_graph(PKtable = SOdata, point_shape_column = Study,
-#'          legend_position = "bottom")
+#'          axis_title_y = "Predicted",
+#'          axis_title_x = "Observed",
+#'          grid_color = "none")
+#'
+#' so_graph(PKtable = SOdata,
+#'          ncol = 1)
+#'
 #' so_graph(PKtable = SOdata,
 #'          point_shape_column = Study,
-#'          legend_label_point_shape = "Studies involving\nDrug X",
+#'          legend_position = "bottom")
+#'
+#' so_graph(PKtable = SOdata,
+#'          point_shape_column = Study,
+#'          legend_label_point_shape = "Studies involving Drug X",
+#'          point_shape = c(21:25),
 #'          point_color_column = File,
 #'          legend_label_point_color = "Simulation file",
-#'          legend_position = "right")
-#'
+#'          point_color_set = "blues",
+#'          legend_position = "right",
+#'          error_bars = "horizontal")
 #' 
 
 so_graph <- function(PKtable, 
                      PKparameters = NA, 
                      PKorder = "default", 
-                     boundary_indicator = "lines",
                      boundaries = c(1, 1.5, 2),
                      boundaries_Guest = c(1, 2),
                      boundary_color_set = "red black", 
@@ -289,7 +284,6 @@ so_graph <- function(PKtable,
                      boundary_line_types = "default",
                      boundary_line_types_Guest = "default",
                      boundary_line_width = 0.3, 
-                     show_boundary_legend = TRUE, 
                      error_bars = "none", 
                      variability_type = "90% CI", 
                      point_color_column, 
@@ -303,10 +297,10 @@ so_graph <- function(PKtable,
                      legend_position = "none",
                      axis_title_x = "Observed",
                      axis_title_y = "Simulated", 
-                     include_dose_num = NA,
                      facet_title_size = NA, 
                      title_adjustments = c(), 
                      graph_labels = FALSE, 
+                     include_dose_num = NA,
                      all_intervals_together = FALSE, 
                      all_AUCs_together = FALSE, 
                      grid_color = NA, 
@@ -327,30 +321,14 @@ so_graph <- function(PKtable,
       PKtable <- PKtable$Table
    }
    
-   if(any(complete.cases(axis_titles))){
-      warning("YOu have specified something for the argument `axis_titles`, which we're deprecating and splitting into `axis_title_x` and `axis_title_y`. Please note that this argument may not work in the future.\n", 
-              call. = FALSE)
-      names(axis_titles) <- tolower(names(axis_titles))
-      
-      if(all(c("x", "y") %in% names(axis_titles)) == FALSE){
-         warning("It is not clear what you want for the x axis title and what you want for the y. Please check the help file for the arguments `axis_title_x` and `axis_title_y`. For now, we'll use the default values.", 
-                 call. = FALSE)
-         axis_title_x <- "Observed"
-         axis_title_y <- "Simulated"
-      } else {
-         axis_title_x <- axis_titles["x"]
-         axis_title_y <- axis_titles["y"]
-      }
-   }
-   
    if(is.na(axis_title_x)){
-      warning("You must specify a value for `axis_title_x`; it can't be NA. We'll use the default of `Observed`.\n", 
+      warning(wrapn("You must specify a value for `axis_title_x`; it can't be NA. We'll use the default of `Observed`."), 
               call. = FALSE)
       axis_title_x <- "Observed"
    }
    
    if(is.na(axis_title_y)){
-      warning("You must specify a value for `axis_title_y`; it can't be NA. We'll use the default of `Simulated`.\n", 
+      warning(wrapn("You must specify a value for `axis_title_y`; it can't be NA. We'll use the default of `Simulated`"), 
               call. = FALSE)
       axis_title_y <- "Simulated"
    }
@@ -359,17 +337,6 @@ so_graph <- function(PKtable,
    if("Observed" %in% PKtable$Statistic == FALSE){
       stop("We can't find the observed data in the table provided for `PKtable`, so we can't make a simulated-versus-observed graph.", 
            call. = FALSE)
-   }
-   
-   BoundIndOptions <- c("fill"= str_detect(tolower(boundary_indicator), "fil"), 
-                        "lines" = str_detect(tolower(boundary_indicator), "line"), 
-                        "none" = str_detect(tolower(boundary_indicator), "none"))
-   boundary_indicator <- names(BoundIndOptions)[BoundIndOptions]
-   
-   if(length(boundary_indicator) != 1){
-      warning("There's something wrong with your input for `boundary_indicator`, so we'll set this to the default value of `lines`.", 
-              call. = FALSE)
-      boundary_indicator <- "lines"
    }
    
    # Checking for appropriate numeric input for boundaries
@@ -413,7 +380,7 @@ so_graph <- function(PKtable,
    
    if(length(boundaries_Guest) != length(boundary_color_set_Guest) &
       boundary_color_set_Guest[1] %in% c("red green", "red black", "black", "muted red green") == FALSE){
-      warning("You have specified one number of boundaries for DDI graphs and a different number of colors for those boundaries, so we don't know what colors you want. We'll use the default BoundariesGuest boundary line colors.\n", 
+      warning("You have specified one number of boundaries for DDI graphs and a different number of colors for those boundaries, so we don't know what colors you want. We'll use the default Guest boundary line colors.\n", 
               call. = FALSE)
       boundary_color_set_Guest <- "red black"
    }
@@ -422,7 +389,7 @@ so_graph <- function(PKtable,
                                          "red black") == FALSE && 
       tryCatch(is.matrix(col2rgb(boundary_color_set_Guest)),
                error = function(x) FALSE) == FALSE){
-      warning("The values you used for BoundariesGuest boundary colors are not all valid colors in R. We'll used the default colors instead.\n", 
+      warning("The values you used for Guest boundary colors are not all valid colors in R. We'll used the default colors instead.\n", 
               call. = FALSE)
       boundary_color_set_Guest <- "red black"
    } 
@@ -502,8 +469,7 @@ so_graph <- function(PKtable,
    ## Setting colors & linetypes -----------------------------------------------
    
    if(boundary_color_set[1] %in% c("red green", "red black", 
-                                   "muted red green") &
-      boundary_indicator != "none"){
+                                   "muted red green")){
       
       boundary_color_set <- 
          set_boundary_colors(color_set = boundary_color_set,
@@ -513,8 +479,7 @@ so_graph <- function(PKtable,
    }
    
    if(boundary_color_set_Guest[1] %in% c("red green", "red black", 
-                                         "muted red green") &
-      boundary_indicator != "none"){
+                                         "muted red green")){
       
       boundary_color_set_Guest <- 
          set_boundary_colors(color_set = boundary_color_set_Guest,
@@ -527,18 +492,19 @@ so_graph <- function(PKtable,
       boundary_color_set <- boundary_color_set[1:length(boundaries)]
       
       boundary_color_set_Guest <- rep(boundary_color_set_Guest, length(boundaries_Guest) + 1)
-      # NB: BoundariesGuest boundaries require an extra color b/c boundary for
+      # NB: Guest boundaries require an extra color b/c boundary for
       # highest-fold error has both curved and straight lines.
       boundary_color_set_Guest <- boundary_color_set_Guest[1:(length(boundaries_Guest) + 1)]
    }
    
-   # Making sure we have enough linetypes
+   # Making sure we have enough linetypes and line widths
    if(boundary_line_types[1] == "default"){
-      boundary_line_types_straight <- c("dashed", 
-                                        rep("solid", length(boundaries) - 1))
+      boundary_line_types_straight <-
+         c("dashed", rep("solid", length(boundaries) - 1))
+      
    } else {
-      boundary_line_types_straight <- rep(boundary_line_types,
-                                          length(boundaries))
+      boundary_line_types_straight <-
+         rep(boundary_line_types, length(boundaries))
    }
    
    if(boundary_line_types_Guest[1] == "default"){
@@ -549,10 +515,25 @@ so_graph <- function(PKtable,
                                        length(boundaries_Guest) + 1)
    }
    
-   boundary_line_types_straight <- boundary_line_types_straight[1:length(boundaries)]
-   # NB: BoundariesGuest boundaries require an extra linetype b/c boundary for
+   boundary_line_types_straight <- 
+      boundary_line_types_straight[1:length(boundaries)]
+   
+   boundary_line_width <- as.numeric(boundary_line_width[1])
+   
+   # NB: There is not actually a difference between the boundary line widths
+   # when they're either straight or Guest curves, but this makes sure we have
+   # enough of them.
+   boundary_line_width_straight <- 
+      rep(boundary_line_width, length(boundaries))[1:length(boundaries)]
+   
+   # NB: Guest boundaries require an extra linetype b/c boundary for
    # highest-fold error has both curved and straight lines.
-   boundary_line_types_Guest <- boundary_line_types_Guest[1:(length(boundaries_Guest) + 1)]
+   boundary_line_types_Guest <- 
+      boundary_line_types_Guest[1:(length(boundaries_Guest) + 1)]
+   
+   boundary_line_width_Guest <- 
+      rep(boundary_line_width, length(boundaries_Guest) + 1)[
+         1:(length(boundaries_Guest) + 1)]
    
    
    ## Setting boundaries ------------------------------------------------------
@@ -566,7 +547,7 @@ so_graph <- function(PKtable,
    Boundaries_num <- boundaries
    Boundaries_num_Guest <- boundaries_Guest
    Boundaries <- list()
-   BoundariesGuest <- list()
+   GuestCurves <- list()
    GuestStraight <- list()
    Poly <- list()
    PolyGuest <- list()
@@ -579,134 +560,66 @@ so_graph <- function(PKtable,
                 LimitName = rep(c("upper", "lower"), each = 100), 
                 Simulated = case_when(LimitName == "upper" ~ Observed * j, 
                                       LimitName == "lower" ~ Observed / j), 
-                Boundary = j)
+                Group = paste(LimitName, j), 
+                Boundary = paste0(j, "x"))
    }
    
    Boundaries <- bind_rows(Boundaries) %>% 
-      mutate(Group = paste(LimitName, Boundary), 
-             Boundary = paste0(Boundary, "x"), 
-             Boundary = factor(Boundary, 
+      mutate(Boundary = factor(Boundary, 
                                levels = paste0(unique(Boundaries_num), "x")))
    
    
    # BoundariesGuest 
    for(j in Boundaries_num_Guest){
-      BoundariesGuest[[as.character(j)]] <- 
+      
+      GuestCurves[[as.character(j)]] <- 
          list("Upper" = data.frame(Observed = 10^seq(-4, 9, length.out = 1000)) %>% 
                  mutate(Limit = ifelse(Observed >= 1, 
                                        (1 + j*(Observed - 1))/Observed,
                                        (1 + j*((1/Observed) - 1))/(1/Observed)),
                         LimitName = "upper",
                         Simulated = Observed * Limit, 
-                        Boundary = j),
+                        Limit = j, 
+                        Boundary = paste0(j, "x (Guest curve)")),
               "Lower" = data.frame(Observed = 10^seq(-4, 9, length.out = 1000)) %>% 
                  mutate(Limit = ifelse(Observed >= 1, 
                                        (1 + j*(Observed - 1))/Observed,
                                        (1 + j*((1/Observed) - 1))/(1/Observed)),
                         LimitName = "lower", 
                         Simulated = Observed / Limit, 
-                        Boundary = j)) %>% 
+                        Limit = j, 
+                        Boundary = paste0(j, "x (Guest curve)"))) %>% 
          bind_rows()
       
-      GuestStraight[[as.character(j)]] <- 
-         list("Upper" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
-                 mutate(LimitName = "upper", 
-                        Simulated = Observed * j, 
-                        Boundary = j), 
-              "Lower" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
-                 mutate(LimitName = "lower", 
-                        Simulated = Observed / j, 
-                        Boundary = j)) %>% 
-         bind_rows()
-   }
-   
-   BoundariesGuest <- bind_rows(BoundariesGuest) %>% 
-      mutate(Group = paste(LimitName, Boundary), 
-             Boundary = paste0(Boundary, "x"), 
-             Boundary = factor(Boundary, 
-                               levels = paste0(unique(Boundaries_num), "x")))
-   
-   GuestStraight <- bind_rows(GuestStraight) %>% 
-      mutate(Group = paste(LimitName, Boundary), 
-             Boundary = paste0(Boundary, "x"), 
-             Boundary = factor(Boundary, 
-                               levels = paste0(unique(Boundaries_num), "x")))
-   
-   
-   # Setting up polygons -- This needs to be done a bit differently b/c we'll
-   # need to combine each boundary w/the one before it except for the smallest
-   # boundary.
-   Poly[["1"]] <- Boundaries[["1"]] %>% 
-      filter(LimitName == "upper") %>% 
-      arrange(Observed) %>% 
-      bind_rows(Boundaries[["1"]] %>%
-                   filter(LimitName == "lower") %>% 
-                   arrange(desc(Observed)))
-   
-   PolyGuest[["1"]] <- 
-      BoundariesGuest[["1"]] %>% 
-      filter(LimitName == "upper") %>% 
-      arrange(Observed) %>% 
-      bind_rows(BoundariesGuest[["1"]] %>%
-                   filter(LimitName == "lower") %>% 
-                   arrange(desc(Observed)))
-   
-   for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
-      Poly[[as.character(Boundaries_num[j_index]) ]] <- 
-         Boundaries[[as.character(Boundaries_num[j_index])]] %>% 
-         filter(LimitName == "upper") %>%
-         arrange(Observed) %>%
-         bind_rows(Boundaries[[as.character(Boundaries_num[j_index-1])]] %>% 
-                      filter(LimitName == "upper") %>%
-                      arrange(desc(Observed))) %>%
-         bind_rows(Boundaries[[as.character(Boundaries_num[j_index-1])]] %>%
-                      filter(LimitName == "lower") %>%
-                      arrange(Observed)) %>%
-         bind_rows(Boundaries[[as.character(Boundaries_num[j_index])]] %>%
-                      filter(LimitName == "lower") %>% 
-                      arrange(desc(Observed)))
-   }
-   
-   
-   for(j_index in 2:length(Boundaries_num_Guest)){ # <--- Note that this is by index and not name!!!!
-      
-      PolyGuest[[as.character(Boundaries_num_Guest[j_index])]] <- 
-         BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]] %>%
-         filter(LimitName == "upper") %>%
-         arrange(Observed) %>%
-         bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index-1])]] %>%
-                      filter(LimitName == "upper") %>%
-                      arrange(desc(Observed))) %>%
-         bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index-1])]] %>%
-                      filter(LimitName == "lower") %>%
-                      arrange(Observed)) %>%
-         bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]] %>%
-                      filter(LimitName == "lower") %>% 
-                      arrange(desc(Observed)))
-      
-      if(j_index == length(Boundaries_num_Guest)){
-         PolyGuest[[j_index + 1]] <- 
-            GuestStraight[[as.character(Boundaries_num_Guest[j_index])]] %>%
-            filter(LimitName == "upper") %>%
-            arrange(Observed) %>%
-            bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]] %>%
-                         filter(LimitName == "upper") %>%
-                         arrange(desc(Observed))) %>%
-            bind_rows(BoundariesGuest[[as.character(Boundaries_num_Guest[j_index])]] %>%
-                         filter(LimitName == "lower") %>%
-                         arrange(Observed)) %>%
-            bind_rows(GuestStraight[[as.character(Boundaries_num_Guest[j_index])]] %>%
-                         filter(LimitName == "lower") %>% 
-                         arrange(desc(Observed)))
+      if(j %in% c(1, max(Boundaries_num_Guest))){
+         GuestStraight[[as.character(j)]] <- 
+            list("Upper" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
+                    mutate(LimitName = "upper", 
+                           Simulated = Observed * j, 
+                           Limit = j, 
+                           Boundary = paste0(j, "x")), 
+                 "Lower" = data.frame(Observed = 10^seq(-4, 9, length.out = 100)) %>% 
+                    mutate(LimitName = "lower", 
+                           Simulated = Observed / j, 
+                           Limit = j, 
+                           Boundary = paste0(j, "x"))) %>% 
+            bind_rows()
       }
    }
    
+   BoundariesGuest <- bind_rows(
+      bind_rows(GuestCurves), 
+      bind_rows(GuestStraight)) %>% 
+      filter(Boundary != "1x (Guest curve)") %>% 
+      arrange(Limit) %>% 
+      mutate(Group = paste(LimitName, Boundary), 
+             Boundary = factor(Boundary, levels = unique(Boundary)))
    
-   # Dealing with units if there are more than one set.
    ## Setting things up for nonstandard evaluation - Part 1 --------------------
    point_color_column <- rlang::enquo(point_color_column)
    point_shape_column <- rlang::enquo(point_shape_column)
    
+   # Dealing with units if there are more than one set.
    PKUnits <- names(PKtable)[str_detect(names(PKtable), " \\(")]
    # CL will always be L/h, so removing those from consideration. Also removing
    # anything with a time unit s/a tmax b/c it will always be h.
@@ -829,7 +742,8 @@ so_graph <- function(PKtable,
    }
    
    # Arranging and tidying input data. First, de-prettifying column names.
-   SO <- PKtable %>% 
+   SO <- prettify_column_names(PKtable = PKtable, 
+                               pretty_or_ugly_cols = "ugly") %>% 
       mutate(Statistic = as.character(Statistic), 
              Statistic = ifelse(str_detect(Statistic, "^Simulated"),
                                 "Simulated", Statistic)) %>% 
@@ -1102,7 +1016,7 @@ so_graph <- function(PKtable,
          mutate(
             Interval = case_when(
                str_detect(PKparameter, "dose1") ~ "first dose", 
-               str_detect(PKparameter, "last") ~ "last dose", 
+               str_detect(PKparameter, "last") ~ "multiple dose", 
                !str_detect(PKparameter, "dose1|last") ~ UnlabeledIntText), 
             PKparameter_orig = PKparameter, 
             PKparameter = gsub("_last|_dose1|inf|tau", "", PKparameter), 
@@ -1111,7 +1025,14 @@ so_graph <- function(PKtable,
       
       legend_label_point_shape <- "Interval"
       
+   } else if(all(is.na(legend_label_point_shape))){
+      legend_label_point_shape <- as_label(point_shape_column)
    }
+   
+   if(all(is.na(legend_label_point_color))){
+      legend_label_point_color <- as_label(point_color_column)
+   }
+   
    
    if(all_AUCs_together){
       SO$PKparameter <- sub("AUCinf|AUCtau", "AUC", SO$PKparameter)
@@ -1291,6 +1212,18 @@ so_graph <- function(PKtable,
    SO <- split(SO, f = SO$PKparameter)
    ErrorBarMsg <- list()
    
+   if(length(find.package("ggnewscale", quiet = TRUE)) == 0){
+      
+      message(paste0("\n", wrapn("To include a legend for the boundaries, we need to install the R package 'ggnewscale'.")))
+      Install <- readline(prompt = "Is it ok to install ggnewscale for you? (y or n)   ")
+      
+      if(tolower(str_sub(Install, 1, 1)) == "y"){
+         install.packages("ggnewscale")
+      } else {
+         message(wrapn("Ok, we will not install ggnewscale for you; we will not include a legend for the boundaries."))
+      }
+   }
+   
    for(i in names(SO)){
       
       # Removing columns when everything is NA b/c that will make for inaccurate
@@ -1372,126 +1305,64 @@ so_graph <- function(PKtable,
                            SO[[i]]$Simulated), na.rm = T)))
       )
       
-      if(boundary_indicator == "lines"){
-         if(str_detect(i, "ratio")){
-            
-            # If it was a Guest plot, then set the limit to be < 1 and the upper to
-            # be > 1. Otherwise, that lowest/highest point is way in the corner.
-            if(Limits[1] == 1){Limits[1] <- 2/3}
-            if(Limits[2] == 1){Limits[2] <- 3}
-            
-            G[[i]] <- ggplot()  +
-               geom_line(data = BoundariesGuest,
-                         aes(x = Observed, y = Simulated,
-                             color = Boundary, 
-                             group = Group,
-                             linetype = Boundary, 
-                             linewidth = Boundary), 
-                         show.legend = show_boundary_legend)
-            
-            
-         } else {
-            G[[i]] <- ggplot()  +
-               geom_line(data = Boundariesaes(x = Observed, y = Simulated,
-                                              color = Boundary, 
-                                              group = Group,
-                                              linetype = Boundary, 
-                                              linewidth = Boundary), 
-                         show.legend = show_boundary_legend) 
-         }
+      if(str_detect(i, "ratio")){
          
-         G[[i]] <- G[[i]] + 
+         # If it was a Guest plot, then set the limit to be < 1 and the upper to
+         # be > 1. Otherwise, that lowest/highest point is way in the corner.
+         if(Limits[1] == 1){Limits[1] <- 2/3}
+         if(Limits[2] == 1){Limits[2] <- 3}
+         
+         G[[i]] <- ggplot() +
+            geom_line(data = BoundariesGuest,
+                      aes(x = Observed, y = Simulated,
+                          color = Boundary, 
+                          group = Group,
+                          linetype = Boundary, 
+                          linewidth = Boundary), 
+                      show.legend = T) + 
+            scale_linewidth_manual(values = c(boundary_line_width_Guest, 
+                                              boundary_line_width_straight), 
+                                   name = "Boundaries for ratios") +
+            # NB: For things to work correctly with ggnewscale, the legend name
+            # MUST be specified with the scale_x_value call; it does NOT work
+            # when specified with, e.g., labs(color = ...)
+            scale_color_manual(values = boundary_color_set_Guest, 
+                               name = "Boundaries for ratios", 
+                               guide = guide_legend(override.aes = list(shape = NA))) +
+            scale_linetype_manual(values = boundary_line_types_straight, 
+                                  name = "Boundaries for ratios")
+         
+      } else {
+         G[[i]] <- ggplot()  +
+            geom_line(data = Boundaries, 
+                      aes(x = Observed, y = Simulated,
+                          color = Boundary, 
+                          group = Group,
+                          linetype = Boundary, 
+                          linewidth = Boundary), 
+                      show.legend = T) +
+            scale_linewidth_manual(values = boundary_line_width_straight, 
+                                   name = "Boundaries") +
             # NB: For things to work correctly with ggnewscale, the legend name
             # MUST be specified with the scale_x_value call; it does NOT work
             # when specified with, e.g., labs(color = ...)
             scale_color_manual(values = boundary_color_set, 
-                               name = "Boundary") +
+                               name = "Boundaries", 
+                               guide = guide_legend(override.aes = list(shape = NA))) +
             scale_linetype_manual(values = boundary_line_types_straight, 
-                                  name = "Boundary") + 
-            scale_linewidth_manual(values = boundary_line_width, 
-                                   name = "Boundary")
+                                  name = "Boundaries")
          
-         
-      } else if(boundary_indicator %in% c("fill", "none")){
-         # Need to add unity line for both fill and none and then can add
-         # polygons
-         
-         if(str_detect(i, "ratio")){
-            
-            # If it was a Guest plot, then set the limit to be < 1 and the upper to
-            # be > 1. Otherwise, that lowest/highest point is way in the corner.
-            if(Limits[1] == 1){Limits[1] <- 2/3}
-            if(Limits[2] == 1){Limits[2] <- 3}
-            
-            G[[i]] <- ggplot()  +
-               geom_line(data = BoundariesGuest %>% filter(Boundary == 1),
-                         aes(x = Observed, y = Simulated,
-                             color = Boundary, 
-                             group = Group,
-                             linetype = Boundary, 
-                             linewidth = Boundary), 
-                         show.legend = show_boundary_legend)
-            
-         } else {
-            G[[i]] <- ggplot()  +
-               geom_line(data = Boundaries %>% filter(Boundary == 1),
-                         aes(x = Observed, y = Simulated,
-                             color = Boundary, 
-                             group = Group,
-                             linetype = Boundary, 
-                             linewidth = Boundary), 
-                         show.legend = show_boundary_legend)
-         }
-         
-         G[[i]] <- G[[i]] + 
-            # NB: For things to work correctly with ggnewscale, the legend name
-            # MUST be specified with the scale_x_value call; it does NOT work
-            # when specified with, e.g., labs(color = ...)
-            scale_color_manual(values = boundary_color_set, 
-                               name = "Boundary") +
-            scale_linetype_manual(values = boundary_line_types_straight, 
-                                  name = "Boundary") + 
-            scale_linewidth_manual(values = boundary_line_width, 
-                                   name = "Boundary")
       }
       
-      if(boundary_indicator == "fill"){
+      if(length(find.package("ggnewscale", quiet = TRUE)) != 0){
          
-         if(str_detect(i, "ratio")){
-            
-            for(j_index in 2:length(Boundaries_num_Guest)){ # <--- Note that this is by index and not name!!!!
-               G[[i]] <- G[[i]] +
-                  geom_polygon(data = PolyGuest[[j_index]],
-                               aes(x = Observed, y = Simulated), inherit.aes = F,
-                               fill = boundary_color_set_Guest[j_index], 
-                               alpha = 0.2)
-               
-               if(j_index == length(Boundaries_num_Guest)){
-                  G[[i]] <- G[[i]] +
-                     geom_polygon(data = PolyGuest[[j_index + 1]],
-                                  aes(x = Observed, y = Simulated), inherit.aes = F,
-                                  fill = boundary_color_set_Guest[j_index + 1], 
-                                  alpha = 0.2)
-               }
-            }
-            
-         } else {
-            
-            for(j_index in 2:length(Boundaries_num)){ # <--- Note that this is by index and not name!!!!
-               G[[i]] <- G[[i]] +
-                  geom_polygon(data = Poly[[j_index]],
-                               aes(x = Observed, y = Simulated), inherit.aes = F,
-                               fill = boundary_color_set[j_index], alpha = 0.2) 
-            }
-         }
-      }
-      
-      # Adding a new scale for colors so that the legend for the lines will look
-      # different from the legend for the points.
-      G[[i]] <- G[[i]] +
-         ggnewscale::new_scale("colour") +
-         ggnewscale::new_scale("linetype") +
-         ggnewscale::new_scale("linewidth")
+         # Adding a new scale for colors so that the legend for the lines will look
+         # different from the legend for the points.
+         G[[i]] <- G[[i]] +
+            ggnewscale::new_scale("colour") +
+            ggnewscale::new_scale("linetype") +
+            ggnewscale::new_scale("linewidth")
+      } 
       
       PossBreaks <- sort(c(10^(-3:9),
                            3*10^(-3:9),
@@ -1516,21 +1387,25 @@ so_graph <- function(PKtable,
       BarWidth <- log10(round_up(Limits[2] / Limits[1])) * 0.05 - 0.025
       
       if(error_bars_i %in% c("vertical", "both")){
-         G[[i]] <- G[[i]] +
-            geom_errorbar(data = SO[[i]], 
-                          aes(x = Observed, 
-                              color = point_color_column, 
-                              ymin = Var_lower, ymax = Var_upper),
-                          width = BarWidth)
+         suppressWarnings(
+            G[[i]] <- G[[i]] +
+               geom_errorbar(data = SO[[i]], 
+                             aes(x = Observed, 
+                                 color = point_color_column, 
+                                 ymin = Var_lower, ymax = Var_upper),
+                             width = BarWidth)
+         )
       } 
       
       if(error_bars_i %in% c("horizontal", "both")){
-         G[[i]] <- G[[i]] +
-            geom_errorbarh(data = SO[[i]], 
-                           aes(y = Simulated, 
-                               color = point_color_column, 
-                               xmin = ObsVar_lower, xmax = ObsVar_upper), 
-                           height = BarWidth)
+         suppressWarnings(
+            G[[i]] <- G[[i]] +
+               geom_errorbarh(data = SO[[i]], 
+                              aes(y = Simulated, 
+                                  color = point_color_column, 
+                                  xmin = ObsVar_lower, xmax = ObsVar_upper), 
+                              height = BarWidth)
+         )
       } 
       
       # Aesthetics for points are determined by:
@@ -1566,14 +1441,6 @@ so_graph <- function(PKtable,
             scale_shape_manual(values = MyShapes, drop = FALSE, 
                                name = legend_label_point_shape)
          
-         if(length(unique(SO[[i]]$point_color_column)) > 3 & 
-            legend_position %in% c("bottom", "top")){
-            G[[i]] <- G[[i]] +
-               guides(
-                  color = guide_legend(ncol = 2), 
-                  shape = guide_legend(ncol = 2))
-         }
-         
       } else {
          
          G[[i]] <- G[[i]] +
@@ -1592,31 +1459,41 @@ so_graph <- function(PKtable,
             scale_shape_manual(values = MyShapes, drop = FALSE, 
                                name = legend_label_point_shape)
          
-         if(length(MyPointColors) > 3){
-            if(any(MyPointShapes %in% c(21:25))){
-               G[[i]] <- G[[i]] + 
-                  guides(color = guide_legend(
+      }
+      
+      if(length(MyPointColors) > 3){
+         if(any(MyPointShapes %in% c(21:25))){
+            G[[i]] <- G[[i]] + 
+               guides(
+                  color = guide_legend(
                      override.aes = list(shape = 21), 
-                     ncol = ifelse(legend_position %in% c("bottom", "top"), 
-                                   2, 1)))
-            } else {
-               G[[i]] <- G[[i]] + 
-                  guides(color = guide_legend(
-                     ncol = ifelse(legend_position %in% c("bottom", "top"), 
-                                   2, 1)))
-            }
-         } else if(any(MyPointShapes %in% c(21:25))){
+                     ncol = 2))
+         } else {
             G[[i]] <- G[[i]] + 
-               guides(color = guide_legend(
-                  override.aes = list(shape = 21)))
+               guides(
+                  color = guide_legend(
+                     ncol = 2))
          }
-         
-         if(length(MyPointShapes) > 3){
-            G[[i]] <- G[[i]] + 
-               guides(shape = guide_legend(
-                  ncol = ifelse(legend_position %in% c("bottom", "top"), 
-                                2, 1)))
-         }
+      } else if(any(MyPointShapes %in% c(21:25))){
+         G[[i]] <- G[[i]] + 
+            guides(color = guide_legend(
+               override.aes = list(shape = 21)))
+      }
+      
+      if(length(MyPointShapes) > 3){
+         G[[i]] <- G[[i]] + 
+            guides(
+               shape = guide_legend(
+                  ncol = 2))
+      }
+      
+      # FIXME: Not sure what number of columns or rows makes most sense for
+      # the most situations
+      if(legend_position %in% c("bottom", "top")){
+         G[[i]] <- G[[i]] +
+            guides(
+               color = guide_legend(nrow = 1),
+               shape = guide_legend(nrow = 1))
       }
       
       if("list" %in% class(title_adjustments)){
@@ -1666,23 +1543,6 @@ so_graph <- function(PKtable,
                axis.title.y = element_text(margin = margin(0, 2.75, 0, 0)),
                axis.title.y.right = element_text(margin = margin(0, 0, 0, 2.75)))
       
-      if(legend_position %in% c("bottom", "top")){
-         if(packageVersion("ggplot2") > "3.5.0"){
-            G[[i]] <- G[[i]] + 
-               theme(legend.box = "vertical", 
-                     legend.spacing.y = unit(0, units = "lines"), 
-                     # legend.key.spacing.y only in ggplot2 3.5.0+
-                     legend.key.spacing.y = unit(-0.15, units = "lines"))
-         } else {
-            G[[i]] <- G[[i]] + 
-               theme(legend.box = "vertical", 
-                     legend.spacing.y = unit(0, units = "lines"))
-         }
-         
-      } else {
-         G[[i]] <- G[[i]] + theme(legend.spacing.y = unit(0.5, units = "lines"))
-      }
-      
       if(ShowLegColor){
          if(complete.cases(legend_label_point_color)){
             if(legend_label_point_color == "none"){    
@@ -1720,6 +1580,10 @@ so_graph <- function(PKtable,
    
    if(length(G) == 1){
       G <- G[[1]] + theme(legend.position = legend_position)
+      
+      if(return_list_of_graphs){
+         PlotList <- G
+      }
       
    } else {
       
@@ -1774,18 +1638,12 @@ so_graph <- function(PKtable,
          G <- G[GoodOrder]
       }
       
-      if(graph_labels & length(G) > 1){
-         labels <- LETTERS[1:length(G)]
-      } else {
-         labels <- NULL
-      }
-      
       if(return_list_of_graphs){
          PlotList <- G
       }
       
-      G <- ggpubr::ggarrange(
-         plotlist = G, align = "hv", 
+      G <- patchwork::wrap_plots(
+         G,
          nrow = switch(NumCR, 
                        
                        # specified both
@@ -1811,15 +1669,38 @@ so_graph <- function(PKtable,
                        "TRUE FALSE" = round_up_unit(length(G)/nrow, 1),
                        
                        # specified neither
-                       "TRUE TRUE" = NULL),
-         labels = labels, 
-         legend = legend_position, 
-         # FIXME - Switch to patchwork and collect the legends. This makes it so
-         # that legend items ONLY include what was in the 1st graph.
-         common.legend = TRUE) + 
-         ggpubr::bgcolor("white") +
-         ggpubr::border(color = NA)
+                       "TRUE TRUE" = NULL)) + 
+         patchwork::plot_layout(guides = "collect")
       
+      if(graph_labels){
+         G <- G + patchwork::plot_annotation(tag_level = "A")
+      }
+      
+      if(legend_position == "none"){
+         
+         G <- G & theme(legend.position = "none")
+         
+      } else {
+         
+         if(legend_position %in% c("bottom", "top")){
+            if(packageVersion("ggplot2") > "3.5.0"){
+               G <- G &
+                  theme(legend.box = "vertical", 
+                        legend.spacing.y = unit(0, units = "lines"), 
+                        legend.key.spacing.y = unit(-0.15, units = "lines"), 
+                        legend.position = legend_position)
+            } else {
+               G <- G & 
+                  theme(legend.box = "vertical", 
+                        legend.spacing.y = unit(0, units = "lines"), 
+                        legend.position = legend_position)
+            }
+            
+         } else {
+            G <- G + theme(legend.spacing.y = unit(0.5, units = "lines"), 
+                           legend.position = legend_position)
+         }
+      }
    }
    
    # Collecting error bar warnings

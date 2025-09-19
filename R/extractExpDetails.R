@@ -421,11 +421,18 @@ extractExpDetails <- function(sim_data_file,
                                    "CustomDosing"),
                                  names(Out))])
       
+      if(Out[["SimulatorUsed"]] == "Simcyp Discovery"){
+         # No DDIs with Discovery sims, and StartHr_sub not included b/c it's
+         # always 0. Setting this.
+         Out[["StartHr_sub"]] <- 0
+         Out[["StartDayTime_sub"]] <- Out[["SimStartDayTime"]]
+      }
+      
    }
    
    # Dealing with custom dosing schedules ---------------------------------
-   if(any(str_detect(exp_details, "^StartDayTime")) & 
-      any(str_detect(names(Out), "^StartDayTime")) == FALSE |
+   if(any(str_detect(exp_details, "^StartDayTime"), na.rm = TRUE) & 
+      any(str_detect(names(Out), "^StartDayTime"), na.rm = TRUE) == FALSE |
       any(CustomDosing, na.rm = TRUE)){
       
       # When there's custom dosing for any of the substrate or inhibitors,
@@ -683,6 +690,7 @@ extractExpDetails <- function(sim_data_file,
    # simulated. Catching this and fixing it. The start time when it's a
    # substrate alone will ALWAYS be the simulation start time.
    if(is.na(Out$Inhibitor1) & 
+      "StartDayTime_sub" %in% names(Out) &&
       Out$StartDayTime_sub != Out$SimStartDayTime){
       Out$StartDayTime_sub <- Out$SimStartDayTime
       Out$StartHr_sub <- 0

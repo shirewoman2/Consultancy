@@ -3,7 +3,8 @@
 #' @param sim_data_file sim_data_file
 #' @param PKparameters data.frame that includes Tissue, CompoundID, and Sheet
 #' @param existing_exp_details harmonized existing_exp_details
-#' @param conc_units how to convert conc units, if desired
+#' @param conc_units desired conc units
+#' @param time_units desired time units
 #' @param MeanType main mean type
 #' @param GMR_mean_type GMR mean type
 #' @param includeTrialMeans determines whether to get individual data
@@ -27,6 +28,7 @@ pk_table_subfun <- function(sim_data_file,
                             PKparameters, 
                             existing_exp_details, 
                             conc_units, 
+                            time_units, 
                             MeanType, 
                             GMR_mean_type, 
                             includeTrialMeans, 
@@ -170,101 +172,15 @@ pk_table_subfun <- function(sim_data_file,
       conc_units <- NA
    }
    
-   if(complete.cases(conc_units)){
-      # Only adjusting AUC and Cmax values and not adjusting time portion of
-      # units -- only conc.
-      if(Deets$Units_Cmax != conc_units){
-         
-         # Adding some NA values to Deets as needed for convert_units to
-         # work w/out generating a ton of warnings.
-         MissingCols <- setdiff(paste0("MW", 
-                                       c("_sub", "_met1", "_met2", "_secmet",
-                                         "_inhib", "_inhib2", "_inhib1met")), 
-                                names(Deets))
-         
-         if(length(MissingCols) > 0){
-            Deets <- Deets %>% 
-               bind_cols(as.data.frame(matrix(
-                  data = NA, ncol = length(MissingCols), 
-                  dimnames = list(NULL, MissingCols))))
-         }
-         
-         MW = c("substrate" = Deets$MW_sub, 
-                "inhibitor 1" = Deets$MW_inhib,
-                "primary metabolite 1" = Deets$MW_met1, 
-                "primary metabolite 2" = Deets$MW_met2, 
-                "inhibitor 2" = Deets$MW_inhib2, 
-                "inhibitor 1 metabolite" = Deets$MW_inhib1met, 
-                "secondary metabolite" = Deets$MW_secmet, 
-                "conjugated payload" = as.numeric(Deets$MW_sub) + 
-                   as.numeric(Deets$MW_met1), 
-                "total antibody" = Deets$MW_sub, 
-                "released payload" = Deets$MW_met1)
-         
-         MyPKResults_all$aggregate <- 
-            split(MyPKResults_all$aggregate,
-                  f = MyPKResults_all$aggregate$PKparameter)
-         
-         if("data.frame" %in% class(MyPKResults_all$individual)){
-            IndivWasDF <- TRUE
-            MyPKResults_all$individual <- 
-               split(MyPKResults_all$individual,
-                     f = MyPKResults_all$individual$PKparameter)
-         } else {
-            IndivWasDF <- FALSE
-         }
-         
-         for(param in names(MyPKResults_all$aggregate)[
-            str_detect(names(MyPKResults_all$aggregate), "AUC|Cmax|Cmin") & 
-            !str_detect(names(MyPKResults_all$aggregate), "[rR]atio")]){
-            MyPKResults_all$aggregate[[param]] <- 
-               MyPKResults_all$aggregate[[param]] %>% 
-               pivot_longer(cols = -any_of(c(
-                  "File", "CompoundID", "Compound", "Inhibitor", "Tissue",
-                  "Simulated", "Dose", "N", "CV", "GCV", "PKparameter")), 
-                  names_to = "Stat", 
-                  values_to = "Conc") %>% 
-               mutate(Conc_units = Deets$Units_Cmax)
-            
-            MyPKResults_all$aggregate[[param]] <- 
-               convert_conc_units(DF_to_convert = MyPKResults_all$aggregate[[param]],
-                                  conc_units = conc_units,
-                                  MW = MW) %>%
-               select(-Conc_units) %>% 
-               pivot_wider(names_from = Stat, 
-                           values_from = Conc)
-            
-            if("individual" %in% names(MyPKResults_all)){
-               if(IndivWasDF){
-                  MyPKResults_all$individual[[param]] <- 
-                     MyPKResults_all$individual[[param]] %>% 
-                     rename(Conc = Value) %>% 
-                     mutate(Conc_units = Deets$Units_Cmax)
-                  
-                  MyPKResults_all$individual[[param]] <- 
-                     convert_conc_units(DF_to_convert = MyPKResults_all$individual[[param]],
-                                        conc_units = conc_units,
-                                        MW = MW) %>%
-                     select(-Conc_units) %>% 
-                     rename(Value = Conc)
-               } else {
-                  MyPKResults_all$individual[[param]] <- 
-                     tibble(Conc = MyPKResults_all$individual[[param]], 
-                            Conc_units = Deets$Units_Cmax) %>% 
-                     convert_conc_units(conc_units = conc_units, 
-                                        MW = MW) %>% 
-                     pull(Conc)
-               }
-            }
-         }
-         
-         MyPKResults_all$aggregate <- bind_rows(MyPKResults_all$aggregate)
-         MyPKResults_all$individual <- bind_rows(MyPKResults_all$individual)
-         
-         # Need to change units in Deets now to match.
-         Deets$Units_AUC <- sub(Deets$Units_Cmax, conc_units, Deets$Units_AUC)
-         Deets$Units_Cmax <- conc_units
-      }
+   if(time_units != Deets$Units_tmax |
+      (complete.cases(conc_units) && Deets$Units_Cmax != conc_units)){
+      
+      MyPKResults_all <- convert_unit_subfun(
+         PKlist = MyPKResults_all, 
+         existing_exp_details = existing_exp_details, 
+         conc_units = conc_units, 
+         time_units = time_units)
+      
    }
    
    # Noting PK that were successfully pulled.

@@ -183,11 +183,12 @@
 #' @param conc_units What concentration units should be used in the table?
 #'   Default is "ng/mL", but if you set the concentration units to something
 #'   else, this will attempt to convert the units to match that. This adjusts
-#'   only the simulated values, since we're assuming that that's the most likely
-#'   problem and that observed units are relatively easy to fix, and it also
-#'   only affects AUC and Cmax values. Acceptable input is any concentration
-#'   unit listed in the Excel form for PE data entry, e.g. \code{conc_units =
-#'   "ng/mL"} or \code{conc_units = "uM"}.
+#'   only the simulated values, and it also only affects AUC and Cmax values.
+#'   Acceptable input is any concentration unit listed in the Excel form for PE
+#'   data entry, e.g. \code{conc_units = "ng/mL"} or \code{conc_units = "uM"}.
+#' @param time_units What time units should be used in the table? Default is
+#'   "hours"; other acceptable options: "minutes", "hours", "days", or "weeks".
+#'   This adjusts only the simulated values.
 #' @param include_num_denom_columns TRUE (default) or FALSE for whether to
 #'   include columns in the output table for the numerator data alone and
 #'   columns for the denominator alone. For example, if you wanted to calculate
@@ -269,16 +270,11 @@
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the main PK table saved as a Word or csv file.  Do not include any slashes,
-#'   dollar signs, or periods in the file name. If you supply only the file
-#'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
-#'   the file name plus "PK summary table" with that extension and output will
-#'   be located in the same folder as \code{sim_data_file}. If you supply
-#'   something other than just "docx" or just "csv" for the file name but you
-#'   leave off the file extension, we'll assume you want it to be ".csv". While
-#'   the main PK table data will be in whatever file format you requested, if
-#'   you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
-#'   its own and will have "- QC" added to the end of the file name.
+#'   the main PK table saved as a Word or csv file. Do not include any slashes,
+#'   dollar signs, or periods in the file name. While the main PK table data
+#'   will be in whatever file format you requested, if you set
+#'   \code{checkDataSource = TRUE}, the QC data will be in a csv file on its own
+#'   and will have "- QC" added to the end of the file name.
 #' @param fontsize the numeric font size for Word output. Default is 11 point.
 #'   This only applies when you save the table as a Word file.
 #' @param page_orientation set the page orientation for the Word file output to
@@ -304,6 +300,7 @@ calc_PK_ratios <- function(PKparameters = NA,
                            paired = TRUE,
                            match_subjects_by = "individual and trial", 
                            conc_units = "ng/mL", 
+                           time_units = "hours", 
                            include_num_denom_columns = TRUE, 
                            mean_type = "geometric",
                            conf_int = 0.9, 
@@ -327,7 +324,8 @@ calc_PK_ratios <- function(PKparameters = NA,
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again."), 
+           call. = FALSE)
    }
    
    # Only returning geometric means and CI's if they want unpaired data.
@@ -406,8 +404,9 @@ calc_PK_ratios <- function(PKparameters = NA,
    PKparameters_orig_NA <- all(is.na(PKparameters))
    
    TEMP <- tidy_input_PK(PKparameters = PKparameters,
-                         sim_data_files = unique(c(sim_data_file_numerator,
-                                                   sim_data_file_denominator)),
+                         sim_data_files = NA,
+                         sim_data_file_numerator = sim_data_file_numerator, 
+                         sim_data_file_denominator = sim_data_file_denominator, 
                          compoundsToExtract = compoundToExtract,
                          tissues = tissue,
                          sheet_PKparameters = sheet_PKparameters, 
@@ -650,154 +649,25 @@ calc_PK_ratios <- function(PKparameters = NA,
       PKreplace[PKdenominator$aggregate$PKparameter]
    
    # Dealing with units
-   if(existing_exp_details$MainDetails$Units_Cmax != conc_units){
+   if(existing_exp_details$MainDetails$Units_Cmax != conc_units | 
+      existing_exp_details$MainDetails$Units_tmax != time_units){
       
-      PKnumerator$aggregate <- PKnumerator$aggregate %>% 
-         mutate(ParamType = case_when(
-            str_detect(PKparameter, "AUC|Cmax") & 
-               !str_detect(PKparameter, "ratio") ~ "conc", 
-            .default = "not conc"))
-      
-      PKnumerator$aggregate <- split(PKnumerator$aggregate, 
-                                     f = list(PKnumerator$aggregate$ParamType))
-      
-      PKnumerator$individual <- PKnumerator$individual %>% 
-         mutate(ParamType = case_when(
-            str_detect(PKparameter, "AUC|Cmax") & 
-               !str_detect(PKparameter, "ratio") ~ "conc", 
-            .default = "not conc"))
-      
-      PKnumerator$individual <- split(PKnumerator$individual, 
-                                      f = list(PKnumerator$individual$ParamType))
-      
-      for(i in intersect(names(PKnumerator$aggregate$conc), 
-                         setdiff(unique(AllStats$InternalColNames), 
-                                 c("GCV", "Skewness", "CV", "Fold")))){
-         
-         TEMP <- convert_units(
-            DF_to_convert = 
-               PKnumerator$aggregate$conc %>%
-               rename(Conc = i) %>%
-               mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax,
-                      Time = 1, 
-                      Time_units = "hours"),
-            DF_with_good_units = list("Conc_units" = conc_units,
-                                      "Time_units" = "hours"),
-            MW = switch(unique(PKnumerator$aggregate$conc$CompoundID),
-                        "substrate" = existing_exp_details$MainDetails$MW_sub,
-                        "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
-                        "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
-                        "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
-                        "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
-                        "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
-                        "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met))
-         
-         PKnumerator$aggregate$conc[, i] <- TEMP$Conc
-         rm(TEMP)
-      }
-      
-      PKnumerator$aggregate <- bind_rows(PKnumerator$aggregate) %>% 
-         select(-ParamType)
-      
-      TEMP <- convert_units(
-         DF_to_convert = 
-            PKnumerator$individual$conc %>%
-            rename(Conc = Value) %>%
-            mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax,
-                   Time = 1, 
-                   Time_units = "hours"),
-         DF_with_good_units = list("Conc_units" = conc_units,
-                                   "Time_units" = "hours"),
-         MW = switch(unique(PKnumerator$individual$conc$CompoundID),
-                     "substrate" = existing_exp_details$MainDetails$MW_sub,
-                     "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
-                     "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
-                     "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
-                     "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
-                     "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
-                     "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met))
-      
-      PKnumerator$individual$conc$Value <- TEMP$Conc
-      rm(TEMP)
-      
-      PKnumerator$individual <- bind_rows(PKnumerator$individual) %>% 
-         select(-ParamType)
+      PKnumerator <- convert_unit_subfun(
+         PKlist = PKnumerator, 
+         existing_exp_details = existing_exp_details, 
+         conc_units = conc_units, 
+         time_units = time_units)
       
    }
    
-   
-   if(existing_exp_details_denom$MainDetails$Units_Cmax != conc_units){
+   if(existing_exp_details_denom$MainDetails$Units_Cmax != conc_units | 
+      existing_exp_details_denom$MainDetails$Units_tmax != time_units){
       
-      PKdenominator$aggregate <- PKdenominator$aggregate %>% 
-         mutate(ParamType = case_when(
-            str_detect(PKparameter, "AUC|Cmax") & 
-               !str_detect(PKparameter, "ratio") ~ "conc", 
-            .default = "not conc"))
-      
-      PKdenominator$aggregate <- split(PKdenominator$aggregate, 
-                                       f = list(PKdenominator$aggregate$ParamType))
-      
-      PKdenominator$individual <- PKdenominator$individual %>% 
-         mutate(ParamType = case_when(
-            str_detect(PKparameter, "AUC|Cmax") & 
-               !str_detect(PKparameter, "ratio") ~ "conc", 
-            .default = "not conc"))
-      
-      PKdenominator$individual <- split(PKdenominator$individual, 
-                                        f = list(PKdenominator$individual$ParamType))
-      
-      for(i in intersect(names(PKdenominator$aggregate$conc), 
-                         setdiff(unique(AllStats$InternalColNames), 
-                                 c("GCV", "Skewness", "CV", "Fold")))){
-         
-         TEMP <- convert_units(
-            DF_to_convert = 
-               PKdenominator$aggregate$conc %>%
-               rename(Conc = i) %>%
-               mutate(Conc_units = existing_exp_details_denom$MainDetails$Units_Cmax,
-                      Time = 1, 
-                      Time_units = "hours"),
-            DF_with_good_units = list("Conc_units" = conc_units,
-                                      "Time_units" = "hours"),
-            MW = switch(unique(PKdenominator$aggregate$conc$CompoundID),
-                        "substrate" = existing_exp_details_denom$MainDetails$MW_sub,
-                        "primary metabolite 1" = existing_exp_details_denom$MainDetails$MW_met1,
-                        "primary metabolite 2" = existing_exp_details_denom$MainDetails$MW_met2,
-                        "secondary metabolite" = existing_exp_details_denom$MainDetails$MW_secmet,
-                        "inhibitor 1" = existing_exp_details_denom$MainDetails$MW_inhib,
-                        "inhibitor 2" = existing_exp_details_denom$MainDetails$MW_inhib2,
-                        "inhibitor 1 metabolite" = existing_exp_details_denom$MainDetails$MW_inhib1met))
-         
-         PKdenominator$aggregate$conc[, i] <- TEMP$Conc
-         rm(TEMP)
-      }
-      
-      PKdenominator$aggregate <- bind_rows(PKdenominator$aggregate) %>% 
-         select(-ParamType)
-      
-      TEMP <- convert_units(
-         DF_to_convert = 
-            PKdenominator$individual$conc %>%
-            rename(Conc = Value) %>%
-            mutate(Conc_units = existing_exp_details_denom$MainDetails$Units_Cmax,
-                   Time = 1, 
-                   Time_units = "hours"),
-         DF_with_good_units = list("Conc_units" = conc_units,
-                                   "Time_units" = "hours"),
-         MW = switch(unique(PKdenominator$individual$conc$CompoundID),
-                     "substrate" = existing_exp_details_denom$MainDetails$MW_sub,
-                     "primary metabolite 1" = existing_exp_details_denom$MainDetails$MW_met1,
-                     "primary metabolite 2" = existing_exp_details_denom$MainDetails$MW_met2,
-                     "secondary metabolite" = existing_exp_details_denom$MainDetails$MW_secmet,
-                     "inhibitor 1" = existing_exp_details_denom$MainDetails$MW_inhib,
-                     "inhibitor 2" = existing_exp_details_denom$MainDetails$MW_inhib2,
-                     "inhibitor 1 metabolite" = existing_exp_details_denom$MainDetails$MW_inhib1met))
-      
-      PKdenominator$individual$conc$Value <- TEMP$Conc
-      rm(TEMP)
-      
-      PKdenominator$individual <- bind_rows(PKdenominator$individual) %>% 
-         select(-ParamType)
+      PKdenominator <- convert_unit_subfun(
+         PKlist = PKdenominator, 
+         existing_exp_details = existing_exp_details_denom, 
+         conc_units = conc_units, 
+         time_units = time_units)
       
    }
    
@@ -1263,25 +1133,33 @@ calc_PK_ratios <- function(PKparameters = NA,
    if(prettify_columns){
       
       PrettyCol <- tibble(OrigName = names(MyPKResults), 
-                          GoodCol = prettify_column_names(names(MyPKResults))) %>% 
-         mutate(GoodCol = sub("DenominatorSim", "denominator", GoodCol),
-                GoodCol = sub("NumeratorSim", "numerator", GoodCol), 
-                GoodCol = sub("Ratio", "ratio", GoodCol))
+                          GoodCol = prettify_column_names(names(MyPKResults)))
       
       # Adjusting units as needed.
       PrettyCol <- PrettyCol %>% 
-         mutate(GoodCol = sub("\\(ng/mL.h\\)", 
-                              paste0("(", existing_exp_details$MainDetails$Units_AUC, ")"), 
-                              GoodCol), 
-                GoodCol = sub("\\(L/h\\)", 
-                              paste0("(", existing_exp_details$MainDetails$Units_CL, ")"), 
-                              GoodCol), 
-                GoodCol = sub("\\(ng/mL\\)", 
-                              paste0("(", existing_exp_details$MainDetails$Units_Cmax, ")"), 
-                              GoodCol), 
+         mutate(GoodCol = sub("ng/mL.h", 
+                              paste0(conc_units, ".", 
+                                     case_match(time_units, 
+                                                "minutes" ~ "min", 
+                                                "hours" ~ "h", 
+                                                "days" ~ "d", 
+                                                "weeks" ~ "wk")), GoodCol), 
+                GoodCol = sub("L/h", 
+                              paste0("L/", 
+                                     case_match(time_units, 
+                                                "minutes" ~ "min", 
+                                                "hours" ~ "h", 
+                                                "days" ~ "d", 
+                                                "weeks" ~ "wk")), GoodCol), 
+                GoodCol = sub("ng/mL", conc_units, GoodCol), 
                 GoodCol = sub("\\(h\\)", 
-                              paste0("(", existing_exp_details$MainDetails$Units_tmax, ")"), 
-                              GoodCol))
+                              paste0("(", 
+                                     case_match(time_units, 
+                                                "minutes" ~ "min", 
+                                                "hours" ~ "h", 
+                                                "days" ~ "d", 
+                                                "weeks" ~ "wk"), 
+                                     ")"), GoodCol))
       
       # Setting prettified names.
       MyPKResults <- MyPKResults[, PrettyCol$OrigName]

@@ -911,7 +911,9 @@ extractConcTime_mult <- function(sim_data_files = NA,
       # sheets.
       for(j in tissues){
          
-         message(paste("     for tissue =", j))
+         if(length(compoundsToExtract_n) > 0){
+            message(paste("     for tissue =", j))
+         }
          # Depending on both the tissue AND which compound the user requests,
          # that could be on multiple sheets or on a single sheet. Figuring out
          # which sheet to read.
@@ -1306,34 +1308,46 @@ extractConcTime_mult <- function(sim_data_files = NA,
                                        sub("pd", "PD", pd), 
                                        ".")), 
                           call. = FALSE)
+                  next
                }
             }
+            
+            MultData[[ff]] <- bind_rows(MultData[[ff]])
          }
          
-         # Not all large-molecule compounds will be included every time, and
-         # we can't check for that until here. Adding a warning in that case.
-         MissingData <- setdiff(compoundsToExtract, 
-                                unique(MultData[[ff]][[j]]$CompoundID))
-         
-         if(length(MissingData) > 0 & LgMolSim){
-            warning(wrapn(paste0("For the simulation '", ff,
-                                 "', no concentrations could be found for the ", 
-                                 MissingData, " in ", j, ".")), 
-                    call. = FALSE)
+         if(nrow(bind_rows(MultData[[ff]])) > 0){
+            # Not all large-molecule compounds will be included every time, and
+            # we can't check for that until here. Adding a warning in that case.
+            MissingData <- setdiff(compoundsToExtract, 
+                                   unique(MultData[[ff]][[j]]$CompoundID))
+            
+            if(length(MissingData) > 0 & LgMolSim){
+               warning(wrapn(paste0("For the simulation '", ff,
+                                    "', no concentrations could be found for the ", 
+                                    MissingData, " in ", j, ".")), 
+                       call. = FALSE)
+            }
          }
       }  
-      
-      MultData[[ff]] <- bind_rows(MultData[[ff]])
-      
-      MultData[[ff]] <- MultData[[ff]] %>% 
-         convert_time_units(time_units = time_units_to_use)
       
       # MUST remove Deets or you can get the wrong info for each file!!!
       rm(Deets, CompoundCheck, compoundsToExtract_n) 
       
+      MultData[[ff]] <- bind_rows(MultData[[ff]])
+      
+      if(nrow(MultData[[ff]]) == 0){next}
+      
+      MultData[[ff]] <- MultData[[ff]] %>% 
+         convert_time_units(time_units = time_units_to_use)
    }
    
    MultData <- bind_rows(MultData)
+   
+   if(nrow(MultData) == 0){
+      warning(wrapn("No concentration-time data for the specific combination of simulation files, tissues, and compounds could be found."), 
+              call. = FALSE)
+      return()
+   }
    
    # toc(log = TRUE)
    

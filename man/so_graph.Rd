@@ -8,7 +8,6 @@ so_graph(
   PKtable,
   PKparameters = NA,
   PKorder = "default",
-  boundary_indicator = "lines",
   boundaries = c(1, 1.5, 2),
   boundaries_Guest = c(1, 2),
   boundary_color_set = "red black",
@@ -16,7 +15,6 @@ so_graph(
   boundary_line_types = "default",
   boundary_line_types_Guest = "default",
   boundary_line_width = 0.3,
-  show_boundary_legend = TRUE,
   error_bars = "none",
   variability_type = "90\% CI",
   point_color_column,
@@ -30,10 +28,10 @@ so_graph(
   legend_position = "none",
   axis_title_x = "Observed",
   axis_title_y = "Simulated",
-  include_dose_num = NA,
   facet_title_size = NA,
   title_adjustments = c(),
   graph_labels = FALSE,
+  include_dose_num = NA,
   all_intervals_together = FALSE,
   all_AUCs_together = FALSE,
   grid_color = NA,
@@ -74,16 +72,6 @@ list for \code{PKparameters} wherever you want that to happen, e.g.,
 \code{PKparameters = c("Cmax_dose1", "BLANK", "AUCinf_dose1", "BLANK",
 "tmax_dose1")}}
 
-\item{boundary_indicator}{how to indicate the boundaries for simulated /
-observed. Options are "lines" (default), "fill" to get a shaded area, or
-"none" to remove any indicators of those
-boundaries. \strong{NOTE: There is a known bug within RStudio that causes
-filled semi-transparent areas like you get with the "fill" option to NOT
-get graphed for certain versions of RStudio.} To get around this, within
-RStudio, go to Tools --> Global Options --> General --> Graphics --> And
-then set "Graphics device: backend" to "AGG". Honestly, this is a better
-option for higher-quality graphics anyway!}
-
 \item{boundaries}{Numerical boundaries to show on the graph. Defaults to the
 1.5- and 2-fold boundaries. Indicate boundaries you want like this:
 \code{boundaries = c(1.25, 1.5, 2)}}
@@ -91,17 +79,15 @@ option for higher-quality graphics anyway!}
 \item{boundaries_Guest}{Numerical boundaries to show on the graph when the PK
 parameter is a mean ratio of the parameter in the presence of a perpetrator
 / the parameter in the absence of the perpetrator. Please see
-[BoundariesGuest Galetin 2011 Drug Metab
-Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/) for a reference for this
-type of graph. If you'd rather show straight lines for these parameters
-instead of BoundariesGuest curves, set this to NA. The default boundaries
-for BoundariesGuest curves are 1 (straight line at unity; even if you don't
-include 1, we'll add it back in) and 2. For all numbers > 1, you'll get a
-BoundariesGuest curve that approaches that value at higher DDI ratios, and,
-for the highest number you list, you'll additionally get straight line
-boundaries. This matches what is described in the BoundariesGuest Galetin
-2011 paper. We recommend using only 1 and 2 as BoundariesGuest boundaries
-for clarity of the graph.}
+https://pubmed.ncbi.nlm.nih.gov/21036951/ for a reference for this type of
+graph. If you'd rather show straight lines for these parameters instead of
+Guest curves, set this to NA. The default boundaries for Guest curves are 1
+(straight line at unity; even if you don't include 1, we'll add it back in)
+and 2. For all numbers > 1, you'll get a Guest curve that approaches that
+value at higher DDI ratios, and, for the highest number you list, you'll
+additionally get straight line boundaries. This matches what is described
+in the Guest Galetin 2011 Drug Metab Dispos paper. We recommend using only
+1 and 2 as Guest boundaries for clarity of the graph.}
 
 \item{boundary_color_set}{set of colors to use for indicating the X-fold
 boundaries of the simulated / observed ratio. The default is "red black",
@@ -117,36 +103,31 @@ interpretable.}
 
 \item{boundary_color_set_Guest}{set of colors to use for indicating the
 X-fold boundaries of the simulated / observed ratio for DDI ratio graphs.
-The default is "red black", which, for the default BoundariesGuest
-boundaries, results in a black curved line and a red straight line at the
-2-fold boundary. Other options are "red green", "muted red green" (a
-lighter, more muted red and green that work well for indicating boundaries
-when you're using shading instead of lines), and "black", which will result
-in only black lines or shading. You also can set this to
+The default is "red black", which, for the default Guest boundaries,
+results in a black curved line and a red straight line at the 2-fold
+boundary. Other options are "red green", "muted red green" (a lighter, more
+muted red and green that work well for indicating boundaries when you're
+using shading instead of lines), and "black", which will result in only
+black lines or shading. You also can set this to
 any set of colors you'd like, e.g., \code{boundary_color_set_Guest = c("yellow",
-"blue")}. The number of colors should equal the number of BoundariesGuest boundaries
+"blue")}. The number of colors should equal the number of Guest boundaries
 that you've indicated or the graph won't be easily interpretable.}
 
 \item{boundary_line_types}{optionally specify the line types to use for the
-boundaries (only applicable when \code{boundary_indicator = "lines"}).
-Leaving this as "default" results in a dashed line at unity and solid lines
-for all others, but you can specify this with any R-acceptable line types,
-e.g., \code{boundary_line_types = c("dotted", "dashed", "solid")}. To see
-the possibilities, type \code{ggpubr::show_line_types()} into the console.}
+boundaries. Leaving this as "default" results in a dashed line at unity and
+solid lines for all others, but you can specify this with any R-acceptable
+line types, e.g., \code{boundary_line_types = c("dotted", "dashed",
+"solid")}. To see the possibilities, type \code{ggpubr::show_line_types()}
+into the console.}
 
 \item{boundary_line_types_Guest}{optionally specify the line types to use for
-the DDI ratio graph boundaries (only applicable when
-\code{boundary_indicator = "lines"}). Leaving this as "default" results in
-a dashed line at unity and solid lines for all others, but you can specify
+the DDI ratio graph boundaries. Leaving this as "default" results in a
+dashed line at unity and solid lines for all others, but you can specify
 this with any R-acceptable line types, e.g., \code{boundary_line_types_Guest =
 c("dotted", "dashed", "solid")}. To see the possibilities, type
 \code{ggpubr::show_line_types()} into the console.}
 
-\item{boundary_line_width}{line width; default is 0.7. This only applies when
-\code{boundary_indicator} is set to "lines", the default.}
-
-\item{show_boundary_legend}{TRUE (default) or FALSE for whether to show a
-legend indicating the meaning of the boundaries}
+\item{boundary_line_width}{line width; default is 0.7.}
 
 \item{error_bars}{Which error bars should be shown on the graph? Options are
 "none" (default), "simulated" to show vertical error bars ("vertical" also
@@ -266,14 +247,6 @@ you don't want one at all.}
 
 \item{axis_title_y}{title for the y axis; default is "Simulated"}
 
-\item{include_dose_num}{Should the dose number be included? If set to TRUE,
-then the dose number part of the graph title, e.g., the "Dose 1" or "Last
-dose" part of "Dose 1 AUCinf" or "Last dose Cmax", will be included. If set
-to FALSE, those would be come "AUCinf" and "Cmax" only with no reference to
-which dose it was. If left as the default NA, then the dose number will be
-omitted if all the data are all for dose 1 or all for the last dose, and it
-will be included if you have a mix of dosing intervals.}
-
 \item{facet_title_size}{optionally specify what font size to use for the
 facet titles. If left as NA, a reasonable guess will be used.}
 
@@ -299,13 +272,21 @@ facet titles. If left as NA, a reasonable guess will be used.}
 \item{graph_labels}{TRUE or FALSE (default) for whether to include labels (A,
 B, C, etc.) for each of the small graphs.}
 
+\item{include_dose_num}{Should the dose number be included? If set to TRUE,
+then the dose number part of the graph title, e.g., the "Dose 1" or "Last
+dose" part of "Dose 1 AUCinf" or "Last dose Cmax", will be included. If set
+to FALSE, those would become "AUCinf" and "Cmax" only with no reference to
+which dose it was. If left as the default NA, then the dose number will be
+omitted if all the data are all for dose 1 or all for the last dose, and it
+will be included if you have a mix of dosing intervals.}
+
 \item{all_intervals_together}{TRUE or FALSE (default) for whether to combine
 all of a single type of PK parameter into a single graph. For example,
 setting this to TRUE would put all the Cmax PK -- regardless of whether it
-was for the 1st dose, the last dose, or a custom interval -- into a single
-graph. The default, FALSE, means that anything that was its own column in
-the PK summary table would also be its own graph here. \emph{NOTE:} If you
-do set this to TRUE, the shape of the points will be mapped to which
+was for the 1st dose, the last dose simulated, or a custom interval -- into
+a single graph. The default, FALSE, means that anything that was its own
+column in the PK table would also be its own graph here. \emph{NOTE:} If
+you do set this to TRUE, the shape of the points will be mapped to which
 interval it is, which means that you can't \emph{also} specify something
 for the argument \code{point_shape_column}. If you do, it will be ignored.
 Try this out if you're uncertain what we mean.}
@@ -341,24 +322,35 @@ a set of arranged ggplot2 graphs
 }
 \description{
 \code{so_graph} makes a graph of simulated vs. observed PK, including
-indicating where the predicted parameters fell within X fold of the observed.
+indicating where the predicted parameters fell within X fold of the observed,
+where "X" is whatever cutoffs you specify.
 }
 \examples{
-# Assuming you have run pk_table on a few files with observed data
-# to generate an object called MyPKOutput, then:
+
+# The object SOdata has some example PK data to work with
+# and is included in the package.
 so_graph(PKtable = SOdata)
-so_graph(PKtable = SOdata, boundary_indicator = "fill")
+
 so_graph(PKtable = SOdata,
-         axis_titles = c("y" = "Predicted", "x" = "Observed"))
-so_graph(PKtable = SOdata, ncol = 1)
-so_graph(PKtable = SOdata, point_shape_column = Study,
-         legend_position = "bottom")
+         axis_title_y = "Predicted",
+         axis_title_x = "Observed",
+         grid_color = "none")
+
+so_graph(PKtable = SOdata,
+         ncol = 1)
+
 so_graph(PKtable = SOdata,
          point_shape_column = Study,
-         legend_label_point_shape = "Studies involving\nDrug X",
+         legend_position = "bottom")
+
+so_graph(PKtable = SOdata,
+         point_shape_column = Study,
+         legend_label_point_shape = "Studies involving Drug X",
+         point_shape = c(21:25),
          point_color_column = File,
          legend_label_point_color = "Simulation file",
-         legend_position = "right")
-
+         point_color_set = "blues",
+         legend_position = "right",
+         error_bars = "horizontal")
 
 }

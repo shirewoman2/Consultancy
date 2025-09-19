@@ -51,7 +51,7 @@ convert_units <- function(DF_to_convert,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again."), 
            call. = FALSE)
    }
    
@@ -131,7 +131,7 @@ convert_conc_units <- function(DF_to_convert,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again."), 
            call. = FALSE)
    }
    
@@ -438,17 +438,39 @@ convert_time_units <- function(DF_to_convert,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again."), 
            call. = FALSE)
    }
    
    if("Time_units" %in% names(DF_to_convert) == FALSE){
-      stop("The function `convert_time_units` requires that DF_to_convert have a column titled `Time_units`, and your data.frame does not. We cannot convert the time units here.", 
+      stop(wrapn("The function `convert_time_units` requires that DF_to_convert have a column titled `Time_units`, and your data.frame does not. We cannot convert the time units here."), 
            call. = FALSE)
    }
    
    if("logical" %in% class(DF_with_good_units)){
       DF_with_good_units <- list(Time_units = time_units)
+   }
+   
+   time_units <- tolower(time_units)[1]
+   time_units <- case_match(time_units, 
+                            "h" ~ "hours", 
+                            "d" ~ "days", 
+                            "wks" ~ "weeks", 
+                            "min" ~ "minutes", 
+                            .default = time_units)
+   
+   DF_to_convert <- DF_to_convert %>% 
+      mutate(Time_units = case_match(Time_units, 
+                                     "h" ~ "hours", 
+                                     "d" ~ "days", 
+                                     "wks" ~ "weeks", 
+                                     "min" ~ "minutes", 
+                                     .default = Time_units))
+   
+   if(time_units %in% c("hours", "days", "weeks", "minutes") == FALSE){
+      warning(wrapn("The only acceptable time units are 'minutes', 'hours', 'days', or 'weeks', and you have requested something else. We'll use the default of 'hours'."),
+              call. = FALSE)
+      time_units <- "hours"
    }
    
    # Converting time units ----------------------------------------------------
@@ -485,4 +507,156 @@ convert_time_units <- function(DF_to_convert,
    return(DF_to_convert)
    
 }
+
+
+#' INTERNAL. For use with pk_table, calc_PK_ratios, etc. This will convert time
+#' and conc units as needed, including accounting for the time unit being in the
+#' denominator for CL.
+#'
+#' @param PKlist list of BOTH individual and aggregate PK
+#' @param existing_exp_details existing_exp_details
+#' @param time_units desired time units
+#' @param conc_units desired conc units
+#'
+#' @returns a list of two data.frames -- individual and aggregate -- PK
+#'   parameters
+convert_unit_subfun <- function(PKlist, 
+                                existing_exp_details, 
+                                time_units, 
+                                conc_units){
+   
+   PKlist$aggregate <- PKlist$aggregate %>% 
+      mutate(
+         ParamType_conc = case_when(
+            str_detect(PKparameter, "AUC|Cmax|Cmin") & 
+               !str_detect(PKparameter, "ratio") ~ "conc", 
+            .default = "not conc"), 
+         ParamType_time = case_when(
+            str_detect(PKparameter, "AUC|CL|tmax|HalfLife") &
+               !str_detect(PKparameter, "ratio") ~ "time", 
+            .default = "not time"))
+   
+   PKlist$individual <- PKlist$individual %>% 
+      mutate(
+         ParamType_conc = case_when(
+            str_detect(PKparameter, "AUC|Cmax|Cmin") & 
+               !str_detect(PKparameter, "ratio") ~ "conc", 
+            .default = "not conc"), 
+         ParamType_time = case_when(
+            str_detect(PKparameter, "AUC|CL|tmax|HalfLife") &
+               !str_detect(PKparameter, "ratio") ~ "time", 
+            .default = "not time"))
+   
+   
+   ### conc conversion -----------------------------------------------------
+   PKlist$aggregate <- split(PKlist$aggregate, 
+                             f = list(PKlist$aggregate$ParamType_conc))
+   
+   PKlist$individual <- split(PKlist$individual, 
+                              f = list(PKlist$individual$ParamType_conc))
+   
+   # aggregate PK
+   for(i in intersect(names(PKlist$aggregate$conc), 
+                      setdiff(unique(AllStats$InternalColNames), 
+                              c("GCV", "Skewness", "CV", "Fold")))){
+      
+      TEMP <- convert_conc_units(
+         DF_to_convert = 
+            PKlist$aggregate$conc %>%
+            rename(Conc = i) %>%
+            mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax),
+         conc_units = conc_units, 
+         MW = switch(
+            unique(PKlist$aggregate$conc$CompoundID),
+            "substrate" = existing_exp_details$MainDetails$MW_sub,
+            "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
+            "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
+            "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
+            "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
+            "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
+            "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met)
+      )
+      
+      PKlist$aggregate$conc[, i] <- TEMP$Conc
+      rm(TEMP)
+   }
+   
+   PKlist$aggregate <- bind_rows(PKlist$aggregate) %>% 
+      select(-ParamType_conc)
+   
+   # individual PK 
+   TEMP <- convert_conc_units(
+      DF_to_convert = 
+         PKlist$individual$conc %>%
+         rename(Conc = Value) %>%
+         mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax),
+      conc_units = conc_units,
+      MW = switch(
+         unique(PKlist$individual$conc$CompoundID),
+         "substrate" = existing_exp_details$MainDetails$MW_sub,
+         "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
+         "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
+         "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
+         "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
+         "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
+         "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met))
+   
+   PKlist$individual$conc$Value <- TEMP$Conc
+   rm(TEMP)
+   
+   PKlist$individual <- bind_rows(PKlist$individual) %>% 
+      select(-ParamType_conc)
+   
+   ### time conversion -----------------------------------------------------
+   
+   PKlist$aggregate <- split(PKlist$aggregate, 
+                             f = list(PKlist$aggregate$ParamType_time))
+   
+   PKlist$individual <- split(PKlist$individual, 
+                              f = list(PKlist$individual$ParamType_time))
+   
+   # aggregate PK
+   for(i in intersect(names(PKlist$aggregate$time), 
+                      setdiff(unique(AllStats$InternalColNames), 
+                              c("GCV", "Skewness", "CV", "Fold")))){
+      
+      TEMP <- convert_time_units(
+         DF_to_convert = 
+            PKlist$aggregate$time %>%
+            rename(Time = i) %>%
+            mutate(Time_units = existing_exp_details$MainDetails$Units_tmax,
+                   # IMPORTANT! Time is in the denominator for CL, so need to
+                   # deal with that!!!
+                   Time = case_when(str_detect(PKparameter, "CL") ~ 1/Time, 
+                                    .default = Time)),
+         time_units = time_units) %>% 
+         mutate(Time = case_when(str_detect(PKparameter, "CL") ~ 1/Time, 
+                                 .default = Time))
+      
+      PKlist$aggregate$time[, i] <- TEMP$Time
+      rm(TEMP)
+   }
+   
+   PKlist$aggregate <- bind_rows(PKlist$aggregate) %>% 
+      select(-ParamType_time)
+   
+   # individual PK 
+   TEMP <- convert_time_units(
+      DF_to_convert = 
+         PKlist$individual$time %>%
+         rename(Time = Value) %>%
+         mutate(Time_units = existing_exp_details$MainDetails$Units_tmax),
+      time_units = time_units)
+   
+   PKlist$individual$time$Value <- TEMP$Time
+   rm(TEMP)
+   
+   PKlist$individual <- bind_rows(PKlist$individual) %>% 
+      select(-ParamType_time)
+   
+   return(PKlist)
+   
+}
+
+
 

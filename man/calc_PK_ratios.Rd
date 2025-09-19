@@ -15,6 +15,7 @@ calc_PK_ratios(
   paired = TRUE,
   match_subjects_by = "individual and trial",
   conc_units = "ng/mL",
+  time_units = "hours",
   include_num_denom_columns = TRUE,
   mean_type = "geometric",
   conf_int = 0.9,
@@ -198,11 +199,13 @@ superior to getting \emph{incorrect} results.}
 \item{conc_units}{What concentration units should be used in the table?
 Default is "ng/mL", but if you set the concentration units to something
 else, this will attempt to convert the units to match that. This adjusts
-only the simulated values, since we're assuming that that's the most likely
-problem and that observed units are relatively easy to fix, and it also
-only affects AUC and Cmax values. Acceptable input is any concentration
-unit listed in the Excel form for PE data entry, e.g. \code{conc_units =
-"ng/mL"} or \code{conc_units = "uM"}.}
+only the simulated values, and it also only affects AUC and Cmax values.
+Acceptable input is any concentration unit listed in the Excel form for PE
+data entry, e.g. \code{conc_units = "ng/mL"} or \code{conc_units = "uM"}.}
+
+\item{time_units}{What time units should be used in the table? Default is
+"hours"; other acceptable options: "minutes", "hours", "days", or "weeks".
+This adjusts only the simulated values.}
 
 \item{include_num_denom_columns}{TRUE (default) or FALSE for whether to
 include columns in the output table for the numerator data alone and
@@ -300,16 +303,11 @@ simulator output file. Useful for QCing.}
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
-the main PK table saved as a Word or csv file.  Do not include any slashes,
-dollar signs, or periods in the file name. If you supply only the file
-extension, e.g., \code{save_table = "docx"}, the name of the file will be
-the file name plus "PK summary table" with that extension and output will
-be located in the same folder as \code{sim_data_file}. If you supply
-something other than just "docx" or just "csv" for the file name but you
-leave off the file extension, we'll assume you want it to be ".csv". While
-the main PK table data will be in whatever file format you requested, if
-you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
-its own and will have "- QC" added to the end of the file name.}
+the main PK table saved as a Word or csv file. Do not include any slashes,
+dollar signs, or periods in the file name. While the main PK table data
+will be in whatever file format you requested, if you set
+\code{checkDataSource = TRUE}, the QC data will be in a csv file on its own
+and will have "- QC" added to the end of the file name.}
 
 \item{name_clinical_study}{optionally specify the name(s) of the clinical
 study or studies for any observed data. This only affects the caption of
