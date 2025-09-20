@@ -172,7 +172,12 @@ pk_table_subfun <- function(sim_data_file,
       conc_units <- NA
    }
    
-   if(time_units != Deets$Units_tmax |
+   if(time_units != case_match(Deets$Units_tmax, 
+                               "h" ~ "hours", 
+                               "d" ~ "days", 
+                               "wks" ~ "weeks", # not actually sure if the Simulator will do weeks or minutes; these are placeholders.
+                               "min" ~ "minutes", 
+                               .default =Deets$Units_tmax) |
       (complete.cases(conc_units) && Deets$Units_Cmax != conc_units)){
       
       MyPKResults_all <- convert_unit_subfun(

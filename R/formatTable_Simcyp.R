@@ -119,7 +119,8 @@
 #'   heading. If you would like to add a horizontal line every time the data set
 #'   changes, e.g., this is a PK table and you want a line every time there's a
 #'   different simulation, tissue, compound, etc. but not every time there's a
-#'   different statistic, set this to "when dataset changes". 
+#'   different statistic, set this to "when dataset changes", which is the
+#'   default.
 #' @param font font to use. Default is "Arial" and any fonts available on your
 #'   machine in either Word or PowerPoint should be acceptable. If you get Times
 #'   New Roman in your table when you asked for something else, it means that
@@ -248,7 +249,7 @@ formatTable_Simcyp <- function(DF,
                                highlight_so_colors = "yellow to red",
                                highlight_cells = NA, 
                                highlight_color = "yellow",
-                               hlines = NA, 
+                               hlines = "when dataset changes", 
                                font = "Arial", 
                                fontsize = 11, 
                                borders = TRUE, 
@@ -340,29 +341,35 @@ formatTable_Simcyp <- function(DF,
       any(str_detect(tolower(hlines), "data.*change"))){
       
       IDs <- DF %>% 
-         select(any_of(setdiff(names(DF), c("Statistic", names(DF)[PKCols])))) %>% 
-         unite(col = "ID", 
-               setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
-               remove = FALSE) %>% 
-         unique() %>% 
-         mutate(Row = as.numeric(NA))
+         select(any_of(setdiff(names(DF), c("Statistic", names(DF)[PKCols]))))
       
-      DF <- DF %>% 
-         unite(col = "ID", 
-               setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
-               remove = FALSE)
-      
-      for(i in 1:nrow(IDs)){
-         IDs$Row[i] <- max(which(DF$ID == IDs$ID[i]))
+      if(ncol(IDs) == 0){
+         hlines <- as.numeric(NA)
+      } else {
+         
+         IDs <- IDs %>% 
+            unite(col = "ID", 
+                  setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
+                  remove = FALSE) %>% 
+            unique() %>% 
+            mutate(Row = as.numeric(NA))
+         
+         DF <- DF %>% 
+            unite(col = "ID", 
+                  setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
+                  remove = FALSE)
+         
+         for(i in 1:nrow(IDs)){
+            IDs$Row[i] <- max(which(DF$ID == IDs$ID[i]))
+         }
+         
+         hlines <- IDs$Row
+         
+         DF$ID <- NULL
       }
-      
-      hlines <- IDs$Row
-      
-      DF$ID <- NULL
-      
    }
    
-   suppressMessages(hlines <- unique(as.numeric(hlines)))
+   suppressWarnings(suppressMessages(hlines <- unique(as.numeric(hlines))))
    
    
    # Main body of function ----------------------------------------------------

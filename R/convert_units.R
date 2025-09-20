@@ -555,57 +555,59 @@ convert_unit_subfun <- function(PKlist,
    PKlist$individual <- split(PKlist$individual, 
                               f = list(PKlist$individual$ParamType_conc))
    
-   # aggregate PK
-   for(i in intersect(names(PKlist$aggregate$conc), 
-                      setdiff(unique(AllStats$InternalColNames), 
-                              c("GCV", "Skewness", "CV", "Fold")))){
+   if("conc" %in% names(PKlist$aggregate)){
+      # aggregate PK
+      for(i in intersect(names(PKlist$aggregate$conc), 
+                         setdiff(unique(AllStats$InternalColNames), 
+                                 c("GCV", "Skewness", "CV", "Fold")))){
+         
+         TEMP <- convert_conc_units(
+            DF_to_convert = 
+               PKlist$aggregate$conc %>%
+               rename(Conc = i) %>%
+               mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax),
+            conc_units = conc_units, 
+            MW = switch(
+               unique(PKlist$aggregate$conc$CompoundID),
+               "substrate" = existing_exp_details$MainDetails$MW_sub,
+               "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
+               "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
+               "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
+               "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
+               "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
+               "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met)
+         )
+         
+         PKlist$aggregate$conc[, i] <- TEMP$Conc
+         rm(TEMP)
+      }
       
+      PKlist$aggregate <- bind_rows(PKlist$aggregate) %>% 
+         select(-ParamType_conc)
+      
+      # individual PK 
       TEMP <- convert_conc_units(
          DF_to_convert = 
-            PKlist$aggregate$conc %>%
-            rename(Conc = i) %>%
+            PKlist$individual$conc %>%
+            rename(Conc = Value) %>%
             mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax),
-         conc_units = conc_units, 
+         conc_units = conc_units,
          MW = switch(
-            unique(PKlist$aggregate$conc$CompoundID),
+            unique(PKlist$individual$conc$CompoundID),
             "substrate" = existing_exp_details$MainDetails$MW_sub,
             "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
             "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
             "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
             "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
             "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
-            "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met)
-      )
+            "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met))
       
-      PKlist$aggregate$conc[, i] <- TEMP$Conc
+      PKlist$individual$conc$Value <- TEMP$Conc
       rm(TEMP)
+      
+      PKlist$individual <- bind_rows(PKlist$individual) %>% 
+         select(-ParamType_conc)
    }
-   
-   PKlist$aggregate <- bind_rows(PKlist$aggregate) %>% 
-      select(-ParamType_conc)
-   
-   # individual PK 
-   TEMP <- convert_conc_units(
-      DF_to_convert = 
-         PKlist$individual$conc %>%
-         rename(Conc = Value) %>%
-         mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax),
-      conc_units = conc_units,
-      MW = switch(
-         unique(PKlist$individual$conc$CompoundID),
-         "substrate" = existing_exp_details$MainDetails$MW_sub,
-         "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
-         "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
-         "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
-         "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
-         "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
-         "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met))
-   
-   PKlist$individual$conc$Value <- TEMP$Conc
-   rm(TEMP)
-   
-   PKlist$individual <- bind_rows(PKlist$individual) %>% 
-      select(-ParamType_conc)
    
    ### time conversion -----------------------------------------------------
    
@@ -615,44 +617,46 @@ convert_unit_subfun <- function(PKlist,
    PKlist$individual <- split(PKlist$individual, 
                               f = list(PKlist$individual$ParamType_time))
    
-   # aggregate PK
-   for(i in intersect(names(PKlist$aggregate$time), 
-                      setdiff(unique(AllStats$InternalColNames), 
-                              c("GCV", "Skewness", "CV", "Fold")))){
+   if("time" %in% names(PKlist$aggregate)){
+      # aggregate PK
+      for(i in intersect(names(PKlist$aggregate$time), 
+                         setdiff(unique(AllStats$InternalColNames), 
+                                 c("GCV", "Skewness", "CV", "Fold")))){
+         
+         TEMP <- convert_time_units(
+            DF_to_convert = 
+               PKlist$aggregate$time %>%
+               rename(Time = i) %>%
+               mutate(Time_units = existing_exp_details$MainDetails$Units_tmax,
+                      # IMPORTANT! Time is in the denominator for CL, so need to
+                      # deal with that!!!
+                      Time = case_when(str_detect(PKparameter, "CL") ~ 1/Time, 
+                                       .default = Time)),
+            time_units = time_units) %>% 
+            mutate(Time = case_when(str_detect(PKparameter, "CL") ~ 1/Time, 
+                                    .default = Time))
+         
+         PKlist$aggregate$time[, i] <- TEMP$Time
+         rm(TEMP)
+      }
       
+      PKlist$aggregate <- bind_rows(PKlist$aggregate) %>% 
+         select(-ParamType_time)
+      
+      # individual PK 
       TEMP <- convert_time_units(
          DF_to_convert = 
-            PKlist$aggregate$time %>%
-            rename(Time = i) %>%
-            mutate(Time_units = existing_exp_details$MainDetails$Units_tmax,
-                   # IMPORTANT! Time is in the denominator for CL, so need to
-                   # deal with that!!!
-                   Time = case_when(str_detect(PKparameter, "CL") ~ 1/Time, 
-                                    .default = Time)),
-         time_units = time_units) %>% 
-         mutate(Time = case_when(str_detect(PKparameter, "CL") ~ 1/Time, 
-                                 .default = Time))
+            PKlist$individual$time %>%
+            rename(Time = Value) %>%
+            mutate(Time_units = existing_exp_details$MainDetails$Units_tmax),
+         time_units = time_units)
       
-      PKlist$aggregate$time[, i] <- TEMP$Time
+      PKlist$individual$time$Value <- TEMP$Time
       rm(TEMP)
+      
+      PKlist$individual <- bind_rows(PKlist$individual) %>% 
+         select(-ParamType_time)
    }
-   
-   PKlist$aggregate <- bind_rows(PKlist$aggregate) %>% 
-      select(-ParamType_time)
-   
-   # individual PK 
-   TEMP <- convert_time_units(
-      DF_to_convert = 
-         PKlist$individual$time %>%
-         rename(Time = Value) %>%
-         mutate(Time_units = existing_exp_details$MainDetails$Units_tmax),
-      time_units = time_units)
-   
-   PKlist$individual$time$Value <- TEMP$Time
-   rm(TEMP)
-   
-   PKlist$individual <- bind_rows(PKlist$individual) %>% 
-      select(-ParamType_time)
    
    return(PKlist)
    
