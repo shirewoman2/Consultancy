@@ -55,6 +55,16 @@ list_interactions <- function(sim_data_file,
    TranspRegex <- "ASBT|BCRP|BSEP|ENT[12]|GLUT1|MATE1|MATE2_K|MCTC1|MDR1|MRP[1-9]|NTCP|OCT(N)?[123]|OAT[1-9]|OATP[124][BC][1-3]|PEPT1|P(_)?gp"
    EnzTranspRegex <- paste0(EnzRegex, "|", TranspRegex)
    
+   existing_exp_details <- filter_sims(which_object = existing_exp_details, 
+                                       which_sims = sim_data_file, 
+                                       include_or_omit = "include")
+   
+   if(nrow(existing_exp_details$MainDetails) == 0){
+      stop(wrapn(paste0("The simulator results file '", sim_data_file, 
+                        "' is not included in what you provided for existing_exp_details, so we cannot provide any interaction parameters for it.")), 
+           call. = FALSE)
+   }
+   
    details_subset <- annotateDetails(existing_exp_details, 
                                      sims_to_include = sim_data_file, 
                                      simulator_section = c("elimination", 
@@ -62,7 +72,10 @@ list_interactions <- function(sim_data_file,
                                                            "interaction")) %>% 
       mutate(Pathway = str_extract(Detail, EnzTranspRegex), 
              Pathway = sub("P(_)?gp", "P-gp", Pathway), 
-             Pathway = sub("MATE2_K", "MATE2-K", Pathway)) %>% 
+             Pathway = sub("MATE2_K", "MATE2-K", Pathway), 
+             DDIRole = case_when(
+                SimulatorSection == "Interaction" ~ "precipitant", 
+                .default = "object")) %>% 
       rename(Value = {{sim_data_file}}) %>% 
       filter(complete.cases(Pathway) & Value != "0")
    
@@ -101,23 +114,30 @@ list_interactions <- function(sim_data_file,
    interactions <- details_subset %>% 
       filter(Detail %in% c(vic_elim$Detail[vic_elim$Pathway %in% affected_pathways], 
                            perp_DDI$Detail[perp_DDI$Pathway %in% affected_pathways])) %>% 
-      select(Pathway, CompoundID, Compound, SimulatorSection, Detail, Value, Notes) %>% 
-      arrange(Pathway)
+      select(Pathway, CompoundID, Compound, DDIRole, SimulatorSection, Detail, Value, Notes) %>% 
+      arrange(Pathway, CompoundID, Compound, DDIRole)
    
    if(include_victim_fms){
       Fms <- extractFmFe(sim_data_file = sim_data_file, 
                          existing_exp_details = existing_exp_details, 
                          returnOnlyMaxMin = TRUE, 
-                         returnAggregateOrIndiv = "aggregate") %>% 
-         filter(Parameter == "fm") %>% 
-         select(Enzyme, Tissue, PerpPresent, Max) %>% 
-         mutate(PerpPresent = ifelse(PerpPresent, "fm with DDI", "fm at baseline")) %>% 
-         pivot_wider(names_from = PerpPresent, 
-                     values_from = Max)
+                         returnAggregateOrIndiv = "aggregate")
       
-      return(list("affected_pathways" = affected_pathways, 
-                  "interactions" = interactions, 
-                  "fms" = Fms))
+      if(nrow(Fms) > 0){
+         Fms <- Fms %>% 
+            filter(Parameter == "fm") %>% 
+            select(Enzyme, Tissue, PerpPresent, Max) %>% 
+            mutate(PerpPresent = ifelse(PerpPresent, "fm with DDI", "fm at baseline")) %>% 
+            pivot_wider(names_from = PerpPresent, 
+                        values_from = Max)
+         
+         return(list("affected_pathways" = affected_pathways, 
+                     "interactions" = interactions, 
+                     "fms" = Fms))
+      } else {
+         return(list("affected_pathways" = affected_pathways, 
+                     "interactions" = interactions))
+      }
       
    } else {
       

@@ -36,7 +36,7 @@ extractExpDetails_DB <- function(sim_data_file){
          
          "\n", 
          
-         "   Simcyp::Initialise(species = Simcyp::SpeciesID$Human, requestedVersion = 22) \n"), 
+         "   Simcyp::Initialise(species = Simcyp::SpeciesID$Human, requestedVersion = 24) \n"), 
          call. = FALSE)
       
       return(list())
@@ -54,27 +54,34 @@ extractExpDetails_DB <- function(sim_data_file){
    # If they didn't include ".db" at the end, add that.
    sim_data_file <- paste0(sim_basename, ".db")
    
-   
    # Main body of function ---------------------------------------------------
-   
-   suppressMessages(
-      Simcyp::SetWorkspace(paste0(sim_basename, ".wksz"), 
-                           verbose = FALSE))
    
    conn <- RSQLite::dbConnect(RSQLite::SQLite(), sim_data_file) 
    on.exit(expr = RSQLite::dbDisconnect(conn))
    
+   Workspace <- paste0(GetParameter(
+      Tag = "WorkspaceName", Category = 9, SubCategory = NA), ".wksz")
+   
+   suppressMessages(
+      Simcyp::SetWorkspace(Workspace, verbose = FALSE))
+   
    # Figure out which compound positions were active. 
    ActiveCompounds <- 
-      sapply(paste0("idInhEnabled", AllRegCompounds$CompoundID_num_Simcyp), 
-             \(x) Simcyp::GetParameter(Tag = x, 
-                                       Category = Simcyp::CategoryID$SimulationData, 
-                                       SubCategory = 0))
-   names(ActiveCompounds) <- AllRegCompounds$DetailNames
+      sapply(paste0("idInhEnabled", AllRegCompounds$CompoundID_num_Simcyp[
+         complete.cases(AllRegCompounds$CompoundID_num_Simcyp)]), 
+         \(x) Simcyp::GetParameter(Tag = x, 
+                                   Category = Simcyp::CategoryID$SimulationData, 
+                                   SubCategory = 0))
+   names(ActiveCompounds) <- AllRegCompounds$DetailNames[
+      complete.cases(AllRegCompounds$CompoundID_num_Simcyp)]
    ActiveCompounds <- names(ActiveCompounds)[ActiveCompounds]
    
    # # Comment this out for actual function, but here is how to see all possible
-   # # parameters for compound, population, and simulation data.
+   # parameters for compound, population, and simulation data. You can get
+   # subcategories by the following: 1) find the tag for the parameter you want
+   # in the Simulator by right clicking on it, 2) click on the tag, 3) paste
+   # into R. This will give you the path for that parameter within the XML file.
+   
    # AllSimulationParameters <- 
    #    data.frame(Name = names(Simcyp::SimulationParameterID), 
    #               Tag = as.character(unlist(Simcyp::SimulationParameterID)))
@@ -83,11 +90,6 @@ extractExpDetails_DB <- function(sim_data_file){
    #    data.frame(Name = names(Simcyp::CompoundParameterID), 
    #               Tag = as.character(unlist(Simcyp::CompoundParameterID)))
    #
-   # Below is not correct. Not sure how to figure out subcategory.
-   # AllSubCategorySimulationParameters <- 
-   #    data.frame(Name = names(Simcyp::SubCategoryID), 
-   #               Tag = as.character(unlist(Simcyp::SubCategoryID)))
-   # 
    # AllPopulationIDs <- 
    #    data.frame(Name = names(Simcyp::PopulationID), 
    #               Tag = as.character(unlist(Simcyp::PopulationID)))
@@ -99,7 +101,7 @@ extractExpDetails_DB <- function(sim_data_file){
              SimcypParameterType, SimcypTag, SimcypSubcategory, 
              ColsChangeWithCmpd) %>% 
       mutate(Detail_nosuffix = case_when(
-         ColsChangeWithCmpd == TRUE ~ sub("_sub|_inhib2|_inhib$|_met1|_met2|_secmet|_inhib1met", 
+         ColsChangeWithCmpd == TRUE ~ sub("_sub|_inhib2|_inhib$|_met1|_met2|_secmet|_inhib1met|_endog", 
                                           "", Detail), 
          TRUE ~ Detail)) %>% 
       left_join(AllRegCompounds %>% select(CompoundID, Suffix, CompoundID_Simcyp), 
@@ -107,7 +109,7 @@ extractExpDetails_DB <- function(sim_data_file){
       mutate(CompoundID_Simcyp = factor(CompoundID_Simcyp, 
                                         levels = c("Substrate", "SubPriMet1", "SubPriMet2", 
                                                    "SubSecMet", "Inhibitor1", "Inhibitor1Met", 
-                                                   "Inhibitor2"))) %>% 
+                                                   "Inhibitor2", "Endogenous"))) %>% 
       arrange(CompoundID_Simcyp)
    
    Details <- list()
@@ -195,31 +197,12 @@ extractExpDetails_DB <- function(sim_data_file){
    
    # General parameters --------------------------------------------------------
    
-   GenParam <- unique(
-      ParameterConversion$Detail_nosuffix[
-         ParameterConversion$SimcypParameterType == "general"])
-   
    # Not sure why, but NumTimeSamples is not working, probably b/c I haven't set
    # up the subcategory correctly.
-   GenParam <- setdiff(GenParam, c("NumTimeSamples"))
-   
-   # Have to deal w/NumDoses, StartHr, etc. specially b/c they're set up not as
-   # a compound parameter but as a general parameter.
-   
-   # All possible parameters
-   X <- ParameterConversion %>% 
+   GenParam <- ParameterConversion %>% 
       filter(SimcypParameterType == "general" & 
-                str_detect(Detail, "_sub|_inhib")) %>% 
+                Detail != "NumTimeSamples") %>% 
       pull(Detail)
-   
-   # Only the ones that apply to active compounds
-   Y <- X[str_detect(X, AllRegCompounds$DosedCompoundSuffix[
-      AllRegCompounds$DetailNames %in% ActiveCompounds])]
-   
-   Remove <- setdiff(X, Y)
-   
-   GenParam <- setdiff(GenParam, Remove)
-   rm(Remove, X, Y)
    
    for(k in GenParam){
       
@@ -265,11 +248,13 @@ extractExpDetails_DB <- function(sim_data_file){
    
    # Getting compound names separately.
    CmpdNames <- 
-      map(.x = AllRegCompounds$CompoundID_num_Simcyp, 
-          .f = function(x){Simcyp::GetCompoundParameter(
-             Tag = "idName", 
-             Compound = x)})
-   names(CmpdNames) <- AllRegCompounds$DetailNames
+      map(.x = AllRegCompounds$CompoundID_num_Simcyp[
+         complete.cases(AllRegCompounds$CompoundID_num_Simcyp)], 
+         .f = function(x){Simcyp::GetCompoundParameter(
+            Tag = "idName", 
+            Compound = x)})
+   names(CmpdNames) <- AllRegCompounds$DetailNames[
+      complete.cases(AllRegCompounds$CompoundID_num_Simcyp)]
    
    Details <- c(Details, 
                 CmpdNames[intersect(AllRegCompounds$DetailNames, ActiveCompounds)])
@@ -319,7 +304,7 @@ extractExpDetails_DB <- function(sim_data_file){
    
    PrandialState_list <- setNames(as.list(PrandialState$PrandialSt), 
                                   nm = PrandialState$Parameter)
-
+   
    Details <- c(Details, 
                 PrandialState_list)
    
@@ -340,13 +325,10 @@ extractExpDetails_DB <- function(sim_data_file){
    # Pulling from workspace file -------------------------------------------
    
    # Checking that the workspace file is available. This will ignore the
-   # date/time stamp on the Excel results if it's still there. 
-   
-   WkspFile <- c("Simulator" = sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.db$",
-                                   ".wksz", sim_data_file), 
-                 "Discovery" = sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?\\.db$",
-                                   ".dscw", sim_data_file))
-   WkspFile <- WkspFile[which(file.exists(WkspFile))]
+   # date/time stamp on the Excel results if it's still there. Not sure if this
+   # is necessary b/c I think you have to have the workspace exist when we
+   # called SetWorkspace.
+   WkspFile <- Workspace[which(file.exists(Workspace))]
    
    if(length(WkspFile) > 0){
       

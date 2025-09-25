@@ -2,8 +2,7 @@
 % Please edit documentation in R/extractConcTime_DB.R
 \name{extractConcTime_DB}
 \alias{extractConcTime_DB}
-\title{Extract concentration-time data from a Simcyp Simulator database file --
-UNDER CONSTRUCTION!!!}
+\title{Extract concentration-time data from a Simcyp Simulator database file}
 \usage{
 extractConcTime_DB(
   sim_data_file,
@@ -16,7 +15,7 @@ extractConcTime_DB(
 )
 }
 \arguments{
-\item{sim_data_file}{name of the Excel file containing the simulated
+\item{sim_data_file}{name of the database file containing the simulated
 concentration-time data, in quotes; must be an output file from the Simcyp
 simulator}
 
@@ -30,40 +29,43 @@ that object here, unquoted. If left as NA, this function will run
 about your experimental set up.}
 
 \item{compoundToExtract}{For which compound do you want to extract
-concentration-time data? Options are: \itemize{\item{"substrate"
-(default),} \item{"primary metabolite 1",} \item{"primary metabolite 2",}
-\item{"secondary metabolite",} \item{"inhibitor 1" -- this can be an
-inducer, inhibitor, activator, or suppresesor, but it's labeled as
-"Inhibitor 1" in the simulator,} \item{"inhibitor 2" for the 2nd inhibitor
-listed in the simulation,} \item{"inhibitor 1 metabolite" for the primary
-metabolite of inhibitor 1} \item{"conjugated protein" for DAR1-DARmax for
-an antibody-drug conjugate; observed data with DV listed as "Conjugated
-Protein Plasma Total" will match these simulated data,} \item{"total
-protein" for DAR0-DARmax for an ADC; observed data with DV listed as "Total
-Protein Conjugate Plasma Total" will match these simulated data,}
-\item{"released payload" for the released drug from an ADC, which shows up
-as primary metabolite 1 in Simulator output files.}} \strong{Note:} If your
-compound is a therapeutic protein or ADC, we haven't tested this very
-thoroughly, so please be extra careful to check that you're getting the
-correct data.}
+  concentration-time data? Options are:
+
+  \itemize{
+  \item{"substrate" (default)}
+  \item{"primary metabolite 1"}
+  \item{"primary metabolite 2"}
+  \item{"secondary metabolite"}
+  \item{"inhibitor 1" -- this can be an inducer, inhibitor, activator, or
+  suppresesor, but it's labeled as "Inhibitor 1" in the simulator}
+  \item{"inhibitor 2" for the 2nd inhibitor listed in the simulation}
+  \item{"inhibitor 1 metabolite" for the primary metabolite of inhibitor 1}
+  }}
 
 \item{tissue}{From which tissue should the desired concentrations be
 extracted? Default is plasma for typical plasma concentration-time data.
 All options: "plasma", "blood", "peripheral plasma", "portal vein plasma",
-"Kp,uu,brain", "Kp,uu,ICF", or "Kp,uu,ISF". We're working on adding more.}
+"Kp,uu,brain", "Kp,uu,ICF", or "Kp,uu,ISF". We're working on adding more
+options for database files.}
 
 \item{obs_to_sim_assignment}{the assignment of which observed files go with
   which simulated files. (NA, which is the default, means no observed data
   will be extracted.) There are four ways to supply this:
 
-  \describe{\item{"use existing_exp_details"}{If you have already
-  extracted the simulation experimental details with the function
-  \code{\link{extractExpDetails_mult}} and you included observed data overlay
-  files in your simulations, as long as those XML files have their
-  corresponding Excel files in the \emph{same} location, we can use that
-  information to figure out which observed Excel file should go with which
+  \describe{\item{"use existing_exp_details"}{If included observed data overlay
+  files in your simulations, as long as those XML files are in the
+  \emph{same} location as when the simulations were run, we can use the
+  information in the workspace file, which must be present in the same
+  folder, to figure out which observed Excel file should go with which
   simulation. Note that this \strong{does} require you to supply something
-  for the argument \code{existing_exp_details} to work.}
+  for the argument \code{existing_exp_details} to work. This has been set up
+  to look for that location even if the user who ran the simulation is
+  different from the user extracting the data, e.g., if the original path was
+  something like "C:/Users/FridaKahlo/Rose project simulations" and the
+  current username is "DiegoRivera", this will look in the folder
+  "C:/Users/DiegoRivera/Rose project simulations" for your XML files. This is
+  assuming that the file path starts with "C:/Users/CurrentUserName/..." and
+  will fail to change the username if that is not the case.}
 
   \item{a character vector of the observed data files, each in
   quotes and encapsulated with \code{c(...)}}{If all the observed data can be
@@ -104,11 +106,8 @@ All options: "plasma", "blood", "peripheral plasma", "portal vein plasma",
 
   For whichever option you choose, the observed files' paths should be
   included if they are located somewhere other than your working directory.
-  The observed data files should be for the Excel file that it is
-  \emph{ready} to be converted to an XML file, not the file that contains
-  only the digitized time and concentration data. This function assumes that
-  the dosing intervals for the observed data match those in the simulated
-  data. See "Details" for more info.}
+  This function assumes that the dosing intervals for the observed data match
+  those in the simulated data. See "Details" for more info.}
 
 \item{conc_units}{desired concentration units; options are the same as the
 ones in the Excel form for PE data entry: "ng/mL" (default), "mg/L",
@@ -124,8 +123,22 @@ simulator output rows labeled as "Population Statistics".}
 a data.frame of concentration-time data
 }
 \description{
-Extract concentration-time data from a Simcyp Simulator database file --
-UNDER CONSTRUCTION!!!
+\code{extractConcTime_DB} will pull concentration-time data from
+  a database file and, optionally, a separately specified observed data file,
+  and puts all data into a single, tidy data.frame, formatted appropriately
+  to work with graphing functions in the SimcypConsultancy package such as
+  \code{\link{ct_plot}} and \code{\link{ct_plot_overlay}}.
+
+  \strong{One note:} While the individuals in a database file are the same
+  individuals as in an Excel file, they are not necessarily assigned to the
+  same trial; this may affect your trial-level but not overall simulation
+  results.
+
+  For detailed instructions and examples, please see the SharePoint file
+  "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+  function examples and instructions/Concentration-time plots 1 - one sim at
+  a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+  include a link to it here.)
 }
 \examples{
 # none yet
