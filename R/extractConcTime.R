@@ -1115,9 +1115,11 @@ extractConcTime <- function(sim_data_file,
          ToConvert_obs <- obs_data %>% filter(complete.cases(Conc_units))
          
          if(nrow(ToConvert) > 0){
-            sim_data <- convert_units(DF_to_convert = ToConvert,
-                                      DF_with_good_units = ToConvert_obs, 
-                                      MW = MW)
+            ToConvert <- convert_units(
+               DF_to_convert = ToConvert,
+               conc_units = unique(ToConvert_obs$Conc_units), 
+               time_units = unique(ToConvert_obs$Time_units), 
+               MW = MW)
          }
          
          sim_data <- bind_rows(SetAside, ToConvert)

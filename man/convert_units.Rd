@@ -8,7 +8,6 @@ convert_units(
   DF_to_convert,
   time_units = "hours",
   conc_units = "ng/mL",
-  DF_with_good_units = NA,
   MW = NA
 )
 }
@@ -31,12 +30,6 @@ concentration units are the same as the ones in the Excel form for PE data
 entry: "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"), "ng/L",
 "ng/mL", "µM" (or "uM"), or "nM".}
 
-\item{DF_with_good_units}{if you would like to just match another data.frame,
-supply here a data.frame that has the desired concentration and time units.
-Options for concentration units are the same as the ones in the Excel form
-for PE data entry, and options for time units are "hours", "days", and
-"minutes".}
-
 \item{MW}{optionally supply a molecular weight for the compound of interest
 to enable conversions between mass per volume and molar concentrations. If
 you have more than one compound, list the compoundID and the MW as a named
@@ -57,6 +50,7 @@ concentration and time units.
 }
 \examples{
 DF_to_convert <- convert_units(DF_to_convert = SimulatedData,
-                             DF_with_good_units = ObsData)
+                               conc_units = "ug/mL", 
+                               time_units = "days")
 
 }

@@ -1232,7 +1232,6 @@ extractConcTime_mult <- function(sim_data_files = NA,
                
                MultData[[ff]][[j]][["FALSE"]] <- MultData[[ff]][[j]][["FALSE"]] %>% 
                   convert_units(
-                     DF_with_good_units = NA, 
                      conc_units = conc_units_to_use,
                      time_units = time_units_to_use, 
                      MW = c("substrate" = Deets$MW_sub, 
