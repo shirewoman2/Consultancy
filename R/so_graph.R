@@ -272,6 +272,11 @@
 #'          point_color_set = "blues",
 #'          legend_position = "right",
 #'          error_bars = "horizontal")
+#' # NB: This will generate 3 warnings about 
+#' # `override.aes` being ignored that we *CANNOT* 
+#' # get to disappear. Please ignore the warnings 
+#' # about that being ignored. 
+#' 
 #' 
 
 so_graph <- function(PKtable, 
@@ -319,6 +324,12 @@ so_graph <- function(PKtable,
    
    if("list" %in% class(PKtable)){
       PKtable <- PKtable$Table
+   }
+   
+   if("CompoundID" %in% names(PKtable) && 
+      length(unique(PKtable$CompoundID)) > 1){
+      stop(wrapn("You have more than one compound ID in your data, and the so_graph function is meant to be used with just one compound ID at a time since the idea is that we'd be evaluating just one model at a time. Please remove the rows in your table that apply to whatever compounds you do not want and try again."), 
+           call. = FALSE)
    }
    
    if(is.na(axis_title_x)){
@@ -444,6 +455,7 @@ so_graph <- function(PKtable,
    if(is.na(error_bars)){
       warning(wrapn("You have requested something for error_bars that is not among the possible options, so we will use the default value of 'none'."), 
               call. = FALSE)
+      error_bars <- "none"
    }
    
    variability_type <- tolower(variability_type)[1]
@@ -703,60 +715,30 @@ so_graph <- function(PKtable,
    ConcType <- ifelse(any(str_detect(PKCols$PrettifiedNames, "µM")), 
                       "molar", "mass per volume")
    
-   # Find all the parameters that were for a user-defined AUC interval and
-   # adjust those.
-   WhichUserInt <- which(str_detect(PKCols$ColName, " for interval from"))
-   UserInt <- PKCols$ColName[WhichUserInt]
-   
-   # Can't just change the name of each user int column b/c that column name may
-   # already exist. Need to remove and then join w/original PK table, keeping
-   # all necessary columns when joining.
-   for(col in UserInt){
-      
-      ToJoin <- PKtable %>% 
-         select(File, col, Statistic, 
-                any_of(c("Compound", "CompoundID", "Tissue", 
-                         as_label(point_color_column), 
-                         as_label(point_shape_column)))) 
-      ToJoin <- ToJoin[which(complete.cases(ToJoin[, col])), ]
-      
-      StartCh <- as.data.frame(str_locate(col, " for interval"))
-      newcol <- str_sub(col, start = 1, end = StartCh$start - 1)
-      
-      names(ToJoin)[which(names(ToJoin) == col)] <- newcol
-      
-      suppressMessages(
-         PKtable <- PKtable %>% 
-            full_join(ToJoin) %>% select(-any_of(col))
-      )
-      
-      rm(newcol, ToJoin)
-      
-   }
-   
-   # Redetermining which are PK now that interval column names have been changed
-   PKCols <- prettify_column_names(PKtable, return_which_are_PK = TRUE)
-   
    if(any(is.na(PKparameters))){
       PKparameters <- unique(PKCols$PKparameter[PKCols$IsPKParam])
    }
    
-   # Arranging and tidying input data. First, de-prettifying column names.
-   SO <- prettify_column_names(PKtable = PKtable, 
-                               pretty_or_ugly_cols = "ugly") %>% 
+   # Arranging and tidying input data. 
+   SO <- PKtable %>% 
+      pivot_longer(names_to = "ColName", 
+                   values_to = "Value", 
+                   cols = any_of(PKCols$ColName[PKCols$IsPKParam == TRUE])) %>% 
+      filter(complete.cases(Value)) %>% 
       mutate(Statistic = as.character(Statistic), 
              Statistic = ifelse(str_detect(Statistic, "^Simulated"),
                                 "Simulated", Statistic)) %>% 
-      # Removing additional columns since they mess up pivoting.
-      select(Statistic, File,
-             any_of(c(PKparameters, "CompoundID", "Tissue", "Sheet", 
-                      as_label(point_color_column), 
-                      as_label(point_shape_column))))%>% 
-      unique() %>% 
-      pivot_longer(names_to = "PKparameter", 
-                   values_to = "Value", 
-                   cols = any_of({{PKparameters}})) %>% 
-      filter(complete.cases(Value))
+      left_join(PKCols %>% 
+                   select(ColName, PKparameter, Interval), 
+                by = "ColName")
+   
+   # # Removing additional columns since they mess up pivoting.
+   # select(Statistic, File,
+   #        any_of(c(PKparameters, "CompoundID", "Tissue", "Sheet", 
+   #                 as_label(point_color_column), 
+   #                 as_label(point_shape_column))))%>% 
+   # unique() %>% 
+   
    
    ## Tidying input data further now that format is long by parameter -------------
    
@@ -914,8 +896,7 @@ so_graph <- function(PKtable,
       rm(VarType)
    }
    
-   SO <- bind_rows(SO) %>% 
-      pivot_wider(names_from = Statistic, values_from = Value) 
+   SO <- bind_rows(SO)
    
    # Filtering to retain only the central stat and the variability type they
    # requested.
@@ -945,17 +926,15 @@ so_graph <- function(PKtable,
                          "range" = c("Minimum", "Maximum", "Range", 
                                      "Observed range")))
    
-   SO <- SO %>% filter(OrigStat %in% GoodStats) %>% 
-      select(-any_of(c("OrigStat", "S/O"))) %>% 
-      pivot_longer(cols = any_of(c("Var_lower", "Var_upper", 
-                                   "ObsVar_lower", "ObsVar_upper", 
-                                   "Simulated", "Observed")), 
-                   names_to = "Statistic", 
-                   values_to = "Value") %>% 
-      filter(complete.cases(Value)) %>% 
+   SO <- SO %>% 
+      filter(OrigStat %in% GoodStats & 
+                complete.cases(Value)) %>% 
+      select(-OrigStat) %>% 
       pivot_wider(names_from = Statistic, 
                   values_from = Value) %>% 
-      filter(complete.cases(Observed) & PKparameter %in% {{PKparameters}})
+      filter(complete.cases(Observed) & 
+                complete.cases(Simulated) & 
+                PKparameter %in% {{PKparameters}})
    
    # A bit more error catching now that everything is tidy
    if("CompoundID" %in% names(SO) && length(unique(SO$CompoundID)) > 1){
@@ -1014,10 +993,6 @@ so_graph <- function(PKtable,
       
       SO <- SO %>% 
          mutate(
-            Interval = case_when(
-               str_detect(PKparameter, "dose1") ~ "first dose", 
-               str_detect(PKparameter, "last") ~ "multiple dose", 
-               !str_detect(PKparameter, "dose1|last") ~ UnlabeledIntText), 
             PKparameter_orig = PKparameter, 
             PKparameter = gsub("_last|_dose1|inf|tau", "", PKparameter), 
             PKparameter = gsub("AUCt", "AUC", PKparameter), 
@@ -1055,14 +1030,34 @@ so_graph <- function(PKtable,
    }
    
    # Checking for other graph title substitutions they want
-   if(length(title_adjustments) > 0 & 
-      "character" %in% class(title_adjustments)){
-      if("sub steady-state for last" %in% tolower(title_adjustments) |
+   if(length(title_adjustments) > 0){
+      if("character" %in% class(title_adjustments) &&
+         "sub steady-state for last" %in% tolower(title_adjustments) |
          "sub steady state for last" %in% tolower(title_adjustments)){
          
          PKparameters <- sub("_last", "_ss", PKparameters)
          PKwithBlanks <- sub("_last", "_ss", PKwithBlanks)
          SO$PKparameter <- sub("_last", "_ss", SO$PKparameter)
+      } else if("list" %in% class(title_adjustments)){
+         # These should all be expressions. If they're not, force it.
+         if(any(sapply(title_adjustments, class) != "expression", na.rm = T)){
+            
+            for(i in which(sapply(title_adjustments, class) != "expression")){
+               title_adjustments[[i]] <- as.expression(title_adjustments[[i]])
+            }
+         }
+         
+         # Checking for missing titles
+         MissingTitles <- setdiff(PKparameters, names(title_adjustments))
+         
+         for(i in MissingTitles){
+            if(i %in% names(PKexpressions)){
+               title_adjustments[[i]] <- PKexpressions[[i]]
+            } else {
+               title_adjustments[[i]] <- 
+                  as.expression(PKCols$PrettifiedNames[PKCols$PKparameter == i])
+            }
+         }
       }
    }
    
@@ -1320,20 +1315,25 @@ so_graph <- function(PKtable,
                           linetype = Boundary, 
                           linewidth = Boundary), 
                       show.legend = T) + 
-            scale_linewidth_manual(values = c(boundary_line_width_Guest, 
-                                              boundary_line_width_straight), 
-                                   name = "Boundaries for ratios") +
+            scale_linewidth_manual(
+               values = c(boundary_line_width_Guest, 
+                          boundary_line_width_straight), 
+               name = "Boundaries for ratios") +
             # NB: For things to work correctly with ggnewscale, the legend name
             # MUST be specified with the scale_x_value call; it does NOT work
             # when specified with, e.g., labs(color = ...)
-            scale_color_manual(values = boundary_color_set_Guest, 
-                               name = "Boundaries for ratios", 
-                               guide = guide_legend(override.aes = list(shape = NA))) +
-            scale_linetype_manual(values = boundary_line_types_straight, 
-                                  name = "Boundaries for ratios")
+            scale_color_manual(
+               values = boundary_color_set_Guest, 
+               name = "Boundaries for ratios", 
+               guide = guide_legend(
+                  override.aes = list(shape = NA))) +
+            
+            scale_linetype_manual(
+               values = boundary_line_types_straight, 
+               name = "Boundaries for ratios")
          
       } else {
-         G[[i]] <- ggplot()  +
+         G[[i]] <- ggplot() +
             geom_line(data = Boundaries, 
                       aes(x = Observed, y = Simulated,
                           color = Boundary, 
@@ -1341,16 +1341,20 @@ so_graph <- function(PKtable,
                           linetype = Boundary, 
                           linewidth = Boundary), 
                       show.legend = T) +
-            scale_linewidth_manual(values = boundary_line_width_straight, 
-                                   name = "Boundaries") +
+            scale_linewidth_manual(
+               values = boundary_line_width_straight, 
+               name = "Boundaries") +
             # NB: For things to work correctly with ggnewscale, the legend name
             # MUST be specified with the scale_x_value call; it does NOT work
             # when specified with, e.g., labs(color = ...)
-            scale_color_manual(values = boundary_color_set, 
-                               name = "Boundaries", 
-                               guide = guide_legend(override.aes = list(shape = NA))) +
-            scale_linetype_manual(values = boundary_line_types_straight, 
-                                  name = "Boundaries")
+            scale_color_manual(
+               values = boundary_color_set, 
+               name = "Boundaries", 
+               guide = guide_legend(
+                  override.aes = list(shape = NA))) +
+            scale_linetype_manual(
+               values = boundary_line_types_straight, 
+               name = "Boundaries")
          
       }
       
@@ -1393,7 +1397,8 @@ so_graph <- function(PKtable,
                              aes(x = Observed, 
                                  color = point_color_column, 
                                  ymin = Var_lower, ymax = Var_upper),
-                             width = BarWidth)
+                             width = BarWidth, 
+                             show.legend = FALSE)
          )
       } 
       
@@ -1404,7 +1409,8 @@ so_graph <- function(PKtable,
                               aes(y = Simulated, 
                                   color = point_color_column, 
                                   xmin = ObsVar_lower, xmax = ObsVar_upper), 
-                              height = BarWidth)
+                              height = BarWidth, 
+                              show.legend = FALSE)
          )
       } 
       
@@ -1434,12 +1440,65 @@ so_graph <- function(PKtable,
                        size = ifelse(is.na(point_size), 2, point_size), 
                        alpha = ifelse(is.na(point_transparency), 1, point_transparency), 
                        show.legend = TRUE) +
-            scale_color_manual(values = MyColors, drop = FALSE, 
-                               name = legend_label_point_color) +
-            scale_fill_manual(values = MyFillColors, drop = FALSE, 
-                              name = legend_label_point_color) +
-            scale_shape_manual(values = MyShapes, drop = FALSE, 
-                               name = legend_label_point_shape)
+            
+            scale_color_manual(
+               values = MyColors, drop = FALSE, 
+               name = legend_label_point_color, 
+               guide = guide_legend(
+                  nrow = switch(legend_position,
+                                "bottom" = 1,
+                                "top" = 1, 
+                                "left" = NULL,
+                                "right" = NULL), 
+                  order = case_when(
+                     # no legend for color
+                     as_label(point_color_column) == "<empty>" ~ 99,
+                     
+                     as_label(point_color_column) != "<empty>" ~ 1))) +
+            
+            scale_fill_manual(
+               values = MyFillColors, drop = FALSE, 
+               name = legend_label_point_color, 
+               guide = guide_legend(
+                  nrow = switch(legend_position,
+                                "bottom" = 1,
+                                "top" = 1, 
+                                "left" = NULL,
+                                "right" = NULL), 
+                  order = case_when(
+                     # no legend for color
+                     as_label(point_color_column) == "<empty>" ~ 99,
+                     
+                     as_label(point_color_column) != "<empty>" ~ 1))) +
+            
+            scale_shape_manual(
+               values = MyShapes, drop = FALSE, 
+               name = legend_label_point_shape, 
+               guide = guide_legend(
+                  nrow = switch(legend_position,
+                                "bottom" = 1,
+                                "top" = 1, 
+                                "left" = NULL,
+                                "right" = NULL), 
+                  order = case_when(
+                     # no legend for color
+                     as_label(point_shape_column) == "<empty>" & 
+                        all_intervals_together == FALSE ~ 99,
+                     
+                     as_label(point_color_column) == "<empty>" & 
+                        as_label(point_shape_column) != "<empty>" ~ 1, 
+                     
+                     as_label(point_color_column) != "<empty>" & 
+                        as_label(point_color_column) != as_label(point_shape_column) ~ 2, 
+                     
+                     all_intervals_together == TRUE & 
+                        as_label(point_color_column) != "<empty>" ~ 2, 
+                     
+                     all_intervals_together == TRUE & 
+                        as_label(point_color_column) == "<empty>" ~ 1, 
+                     
+                     as_label(point_color_column) != "<empty>" & 
+                        as_label(point_color_column) == as_label(point_shape_column) ~ 1)))
          
       } else {
          
@@ -1452,12 +1511,64 @@ so_graph <- function(PKtable,
                        size = ifelse(is.na(point_size), 2, point_size), 
                        alpha = ifelse(is.na(point_transparency), 1, point_transparency), 
                        show.legend = TRUE) +
-            scale_color_manual(values = MyColors, drop = FALSE, 
-                               name = legend_label_point_color) +
-            scale_fill_manual(values = MyFillColors, drop = FALSE, 
-                              name = legend_label_point_color) +
-            scale_shape_manual(values = MyShapes, drop = FALSE, 
-                               name = legend_label_point_shape)
+            scale_color_manual(
+               values = MyColors, drop = FALSE, 
+               name = legend_label_point_color, 
+               guide = guide_legend(
+                  nrow = switch(legend_position,
+                                "bottom" = 1,
+                                "top" = 1, 
+                                "left" = NULL,
+                                "right" = NULL), 
+                  order = case_when(
+                     # no legend for color
+                     as_label(point_color_column) == "<empty>" ~ 99,
+                     
+                     as_label(point_color_column) != "<empty>" ~ 1))) +
+            
+            scale_fill_manual(
+               values = MyFillColors, drop = FALSE, 
+               name = legend_label_point_color, 
+               guide = guide_legend(
+                  nrow = switch(legend_position,
+                                "bottom" = 1,
+                                "top" = 1, 
+                                "left" = NULL,
+                                "right" = NULL), 
+                  order = case_when(
+                     # no legend for color
+                     as_label(point_color_column) == "<empty>" ~ 99,
+                     
+                     as_label(point_color_column) != "<empty>" ~ 1))) +
+            
+            scale_shape_manual(
+               values = MyShapes, drop = FALSE, 
+               name = legend_label_point_shape, 
+               guide = guide_legend(
+                  nrow = switch(legend_position,
+                                "bottom" = 1,
+                                "top" = 1, 
+                                "left" = NULL,
+                                "right" = NULL), 
+                  order = case_when(
+                     # no legend for color
+                     as_label(point_shape_column) == "<empty>" & 
+                        all_intervals_together == FALSE ~ 99,
+                     
+                     as_label(point_color_column) == "<empty>" & 
+                        as_label(point_shape_column) != "<empty>" ~ 1, 
+                     
+                     as_label(point_color_column) != "<empty>" & 
+                        as_label(point_color_column) != as_label(point_shape_column) ~ 2, 
+                     
+                     all_intervals_together == TRUE & 
+                        as_label(point_color_column) != "<empty>" ~ 2, 
+                     
+                     all_intervals_together == TRUE & 
+                        as_label(point_color_column) == "<empty>" ~ 1, 
+                     
+                     as_label(point_color_column) != "<empty>" & 
+                        as_label(point_color_column) == as_label(point_shape_column) ~ 1)))
          
       }
       
@@ -1467,33 +1578,38 @@ so_graph <- function(PKtable,
                guides(
                   color = guide_legend(
                      override.aes = list(shape = 21), 
-                     ncol = 2))
+                     ncol = case_when(
+                        legend_position %in% c("left", "right") ~ 2, 
+                        legend_position %in% c("top", "bottom") ~ 3)), 
+                  fill = guide_legend(
+                     override.aes = list(shape = 21), 
+                     ncol = case_when(
+                        legend_position %in% c("left", "right") ~ 2, 
+                        legend_position %in% c("top", "bottom") ~ 3)))
          } else {
             G[[i]] <- G[[i]] + 
                guides(
                   color = guide_legend(
-                     ncol = 2))
+                     ncol = case_when(
+                        legend_position %in% c("left", "right") ~ 2, 
+                        legend_position %in% c("top", "bottom") ~ 3)))
          }
       } else if(any(MyPointShapes %in% c(21:25))){
          G[[i]] <- G[[i]] + 
-            guides(color = guide_legend(
-               override.aes = list(shape = 21)))
+            guides(
+               color = guide_legend(
+                  override.aes = list(shape = 21)), 
+               fill = guide_legend(
+                  override.aes = list(shape = 21)))
       }
       
       if(length(MyPointShapes) > 3){
          G[[i]] <- G[[i]] + 
             guides(
                shape = guide_legend(
-                  ncol = 2))
-      }
-      
-      # FIXME: Not sure what number of columns or rows makes most sense for
-      # the most situations
-      if(legend_position %in% c("bottom", "top")){
-         G[[i]] <- G[[i]] +
-            guides(
-               color = guide_legend(nrow = 1),
-               shape = guide_legend(nrow = 1))
+                  ncol = case_when(
+                     legend_position %in% c("left", "right") ~ 2, 
+                     legend_position %in% c("top", "bottom") ~ 3)))
       }
       
       if("list" %in% class(title_adjustments)){
@@ -1607,7 +1723,7 @@ so_graph <- function(PKtable,
             G[[blanks]] <- ggplot() + theme_void()
          }
          
-         G <- G[PKwithBlanks]
+         G <- G[PKwithBlanks[PKwithBlanks %in% names(G)]]
          
       } else {
          

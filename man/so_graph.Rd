@@ -352,5 +352,10 @@ so_graph(PKtable = SOdata,
          point_color_set = "blues",
          legend_position = "right",
          error_bars = "horizontal")
+# NB: This will generate 3 warnings about 
+# `override.aes` being ignored that we *CANNOT* 
+# get to disappear. Please ignore the warnings 
+# about that being ignored. 
+
 
 }

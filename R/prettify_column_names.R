@@ -97,7 +97,7 @@ prettify_column_names <- function(PKtable,
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_dose1 Ratio|_dose1_withInhib Ratio", "_ratio_dose1"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_last Ratio|_last_withInhib Ratio", "_ratio_last"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "_withInhib Ratio", "_ratio"), 
-         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "for interval from.*to [0-9]{1,} h ", ""), 
+         ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "for interval from.*to [0-9]{1,} h( )?", ""), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "Interval_Numerator", "Interval numerator simulation"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, " Ratio", " ratio"), 
          ColNamesNoDecorations = str_replace(ColNamesNoDecorations, "Interval_Denominator", "Interval denominator simulation"), 
@@ -113,6 +113,8 @@ prettify_column_names <- function(PKtable,
          ColNamesNoDecorations = str_replace(
             ColNamesNoDecorations, 
             " numerator simulation| denominator simulation", ""), 
+         
+         ColNamesNoDecorations = str_trim(ColNamesNoDecorations), 
          
          # Dealing with unit differences b/c could have units in table other
          # than the most common ng/mL and h.
@@ -151,13 +153,6 @@ prettify_column_names <- function(PKtable,
    
    # Dealing w/multiple conc or time units
    ConcUnits <- sort(unique(TableNames$Conc))
-   if(length(ConcUnits) > 1){
-      message(wrapn(paste0(
-         "You have more than one concentration unit in your PK table; specifically, you have units of ", 
-         str_comma(paste0("`", ConcUnits, "`")), 
-         ". Just fyi, if you're running a function for making a PK table, and you see this message, we can adjust concentration units for you if you request that with the argument convert_conc_units.")))
-   }   
-   
    OtherConcUnits <- setdiff(ConcUnits, "ng/mL")
    if(length(ConcUnits) > 0 & length(OtherConcUnits) > 0){
       TableNames$ColNamesStdUnits <- 
@@ -258,12 +253,19 @@ prettify_column_names <- function(PKtable,
    # Putting time interval back into col names
    if(any(str_detect(TableNames$OrigColNames, "for interval from"))){
       TableNames <- TableNames %>% 
-         mutate(Suffix = str_extract(OrigColNames, "for interval from.*to [0-9]{1,} h "), 
-                PrettifiedNames = ifelse(complete.cases(Suffix), 
-                                         str_replace(PrettifiedNames, 
-                                                     " \\(", 
-                                                     paste0(" ", Suffix, "(")), 
-                                         PrettifiedNames)) %>% 
+         mutate(Suffix = str_extract(OrigColNames, "for interval from.*to [0-9]{1,} h( )?"), 
+                PrettifiedNames = case_when(
+                   complete.cases(Suffix) & 
+                      str_detect(PrettifiedNames, " \\(") ~
+                      str_replace(PrettifiedNames, " \\(", 
+                                  paste0(" ", Suffix, "(")), 
+                   
+                   # ratios of user intervals
+                   complete.cases(Suffix) & 
+                      str_detect(PrettifiedNames, " \\(") == FALSE ~
+                      paste(PrettifiedNames, Suffix), 
+                   
+                   is.na(Suffix) ~ PrettifiedNames)) %>% 
          select(-Suffix)
    }
    
@@ -314,7 +316,8 @@ prettify_column_names <- function(PKtable,
    
    # Check that all column names would be unique.
    if(any(duplicated(TableNames$FinalNames)) & 
-      fix_col_names == TRUE){
+      fix_col_names == TRUE & 
+      return_which_are_PK == FALSE){
       warning(wrapn(paste0(
          "Some table names would be duplicated after ",
          ifelse(pretty_or_ugly_cols == "pretty", 
