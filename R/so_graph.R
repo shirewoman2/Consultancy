@@ -1,32 +1,28 @@
-#' Graph of simulated vs. observed PK
+#' Graphs of simulated vs. observed PK
 #'
-#' \code{so_graph} makes a graph of simulated vs. observed PK, including
-#' indicating where the predicted parameters fell within X fold of the observed,
-#' where "X" is whatever cutoffs you specify.
+#' \code{so_graph} makes graphs of simulated vs. observed PK that indicate where
+#' the predicted parameters fell within X fold of the observed, where "X" is
+#' whatever cutoffs you specify.
 #'
 #' @param PKtable a table in the same format as output from the function
 #'   \code{\link{pk_table}}. This should include a column titled "Statistic" and
 #'   columns for each of the PK parameters you want to graph. The column
-#'   statistic should have values of "Simulated" and "Observed" for the
-#'   simulated and observed PK, respectively; anything else will be ignored. The
-#'   columns for each PK parameter should be named like the values in the
-#'   data.frame PKParameterDefinitions, in the column "PKparameter". To see
-#'   that, please enter \code{view(PKParameterDefinitions)} into the console.
-#' @param PKparameters any of the AUC, Cmax, tmax, CL, or half-life PK
-#'   parameters included in the output from \code{\link{pk_table}}; if left as
-#'   NA, this will make graphs for each parameter included in \code{PKtable}. To
-#'   see the full set of possible parameters, enter
-#'   \code{view(PKParameterDefinitions)} into the console.
+#'   "Statistic" should have values of "Simulated" and "Observed" for the
+#'   simulated and observed PK, respectively, and also values for any
+#'   variability you'd like to show as error bars.
+#' @param PKparameters any of the PK parameters included in the output from
+#'   \code{\link{pk_table}}; if left as NA, this will make graphs for each
+#'   parameter included in \code{PKtable}. To see the full set of possible
+#'   parameters, enter \code{view(PKParameterDefinitions)} into the console.
 #' @param PKorder optionally specify the order of the graphs. Leaving this as
-#'   "default" puts the graphs in the same order as the columns in the Simcyp
-#'   Consultancy Team template for PK tables (plus some guesses at a good order
-#'   for PK parameters that are not listed in said template table). Setting this
-#'   to "user specified" will make the order of the graphs match the order you
-#'   specified with the argument \code{PKparameters}. Graphs are plotted left to
-#'   right and then top to bottom. If you would like a blank space inserted
-#'   between some parameters -- for example, to keep all your Cmax values in the
-#'   same column or something like that -- include "BLANK" in the values you
-#'   list for \code{PKparameters} wherever you want that to happen, e.g.,
+#'   "default" puts the graphs in approximately the same order as the columns in
+#'   the Simcyp Consultancy Team template for PK tables. Setting this to "user
+#'   specified" will make the order of the graphs match the order you specified
+#'   with the argument \code{PKparameters}. Graphs are plotted left to right and
+#'   then top to bottom. If you would like a blank space inserted between some
+#'   parameters -- for example, to keep all your Cmax values in the same column
+#'   or something like that -- include "BLANK" in the values you list for
+#'   \code{PKparameters} wherever you want that to happen, e.g.,
 #'   \code{PKparameters = c("Cmax_dose1", "BLANK", "AUCinf_dose1", "BLANK",
 #'   "tmax_dose1")}
 #' @param all_intervals_together TRUE or FALSE (default) for whether to combine
@@ -41,14 +37,14 @@
 #'   Try this out if you're uncertain what we mean.
 #' @param all_AUCs_together TRUE or FALSE (default) for whether to combine,
 #'   e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
-#'   with this because if you have points for both AUCinf and AUCt for a
-#'   simulation, then BOTH of those points will show up on the graph.
+#'   with this because, if you have points for both AUCinf and AUCt for a
+#'   simulation, BOTH of those points will show up on the graph.
 #' @param boundaries Numerical boundaries to show on the graph. Defaults to the
 #'   1.5- and 2-fold boundaries. Indicate boundaries you want like this:
 #'   \code{boundaries = c(1.25, 1.5, 2)}
 #' @param boundaries_Guest Numerical boundaries to show on the graph when the PK
-#'   parameter is a mean ratio of the parameter in the presence of a perpetrator
-#'   / the parameter in the absence of the perpetrator. Please see
+#'   parameter is a mean ratio of the parameter in the presence of a precipitant
+#'   drug / the parameter at baseline. Please see
 #'   https://pubmed.ncbi.nlm.nih.gov/21036951/ for a reference for this type of
 #'   graph. If you'd rather show straight lines for these parameters instead of
 #'   Guest curves, set this to NA. The default boundaries for Guest curves are 1
@@ -62,9 +58,7 @@
 #'   boundaries of the simulated / observed ratio. The default is "red black",
 #'   which, for the default boundaries, results in a black line at the 1.5-fold
 #'   boundary and a red one at the 2-fold boundary. Other options are "red
-#'   green", "muted red green" (a lighter, more muted red and green that work
-#'   well for indicating boundaries when you're using shading instead of lines),
-#'   and "black", which will result in only black lines or shading. You also can
+#'   green" and "black", which will result in only black lines. You also can
 #'   set this to any set of colors you'd like, e.g., \code{boundary_color_set =
 #'   c("yellow", "blue")}. The number of colors should equal the number of
 #'   boundaries that you've indicated or the graph won't be easily
@@ -73,10 +67,8 @@
 #'   X-fold boundaries of the simulated / observed ratio for DDI ratio graphs.
 #'   The default is "red black", which, for the default Guest boundaries,
 #'   results in a black curved line and a red straight line at the 2-fold
-#'   boundary. Other options are "red green", "muted red green" (a lighter, more
-#'   muted red and green that work well for indicating boundaries when you're
-#'   using shading instead of lines), and "black", which will result in only
-#'   black lines or shading. You also can set this to
+#'   boundary. Other options are "red green" and "black", which will result in
+#'   only black lines or shading. You also can set this to
 #'   any set of colors you'd like, e.g., \code{boundary_color_set_Guest = c("yellow",
 #'   "blue")}. The number of colors should equal the number of Guest boundaries
 #'   that you've indicated or the graph won't be easily interpretable.
@@ -84,15 +76,14 @@
 #'   boundaries. Leaving this as "default" results in a dashed line at unity and
 #'   solid lines for all others, but you can specify this with any R-acceptable
 #'   line types, e.g., \code{boundary_line_types = c("dotted", "dashed",
-#'   "solid")}. To see the possibilities, type \code{ggpubr::show_line_types()}
-#'   into the console.
+#'   "solid")}. To see possible line types, run \code{ggpubr::show_line_types()}.
 #' @param boundary_line_types_Guest optionally specify the line types to use for
 #'   the DDI ratio graph boundaries. Leaving this as "default" results in a
 #'   dashed line at unity and solid lines for all others, but you can specify
 #'   this with any R-acceptable line types, e.g., \code{boundary_line_types_Guest =
-#'   c("dotted", "dashed", "solid")}. To see the possibilities, type
-#'   \code{ggpubr::show_line_types()} into the console.
-#' @param boundary_line_width line width; default is 0.7.
+#'   c("dotted", "dashed", "solid")}. To see possible line types, run
+#'   \code{ggpubr::show_line_types()}.
+#' @param boundary_line_width boundary line width; default is 0.7.
 #' @param graph_labels TRUE or FALSE (default) for whether to include labels (A,
 #'   B, C, etc.) for each of the small graphs.
 #' @param axis_title_x title for the x axis; default is "Observed"
@@ -105,7 +96,9 @@
 #'   variability would you like to have those error bars display? Options are
 #'   "90\% CI" (default), "95\% CI", "CV\%", "percentiles", "standard
 #'   deviation", ("SD" will also work fine), or "range". If \code{error_bars} is
-#'   set to "none", this will be ignored.
+#'   set to "none", this will be ignored. Obviously, if your source data do not
+#'   include the variability type you requested, we can't show that on the
+#'   graph.
 #' @param point_color_column (optional) the column in \code{PKtable} that should
 #'   be used for determining which color the points will be. This should be
 #'   unquoted. For example, if you have a column named "Study" in the data.frame
@@ -182,9 +175,9 @@
 #'   circle and an open triangle. If you only specify one value, it will be used
 #'   for all points. If you don't specify anything for
 #'   \code{point_shape_column}, then only the first value listed will be used.
-#'   To see all the possible shapes and what number corresponds to which shape,
-#'   type \code{ggpubr::show_point_shapes()} into the console. If left as NA,
-#'   all points will be filled circles.
+#'   To see possible shapes and what number corresponds to which shape, run
+#'   \code{ggpubr::show_point_shapes()}. If left as NA, all points will be
+#'   filled circles.
 #' @param point_size optionally specify the size of the points to use for the
 #'   observed data. If left as NA, the size will be 2.
 #' @param point_transparency optionally specify how transparent to make the
@@ -198,8 +191,8 @@
 #'   column name is for \code{point_color_column}. If you don't want a label for
 #'   this legend item, set this to "none".
 #' @param legend_position Specify where you want the legend to be. Options are
-#'   "left", "right" (default in most scenarios), "bottom", "top", or "none" if
-#'   you don't want one at all.
+#'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
+#'   at all.
 #' @param grid_color optionally specify the color of the major and minor grid
 #'   lines on your graph. Default is "grey92", which is the standard grey for
 #'   theme_bw() in ggplot2. Set this to "none" if you want no grid lines under
@@ -212,8 +205,6 @@
 #'   in quotes here, e.g., "My conc time graph.png"
 #' @param fig_height figure height in inches; default is 8
 #' @param fig_width figure width in inches; default is 6
-#' @param return_list_of_graphs TRUE or FALSE (default) for whether to return a
-#'   list of each individual graph as its own separate ggplot2 object.
 #' @param include_dose_num Should the dose number be included? If set to TRUE,
 #'   then the dose number part of the graph title, e.g., the "Dose 1" or "Last
 #'   dose" part of "Dose 1 AUCinf" or "Last dose Cmax", will be included. If set
@@ -231,7 +222,7 @@
 #'   "Last dose Cmax", this will use "steady-state" instead, e.g.,
 #'   "Steady-state Cmax"}
 #'
-#'   \item{"use my expressions"}{If you'd like to use your own specific R
+#'   \item{a list of exactly what you want}{If you'd like to use your own specific R
 #'   expressions rather than the defaults included in the package, you can do
 #'   that. You will need to supply a list here, and all of your PK parameters
 #'   must be included or things will not work well. Here is an example of how
@@ -239,10 +230,18 @@
 #'   "Cmax_last" = expression(C[max]), "Cmin_last" = expression(C[trough]))}
 #'
 #'   \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other
-#'   substitutions people might want. Instead of the using AUCinf, graph titles will
+#'   substitutions people might want. Instead of the using AUCinf, graph titles would
 #'   use AUC0 to inf}}
+#' @param number_format How should the numbers on the axes be formatted? Options
+#'   are "scientific", "regular", or NA, which will use scientific notation when
+#'   the largest value, rounded up, is > 1e5 and regular notation with commas
+#'   for every 10^3 interval otherwise.
+#' @param return_separate_graphs TRUE or FALSE (default) for whether to return a
+#'   list of each individual graph as its own separate ggplot2 object.
+#' @param return_list_of_graphs SOON TO BE DEPRECATED. Same as
+#'   'return_separate_graphs', but we thought the other name was clearer.
 #'
-#' @return a set of arranged ggplot2 graphs
+#' @return a set of arranged ggplot2 graphs or a list of individual graphs
 #' @export
 #'
 #' @examples
@@ -272,11 +271,12 @@
 #'          point_color_set = "blues",
 #'          legend_position = "right",
 #'          error_bars = "horizontal")
-#' # NB: This will generate 3 warnings about 
-#' # `override.aes` being ignored that we *CANNOT* 
-#' # get to disappear. Please ignore the warnings 
-#' # about that being ignored. 
-#' 
+#' # NB: This will generate 3 warnings about
+#' # `override.aes` being ignored that we *CANNOT*
+#' # get to disappear. Please ignore the warnings
+#' # about `override.aes` being ignored. Yes,
+#' # that's a lot of ignoring. :)
+#'
 #' 
 
 so_graph <- function(PKtable, 
@@ -292,13 +292,13 @@ so_graph <- function(PKtable,
                      error_bars = "none", 
                      variability_type = "90% CI", 
                      point_color_column, 
-                     point_color_set = "default",
                      legend_label_point_color = NA, 
+                     point_color_set = "default",
                      point_shape_column, 
+                     legend_label_point_shape = NA, 
                      point_shape = NA,
                      point_size = NA,
                      point_transparency = 1, 
-                     legend_label_point_shape = NA, 
                      legend_position = "none",
                      axis_title_x = "Observed",
                      axis_title_y = "Simulated", 
@@ -308,13 +308,15 @@ so_graph <- function(PKtable,
                      include_dose_num = NA,
                      all_intervals_together = FALSE, 
                      all_AUCs_together = FALSE, 
+                     number_format = NA, 
                      grid_color = NA, 
                      ncol = NULL, 
                      nrow = NULL,
                      save_graph = NA, 
                      fig_width = 8, 
                      fig_height = 6, 
-                     return_list_of_graphs = FALSE){
+                     return_separate_graphs = FALSE, 
+                     return_list_of_graphs = NA){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -348,6 +350,22 @@ so_graph <- function(PKtable,
    if("Observed" %in% PKtable$Statistic == FALSE){
       stop("We can't find the observed data in the table provided for `PKtable`, so we can't make a simulated-versus-observed graph.", 
            call. = FALSE)
+   }
+   
+   number_format <- tolower(number_format)[1]
+   number_format <- case_when(str_detect(number_format, "sci") ~ "scientific", 
+                              is.na(number_format) ~ "default", 
+                              number_format == "default" ~ "default", 
+                              .default = "regular")
+   
+   if(any(complete.cases(return_list_of_graphs))){
+      if(return_separate_graphs == return_list_of_graphs){
+         warning(wrapn("We're deprecating the argument 'return_list_of_graphs' and renaming it 'return_separate_graphs' because we think that's clearer. Please use only 'return_separate_graphs' in the fugure."), 
+                 call. = FALSE)
+      } else {
+         warning(wrapn("We're deprecating the argument 'return_list_of_graphs' and renaming it 'return_separate_graphs' because we think that's clearer. You have supplied different values for those two arguments, so we're going to use the value used for 'return_separate_graphs'. Please use only 'return_separate_graphs' in the fugure."), 
+                 call. = FALSE)
+      }
    }
    
    # Checking for appropriate numeric input for boundaries
@@ -1439,66 +1457,7 @@ so_graph <- function(PKtable,
                            shape = point_color_column),
                        size = ifelse(is.na(point_size), 2, point_size), 
                        alpha = ifelse(is.na(point_transparency), 1, point_transparency), 
-                       show.legend = TRUE) +
-            
-            scale_color_manual(
-               values = MyColors, drop = FALSE, 
-               name = legend_label_point_color, 
-               guide = guide_legend(
-                  nrow = switch(legend_position,
-                                "bottom" = 1,
-                                "top" = 1, 
-                                "left" = NULL,
-                                "right" = NULL), 
-                  order = case_when(
-                     # no legend for color
-                     as_label(point_color_column) == "<empty>" ~ 99,
-                     
-                     as_label(point_color_column) != "<empty>" ~ 1))) +
-            
-            scale_fill_manual(
-               values = MyFillColors, drop = FALSE, 
-               name = legend_label_point_color, 
-               guide = guide_legend(
-                  nrow = switch(legend_position,
-                                "bottom" = 1,
-                                "top" = 1, 
-                                "left" = NULL,
-                                "right" = NULL), 
-                  order = case_when(
-                     # no legend for color
-                     as_label(point_color_column) == "<empty>" ~ 99,
-                     
-                     as_label(point_color_column) != "<empty>" ~ 1))) +
-            
-            scale_shape_manual(
-               values = MyShapes, drop = FALSE, 
-               name = legend_label_point_shape, 
-               guide = guide_legend(
-                  nrow = switch(legend_position,
-                                "bottom" = 1,
-                                "top" = 1, 
-                                "left" = NULL,
-                                "right" = NULL), 
-                  order = case_when(
-                     # no legend for color
-                     as_label(point_shape_column) == "<empty>" & 
-                        all_intervals_together == FALSE ~ 99,
-                     
-                     as_label(point_color_column) == "<empty>" & 
-                        as_label(point_shape_column) != "<empty>" ~ 1, 
-                     
-                     as_label(point_color_column) != "<empty>" & 
-                        as_label(point_color_column) != as_label(point_shape_column) ~ 2, 
-                     
-                     all_intervals_together == TRUE & 
-                        as_label(point_color_column) != "<empty>" ~ 2, 
-                     
-                     all_intervals_together == TRUE & 
-                        as_label(point_color_column) == "<empty>" ~ 1, 
-                     
-                     as_label(point_color_column) != "<empty>" & 
-                        as_label(point_color_column) == as_label(point_shape_column) ~ 1)))
+                       show.legend = TRUE) 
          
       } else {
          
@@ -1510,107 +1469,103 @@ so_graph <- function(PKtable,
                            shape = point_shape_column),
                        size = ifelse(is.na(point_size), 2, point_size), 
                        alpha = ifelse(is.na(point_transparency), 1, point_transparency), 
-                       show.legend = TRUE) +
-            scale_color_manual(
-               values = MyColors, drop = FALSE, 
-               name = legend_label_point_color, 
-               guide = guide_legend(
-                  nrow = switch(legend_position,
-                                "bottom" = 1,
-                                "top" = 1, 
-                                "left" = NULL,
-                                "right" = NULL), 
-                  order = case_when(
-                     # no legend for color
-                     as_label(point_color_column) == "<empty>" ~ 99,
-                     
-                     as_label(point_color_column) != "<empty>" ~ 1))) +
-            
-            scale_fill_manual(
-               values = MyFillColors, drop = FALSE, 
-               name = legend_label_point_color, 
-               guide = guide_legend(
-                  nrow = switch(legend_position,
-                                "bottom" = 1,
-                                "top" = 1, 
-                                "left" = NULL,
-                                "right" = NULL), 
-                  order = case_when(
-                     # no legend for color
-                     as_label(point_color_column) == "<empty>" ~ 99,
-                     
-                     as_label(point_color_column) != "<empty>" ~ 1))) +
-            
-            scale_shape_manual(
-               values = MyShapes, drop = FALSE, 
-               name = legend_label_point_shape, 
-               guide = guide_legend(
-                  nrow = switch(legend_position,
-                                "bottom" = 1,
-                                "top" = 1, 
-                                "left" = NULL,
-                                "right" = NULL), 
-                  order = case_when(
-                     # no legend for color
-                     as_label(point_shape_column) == "<empty>" & 
-                        all_intervals_together == FALSE ~ 99,
-                     
-                     as_label(point_color_column) == "<empty>" & 
-                        as_label(point_shape_column) != "<empty>" ~ 1, 
-                     
-                     as_label(point_color_column) != "<empty>" & 
-                        as_label(point_color_column) != as_label(point_shape_column) ~ 2, 
-                     
-                     all_intervals_together == TRUE & 
-                        as_label(point_color_column) != "<empty>" ~ 2, 
-                     
-                     all_intervals_together == TRUE & 
-                        as_label(point_color_column) == "<empty>" ~ 1, 
-                     
-                     as_label(point_color_column) != "<empty>" & 
-                        as_label(point_color_column) == as_label(point_shape_column) ~ 1)))
+                       show.legend = TRUE)
          
       }
       
-      if(length(MyPointColors) > 3){
-         if(any(MyPointShapes %in% c(21:25))){
-            G[[i]] <- G[[i]] + 
-               guides(
-                  color = guide_legend(
-                     override.aes = list(shape = 21), 
-                     ncol = case_when(
-                        legend_position %in% c("left", "right") ~ 2, 
-                        legend_position %in% c("top", "bottom") ~ 3)), 
-                  fill = guide_legend(
-                     override.aes = list(shape = 21), 
-                     ncol = case_when(
-                        legend_position %in% c("left", "right") ~ 2, 
-                        legend_position %in% c("top", "bottom") ~ 3)))
-         } else {
-            G[[i]] <- G[[i]] + 
-               guides(
-                  color = guide_legend(
-                     ncol = case_when(
-                        legend_position %in% c("left", "right") ~ 2, 
-                        legend_position %in% c("top", "bottom") ~ 3)))
-         }
-      } else if(any(MyPointShapes %in% c(21:25))){
+      G[[i]] <- G[[i]] +
+         scale_color_manual(
+            values = MyColors, drop = FALSE, 
+            name = legend_label_point_color, 
+            guide = guide_legend(
+               nrow = switch(
+                  legend_position,
+                  "bottom" = case_when(
+                     length(unique(SO[[i]]$point_color_column)) > 3 & 
+                        length(unique(SO[[i]]$point_color_column)) <= 6 ~ 2, 
+                     length(unique(SO[[i]]$point_color_column)) > 6 ~ 3, 
+                     .default = 1),
+                  "top" = case_when(
+                     length(unique(SO[[i]]$point_color_column)) > 3 & 
+                        length(unique(SO[[i]]$point_color_column)) <= 6 ~ 2, 
+                     length(unique(SO[[i]]$point_color_column)) > 6 ~ 3, 
+                     .default = 1), 
+                  "left" = NULL,
+                  "right" = NULL), 
+               order = case_when(
+                  # no legend for color
+                  as_label(point_color_column) == "<empty>" ~ 99,
+                  
+                  as_label(point_color_column) != "<empty>" ~ 1))) +
+         
+         scale_fill_manual(
+            values = MyFillColors, drop = FALSE, 
+            name = legend_label_point_color, 
+            guide = guide_legend(
+               nrow = switch(legend_position,
+                             "bottom" = case_when(
+                                length(levels(SO[[i]]$point_color_column)) > 3 & 
+                                   length(levels(SO[[i]]$point_color_column)) <= 6 ~ 2, 
+                                length(levels(SO[[i]]$point_color_column)) > 6 ~ 3, 
+                                .default = 1),
+                             "top" = case_when(
+                                length(levels(SO[[i]]$point_color_column)) > 3 & 
+                                   length(levels(SO[[i]]$point_color_column)) <= 6 ~ 2, 
+                                length(levels(SO[[i]]$point_color_column)) > 6 ~ 3, 
+                                .default = 1), 
+                             "left" = NULL,
+                             "right" = NULL), 
+               order = case_when(
+                  # no legend for color
+                  as_label(point_color_column) == "<empty>" ~ 99,
+                  
+                  as_label(point_color_column) != "<empty>" ~ 1))) +
+         
+         scale_shape_manual(
+            values = MyShapes, drop = FALSE, 
+            name = legend_label_point_shape, 
+            guide = guide_legend(
+               nrow = switch(legend_position,
+                             "bottom" = case_when(
+                                length(levels(SO[[i]]$point_shape_column)) > 3 & 
+                                   length(levels(SO[[i]]$point_shape_column)) <= 6 ~ 2, 
+                                length(levels(SO[[i]]$point_shape_column)) > 6 ~ 3, 
+                                .default = 1),
+                             "top" = case_when(
+                                length(levels(SO[[i]]$point_shape_column)) > 3 & 
+                                   length(levels(SO[[i]]$point_shape_column)) <= 6 ~ 2, 
+                                length(levels(SO[[i]]$point_shape_column)) > 6 ~ 3, 
+                                .default = 1),
+                             "left" = NULL,
+                             "right" = NULL), 
+               order = case_when(
+                  # no legend for color
+                  as_label(point_shape_column) == "<empty>" & 
+                     all_intervals_together == FALSE ~ 99,
+                  
+                  as_label(point_color_column) == "<empty>" & 
+                     as_label(point_shape_column) != "<empty>" ~ 1, 
+                  
+                  as_label(point_color_column) != "<empty>" & 
+                     as_label(point_color_column) != as_label(point_shape_column) ~ 2, 
+                  
+                  all_intervals_together == TRUE & 
+                     as_label(point_color_column) != "<empty>" ~ 2, 
+                  
+                  all_intervals_together == TRUE & 
+                     as_label(point_color_column) == "<empty>" ~ 1, 
+                  
+                  as_label(point_color_column) != "<empty>" & 
+                     as_label(point_color_column) == as_label(point_shape_column) ~ 1)))
+      
+      if(any(MyPointShapes %in% c(21:25))){
          G[[i]] <- G[[i]] + 
             guides(
                color = guide_legend(
                   override.aes = list(shape = 21)), 
                fill = guide_legend(
                   override.aes = list(shape = 21)))
-      }
-      
-      if(length(MyPointShapes) > 3){
-         G[[i]] <- G[[i]] + 
-            guides(
-               shape = guide_legend(
-                  ncol = case_when(
-                     legend_position %in% c("left", "right") ~ 2, 
-                     legend_position %in% c("top", "bottom") ~ 3)))
-      }
+      } 
       
       if("list" %in% class(title_adjustments)){
          Gtitle <- title_adjustments[[i]]
@@ -1627,22 +1582,31 @@ so_graph <- function(PKtable,
          }
       }
       
-      CheckRange <- ifelse(round_up(max(c(SO[[i]]$Simulated, 
-                                          SO[[i]]$Observed),
-                                        na.rm = T)) >= 1e5, 
-                           "sci", "comma")
+      number_format_i <- case_when(
+         number_format == "default" & 
+            round_up(max(c(SO[[i]]$Simulated, 
+                           SO[[i]]$Observed),
+                         na.rm = T)) >= 1e5 ~ "sci", 
+         
+         number_format == "default" & 
+            round_up(max(c(SO[[i]]$Simulated, 
+                           SO[[i]]$Observed),
+                         na.rm = T)) < 1e5 ~ "comma", 
+         
+         number_format == "regular" ~ "comma", 
+         number_format == "scientific" ~ "sci")
       
       G[[i]] <- G[[i]] + 
          xlab(axis_title_x) +
          ylab(axis_title_y) +
          scale_y_log10(breaks = MajBreaks, 
                        minor_breaks = MinBreaks, 
-                       labels = switch(CheckRange, 
+                       labels = switch(number_format_i, 
                                        "sci" = scales::label_scientific(MajBreaks), 
                                        "comma" = scales::label_comma(MajBreaks))) +
          scale_x_log10(breaks = MajBreaks, 
                        minor_breaks = MinBreaks, 
-                       labels = switch(CheckRange, 
+                       labels = switch(number_format_i, 
                                        "sci" = scales::label_scientific(MajBreaks), 
                                        "comma" = scales::label_comma(MajBreaks))) +
          coord_cartesian(xlim = Limits, ylim = Limits) + # this causes the shading to disappear for BoundariesGuest curves. no idea why, but I think it's a bug w/coord_cartesian.
@@ -1697,7 +1661,7 @@ so_graph <- function(PKtable,
    if(length(G) == 1){
       G <- G[[1]] + theme(legend.position = legend_position)
       
-      if(return_list_of_graphs){
+      if(return_separate_graphs){
          PlotList <- G
       }
       
@@ -1754,7 +1718,7 @@ so_graph <- function(PKtable,
          G <- G[GoodOrder]
       }
       
-      if(return_list_of_graphs){
+      if(return_separate_graphs){
          PlotList <- G
       }
       
@@ -1884,7 +1848,7 @@ so_graph <- function(PKtable,
       }
    }
    
-   if(return_list_of_graphs){
+   if(return_separate_graphs){
       return(PlotList)
    } else {
       return(G)
