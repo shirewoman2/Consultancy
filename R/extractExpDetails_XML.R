@@ -84,15 +84,16 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    # If they didn't include ".wksz" or ".dscw" at the end, add that.
    WkspFilesNoExt <- sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?(\\.xlsx|\\.dscw|\\.wksz)$",
                          "", sim_workspace_files)
-   WkspFile <- list("Simulator" = paste0(WkspFilesNoExt, ".wksz"), 
-                    "Discovery" = paste0(WkspFilesNoExt, ".dscw"))
+   WkspFile <- list("Simulator" = paste0(unique(WkspFilesNoExt), ".wksz"), 
+                    "Discovery" = paste0(unique(WkspFilesNoExt), ".dscw"))
    WkspFile$Simulator <- WkspFile$Simulator[which(file.exists(WkspFile$Simulator))]
    WkspFile$Discovery <- WkspFile$Discovery[which(file.exists(WkspFile$Discovery))]
    WkspFile <- as.character(unlist(WkspFile))
    
    # Warning when file doesn't exist
-   MissingSimFiles <- WkspFilesNoExt[
-      sapply(WkspFilesNoExt, FUN = function(x){any(str_detect(WkspFile, x))}) == FALSE]
+   MissingSimFiles <- basename(WkspFilesNoExt)[
+      sapply(basename(WkspFilesNoExt), 
+             FUN = function(x){any(str_detect(basename(WkspFile), x))}) == FALSE]
    
    if(length(MissingSimFiles) > 0){
       warning(paste0("The file(s) ", 

@@ -20,9 +20,11 @@ enzyme-abundance-time data, in quotes}
 etc. Spaces or hyphens in enzyme names will be ignored. Not case sensitive.}
 
 \item{tissue}{From which tissue should the desired enzyme abundance be
-extracted? Options are "liver" (default), "gut", or "kidney". Note: If
-"gut" is selected, the output will return both colon and small intestine
-concentrations.}
+extracted? Options are "liver" (default), "gut", "ADAM gut", or "kidney".
+Note: If "gut" is selected, the output will return both colon and small
+intestine concentrations but not ADAM-model gut-segmental enzyme levels.
+Using "ADAM gut" will get individual gut segment levels in the stomach
+through the colon.}
 
 \item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated
 enzyme abundance data? Options are "individual", "aggregate", or "both"
@@ -90,6 +92,6 @@ to get the dose number for a custom-dosing regimen.
 \examples{
 extractEnzAbund(sim_data_file = "../Example simulator output MD.xlsx",
                 enzyme = "CYP3A4", tissue = "liver")
-                
+
                 
 }
