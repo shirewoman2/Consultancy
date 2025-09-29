@@ -531,10 +531,6 @@ calc_PK_ratios <- function(PKparameters = NA,
       
    }
    
-   PKparameters <- PKparameters %>% 
-      mutate(Sheet = case_when(is.na(Sheet) ~ {{sheet_PKparameters}}, 
-                               .default = Sheet))
-   
    # Checking for file name issues
    CheckFileNames <- check_file_name(PKparameters$File)
    BadFileNames <- CheckFileNames[!CheckFileNames == "File name meets naming standards."]

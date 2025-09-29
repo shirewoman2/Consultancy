@@ -1310,7 +1310,7 @@ tidy_input_PK <- function(PKparameters,
    # If they have left PKparameters as NA, then we need to figure out which PK
    # parameters apply.
    
-   if(any(is.na(PKparameters$PKparameter))){
+   if(all(is.na(PKparameters$PKparameter))){
       
       MainPKParams <- AllPKParameters %>%
          # Per Hannah and template: Only include CL/F, t1/2, or tmax
@@ -1327,7 +1327,10 @@ tidy_input_PK <- function(PKparameters,
       )
       
       suppressMessages(
-         PKparameters <- PKparameters %>% select(-PKparameter) %>% 
+         PKparameters <- PKparameters %>% 
+            select(-PKparameter,
+                   -AppliesToSingleDose,
+                   -AppliesOnlyWhenPerpPresent) %>% 
             left_join(MainPKParams)
       )
       
