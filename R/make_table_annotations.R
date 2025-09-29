@@ -413,24 +413,23 @@ make_table_annotations <- function(MyPKResults, # only PK table
       DosesIncluded <- ifelse(DosesIncluded == "", "no dose num included", DosesIncluded)
    }
    
-   HeadText2 <- switch(
-      DosesIncluded, 
-      "Dose1 Last" = paste("the first and multiple", 
-                           MyDoseRoute, "doses"),
+   HeadText2 <- case_when(
+      # 1st dose and also either last or user interval
+      str_detect(DosesIncluded, "Dose1 Last|Dose1 User") ~
+         paste("the first and multiple", MyDoseRoute, "doses"),
       
-      "Dose1" = paste(ifelse(is.na(Deets$DoseInt_sub), 
-                             "a single", "the first"),
-                      MyDoseRoute, "dose"),
+      # only 1st dose
+      DosesIncluded == "Dose1" ~
+         paste(ifelse(is.na(Deets$DoseInt_sub), "a single", "the first"),
+               MyDoseRoute, "dose"),
       
-      "Last" = paste("multiple",
-                     MyDoseRoute, "doses"), 
+      DosesIncluded %in% c("Last", "User") ~
+         paste("multiple", MyDoseRoute, "doses"), 
       
-      "User" = paste("multiple",
-                     MyDoseRoute, "doses"), 
-      
-      "no dose num included" = ifelse(is.na(Deets$DoseInt_sub), 
-                                      paste("a single", MyDoseRoute, "dose"), 
-                                      paste("the first and/or multiple", MyDoseRoute, "doses"))
+      DosesIncluded == "no dose num included" ~
+         ifelse(is.na(Deets$DoseInt_sub), 
+                paste("a single", MyDoseRoute, "dose"), 
+                paste("the first and/or multiple", MyDoseRoute, "doses"))
    )
    
    HeadText3 <- ifelse(
@@ -441,9 +440,9 @@ make_table_annotations <- function(MyPKResults, # only PK table
       paste(" with or without", 
             ifelse(DoseFreq_inhib == "single dose", 
                    paste0("a single dose of ", 
-                         Deets$Dose_inhib, " ", 
-                         MyDoseUnits, " ", 
-                         MyPerpetrator), 
+                          Deets$Dose_inhib, " ", 
+                          MyDoseUnits, " ", 
+                          MyPerpetrator), 
                    paste0("multiple doses of ", 
                           Deets$Dose_inhib, " ", 
                           MyDoseUnits, " ", 

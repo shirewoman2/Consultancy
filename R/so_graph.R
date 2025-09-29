@@ -1,8 +1,12 @@
 #' Graphs of simulated vs. observed PK
 #'
-#' \code{so_graph} makes graphs of simulated vs. observed PK that indicate where
-#' the predicted parameters fell within X fold of the observed, where "X" is
-#' whatever cutoffs you specify.
+#' @description \code{so_graph} makes graphs of simulated vs. observed PK that
+#'   indicate where the predicted parameters fell within X fold of the observed,
+#'   where "X" is whatever cutoffs you specify.
+#'
+#'   \strong{Note from LSh:} You will sometimes see this warning repeated once
+#'   for each graph: "Duplicated `override.aes` is ignored.". I can't seem to
+#'   make these superfluous warnings go away, but you should ignore them.
 #'
 #' @param PKtable a table in the same format as output from the function
 #'   \code{\link{pk_table}}. This should include a column titled "Statistic" and
@@ -12,7 +16,18 @@
 #'   variability you'd like to show as error bars.
 #' @param PKparameters any of the PK parameters included in the output from
 #'   \code{\link{pk_table}}; if left as NA, this will make graphs for each
-#'   parameter included in \code{PKtable}. To see the full set of possible
+#'   parameter included in \code{PKtable}. You can request all of something,
+#'   e.g., all Cmax parameters or all dose 1 parameters, by specifying
+#'   \code{PKparameters = "all XXX"} where "XXX" is some text you want to match
+#'   in the PK table column names. Setting this to "all Cmax" will give you all
+#'   the PK data pertaining to Cmax regardless of which dose it is or whether
+#'   there was a perpetrator drug present. Similarly, setting this to "all dose
+#'   1" will get you all the first-dose PK. You can specify more than one "all
+#'   XXX" item, e.g., \code{PKparameters = c("all Cmax", "all AUC")} This is not
+#'   case sensitive, but whatever you're looking for must be included in the
+#'   column names of what you supplied for PKtable. If you want to specify
+#'   individual PK parameters here, you'll need to list them by their
+#'   SimcypConsultancy package coded name. To see the full set of possible
 #'   parameters, enter \code{view(PKParameterDefinitions)} into the console.
 #' @param PKorder optionally specify the order of the graphs. Leaving this as
 #'   "default" puts the graphs in approximately the same order as the columns in
@@ -367,6 +382,45 @@ so_graph <- function(PKtable,
                  call. = FALSE)
       }
    }
+   
+   # Translating "all XXX" PK parameters
+   if(any(str_detect(tolower(PKparameters), "all"), na.rm = T)){
+      
+      PKparameters <- as.list(PKparameters)
+      PKparameters_all <- map_lgl(.x = PKparameters, 
+                                  .f = \(x) str_detect(tolower(x), "all"))
+      
+      MyPK <- prettify_column_names(PKtable = PKtable, 
+                                    pretty_or_ugly_cols = "ugly", 
+                                    return_which_are_PK = TRUE, 
+                                    fix_col_names = F) %>% 
+         # Making this FALSE by default for now b/c only want to add PK
+         # parameters that are specifically requested
+         mutate(INCLUDE = FALSE)
+      
+      for(i in which(PKparameters_all)){
+         String <- sub("all", "", PKparameters[[i]]) %>% 
+            str_trim() %>% 
+            tolower()
+         
+         MyPK <- MyPK %>% 
+            mutate(INCLUDE = case_when(
+               str_detect(tolower(ColName), {String}) ~ TRUE, 
+               .default = INCLUDE))
+         
+         rm(String)
+      }
+      
+      PKparameters <- unlist(PKparameters)[-which(PKparameters_all)]
+      PKparameters <- c(PKparameters, 
+                        (MyPK %>% filter(INCLUDE == TRUE) %>% 
+                            pull(PKparameter)))
+      
+      rm(MyPK, PKparameters_all)
+   }
+   
+   # Harmonizing PK parameters b/c likely that people will mess that up
+   PKparameters <- harmonize_PK_names(PKparameters)
    
    # Checking for appropriate numeric input for boundaries
    if(any(boundaries < 1)){

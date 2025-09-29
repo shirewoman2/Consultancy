@@ -22,15 +22,43 @@ harmonize_PK_names <- function(PKparameters){
    PKparameters <- sub("_ss", "_last", PKparameters)
    PKparameters <- sub("_first", "_dose1", PKparameters)
    
+   # other miscellaneous errors for parameters that aren't the main ones
+   PKparameters <- sub("cl(_)?hep", "CL_hep", PKparameters)
+   PKparameters <- sub("cl(_)?po", "CL_po", PKparameters)
+   PKparameters <- sub("um1_", "umI_", PKparameters)
+   PKparameters <- sub("um2_", "umII_", PKparameters)
+   PKparameters <- sub("um3_", "umIII_", PKparameters)
+   PKparameters <- sub("um4_", "umIV_", PKparameters)
+   PKparameters <- sub("auc tab", "AUC tab", PKparameters)
+   PKparameters <- sub("absorption tab", "Absorption tab", PKparameters)
+   
    # other misc errors
-   PKparameters <- sub("AUCt_last", "AUCtau_last", PKparameters)
    PKparameters <- sub("AUC_last", "AUCtau_last", PKparameters)
    PKparameters <- sub("AUC_inf", "AUCinf", PKparameters)
    PKparameters <- sub("AUC_t", "AUCt", PKparameters)
    PKparameters <- sub("AUCtau_dose1", "AUCt_dose1", PKparameters)
-   PKparameters <- sub("AUCt_ratio_last", "AUCtau_ratio_last", PKparameters)
    PKparameters <- sub("_[iI]nhib", "_withInhib", PKparameters)
    PKparameters <- sub("withinhib", "withInhib", PKparameters)
+   PKparameters <- sub("Tmax", "tmax", PKparameters)
+   
+   BasePK <- AllPKParameters %>% 
+      filter(AppliesToAllDoses == FALSE & 
+                !BasePKparameter %in% c("AUCinf_PercExtrap")) %>% 
+      pull(BasePKparameter) %>% unique()
+   
+   for(prefix in BasePK){
+      PKparameters <- sub(paste0(prefix, "_withInhib_dose1"), 
+                          paste0(prefix, "_dose1_withInhib"), 
+                          PKparameters)
+      
+      PKparameters <- sub(paste0(prefix, "_withInhib_last"), 
+                          paste0(prefix, "_last_withInhib"), 
+                          PKparameters)
+   }
+   
+   PKparameters <- sub("AUCt_last", "AUCtau_last", PKparameters)
+   PKparameters <- sub("AUCt_ratio_last", "AUCtau_ratio_last", PKparameters)
+   PKparameters <- sub("AUCt_last_withInhib", "AUCtau_last_withInhib", PKparameters)
    PKparameters <- case_match(PKparameters, 
                               "AUCtau" ~ "AUCt", 
                               "AUCtau_withInhib" ~ "AUCt_withInhib", 
@@ -51,16 +79,6 @@ harmonize_PK_names <- function(PKparameters){
       mutate(NoCaseProbs = ifelse(complete.cases(Rev), 
                                   Rev, Orig)) %>% 
       pull(NoCaseProbs)
-   
-   # other miscellaneous errors for parameters that aren't the main ones
-   PKparameters <- sub("cl(_)?hep", "CL_hep", PKparameters)
-   PKparameters <- sub("cl(_)?po", "CL_po", PKparameters)
-   PKparameters <- sub("um1_", "umI_", PKparameters)
-   PKparameters <- sub("um2_", "umII_", PKparameters)
-   PKparameters <- sub("um3_", "umIII_", PKparameters)
-   PKparameters <- sub("um4_", "umIV_", PKparameters)
-   PKparameters <- sub("auc tab", "AUC tab", PKparameters)
-   PKparameters <- sub("absorption tab", "Absorption tab", PKparameters)
    
    return(PKparameters)
 }

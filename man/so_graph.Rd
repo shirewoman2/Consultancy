@@ -55,7 +55,18 @@ variability you'd like to show as error bars.}
 
 \item{PKparameters}{any of the PK parameters included in the output from
 \code{\link{pk_table}}; if left as NA, this will make graphs for each
-parameter included in \code{PKtable}. To see the full set of possible
+parameter included in \code{PKtable}. You can request all of something,
+e.g., all Cmax parameters or all dose 1 parameters, by specifying
+\code{PKparameters = "all XXX"} where "XXX" is some text you want to match
+in the PK table column names. Setting this to "all Cmax" will give you all
+the PK data pertaining to Cmax regardless of which dose it is or whether
+there was a perpetrator drug present. Similarly, setting this to "all dose
+1" will get you all the first-dose PK. You can specify more than one "all
+XXX" item, e.g., \code{PKparameters = c("all Cmax", "all AUC")} This is not
+case sensitive, but whatever you're looking for must be included in the
+column names of what you supplied for PKtable. If you want to specify
+individual PK parameters here, you'll need to list them by their
+SimcypConsultancy package coded name. To see the full set of possible
 parameters, enter \code{view(PKParameterDefinitions)} into the console.}
 
 \item{PKorder}{optionally specify the order of the graphs. Leaving this as
@@ -324,9 +335,13 @@ list of each individual graph as its own separate ggplot2 object.}
 a set of arranged ggplot2 graphs or a list of individual graphs
 }
 \description{
-\code{so_graph} makes graphs of simulated vs. observed PK that indicate where
-the predicted parameters fell within X fold of the observed, where "X" is
-whatever cutoffs you specify.
+\code{so_graph} makes graphs of simulated vs. observed PK that
+  indicate where the predicted parameters fell within X fold of the observed,
+  where "X" is whatever cutoffs you specify.
+
+  \strong{Note from LSh:} You will sometimes see this warning repeated once
+  for each graph: "Duplicated `override.aes` is ignored.". I can't seem to
+  make these superfluous warnings go away, but you should ignore them.
 }
 \examples{
 

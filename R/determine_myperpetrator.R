@@ -29,16 +29,29 @@ determine_myperpetrator <- function(Deets,
    }
    
    MyPerpetrator <- 
-      c("Inhibitor1" = switch(as.character("Inhibitor1" %in% names(Deets)), 
-                              "TRUE" = str_comma(Deets$Inhibitor1), 
-                              "FALSE" = as.character(NA)), 
-        "Inhibitor1Metabolite" = switch(as.character("Inhibitor1Metabolite") %in%
-                                           names(Deets), 
-                                        "TRUE" = str_comma(Deets$Inhibitor1Metabolite), 
-                                        "FALSE" = as.character(NA)), 
-        "Inhibitor2" = switch(as.character("Inhibitor2" %in% names(Deets)), 
-                              "TRUE" = str_comma(Deets$Inhibitor2), 
-                              "FALSE" = as.character(NA)))
+      c("Inhibitor1" = 
+           switch(
+              as.character("Inhibitor1" %in% names(Deets)), 
+              "TRUE" = case_when(
+                 complete.cases(Deets$Inhibitor1) ~ str_comma(Deets$Inhibitor1),
+                 .default = as.character(NA)), 
+              "FALSE" = as.character(NA)), 
+        
+        "Inhibitor1Metabolite" =
+           switch(
+              as.character("Inhibitor1Metabolite" %in% names(Deets)), 
+              "TRUE" = case_when(
+                 complete.cases(Deets$Inhibitor1Metabolite) ~ str_comma(Deets$Inhibitor1Metabolite),
+                 .default = as.character(NA)), 
+              "FALSE" = as.character(NA)), 
+        
+        "Inhibitor2" = 
+           switch(
+              as.character("Inhibitor2" %in% names(Deets)), 
+              "TRUE" = case_when(
+                 complete.cases(Deets$Inhibitor2) ~ str_comma(Deets$Inhibitor2),
+                 .default = as.character(NA)), 
+              "FALSE" = as.character(NA)))
    
    if(any(complete.cases(MyPerpetrator))){
       
