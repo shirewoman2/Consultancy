@@ -34,7 +34,7 @@ so_graph(
   include_dose_num = NA,
   all_AUCs_together = FALSE,
   all_intervals_together = FALSE,
-  interval_names = NA,
+  interval_labels = NA,
   number_format = NA,
   grid_color = NA,
   ncol = NULL,
@@ -303,14 +303,14 @@ interval it is, which means that you can't \emph{also} specify something
 for the argument \code{point_shape_column}. If you do, it will be ignored.
 Try this out if you're uncertain what we mean.}
 
-\item{interval_names}{If you have set \code{all_intervals_together} to TRUE,
+\item{interval_labels}{If you have set \code{all_intervals_together} to TRUE,
 you can rename the intervals here. The default names for the intervals come
 from the column names in the PK table, and will be named "dose 1" and "last
 dose" for those two very typical intervals and will be named "from X h to Y
 h" for all user-defined intervals. To rename those to something else, use a
 named character vector, where the names are the default intervals and the
 values are what you'd like to use instead. For example, this will change
-"dose 1" to "Day 1", etc.: \code{interval_names = c("dose 1" = "Day 1",
+"dose 1" to "Day 1", etc.: \code{interval_labels = c("dose 1" = "Day 1",
 "from 144 h to 168 h" = "Day 7", "last dose" = "Day 14")}}
 
 \item{number_format}{How should the numbers on the axes be formatted? Options

@@ -50,14 +50,14 @@
 #'   interval it is, which means that you can't \emph{also} specify something
 #'   for the argument \code{point_shape_column}. If you do, it will be ignored.
 #'   Try this out if you're uncertain what we mean.
-#' @param interval_names If you have set \code{all_intervals_together} to TRUE,
+#' @param interval_labels If you have set \code{all_intervals_together} to TRUE,
 #'   you can rename the intervals here. The default names for the intervals come
 #'   from the column names in the PK table, and will be named "dose 1" and "last
 #'   dose" for those two very typical intervals and will be named "from X h to Y
 #'   h" for all user-defined intervals. To rename those to something else, use a
 #'   named character vector, where the names are the default intervals and the
 #'   values are what you'd like to use instead. For example, this will change
-#'   "dose 1" to "Day 1", etc.: \code{interval_names = c("dose 1" = "Day 1",
+#'   "dose 1" to "Day 1", etc.: \code{interval_labels = c("dose 1" = "Day 1",
 #'   "from 144 h to 168 h" = "Day 7", "last dose" = "Day 14")}
 #' @param all_AUCs_together TRUE or FALSE (default) for whether to combine,
 #'   e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
@@ -332,7 +332,7 @@ so_graph <- function(PKtable,
                      include_dose_num = NA,
                      all_AUCs_together = FALSE, 
                      all_intervals_together = FALSE, 
-                     interval_names = NA, 
+                     interval_labels = NA, 
                      number_format = NA, 
                      grid_color = NA, 
                      ncol = NULL, 
@@ -1067,22 +1067,22 @@ so_graph <- function(PKtable,
                  call. = FALSE)
       }
       
-      if(any(complete.cases(interval_names))){
+      if(any(complete.cases(interval_labels))){
          
-         if(all(is.null(names(interval_names))) | 
-            is.character(interval_names) == FALSE){
-            warning(wrapn("What you have provided for 'interval_names' is not a named character vector, which is what we need to rename the intervals for you in the graph legend. Please check the help file."), 
+         if(all(is.null(names(interval_labels))) | 
+            is.character(interval_labels) == FALSE){
+            warning(wrapn("What you have provided for 'interval_labels' is not a named character vector, which is what we need to rename the intervals for you in the graph legend. Please check the help file."), 
                     call. = FALSE)
          } else {
             PKCols <- PKCols %>% 
                rename(Interval_orig = Interval) %>% 
-               mutate(Interval_rev = interval_names[Interval_orig], 
+               mutate(Interval_rev = interval_labels[Interval_orig], 
                       Interval = case_when(
                          complete.cases(Interval_rev) ~ Interval_rev, 
                          .default = Interval_orig))
             
             if(any(PKCols$Interval != PKCols$Interval, na.rm = T)){
-               warning(wrapn("In at least some cases, the names of the character vector you provided for 'interval_names' did not perfectly match the intervals in the PK table. The original interval names will be used for those instances."), 
+               warning(wrapn("In at least some cases, the names of the character vector you provided for 'interval_labels' did not perfectly match the intervals in the PK table. The original interval names will be used for those instances."), 
                        .call = FALSE)
             }
             
