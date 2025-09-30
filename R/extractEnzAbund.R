@@ -254,18 +254,18 @@ extractEnzAbund <- function(sim_data_file,
       "colon", "small intestine", "stomach", 
       "duodenum", "jejunum I", "jejunum II", 
       "ileum I", "ileum II", "ileum III", 
-      "ileum IV", "colon")[
+      "ileum IV")[
          c(
             any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)"), na.rm = T),
             any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)|\\(gut\\)"), na.rm = T), 
             any(str_detect(tolower(sim_data_xl$...1), "\\(stomach\\)"), na.rm = T), 
             any(str_detect(tolower(sim_data_xl$...1), "\\(duodenum\\)"), na.rm = T),
             any(str_detect(tolower(sim_data_xl$...1), "\\(jejunum i\\)"), na.rm = T),
+            any(str_detect(tolower(sim_data_xl$...1), "\\(jejunum ii\\)"), na.rm = T),
             any(str_detect(tolower(sim_data_xl$...1), "\\(ileum i\\)"), na.rm = T),
             any(str_detect(tolower(sim_data_xl$...1), "\\(ileum ii\\)"), na.rm = T),
             any(str_detect(tolower(sim_data_xl$...1), "\\(ileum iii\\)"), na.rm = T),
-            any(str_detect(tolower(sim_data_xl$...1), "\\(ileum iv\\)"), na.rm = T),
-            any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)"), na.rm = T))
+            any(str_detect(tolower(sim_data_xl$...1), "\\(ileum iv\\)"), na.rm = T))
       ]
    
    # Extracting aggregate data ---------------------------------------------
