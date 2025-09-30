@@ -32,8 +32,9 @@ so_graph(
   title_adjustments = c(),
   graph_labels = FALSE,
   include_dose_num = NA,
-  all_intervals_together = FALSE,
   all_AUCs_together = FALSE,
+  all_intervals_together = FALSE,
+  interval_names = NA,
   number_format = NA,
   grid_color = NA,
   ncol = NULL,
@@ -286,6 +287,11 @@ which dose it was. If left as the default NA, then the dose number will be
 omitted if all the data are all for dose 1 or all for the last dose, and it
 will be included if you have a mix of dosing intervals.}
 
+\item{all_AUCs_together}{TRUE or FALSE (default) for whether to combine,
+e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
+with this because, if you have points for both AUCinf and AUCt for a
+simulation, BOTH of those points will show up on the graph.}
+
 \item{all_intervals_together}{TRUE or FALSE (default) for whether to combine
 all of a single type of PK parameter into a single graph. For example,
 setting this to TRUE would put all the Cmax PK -- regardless of whether it
@@ -297,10 +303,15 @@ interval it is, which means that you can't \emph{also} specify something
 for the argument \code{point_shape_column}. If you do, it will be ignored.
 Try this out if you're uncertain what we mean.}
 
-\item{all_AUCs_together}{TRUE or FALSE (default) for whether to combine,
-e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
-with this because, if you have points for both AUCinf and AUCt for a
-simulation, BOTH of those points will show up on the graph.}
+\item{interval_names}{If you have set \code{all_intervals_together} to TRUE,
+you can rename the intervals here. The default names for the intervals come
+from the column names in the PK table, and will be named "dose 1" and "last
+dose" for those two very typical intervals and will be named "from X h to Y
+h" for all user-defined intervals. To rename those to something else, use a
+named character vector, where the names are the default intervals and the
+values are what you'd like to use instead. For example, this will change
+"dose 1" to "Day 1", etc.: \code{interval_names = c("dose 1" = "Day 1",
+"from 144 h to 168 h" = "Day 7", "last dose" = "Day 14")}}
 
 \item{number_format}{How should the numbers on the axes be formatted? Options
 are "scientific", "regular", or NA, which will use scientific notation when

@@ -50,6 +50,15 @@
 #'   interval it is, which means that you can't \emph{also} specify something
 #'   for the argument \code{point_shape_column}. If you do, it will be ignored.
 #'   Try this out if you're uncertain what we mean.
+#' @param interval_names If you have set \code{all_intervals_together} to TRUE,
+#'   you can rename the intervals here. The default names for the intervals come
+#'   from the column names in the PK table, and will be named "dose 1" and "last
+#'   dose" for those two very typical intervals and will be named "from X h to Y
+#'   h" for all user-defined intervals. To rename those to something else, use a
+#'   named character vector, where the names are the default intervals and the
+#'   values are what you'd like to use instead. For example, this will change
+#'   "dose 1" to "Day 1", etc.: \code{interval_names = c("dose 1" = "Day 1",
+#'   "from 144 h to 168 h" = "Day 7", "last dose" = "Day 14")}
 #' @param all_AUCs_together TRUE or FALSE (default) for whether to combine,
 #'   e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
 #'   with this because, if you have points for both AUCinf and AUCt for a
@@ -321,8 +330,9 @@ so_graph <- function(PKtable,
                      title_adjustments = c(), 
                      graph_labels = FALSE, 
                      include_dose_num = NA,
-                     all_intervals_together = FALSE, 
                      all_AUCs_together = FALSE, 
+                     all_intervals_together = FALSE, 
+                     interval_names = NA, 
                      number_format = NA, 
                      grid_color = NA, 
                      ncol = NULL, 
@@ -1051,16 +1061,36 @@ so_graph <- function(PKtable,
       # that all data were for the same standard interval. If some of the names
       # include interval and some don't, then the ones w/out must be
       # user-defined intervals.
-      AnyIntervalIncluded <- any(str_detect(
-         PKCols$PKparameter[PKCols$IsPKParam], "_dose1|_last"), na.rm = T)
-      
-      UnlabeledIntText <- ifelse(AnyIntervalIncluded, 
-                                 "user-defined interval", 
-                                 "applies to all intervals")
       
       if(as_label(point_shape_column) != "<empty>"){
          warning(wrapn("You have specified something for the point_shape_column but also requested that we show all dosing intervals together, which overrides that. The point shape will be determined by the interval rather than by point_shape_column."), 
                  call. = FALSE)
+      }
+      
+      if(any(complete.cases(interval_names))){
+         
+         if(all(is.null(names(interval_names))) | 
+            is.character(interval_names) == FALSE){
+            warning(wrapn("What you have provided for 'interval_names' is not a named character vector, which is what we need to rename the intervals for you in the graph legend. Please check the help file."), 
+                    call. = FALSE)
+         } else {
+            PKCols <- PKCols %>% 
+               rename(Interval_orig = Interval) %>% 
+               mutate(Interval_rev = interval_names[Interval_orig], 
+                      Interval = case_when(
+                         complete.cases(Interval_rev) ~ Interval_rev, 
+                         .default = Interval_orig))
+            
+            if(any(PKCols$Interval != PKCols$Interval, na.rm = T)){
+               warning(wrapn("In at least some cases, the names of the character vector you provided for 'interval_names' did not perfectly match the intervals in the PK table. The original interval names will be used for those instances."), 
+                       .call = FALSE)
+            }
+            
+            SO <- SO %>% 
+               rename(Interval_orig = Interval) %>% 
+               left_join(PKCols %>% select(Interval_orig, Interval), 
+                         by = "Interval_orig")
+         }
       }
       
       SO <- SO %>% 
