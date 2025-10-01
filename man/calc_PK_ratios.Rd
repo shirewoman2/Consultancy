@@ -10,7 +10,7 @@ calc_PK_ratios(
   sim_data_file_denominator = NA,
   compoundToExtract = NA,
   tissue = NA,
-  sheet_PKparameters = NA,
+  sheet_user_interval = NA,
   existing_exp_details = NA,
   paired = TRUE,
   match_subjects_by = "individual and trial",
@@ -34,7 +34,8 @@ calc_PK_ratios(
   shading_column,
   highlight_gmr_colors = NA,
   page_orientation = "landscape",
-  fontsize = 11
+  fontsize = 11,
+  sheet_PKparameters = NA
 )
 }
 \arguments{
@@ -45,8 +46,10 @@ calc_PK_ratios(
   specify what you need in terms of which tissue, which compound, which
   simulation files, and which tab to get the data from with the arguments
   \code{tissue}, \code{compoundToExtract}, \code{sim_data_file_numerator},
-  \code{sim_data_file_denominator}, and \code{sheet_PKparameters}.
-  \strong{Details on each option:} \describe{\item{\strong{Option 1: }a file to read or a data.frame}{This
+  \code{sim_data_file_denominator}, and \code{sheet_user_interval}.
+  \strong{Details on each option:} \describe{\item{
+
+  \strong{Option 1: }a file to read or a data.frame}{This
   is the most versatile option and, we think, the clearest in terms of
   getting what you expected. Please try running \code{\link{make_example_PK_input}}
   to see examples for how to set up a csv or Excel file or data.frame to
@@ -98,7 +101,7 @@ calc_PK_ratios(
   from all your simulations. List the PK parameters you want here and then,
   in the arguments
   \code{tissue}, \code{compoundToExtract}, and
-  \code{sheet_PKparameters} specify what you want for each of those. If
+  \code{sheet_user_interval} specify what you want for each of those. If
   you're going this route, here are the two options
   you have for the argument \code{PKparameters}: \describe{
 
@@ -147,7 +150,7 @@ tissue for the numerator PK and a different one for the denominator PK,
 that must be specified in a data.frame or a csv file that you supply to the
 argument \code{PKparameters}.}
 
-\item{sheet_PKparameters}{If you have a user-defined AUC interval and you
+\item{sheet_user_interval}{If you have a user-defined AUC interval and you
 want the PK parameters for to be pulled from that specific tab in the
 Simulator output Excel files, list that tab here. If you want standard
 first-dose or last-dose PK parameters, leave this as the default NA; we
@@ -340,6 +343,10 @@ highlighting for GMR level will be done.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
+
+\item{sheet_PKparameters}{deprecated because we should have named this
+argument more clearly originally! Please see the argument
+'sheet_user_interval'.}
 }
 \value{
 A list or a data.frame of PK data that optionally includes where the

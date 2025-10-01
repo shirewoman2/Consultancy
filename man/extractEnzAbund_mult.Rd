@@ -13,7 +13,6 @@ extractEnzAbund_mult(
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
   existing_exp_details = NA,
-  fromMultFunction = FALSE,
   ...
 )
 }
@@ -74,9 +73,6 @@ Sheet" (e.g., when you ran extractExpDetails_mult you said
 save some processing time by supplying that object here, unquoted. If left
 as NA, this function will run \code{extractExpDetails} behind the scenes to
 figure out some information about your experimental set up.}
-
-\item{fromMultFunction}{INTERNAL USE ONLY. TRUE or FALSE on whether this is
-being called on by \code{\link{extractConcTime_mult}}.}
 }
 \value{
 Returns a large data.frame with multiple sets of enzyme-abundance

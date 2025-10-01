@@ -68,8 +68,6 @@
 #'   enzyme-abundance data? Options are "aggregate" (default), "individual", or
 #'   "both". Aggregated data are not calculated here but are pulled from the
 #'   simulator output rows labeled as "Population Statistics".
-#' @param fromMultFunction INTERNAL USE ONLY. TRUE or FALSE on whether this is
-#'   being called on by \code{\link{extractConcTime_mult}}.
 #'
 #' @return Returns a large data.frame with multiple sets of enzyme-abundance
 #'   data, formatted the same way as output from the function
@@ -93,7 +91,6 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                                  time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate", 
                                  existing_exp_details = NA, 
-                                 fromMultFunction = FALSE, 
                                  ...){
    
    # Error catching -------------------------------------------------------
@@ -268,7 +265,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
    MultData <- list()
    
    for(ff in sim_data_files_topull){
-      message(paste("Extracting data from file =", ff))
+      message(paste("Extracting enzyme-abundance data from file =", ff))
       MultData[[ff]] <- list()
       
       # Getting summary data for the simulation(s)
@@ -299,7 +296,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       # sheets.
       for(j in tissues){
          
-         message(paste("Extracting data for tissue =", 
+         message(paste("   for tissue =", 
                        case_match(j, 
                                   "adam gut" ~ "ADAM gut", 
                                   .default = j)))
@@ -308,7 +305,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
          
          for(k in enzymesToExtract){
             
-            message(paste("Extracting data for enzyme =", k))
+            message(paste("      for enzyme =", k))
             
             MultData[[ff]][[j]][[k]] <- extractEnzAbund(
                sim_data_file = ff,

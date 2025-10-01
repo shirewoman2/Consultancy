@@ -29,7 +29,7 @@
 #'   specify what you need in terms of which tissues, which compounds, which
 #'   simulation files, and which tab to get the data from with the arguments
 #'   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
-#'   \code{sheet_PKparameters}.
+#'   \code{sheet_user_interval}.
 #'   \strong{Details on each option:} \describe{
 #'
 #'   \item{\strong{Option 1: }a file to read or a data.frame}{This
@@ -41,7 +41,7 @@
 #'   tab in the Excel file those data should be pulled. Whatever you supply, the
 #'   columns that will be read are: \itemize{\item{"File" (same thing as the argument
 #'   \code{sim_data_files})} \item{"Sheet" (same thing as the argument
-#'   \code{sheet_PKparameters})} \item{"Tissue" (same as the argument \code{tissues})}
+#'   \code{sheet_user_interval})} \item{"Tissue" (same as the argument \code{tissues})}
 #'   \item{"CompoundID" (same as the argument \code{compoundsToExtract})
 #'   \item{"ObsValue" for any observed data (no equivalent argument)}
 #'   \item{"Variability" for any observed variability (no equivalent argument
@@ -68,7 +68,7 @@
 #'   from all your simulations. List the PK parameters you want here and then,
 #'   in the arguments
 #'   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
-#'   \code{sheet_PKparameters} specify which of each of those items you want.
+#'   \code{sheet_user_interval} specify which of each of those items you want.
 #'   You'll get all possible combinations of these, so, for example, if you say
 #'   \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")} and
 #'   \code{tissues = c("blood", "plasma")}, you'll get the dose 1 AUCinf and
@@ -134,10 +134,10 @@
 #' @param file_order order of the simulations in the output table, default is to
 #'   leave the order "as is", in which case the order will be whatever is
 #'   specified with \code{sim_data_files}.
-#' @param sheet_PKparameters (optional) If you want the PK parameters to be
+#' @param sheet_user_interval (optional) If you want the PK parameters to be
 #'   pulled from a \strong{user-defined interval tab} in the simulator output
 #'   file, list that tab here. Otherwise, this should be left as NA.
-#'   \code{sheet_PKparameters} can only have a \emph{single value}, though. If
+#'   \code{sheet_user_interval} can only have a \emph{single value}, though. If
 #'   you want some parameters from a custom-interval tab and others from the
 #'   regular tabs, you must supply that as part of a data.frame or csv file for
 #'   the argument \code{PKparameters}. Please try running
@@ -359,6 +359,9 @@
 #'   you'll get a column with the interval, and then all Cmax values will be in
 #'   one column with the data for the 1st dose in one set of rows and the data
 #'   for the last dose in a different set of rows.
+#' @param sheet_PKparameters deprecated because we should have named this
+#'   argument more clearly originally! Please see the argument
+#'   'sheet_user_interval'.
 #'
 #' @return a data.frame
 #' @export
@@ -370,7 +373,7 @@ pk_table <- function(PKparameters = NA,
                      sim_data_files = NA, 
                      compoundsToExtract = NA,
                      tissues = NA, 
-                     sheet_PKparameters = NA, 
+                     sheet_user_interval = NA, 
                      existing_exp_details = NA, 
                      mean_type = NA, 
                      use_median_for_tmax = TRUE, 
@@ -408,7 +411,8 @@ pk_table <- function(PKparameters = NA,
                      return_PK_pulled = FALSE, 
                      return_caption = FALSE, 
                      ..., 
-                     convert_conc_units = NA){
+                     convert_conc_units = NA, 
+                     sheet_PKparameters = NA){
    
    # Error catching ----------------------------------------------------------
    
@@ -436,6 +440,18 @@ pk_table <- function(PKparameters = NA,
       tissues <- sys.call()$tissue
    }
    
+   if(any(complete.cases(sheet_PKparameters))){
+      
+      if(all(is.na(sheet_user_interval))){
+         warning(wrapn("You have specified something for the argument 'sheet_PKparameters', which we are deprecating in favor of 'sheet_user_interval', which we're hoping will be a clearer name in terms of what this function is expecting. We will set the argument 'sheet_user_interval' to what you had provided for 'sheet_PKparameters'."), 
+                 call. = FALSE)
+         sheet_user_interval <- sheet_PKparameters
+      } else {
+         warning(wrapn("You have specified something for both the argument 'sheet_PKparameters', which we are deprecating, and the argument 'sheet_user_interval', which is what we're replacing it with. We will ignore what you provided for 'sheet_PKparameters'."), 
+                 call. = FALSE)
+      }
+   }
+   
    if("convert_conc_units" %in% names(match.call())){
       if("conc_units" %in% names(match.call()) == FALSE){
          conc_units <- convert_conc_units
@@ -460,10 +476,10 @@ pk_table <- function(PKparameters = NA,
       }
    }
    
-   # sheet_PKparameters should be length 1 and not be named b/c, if they want
+   # sheet_user_interval should be length 1 and not be named b/c, if they want
    # more than 1, they need to supply it to PKparameters.
-   if(length(sheet_PKparameters) > 1){
-      stop(str_wrap("The value for sheet_PKparameters must be only 1 item, and it looks like you have more than that. If you want to specify multiple sheets to use for PK parameters, please specify them by supplying a data.frame to the argument `PKparameters`. You can see examples for how to supply this by running `make_PK_example_input()`."), 
+   if(length(sheet_user_interval) > 1){
+      stop(str_wrap("The value for sheet_user_interval must be only 1 item, and it looks like you have more than that. If you want to specify multiple sheets to use for PK parameters, please specify them by supplying a data.frame to the argument `PKparameters`. You can see examples for how to supply this by running `make_PK_example_input()`."), 
            call. = FALSE)
    }
    
@@ -488,7 +504,7 @@ pk_table <- function(PKparameters = NA,
    PKparam_tidied <- tidy_input_PK(PKparameters = PKparameters, 
                                    sim_data_files = sim_data_files, 
                                    compoundsToExtract = compoundsToExtract, 
-                                   sheet_PKparameters = sheet_PKparameters, 
+                                   sheet_user_interval = sheet_user_interval, 
                                    tissues = tissues, 
                                    existing_exp_details = existing_exp_details)
    

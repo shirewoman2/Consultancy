@@ -15,7 +15,7 @@
 #'   specify what you need in terms of which tissue, which compound, which
 #'   simulation files, and which tab to get the data from with the arguments
 #'   \code{tissue}, \code{compoundToExtract}, \code{sim_data_file_numerator},
-#'   \code{sim_data_file_denominator}, and \code{sheet_PKparameters}.
+#'   \code{sim_data_file_denominator}, and \code{sheet_user_interval}.
 #'   \strong{Details on each option:} \describe{\item{\strong{Option 1: }a file to read or a data.frame}{This
 #'   is the most versatile option and, we think, the clearest in terms of
 #'   getting what you expected. Please try running \code{\link{make_example_PK_input}}
@@ -68,7 +68,7 @@
 #'   from all your simulations. List the PK parameters you want here and then,
 #'   in the arguments
 #'   \code{tissue}, \code{compoundToExtract}, and
-#'   \code{sheet_PKparameters} specify what you want for each of those. If
+#'   \code{sheet_user_interval} specify what you want for each of those. If
 #'   you're going this route, here are the two options
 #'   you have for the argument \code{PKparameters}: \describe{
 #'
@@ -115,7 +115,7 @@
 #'   tissue for the numerator PK and a different one for the denominator PK,
 #'   that must be specified in a data.frame or a csv file that you supply to the
 #'   argument \code{PKparameters}.
-#' @param sheet_PKparameters If you have a user-defined AUC interval and you
+#' @param sheet_user_interval If you have a user-defined AUC interval and you
 #'   want the PK parameters for to be pulled from that specific tab in the
 #'   Simulator output Excel files, list that tab here. If you want standard
 #'   first-dose or last-dose PK parameters, leave this as the default NA; we
@@ -296,6 +296,9 @@
 #' @param time_units What time units should be used in the table? Default is
 #'   "hours", and "days" is the other acceptable option. This adjusts only the
 #'   simulated values.
+#' @param sheet_PKparameters deprecated because we should have named this
+#'   argument more clearly originally! Please see the argument
+#'   'sheet_user_interval'.
 #'
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from and data to use for making forest plots
@@ -306,7 +309,7 @@
 calc_PK_ratios_mult <- function(PKparameters = NA, 
                                 compoundToExtract = NA,
                                 tissue = NA, 
-                                sheet_PKparameters = NA,
+                                sheet_user_interval = NA,
                                 existing_exp_details = NA,
                                 paired = TRUE,
                                 match_subjects_by = "individual and trial", 
@@ -333,7 +336,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                                 single_table = TRUE,
                                 page_orientation = "landscape", 
                                 fontsize = 11, 
-                                sim_data_file_pairs = "deprecated"){
+                                sim_data_file_pairs = "deprecated", 
+                                sheet_PKparameters = NA){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -404,6 +408,18 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
               call. = FALSE)
    }
    
+   if(any(complete.cases(sheet_PKparameters))){
+      
+      if(all(is.na(sheet_user_interval))){
+         warning(wrapn("You have specified something for the argument 'sheet_PKparameters', which we are deprecating in favor of 'sheet_user_interval', which we're hoping will be a clearer name in terms of what this function is expecting. We will set the argument 'sheet_user_interval' to what you had provided for 'sheet_PKparameters'."), 
+                 call. = FALSE)
+         sheet_user_interval <- sheet_PKparameters
+      } else {
+         warning(wrapn("You have specified something for both the argument 'sheet_PKparameters', which we are deprecating, and the argument 'sheet_user_interval', which is what we're replacing it with. We will ignore what you provided for 'sheet_PKparameters'."), 
+                 call. = FALSE)
+      }
+   }
+   
    
    # Main body of function -------------------------------------------------
    
@@ -414,7 +430,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    TEMP <- tidy_input_PK(PKparameters = PKparameters, 
                          compoundsToExtract = compoundToExtract, 
                          tissues = tissue, 
-                         sheet_PKparameters = sheet_PKparameters, 
+                         sheet_user_interval = sheet_user_interval, 
                          existing_exp_details = existing_exp_details)
    PKparameters <- TEMP$PKparameters %>% unique()
    FilePairs <- TEMP$FilePairs %>% unique()

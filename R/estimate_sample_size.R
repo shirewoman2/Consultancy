@@ -46,7 +46,7 @@
 #'   want and then also specify what you need in terms of which tissues, which
 #'   compounds, which simulation files, and which tab to get the data from with
 #'   the arguments \code{tissues}, \code{compoundsToExtract},
-#'   \code{sim_data_files}, and \code{sheet_PKparameters}.
+#'   \code{sim_data_files}, and \code{sheet_user_interval}.
 #'   \strong{Details on each option:} \describe{
 #'
 #'   \item{\strong{Option 1:} a file to read or a data.frame}{This
@@ -66,7 +66,7 @@
 #'   Whatever you supply, the
 #'   columns that will be read are: \itemize{\item{"File" (same thing as the argument
 #'   \code{sim_data_files})} \item{"Sheet" (same thing as the argument
-#'   \code{sheet_PKparameters})} \item{"Tissue" (same as the argument \code{tissues})}
+#'   \code{sheet_user_interval})} \item{"Tissue" (same as the argument \code{tissues})}
 #'   \item{"CompoundID" (same as the argument \code{compoundsToExtract})
 #'   \item{"ObsValue" for any observed data (no equivalent argument)}
 #'   \item{"Variability" for any observed variability (no equivalent argument
@@ -93,7 +93,7 @@
 #'   from all your simulations. List the PK parameters you want here and then,
 #'   in the arguments
 #'   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
-#'   \code{sheet_PKparameters} specify which of each of those items you want.
+#'   \code{sheet_user_interval} specify which of each of those items you want.
 #'   You'll get all possible combinations of these, so, for example, if you say
 #'   \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")} and
 #'   \code{tissues = c("blood", "plasma")}, you'll get the dose 1 AUCinf and
@@ -128,10 +128,10 @@
 #'   Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
 #'   "peripheral plasma", or "peripheral blood". \strong{If you want more than one,
 #'   please supply a data.frame or .csv file to the argument \code{PKparameters}.}
-#' @param sheet_PKparameters (optional) If you want the PK parameters to be
+#' @param sheet_user_interval (optional) If you want the PK parameters to be
 #'   pulled from a \strong{user-defined interval tab} in the simulator output
 #'   file, list that tab here. Otherwise, this should be left as NA.
-#'   \code{sheet_PKparameters} can only have a \emph{single value}, though. If
+#'   \code{sheet_user_interval} can only have a \emph{single value}, though. If
 #'   you want some parameters from a custom-interval tab and others from the
 #'   regular tabs, you must supply that as part of a data.frame or csv file for
 #'   the argument \code{PKparameters}. Please try running
@@ -175,7 +175,7 @@
 #'   parameter, e.g., both AUCinf_dose1 and AUCinf_dose1_withInhib. If you
 #'   supply something here, we'll only pay attention to the arguments
 #'   sim_data_files, existing_exp_details, PKparameters, compoundToExtract,
-#'   tissue, and sheet_PKparameters if what you supply doesn't have that same
+#'   tissue, and sheet_user_interval if what you supply doesn't have that same
 #'   structure. This ONLY works with the simplest of possible comparisons: a
 #'   standard DDI simulation.
 #' @param save_result file name for optionally saving the results as either an
@@ -206,7 +206,7 @@ estimate_sample_size <- function(
       existing_exp_details = NA, 
       compoundToExtract = "substrate", 
       tissue = "plasma", 
-      sheet_PKparameters = NA, 
+      sheet_user_interval = NA, 
       PK_data = NA, 
       round_up_N = TRUE, 
       sim_trials_to_include = "all", 
@@ -273,7 +273,7 @@ estimate_sample_size <- function(
                                existing_exp_details = existing_exp_details, 
                                compoundsToExtract = compoundToExtract, 
                                tissues = tissue, 
-                               sheet_PKparameters = sheet_PKparameters)
+                               sheet_user_interval = sheet_user_interval)
       
       existing_exp_details <- InputPK$existing_exp_details
       

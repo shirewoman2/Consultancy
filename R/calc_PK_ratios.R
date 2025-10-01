@@ -17,8 +17,10 @@
 #'   specify what you need in terms of which tissue, which compound, which
 #'   simulation files, and which tab to get the data from with the arguments
 #'   \code{tissue}, \code{compoundToExtract}, \code{sim_data_file_numerator},
-#'   \code{sim_data_file_denominator}, and \code{sheet_PKparameters}.
-#'   \strong{Details on each option:} \describe{\item{\strong{Option 1: }a file to read or a data.frame}{This
+#'   \code{sim_data_file_denominator}, and \code{sheet_user_interval}.
+#'   \strong{Details on each option:} \describe{\item{
+#'
+#'   \strong{Option 1: }a file to read or a data.frame}{This
 #'   is the most versatile option and, we think, the clearest in terms of
 #'   getting what you expected. Please try running \code{\link{make_example_PK_input}}
 #'   to see examples for how to set up a csv or Excel file or data.frame to
@@ -70,7 +72,7 @@
 #'   from all your simulations. List the PK parameters you want here and then,
 #'   in the arguments
 #'   \code{tissue}, \code{compoundToExtract}, and
-#'   \code{sheet_PKparameters} specify what you want for each of those. If
+#'   \code{sheet_user_interval} specify what you want for each of those. If
 #'   you're going this route, here are the two options
 #'   you have for the argument \code{PKparameters}: \describe{
 #'
@@ -115,7 +117,7 @@
 #'   tissue for the numerator PK and a different one for the denominator PK,
 #'   that must be specified in a data.frame or a csv file that you supply to the
 #'   argument \code{PKparameters}.
-#' @param sheet_PKparameters If you have a user-defined AUC interval and you
+#' @param sheet_user_interval If you have a user-defined AUC interval and you
 #'   want the PK parameters for to be pulled from that specific tab in the
 #'   Simulator output Excel files, list that tab here. If you want standard
 #'   first-dose or last-dose PK parameters, leave this as the default NA; we
@@ -284,6 +286,9 @@
 #'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
 #'   "green to red" or a vector of 4 colors of your choosing. If left as NA, no
 #'   highlighting for GMR level will be done.
+#' @param sheet_PKparameters deprecated because we should have named this
+#'   argument more clearly originally! Please see the argument
+#'   'sheet_user_interval'.
 #'
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from
@@ -296,7 +301,7 @@ calc_PK_ratios <- function(PKparameters = NA,
                            sim_data_file_denominator = NA, 
                            compoundToExtract = NA, 
                            tissue = NA, 
-                           sheet_PKparameters = NA,
+                           sheet_user_interval = NA,
                            existing_exp_details = NA,
                            paired = TRUE,
                            match_subjects_by = "individual and trial", 
@@ -320,7 +325,8 @@ calc_PK_ratios <- function(PKparameters = NA,
                            shading_column, 
                            highlight_gmr_colors = NA, 
                            page_orientation = "landscape", 
-                           fontsize = 11){
+                           fontsize = 11, 
+                           sheet_PKparameters = NA){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
@@ -394,6 +400,18 @@ calc_PK_ratios <- function(PKparameters = NA,
    
    conc_units <- ifelse(is.na(conc_units[1]), "ng/mL", conc_units[1])
    
+   if(any(complete.cases(sheet_PKparameters))){
+      
+      if(all(is.na(sheet_user_interval))){
+         warning(wrapn("You have specified something for the argument 'sheet_PKparameters', which we are deprecating in favor of 'sheet_user_interval', which we're hoping will be a clearer name in terms of what this function is expecting. We will set the argument 'sheet_user_interval' to what you had provided for 'sheet_PKparameters'."), 
+                 call. = FALSE)
+         sheet_user_interval <- sheet_PKparameters
+      } else {
+         warning(wrapn("You have specified something for both the argument 'sheet_PKparameters', which we are deprecating, and the argument 'sheet_user_interval', which is what we're replacing it with. We will ignore what you provided for 'sheet_PKparameters'."), 
+                 call. = FALSE)
+      }
+   }
+   
    
    # Main body of function -------------------------------------------------
    
@@ -410,7 +428,7 @@ calc_PK_ratios <- function(PKparameters = NA,
                          sim_data_file_denominator = sim_data_file_denominator, 
                          compoundsToExtract = compoundToExtract,
                          tissues = tissue,
-                         sheet_PKparameters = sheet_PKparameters, 
+                         sheet_user_interval = sheet_user_interval, 
                          existing_exp_details = existing_exp_details)
    
    existing_exp_details <- TEMP %>% pluck("existing_exp_details")

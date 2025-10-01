@@ -77,17 +77,14 @@ A data.frame of enzyme abundance with time with the following
   }
 }
 \description{
-Extracts enzyme abundance data from a simulator output Excel file. The
-appropriate tab must be present in the output file. For detailed instructions
-and examples, please see the SharePoint file "Simcyp PBPKConsult R Files -
-Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
-instructions/Enzyme abundance plots/Enzyme-abundance-plot-examples.docx".
-(Sorry, we are unable to include a link to it here.)
-}
-\details{
-\strong{Note:} Unlike the similar function for extracting drug
-concentrations, \code{\link{extractConcTime}}, This has not been set up yet
-to get the dose number for a custom-dosing regimen.
+\code{extractEnzAbund} is meant to be used in conjunction with
+  \code{\link{enz_plot}} to create graphs of relative enzyme abundances.
+
+  For detailed instructions and examples, please see the SharePoint file
+  "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+  function examples and instructions/Enzyme abundance
+  plots/Enzyme-abundance-plot-examples.docx". (Sorry, we are unable to
+  include a link to it here.)
 }
 \examples{
 extractEnzAbund(sim_data_file = "../Example simulator output MD.xlsx",

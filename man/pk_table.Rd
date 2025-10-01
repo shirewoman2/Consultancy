@@ -9,7 +9,7 @@ pk_table(
   sim_data_files = NA,
   compoundsToExtract = NA,
   tissues = NA,
-  sheet_PKparameters = NA,
+  sheet_user_interval = NA,
   existing_exp_details = NA,
   mean_type = NA,
   use_median_for_tmax = TRUE,
@@ -47,7 +47,8 @@ pk_table(
   return_PK_pulled = FALSE,
   return_caption = FALSE,
   ...,
-  convert_conc_units = NA
+  convert_conc_units = NA,
+  sheet_PKparameters = NA
 )
 }
 \arguments{
@@ -58,7 +59,7 @@ pk_table(
   specify what you need in terms of which tissues, which compounds, which
   simulation files, and which tab to get the data from with the arguments
   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
-  \code{sheet_PKparameters}.
+  \code{sheet_user_interval}.
   \strong{Details on each option:} \describe{
 
   \item{\strong{Option 1: }a file to read or a data.frame}{This
@@ -70,7 +71,7 @@ pk_table(
   tab in the Excel file those data should be pulled. Whatever you supply, the
   columns that will be read are: \itemize{\item{"File" (same thing as the argument
   \code{sim_data_files})} \item{"Sheet" (same thing as the argument
-  \code{sheet_PKparameters})} \item{"Tissue" (same as the argument \code{tissues})}
+  \code{sheet_user_interval})} \item{"Tissue" (same as the argument \code{tissues})}
   \item{"CompoundID" (same as the argument \code{compoundsToExtract})
   \item{"ObsValue" for any observed data (no equivalent argument)}
   \item{"Variability" for any observed variability (no equivalent argument
@@ -97,7 +98,7 @@ pk_table(
   from all your simulations. List the PK parameters you want here and then,
   in the arguments
   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
-  \code{sheet_PKparameters} specify which of each of those items you want.
+  \code{sheet_user_interval} specify which of each of those items you want.
   You'll get all possible combinations of these, so, for example, if you say
   \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")} and
   \code{tissues = c("blood", "plasma")}, you'll get the dose 1 AUCinf and
@@ -159,10 +160,10 @@ or, better, do not supply anything here and instead supply which tissue you
 want for which simulation and which compound, etc. when you supply a
 data.frame or csv file to the argument \code{PKparameters}.}
 
-\item{sheet_PKparameters}{(optional) If you want the PK parameters to be
+\item{sheet_user_interval}{(optional) If you want the PK parameters to be
 pulled from a \strong{user-defined interval tab} in the simulator output
 file, list that tab here. Otherwise, this should be left as NA.
-\code{sheet_PKparameters} can only have a \emph{single value}, though. If
+\code{sheet_user_interval} can only have a \emph{single value}, though. If
 you want some parameters from a custom-interval tab and others from the
 regular tabs, you must supply that as part of a data.frame or csv file for
 the argument \code{PKparameters}. Please try running
@@ -429,6 +430,10 @@ but at present, this is not set up to return multiple table captions.}
 
 \item{convert_conc_units}{SOON TO BE DEPRECATED. Please use the argument
 "conc_units" instead.}
+
+\item{sheet_PKparameters}{deprecated because we should have named this
+argument more clearly originally! Please see the argument
+'sheet_user_interval'.}
 }
 \value{
 a data.frame

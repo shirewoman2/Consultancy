@@ -12,7 +12,7 @@ tidy_input_PK(
   existing_exp_details = NA,
   compoundsToExtract = "substrate",
   tissues = "plasma",
-  sheet_PKparameters = NA
+  sheet_user_interval = NA
 )
 }
 \arguments{
@@ -44,7 +44,7 @@ the parent function.}
 
 \item{tissues}{the values they supplied for tissues in the parent function}
 
-\item{sheet_PKparameters}{the values they supplied for sheet_PKparameters in
+\item{sheet_user_interval}{the values they supplied for sheet_user_interval in
 the parent function}
 }
 \value{

@@ -1,15 +1,13 @@
 #' Extract enzyme abundance data from a simulator output Excel file
 #'
-#' Extracts enzyme abundance data from a simulator output Excel file. The
-#' appropriate tab must be present in the output file. For detailed instructions
-#' and examples, please see the SharePoint file "Simcyp PBPKConsult R Files -
-#' Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
-#' instructions/Enzyme abundance plots/Enzyme-abundance-plot-examples.docx".
-#' (Sorry, we are unable to include a link to it here.)
+#' @description \code{extractEnzAbund} is meant to be used in conjunction with
+#'   \code{\link{enz_plot}} to create graphs of relative enzyme abundances.
 #'
-#' \strong{Note:} Unlike the similar function for extracting drug
-#' concentrations, \code{\link{extractConcTime}}, This has not been set up yet
-#' to get the dose number for a custom-dosing regimen.
+#'   For detailed instructions and examples, please see the SharePoint file
+#'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+#'   function examples and instructions/Enzyme abundance
+#'   plots/Enzyme-abundance-plot-examples.docx". (Sorry, we are unable to
+#'   include a link to it here.)
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   enzyme-abundance-time data, in quotes
@@ -82,6 +80,9 @@ extractEnzAbund <- function(sim_data_file,
                             returnAggregateOrIndiv = "both", 
                             existing_exp_details = NA){
    
+   # Unlike extractConcTime, this has not been set up yet to get the dose number
+   # for a custom-dosing regimen.
+
    # Error catching --------------------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){

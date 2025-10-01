@@ -20,7 +20,7 @@
 #' @param compoundsToExtract the values they supplied for compoundsToExtract in
 #'   the parent function.
 #' @param tissues the values they supplied for tissues in the parent function
-#' @param sheet_PKparameters the values they supplied for sheet_PKparameters in
+#' @param sheet_user_interval the values they supplied for sheet_user_interval in
 #'   the parent function
 #' @param sim_data_file_numerator sim file for the numerator. This ONLY comes
 #'   from calc_PK_ratios and NOT calc_PK_ratios_mult and thus MUST have length
@@ -44,7 +44,7 @@ tidy_input_PK <- function(PKparameters,
                           existing_exp_details = NA, 
                           compoundsToExtract = "substrate",
                           tissues = "plasma", 
-                          sheet_PKparameters = NA){
+                          sheet_user_interval = NA){
    
    # Reading in any observed data, tidying those data, and harmonizing all the
    # possible places they could have specified which PK parameters they want and
@@ -325,6 +325,13 @@ tidy_input_PK <- function(PKparameters,
       
       if("Denominator_Sheet" %in% names(PKparameters) == FALSE){
          PKparameters$Denominator_Sheet <- NA
+      }
+      
+      if(all(is.na(PKparameters$Numerator_Sheet)) & 
+         all(is.na(PKparameters$Denominator_Sheet)) & 
+         complete.cases(sheet_user_interval)){
+         PKparameters$Numerator_Sheet <- sheet_user_interval
+         PKparameters$Denominator_Sheet <- sheet_user_interval
       }
       
       # PKparameter
@@ -654,13 +661,13 @@ tidy_input_PK <- function(PKparameters,
       }
       
       if("Sheet" %in% names(PKparameters) == FALSE & 
-         any(c("tab", "sheets", "sheet_pkparameter", "sheet_pkparameters") %in% 
+         any(c("tab", "sheets", "sheet_pkparameter", "sheet_user_interval") %in% 
              tolower(names(PKparameters)))){
          
          ColToUse <- c(which(tolower(names(PKparameters)) == "tab"), 
                        which(tolower(names(PKparameters)) == "sheets"), 
                        which(tolower(names(PKparameters)) == "sheet_pkparameter"), 
-                       which(tolower(names(PKparameters)) == "sheet_pkparameters"))[1]
+                       which(tolower(names(PKparameters)) == "sheet_user_interval"))[1]
          
          warning(wrapn(paste0("We were looking for a column named `UserAUCSheet` in what you supplied for `PKparameters` and did not find it, but we *did* find a column called `", 
                               names(PKparameters)[ColToUse],
@@ -672,9 +679,9 @@ tidy_input_PK <- function(PKparameters,
       }
       
       if("Sheet" %in% names(PKparameters) == FALSE){
-         # This is ok that it's set to sheet_PKparameters b/c we have already
-         # checked that sheet_PKparameters has length 1. 
-         PKparameters$Sheet <- sheet_PKparameters
+         # This is ok that it's set to sheet_user_interval b/c we have already
+         # checked that sheet_user_interval has length 1. 
+         PKparameters$Sheet <- sheet_user_interval
       }
       
       
@@ -778,16 +785,16 @@ tidy_input_PK <- function(PKparameters,
       
       ## Checking sheets -----------------------------------------------
       
-      # sheet_PKparameters should be length 1 and not be named b/c, if they want
+      # sheet_user_interval should be length 1 and not be named b/c, if they want
       # more than 1, they need to supply it to PKparameters.
-      if(length(sheet_PKparameters) > 1){
-         stop(str_wrap("The value for sheet_PKparameters must be only 1 item, and it looks like you have more than that. If you want to specify multiple sheets to use for PK parameters, please specify them by supplying a data.frame to the argument `PKparameters`. You can see examples for how to supply this by running `make_PK_example_input()`."), 
+      if(length(sheet_user_interval) > 1){
+         stop(str_wrap("The value for sheet_user_interval must be only 1 item, and it looks like you have more than that. If you want to specify multiple sheets to use for PK parameters, please specify them by supplying a data.frame to the argument `PKparameters`. You can see examples for how to supply this by running `make_PK_example_input()`."), 
               call. = FALSE)
       }
       # Note to self: this check is also present at the top of pk_table.
       # Probably not needed.
       
-      PKparameters$Sheet <- sheet_PKparameters
+      PKparameters$Sheet <- sheet_user_interval
       
       ## Tissue -----------------------------------------------------------
       
@@ -896,13 +903,6 @@ tidy_input_PK <- function(PKparameters,
             PKparameter == "AUCinf_withInhib" ~ "AUCinf_dose1_withInhib", 
             PKparameter == "AUCinf_ratio" ~ "AUCinf_ratio_dose1", 
             .default = PKparameter), 
-         AUCinfNoDose = FALSE, 
-         
-         AUCinfSheetMismatch = 
-            case_when(
-               str_detect(PKparameter, "AUCinf") & 
-                  complete.cases(Sheet) ~ TRUE, 
-               .default = FALSE), 
          
          ShouldListSheet = 
             case_when(
@@ -923,45 +923,24 @@ tidy_input_PK <- function(PKparameters,
          
          Sheet4Last_CC = str_detect(Sheet, "last") & complete.cases(Sheet), 
          
-         PKparam_missing_dose1 = Sheet4Dose1_CC & !str_detect(PKparameter, "_dose1"), 
+         PKparam_missing_dose1 = case_when(
+            Sheet4Dose1_CC & complete.cases(Sheet) & 
+               !str_detect(PKparameter, "_dose1") ~ TRUE, 
+            .default = FALSE), 
          
-         PKparam_missing_last = Sheet4Last_CC & !str_detect(PKparameter, "_last"))
+         PKparam_missing_last = Sheet4Last_CC & !str_detect(PKparameter, "_last"), 
+         
+         # Just fixing things when they have listed 1st or last dose sheet but
+         # shouldn't have. 
+         PKparameter = case_when(
+            PKparam_missing_dose1 ~ paste0(PKparameter, "_dose1"), 
+            PKparam_missing_last ~ paste0(PKparameter, "_last"), 
+            .default = PKparameter), 
+         Sheet = case_when(Sheet4Dose1_CC == TRUE ~ NA, 
+                           Sheet4Last_CC == TRUE ~ NA, 
+                           .default = Sheet), 
+      )
    
-   
-   if(any(PKparameters$AUCinfSheetMismatch, na.rm = T)){
-      warning(wrapn("You requested AUCinf but then also specified what sheet to use for getting that parameter. We assume that, if you're supplying a sheet name, it's because it's a custom AUC interval, which wouldn't make sense for AUCinf, which is only a first-dose PK parameter. We will ignore the sheet you specified for AUCinf."), 
-              call. = FALSE)
-      
-      PKparameters <- PKparameters %>% 
-         mutate(
-            Sheet = case_when(str_detect(PKparameter, "AUCinf") ~ NA, 
-                              .default = Sheet), 
-            
-            # Redoing checks above with updated data.frame
-            ShouldListSheet = 
-               case_when(
-                  
-                  PKparameter %in% AllPKParameters$PKparameter[
-                     AllPKParameters$AppliesToAllDoses == TRUE] ~ FALSE, 
-                  
-                  is.na(PKparameter) ~ FALSE, 
-                  
-                  str_detect(PKparameter, "_dose1|_last") ~ FALSE, 
-                  
-                  .default = TRUE), 
-            
-            ShouldListSheetButDidnt = ShouldListSheet == TRUE & is.na(Sheet), 
-            
-            Sheet4Dose1_CC = str_detect(Sheet, "1st") & 
-               complete.cases(Sheet), 
-            
-            Sheet4Last_CC = str_detect(Sheet, "last") & complete.cases(Sheet), 
-            
-            PKparam_missing_dose1 = Sheet4Dose1_CC & !str_detect(PKparameter, "_dose1"), 
-            
-            PKparam_missing_last = Sheet4Last_CC & !str_detect(PKparameter, "_last"))
-      
-   }
    
    if(any(PKparameters$ShouldListSheetButDidnt, na.rm = T)){
       warning(wrapn("It looks like you would like PK data from a user-defined AUC interval because you did not include '_dose1' or '_last' in the PK parameter name for some PK parameters but also did not list which sheet to use for that user-defined interval. We know which sheet to use for the first dose and which to use for the last dose, but we only know which to use for a user-defined AUC interval when you tell us. We will have to ignore any parameters that look like they must be for a custom interval that don't have a sheet included."), 
@@ -971,46 +950,6 @@ tidy_input_PK <- function(PKparameters,
       
    }
    
-   # Just fixing things when they have listed 1st or last dose sheet but
-   # shouldn't have. 
-   PKparameters <- PKparameters %>% 
-      mutate(
-         PKparameter = case_when(
-            PKparam_missing_dose1 ~ paste0(PKparameter, "_dose1"), 
-            PKparam_missing_last ~ paste0(PKparameter, "_last"), 
-            .default = PKparameter), 
-         # PKparameter = sub("_withInhib_dose1", "_dose1_withInhib", PKparameter), 
-         # PKparameter = sub("_withInhib_last", "_last_withInhib", PKparameter), 
-         # PKparameter = sub("AUCt_last", "AUCtau_last", PKparameter), 
-         # PKparameter = sub("AUCt_ratio_last", "AUCtau_ratio_last", PKparameter), 
-         # PKparameter = sub("AUCt_last_withInhib", "AUCtau_last_withInhib", PKparameter), 
-         Sheet = case_when(Sheet4Dose1_CC == TRUE ~ NA, 
-                           Sheet4Last_CC == TRUE ~ NA, 
-                           .default = Sheet), 
-         
-         # Redoing checks above with updated data.frame
-         ShouldListSheet = 
-            case_when(
-               
-               PKparameter %in% AllPKParameters$PKparameter[
-                  AllPKParameters$AppliesToAllDoses == TRUE] ~ FALSE, 
-               
-               is.na(PKparameter) ~ FALSE, 
-               
-               str_detect(PKparameter, "_dose1|_last") ~ FALSE, 
-               
-               .default = TRUE), 
-         
-         ShouldListSheetButDidnt = ShouldListSheet == TRUE & is.na(Sheet), 
-         
-         Sheet4Dose1_CC = str_detect(Sheet, "1st") & 
-            complete.cases(Sheet), 
-         
-         Sheet4Last_CC = str_detect(Sheet, "last") & complete.cases(Sheet), 
-         
-         PKparam_missing_dose1 = Sheet4Dose1_CC & !str_detect(PKparameter, "_dose1"), 
-         
-         PKparam_missing_last = Sheet4Last_CC & !str_detect(PKparameter, "_last"))
    
    ## PKparameter -----------------------------------------------------------
    
@@ -1121,22 +1060,11 @@ tidy_input_PK <- function(PKparameters,
    # Noting when parameters only apply to SD or only apply to DDI
    PKparameters <- PKparameters %>% 
       left_join(
-         bind_rows(
-            AllPKParameters %>% 
-               select(PKparameter,
-                      AppliesToSingleDose,
-                      AppliesOnlyWhenPerpPresent, 
-                      UserInterval), 
-            
-            AllPKParameters %>% 
-               select(PKparameter_nodosenum,
-                      AppliesOnlyWhenPerpPresent, 
-                      UserInterval) %>% 
-               rename(PKparameter = PKparameter_nodosenum) %>% 
-               mutate(AppliesToSingleDose = FALSE)) %>%
-            filter(UserInterval == FALSE) %>% 
-            select(-UserInterval) %>% 
-            unique(), 
+         AllPKParameters %>% 
+            select(PKparameter,
+                   AppliesToSingleDose,
+                   AppliesOnlyWhenPerpPresent, 
+                   UserInterval) %>% unique(), 
          by = "PKparameter") 
    
    ## Checking existing_exp_details ------------------------------------------
