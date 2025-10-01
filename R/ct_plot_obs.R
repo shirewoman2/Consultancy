@@ -482,7 +482,7 @@ ct_plot_obs <- function(ct_dataframe,
    if(str_detect(mean_type, "only")){
       # This is when they only want to see means and not individual data. The
       # easiest way to do this, I think, is to just set the obs_line_trans to 0.
-      mean_type <- sub("( )?only", "", mean_type)
+      mean_type <- sub("( )?only|only( )?", "", mean_type)
       obs_line_trans <- 0
    } 
    
@@ -491,11 +491,16 @@ ct_plot_obs <- function(ct_dataframe,
       
       # For calculating means, grouping by everything except conc and columns
       # that would be just for one individual. 
-      GroupingCols <- setdiff(names(ct_dataframe), 
-                              c("Individual", "SD_SE", "Conc"))
-
+      GroupingCols <- setdiff(
+         names(ct_dataframe), 
+         
+         map(.x = ObsColNames, 
+             .f = \(x) x %>% filter(VariesWithIndividual == TRUE) %>%
+                pull(ColName)) %>% unlist() %>% unique())
+      
       suppressMessages(
          CTagg <- ct_dataframe %>% 
+            filter(IndivOrAgg == "individual") %>% 
             group_by(across(.cols = any_of(GroupingCols))) %>% 
             summarize(Conc = switch(mean_type, 
                                     "arithmetic" = mean(Conc, na.rm = T), 
