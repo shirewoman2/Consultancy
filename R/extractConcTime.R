@@ -482,12 +482,13 @@ extractConcTime <- function(sim_data_file,
    if("LgMol_simulation" %in% names(Deets)){
       LgMolSim <- Deets$LgMol_simulation
    } else if("ADCSimulation_sub" %in% names(Deets)){
-      LgMolSim <- case_when(
-         is.character(Deets$ADCSimulation_sub) ~ 
-            case_match(Deets$ADCSimulation_sub, 
-                       "yes" ~ TRUE, 
-                       "no" ~ FALSE), 
-         is.logical(Deets$ADCSimulation_sub) ~ Deets$ADCSimulation_sub)
+      if(is.character(Deets$ADCSimulation_sub)){
+         LgMolSim <- case_match(Deets$ADCSimulation_sub, 
+                                "yes" ~ TRUE, 
+                                "no" ~ FALSE)
+      } else if(is.logical(Deets$ADCSimulation_sub)){
+         LgMolSim <- Deets$ADCSimulation_sub
+      }
    } else if("ADCSimulation" %in% names(Deets)){
       LgMolSim <- case_when(
          is.character(Deets$ADCSimulation) ~ 
@@ -1064,6 +1065,8 @@ extractConcTime <- function(sim_data_file,
          # get useless and confusing warnings.
          GoodMW <-
             Deets %>% select(matches("^MW_")) %>% 
+            mutate(across(.cols = everything(), 
+                          .fns = as.numeric)) %>% 
             pivot_longer(cols = everything(), 
                          names_to = "Suffix", 
                          values_to = "MW") %>% 

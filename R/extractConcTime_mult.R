@@ -757,13 +757,12 @@ extractConcTime_mult <- function(sim_data_files = NA,
             MissingFiles <- setdiff(ObsAssign$File,
                                     unique(c(sim_data_files, ct_dataframe$File)))
             if(length(MissingFiles) > 0){
-               warning(paste0(wrapn(
-                  "When you assigned observed data files to simulator files with the argument `obs_to_sim_assignment`, you included simulator files that are *not* included in `sim_data_files`. We cannot include these observed data files in the output data because we don't know which simulator files they belong with. The problem simulator files is/are: "), 
+               warning(wrapn(paste0(
+                  "When you assigned observed data files to simulator files with the argument `obs_to_sim_assignment`, you included simulator files that are *not* included in `sim_data_files`. We cannot include these observed data files in the output data because we don't know which simulator files they belong with. The problem simulator files is/are: ", 
                   str_comma(MissingFiles), ", which is/are set to match the following observed files: ",
-                  str_comma(names(obs_to_sim_assignment[
-                     which(obs_to_sim_assignment %in%
-                              unique(c(sim_data_files, ct_dataframe$File)) == FALSE)])), 
-                  ".\n"), 
+                  str_comma(ObsAssign %>% 
+                               filter(File %in% MissingFiles) %>% 
+                               pull(ObsFile)))), 
                   call. = FALSE)
                
                ObsAssign <-
@@ -841,19 +840,20 @@ extractConcTime_mult <- function(sim_data_files = NA,
                          "pd input" = "pd input", 
                          "pd response" = "pd response")
       
-      # Previous versions of the package checked for whether the simulation had a
-      # large molecule present differently b/c I hadn't really come up with a good
-      # strategy for dealing with them. Hacking around data extracted from previous
-      # package versions here.
+      # Previous versions of the package checked for whether the simulation had
+      # a large molecule present differently b/c I hadn't really come up with a
+      # good strategy for dealing with them. Hacking around data extracted from
+      # previous package versions here.
       if("LgMol_simulation" %in% names(Deets)){
          LgMolSim <- Deets$LgMol_simulation
       } else if("ADCSimulation_sub" %in% names(Deets)){
-         LgMolSim <- case_when(
-            is.character(Deets$ADCSimulation_sub) ~ 
-               case_match(Deets$ADCSimulation_sub, 
-                          "yes" ~ TRUE, 
-                          "no" ~ FALSE), 
-            is.logical(Deets$ADCSimulation_sub) ~ Deets$ADCSimulation_sub)
+         if(is.character(Deets$ADCSimulation_sub)){
+            LgMolSim <- case_match(Deets$ADCSimulation_sub, 
+                                   "yes" ~ TRUE, 
+                                   "no" ~ FALSE)
+         } else if(is.logical(Deets$ADCSimulation_sub)){
+            LgMolSim <- Deets$ADCSimulation_sub
+         }
       } else if("ADCSimulation" %in% names(Deets)){
          LgMolSim <- case_when(
             is.character(Deets$ADCSimulation) ~ 
