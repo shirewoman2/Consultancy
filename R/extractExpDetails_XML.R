@@ -282,17 +282,15 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                
                # Data class must be numeric for specific levels in some cases.
                # Setting that as needed here.
-               if(k %in% c("Transporter_Gut_ABCB1_P_gp_MDR1_Apical_RAFREF", 
-                           "Transporter_Gut_ABCB1_P_gp_system")){
+               if(DeetInfo$Level3 %in% c("GutTransporterSet")){
                   DeetInfo$Level4 <- as.numeric(DeetInfo$Level4)
                }
                
-               if(k %in% k %in% c("ParticleSizeD10", 
-                                  "ParticleSizeD50", 
-                                  "ParticleSizeD90")){
+               if(k %in% c("ParticleSizeD10", 
+                           "ParticleSizeD50", 
+                           "ParticleSizeD90")){
                   DeetInfo$Level6 <- as.numeric(DeetInfo$Level6)
                }
-               
                
                # Check for a switch b/c that will change what tag we extract
                if(complete.cases(DeetInfo$XMLswitch)){
@@ -393,6 +391,12 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                 "1" ~ "predicted", 
                                 .default = DeetValue), 
                   
+                  # Adjusting for when this doesn't apply
+                  k %in% paste0("fa", AllRegCompounds$Suffix) ~
+                     case_when(XML::xmlValue(RootNode[["Compounds"]][[
+                        CompoundNum]][["AbsorptionSwitch"]]) == "1" ~ NA, 
+                        .default = DeetValue),
+                  
                   str_detect(k, "Formulation") ~ 
                      case_match(DeetValue, 
                                 "0" ~ "solution", 
@@ -411,6 +415,28 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                 "true" ~ "locked", 
                                 "false" ~ "unlocked"), 
                   
+                  # Adjusting when things need to be set to NA when they don't
+                  # apply. Peff is complicated, so it's separate from this.
+                  str_detect(k, "Qgut_userinput") ~
+                     case_when(XML::xmlValue(RootNode[["Compounds"]][[
+                        CompoundNum]][["QGutSwitch"]]) == "1" ~ NA, 
+                        .default = DeetValue), 
+                  
+                  # Switch translation here: true means use RAF/REF. false means
+                  # use ISEF,T.
+                  str_detect(k, "Transporter_Gut_ABCB1_P_gp_MDR1_Apical_ISEFT") ~
+                     case_when(
+                        XML::xmlValue(RootNode[["Compounds"]][[
+                           CompoundNum]][["GutTransporterSet"]][[10]][[
+                              "ISEFT_RAFREFSwitch"]]) == "false" ~ NA, 
+                        .default = DeetValue), 
+                  str_detect(k, "Transporter_Gut_ABCB1_P_gp_MDR1_Apical_RAFREF") ~
+                     case_when(
+                        XML::xmlValue(RootNode[["Compounds"]][[
+                           CompoundNum]][["GutTransporterSet"]][[10]][[
+                              "ISEFT_RAFREFSwitch"]]) == "true" ~ NA, 
+                        .default = DeetValue), 
+                  
                   TRUE ~ DeetValue)
                
                suppressWarnings(
@@ -418,20 +444,6 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                       "numeric" = as.numeric(DeetValue), 
                                       "character" = as.character(DeetValue))
                )
-               
-               # Adjusting when things need to be set to NA when they don't
-               # apply. Peff is complicated, so it's separate from this.
-               if(str_detect(k, "Qgut_userinput") & 
-                  XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["QGutSwitch"]]) == "1"){
-                  DeetValue <- NA
-               }
-               
-               if(k %in% paste0("fa", AllRegCompounds$Suffix) & 
-                  XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["AbsorptionSwitch"]]) == "1"){
-                  # This is when fa is predicted and the value listed in the
-                  # workspace is thus unreliable.
-                  DeetValue <- NA
-               }
                
                Deets[[i]][[k]] <- DeetValue 
                

@@ -301,16 +301,18 @@ ct_plot3 <- function(ct_dataframe,
    }
    
    if(length(sort(unique(ct_dataframe$DoseNum))) == 1){
-      stop("ct_plot3 is only for multiple-dose scenarios, but these data appear to be for only one dose.")
+      stop(wrapn("ct_plot3 is only for multiple-dose scenarios, but these data appear to be for only one dose."), 
+           call. = FALSE)
    }
    
    if(hasArg("time_range")){
-      stop("You cannot supply anything for 'time_range' here because ct_plot3 needs to set the time range automatically. Please remove 'time_range' from your arguments.")
+      stop(wrapn("You cannot supply anything for 'time_range' here because ct_plot3 needs to set the time range automatically. Please remove 'time_range' from your arguments."), 
+           call. = FALSE)
    }
    
    
    if(nrow(ct_dataframe) == 0){
-      stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
+      stop(wrapn("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows."), 
            call. = FALSE)
    }
    
@@ -337,7 +339,7 @@ ct_plot3 <- function(ct_dataframe,
       
       if(qc_graph == TRUE & 
          (class(Deets)[1] == "character" || nrow(Deets) == 0)){
-         warning("We couldn't find the source Excel file for this graph, so we can't QC it.", 
+         warning(wrapn("We couldn't find the source Excel file for this graph, so we can't QC it."), 
                  call. = FALSE)
          qc_graph <- FALSE
       }

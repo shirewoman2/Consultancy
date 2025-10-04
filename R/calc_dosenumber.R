@@ -86,12 +86,22 @@ calc_dosenumber <- function(ct_dataframe,
    
    # Main body of function -------------------------------------------------
    
+   AllDosedCompounds <- AllCompounds %>% 
+      filter(!CompoundID %in% c("endogenous"))
+   
+   DosedCompoundIDs <- AllDosedCompounds$DosedCompoundID
+   names(DosedCompoundIDs) <- AllDosedCompounds$CompoundID
+   
    # Adding some NA values to Deets as needed for the next bit to
    # work w/out generating a ton of warnings.
-   MissingCols <- setdiff(paste0(rep(c("DoseInt", "StartHr", "Regimen", 
-                                       "NumDoses"), each = 3), 
-                                 c("_sub", "_inhib", "_inhib2")), 
-                          names(Deets))
+   MissingCols <- setdiff(
+      paste0(rep(c("DoseInt", "StartHr", "Regimen", 
+                   "NumDoses", "BolusDose", 
+                   "InfusionDose"), 
+                 each = nrow(AllDosedCompounds)), 
+             AllDosedCompounds$DosedCompoundSuffix), 
+      
+      names(Deets)) %>% unique()
    
    if(length(MissingCols) > 0){
       Deets <- Deets %>% 
@@ -107,12 +117,6 @@ calc_dosenumber <- function(ct_dataframe,
    
    ct_dataframe <- split(ct_dataframe, 
                          f = ct_dataframe$File)
-   
-   AllDosedCompounds <- AllCompounds %>% 
-      filter(!CompoundID %in% c("endogenous"))
-   
-   DosedCompoundIDs <- AllDosedCompounds$DosedCompoundID
-   names(DosedCompoundIDs) <- AllDosedCompounds$CompoundID
    
    for(i in intersect(names(Deets), 
                       names(ct_dataframe))){

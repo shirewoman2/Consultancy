@@ -842,11 +842,8 @@ extractConcTime <- function(sim_data_file,
    
    ## observed data -------------------------------------------------------
    
-   # This section of code ONLY applies when obs concs are NOT extracted
-   # separately. This piece of code also ONLY applies to systemic concs.
-   
    # Setting up some names of observed data for use later. Note that
-   # names(ObsCompounds) are lower case but values are original case. 
+   # names(ObsCompounds) are lower case but values are original case.
    ObsCompounds <-
       c("substrate" = Deets$Substrate,
         "inhibitor 1" = Deets$Inhibitor1,

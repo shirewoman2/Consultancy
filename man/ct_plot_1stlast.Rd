@@ -496,9 +496,13 @@ saved to disk.}
 a ggplot2 graphs or a set of arranged ggplot2 graphs
 }
 \description{
-\code{ct_plot_1stlast} makes concentration-time plots like Freddy and Laura
-Sh. discussed. :)
+\code{ct_plot_1stlast} makes concentration-time plots like
+of the first and last doses of a simulation or
 }
 \examples{
-data(MDZct)
+# We'll use some example multiple-dose concentration-time data
+# included in the package for this example: 
+ct_plot_1stlast(ct_dataframe = LMVct)
+
+
 }

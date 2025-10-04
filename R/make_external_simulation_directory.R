@@ -61,9 +61,9 @@ find_sims_in_report <- function(report_name,
       Index = 1:nrow(BodyText), 
       Text = BodyText$text, 
       FigTab = str_extract(Text, "^(Table|Figure).[0-9]{1,}"), 
-      File = as.character(str_extract_all(Text, "[Ss]ource simulated data: [a-z|0-9]{1,}[^ ].*.xlsx"))) %>% 
+      File = as.character(str_extract_all(Text, "[Ss]ource( simulated)?( data)?: [a-z|0-9]{1,}[^ ].*\\.(xlsx|wksz|db|sft|phxproj)"))) %>% 
       mutate(
-         File = gsub("[Ss]ource simulated data: |,| and", "", File), 
+         File = gsub("[Ss]ource( simulated)?( data)?: |,| and", "", File), 
          File = case_when(File == "character(0)" ~ NA, 
                           .default = File),
          # placeholder
