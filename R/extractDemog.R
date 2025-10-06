@@ -192,10 +192,11 @@ extractDemog <- function(sim_data_files = NA,
       
       if("Demographic Data" %in% which_data){
          
-         Demog.xl <- tryCatch(readxl::read_xlsx(ff, 
-                                                skip = 20, # This should be the same every time. 
-                                                sheet = "Demographic Data"), 
-                              error = function(x) "glitch")
+         suppressMessages(
+            Demog.xl <- tryCatch(readxl::read_xlsx(ff, 
+                                                   sheet = "Demographic Data"), 
+                                 error = function(x) "glitch")
+         )
          
          if("character" %in% class(Demog.xl)){
             warning(paste0("The file `", 
@@ -203,6 +204,12 @@ extractDemog <- function(sim_data_files = NA,
                            "` is not present or does not have a tab titled `Demographic Data`, so we cannot extract any data for it.\n"), 
                     call. = FALSE)
          } else {
+            
+            # Finding the data we need
+            StartRow <- which(Demog.xl[, 1] == "Index")
+            Demog.temp <- Demog.xl[(StartRow + 1):nrow(Demog.xl), ]
+            names(Demog.temp) <- as.character(t(Demog.xl[StartRow, ]))
+            Demog.xl <- Demog.temp
             
             ColNames <- c("Index" = "Individual", 
                           "Population" = "PopulationNumber", 
