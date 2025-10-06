@@ -237,7 +237,7 @@ demog_plot <- function(demog_dataframe,
                        legend_label_color = NA,
                        legend_position = "right", 
                        graph_title = "Demographics", 
-                       alpha = 0.8, 
+                       alpha = 0.5, 
                        ncol = NULL, 
                        nrow = NULL, 
                        facet_by_sex = TRUE, 
@@ -653,13 +653,14 @@ demog_plot <- function(demog_dataframe,
       
       suppressWarnings(
          G <- ggplot(demog_dataframe, aes(x = MyVar, fill = colorBy_column)) +
-            geom_density(alpha = 0.5) +
-            guides(fill = guide_legend(override.aes = 
-                                          list(shape = 15,
-                                               size = 6, 
-                                               color = NA,
-                                               alpha = 1)), 
-                   color = "none") + 
+            geom_density(alpha = alpha) +
+            guides(fill = guide_legend(
+               override.aes = 
+                  list(shape = 15,
+                       size = 6, 
+                       color = NA,
+                       alpha = 1)), 
+               color = "none") + 
             ylab("Distribution") +
             xlab(DemogLabs[Var])
       )
@@ -686,7 +687,7 @@ demog_plot <- function(demog_dataframe,
       suppressWarnings(
          G <- ggplot(demog_dataframe, aes(y = MyVar, 
                                           x = colorBy_column,  fill = colorBy_column)) +
-            geom_boxplot(alpha = 0.8) +
+            geom_boxplot(alpha = alpha) +
             guides(fill = guide_legend(override.aes = 
                                           list(shape = 15,
                                                size = 6, 
@@ -731,7 +732,7 @@ demog_plot <- function(demog_dataframe,
             ggplot(demog_dataframe, 
                    aes(x = age, y = colorBy_column, fill = colorBy_column)) +
             facet_grid(sex ~ ., switch = FacetSwitch) +
-            geom_violin(alpha = 0.7) +
+            geom_violin(alpha = alpha) +
             scale_fill_manual(values = MyColors) +
             guides(fill = guide_legend(override.aes = 
                                           list(shape = 15,
@@ -768,7 +769,7 @@ demog_plot <- function(demog_dataframe,
          MyGraphs[[yy]] <-
             ggplot(PercFemale, aes(x = colorBy_column, fill = colorBy_column,
                                    y = PercFemale)) +
-            geom_bar(stat = "identity", alpha = 0.7) +
+            geom_bar(stat = "identity", alpha = alpha) +
             guides(fill = guide_legend(override.aes = 
                                           list(shape = 15, 
                                                size = 6, 
@@ -833,13 +834,12 @@ demog_plot <- function(demog_dataframe,
          MyGraphs[[yy]] <- MyGraphs[[yy]] +
             geom_point(alpha = alpha) + 
             scale_color_manual(values = MyColors) +
-            labs(color = NULL) +
             guides(color = guide_legend(override.aes = 
                                            list(shape = 15, 
                                                 size = 6, 
                                                 fill = NA, 
                                                 alpha = 1)), 
-                   shape = guide_legend(override.aes = list())) + 
+                   shape = guide_legend(override.aes = list(alpha = 1))) + 
             ylab(case_match(yy, 
                             "weight vs height" ~ "Weight (kg)", 
                             "height vs age" ~ "Height (cm)", 
@@ -850,8 +850,16 @@ demog_plot <- function(demog_dataframe,
                             "weight vs age" ~ "Age (years)")) +
             theme_consultancy(border = border_facets)
          
+         if(complete.cases(legend_label_color)){
+            MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(color = legend_label_color)
+         } else {
+            MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(color = NULL)
+         }
+         
          if(length(unique(demog_dataframe$sex)) == 1){
             MyGraphs[[yy]] <- MyGraphs[[yy]] + guides(shape = "none") 
+         } else {
+            MyGraphs[[yy]] <- MyGraphs[[yy]] + labs(shape = "Sex")
          }
          
          MyGraphs[[yy]] <- MyGraphs[[yy]] +
