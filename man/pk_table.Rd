@@ -125,7 +125,10 @@ pk_table(
   \code{AUCinf_dose1_withInhib} when your simulation did not include a
   perpetrator -- will be ignored.}
 
-\item{sim_data_files}{the Simcyp Simulator output Excel files to use. Options
+\item{sim_data_files}{the Simcyp Simulator output Excel files to use. If you
+have specified which simulation files to use in what you supplied for the
+argument \code{PKparameters}, anything you supply here will be ignored.
+Options
 for how to specify these: \itemize{\item{NA to extract PK data
 for \emph{all} the Excel files in the current folder or for all the files
 listed in what you supply to the argument \code{PKparameters}}
@@ -133,9 +136,9 @@ listed in what you supply to the argument \code{PKparameters}}
 in the current folder and all subfolders.} \item{a character
 vector of simulator output files, each in quotes and encapsulated with
 \code{c(...)}} } If you do want specific simulations, please take pity on your
-poor R coders and do not use the same simulation file names in different
-subfolders; duplicate file names are just too confusing, and we might give
-you incorrect results.}
+poor R coders and do not request PK data for the same simulation file names
+in different subfolders; duplicate file names are just too confusing, and
+we might give you incorrect results.}
 
 \item{compoundsToExtract}{For which compounds do you want to extract PK data?
 Options are any combination of the following:
@@ -440,22 +443,29 @@ a data.frame
 }
 \description{
 \code{pk_table} creates tables of PK parameters for reports and
-presentations, including reporting means, CVs, and confidence intervals or
-percentiles and, optionally, comparisons to observed data. This function
-automatically finds the correct tabs and the correct cells in a Simulator
-output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Coding
-requires having a standardized way to input all the myriad
+  presentations, including reporting means, CVs, and confidence intervals or
+  percentiles and, optionally, comparisons to observed data. This function
+  automatically finds the correct tabs and the correct cells in a Simulator
+  output Excel file to obtain those data.
+
+\strong{Notes:} \itemize{\item{Coding requires having a standardized way to input all the myriad
 possibilities for PK parameters, which can be tricky. Please try
 running \code{\link{make_example_PK_input}} to see examples for how to
-specify the PK parameters you need.} \item{For detailed instructions and
+specify the PK parameters you need.}
+
+\item{For detailed instructions and
 examples, please see the SharePoint file "Simcyp PBPKConsult
 R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
 instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
-include a link to it here.)} \item{In the results, tmax will be listed as
+include a link to it here.)}
+
+\item{In the results, tmax will be listed as
 median, min, and max rather than mean, lower and higher confidence interval
 or percentiles. Similarly, if you request trial means, the values for tmax
 will be the range of medians for the trials rather than the range of
-means.} \item{We strongly recommend saving the output to a Word file, which
+means.}
+
+\item{We strongly recommend saving the output to a Word file, which
 will apply any highlighting you request and some other nice formatting,
 will not drop trailing zeroes, and will include some text for possible
 table headings and captions.}}

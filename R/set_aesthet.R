@@ -18,6 +18,8 @@
 #' @param from_ct_plot T or F on whether this is from ct_plot (alternative is
 #'   ct_plot_overlay). Using this to determine whether line color is black or
 #'   colors.
+#' @param linetype_levels levels in linetype_column
+#' @param color_levels levels in colorBy_column
 #'
 #' @return several objects to use with setting graph aesthetics
 
@@ -27,8 +29,12 @@ set_aesthet <- function(figure_type,
                         AESCols, 
                         line_type,
                         n_line_type, 
+                        linetype_levels = NA, 
+                        
                         line_color,
                         n_line_color, 
+                        color_levels = NA, 
+                        
                         obs_shape, 
                         n_obs_shape, 
                         obs_color, 
@@ -53,10 +59,15 @@ set_aesthet <- function(figure_type,
    # line_type ---------------------------------------------------------------
    
    if(is.na(line_type[1])){
-      line_type <- rep(c("solid", "dashed"), n_line_type)
+      line_type <- rep(c("solid", "dashed", "dotted"), n_line_type)
    }
    
    line_type <- rep(line_type, n_line_type)[1:n_line_type]
+   
+   if(any(complete.cases(linetype_levels)) & 
+      figure_type %in% c("compound summary") == FALSE){
+      names(line_type) <- linetype_levels
+   }
    
    
    # obs_shape --------------------------------------------------------------
@@ -74,6 +85,10 @@ set_aesthet <- function(figure_type,
    }
    
    obs_shape <- rep(obs_shape, n_obs_shape)[1:n_obs_shape]
+   
+   if(any(complete.cases(linetype_levels))){
+      names(obs_shape) <- linetype_levels
+   }
    
    # It's really hard to have a mix of shapes with solid plus outline and then
    # also shapes that are just outline or just solid. If people have requested a
@@ -100,7 +115,7 @@ set_aesthet <- function(figure_type,
    # line_color --------------------------------------------------------------
    
    if(is.na(line_color[1])){
-      if(from_ct_plot | AESCols["color"] == "<empty>"){
+      if(AESCols["color"] == "<empty>" | from_ct_plot == TRUE){
          line_color <- rep("black", n_line_color)
          
       } else {
@@ -124,6 +139,13 @@ set_aesthet <- function(figure_type,
    # Just making absolutely sure we have enough colors
    line_color <- rep(line_color, n_line_color)[1:n_line_color]
    
+   # To ensure that simulated and observed data colors match, naming the values
+   # in line_color.
+   if(any(complete.cases(color_levels)) & 
+      figure_type %in% c("compound summary") == FALSE){
+      names(line_color) <- color_levels
+   }
+   
    
    # obs_color ----------------------------------------------------------------
    
@@ -134,30 +156,28 @@ set_aesthet <- function(figure_type,
       
       if(all(is.na(obs_color)) & 
          figure_type %in% c("freddy", "compound summary") == FALSE){
-         obs_color <- line_color
+         obs_color <- line_color[1:n_obs_color]
          
-      } else if(all(is.na(obs_color)) & 
-                figure_type == "freddy"){
+      } else if(all(is.na(obs_color)) & figure_type == "freddy"){
          obs_color <- "#3030FE"
          
-      } else if(all(is.na(obs_color)) & 
-                figure_type == "compound summary"){
-         obs_color <- make_color_set(color_set = "default", 
-                                     num_colors = n_obs_color)
+      } else if(figure_type == "compound summary"){
+         if(all(is.na(obs_color))){
+            obs_color <- make_color_set(color_set = "default", 
+                                        num_colors = n_obs_color)
+         } else {
+            obs_color <- make_color_set(color_set = obs_color, 
+                                        num_colors = n_obs_color)
+         }
          
       } else if((length(unique(line_color)) == 1 &&
                  line_color[1] == "black") &
                 all(complete.cases(obs_color))){
          
-         if(figure_type == "compound summary"){
-            obs_color <- make_color_set(color_set = obs_color, 
-                                        num_colors = n_obs_color)   
-         } else {
-            # This is when it's from ct_plot and line_color doesn't change based on
-            # Inhibitor column.
-            obs_color <- make_color_set(color_set = obs_color, 
-                                        num_colors = 1)
-         }
+         # This is when it's from ct_plot and line_color doesn't change based on
+         # Inhibitor column.
+         obs_color <- make_color_set(color_set = obs_color, 
+                                     num_colors = 1)
          
       } else if((length(unique(line_color)) > 1)){
          
@@ -189,9 +209,6 @@ set_aesthet <- function(figure_type,
               call. = FALSE)
    }
    
-   # Making sure we have enough colors
-   obs_color <- rep(obs_color, n_obs_color)[1:n_obs_color]
-   
    obs_fill_trans <- ifelse(is.na(as.numeric(obs_fill_trans)), 
                             0.5, as.numeric(obs_fill_trans))
    
@@ -205,5 +222,7 @@ set_aesthet <- function(figure_type,
                "obs_color" = obs_color, 
                "obs_fill_trans" = obs_fill_trans,
                "obs_line_trans" = obs_line_trans)
+   
+   return(Out)
    
 }

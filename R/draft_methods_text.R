@@ -79,7 +79,7 @@ draft_methods_text <- function(sim_data_file,
                               ifelse(victim_sim, MyPerpetrator, MySubstrate), 
                               " was used. Performance verification of the ",
                               ifelse(victim_sim, MyPerpetrator, MySubstrate),
-                              " model is provided in **Appendix A** – Performance Verification of CYP3A Substrates, Inhibitors and Inducers."))
+                              " model is provided in **Appendix A** - Performance Verification of CYP3A Substrates, Inhibitors and Inducers."))
    
    numbers <- c("one", "two", "three", "four", "five", "six", "seven", "eight",
                 "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",

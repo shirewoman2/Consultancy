@@ -845,7 +845,12 @@ so_graph <- function(PKtable,
                               PKparameter, Interval), 
                     .fns = \(x) ifelse(is.na(x), "default", x)), 
              Value = gsub("\\(|\\)|\\[|\\]", "", Value), 
-             Value = sub(", | - ", " to ", Value))
+             Value = sub(", | - ", " to ", Value)) %>% 
+      # Removing extraneous columns b/c they interfere w/pivotting
+      select(Statistic, File, CompoundID, Tissue, Sheet, Interval, 
+             PKparameter, any_of(c(as_label(point_color_column), 
+                                   as_label(point_shape_column))), 
+             Value)
    
    SO <- split(SO, list(SO$Statistic, 
                         SO$File, 

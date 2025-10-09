@@ -222,9 +222,9 @@ a data.frame of the sample sizes needed for each combination of
   \itemize{\item{Cohen, J. (1988). Statistical power analysis for the
   behavioral sciences (2nd ed.). Hillsdale,NJ: Lawrence Erlbaum.}
 
-  \item{Lakens, D. (2013). “Calculating and
+  \item{Lakens, D. (2013). "Calculating and
   reporting effect sizes to facilitate cumulative science: a practical primer
-  for t-tests and ANOVAs.” Frontiers in Psychology, 4:863. doi: 10.3389/fpsyg.2013.00863}}
+  for t-tests and ANOVAs." Frontiers in Psychology, 4:863. doi: 10.3389/fpsyg.2013.00863}}
 
   If you save the results from running this as a Word file, that document
   will contain more information on the methods and possible text to include
