@@ -7,10 +7,12 @@
 tidy_input_PK(
   PKparameters,
   sim_data_files = NA,
+  sim_data_file_numerator = NA,
+  sim_data_file_denominator = NA,
   existing_exp_details = NA,
   compoundsToExtract = "substrate",
   tissues = "plasma",
-  sheet_PKparameters = NA
+  sheet_user_interval = NA
 )
 }
 \arguments{
@@ -20,6 +22,14 @@ vector, or NA.}
 
 \item{sim_data_files}{a character vector of file names. This should no longer
 be NA or "recursive".}
+
+\item{sim_data_file_numerator}{sim file for the numerator. This ONLY comes
+from calc_PK_ratios and NOT calc_PK_ratios_mult and thus MUST have length
+1.}
+
+\item{sim_data_file_denominator}{sim file for the denominator. This ONLY
+comes from calc_PK_ratios and NOT calc_PK_ratios_mult and thus MUST have
+length 1.}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} to get all the details from the "Input
@@ -34,12 +44,8 @@ the parent function.}
 
 \item{tissues}{the values they supplied for tissues in the parent function}
 
-\item{sheet_PKparameters}{the values they supplied for sheet_PKparameters in
+\item{sheet_user_interval}{the values they supplied for sheet_user_interval in
 the parent function}
-
-\item{report_input_file}{probably not in use}
-
-\item{sheet_report}{probably not in use}
 }
 \value{
 a list of: 1) "PKparameters" -- a tidy data.frame of PKparameters

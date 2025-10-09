@@ -192,10 +192,11 @@ extractDemog <- function(sim_data_files = NA,
       
       if("Demographic Data" %in% which_data){
          
-         Demog.xl <- tryCatch(readxl::read_xlsx(ff, 
-                                                skip = 20, # This should be the same every time. 
-                                                sheet = "Demographic Data"), 
-                              error = function(x) "glitch")
+         suppressMessages(
+            Demog.xl <- tryCatch(readxl::read_xlsx(ff, 
+                                                   sheet = "Demographic Data"), 
+                                 error = function(x) "glitch")
+         )
          
          if("character" %in% class(Demog.xl)){
             warning(paste0("The file `", 
@@ -204,6 +205,7 @@ extractDemog <- function(sim_data_files = NA,
                     call. = FALSE)
          } else {
             
+            # Finding the data we need
             ColNames <- c("Index" = "Individual", 
                           "Population" = "PopulationNumber", 
                           "Trial" = "Trial", 
@@ -229,7 +231,11 @@ extractDemog <- function(sim_data_files = NA,
                           "Allometric Scalar" = "AllometricScalar", 
                           "Simulation Duration" = "SimDuration")
             
-            ColNames <- ColNames[which(names(ColNames) %in% names(Demog.xl))]
+            StartRow <- which(Demog.xl[, 1] == "Index")
+            OrigNames <- as.character(t(Demog.xl[StartRow, ]))
+            names(Demog.xl) <- OrigNames
+            
+            ColNames <- ColNames[which(names(ColNames) %in% OrigNames)]
             
             MissingColNames <- setdiff(names(Demog.xl), names(ColNames))
             if(length(MissingColNames) > 0){
@@ -239,11 +245,33 @@ extractDemog <- function(sim_data_files = NA,
                        call. = FALSE)
             }
             
-            suppressWarnings(LastRow <- min(which(is.na(Demog.xl$Index))) - 1)
+            LastRow <- which(is.na(Demog.xl$Index))
+            suppressWarnings(LastRow <- min(LastRow[LastRow > StartRow]))
             LastRow <- ifelse(is.infinite(LastRow), nrow(Demog.xl), LastRow)
             
-            Demog[[ff]] <- Demog.xl[1:LastRow, names(ColNames)]
+            Demog[[ff]] <- Demog.xl[(StartRow + 1):LastRow, names(ColNames)]
             names(Demog[[ff]]) <- ColNames
+            
+            if(Population[[ff]]$Population == "Multiple populations"){
+               # population names should be in the age column
+               PopNums <-
+                  Demog.xl[, which(str_detect(names(Demog.xl), "^Age"))] %>% 
+                  t() %>% as.character()
+               
+               PopNums <- PopNums[
+                  which(str_detect(PopNums, "Population"))]
+               
+               PopNums <- str_split(PopNums, pattern = ": ")
+               
+               PopNumTranslation <- map(PopNums, 3) %>% unlist()
+               names(PopNumTranslation) <- map(PopNums, 2) %>% unlist()
+               
+               Demog[[ff]]$Population <-
+                  as.character(PopNumTranslation[Demog[[ff]]$PopulationNumber])
+               
+            } else {
+               Demog[[ff]]$Population <- Population[[ff]]$Population
+            }
             
             suppressWarnings(
                Demog[[ff]] <- Demog[[ff]] %>% 

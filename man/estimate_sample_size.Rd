@@ -17,7 +17,7 @@ estimate_sample_size(
   existing_exp_details = NA,
   compoundToExtract = "substrate",
   tissue = "plasma",
-  sheet_PKparameters = NA,
+  sheet_user_interval = NA,
   PK_data = NA,
   round_up_N = TRUE,
   sim_trials_to_include = "all",
@@ -35,7 +35,7 @@ output, in quotes.}
   want and then also specify what you need in terms of which tissues, which
   compounds, which simulation files, and which tab to get the data from with
   the arguments \code{tissues}, \code{compoundsToExtract},
-  \code{sim_data_files}, and \code{sheet_PKparameters}.
+  \code{sim_data_files}, and \code{sheet_user_interval}.
   \strong{Details on each option:} \describe{
 
   \item{\strong{Option 1:} a file to read or a data.frame}{This
@@ -55,7 +55,7 @@ output, in quotes.}
   Whatever you supply, the
   columns that will be read are: \itemize{\item{"File" (same thing as the argument
   \code{sim_data_files})} \item{"Sheet" (same thing as the argument
-  \code{sheet_PKparameters})} \item{"Tissue" (same as the argument \code{tissues})}
+  \code{sheet_user_interval})} \item{"Tissue" (same as the argument \code{tissues})}
   \item{"CompoundID" (same as the argument \code{compoundsToExtract})
   \item{"ObsValue" for any observed data (no equivalent argument)}
   \item{"Variability" for any observed variability (no equivalent argument
@@ -82,7 +82,7 @@ output, in quotes.}
   from all your simulations. List the PK parameters you want here and then,
   in the arguments
   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
-  \code{sheet_PKparameters} specify which of each of those items you want.
+  \code{sheet_user_interval} specify which of each of those items you want.
   You'll get all possible combinations of these, so, for example, if you say
   \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")} and
   \code{tissues = c("blood", "plasma")}, you'll get the dose 1 AUCinf and
@@ -164,10 +164,10 @@ Options are "plasma" (default), "unbound plasma", "blood", "unbound blood",
 "peripheral plasma", or "peripheral blood". \strong{If you want more than one,
 please supply a data.frame or .csv file to the argument \code{PKparameters}.}}
 
-\item{sheet_PKparameters}{(optional) If you want the PK parameters to be
+\item{sheet_user_interval}{(optional) If you want the PK parameters to be
 pulled from a \strong{user-defined interval tab} in the simulator output
 file, list that tab here. Otherwise, this should be left as NA.
-\code{sheet_PKparameters} can only have a \emph{single value}, though. If
+\code{sheet_user_interval} can only have a \emph{single value}, though. If
 you want some parameters from a custom-interval tab and others from the
 regular tabs, you must supply that as part of a data.frame or csv file for
 the argument \code{PKparameters}. Please try running
@@ -182,7 +182,7 @@ and it MUST have both the baseline and the DDI version of each PK
 parameter, e.g., both AUCinf_dose1 and AUCinf_dose1_withInhib. If you
 supply something here, we'll only pay attention to the arguments
 sim_data_files, existing_exp_details, PKparameters, compoundToExtract,
-tissue, and sheet_PKparameters if what you supply doesn't have that same
+tissue, and sheet_user_interval if what you supply doesn't have that same
 structure. This ONLY works with the simplest of possible comparisons: a
 standard DDI simulation.}
 
@@ -222,9 +222,9 @@ a data.frame of the sample sizes needed for each combination of
   \itemize{\item{Cohen, J. (1988). Statistical power analysis for the
   behavioral sciences (2nd ed.). Hillsdale,NJ: Lawrence Erlbaum.}
 
-  \item{Lakens, D. (2013). “Calculating and
+  \item{Lakens, D. (2013). "Calculating and
   reporting effect sizes to facilitate cumulative science: a practical primer
-  for t-tests and ANOVAs.” Frontiers in Psychology, 4:863. doi: 10.3389/fpsyg.2013.00863}}
+  for t-tests and ANOVAs." Frontiers in Psychology, 4:863. doi: 10.3389/fpsyg.2013.00863}}
 
   If you save the results from running this as a Word file, that document
   will contain more information on the methods and possible text to include

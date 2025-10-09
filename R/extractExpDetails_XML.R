@@ -84,15 +84,16 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
    # If they didn't include ".wksz" or ".dscw" at the end, add that.
    WkspFilesNoExt <- sub("( - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2})?(\\.xlsx|\\.dscw|\\.wksz)$",
                          "", sim_workspace_files)
-   WkspFile <- list("Simulator" = paste0(WkspFilesNoExt, ".wksz"), 
-                    "Discovery" = paste0(WkspFilesNoExt, ".dscw"))
+   WkspFile <- list("Simulator" = paste0(unique(WkspFilesNoExt), ".wksz"), 
+                    "Discovery" = paste0(unique(WkspFilesNoExt), ".dscw"))
    WkspFile$Simulator <- WkspFile$Simulator[which(file.exists(WkspFile$Simulator))]
    WkspFile$Discovery <- WkspFile$Discovery[which(file.exists(WkspFile$Discovery))]
    WkspFile <- as.character(unlist(WkspFile))
    
    # Warning when file doesn't exist
-   MissingSimFiles <- WkspFilesNoExt[
-      sapply(WkspFilesNoExt, FUN = function(x){any(str_detect(WkspFile, x))}) == FALSE]
+   MissingSimFiles <- basename(WkspFilesNoExt)[
+      sapply(basename(WkspFilesNoExt), 
+             FUN = function(x){any(str_detect(basename(WkspFile), x))}) == FALSE]
    
    if(length(MissingSimFiles) > 0){
       warning(paste0("The file(s) ", 
@@ -281,17 +282,15 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                
                # Data class must be numeric for specific levels in some cases.
                # Setting that as needed here.
-               if(k %in% c("Transporter_Gut_ABCB1_P_gp_MDR1_Apical_RAFREF", 
-                           "Transporter_Gut_ABCB1_P_gp_system")){
+               if(DeetInfo$Level3 %in% c("GutTransporterSet")){
                   DeetInfo$Level4 <- as.numeric(DeetInfo$Level4)
                }
                
-               if(k %in% k %in% c("ParticleSizeD10", 
-                                  "ParticleSizeD50", 
-                                  "ParticleSizeD90")){
+               if(k %in% c("ParticleSizeD10", 
+                           "ParticleSizeD50", 
+                           "ParticleSizeD90")){
                   DeetInfo$Level6 <- as.numeric(DeetInfo$Level6)
                }
-               
                
                # Check for a switch b/c that will change what tag we extract
                if(complete.cases(DeetInfo$XMLswitch)){
@@ -392,6 +391,12 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                 "1" ~ "predicted", 
                                 .default = DeetValue), 
                   
+                  # Adjusting for when this doesn't apply
+                  k %in% paste0("fa", AllRegCompounds$Suffix) ~
+                     case_when(XML::xmlValue(RootNode[["Compounds"]][[
+                        CompoundNum]][["AbsorptionSwitch"]]) == "1" ~ NA, 
+                        .default = DeetValue),
+                  
                   str_detect(k, "Formulation") ~ 
                      case_match(DeetValue, 
                                 "0" ~ "solution", 
@@ -410,6 +415,28 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                 "true" ~ "locked", 
                                 "false" ~ "unlocked"), 
                   
+                  # Adjusting when things need to be set to NA when they don't
+                  # apply. Peff is complicated, so it's separate from this.
+                  str_detect(k, "Qgut_userinput") ~
+                     case_when(XML::xmlValue(RootNode[["Compounds"]][[
+                        CompoundNum]][["QGutSwitch"]]) == "1" ~ NA, 
+                        .default = DeetValue), 
+                  
+                  # Switch translation here: true means use RAF/REF. false means
+                  # use ISEF,T.
+                  str_detect(k, "Transporter_Gut_ABCB1_P_gp_MDR1_Apical_ISEFT") ~
+                     case_when(
+                        XML::xmlValue(RootNode[["Compounds"]][[
+                           CompoundNum]][["GutTransporterSet"]][[10]][[
+                              "ISEFT_RAFREFSwitch"]]) == "false" ~ NA, 
+                        .default = DeetValue), 
+                  str_detect(k, "Transporter_Gut_ABCB1_P_gp_MDR1_Apical_RAFREF") ~
+                     case_when(
+                        XML::xmlValue(RootNode[["Compounds"]][[
+                           CompoundNum]][["GutTransporterSet"]][[10]][[
+                              "ISEFT_RAFREFSwitch"]]) == "true" ~ NA, 
+                        .default = DeetValue), 
+                  
                   TRUE ~ DeetValue)
                
                suppressWarnings(
@@ -417,20 +444,6 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                       "numeric" = as.numeric(DeetValue), 
                                       "character" = as.character(DeetValue))
                )
-               
-               # Adjusting when things need to be set to NA when they don't
-               # apply. Peff is complicated, so it's separate from this.
-               if(str_detect(k, "Qgut_userinput") & 
-                  XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["QGutSwitch"]]) == "1"){
-                  DeetValue <- NA
-               }
-               
-               if(k %in% paste0("fa", AllRegCompounds$Suffix) & 
-                  XML::xmlValue(RootNode[["Compounds"]][[CompoundNum]][["AbsorptionSwitch"]]) == "1"){
-                  # This is when fa is predicted and the value listed in the
-                  # workspace is thus unreliable.
-                  DeetValue <- NA
-               }
                
                Deets[[i]][[k]] <- DeetValue 
                
@@ -630,7 +643,10 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
          
          # NB: Population parameters need to have level 2 be numeric rather
          # than character.
-         if(is.na(DeetInfo$Level1)){browser()}
+         if(is.na(DeetInfo$Level1)){
+            # browser()
+         }
+         
          if(DeetInfo$Level1 == "Populations"){
             DeetInfo$Level2 <- as.numeric(DeetInfo$Level2)
          }

@@ -2,15 +2,21 @@
 #'
 #' @description Extracts concentration-time data from simulator output Excel
 #'   files and, optionally, a separately specified observed data file, and puts
-#'   all data into a single, tidy data.frame. There are some nuances to how it
-#'   deals with observed data; please see the details at the bottom of this help
-#'   file. Not all substrate metabolites, inhibitors, or inhibitor metabolites
-#'   are available in all tissues. If it's not present in your Excel output, we
-#'   can't extract it here. For detailed instructions and examples, please see
-#'   the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
-#'   Files/SimcypConsultancy function examples and
-#'   instructions/Concentration-time plots 1 - one sim at a
-#'   time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+#'   all data into a single, tidy data.frame, formatted appropriately to work
+#'   with graphing functions in the SimcypConsultancy package such as
+#'   \code{\link{ct_plot}} and \code{\link{ct_plot_overlay}}.
+#'
+#'   There are some nuances to how it deals with observed data; please see the
+#'   details at the bottom of this help file.
+#'
+#'   Not all substrate metabolites, inhibitors, or inhibitor metabolites are
+#'   available in all tissues. If it's not present in your Excel output, we
+#'   can't extract it here.
+#'
+#'   For detailed instructions and examples, please see the SharePoint file
+#'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+#'   function examples and instructions/Concentration-time plots 1 - one sim at
+#'   a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
 #'   include a link to it here.)
 #'
 #' @details \strong{A note on observed data:} When observed data are included in
@@ -476,12 +482,13 @@ extractConcTime <- function(sim_data_file,
    if("LgMol_simulation" %in% names(Deets)){
       LgMolSim <- Deets$LgMol_simulation
    } else if("ADCSimulation_sub" %in% names(Deets)){
-      LgMolSim <- case_when(
-         is.character(Deets$ADCSimulation_sub) ~ 
-            case_match(Deets$ADCSimulation_sub, 
-                       "yes" ~ TRUE, 
-                       "no" ~ FALSE), 
-         is.logical(Deets$ADCSimulation_sub) ~ Deets$ADCSimulation_sub)
+      if(is.character(Deets$ADCSimulation_sub)){
+         LgMolSim <- case_match(Deets$ADCSimulation_sub, 
+                                "yes" ~ TRUE, 
+                                "no" ~ FALSE)
+      } else if(is.logical(Deets$ADCSimulation_sub)){
+         LgMolSim <- Deets$ADCSimulation_sub
+      }
    } else if("ADCSimulation" %in% names(Deets)){
       LgMolSim <- case_when(
          is.character(Deets$ADCSimulation) ~ 
@@ -835,11 +842,8 @@ extractConcTime <- function(sim_data_file,
    
    ## observed data -------------------------------------------------------
    
-   # This section of code ONLY applies when obs concs are NOT extracted
-   # separately. This piece of code also ONLY applies to systemic concs.
-   
    # Setting up some names of observed data for use later. Note that
-   # names(ObsCompounds) are lower case but values are original case. 
+   # names(ObsCompounds) are lower case but values are original case.
    ObsCompounds <-
       c("substrate" = Deets$Substrate,
         "inhibitor 1" = Deets$Inhibitor1,
@@ -1058,6 +1062,8 @@ extractConcTime <- function(sim_data_file,
          # get useless and confusing warnings.
          GoodMW <-
             Deets %>% select(matches("^MW_")) %>% 
+            mutate(across(.cols = everything(), 
+                          .fns = as.numeric)) %>% 
             pivot_longer(cols = everything(), 
                          names_to = "Suffix", 
                          values_to = "MW") %>% 
@@ -1109,9 +1115,11 @@ extractConcTime <- function(sim_data_file,
          ToConvert_obs <- obs_data %>% filter(complete.cases(Conc_units))
          
          if(nrow(ToConvert) > 0){
-            sim_data <- convert_units(DF_to_convert = ToConvert,
-                                      DF_with_good_units = ToConvert_obs, 
-                                      MW = MW)
+            ToConvert <- convert_units(
+               DF_to_convert = ToConvert,
+               conc_units = unique(ToConvert_obs$Conc_units), 
+               time_units = unique(ToConvert_obs$Time_units), 
+               MW = MW)
          }
          
          sim_data <- bind_rows(SetAside, ToConvert)

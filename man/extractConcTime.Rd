@@ -161,15 +161,21 @@ A data.frame of concentration-time data with the following columns:
 \description{
 Extracts concentration-time data from simulator output Excel
   files and, optionally, a separately specified observed data file, and puts
-  all data into a single, tidy data.frame. There are some nuances to how it
-  deals with observed data; please see the details at the bottom of this help
-  file. Not all substrate metabolites, inhibitors, or inhibitor metabolites
-  are available in all tissues. If it's not present in your Excel output, we
-  can't extract it here. For detailed instructions and examples, please see
-  the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
-  Files/SimcypConsultancy function examples and
-  instructions/Concentration-time plots 1 - one sim at a
-  time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
+  all data into a single, tidy data.frame, formatted appropriately to work
+  with graphing functions in the SimcypConsultancy package such as
+  \code{\link{ct_plot}} and \code{\link{ct_plot_overlay}}.
+
+  There are some nuances to how it deals with observed data; please see the
+  details at the bottom of this help file.
+
+  Not all substrate metabolites, inhibitors, or inhibitor metabolites are
+  available in all tissues. If it's not present in your Excel output, we
+  can't extract it here.
+
+  For detailed instructions and examples, please see the SharePoint file
+  "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+  function examples and instructions/Concentration-time plots 1 - one sim at
+  a time/Concentration-time-plot-examples-1.docx". (Sorry, we are unable to
   include a link to it here.)
 }
 \details{

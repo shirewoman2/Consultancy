@@ -600,7 +600,7 @@ ct_plot_overlay <- function(ct_dataframe,
    # Error catching ---------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again."), 
            call. = FALSE)
    }
    
@@ -1981,17 +1981,21 @@ ct_plot_overlay <- function(ct_dataframe,
    # Setting numbers of things required separately so that user doesn't get
    # annoying warning message about possibly uninitialized columns.
    if(AESCols["linetype"] == "<empty>"){
+      linetype_levels <- NA
       n_line_type <- 1
    } else {
-      n_line_type <- length(unique(c(levels(sim_dataframe$linetype_column), 
-                                     levels(obs_dataframe$linetype_column))))
+      linetype_levels <- unique(c(levels(sim_dataframe$linetype_column), 
+                                  levels(obs_dataframe$linetype_column)))
+      n_line_type <- length(linetype_levels)
    } 
    
    if(AESCols["color"] == "<empty>"){
+      color_levels <- NA
       n_line_color <- 1
    } else {
-      n_line_color <- length(unique(c(levels(sim_dataframe$colorBy_column), 
-                                      levels(obs_dataframe$colorBy_column))))
+      color_levels <- unique(c(levels(sim_dataframe$colorBy_column), 
+                               levels(obs_dataframe$colorBy_column)))
+      n_line_color <- length(color_levels)
    } 
    
    if(any(complete.cases(obs_color))){
@@ -2009,8 +2013,12 @@ ct_plot_overlay <- function(ct_dataframe,
       DDI = DDI, 
       line_type = linetypes, 
       n_line_type = n_line_type, 
+      linetype_levels = linetype_levels, 
+      
       line_color = color_set, 
       n_line_color = n_line_color, 
+      color_levels = color_levels, 
+      
       obs_shape = obs_shape, 
       n_obs_shape = n_line_type, 
       obs_color = obs_color, 
@@ -2022,7 +2030,7 @@ ct_plot_overlay <- function(ct_dataframe,
    obs_shape <- AesthetStuff$obs_shape
    line_color <- AesthetStuff$line_color
    obs_color <- AesthetStuff$obs_color
-   obs_fill_trans<- AesthetStuff$obs_fill_trans
+   obs_fill_trans <- AesthetStuff$obs_fill_trans
    obs_line_trans <- AesthetStuff$obs_line_trans
    
    # if(length(obs_shape) < NumShapes){

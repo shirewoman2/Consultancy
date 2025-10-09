@@ -4,12 +4,7 @@
 \alias{convert_conc_units}
 \title{Convert the concentration units in a data.frame of concentration-time data}
 \usage{
-convert_conc_units(
-  DF_to_convert,
-  conc_units = "ng/mL",
-  DF_with_good_units = NA,
-  MW = NA
-)
+convert_conc_units(DF_to_convert, conc_units = "ng/mL", MW = NA)
 }
 \arguments{
 \item{DF_to_convert}{the data.frame of concentration-time data with units
@@ -26,12 +21,6 @@ include the column "CompoundID".}
 concentration units are the same as the ones in the Excel form for PE data
 entry: "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"), "ng/L",
 "ng/mL", "µM" (or "uM"), or "nM".}
-
-\item{DF_with_good_units}{if you would like to just match another data.frame,
-supply here a data.frame that has the desired concentration and time units.
-Options for concentration units are the same as the ones in the Excel form
-for PE data entry, and options for time units are "hours", "days", and
-"minutes".}
 
 \item{MW}{optionally supply a molecular weight for the compound of interest
 to enable conversions between mass per volume and molar concentrations. If

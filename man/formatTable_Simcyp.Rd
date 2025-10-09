@@ -22,7 +22,7 @@ formatTable_Simcyp(
   highlight_so_colors = "yellow to red",
   highlight_cells = NA,
   highlight_color = "yellow",
-  hlines = NA,
+  hlines = "when dataset changes",
   font = "Arial",
   fontsize = 11,
   borders = TRUE,
@@ -174,7 +174,8 @@ the bottom of rows 3 and 5 of the main part of your table not counting the
 heading. If you would like to add a horizontal line every time the data set
 changes, e.g., this is a PK table and you want a line every time there's a
 different simulation, tissue, compound, etc. but not every time there's a
-different statistic, set this to "when dataset changes".}
+different statistic, set this to "when dataset changes", which is the
+default.}
 
 \item{font}{font to use. Default is "Arial" and any fonts available on your
 machine in either Word or PowerPoint should be acceptable. If you get Times

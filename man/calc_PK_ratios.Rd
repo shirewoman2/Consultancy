@@ -10,15 +10,16 @@ calc_PK_ratios(
   sim_data_file_denominator = NA,
   compoundToExtract = NA,
   tissue = NA,
-  sheet_PKparameters = NA,
+  sheet_user_interval = NA,
   existing_exp_details = NA,
   paired = TRUE,
   match_subjects_by = "individual and trial",
-  distribution_type = "t",
-  mean_type = "geometric",
   conc_units = "ng/mL",
+  time_units = "hours",
   include_num_denom_columns = TRUE,
+  mean_type = "geometric",
   conf_int = 0.9,
+  distribution_type = "t",
   includeConfInt = TRUE,
   includeCV = TRUE,
   include_dose_num = NA,
@@ -33,7 +34,8 @@ calc_PK_ratios(
   shading_column,
   highlight_gmr_colors = NA,
   page_orientation = "landscape",
-  fontsize = 11
+  fontsize = 11,
+  sheet_PKparameters = NA
 )
 }
 \arguments{
@@ -44,8 +46,10 @@ calc_PK_ratios(
   specify what you need in terms of which tissue, which compound, which
   simulation files, and which tab to get the data from with the arguments
   \code{tissue}, \code{compoundToExtract}, \code{sim_data_file_numerator},
-  \code{sim_data_file_denominator}, and \code{sheet_PKparameters}.
-  \strong{Details on each option:} \describe{\item{\strong{Option 1: }a file to read or a data.frame}{This
+  \code{sim_data_file_denominator}, and \code{sheet_user_interval}.
+  \strong{Details on each option:} \describe{\item{
+
+  \strong{Option 1: }a file to read or a data.frame}{This
   is the most versatile option and, we think, the clearest in terms of
   getting what you expected. Please try running \code{\link{make_example_PK_input}}
   to see examples for how to set up a csv or Excel file or data.frame to
@@ -57,7 +61,8 @@ calc_PK_ratios(
 
   \item{"Denominator_File"}{This is the same thing as the argument \code{sim_data_file_denominator})}
 
-  \item{"Numerator_Sheet" or "Denominator_Sheet"}{When it's a user-defined AUC interval you want,
+  \item{"Numerator_UserAUCSheet" or "Denominator_UserAUCSheet"}{When it's a
+  user-defined AUC interval you want,
   this specifies which sheet in the Simulator output Excel file to use for
   the corresponding PK parameter in the numerator or denominator,
   respectively. If it's a regular first-dose or last-dose PK parameter,
@@ -96,7 +101,7 @@ calc_PK_ratios(
   from all your simulations. List the PK parameters you want here and then,
   in the arguments
   \code{tissue}, \code{compoundToExtract}, and
-  \code{sheet_PKparameters} specify what you want for each of those. If
+  \code{sheet_user_interval} specify what you want for each of those. If
   you're going this route, here are the two options
   you have for the argument \code{PKparameters}: \describe{
 
@@ -145,7 +150,7 @@ tissue for the numerator PK and a different one for the denominator PK,
 that must be specified in a data.frame or a csv file that you supply to the
 argument \code{PKparameters}.}
 
-\item{sheet_PKparameters}{If you have a user-defined AUC interval and you
+\item{sheet_user_interval}{If you have a user-defined AUC interval and you
 want the PK parameters for to be pulled from that specific tab in the
 Simulator output Excel files, list that tab here. If you want standard
 first-dose or last-dose PK parameters, leave this as the default NA; we
@@ -195,23 +200,16 @@ setting of "individual and trial" but the trials are NOT the same between
 simulations, you'll get a warning and no results, which we think is vastly
 superior to getting \emph{incorrect} results.}
 
-\item{distribution_type}{use a "t" distribution (default) or a "Z"
-distribution. Note: The Simcyp Simulator calculates geometric confidence
-intervals with a t distribution.}
-
-\item{mean_type}{What kind of means and confidence intervals do you want
-listed in the output table? Options are "arithmetic" or "geometric"
-(default). This will give you arithmetic or geometric means for everything
-but tmax values, which will be medians.}
-
 \item{conc_units}{What concentration units should be used in the table?
 Default is "ng/mL", but if you set the concentration units to something
 else, this will attempt to convert the units to match that. This adjusts
-only the simulated values, since we're assuming that that's the most likely
-problem and that observed units are relatively easy to fix, and it also
-only affects AUC and Cmax values. Acceptable input is any concentration
-unit listed in the Excel form for PE data entry, e.g. \code{conc_units =
-"ng/mL"} or \code{conc_units = "uM"}.}
+only the simulated values, and it also only affects AUC and Cmax values.
+Acceptable input is any concentration unit listed in the Excel form for PE
+data entry, e.g. \code{conc_units = "ng/mL"} or \code{conc_units = "uM"}.}
+
+\item{time_units}{What time units should be used in the table? Default is
+"hours"; other acceptable options: "minutes", "hours", "days", or "weeks".
+This adjusts only the simulated values.}
 
 \item{include_num_denom_columns}{TRUE (default) or FALSE for whether to
 include columns in the output table for the numerator data alone and
@@ -222,7 +220,16 @@ and also a column with summary statistics on the AUC for cancer patients
 and a column with summary statistics on the AUC for healthy volunteers.
 Setting it to FALSE would give you only the ratios.}
 
+\item{mean_type}{What kind of means and confidence intervals do you want
+listed in the output table? Options are "arithmetic" or "geometric"
+(default). This will give you arithmetic or geometric means for everything
+but tmax values, which will be medians.}
+
 \item{conf_int}{confidence interval to use; default is 90\%}
+
+\item{distribution_type}{use a "t" distribution (default) or a "Z"
+distribution. Note: The Simcyp Simulator calculates geometric confidence
+intervals with a t distribution.}
 
 \item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
 confidence intervals were included in the simulator output file. Note that
@@ -300,16 +307,11 @@ simulator output file. Useful for QCing.}
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
-the main PK table saved as a Word or csv file.  Do not include any slashes,
-dollar signs, or periods in the file name. If you supply only the file
-extension, e.g., \code{save_table = "docx"}, the name of the file will be
-the file name plus "PK summary table" with that extension and output will
-be located in the same folder as \code{sim_data_file}. If you supply
-something other than just "docx" or just "csv" for the file name but you
-leave off the file extension, we'll assume you want it to be ".csv". While
-the main PK table data will be in whatever file format you requested, if
-you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
-its own and will have "- QC" added to the end of the file name.}
+the main PK table saved as a Word or csv file. Do not include any slashes,
+dollar signs, or periods in the file name. While the main PK table data
+will be in whatever file format you requested, if you set
+\code{checkDataSource = TRUE}, the QC data will be in a csv file on its own
+and will have "- QC" added to the end of the file name.}
 
 \item{name_clinical_study}{optionally specify the name(s) of the clinical
 study or studies for any observed data. This only affects the caption of
@@ -341,6 +343,10 @@ highlighting for GMR level will be done.}
 
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
+
+\item{sheet_PKparameters}{deprecated because we should have named this
+argument more clearly originally! Please see the argument
+'sheet_user_interval'.}
 }
 \value{
 A list or a data.frame of PK data that optionally includes where the

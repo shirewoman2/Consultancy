@@ -15,7 +15,7 @@
 #'   specify what you need in terms of which tissue, which compound, which
 #'   simulation files, and which tab to get the data from with the arguments
 #'   \code{tissue}, \code{compoundToExtract}, \code{sim_data_file_numerator},
-#'   \code{sim_data_file_denominator}, and \code{sheet_PKparameters}.
+#'   \code{sim_data_file_denominator}, and \code{sheet_user_interval}.
 #'   \strong{Details on each option:} \describe{\item{\strong{Option 1: }a file to read or a data.frame}{This
 #'   is the most versatile option and, we think, the clearest in terms of
 #'   getting what you expected. Please try running \code{\link{make_example_PK_input}}
@@ -28,7 +28,8 @@
 #'
 #'   \item{"Denominator_File"}{This is the same thing as the argument \code{sim_data_file_denominator})}
 #'
-#'   \item{"Numerator_Sheet" or "Denominator_Sheet"}{When it's a user-defined AUC interval you want,
+#'   \item{"Numerator_UserAUCSheet" or "Denominator_UserAUCSheet"}{When it's
+#'   a user-defined AUC interval you want,
 #'   this specifies which sheet in the Simulator output Excel file to use for
 #'   the corresponding PK parameter in the numerator or denominator,
 #'   respectively. If it's a regular first-dose or last-dose PK parameter,
@@ -67,7 +68,7 @@
 #'   from all your simulations. List the PK parameters you want here and then,
 #'   in the arguments
 #'   \code{tissue}, \code{compoundToExtract}, and
-#'   \code{sheet_PKparameters} specify what you want for each of those. If
+#'   \code{sheet_user_interval} specify what you want for each of those. If
 #'   you're going this route, here are the two options
 #'   you have for the argument \code{PKparameters}: \describe{
 #'
@@ -114,7 +115,7 @@
 #'   tissue for the numerator PK and a different one for the denominator PK,
 #'   that must be specified in a data.frame or a csv file that you supply to the
 #'   argument \code{PKparameters}.
-#' @param sheet_PKparameters If you have a user-defined AUC interval and you
+#' @param sheet_user_interval If you have a user-defined AUC interval and you
 #'   want the PK parameters for to be pulled from that specific tab in the
 #'   Simulator output Excel files, list that tab here. If you want standard
 #'   first-dose or last-dose PK parameters, leave this as the default NA; we
@@ -270,16 +271,11 @@
 #' @param save_table optionally save the output table and, if requested, the QC
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
-#'   the main PK table saved as a Word or csv file.  Do not include any slashes,
-#'   dollar signs, or periods in the file name. If you supply only the file
-#'   extension, e.g., \code{save_table = "docx"}, the name of the file will be
-#'   the file name plus "PK summary table" with that extension and output will
-#'   be located in the same folder as \code{sim_data_file}. If you supply
-#'   something other than just "docx" or just "csv" for the file name but you
-#'   leave off the file extension, we'll assume you want it to be ".csv". While
-#'   the main PK table data will be in whatever file format you requested, if
-#'   you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
-#'   its own and will have "- QC" added to the end of the file name.
+#'   the main PK table saved as a Word or csv file. Do not include any slashes,
+#'   dollar signs, or periods in the file name. While the main PK table data
+#'   will be in whatever file format you requested, if you set
+#'   \code{checkDataSource = TRUE}, the QC data will be in a csv file on its own
+#'   and will have "- QC" added to the end of the file name.
 #' @param single_table TRUE (default) or FALSE for whether to save all the PK
 #'   data in a single table or break the data up by tissue, compound ID, and
 #'   file into multiple tables. This only applies to the Word output.
@@ -291,6 +287,18 @@
 #'   highlighting geometric mean ratios for DDIs. Options are "yellow to red",
 #'   "green to red" or a vector of 4 colors of your choosing. If left as NA, no
 #'   highlighting for GMR level will be done.
+#' @param conc_units What concentration units should be used in the table?
+#'   Default is "ng/mL", but if you set the concentration units to something
+#'   else, this will attempt to convert the units to match that. This adjusts
+#'   only the simulated values, and it also only affects AUC and Cmax values.
+#'   Acceptable input is any concentration unit listed in the Excel form for PE
+#'   data entry, e.g. \code{conc_units = "ng/mL"} or \code{conc_units = "uM"}.
+#' @param time_units What time units should be used in the table? Default is
+#'   "hours", and "days" is the other acceptable option. This adjusts only the
+#'   simulated values.
+#' @param sheet_PKparameters deprecated because we should have named this
+#'   argument more clearly originally! Please see the argument
+#'   'sheet_user_interval'.
 #'
 #' @return A list or a data.frame of PK data that optionally includes where the
 #'   data came from and data to use for making forest plots
@@ -301,24 +309,26 @@
 calc_PK_ratios_mult <- function(PKparameters = NA, 
                                 compoundToExtract = NA,
                                 tissue = NA, 
-                                sheet_PKparameters = NA,
+                                sheet_user_interval = NA,
                                 existing_exp_details = NA,
                                 paired = TRUE,
                                 match_subjects_by = "individual and trial", 
-                                distribution_type = "t",
-                                mean_type = "geometric", 
                                 include_num_denom_columns = TRUE, 
+                                conc_units = "ng/mL", 
+                                time_units = "hours", 
+                                mean_type = "geometric", 
                                 conf_int = 0.9, 
+                                distribution_type = "t",
                                 includeConfInt = TRUE,
                                 includeCV = TRUE, 
                                 include_dose_num = NA,
+                                extract_forest_data = FALSE, 
                                 concatVariability = TRUE, 
                                 variability_format = "to",
                                 prettify_columns = TRUE,
                                 prettify_compound_names = TRUE,
                                 rounding = NA,
                                 checkDataSource = TRUE, 
-                                extract_forest_data = FALSE, 
                                 save_table = NA, 
                                 name_clinical_study = NA, 
                                 shading_column, 
@@ -326,12 +336,14 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                                 single_table = TRUE,
                                 page_orientation = "landscape", 
                                 fontsize = 11, 
-                                sim_data_file_pairs = "deprecated"){
+                                sim_data_file_pairs = "deprecated", 
+                                sheet_PKparameters = NA){
    
    # Error catching ----------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again."), 
+           call. = FALSE)
    }
    
    if("character" %in% class(sim_data_file_pairs) == FALSE ||
@@ -396,6 +408,18 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
               call. = FALSE)
    }
    
+   if(any(complete.cases(sheet_PKparameters))){
+      
+      if(all(is.na(sheet_user_interval))){
+         warning(wrapn("You have specified something for the argument 'sheet_PKparameters', which we are deprecating in favor of 'sheet_user_interval', which we're hoping will be a clearer name in terms of what this function is expecting. We will set the argument 'sheet_user_interval' to what you had provided for 'sheet_PKparameters'."), 
+                 call. = FALSE)
+         sheet_user_interval <- sheet_PKparameters
+      } else {
+         warning(wrapn("You have specified something for both the argument 'sheet_PKparameters', which we are deprecating, and the argument 'sheet_user_interval', which is what we're replacing it with. We will ignore what you provided for 'sheet_PKparameters'."), 
+                 call. = FALSE)
+      }
+   }
+   
    
    # Main body of function -------------------------------------------------
    
@@ -403,14 +427,10 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    
    # If they are *only* supplying file pairs and no PK, then use that for
    # PKparameters b/c when it's tidied in the next step, it will work better.
-   if(any(complete.cases(PKparameters)) == FALSE & 
-      any(complete.cases(sim_data_file_pairs))){
-      PKparameters <- sim_data_file_pairs
-   }
    TEMP <- tidy_input_PK(PKparameters = PKparameters, 
                          compoundsToExtract = compoundToExtract, 
                          tissues = tissue, 
-                         sheet_PKparameters = sheet_PKparameters, 
+                         sheet_user_interval = sheet_user_interval, 
                          existing_exp_details = existing_exp_details)
    PKparameters <- TEMP$PKparameters %>% unique()
    FilePairs <- TEMP$FilePairs %>% unique()
@@ -463,6 +483,7 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          include_dose_num = TRUE, # will remove dose number at end if needed
          prettify_columns = FALSE, 
          prettify_compound_names = FALSE, 
+         conc_units = conc_units, 
          rounding = "none", # will change this later as needed
          concatVariability = FALSE, # will change this later as needed
          checkDataSource = TRUE, 
@@ -521,7 +542,9 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
       # stat, concatenating, then converting back to wide.
       MyPKResults <- MyPKResults %>% 
          pivot_longer(cols = -any_of(c("Statistic", "CompoundID", "Compound", 
-                                       "Tissue", "File", "Sheet")), 
+                                       "Tissue", "File", "Sheet", 
+                                       "Interval_Numerator",
+                                       "Interval_Denominator")), 
                       names_to = "PKparameter", 
                       values_to = "Value") %>% 
          filter(complete.cases(Value)) %>% 
@@ -538,7 +561,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
                       "parentheses" = paste0("(", `90% CI - Lower`, ", ", `90% CI - Upper`, ")")),
             .default = NA)) %>% 
          select(-`90% CI - Lower`, -`90% CI - Upper`) %>% 
-         pivot_longer(cols = -c(CompoundID, Tissue, File, PKparameter), 
+         pivot_longer(cols = -c(CompoundID, Tissue, File, PKparameter, 
+                                Interval_Numerator, Interval_Denominator), 
                       names_to = "Statistic", 
                       values_to = "Value") %>% 
          pivot_wider(names_from = PKparameter, 
@@ -548,7 +572,9 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
          # Pivoting longer to remove empty cells, get things in order, and more
          # easily round.
          pivot_longer(cols = -any_of(c("File", "Statistic", "Tissue",
-                                       "CompoundID")), 
+                                       "CompoundID",
+                                       "Interval_Numerator",
+                                       "Interval_Denominator")), 
                       names_to = "PKparameter", 
                       values_to = "Value") %>% 
          separate_wider_delim(cols = PKparameter, delim = " ", 
@@ -581,12 +607,61 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    
    # Setting column order
    MyPKResults <- MyPKResults %>% 
-      relocate(CompoundID, Tissue, File, .after = last_col())
+      relocate(Interval_Numerator, Interval_Denominator, 
+               CompoundID, Tissue, File, .after = last_col())
    
    if(includeConfInt == FALSE){
       MyPKResults <- MyPKResults %>% 
          filter(!str_detect(Statistic, "CI|confidence"))
    }
+   
+   
+   ## Prettifying as needed --------------------------------------------------
+   
+   if(prettify_columns){
+      
+      PrettyCol <- tibble(OrigName = names(MyPKResults), 
+                          GoodCol = prettify_column_names(names(MyPKResults)))
+      
+      # Adjusting units as needed.
+      PrettyCol <- PrettyCol %>% 
+         mutate(GoodCol = sub("ng/mL.h", 
+                              paste0(conc_units, ".", 
+                                     case_match(time_units, 
+                                                "minutes" ~ "min", 
+                                                "hours" ~ "h", 
+                                                "days" ~ "d", 
+                                                "weeks" ~ "wk")), GoodCol), 
+                GoodCol = sub("L/h", 
+                              paste0("L/", 
+                                     case_match(time_units, 
+                                                "minutes" ~ "min", 
+                                                "hours" ~ "h", 
+                                                "days" ~ "d", 
+                                                "weeks" ~ "wk")), GoodCol), 
+                GoodCol = sub("ng/mL", conc_units, GoodCol), 
+                GoodCol = sub("\\(h\\)", 
+                              paste0("(", 
+                                     case_match(time_units, 
+                                                "minutes" ~ "min", 
+                                                "hours" ~ "h", 
+                                                "days" ~ "d", 
+                                                "weeks" ~ "wk"), 
+                                     ")"), GoodCol))
+      
+      # Setting prettified names.
+      MyPKResults <- MyPKResults[, PrettyCol$OrigName]
+      names(MyPKResults) <- PrettyCol$GoodCol
+   }
+   
+   include_dose_num <- check_include_dose_num(PK = MyPKResults, 
+                                              include_dose_num = include_dose_num)
+   
+   if(include_dose_num == FALSE){
+      names(MyPKResults) <- sub("Dose 1 |Last dose |_dose1|_last", "",
+                                names(MyPKResults))
+   }
+   
    
    # Setting up table caption ------------------------------------------------
    
@@ -633,6 +708,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    
    Out <- list(Table = MyPKResults)
    
+   # Need to set this for saving b/c it's an option for pk_table but not here
+   interval_in_columns <- FALSE
    
    if(complete.cases(save_table)){
       

@@ -65,19 +65,19 @@ addObsPoints <- function(obs_dataframe,
    # instead). I just could NOT get this to work with a mix where you'd need to
    # sometimes map fill and sometimes map color.
    
-   if("colorBy_column" %in% names(obs_dataframe) &&
-      "factor" %in% class(obs_dataframe$colorBy_column)){
-      obs_color <- rep(obs_color, length(levels(obs_dataframe$colorBy_column)))[
-         1:length(levels(obs_dataframe$colorBy_column))]
-      names(obs_color) <- levels(obs_dataframe$colorBy_column)
-   }
-   
-   if("linetype_column" %in% names(obs_dataframe) &&
-      "factor" %in% class(obs_dataframe$linetype_column)){
-      obs_shape <- rep(obs_shape, length(levels(obs_dataframe$linetype_column)))[
-         1:length(levels(obs_dataframe$linetype_column))]
-      names(obs_shape) <- levels(obs_dataframe$linetype_column)
-   }
+   # if("colorBy_column" %in% names(obs_dataframe) &&
+   #    "factor" %in% class(obs_dataframe$colorBy_column)){
+   #    obs_color <- rep(obs_color, length(levels(obs_dataframe$colorBy_column)))[
+   #       1:length(levels(obs_dataframe$colorBy_column))]
+   #    names(obs_color) <- levels(obs_dataframe$colorBy_column)
+   # }
+   # 
+   # if("linetype_column" %in% names(obs_dataframe) &&
+   #    "factor" %in% class(obs_dataframe$linetype_column)){
+   #    obs_shape <- rep(obs_shape, length(levels(obs_dataframe$linetype_column)))[
+   #       1:length(levels(obs_dataframe$linetype_column))]
+   #    names(obs_shape) <- levels(obs_dataframe$linetype_column)
+   # }
    
    
    if(all(c(AESCols["color"], AESCols["linetype"]) != "<empty>")){
@@ -87,7 +87,8 @@ addObsPoints <- function(obs_dataframe,
       if(all(obs_shape %in% 21:25)){
          # solid fill w/black outline
          
-         if(all(obs_color == line_color) | 
+         if((length(obs_color) == length(line_color) &&
+             all(obs_color == line_color)) | 
             figure_type == "compound summary"){
             A <- A + 
                # filled shapes added here

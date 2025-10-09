@@ -8,24 +8,26 @@ calc_PK_ratios_mult(
   PKparameters = NA,
   compoundToExtract = NA,
   tissue = NA,
-  sheet_PKparameters = NA,
+  sheet_user_interval = NA,
   existing_exp_details = NA,
   paired = TRUE,
   match_subjects_by = "individual and trial",
-  distribution_type = "t",
-  mean_type = "geometric",
   include_num_denom_columns = TRUE,
+  conc_units = "ng/mL",
+  time_units = "hours",
+  mean_type = "geometric",
   conf_int = 0.9,
+  distribution_type = "t",
   includeConfInt = TRUE,
   includeCV = TRUE,
   include_dose_num = NA,
+  extract_forest_data = FALSE,
   concatVariability = TRUE,
   variability_format = "to",
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   rounding = NA,
   checkDataSource = TRUE,
-  extract_forest_data = FALSE,
   save_table = NA,
   name_clinical_study = NA,
   shading_column,
@@ -33,7 +35,8 @@ calc_PK_ratios_mult(
   single_table = TRUE,
   page_orientation = "landscape",
   fontsize = 11,
-  sim_data_file_pairs = "deprecated"
+  sim_data_file_pairs = "deprecated",
+  sheet_PKparameters = NA
 )
 }
 \arguments{
@@ -44,7 +47,7 @@ calc_PK_ratios_mult(
   specify what you need in terms of which tissue, which compound, which
   simulation files, and which tab to get the data from with the arguments
   \code{tissue}, \code{compoundToExtract}, \code{sim_data_file_numerator},
-  \code{sim_data_file_denominator}, and \code{sheet_PKparameters}.
+  \code{sim_data_file_denominator}, and \code{sheet_user_interval}.
   \strong{Details on each option:} \describe{\item{\strong{Option 1: }a file to read or a data.frame}{This
   is the most versatile option and, we think, the clearest in terms of
   getting what you expected. Please try running \code{\link{make_example_PK_input}}
@@ -57,7 +60,8 @@ calc_PK_ratios_mult(
 
   \item{"Denominator_File"}{This is the same thing as the argument \code{sim_data_file_denominator})}
 
-  \item{"Numerator_Sheet" or "Denominator_Sheet"}{When it's a user-defined AUC interval you want,
+  \item{"Numerator_UserAUCSheet" or "Denominator_UserAUCSheet"}{When it's
+  a user-defined AUC interval you want,
   this specifies which sheet in the Simulator output Excel file to use for
   the corresponding PK parameter in the numerator or denominator,
   respectively. If it's a regular first-dose or last-dose PK parameter,
@@ -96,7 +100,7 @@ calc_PK_ratios_mult(
   from all your simulations. List the PK parameters you want here and then,
   in the arguments
   \code{tissue}, \code{compoundToExtract}, and
-  \code{sheet_PKparameters} specify what you want for each of those. If
+  \code{sheet_user_interval} specify what you want for each of those. If
   you're going this route, here are the two options
   you have for the argument \code{PKparameters}: \describe{
 
@@ -139,7 +143,7 @@ tissue for the numerator PK and a different one for the denominator PK,
 that must be specified in a data.frame or a csv file that you supply to the
 argument \code{PKparameters}.}
 
-\item{sheet_PKparameters}{If you have a user-defined AUC interval and you
+\item{sheet_user_interval}{If you have a user-defined AUC interval and you
 want the PK parameters for to be pulled from that specific tab in the
 Simulator output Excel files, list that tab here. If you want standard
 first-dose or last-dose PK parameters, leave this as the default NA; we
@@ -189,14 +193,6 @@ setting of "individual and trial" but the trials are NOT the same between
 simulations, you'll get a warning and no results, which we think is vastly
 superior to getting \emph{incorrect} results.}
 
-\item{distribution_type}{use a "t" distribution (default) or a "Z"
-distribution. Note: The Simcyp Simulator calculates geometric confidence
-intervals with a t distribution.}
-
-\item{mean_type}{What kind of means and confidence intervals do you want
-listed in the output table? Options are "arithmetic" or "geometric"
-(default).}
-
 \item{include_num_denom_columns}{TRUE (default) or FALSE for whether to
 include columns in the output table for the numerator data alone and
 columns for the denominator alone. For example, if you wanted to calculate
@@ -206,7 +202,26 @@ and also a column with summary statistics on the AUC for cancer patients
 and a column with summary statistics on the AUC for healthy volunteers.
 Setting it to FALSE would give you only the ratios.}
 
+\item{conc_units}{What concentration units should be used in the table?
+Default is "ng/mL", but if you set the concentration units to something
+else, this will attempt to convert the units to match that. This adjusts
+only the simulated values, and it also only affects AUC and Cmax values.
+Acceptable input is any concentration unit listed in the Excel form for PE
+data entry, e.g. \code{conc_units = "ng/mL"} or \code{conc_units = "uM"}.}
+
+\item{time_units}{What time units should be used in the table? Default is
+"hours", and "days" is the other acceptable option. This adjusts only the
+simulated values.}
+
+\item{mean_type}{What kind of means and confidence intervals do you want
+listed in the output table? Options are "arithmetic" or "geometric"
+(default).}
+
 \item{conf_int}{confidence interval to use; default is 90\%}
+
+\item{distribution_type}{use a "t" distribution (default) or a "Z"
+distribution. Note: The Simcyp Simulator calculates geometric confidence
+intervals with a t distribution.}
 
 \item{includeConfInt}{TRUE (default) or FALSE for whether to include whatever
 confidence intervals were included in the simulator output file. Note that
@@ -226,6 +241,17 @@ default, if you have data only for the first dose or only for the last
 dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
+
+\item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
+the same time. If set to TRUE, this will return a list that includes data
+formatted for use with the function \code{\link{forest_plot}}. This will
+assume that the denominator is the baseline or control scenario and the
+numerator is the comparison. In the output for this, the column "Dose_sub"
+will contain the dose of the substrate in the denominator simualtions, and
+the column "Dose_inhib" will contain the dose of the inhibitor (if there
+was one) in the numerator simulations or the dose of the substrate in the
+numerator simulations if there was not. If there was not an inhibitor, the
+column "Inhibitor 1" will contain the file names for the numerator sims.}
 
 \item{concatVariability}{TRUE (default) or FALSE for whether to concatenate
 the variability. If "TRUE", the output will be formatted into a single row
@@ -281,30 +307,14 @@ rounded to X digits}}}
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
 
-\item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
-the same time. If set to TRUE, this will return a list that includes data
-formatted for use with the function \code{\link{forest_plot}}. This will
-assume that the denominator is the baseline or control scenario and the
-numerator is the comparison. In the output for this, the column "Dose_sub"
-will contain the dose of the substrate in the denominator simualtions, and
-the column "Dose_inhib" will contain the dose of the inhibitor (if there
-was one) in the numerator simulations or the dose of the substrate in the
-numerator simulations if there was not. If there was not an inhibitor, the
-column "Inhibitor 1" will contain the file names for the numerator sims.}
-
 \item{save_table}{optionally save the output table and, if requested, the QC
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
-the main PK table saved as a Word or csv file.  Do not include any slashes,
-dollar signs, or periods in the file name. If you supply only the file
-extension, e.g., \code{save_table = "docx"}, the name of the file will be
-the file name plus "PK summary table" with that extension and output will
-be located in the same folder as \code{sim_data_file}. If you supply
-something other than just "docx" or just "csv" for the file name but you
-leave off the file extension, we'll assume you want it to be ".csv". While
-the main PK table data will be in whatever file format you requested, if
-you set \code{checkDataSource = TRUE}, the QC data will be in a csv file on
-its own and will have "- QC" added to the end of the file name.}
+the main PK table saved as a Word or csv file. Do not include any slashes,
+dollar signs, or periods in the file name. While the main PK table data
+will be in whatever file format you requested, if you set
+\code{checkDataSource = TRUE}, the QC data will be in a csv file on its own
+and will have "- QC" added to the end of the file name.}
 
 \item{name_clinical_study}{optionally specify the name(s) of the clinical
 study or studies for any observed data. This only affects the caption of
@@ -347,6 +357,10 @@ asking you to tell us that. Now, we'd like you to give us this information
 with the argument \code{PKarameters} and ONLY there. We apologize for the
 inconvenience, but, to be frank, this is a pretty complicated function to
 put together, and we needed to simplify things.}
+
+\item{sheet_PKparameters}{deprecated because we should have named this
+argument more clearly originally! Please see the argument
+'sheet_user_interval'.}
 }
 \value{
 A list or a data.frame of PK data that optionally includes where the

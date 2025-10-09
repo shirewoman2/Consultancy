@@ -746,9 +746,8 @@ ct_plot <- function(ct_dataframe = NA,
       "Study" %in% names(ct_dataframe) == FALSE){
       warning(wrapn("You have requested a figure type of 'compound summary' but have not included a column named 'Study' in your source data. We need that column to determine how to color the observed data points, so we'll have to make all the observed data points the same color."), 
               call. = FALSE)
-      figure_type <- "freddy"
+      figure_type <- "freddy" 
    }
-   
    
    if(("Compound" %in% names(ct_dataframe) && length(unique(ct_dataframe$Compound)) > 1) | 
       ("CompoundID" %in% names(ct_dataframe) && length(unique(ct_dataframe$CompoundID)) > 1)){
@@ -1106,22 +1105,22 @@ ct_plot <- function(ct_dataframe = NA,
       mutate(Inhibitor = ifelse(is.na(Inhibitor), "none", Inhibitor), 
              Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
    
-   Data <- Data %>% 
-      # Making columns for mapping color/fill and linetype/shape
-      mutate(
-         colorBy_column = case_when(
-            figure_type == "compound summary" ~ Study, 
-            .default = Inhibitor), 
-         linetype_column = case_when(
-            figure_type == "compound summary" ~ Study, 
-            .default = Inhibitor))
-   
    # If it's a compound summary figure type, set the column "Study" to be factor
    # if it's not already.
    if("Study" %in% names(Data) && "factor" %in% class(Data$Study) == FALSE){
       Data <- Data %>% 
          mutate(Study = factor(Study, levels = sort(unique(Study))))
    }
+   
+   Data <- Data %>% 
+      # Making columns for mapping color/fill and linetype/shape
+      mutate(
+         colorBy_column = case_when(
+            {figure_type} == "compound summary" ~ Study, 
+            .default = Inhibitor), 
+         linetype_column = case_when(
+            {figure_type} == "compound summary" ~ Study, 
+            .default = Inhibitor))
    
    if("factor" %in% class(Data$colorBy_column) == FALSE){
       Data <- Data %>% mutate(colorBy_column = factor(colorBy_column))
@@ -1132,8 +1131,8 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    if(figure_type == "compound summary"){
-      levels(Data$colorBy_column) <- levels(Data$Study)
-      levels(Data$linetype_column) <- levels(Data$Study)
+      levels(Data$colorBy_column) <- c(levels(Data$Study), "none")
+      levels(Data$linetype_column) <- c(levels(Data$Study), "none")
    } else {
       levels(Data$colorBy_column) <- levels(Data$Inhibitor)
       levels(Data$linetype_column) <- levels(Data$Inhibitor)
@@ -1445,23 +1444,37 @@ ct_plot <- function(ct_dataframe = NA,
       from_ct_plot = T, 
       AESCols = AESCols, 
       DDI = DDI, 
+      
       line_type = line_type, 
       n_line_type = case_when(
          DDI ~ 2, 
-         figure_type %in% c("freddy", "compound summary") ~ 2, 
+         figure_type %in% c("freddy") ~ 2, 
          .default = 1), 
+      # Need to drop unused levels here, e.g., if the graph only shows one level
+      # of a DDI (baseline or + perp) but the overall levels include both of
+      # those. This can happen when plotting an inhibitor 1, for example.
+      linetype_levels = levels(droplevels(Data$linetype_column)), 
+      
+      # colorByColumn is Inhibitor for most figure types, Study for "compound
+      # summary" figure type. As with linetype, need to drop unused levels. 
+      color_levels = levels(droplevels(Data$colorBy_column)), 
       line_color = line_color, 
-      n_line_color = ifelse(DDI, 2, 1), 
+      # n_line_color will ALWAYS match the number of unique values for Inhibitor
+      # column, even when it's a compound_summary figure.
+      n_line_color = length(unique(Data$Inhibitor)), 
+      
       obs_shape = obs_shape, 
       n_obs_shape = case_when(
          figure_type == "compound summary" ~ length(unique(obs_dataframe$Study)), 
          figure_type != "compound summary" & DDI == TRUE ~ 2, 
          figure_type != "compound summary" & DDI == FALSE ~ 1), 
+      
       obs_color = obs_color, 
       n_obs_color = case_when(
          figure_type == "compound summary" ~ length(unique(obs_dataframe$Study)), 
          figure_type != "compound summary" & DDI == TRUE ~ 2, 
          figure_type != "compound summary" & DDI == FALSE ~ 1), 
+      
       obs_fill_trans = obs_fill_trans,
       obs_line_trans = obs_line_trans)
    
@@ -1897,9 +1910,13 @@ ct_plot <- function(ct_dataframe = NA,
    }
    
    A <- A + 
+      # NB: colors/fills only apply to observed data with figure_type = "compound summary"
       scale_fill_manual(values = FillColor) +
+      scale_color_manual(values = switch(
+         as.character(figure_type == "compound summary"), 
+         "TRUE" = obs_color, 
+         "FALSE" = line_color)) +
       scale_shape_manual(values = obs_shape) +
-      scale_color_manual(values = line_color) +
       scale_linetype_manual(values = line_type)
    
    # Making semi-log graph ------------------------------------------------

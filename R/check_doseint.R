@@ -260,8 +260,9 @@ check_doseint <- function(sim_data_file,
                         IntDuration = ifelse(any(IntCheck$IntDurationMatch == FALSE), 
                                              "there's a mismatch between the length of at least one dosing interval and the AUC interval", NA))
    
-   IntCheckMessage <- str_c(IntCheckMessage, collapse = "\n")
-   IntCheckMessage <- ifelse(is.na(IntCheckMessage), "good", IntCheckMessage)
+   IntCheckMessage <- ifelse(all(is.na(IntCheckMessage)),
+                             "good",
+                             str_comma(IntCheckMessage))
    
    if(nrow(CustomDosing > 0)){
       IntCheckMessage <- "custom dosing"

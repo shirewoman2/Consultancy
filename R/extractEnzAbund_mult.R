@@ -1,20 +1,23 @@
 #' Pull enzyme-abundance data from multiple Simcyp Simulator output files
 #'
-#' \code{extractEnzAbund_mult} is meant to be used in conjunction with
-#' \code{\link{enz_plot_overlay}} to create graphs from multiple Simcyp
-#' Simulator output files or from multiple enzymes or tissues. If you list
-#' multiple files, multiple tissues, and/or multiple enzymes to extract (see
-#' notes on options below), this will extract \emph{all} possible variations of
-#' them. For example, if you ask for data from the files "sim1.xlsx" and
-#' "sim2.xlsx" and then also ask for the enzymes "CYP3A4" and "CYP2C9", you will
-#' get the CYP3A4 and CYP2C9 abundance data from \emph{both} files.
-#' \strong{NOTE:} If ANY of the Excel files you wish to extract data from are
-#' open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
-#' Be sure to close all of the source Excel files. For detailed instructions and
-#' examples, please see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp
-#' PBPKConsult R Files/SimcypConsultancy function examples and
-#' instructions/Enzyme abundance plots/Enzyme-abundance-plot-examples.docx".
-#' (Sorry, we are unable to include a link to it here.)
+#' @description \code{extractEnzAbund_mult} is meant to be used in conjunction
+#'   with \code{\link{enz_plot_overlay}} to create graphs from multiple Simcyp
+#'   Simulator output files or from multiple enzymes or tissues. If you list
+#'   multiple files, multiple tissues, and/or multiple enzymes to extract (see
+#'   notes on options below), this will extract \emph{all} possible variations
+#'   of them. For example, if you ask for data from the files "sim1.xlsx" and
+#'   "sim2.xlsx" and then also ask for the enzymes "CYP3A4" and "CYP2C9", you
+#'   will get the CYP3A4 and CYP2C9 abundance data from \emph{both} files.
+#'
+#'   \strong{NOTE:} If ANY of the Excel files you wish to extract data from are
+#'   open, this WILL CRASH and WILL NOT save whatever progress it has made so
+#'   far. Be sure to close all of the source Excel files.
+#'
+#'   For detailed instructions and examples, please see the SharePoint file
+#'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+#'   function examples and instructions/Enzyme abundance
+#'   plots/Enzyme-abundance-plot-examples.docx". (Sorry, we are unable to
+#'   include a link to it here.)
 #'
 #' @param sim_data_files a character vector of simulator output files, each in
 #'   quotes and encapsulated with \code{c(...)}, NA to extract enzyme-abundance
@@ -53,19 +56,18 @@
 #'   request multiple enzymes, enclose them in \code{c(...)}, e.g.,
 #'   \code{enzymes = c("CYP3A4", "CYP2D6", "CYP2C19")}. Spaces or hyphens in
 #'   enzyme names will be ignored. Not case sensitive.
-#' @param tissues From which tissues should the desired enzyme abundances be
-#'   extracted? Options are "liver" (default), "gut", or "kidney". Note: If
-#'   "gut" is selected, the output will return both colon and small intestine
-#'   concentrations. To request multiple tissues, enclose them in \code{c(...)},
-#'   e.g., \code{tissues = c("liver", "gut", "kidney")}
+#' @param tissues From which tissue should the desired enzyme abundance be
+#'   extracted? Options are "liver" (default), "gut", "ADAM gut", or "kidney".
+#'   Note: If "gut" is selected, the output will return both colon and small
+#'   intestine concentrations but not ADAM-model gut-segmental enzyme levels.
+#'   Using "ADAM gut" will get individual gut segment levels in the stomach
+#'   through the colon.
 #' @param time_units_to_use time units to use so that all data will be
 #'   comparable. Options are "hours" (default) or "minutes".
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   enzyme-abundance data? Options are "aggregate" (default), "individual", or
 #'   "both". Aggregated data are not calculated here but are pulled from the
 #'   simulator output rows labeled as "Population Statistics".
-#' @param fromMultFunction INTERNAL USE ONLY. TRUE or FALSE on whether this is
-#'   being called on by \code{\link{extractConcTime_mult}}.
 #'
 #' @return Returns a large data.frame with multiple sets of enzyme-abundance
 #'   data, formatted the same way as output from the function
@@ -89,7 +91,6 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
                                  time_units_to_use = "hours",
                                  returnAggregateOrIndiv = "aggregate", 
                                  existing_exp_details = NA, 
-                                 fromMultFunction = FALSE, 
                                  ...){
    
    # Error catching -------------------------------------------------------
@@ -120,10 +121,13 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
    tissues <- tolower(tissues)
    
    # If they didn't include ".xlsx" at the end, add that.
-   sim_data_files <- as.character(
-      sapply(sim_data_files, 
-             function(x) ifelse(str_detect(x, "\\.xlsx$"), 
-                                x, paste0(x, ".xlsx"))))
+   if(any(complete.cases(sim_data_files)) &&
+      all(str_detect(sim_data_files, "^recursive$") == FALSE)){
+      sim_data_files <- as.character(
+         sapply(sim_data_files, 
+                function(x) ifelse(str_detect(x, "\\.xlsx$"), 
+                                   x, paste0(x, ".xlsx"))))
+   }
    
    # Make it so that, if they supply NA, NULL, or "none" for sim_enz_dataframe, all
    # of those will work. Note to coders: It was REALLY HARD to get this to work
@@ -164,9 +168,11 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
    
    EnzTisCheck <- data.frame(Tissue = c(rep("liver", length(LiverEnz)), 
                                         rep("gut", length(GutEnz)), 
+                                        rep("adam gut", length(GutEnz)), 
                                         rep("kidney", length(KidneyEnz))), 
                              Enzyme = c(LiverEnz, 
                                         GutEnz, 
+                                        GutEnz,
                                         KidneyEnz)) %>% 
       mutate(ID = paste(Tissue, Enzyme))
    
@@ -259,7 +265,7 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
    MultData <- list()
    
    for(ff in sim_data_files_topull){
-      message(paste("Extracting data from file =", ff))
+      message(paste("Extracting enzyme-abundance data from file =", ff))
       MultData[[ff]] <- list()
       
       # Getting summary data for the simulation(s)
@@ -290,13 +296,16 @@ extractEnzAbund_mult <- function(sim_data_files = NA,
       # sheets.
       for(j in tissues){
          
-         message(paste("Extracting data for tissue =", j))
+         message(paste("   for tissue =", 
+                       case_match(j, 
+                                  "adam gut" ~ "ADAM gut", 
+                                  .default = j)))
          
          MultData[[ff]][[j]] <- list()
          
          for(k in enzymesToExtract){
             
-            message(paste("Extracting data for enzyme =", k))
+            message(paste("      for enzyme =", k))
             
             MultData[[ff]][[j]][[k]] <- extractEnzAbund(
                sim_data_file = ff,

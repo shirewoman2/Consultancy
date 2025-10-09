@@ -1,24 +1,24 @@
 #' Extract enzyme abundance data from a simulator output Excel file
 #'
-#' Extracts enzyme abundance data from a simulator output Excel file. The
-#' appropriate tab must be present in the output file. For detailed instructions
-#' and examples, please see the SharePoint file "Simcyp PBPKConsult R Files -
-#' Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
-#' instructions/Enzyme abundance plots/Enzyme-abundance-plot-examples.docx".
-#' (Sorry, we are unable to include a link to it here.)
+#' @description \code{extractEnzAbund} is meant to be used in conjunction with
+#'   \code{\link{enz_plot}} to create graphs of relative enzyme abundances.
 #'
-#' \strong{Note:} Unlike the similar function for extracting drug
-#' concentrations, \code{\link{extractConcTime}}, This has not been set up yet
-#' to get the dose number for a custom-dosing regimen.
+#'   For detailed instructions and examples, please see the SharePoint file
+#'   "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+#'   function examples and instructions/Enzyme abundance
+#'   plots/Enzyme-abundance-plot-examples.docx". (Sorry, we are unable to
+#'   include a link to it here.)
 #'
 #' @param sim_data_file name of the Excel file containing the simulated
 #'   enzyme-abundance-time data, in quotes
 #' @param enzyme the enzyme of interest, e.g., "CYP3A4" (default), "UGT1A1",
 #'   etc. Spaces or hyphens in enzyme names will be ignored. Not case sensitive.
 #' @param tissue From which tissue should the desired enzyme abundance be
-#'   extracted? Options are "liver" (default), "gut", or "kidney". Note: If
-#'   "gut" is selected, the output will return both colon and small intestine
-#'   concentrations.
+#'   extracted? Options are "liver" (default), "gut", "ADAM gut", or "kidney".
+#'   Note: If "gut" is selected, the output will return both colon and small
+#'   intestine concentrations but not ADAM-model gut-segmental enzyme levels.
+#'   Using "ADAM gut" will get individual gut segment levels in the stomach
+#'   through the colon.
 #' @param returnAggregateOrIndiv Return aggregate and/or individual simulated
 #'   enzyme abundance data? Options are "individual", "aggregate", or "both"
 #'   (default). Aggregated data are not calculated here but are pulled from the
@@ -72,7 +72,7 @@
 #' @examples
 #' extractEnzAbund(sim_data_file = "../Example simulator output MD.xlsx",
 #'                 enzyme = "CYP3A4", tissue = "liver")
-#'                 
+#'
 #'                 
 extractEnzAbund <- function(sim_data_file,
                             enzyme = "CYP3A4",
@@ -80,6 +80,9 @@ extractEnzAbund <- function(sim_data_file,
                             returnAggregateOrIndiv = "both", 
                             existing_exp_details = NA){
    
+   # Unlike extractConcTime, this has not been set up yet to get the dose number
+   # for a custom-dosing regimen.
+
    # Error catching --------------------------------------------------------------------
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
@@ -108,18 +111,18 @@ extractEnzAbund <- function(sim_data_file,
    }
    
    if(length(tissue) != 1){
-      warning("You must enter one and only one tissue option. (Default is liver.)\n",
-              call. = FALSE)
-      return(data.frame())
-   }
-   
-   if(tissue %in% c("gut", "liver", "kidney") == FALSE){
-      warning("The tissue you entered is not one of the options. Please select one of 'gut', 'liver', or 'kidney' for the tissue.\n",
+      warning(wrapn("You must enter one and only one tissue option. (Default is liver.)"),
               call. = FALSE)
       return(data.frame())
    }
    
    tissue <- tolower(tissue)
+   if(tissue %in% c("gut", "liver", "kidney", "adam gut") == FALSE){
+      warning(wrapn("The tissue you entered is not one of the options. Please select one of 'gut', 'ADAM gut', 'liver', or 'kidney' for the tissue."),
+              call. = FALSE)
+      return(data.frame())
+   }
+   
    enzyme <- gsub(" |_|-", "", toupper(enzyme))
    
    # Checking that what they're asking for is possible
@@ -144,7 +147,7 @@ extractEnzAbund <- function(sim_data_file,
       return(data.frame())
    }
    
-   if(tissue == "gut" & enzyme %in% GutEnz == FALSE){
+   if(tissue %in% c("gut", "adam gut") & enzyme %in% GutEnz == FALSE){
       warning(wrapn(paste0("You requested ", enzyme, " levels in the gut, which is not among the possible outputs from the Simcyp Simulator, so we cannot return any data.")), 
               call. = FALSE)
       return(data.frame())
@@ -220,17 +223,19 @@ extractEnzAbund <- function(sim_data_file,
                                  switch(tissue,
                                         "liver" = "(liver)",
                                         "gut" = "(gut)",
+                                        "adam gut" = "(gut segmental levels)", 
                                         "kidney" = "(kidney)"))) %>% 
       pull(Sheet)
    
    if(length(SheetToExtract) == 0){
-      warning(paste0("The simulator output file `", 
-                     sim_data_file, "` does not appear to have the sheet we need for the enzyme abundances requested. We were looking for a sheet titled `",
-                     paste(toupper(enzyme), switch(tissue,
-                                                   "liver" = "(liver)",
-                                                   "gut" = "(gut)",
-                                                   "kidney" = "(kidney)")), 
-                     "` and could not find it, so these data cannot be returned.\n"), 
+      warning(wrapn(paste0("The simulator output file `", 
+                           sim_data_file, "` does not appear to have the sheet we need for the enzyme abundances requested. We were looking for a sheet titled `",
+                           paste(toupper(enzyme), switch(tissue,
+                                                         "liver" = "(liver)",
+                                                         "gut" = "(gut)",
+                                                         "adam gut" = "(Gut segmental levels)", 
+                                                         "kidney" = "(kidney)")), 
+                           "` and could not find it, so these data cannot be returned.")), 
               call. = FALSE)
       return(data.frame())
    }
@@ -241,50 +246,153 @@ extractEnzAbund <- function(sim_data_file,
                          sheet = SheetToExtract,
                          col_names = FALSE))
    
+   # If the tissue was gut, there are separate data sets for small
+   # intestine and colon or for gut and colon depending on simulator
+   # version or maybe on whether it was an ADAM model (still figuring out
+   # what causes "SI" to be replaced with "Gut" in output). Checking for
+   # that.
+   GutParts <- c(
+      "colon", "small intestine", "stomach", 
+      "duodenum", "jejunum I", "jejunum II", 
+      "ileum I", "ileum II", "ileum III", 
+      "ileum IV")[
+         c(
+            any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)"), na.rm = T),
+            any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)|\\(gut\\)"), na.rm = T), 
+            any(str_detect(tolower(sim_data_xl$...1), "\\(stomach\\)"), na.rm = T), 
+            any(str_detect(tolower(sim_data_xl$...1), "\\(duodenum\\)"), na.rm = T),
+            any(str_detect(tolower(sim_data_xl$...1), "\\(jejunum i\\)"), na.rm = T),
+            any(str_detect(tolower(sim_data_xl$...1), "\\(jejunum ii\\)"), na.rm = T),
+            any(str_detect(tolower(sim_data_xl$...1), "\\(ileum i\\)"), na.rm = T),
+            any(str_detect(tolower(sim_data_xl$...1), "\\(ileum ii\\)"), na.rm = T),
+            any(str_detect(tolower(sim_data_xl$...1), "\\(ileum iii\\)"), na.rm = T),
+            any(str_detect(tolower(sim_data_xl$...1), "\\(ileum iv\\)"), na.rm = T))
+      ]
+   
    # Extracting aggregate data ---------------------------------------------
    if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
       
-      # If the tissue was gut, there are separate data sets for small
-      # intestine and colon or for gut and colon depending on simulator
-      # version or maybe on whether it was an ADAM model (still figuring out
-      # what causes "SI" to be replaced with "Gut" in output). Checking for
-      # that.
-      GutParts <- c("colon", "small intestine")[
-         c(any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)")),
-           any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)|\\(gut\\)")))]
-      
-      if(all(complete.cases(GutParts)) & tissue == "gut"){
+      if(length(GutParts) > 1 & tissue %in% c("gut", "adam gut")){
          
          sim_data_mean <- list()
          
          # mean data
          StartRow_agg <- which(sim_data_xl$...1 == "Population Statistics")
+         StartRow_indiv <- which(sim_data_xl$...1 == "Individual Statistics")
          TimeRows <- which(str_detect(sim_data_xl$...1, "^Time "))
-         TimeRows <- TimeRows[TimeRows > StartRow_agg][1:2]
+         TimeRows <- TimeRows[TimeRows > StartRow_agg & 
+                                 TimeRows < StartRow_indiv]
          
          # Figuring out which rows contain which data
          FirstBlank <- intersect(which(is.na(sim_data_xl$...1)),
-                                 which(1:nrow(sim_data_xl) > TimeRows[2]))[1]
+                                 which(1:nrow(sim_data_xl) > TimeRows[length(TimeRows)]))[1]
          FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
          NamesToCheck <- tolower(sim_data_xl$...1[TimeRows[1]:(FirstBlank-1)])
          
          # Need to note which rows are for which gut part.
+         GutRows <- list()
+         
          SIrows <- which(str_detect(NamesToCheck, "\\(si\\)|\\(gut\\)")) +
             TimeRows[1]-1
-         SITimeRow <- TimeRows[TimeRows + 1 == SIrows]
+         SITimeRow <- TimeRows[which((TimeRows + 1) %in% SIrows)]
          # Looking for the next blank row after SITimeRow
          SIEndRow <- which(is.na(sim_data_xl$...1))
          SIEndRow <- SIEndRow[SIEndRow > SITimeRow][1] - 1
+         if(length(SITimeRow) > 0){
+            GutRows[["small intestine"]] <- SITimeRow:SIEndRow
+         }
          
+         # NB: This regex should work for both ADAM-model and also
+         # non-ADAM-model colon abundances
          Colonrows <- which(str_detect(NamesToCheck, "\\(colon\\)")) +
             TimeRows[1]-1
-         ColonTimeRow <- TimeRows[TimeRows + 1 == Colonrows]
+         ColonTimeRow <- TimeRows[which((TimeRows + 1) %in% Colonrows)]
          # Looking for the next blank row after ColonTimeRow
          ColonEndRow <- which(is.na(sim_data_xl$...1))
          ColonEndRow <- ColonEndRow[ColonEndRow > ColonTimeRow][1] - 1
+         if(length(ColonTimeRow) > 0){
+            GutRows[["colon"]] <- ColonTimeRow:ColonEndRow
+         }
          
-         GutRows <- list("colon" = ColonTimeRow:ColonEndRow,
-                         "small intestine" = SITimeRow:SIEndRow)
+         Stomachrows <- which(str_detect(NamesToCheck, "\\(stomach\\)")) +
+            TimeRows[1]-1
+         StomachTimeRow <- TimeRows[which((TimeRows + 1) %in% Stomachrows)]
+         # Looking for the next blank row after StomachTimeRow
+         StomachEndRow <- which(is.na(sim_data_xl$...1))
+         StomachEndRow <- StomachEndRow[StomachEndRow > StomachTimeRow][1] - 1
+         if(length(StomachTimeRow) > 0){
+            GutRows[["stomach"]] <- StomachTimeRow:StomachEndRow
+         }
+         
+         Duodenumrows <- which(str_detect(NamesToCheck, "\\(duodenum\\)")) +
+            TimeRows[1]-1
+         DuodenumTimeRow <- TimeRows[which((TimeRows + 1) %in% Duodenumrows)]
+         # Looking for the next blank row after DuodenumTimeRow
+         DuodenumEndRow <- which(is.na(sim_data_xl$...1))
+         DuodenumEndRow <- DuodenumEndRow[DuodenumEndRow > DuodenumTimeRow][1] - 1
+         if(length(DuodenumTimeRow) > 0){
+            GutRows[["duodenum"]] <- DuodenumTimeRow:DuodenumEndRow
+         }
+         
+         JejunumIrows <- which(str_detect(NamesToCheck, "\\(jejunum i\\)")) +
+            TimeRows[1]-1
+         JejunumITimeRow <- TimeRows[which((TimeRows + 1) %in% JejunumIrows)]
+         # Looking for the next blank row after JejunumITimeRow
+         JejunumIEndRow <- which(is.na(sim_data_xl$...1))
+         JejunumIEndRow <- JejunumIEndRow[JejunumIEndRow > JejunumITimeRow][1] - 1
+         if(length(JejunumITimeRow) > 0){
+            GutRows[["jejunum I"]] <- JejunumITimeRow:JejunumIEndRow
+         }
+         
+         JejunumIIrows <- which(str_detect(NamesToCheck, "\\(jejunum ii\\)")) +
+            TimeRows[1]-1
+         JejunumIITimeRow <- TimeRows[which((TimeRows + 1) %in% JejunumIIrows)]
+         # Looking for the next blank row after JejunumIITimeRow
+         JejunumIIEndRow <- which(is.na(sim_data_xl$...1))
+         JejunumIIEndRow <- JejunumIIEndRow[JejunumIIEndRow > JejunumIITimeRow][1] - 1
+         if(length(JejunumIITimeRow) > 0){
+            GutRows[["jejunum II"]] <- JejunumIITimeRow:JejunumIIEndRow
+         }
+         
+         IleumIrows <- which(str_detect(NamesToCheck, "\\(ileum i\\)")) +
+            TimeRows[1]-1
+         IleumITimeRow <- TimeRows[which((TimeRows + 1) %in% IleumIrows)]
+         # Looking for the next blank row after IleumITimeRow
+         IleumIEndRow <- which(is.na(sim_data_xl$...1))
+         IleumIEndRow <- IleumIEndRow[IleumIEndRow > IleumITimeRow][1] - 1
+         if(length(IleumITimeRow) > 0){
+            GutRows[["ileum I"]] <- IleumITimeRow:IleumIEndRow
+         }
+         
+         IleumIIrows <- which(str_detect(NamesToCheck, "\\(ileum ii\\)")) +
+            TimeRows[1]-1
+         IleumIITimeRow <- TimeRows[which((TimeRows + 1) %in% IleumIIrows)]
+         # Looking for the next blank row after IleumIITimeRow
+         IleumIIEndRow <- which(is.na(sim_data_xl$...1))
+         IleumIIEndRow <- IleumIIEndRow[IleumIIEndRow > IleumIITimeRow][1] - 1
+         if(length(IleumIITimeRow) > 0){
+            GutRows[["ileum II"]] <- IleumIITimeRow:IleumIIEndRow
+         }
+         
+         IleumIIIrows <- which(str_detect(NamesToCheck, "\\(ileum iii\\)")) +
+            TimeRows[1]-1
+         IleumIIITimeRow <- TimeRows[which((TimeRows + 1) %in% IleumIIIrows)]
+         # Looking for the next blank row after IleumIIITimeRow
+         IleumIIIEndRow <- which(is.na(sim_data_xl$...1))
+         IleumIIIEndRow <- IleumIIIEndRow[IleumIIIEndRow > IleumIIITimeRow][1] - 1
+         if(length(IleumIIITimeRow) > 0){
+            GutRows[["ileum III"]] <- IleumIIITimeRow:IleumIIIEndRow
+         }
+         
+         IleumIVrows <- which(str_detect(NamesToCheck, "\\(ileum iv\\)")) +
+            TimeRows[1]-1
+         IleumIVTimeRow <- TimeRows[which((TimeRows + 1) %in% IleumIVrows)]
+         # Looking for the next blank row after IleumIVTimeRow
+         IleumIVEndRow <- which(is.na(sim_data_xl$...1))
+         IleumIVEndRow <- IleumIVEndRow[IleumIVEndRow > IleumIVTimeRow][1] - 1
+         if(length(IleumIVTimeRow) > 0){
+            GutRows[["ileum IV"]] <- IleumIVTimeRow:IleumIVEndRow
+         }
          
          # Checking for inhibitor
          PerpPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
@@ -479,16 +587,11 @@ extractEnzAbund <- function(sim_data_file,
       }
    }
    
+   
    # Extracting individual data --------------------------------------------
    if(any(c("individual", "both") %in% returnAggregateOrIndiv)){
       
-      # If the tissue was gut, there are separate data sets for small
-      # intestine and colon. Checking for that.
-      GutParts <- c("colon", "small intestine")[
-         c(any(str_detect(tolower(sim_data_xl$...1), "\\(colon\\)")),
-           any(str_detect(tolower(sim_data_xl$...1), "\\(si\\)|\\(gut\\)")))]
-      
-      if(length(which(complete.cases(GutParts))) > 0 & tissue == "gut"){
+      if(length(GutParts) > 1 & tissue %in% c("gut", "adam gut")){
          
          sim_data_ind <- list()
          
@@ -502,17 +605,30 @@ extractEnzAbund <- function(sim_data_file,
          FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
          NamesToCheck <- tolower(sim_data_xl$...1[TimeRows[1]:nrow(sim_data_xl)])
          
+         TimeRows <- which(str_detect(sim_data_xl$...1, "^Time "))
+         TimeRows <- TimeRows[TimeRows > StartRow_indiv]
+         
+         # Figuring out which rows contain which data
+         NamesToCheck <- tolower(sim_data_xl$...1[TimeRows[1]:nrow(sim_data_xl)])
+         
          # Need to note which rows are for which gut part.
+         GutRows <- list()
+         
          SIrows <- which(str_detect(NamesToCheck, "\\(si\\)|\\(gut\\)")) +
             TimeRows[1]-1
          SITimeRow <- intersect(TimeRows+1, SIrows) - 1
          # Looking for the next blank row after SITimeRow
          SIEndRow <- which(is.na(sim_data_xl$...1))
-         SIEndRow <- SIEndRow[SIEndRow > SITimeRow][1] - 1
+         SIEndRow <- SIEndRow[which(SIEndRow > SITimeRow)][1] - 1
          # The above doesn't work if the last row is the last row of in the file, so
          # catching that exception.
          SIEndRow <- ifelse(is.na(SIEndRow), nrow(sim_data_xl), SIEndRow)
+         if(length(SITimeRow) > 0){
+            GutRows[["small intestine"]] <- SITimeRow:SIEndRow
+         }
          
+         # NB: This regex should work for both ADAM-model and also
+         # non-ADAM-model colon abundances
          Colonrows <- which(str_detect(NamesToCheck, "\\(colon\\)")) +
             TimeRows[1]-1
          ColonTimeRow <- intersect(TimeRows+1, Colonrows) - 1
@@ -522,9 +638,113 @@ extractEnzAbund <- function(sim_data_file,
          # The above doesn't work if the last row is the last row of in the file, so
          # catching that exception.
          ColonEndRow <- ifelse(is.na(ColonEndRow), nrow(sim_data_xl), ColonEndRow)
+         if(length(ColonTimeRow) > 0){
+            GutRows[["colon"]] <- ColonTimeRow:ColonEndRow
+         }
          
-         GutRows <- list("colon" = ColonTimeRow:ColonEndRow,
-                         "small intestine" = SITimeRow:SIEndRow)
+         Stomachrows <- which(str_detect(NamesToCheck, "\\(stomach\\)")) +
+            TimeRows[1]-1
+         StomachTimeRow <- intersect(TimeRows+1, Stomachrows) - 1
+         # Looking for the next blank row after StomachTimeRow
+         StomachEndRow <- which(is.na(sim_data_xl$...1))
+         StomachEndRow <- StomachEndRow[which(StomachEndRow > StomachTimeRow)][1] - 1
+         # The above doesn't work if the last row is the last row of in the file, so
+         # catching that exception.
+         StomachEndRow <- ifelse(is.na(StomachEndRow), nrow(sim_data_xl), StomachEndRow)
+         if(length(StomachTimeRow) > 0){
+            GutRows[["stomach"]] <- StomachTimeRow:StomachEndRow
+         }
+         
+         Duodenumrows <- which(str_detect(NamesToCheck, "\\(duodenum\\)")) +
+            TimeRows[1]-1
+         DuodenumTimeRow <- intersect(TimeRows+1, Duodenumrows) - 1
+         # Looking for the next blank row after DuodenumTimeRow
+         DuodenumEndRow <- which(is.na(sim_data_xl$...1))
+         DuodenumEndRow <- DuodenumEndRow[which(DuodenumEndRow > DuodenumTimeRow)][1] - 1
+         # The above doesn't work if the last row is the last row of in the file, so
+         # catching that exception.
+         DuodenumEndRow <- ifelse(is.na(DuodenumEndRow), nrow(sim_data_xl), DuodenumEndRow)
+         if(length(DuodenumTimeRow) > 0){
+            GutRows[["duodenum"]] <- DuodenumTimeRow:DuodenumEndRow
+         }
+         
+         JejunumIrows <- which(str_detect(NamesToCheck, "\\(jejunum i\\)")) +
+            TimeRows[1]-1
+         JejunumITimeRow <- intersect(TimeRows+1, JejunumIrows) - 1
+         # Looking for the next blank row after JejunumITimeRow
+         JejunumIEndRow <- which(is.na(sim_data_xl$...1))
+         JejunumIEndRow <- JejunumIEndRow[which(JejunumIEndRow > JejunumITimeRow)][1] - 1
+         # The above doesn't work if the last row is the last row of in the file, so
+         # catching that exception.
+         JejunumIEndRow <- ifelse(is.na(JejunumIEndRow), nrow(sim_data_xl), JejunumIEndRow)
+         if(length(JejunumITimeRow) > 0){
+            GutRows[["jejunum I"]] <- JejunumITimeRow:JejunumIEndRow
+         }
+         
+         JejunumIIrows <- which(str_detect(NamesToCheck, "\\(jejunum ii\\)")) +
+            TimeRows[1]-1
+         JejunumIITimeRow <- intersect(TimeRows+1, JejunumIIrows) - 1
+         # Looking for the next blank row after JejunumIITimeRow
+         JejunumIIEndRow <- which(is.na(sim_data_xl$...1))
+         JejunumIIEndRow <- JejunumIIEndRow[which(JejunumIIEndRow > JejunumIITimeRow)][1] - 1
+         # The above doesn't work if the last row is the last row of in the file, so
+         # catching that exception.
+         JejunumIIEndRow <- ifelse(is.na(JejunumIIEndRow), nrow(sim_data_xl), JejunumIIEndRow)
+         if(length(JejunumIITimeRow) > 0){
+            GutRows[["jejunum II"]] <- JejunumIITimeRow:JejunumIIEndRow
+         }
+         
+         IleumIrows <- which(str_detect(NamesToCheck, "\\(ileum i\\)")) +
+            TimeRows[1]-1
+         IleumITimeRow <- intersect(TimeRows+1, IleumIrows) - 1
+         # Looking for the next blank row after IleumITimeRow
+         IleumIEndRow <- which(is.na(sim_data_xl$...1))
+         IleumIEndRow <- IleumIEndRow[which(IleumIEndRow > IleumITimeRow)][1] - 1
+         # The above doesn't work if the last row is the last row of in the file, so
+         # catching that exception.
+         IleumIEndRow <- ifelse(is.na(IleumIEndRow), nrow(sim_data_xl), IleumIEndRow)
+         if(length(IleumITimeRow) > 0){
+            GutRows[["ileum I"]] <- IleumITimeRow:IleumIEndRow
+         }
+         
+         IleumIIrows <- which(str_detect(NamesToCheck, "\\(ileum ii\\)")) +
+            TimeRows[1]-1
+         IleumIITimeRow <- intersect(TimeRows+1, IleumIIrows) - 1
+         # Looking for the next blank row after IleumIITimeRow
+         IleumIIEndRow <- which(is.na(sim_data_xl$...1))
+         IleumIIEndRow <- IleumIIEndRow[which(IleumIIEndRow > IleumIITimeRow)][1] - 1
+         # The above doesn't work if the last row is the last row of in the file, so
+         # catching that exception.
+         IleumIIEndRow <- ifelse(is.na(IleumIIEndRow), nrow(sim_data_xl), IleumIIEndRow)
+         if(length(IleumIITimeRow) > 0){
+            GutRows[["ileum II"]] <- IleumIITimeRow:IleumIIEndRow
+         }
+         
+         IleumIIIrows <- which(str_detect(NamesToCheck, "\\(ileum iii\\)")) +
+            TimeRows[1]-1
+         IleumIIITimeRow <- intersect(TimeRows+1, IleumIIIrows) - 1
+         # Looking for the next blank row after IleumIIITimeRow
+         IleumIIIEndRow <- which(is.na(sim_data_xl$...1))
+         IleumIIIEndRow <- IleumIIIEndRow[which(IleumIIIEndRow > IleumIIITimeRow)][1] - 1
+         # The above doesn't work if the last row is the last row of in the file, so
+         # catching that exception.
+         IleumIIIEndRow <- ifelse(is.na(IleumIIIEndRow), nrow(sim_data_xl), IleumIIIEndRow)
+         if(length(IleumIIITimeRow) > 0){
+            GutRows[["ileum III"]] <- IleumIIITimeRow:IleumIIIEndRow
+         }
+         
+         IleumIVrows <- which(str_detect(NamesToCheck, "\\(ileum iv\\)")) +
+            TimeRows[1]-1
+         IleumIVTimeRow <- intersect(TimeRows+1, IleumIVrows) - 1
+         # Looking for the next blank row after IleumIVTimeRow
+         IleumIVEndRow <- which(is.na(sim_data_xl$...1))
+         IleumIVEndRow <- IleumIVEndRow[which(IleumIVEndRow > IleumIVTimeRow)][1] - 1
+         # The above doesn't work if the last row is the last row of in the file, so
+         # catching that exception.
+         IleumIVEndRow <- ifelse(is.na(IleumIVEndRow), nrow(sim_data_xl), IleumIVEndRow)
+         if(length(IleumIVTimeRow) > 0){
+            GutRows[["ileum IV"]] <- IleumIVTimeRow:IleumIVEndRow
+         }
          
          # Checking for inhibitor
          PerpPresent <- any(str_detect(NamesToCheck, "with inh"), na.rm = TRUE)
@@ -713,6 +933,20 @@ extractEnzAbund <- function(sim_data_file,
    if("individual" %in% returnAggregateOrIndiv){
       Data <- Data %>%
          mutate(Individual = ifelse(is.na(Individual), Trial, Individual))
+   }
+   
+   # Adding some NA values to Deets as needed for the next bit to
+   # work w/out generating a ton of warnings.
+   MissingCols <- setdiff(paste0(rep(c("DoseInt", "StartHr", "Regimen", 
+                                       "NumDoses"), each = 3), 
+                                 c("_sub", "_inhib", "_inhib2")), 
+                          names(Deets))
+   
+   if(length(MissingCols) > 0){
+      Deets <- Deets %>% 
+         bind_cols(as.data.frame(matrix(data = NA, 
+                                        ncol = length(MissingCols),
+                                        dimnames = list(NULL, MissingCols))))
    }
    
    # Adding DoseNumber so that we can skip extractExpDetails in ct_plot when

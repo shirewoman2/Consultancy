@@ -9,7 +9,7 @@ pk_table(
   sim_data_files = NA,
   compoundsToExtract = NA,
   tissues = NA,
-  sheet_PKparameters = NA,
+  sheet_user_interval = NA,
   existing_exp_details = NA,
   mean_type = NA,
   use_median_for_tmax = TRUE,
@@ -23,6 +23,8 @@ pk_table(
   concatVariability = TRUE,
   variability_format = "to",
   conc_units = NA,
+  time_units = "hours",
+  interval_in_columns = TRUE,
   include_dose_num = NA,
   PKorder = "default",
   file_order = "as is",
@@ -45,7 +47,8 @@ pk_table(
   return_PK_pulled = FALSE,
   return_caption = FALSE,
   ...,
-  convert_conc_units = NA
+  convert_conc_units = NA,
+  sheet_PKparameters = NA
 )
 }
 \arguments{
@@ -56,7 +59,7 @@ pk_table(
   specify what you need in terms of which tissues, which compounds, which
   simulation files, and which tab to get the data from with the arguments
   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
-  \code{sheet_PKparameters}.
+  \code{sheet_user_interval}.
   \strong{Details on each option:} \describe{
 
   \item{\strong{Option 1: }a file to read or a data.frame}{This
@@ -68,7 +71,7 @@ pk_table(
   tab in the Excel file those data should be pulled. Whatever you supply, the
   columns that will be read are: \itemize{\item{"File" (same thing as the argument
   \code{sim_data_files})} \item{"Sheet" (same thing as the argument
-  \code{sheet_PKparameters})} \item{"Tissue" (same as the argument \code{tissues})}
+  \code{sheet_user_interval})} \item{"Tissue" (same as the argument \code{tissues})}
   \item{"CompoundID" (same as the argument \code{compoundsToExtract})
   \item{"ObsValue" for any observed data (no equivalent argument)}
   \item{"Variability" for any observed variability (no equivalent argument
@@ -95,7 +98,7 @@ pk_table(
   from all your simulations. List the PK parameters you want here and then,
   in the arguments
   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
-  \code{sheet_PKparameters} specify which of each of those items you want.
+  \code{sheet_user_interval} specify which of each of those items you want.
   You'll get all possible combinations of these, so, for example, if you say
   \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")} and
   \code{tissues = c("blood", "plasma")}, you'll get the dose 1 AUCinf and
@@ -122,7 +125,10 @@ pk_table(
   \code{AUCinf_dose1_withInhib} when your simulation did not include a
   perpetrator -- will be ignored.}
 
-\item{sim_data_files}{the Simcyp Simulator output Excel files to use. Options
+\item{sim_data_files}{the Simcyp Simulator output Excel files to use. If you
+have specified which simulation files to use in what you supplied for the
+argument \code{PKparameters}, anything you supply here will be ignored.
+Options
 for how to specify these: \itemize{\item{NA to extract PK data
 for \emph{all} the Excel files in the current folder or for all the files
 listed in what you supply to the argument \code{PKparameters}}
@@ -130,9 +136,9 @@ listed in what you supply to the argument \code{PKparameters}}
 in the current folder and all subfolders.} \item{a character
 vector of simulator output files, each in quotes and encapsulated with
 \code{c(...)}} } If you do want specific simulations, please take pity on your
-poor R coders and do not use the same simulation file names in different
-subfolders; duplicate file names are just too confusing, and we might give
-you incorrect results.}
+poor R coders and do not request PK data for the same simulation file names
+in different subfolders; duplicate file names are just too confusing, and
+we might give you incorrect results.}
 
 \item{compoundsToExtract}{For which compounds do you want to extract PK data?
 Options are any combination of the following:
@@ -157,10 +163,10 @@ or, better, do not supply anything here and instead supply which tissue you
 want for which simulation and which compound, etc. when you supply a
 data.frame or csv file to the argument \code{PKparameters}.}
 
-\item{sheet_PKparameters}{(optional) If you want the PK parameters to be
+\item{sheet_user_interval}{(optional) If you want the PK parameters to be
 pulled from a \strong{user-defined interval tab} in the simulator output
 file, list that tab here. Otherwise, this should be left as NA.
-\code{sheet_PKparameters} can only have a \emph{single value}, though. If
+\code{sheet_user_interval} can only have a \emph{single value}, though. If
 you want some parameters from a custom-interval tab and others from the
 regular tabs, you must supply that as part of a data.frame or csv file for
 the argument \code{PKparameters}. Please try running
@@ -228,16 +234,28 @@ that there was another name for parentheses.)}
 \item{conc_units}{What concentration units should be used in the table?
 Default is NA to leave the units as is, but if you set the concentration
 units to something else, this will attempt to convert the units to match
-that. This adjusts only the simulated values, since we're assuming that
-that's the most likely problem and that observed units are relatively easy
-to fix, and it also only affects AUC and Cmax values. If you leave this as
-NA, the units in the 1st simulation will be used as the units for
-\emph{all} the simulations for consistency and clarity. Acceptable input is
-any concentration unit
-listed in the Excel form for PE data entry, e.g. \code{conc_units =
-"ng/mL"} or \code{conc_units = "uM"}. Molar concentrations will be
-automatically converted using the molecular weight of whatever you set for
-\code{compoundToExtract}.}
+that. This adjusts only the simulated values. If you leave this as NA, the
+units in the 1st simulation will be used as the units for \emph{all} the
+simulations for consistency and clarity. Acceptable input is any
+concentration unit listed in the Excel form for PE data entry, e.g.
+\code{conc_units = "ng/mL"} or \code{conc_units = "uM"}. Molar
+concentrations will be automatically converted using the molecular weight
+of whatever you set for \code{compoundToExtract}.}
+
+\item{time_units}{What time units should be used in the table? Default is
+"hours"; other acceptable options: "minutes", "hours", "days", or "weeks".
+This adjusts only the simulated values.}
+
+\item{interval_in_columns}{TRUE (default) or FALSE for whether to include the
+dosing interval that pertains to that specific PK parameter in the columns
+of the table or, if FALSE, in the rows. The default will give you a table
+that is wide by AUC interval, with, for example, one column for Cmax for
+dose 1 and a different column for Cmax for the last dose simulated. Setting
+this to FALSE will give you all of a given PK parameter in the same column
+with an additional column specifying which interval it was. For example,
+you'll get a column with the interval, and then all Cmax values will be in
+one column with the data for the 1st dose in one set of rows and the data
+for the last dose in a different set of rows.}
 
 \item{include_dose_num}{NA (default), TRUE, or FALSE on whether to include
 the dose number when listing the PK parameter. By default, the parameter
@@ -330,14 +348,10 @@ information for checking the dosing intervals}
 info, by supplying a file name in quotes here, e.g., "My nicely formatted
 table.docx" or "My table.csv", depending on whether you'd prefer to have
 the table saved as a Word or csv file.  Do not include any slashes, dollar
-signs, or periods in the file name. (You can also save the table to a Word
-file later with the function \code{\link{formatTable_Simcyp}}.) If you
-supply only the file extension, e.g., \code{save_table = "docx"}, the name
-of the file will be "PK summary table" with that extension. If you supply
-something other than just "docx" or just "csv" for the file name but you
-leave off the file extension, we'll assume you want it to be ".csv". All PK
-info will be included in a single Word or csv file, and, if
-\code{checkDataSource = TRUE}, that will be saved in a single csv file.}
+signs, or periods in the file name. While the main PK table data will be in
+whatever file format you requested, if you set \code{checkDataSource =
+TRUE}, the QC data will be in a csv file on its own and will have "- QC"
+added to the end of the file name.}
 
 \item{highlight_gmr_colors}{optionally specify a set of colors to use for
 highlighting geometric mean ratios for DDIs. Options are "yellow to red",
@@ -419,28 +433,39 @@ but at present, this is not set up to return multiple table captions.}
 
 \item{convert_conc_units}{SOON TO BE DEPRECATED. Please use the argument
 "conc_units" instead.}
+
+\item{sheet_PKparameters}{deprecated because we should have named this
+argument more clearly originally! Please see the argument
+'sheet_user_interval'.}
 }
 \value{
 a data.frame
 }
 \description{
 \code{pk_table} creates tables of PK parameters for reports and
-presentations, including reporting means, CVs, and confidence intervals or
-percentiles and, optionally, comparisons to observed data. This function
-automatically finds the correct tabs and the correct cells in a Simulator
-output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Coding
-requires having a standardized way to input all the myriad
+  presentations, including reporting means, CVs, and confidence intervals or
+  percentiles and, optionally, comparisons to observed data. This function
+  automatically finds the correct tabs and the correct cells in a Simulator
+  output Excel file to obtain those data.
+
+\strong{Notes:} \itemize{\item{Coding requires having a standardized way to input all the myriad
 possibilities for PK parameters, which can be tricky. Please try
 running \code{\link{make_example_PK_input}} to see examples for how to
-specify the PK parameters you need.} \item{For detailed instructions and
+specify the PK parameters you need.}
+
+\item{For detailed instructions and
 examples, please see the SharePoint file "Simcyp PBPKConsult
 R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
 instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
-include a link to it here.)} \item{In the results, tmax will be listed as
+include a link to it here.)}
+
+\item{In the results, tmax will be listed as
 median, min, and max rather than mean, lower and higher confidence interval
 or percentiles. Similarly, if you request trial means, the values for tmax
 will be the range of medians for the trials rather than the range of
-means.} \item{We strongly recommend saving the output to a Word file, which
+means.}
+
+\item{We strongly recommend saving the output to a Word file, which
 will apply any highlighting you request and some other nice formatting,
 will not drop trailing zeroes, and will include some text for possible
 table headings and captions.}}

@@ -482,20 +482,30 @@ ct_plot_obs <- function(ct_dataframe,
    if(str_detect(mean_type, "only")){
       # This is when they only want to see means and not individual data. The
       # easiest way to do this, I think, is to just set the obs_line_trans to 0.
-      mean_type <- sub("( )?only", "", mean_type)
+      mean_type <- sub("( )?only|only( )?", "", mean_type)
       obs_line_trans <- 0
    } 
    
-   if(any(c("obs mean", "obs geomean") %in% ct_dataframe$Trial) == FALSE & 
+   if(any(c("obs mean", "obs geomean") %in% ct_dataframe$Trial == FALSE) & 
       mean_type != "none"){
       
       # For calculating means, grouping by everything except conc and columns
       # that would be just for one individual. 
-      GroupingCols <- setdiff(names(ct_dataframe), 
-                              c("Individual", "SD_SE", "Conc"))
-
+      GroupingCols <- setdiff(
+         names(ct_dataframe), 
+         
+         map(.x = ObsColNames, 
+             .f = \(x) x %>% filter(VariesWithIndividual == TRUE) %>%
+                pull(ColName)) %>% unlist() %>% unique())
+      
       suppressMessages(
          CTagg <- ct_dataframe %>% 
+            filter(IndivOrAgg == "individual" | 
+                      # Need to include option when IndivOrAgg not specified or
+                      # it will remove all data. This is NOT automatically
+                      # filled in when we extract obs data b/c there's no way of
+                      # knowing this.
+                      is.na(IndivOrAgg)) %>% 
             group_by(across(.cols = any_of(GroupingCols))) %>% 
             summarize(Conc = switch(mean_type, 
                                     "arithmetic" = mean(Conc, na.rm = T), 
@@ -551,7 +561,8 @@ ct_plot_obs <- function(ct_dataframe,
       facet2_column = !!facet2_column,
       facet2_title = facet2_title, 
       obs_to_sim_assignment = NA,
-      mean_type = mean_type,
+      # mean_type = "none", # NB: This needs to be "none" for ct_plot_overlay to work correctly w/obs data
+      mean_type = mean_type, 
       figure_type = "means only", 
       linear_or_log = linear_or_log,
       color_labels = color_labels, 

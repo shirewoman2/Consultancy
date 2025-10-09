@@ -1149,7 +1149,7 @@ inductFit <- function(DF,
          scale_x_log10() +
          coord_cartesian(xlim = 10^GoodXLim, ylim = GoodYLim) +
          xlab(ifelse(complete.cases(drug),
-                     paste(drug, "concentration (μM)"), "Concentration (μM)")) +
+                     paste(drug, "concentration (µM)"), "Concentration (µM)")) +
          ylab(Ylab) +
          theme_consultancy() +
          theme(panel.grid.minor.y = element_line(color = NA),

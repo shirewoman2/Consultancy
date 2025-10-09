@@ -273,7 +273,8 @@ match_obs_to_sim <- function(ct_dataframe,
                                names(ct_dataframe[[k]]))){
             ObsData_j[[k]][[cmpd]] <- 
                convert_units(DF_to_convert = ObsData_j[[k]][[cmpd]], 
-                             DF_with_good_units = ct_dataframe[[k]][[cmpd]], 
+                             conc_units = unique(ct_dataframe[[k]][[cmpd]]$Conc_units), 
+                             time_units = unique(ct_dataframe[[k]][[cmpd]]$Time_units), 
                              MW = c("substrate" = Deets$MW_sub, 
                                     "inhibitor 1" = Deets$MW_inhib,
                                     "primary metabolite 1" = Deets$MW_met1, 

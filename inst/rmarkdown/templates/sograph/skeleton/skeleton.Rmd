@@ -26,16 +26,9 @@ Cap1 <- paste0("*The dashed black line indicates unity",
                ifelse(length(boundaries[boundaries != 1]) == 0, 
                       ".*", ",*"))
 
-Cap2 <- ifelse(boundary_indicator == "lines", 
-               # switch(str_extract(ColorChoices, "0,1|1,2|2,3|3,Inf"), 
-               #        "0,1" = "solid lines", 
-               #        "1,2" = "solid lines")
-               paste0(" *and solid lines indicate the boundaries for simulated/observed values within ", 
-                      str_comma(boundaries[boundaries != 1]), 
-                      " fold.*"), 
-               paste0(" *and shaded regions indicate the boundaries for simulated/observed values within ", 
-                      str_comma(boundaries[boundaries != 1]), 
-                      " fold.*"))
+Cap2 <- paste0(" *and solid lines indicate the boundaries for simulated/observed values within ", 
+               str_comma(boundaries[boundaries != 1]), 
+               " fold.*")
 
 # Only include Cap2 if they had more than one boundary.
 Cap2 <- ifelse(length(boundaries[boundaries != 1]) == 0, 

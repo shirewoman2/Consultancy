@@ -11,8 +11,10 @@ set_aesthet(
   AESCols,
   line_type,
   n_line_type,
+  linetype_levels = NA,
   line_color,
   n_line_color,
+  color_levels = NA,
   obs_shape,
   n_obs_shape,
   obs_color,
@@ -36,9 +38,13 @@ colors.}
 
 \item{n_line_type}{number of line types needed}
 
+\item{linetype_levels}{levels in linetype_column}
+
 \item{line_color}{user-specified line color}
 
 \item{n_line_color}{number line colors needed}
+
+\item{color_levels}{levels in colorBy_column}
 
 \item{obs_shape}{user-specified observed data shape}
 

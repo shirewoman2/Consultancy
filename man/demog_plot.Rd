@@ -16,7 +16,7 @@ demog_plot(
   legend_label_color = NA,
   legend_position = "right",
   graph_title = "Demographics",
-  alpha = 0.8,
+  alpha = 0.5,
   ncol = NULL,
   nrow = NULL,
   facet_by_sex = TRUE,

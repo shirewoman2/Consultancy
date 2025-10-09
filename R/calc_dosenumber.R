@@ -86,12 +86,22 @@ calc_dosenumber <- function(ct_dataframe,
    
    # Main body of function -------------------------------------------------
    
+   AllDosedCompounds <- AllCompounds %>% 
+      filter(!CompoundID %in% c("endogenous"))
+   
+   DosedCompoundIDs <- AllDosedCompounds$DosedCompoundID
+   names(DosedCompoundIDs) <- AllDosedCompounds$CompoundID
+   
    # Adding some NA values to Deets as needed for the next bit to
    # work w/out generating a ton of warnings.
-   MissingCols <- setdiff(paste0(rep(c("DoseInt", "StartHr", "Regimen", 
-                                       "NumDoses"), each = 3), 
-                                 c("_sub", "_inhib", "_inhib2")), 
-                          names(Deets))
+   MissingCols <- setdiff(
+      paste0(rep(c("DoseInt", "StartHr", "Regimen", 
+                   "NumDoses", "BolusDose", 
+                   "InfusionDose"), 
+                 each = nrow(AllDosedCompounds)), 
+             AllDosedCompounds$DosedCompoundSuffix), 
+      
+      names(Deets)) %>% unique()
    
    if(length(MissingCols) > 0){
       Deets <- Deets %>% 
@@ -111,63 +121,74 @@ calc_dosenumber <- function(ct_dataframe,
    for(i in intersect(names(Deets), 
                       names(ct_dataframe))){
       
-      # Getting dose regimen info
-      MyIntervals <- 
-         c("substrate" = Deets[[i]]$DoseInt_sub,
-           "primary metabolite 1" = Deets[[i]]$DoseInt_sub,
-           "primary metabolite 2" = Deets[[i]]$DoseInt_sub,
-           "secondary metabolite" = Deets[[i]]$DoseInt_sub,
-           "inhibitor 1" = Deets[[i]]$DoseInt_inhib,
-           "inhibitor 1 metabolite" = Deets[[i]]$DoseInt_inhib,
-           "inhibitor 2" = Deets[[i]]$DoseInt_inhib2, 
-           "UNKNOWN" = NA)
+      # Previous versions of the package checked for whether the simulation had a
+      # large molecule present differently b/c I hadn't really come up with a good
+      # strategy for dealing with them. Hacking around data extracted from previous
+      # package versions here.
+      if("LgMol_simulation" %in% names(Deets)){
+         LgMolSim <- Deets$LgMol_simulation
+      } else if("ADCSimulation_sub" %in% names(Deets)){
+         if(is.character(Deets$ADCSimulation_sub)){
+            LgMolSim <- case_match(Deets$ADCSimulation_sub, 
+                                   "yes" ~ TRUE, 
+                                   "no" ~ FALSE)
+         } else if(is.logical(Deets$ADCSimulation_sub)){
+            LgMolSim <- Deets$ADCSimulation_sub
+         }
+      } else if("ADCSimulation" %in% names(Deets)){
+         LgMolSim <- case_when(
+            is.character(Deets$ADCSimulation) ~ 
+               case_match(Deets$ADCSimulation, 
+                          "yes" ~ TRUE, 
+                          "no" ~ FALSE), 
+            is.logical(Deets$ADCSimulation) ~ Deets$ADCSimulation)
+      } else {
+         LgMolSim <- FALSE
+      }
       
-      MyStartTimes <- 
-         c("substrate" = Deets[[i]]$StartHr_sub,
-           "primary metabolite 1" = Deets[[i]]$StartHr_sub,
-           "primarymetabolite 2" = Deets[[i]]$StartHr_sub,
-           "secondary metabolite" = Deets[[i]]$StartHr_sub,
-           "inhibitor 1" = Deets[[i]]$StartHr_inhib,
-           "inhibitor 2" = Deets[[i]]$StartHr_inhib2,
-           "inhibitor 1 metabolite" = Deets[[i]]$StartHr_inhib, 
-           "UNKNOWN" = NA)
+      # Getting dose regimen info
+      MyIntervals <- Deets[[i]][
+         paste0("DoseInt", AllDosedCompounds$DosedCompoundSuffix)] %>% 
+         t() %>% as.numeric()
+      MyIntervals <- c(MyIntervals, NA)
+      names(MyIntervals) <- c(AllDosedCompounds$CompoundID, "UNKNOWN")
+      
+      MyStartTimes <- Deets[[i]][
+         paste0("StartHr", AllDosedCompounds$DosedCompoundSuffix)] %>% 
+         t() %>% as.numeric()
+      MyStartTimes <- c(MyStartTimes, NA)
+      names(MyStartTimes) <- c(AllDosedCompounds$CompoundID, "UNKNOWN")
       
       MyMaxDoseNum <- 
-         c("substrate" = ifelse(Deets[[i]]$Regimen_sub == "Single Dose", 
-                                1, Deets[[i]]$NumDoses_sub),
-           "primary metabolite 1" = ifelse(Deets[[i]]$Regimen_sub == "Single Dose", 
-                                           1, Deets[[i]]$NumDoses_sub),
-           "primarymetabolite 2" = ifelse(Deets[[i]]$Regimen_sub == "Single Dose", 
-                                          1, Deets[[i]]$NumDoses_sub),
-           "secondary metabolite" = ifelse(Deets[[i]]$Regimen_sub == "Single Dose", 
-                                           1, Deets[[i]]$NumDoses_sub),
-           "inhibitor 1" = ifelse(Deets[[i]]$Regimen_inhib == "Single Dose", 
-                                  1, Deets[[i]]$NumDoses_inhib),
-           "inhibitor 2" = ifelse(Deets[[i]]$Regimen_inhib2 == "Single Dose", 
-                                  1, Deets[[i]]$NumDoses_inhib2),
-           "inhibitor 1 metabolite" = ifelse(Deets[[i]]$Regimen_inhib == "Single Dose", 
-                                             1, Deets[[i]]$NumDoses_inhib), 
-           "UNKNOWN" = NA)
+         tibble(Regimen = Deets[[i]][
+            paste0("Regimen", AllDosedCompounds$DosedCompoundSuffix)] %>% 
+               t() %>% as.character(), 
+            NumDoses = Deets[[i]][
+               paste0("NumDoses", AllDosedCompounds$DosedCompoundSuffix)] %>% 
+               t() %>% as.numeric()) %>% 
+         mutate(case_when(Regimen == "Single Dose" ~ 1, 
+                          .default = NumDoses)) %>% 
+         pull(NumDoses)
+      MyMaxDoseNum <- c(MyMaxDoseNum, NA)
+      names(MyMaxDoseNum) <- c(AllDosedCompounds$CompoundID, "UNKNOWN")
       
-      MyDose <- 
-         c("substrate" = Deets[[i]]$Dose_sub,
-           "primary metabolite 1" = NA,
-           "primarymetabolite 2" = NA,
-           "secondary metabolite" = NA,
-           "inhibitor 1" = Deets[[i]]$Dose_inhib,
-           "inhibitor 2" = Deets[[i]]$Dose_inhib2,
-           "inhibitor 1 metabolite" = NA, 
-           "UNKNOWN" = NA)
+      MyDose <- Deets[[i]][
+         paste0("Dose", AllDosedCompounds$DosedCompoundSuffix)] %>% 
+         t() %>% as.numeric()
+      MyDose <- c(MyDose, NA)
+      names(MyDose) <- c(AllDosedCompounds$CompoundID, "UNKNOWN")
       
-      # Converting data to numeric while also retaining names
-      suppressWarnings(
-         MyIntervals <- sapply(MyIntervals, FUN = as.numeric))
-      suppressWarnings(
-         MyStartTimes <- sapply(MyStartTimes, FUN = as.numeric))
-      suppressWarnings(
-         MyMaxDoseNum <- sapply(MyMaxDoseNum, FUN = as.numeric))
-      suppressWarnings(
-         MyDose <- sapply(MyDose, FUN = as.numeric))
+      MyBolusDose <- Deets[[i]][
+         paste0("BolusDose", AllDosedCompounds$DosedCompoundSuffix)] %>% 
+         t() %>% as.numeric()
+      MyBolusDose <- c(MyBolusDose, NA)
+      names(MyBolusDose) <- c(AllDosedCompounds$CompoundID, "UNKNOWN")
+      
+      MyInfusionDose <- Deets[[i]][
+         paste0("InfusionDose", AllDosedCompounds$DosedCompoundSuffix)] %>% 
+         t() %>% as.numeric()
+      MyInfusionDose <- c(MyInfusionDose, NA)
+      names(MyInfusionDose) <- c(AllDosedCompounds$CompoundID, "UNKNOWN")
       
       ct_dataframe[[i]] <- ct_dataframe[[i]] %>%
          mutate(StartHr = MyStartTimes[CompoundID],
@@ -183,9 +204,17 @@ calc_dosenumber <- function(ct_dataframe,
                 # dose, then DoseInt is NA.
                 DoseNum = ifelse(is.na(DoseInt),
                                  ifelse(TimeSinceDose1 < 0, 0, 1), DoseNum), 
-                Dose_sub = MyDose["substrate"],
+                Dose_sub = MyDose["substrate"], # NB: This will work fine for large-mol sims, too.
                 Dose_inhib = MyDose["inhibitor 1"], 
-                Dose_inhib2 = MyDose["inhibitor 2"])
+                Dose_inhib2 = MyDose["inhibitor 2"], 
+                
+                BolusDose_sub = MyBolusDose["substrate"], # NB: This will work fine for large-mol sims, too.
+                BolusDose_inhib = MyBolusDose["inhibitor 1"], 
+                BolusDose_inhib2 = MyBolusDose["inhibitor 2"], 
+                
+                InfusionDose_sub = MyInfusionDose["substrate"], # NB: This will work fine for large-mol sims, too.
+                InfusionDose_inhib = MyInfusionDose["inhibitor 1"], 
+                InfusionDose_inhib2 = MyInfusionDose["inhibitor 2"])
       
       # Checking for any custom dosing
       if("list" %in% class(existing_exp_details) &&
@@ -195,29 +224,14 @@ calc_dosenumber <- function(ct_dataframe,
          # Need match the conc-time compound ID with the CustomDosing data.frame
          # based on the compound that was DOSED for this to work with
          # metabolites.
-         ct_dataframe[[i]] <- ct_dataframe[[i]] %>% 
-            mutate(DosedCompoundID =
-                      case_when(CompoundID %in% c("substrate", 
-                                                  "primary metabolite 1",
-                                                  "primary metabolite 2", 
-                                                  "secondary metabolite", 
-                                                  "PD response", 
-                                                  "PD input") ~ "substrate", 
-                                CompoundID %in% c("inhibitor 1", 
-                                                  "inhibitor 1 metabolite") ~ "inhibitor 1", 
-                                CompoundID %in% c("inhibitor 2") ~ "inhibitor 2"))
+         ct_dataframe[[i]]$DosedCompoundID <- 
+            DosedCompoundIDs[ct_dataframe[[i]]$CompoundID]
          
          ct_dataframe[[i]] <- split(ct_dataframe[[i]],
                                     f = ct_dataframe[[i]]$DosedCompoundID)
          
-         CD_i <- existing_exp_details$CustomDosing %>% filter(File == i) %>% 
-            mutate(Dose_sub = case_when(complete.cases(Dose) & 
-                                           CompoundID == "substrate" ~ Dose), 
-                   Dose_inhib = case_when(complete.cases(Dose) & 
-                                             CompoundID == "inhibitor 1" ~ Dose), 
-                   Dose_inhib2 = case_when(complete.cases(Dose) & 
-                                              CompoundID == "inhibitor 2" ~ Dose)) %>% 
-            select(-Dose)
+         CD_i <- existing_exp_details$CustomDosing %>% 
+            filter(File == i)
          
          if(nrow(CD_i) > 0){
             
@@ -228,8 +242,10 @@ calc_dosenumber <- function(ct_dataframe,
                if(max(ct_dataframe[[i]][[j]]$Time) > max(CD_i[[j]]$Time)){
                   CD_i[[j]] <- CD_i[[j]] %>% 
                      # Need this next bit for using cut function appropriately
-                     bind_rows(data.frame(Time = max(ct_dataframe[[i]][[j]]$Time) + 1, 
-                                          DoseNum = max(CD_i[[j]]$DoseNum)))
+                     bind_rows(
+                        data.frame(
+                           Time = max(ct_dataframe[[i]][[j]]$Time) + 1, 
+                           DoseNum = max(CD_i[[j]]$DoseNum)))
                }
                
                # If there was a loading dose or something (not really sure what
@@ -237,8 +253,8 @@ calc_dosenumber <- function(ct_dataframe,
                # Removing the earlier one so that this will work.
                if(any(duplicated(CD_i[[j]]$Time))){
                   warning(wrapn(paste0("There were multiple dose numbers listed at the same time for the ",
-                                 j," in the file ", i, 
-                                 "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed.")),
+                                       j," in the file ", i, 
+                                       "; did you mean for that to be the case? For now, the dose number at that duplicated time will be set to the 2nd dose number listed.")),
                           call. = FALSE)
                   TimeToRemove <- which(duplicated(
                      CD_i[[j]]$Time, fromLast = TRUE))
@@ -284,7 +300,8 @@ calc_dosenumber <- function(ct_dataframe,
       ct_dataframe[[i]] <- ct_dataframe[[i]] %>%
          select(-any_of(c("MaxDoseNum", "Breaks")))
       
-      rm(MyIntervals, MyStartTimes, MyMaxDoseNum)
+      rm(MyIntervals, MyStartTimes, MyMaxDoseNum, 
+         MyDose, MyBolusDose, MyInfusionDose, LgMolSim)
       
    }
    

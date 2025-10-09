@@ -72,99 +72,66 @@ if(FromCalcPKRatios){
 
 ```{r}
 
-# Adding a warning if there was a mismatch between the last dosing interval and
-# the AUC interval if any of the PK included last dose. 
+# Adding a warning if there was a mismatch between the dosing interval and the
+# AUC interval
 
-if(str_detect(DosesIncluded, "Last") & 
-   any(CheckDoseInt_list[[i]]$IntervalRemaining != CheckDoseInt_list[[i]]$DoseInt_X)){
+DoseIntProb <- CheckDoseInt_list[[i]] %>% 
+         filter(IntStartMatch == FALSE | IntEndMatch == FALSE | 
+                   IntDurationMatch == FALSE) 
+DoseIntProb <- nrow(DoseIntProb) > 0
+
+if(DoseIntProb){
    
-   Problems <- CheckDoseInt_list[[i]] %>% 
-      filter(DoseInt_X != IntervalRemaining)
-   
-   DoseIntWarning_last <- list(
-      "***WARNING: The time used for integrating the AUC for the last dose was not the same as the dosing interval.***", 
+   DoseIntWarning <- list(
+      "***WARNING: There was a mismatch between the dosing interval and the AUC interval for the following files and compounds:***\n", 
       
-      paste0("**Dosing interval: ", 
-             unique(Problems$DoseInt_X), " h**"),
-      
-      paste0("**Last dose start time: ",
-             unique(Problems$LastDoseTime), " h**"),
-      
-      paste0("**Simulation end time: ",
-             unique(Problems$SimDuration), " h**"),
-      
-      paste0("**Time used for integrating the last-dose AUC: ", 
-             unique(Problems$IntervalRemaining), " h**"),
+      CheckDoseInt_list[[i]] %>% 
+         filter(IntStartMatch == FALSE | IntEndMatch == FALSE | IntDurationMatch == FALSE) %>% 
+         mutate(
+            Problems = paste0(
+               case_when(
+                  IntStartMatch == FALSE ~ "Start time of AUC interval does not match start time of dose. ", 
+                  .default = ""), 
+               case_when(
+                  IntEndMatch == FALSE ~ "End time of AUC interval does not match end of dosing interval. ", 
+                  .default = ""), 
+               case_when(
+                  IntDurationMatch == FALSE ~ "The duration of the AUC interval does not match the dosing interval. ", 
+                  .default = ""))) %>% 
+            select(File, Sheet, CompoundID, StartHr, EndHr, IntDuration, DoseInt, Problems) %>% 
+         rename("Start AUC interval time (h)" = StartHr, 
+                "End AUC interval time (h)" = EndHr, 
+                "AUC interval (h)" = IntDuration, 
+                "Dosing interval (h)" = DoseInt) %>% 
+         flextable::flextable() %>% 
+         flextable::width(j = 1:3, width = 1.2) %>% 
+         flextable::width(j = 4:7, width = 0.8) %>% 
+         flextable::width(j = 8, width = 1.5), 
       
       "***Please check these results carefully.***")
    
-   rm(Problems)
-   
 } else {
-   DoseIntWarning_last <- list(c(), c(), c(), c(), c(), c())
-}
-
-if(str_detect(DosesIncluded, "User") & 
-   any(CheckDoseInt_list[[i]]$UserIntervalRemaining != CheckDoseInt_list[[i]]$DoseInt_X, na.rm = T)){
    
-   Problems <- CheckDoseInt_list[[i]] %>% 
-      filter(DoseInt_X != UserIntervalRemaining)
-   
-   DoseIntWarning_user <- list(
-      "***WARNING: The time used for integrating the AUC for the user-defined interval was not the same as the dosing interval.***", 
-      
-      paste0("**Dosing interval: ", 
-             unique(Problems$DoseInt_X), " h**"),
-      
-      paste0("**User-defined interval start time: ",
-             unique(Problems$UserIntervalStart), " h**"),
-      
-      paste0("**User-defined interval end time: ", 
-             unique(Problems$UserIntervalEnd), " h**"),
-      
-      paste0("**Time used for integrating the user-defined AUC: ", 
-             unique(Problems$UserIntervalRemaining), " h**"),
-      
-      "***Please check these results carefully.***")
-   
-   rm(Problems)
-   
-} else {
-   DoseIntWarning_user <- list(c(), c(), c(), c(), c(), c())
+   DoseIntWarning <- list(
+      c(), c(), c()
+   )
 }
 
 ```
-`r DoseIntWarning_last[[1]]` 
 
-`r DoseIntWarning_last[[2]]` 
+`r DoseIntWarning[[1]]` 
 
-`r DoseIntWarning_last[[3]]` 
+`r DoseIntWarning[[2]]` 
 
-`r DoseIntWarning_last[[4]]` 
-
-`r DoseIntWarning_last[[5]]` 
-
-`r DoseIntWarning_last[[6]]` 
-
-`r DoseIntWarning_user[[1]]` 
-
-`r DoseIntWarning_user[[2]]` 
-
-`r DoseIntWarning_user[[3]]` 
-
-`r DoseIntWarning_user[[4]]` 
-
-`r DoseIntWarning_user[[5]]` 
-
-`r DoseIntWarning_user[[6]]` 
+`r DoseIntWarning[[3]]` 
 
 
 ```{r}
 
-if(is.na(include_dose_num_orig)){
-   include_dose_num <- check_include_dose_num(MyPKResults[[i]], 
-                                              include_dose_num)
-}
+include_dose_num <- check_include_dose_num(
+   MyPKResults[[i]] %>% ungroup() %>% 
+      purrr::discard(~all(is.na(.))), 
+   include_dose_num_orig)
 
 if(include_dose_num == FALSE){
    names(MyPKResults[[i]]) <- sub("Dose 1 |Last dose |_dose1|_last", "", names(MyPKResults[[i]]))
@@ -178,27 +145,42 @@ names(TempTable) <- sub("perpetrator", MyPerpetrator, names(TempTable))
 if(as_label(shading_column) == "<empty>"){
    
    formatTable_Simcyp(TempTable,
-                      merge_shaded_cells = TRUE,
-                      perpetrator_name = MyPerpetrator, 
+                      hlines = "when dataset changes", 
+                      merge_shaded_cells = TRUE, 
+                      bold_cells = MakeBold, 
+                      merge_columns = intersect(
+                         names(MyPKResults), 
+                         c("File", "Interval", 
+                           "Sheet", "Tissue", 
+                           "CompoundID", 
+                           "Interval numerator simulation", 
+                           "Interval denominator simulation")), 
                       fontsize = fontsize,
                       prettify_columns = prettify_columns, 
                       add_header_for_DDI = add_header_for_DDI, 
+                      highlight_gmr_colors = highlight_gmr_colors, 
                       highlight_so_cutoffs = highlight_so_cutoffs, 
-                      highlight_so_colors = highlight_so_colors, 
-                      highlight_gmr_colors = highlight_gmr_colors)
+                      highlight_so_colors = highlight_so_colors)
    
 } else {
    
    formatTable_Simcyp(TempTable,
                       shading_column = !!shading_column, 
-                      merge_shaded_cells = TRUE,
-                      perpetrator_name = MyPerpetrator, 
+                      bold_cells = MakeBold, 
+                      merge_shaded_cells = TRUE, 
+                      merge_columns = intersect(
+                         names(MyPKResults), 
+                         c("File", "Interval", 
+                           "Sheet", "Tissue", 
+                           "CompoundID", 
+                           "Interval numerator simulation", 
+                           "Interval denominator simulation")), 
                       fontsize = fontsize,
                       prettify_columns = prettify_columns, 
                       add_header_for_DDI = add_header_for_DDI, 
+                      highlight_gmr_colors = highlight_gmr_colors, 
                       highlight_so_cutoffs = highlight_so_cutoffs, 
-                      highlight_so_colors = highlight_so_colors, 
-                      highlight_gmr_colors = highlight_gmr_colors)
+                      highlight_so_colors = highlight_so_colors)
    
 }
 

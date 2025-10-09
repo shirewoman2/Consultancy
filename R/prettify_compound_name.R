@@ -45,10 +45,11 @@ prettify_compound_name <- function(compound_name,
                      "Esomeprazole", "Ethinylestradiol",
                      "Fedratinib", "Fluconazole", "Flurbiprofen", "Fluvoxamine", 
                      "Gemfibrozil", 
-                     "Glyburide", "Ibrutinib", "Imipramine", "Itraconazole", 
+                     "Glyburide", "Ibrutinib", "Imipramine", "Itraconazole",
+                     "Ketoconazole-200 mg BID", 
                      "Lansoprazole", "Lorazepam", "Metformin", "Metoprolol", 
-                     "Midazolam", "Modafinil", 
-                     "Montelukast", "Nebivolol", "Nifedipine", 
+                     "Midazolam", "3-MethoxyMorphinan", "Modafinil", 
+                     "Montelukast", "Nebivolol", "Nifedipine", "Norfluoxetine", 
                      "Omeprazole", "Ondansetron", "Oxycodone", "Phenacetin", 
                      "Phenytoin", 
                      "Pioglitazone", "Pravastatin", "Quinidine", "Raltegravir", 
@@ -85,6 +86,7 @@ prettify_compound_name <- function(compound_name,
    compound_name <- sub("^r-", "R-", compound_name)
    compound_name <- sub("_fasted [sS]oln|_fed [cC]apsule", "", compound_name)
    compound_name <- sub("OH-itraconazole", "hydroxyitraconazole", compound_name)
+   compound_name <- sub("3-MethoxyMorphinan", "3-methoxymorphinan", compound_name)
    
    # Misspelled compound files
    compound_name <- sub("levenorgestrel", "levonorgestrel", compound_name)

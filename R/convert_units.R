@@ -19,11 +19,6 @@
 #'   concentration units are the same as the ones in the Excel form for PE data
 #'   entry: "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"), "ng/L",
 #'   "ng/mL", "µM" (or "uM"), or "nM".
-#' @param DF_with_good_units if you would like to just match another data.frame,
-#'   supply here a data.frame that has the desired concentration and time units.
-#'   Options for concentration units are the same as the ones in the Excel form
-#'   for PE data entry, and options for time units are "hours", "days", and
-#'   "minutes".
 #' @param MW optionally supply a molecular weight for the compound of interest
 #'   to enable conversions between mass per volume and molar concentrations. If
 #'   you have more than one compound, list the compoundID and the MW as a named
@@ -39,19 +34,19 @@
 #'
 #' @examples
 #' DF_to_convert <- convert_units(DF_to_convert = SimulatedData,
-#'                              DF_with_good_units = ObsData)
+#'                                conc_units = "ug/mL", 
+#'                                time_units = "days")
 #' 
 convert_units <- function(DF_to_convert, 
                           time_units = "hours", 
                           conc_units = "ng/mL", 
-                          DF_with_good_units = NA, 
                           MW = NA){
    
    # Error catching ----------------------------------------------------------
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again."), 
            call. = FALSE)
    }
    
@@ -72,7 +67,6 @@ convert_units <- function(DF_to_convert,
    
    DF_to_convert <- convert_conc_units(DF_to_convert = DF_to_convert,
                                        conc_units = conc_units, 
-                                       DF_with_good_units = DF_with_good_units, 
                                        MW = MW)
    
    ## Converting time units -------------------------------------------------
@@ -101,11 +95,6 @@ convert_units <- function(DF_to_convert,
 #'   concentration units are the same as the ones in the Excel form for PE data
 #'   entry: "mg/L", "mg/mL", "µg/L" (or "ug/L"), "µg/mL" (or "ug/mL"), "ng/L",
 #'   "ng/mL", "µM" (or "uM"), or "nM".
-#' @param DF_with_good_units if you would like to just match another data.frame,
-#'   supply here a data.frame that has the desired concentration and time units.
-#'   Options for concentration units are the same as the ones in the Excel form
-#'   for PE data entry, and options for time units are "hours", "days", and
-#'   "minutes".
 #' @param MW optionally supply a molecular weight for the compound of interest
 #'   to enable conversions between mass per volume and molar concentrations. If
 #'   you have more than one compound, list the compoundID and the MW as a named
@@ -124,14 +113,13 @@ convert_units <- function(DF_to_convert,
 #' 
 convert_conc_units <- function(DF_to_convert, 
                                conc_units = "ng/mL", 
-                               DF_with_good_units = NA, 
                                MW = NA){
    
    # Error catching ----------------------------------------------------------
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again."), 
            call. = FALSE)
    }
    
@@ -178,17 +166,6 @@ convert_conc_units <- function(DF_to_convert,
    
    # Converting concentration units --------------------------------------
    
-   if("data.frame" %in% class(DF_with_good_units)){
-      DF_with_good_units <- DF_with_good_units %>% 
-         mutate(Conc_units = sub("ug", "µg", Conc_units), 
-                Conc_units = sub("uM", "µM", Conc_units))
-   } else if("list" %in% class(DF_with_good_units)){
-      DF_with_good_units$Conc_units <- sub("ug", "µg", DF_with_good_units$Conc_units)
-      DF_with_good_units$Conc_units <- sub("uM", "µM", DF_with_good_units$Conc_units)
-   } else {
-      DF_with_good_units <- list(Conc_units = conc_units)
-   }
-   
    # Allowing for "u" instead of "µ" as input
    if("Conc_units" %in% names(DF_to_convert)){
       DF_to_convert <- DF_to_convert %>% 
@@ -196,203 +173,207 @@ convert_conc_units <- function(DF_to_convert,
                 Conc_units = sub("uM", "µM", Conc_units))
    }
    
-   DF_with_good_units$Conc_units <- sub("ug", "µg", DF_with_good_units$Conc_units)
-   DF_with_good_units$Conc_units <- sub("uM", "µM", DF_with_good_units$Conc_units)
+   conc_units <- sub("ug", "µg", conc_units)
+   conc_units <- sub("uM", "µM", conc_units)
+   
+   if(length(unique(conc_units)) > 1){
+      
+      conc_units <- unique(conc_units)[1]
+      
+      warning(wrapn(paste0("You have provided more than one desired concentration unit, so we will convert your concentrations using only the first requested concentration unit: ", 
+                           unique(conc_units))), 
+              call. = FALSE)
+   }
    
    MassUnits <- c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL")
    MolarUnits <- c("µM", "nM")
    
-   if(unique(DF_with_good_units$Conc_units) %in% MassUnits &
-      unique(DF_to_convert$Conc_units) %in% MolarUnits){
+   # Dealing with possible missing conc units
+   DF_to_convert <- DF_to_convert %>% 
+      mutate(Conc_units = case_when(is.na(Conc_units) ~ "passthrough", 
+                                    .default = Conc_units))
+   
+   DF_to_convert <- split(x = DF_to_convert, 
+                          f = DF_to_convert$Conc_units)
+   
+   for(uu in setdiff(names(DF_to_convert), conc_units)){
+      if(unique(conc_units) %in% MassUnits &
+         unique(DF_to_convert[[uu]]$Conc_units) %in% MolarUnits){
+         
+         if(all(is.na(MW))){
+            warning(wrapn("You requested that we convert your mass/volume units to molar units, but, since you haven't provided us with the molecular weights, we cannot perform this conversion."), 
+                    call. = FALSE)
+            
+            next
+         }
+         
+         suppressMessages(
+            ConvTable_conc <- data.frame(
+               
+               OrigUnits = rep(c("µM", "nM"), 6), 
+               
+               RevUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
+                              each = 2)) %>% 
+               mutate(
+                  FactorNoMW = c(
+                     # uM then nM
+                     1/1000,    1/10^6,  # mg/L
+                     1/10^6,    1/10^9,  # mg/mL
+                     1,         1/1000,  # ug/L
+                     1/1000,    1/10^6,  # ug/mL
+                     1*1000,    1,  # ng/L
+                     1,         1/1000  # ng/mL
+                  )) %>% 
+               left_join(
+                  left_join(data.frame(MW = MW, 
+                                       CompoundID = names(MW)),
+                            expand_grid(CompoundID = names(MW), 
+                                        OrigUnits = c("µM", "nM")))) %>% 
+               mutate(Factor = MW * FactorNoMW)
+         )
+         
+      } else if(unique(conc_units) %in% MolarUnits &
+                unique(DF_to_convert[[uu]]$Conc_units) %in% MassUnits){
+         
+         if(all(is.na(MW))){
+            warning(wrapn("You requested that we convert your molar concentration units to mass/volume units, but, since you haven't provided us with the molecular weights, we cannot perform this conversion."), 
+                    call. = FALSE)
+            
+            next
+         }
+         
+         suppressMessages(
+            ConvTable_conc <- data.frame(
+               OrigUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
+                               each = 2),
+               
+               RevUnits = rep(c("µM", "nM"), 6)) %>% 
+               mutate(
+                  FactorNoMW = c(
+                     # uM then nM
+                     1000,    10^6,  # mg/L
+                     10^6,    10^9,  # mg/mL
+                     1,       1000,  # ug/L
+                     1000,    10^6,  # ug/mL
+                     1000,    1,  # ng/L
+                     1,       1000  # ng/mL
+                  )) %>% 
+               left_join(
+                  left_join(data.frame(MW = MW, 
+                                       CompoundID = names(MW)),
+                            expand_grid(CompoundID = names(MW), 
+                                        RevUnits = c("µM", "nM")))) %>% 
+               mutate(MW = as.numeric(MW), 
+                      Factor = FactorNoMW / MW)
+         )
+         
+         
+      } else {
+         
+         ConvTable_conc <- data.frame(
+            OrigUnits = c(
+               rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
+                     "ng/mL"), 6),
+               
+               rep(c("µM", "nM"), 2),
+               
+               rep(c("mg", "µg", "ng"), 3),
+               
+               "mL", "PD response"),
+            
+            RevUnits = c(
+               rep("mg/L", 6),
+               rep("mg/mL", 6),
+               rep("µg/L", 6),
+               rep("µg/mL", 6),
+               rep("ng/L", 6),
+               rep("ng/mL", 6),
+               
+               rep("µM", 2),
+               rep("nM", 2),
+               
+               rep(c("mg", "µg", "ng"), each = 3),
+               
+               "mL", "PD response"),
+            
+            Factor = c(1,    10^3, 10^-3, 1,     10^6,  10^-3, # mg/L
+                       10^3, 1,    10^-6, 10^-3, 10^9,  10^-6, # mg/mL
+                       10^3, 10^6, 1,     10^3,  10^-3, 1,    # ug/L
+                       1,    10^3, 10^-3, 1,     10^-6, 10^-3,# ug/mL
+                       10^6, 10^9, 10^3,  10^6,  1,     10^3, # ng/L
+                       10^3, 10^6, 1,     10^3,  10^-3, 1,    # ng/mL
+                       
+                       1,    10^-3, # uM
+                       10^3, 1,     # nM
+                       
+                       1,    10^-3, 10^-6, # mg
+                       1^3,  1,     10^-3, # ug
+                       10^6, 10^3,  1, # ng
+                       
+                       1, # mL
+                       1 # PD response
+            ) )
+      }
       
-      if(all(is.na(MW))){
-         warning(wrapn("You requested that we convert your concentration units, but, since you haven't provided us anything for 'existing_exp_details', so we don't know what the molecular weights are and thus cannot perform this conversion."), 
+      # Note to self: Invisible differences in glyphs has tripped me up
+      # repeatedly. What looks like the mu character sometimes is translated to
+      # the mu character (unicode: U+00B5) and sometimes is translated to
+      # something that looks like mu but somehow actually is not mu??? Excel has
+      # its own character conversion that's different from what everyone else
+      # uses, and Sam thinks that might be what's causing this issue. The mu's
+      # in this script were copied and pasted to match the mu symbol that R had
+      # read from Excel, so here's hoping this works.
+      if(unique(conc_units) %in% 
+         ConvTable_conc$RevUnits == FALSE |
+         unique(DF_to_convert[[uu]]$Conc_units) %in% ConvTable_conc$OrigUnits == FALSE){
+         
+         warning(wrapn("Our apologies, but we have not yet set up this function to deal with your concentration units. If that seems weird because you've got pretty typical units here, it's probably that you have a mu symbol somewhere -- maybe in your observed data, maybe in the Simulator Excel outputs we're trying to read -- and there's a problem with how that's encoded. Please tell Laura Sh. because this is a particularly thorny issue to resolve. If you can, please try using some other unit because, honestly, we're really struggling with how to fix this problem."),
                  call. = FALSE)
          
-         return(DF_to_convert)
+         next
       }
       
-      suppressMessages(
-         ConvTable_conc <- data.frame(
-            
-            OrigUnits = rep(c("µM", "nM"), 6), 
-            
-            RevUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
-                           each = 2)) %>% 
-            mutate(
-               FactorNoMW = c(
-                  # uM then nM
-                  1/1000,    1/10^6,  # mg/L
-                  1/10^6,    1/10^9,  # mg/mL
-                  1,         1/1000,  # ug/L
-                  1/1000,    1/10^6,  # ug/mL
-                  1*1000,    1,  # ng/L
-                  1,         1/1000  # ng/mL
-               )) %>% 
-            left_join(
-               left_join(data.frame(MW = MW, 
-                                    CompoundID = names(MW)),
-                         expand_grid(CompoundID = names(MW), 
-                                     OrigUnits = c("µM", "nM")))) %>% 
-            mutate(Factor = MW * FactorNoMW)
-      )
+      ConvTable_conc <- ConvTable_conc %>% 
+         filter(OrigUnits %in% unique(DF_to_convert[[uu]]$Conc_units) &
+                   RevUnits %in% unique(conc_units))
       
-   } else if(unique(DF_with_good_units$Conc_units) %in% MolarUnits &
-             unique(DF_to_convert$Conc_units) %in% MassUnits){
-      
-      if(all(is.na(MW))){
-         warning(wrapn("You requested that we convert your concentration units, but, since you haven't provided us anything for 'existing_exp_details', so we don't know what the molecular weights are and thus cannot perform this conversion."), 
-                 call. = FALSE)
+      if("CompoundID" %in% names(DF_to_convert[[uu]]) & 
+         "CompoundID" %in% names(ConvTable_conc)){
          
-         return(DF_to_convert)
-      }
-      
-      suppressMessages(
-         ConvTable_conc <- data.frame(
-            OrigUnits = rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L", "ng/mL"), 
-                            each = 2),
-            
-            RevUnits = rep(c("µM", "nM"), 6)) %>% 
-            mutate(
-               FactorNoMW = c(
-                  # uM then nM
-                  1000,    10^6,  # mg/L
-                  10^6,    10^9,  # mg/mL
-                  1,       1000,  # ug/L
-                  1000,    10^6,  # ug/mL
-                  1000,    1,  # ng/L
-                  1,       1000  # ng/mL
-               )) %>% 
-            left_join(
-               left_join(data.frame(MW = MW, 
-                                    CompoundID = names(MW)),
-                         expand_grid(CompoundID = names(MW), 
-                                     RevUnits = c("µM", "nM")))) %>% 
-            mutate(MW = as.numeric(MW), 
-                   Factor = FactorNoMW / MW)
-      )
-      
-      
-   } else {
-      
-      ConvTable_conc <- data.frame(
-         OrigUnits = c(
-            rep(c("mg/L", "mg/mL", "µg/L", "µg/mL", "ng/L",
-                  "ng/mL"), 6),
-            
-            rep(c("µM", "nM"), 2),
-            
-            rep(c("mg", "µg", "ng"), 3),
-            
-            "mL", "PD response"),
+         DF_to_convert[[uu]] <- DF_to_convert[[uu]] %>% 
+            left_join(ConvTable_conc, by = "CompoundID") %>% 
+            mutate(across(.cols = any_of(c("Conc", "SD_SE")), 
+                          .fns = \(x) x*Factor),
+                   Conc_units = RevUnits)
          
-         RevUnits = c(
-            rep("mg/L", 6),
-            rep("mg/mL", 6),
-            rep("µg/L", 6),
-            rep("µg/mL", 6),
-            rep("ng/L", 6),
-            rep("ng/mL", 6),
-            
-            rep("µM", 2),
-            rep("nM", 2),
-            
-            rep(c("mg", "µg", "ng"), each = 3),
-            
-            "mL", "PD response"),
+      } else {
+         Factor <-
+            ConvTable_conc$Factor[
+               which(ConvTable_conc$OrigUnits == unique(DF_to_convert[[uu]]$Conc_units) &
+                        ConvTable_conc$RevUnits == unique(conc_units))]
          
-         Factor = c(1,    10^3, 10^-3, 1,     10^6,  10^-3, # mg/L
-                    10^3, 1,    10^-6, 10^-3, 10^9,  10^-6, # mg/mL
-                    10^3, 10^6, 1,     10^3,  10^-3, 1,    # ug/L
-                    1,    10^3, 10^-3, 1,     10^-6, 10^-3,# ug/mL
-                    10^6, 10^9, 10^3,  10^6,  1,     10^3, # ng/L
-                    10^3, 10^6, 1,     10^3,  10^-3, 1,    # ng/mL
-                    
-                    1,    10^-3, # uM
-                    10^3, 1,     # nM
-                    
-                    1,    10^-3, 10^-6, # mg
-                    1^3,  1,     10^-3, # ug
-                    10^6, 10^3,  1, # ng
-                    
-                    1, # mL
-                    1 # PD response
-         ) )
-      
-      
-   }
-   
-   # If both DF to convert and DF w/good units have NA for Conc_units, then pass
-   # through.
-   if(length(unique(DF_with_good_units$Conc_units[
-      complete.cases(DF_with_good_units$Conc_units)])) == 0){
-      return(DF_to_convert)
-   }
-   
-   # Note to self: Invisible differences in glyphs has tripped me up repeatedly.
-   # What looks like the mu character sometimes is translated to the mu
-   # character (unicode: U+00B5) and sometimes is translated to something that
-   # looks like mu but somehow actually is not mu??? Excel has its own character
-   # conversion that's different from what everyone else uses, and Sam thinks
-   # that might be what's causing this issue. The mu's in this script were
-   # copied and pasted to match the mu symbol that R had read from Excel, so
-   # here's hoping this works.
-   if(unique(DF_with_good_units$Conc_units) %in% 
-      ConvTable_conc$RevUnits == FALSE |
-      unique(DF_to_convert$Conc_units) %in% ConvTable_conc$OrigUnits == FALSE){
-      stop(wrapn("Our apologies, but we have not yet set up this function to deal with your concentration units. If that seems weird because you've got pretty typical units here, it's probably that you have a mu symbol somewhere -- maybe in your observed data, maybe in the Simulator Excel outputs we're trying to read -- and there's a problem with how that's encoded. Please tell Laura Sh. because this is a particularly thorny issue to resolve. If you can, please try using some other unit because, honestly, we're really struggling with how to fix this problem."),
-           call. = FALSE)
-   }
-   
-   ConvTable_conc <- ConvTable_conc %>% 
-      filter(OrigUnits %in% unique(DF_to_convert$Conc_units) &
-                RevUnits %in% unique(DF_with_good_units$Conc_units))
-   
-   # If there are multiple compound IDs in DF_to_convert, then there can be
-   # multiple CompoundIDs in ConvTable_conc. For some applications, though, s/a
-   # PK tables, there might not be any compuond IDs.
-   
-   if("CompoundID" %in% names(DF_to_convert) & 
-      "CompoundID" %in% names(ConvTable_conc)){
-      
-      if(any(ConvTable_conc %>% filter(CompoundID %in% DF_to_convert$CompoundID) %>% 
-             group_by(CompoundID) %>% summarize(N = n()) %>% 
-             pull(N) < 1)){
-         stop(paste0("You supplied concentration units of ",
-                     str_comma(unique(DF_to_convert$Conc_units)), 
-                     ", but we were not able to convert them to the desired units of ", 
-                     unique(DF_with_good_units$Conc_units), 
-                     ". No conversion of units was possible and thus no data can be returned here."),
-              call. = FALSE)
+         if(length(Factor) < 1){
+            warning(paste0("You supplied concentration units of ",
+                           str_comma(unique(DF_to_convert[[uu]]$Conc_units)), 
+                           ", but we were not able to convert them to the desired units of ", 
+                           unique(conc_units), 
+                           ". No conversion of units was possible and thus no data can be returned here."),
+                    call. = FALSE)
+            next
+         }
+         
+         # NB: Factor is an external variable in this case, not a column; hence
+         # the {}
+         DF_to_convert[[uu]] <- DF_to_convert[[uu]] %>% 
+            mutate(across(.cols = any_of(c("Conc", "SD_SE")), 
+                          .fns = \(x) x*{Factor}),
+                   Conc_units = unique(conc_units))
       }
-      
-      DF_to_convert <- DF_to_convert %>% 
-         left_join(ConvTable_conc, by = "CompoundID") %>% 
-         mutate(across(.cols = any_of(c("Conc", "SD_SE")), 
-                       .fns = \(x) x*Factor),
-                Conc_units = RevUnits)
-      
-   } else {
-      Factor <-
-         ConvTable_conc$Factor[
-            which(ConvTable_conc$OrigUnits == unique(DF_to_convert$Conc_units) &
-                     ConvTable_conc$RevUnits == unique(DF_with_good_units$Conc_units))]
-      
-      if(length(Factor) < 1){
-         stop(paste0("You supplied concentration units of ",
-                     str_comma(unique(DF_to_convert$Conc_units)), 
-                     ", but we were not able to convert them to the desired units of ", 
-                     unique(DF_with_good_units$Conc_units), 
-                     ". No conversion of units was possible and thus no data can be returned here."),
-              call. = FALSE)
-      }
-      
-      # NB: Factor is an external variable in this case, not a column; hence the {}
-      DF_to_convert <- DF_to_convert %>% 
-         mutate(across(.cols = any_of(c("Conc", "SD_SE")), 
-                       .fns = \(x) x*{Factor}),
-                Conc_units = unique(DF_with_good_units$Conc_units))
    }
+   
+   DF_to_convert <- bind_rows(DF_to_convert) %>% 
+      mutate(Conc_units = case_when(Conc_units == "passthrough" ~ NA, 
+                                    .default = Conc_units))
    
    ## Output -----------------------------------------------------------
    
@@ -438,17 +419,39 @@ convert_time_units <- function(DF_to_convert,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again."), 
            call. = FALSE)
    }
    
    if("Time_units" %in% names(DF_to_convert) == FALSE){
-      stop("The function `convert_time_units` requires that DF_to_convert have a column titled `Time_units`, and your data.frame does not. We cannot convert the time units here.", 
+      stop(wrapn("The function `convert_time_units` requires that DF_to_convert have a column titled `Time_units`, and your data.frame does not. We cannot convert the time units here."), 
            call. = FALSE)
    }
    
    if("logical" %in% class(DF_with_good_units)){
       DF_with_good_units <- list(Time_units = time_units)
+   }
+   
+   time_units <- tolower(time_units)[1]
+   time_units <- case_match(time_units, 
+                            "h" ~ "hours", 
+                            "d" ~ "days", 
+                            "wks" ~ "weeks", 
+                            "min" ~ "minutes", 
+                            .default = time_units)
+   
+   DF_to_convert <- DF_to_convert %>% 
+      mutate(Time_units = case_match(Time_units, 
+                                     "h" ~ "hours", 
+                                     "d" ~ "days", 
+                                     "wks" ~ "weeks", 
+                                     "min" ~ "minutes", 
+                                     .default = Time_units))
+   
+   if(time_units %in% c("hours", "days", "weeks", "minutes") == FALSE){
+      warning(wrapn("The only acceptable time units are 'minutes', 'hours', 'days', or 'weeks', and you have requested something else. We'll use the default of 'hours'."),
+              call. = FALSE)
+      time_units <- "hours"
    }
    
    # Converting time units ----------------------------------------------------
@@ -485,4 +488,160 @@ convert_time_units <- function(DF_to_convert,
    return(DF_to_convert)
    
 }
+
+
+#' INTERNAL. For use with pk_table, calc_PK_ratios, etc. This will convert time
+#' and conc units as needed, including accounting for the time unit being in the
+#' denominator for CL.
+#'
+#' @param PKlist list of BOTH individual and aggregate PK
+#' @param existing_exp_details existing_exp_details
+#' @param time_units desired time units
+#' @param conc_units desired conc units
+#'
+#' @returns a list of two data.frames -- individual and aggregate -- PK
+#'   parameters
+convert_unit_subfun <- function(PKlist, 
+                                existing_exp_details, 
+                                time_units, 
+                                conc_units){
+   
+   PKlist$aggregate <- PKlist$aggregate %>% 
+      mutate(
+         ParamType_conc = case_when(
+            str_detect(PKparameter, "AUC|Cmax|Cmin") & 
+               !str_detect(PKparameter, "ratio") ~ "conc", 
+            .default = "not conc"), 
+         ParamType_time = case_when(
+            str_detect(PKparameter, "AUC|CL|tmax|HalfLife") &
+               !str_detect(PKparameter, "ratio") ~ "time", 
+            .default = "not time"))
+   
+   PKlist$individual <- PKlist$individual %>% 
+      mutate(
+         ParamType_conc = case_when(
+            str_detect(PKparameter, "AUC|Cmax|Cmin") & 
+               !str_detect(PKparameter, "ratio") ~ "conc", 
+            .default = "not conc"), 
+         ParamType_time = case_when(
+            str_detect(PKparameter, "AUC|CL|tmax|HalfLife") &
+               !str_detect(PKparameter, "ratio") ~ "time", 
+            .default = "not time"))
+   
+   
+   ### conc conversion -----------------------------------------------------
+   PKlist$aggregate <- split(PKlist$aggregate, 
+                             f = list(PKlist$aggregate$ParamType_conc))
+   
+   PKlist$individual <- split(PKlist$individual, 
+                              f = list(PKlist$individual$ParamType_conc))
+   
+   if("conc" %in% names(PKlist$aggregate)){
+      # aggregate PK
+      for(i in intersect(names(PKlist$aggregate$conc), 
+                         setdiff(unique(AllStats$InternalColNames), 
+                                 c("GCV", "Skewness", "CV", "Fold")))){
+         
+         TEMP <- convert_conc_units(
+            DF_to_convert = 
+               PKlist$aggregate$conc %>%
+               rename(Conc = i) %>%
+               mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax),
+            conc_units = conc_units, 
+            MW = switch(
+               unique(PKlist$aggregate$conc$CompoundID),
+               "substrate" = existing_exp_details$MainDetails$MW_sub,
+               "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
+               "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
+               "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
+               "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
+               "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
+               "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met)
+         )
+         
+         PKlist$aggregate$conc[, i] <- TEMP$Conc
+         rm(TEMP)
+      }
+      
+      PKlist$aggregate <- bind_rows(PKlist$aggregate) %>% 
+         select(-ParamType_conc)
+      
+      # individual PK 
+      TEMP <- convert_conc_units(
+         DF_to_convert = 
+            PKlist$individual$conc %>%
+            rename(Conc = Value) %>%
+            mutate(Conc_units = existing_exp_details$MainDetails$Units_Cmax),
+         conc_units = conc_units,
+         MW = switch(
+            unique(PKlist$individual$conc$CompoundID),
+            "substrate" = existing_exp_details$MainDetails$MW_sub,
+            "primary metabolite 1" = existing_exp_details$MainDetails$MW_met1,
+            "primary metabolite 2" = existing_exp_details$MainDetails$MW_met2,
+            "secondary metabolite" = existing_exp_details$MainDetails$MW_secmet,
+            "inhibitor 1" = existing_exp_details$MainDetails$MW_inhib,
+            "inhibitor 2" = existing_exp_details$MainDetails$MW_inhib2,
+            "inhibitor 1 metabolite" = existing_exp_details$MainDetails$MW_inhib1met))
+      
+      PKlist$individual$conc$Value <- TEMP$Conc
+      rm(TEMP)
+      
+      PKlist$individual <- bind_rows(PKlist$individual) %>% 
+         select(-ParamType_conc)
+   }
+   
+   ### time conversion -----------------------------------------------------
+   
+   PKlist$aggregate <- split(PKlist$aggregate, 
+                             f = list(PKlist$aggregate$ParamType_time))
+   
+   PKlist$individual <- split(PKlist$individual, 
+                              f = list(PKlist$individual$ParamType_time))
+   
+   if("time" %in% names(PKlist$aggregate)){
+      # aggregate PK
+      for(i in intersect(names(PKlist$aggregate$time), 
+                         setdiff(unique(AllStats$InternalColNames), 
+                                 c("GCV", "Skewness", "CV", "Fold")))){
+         
+         TEMP <- convert_time_units(
+            DF_to_convert = 
+               PKlist$aggregate$time %>%
+               rename(Time = i) %>%
+               mutate(Time_units = existing_exp_details$MainDetails$Units_tmax,
+                      # IMPORTANT! Time is in the denominator for CL, so need to
+                      # deal with that!!!
+                      Time = case_when(str_detect(PKparameter, "CL") ~ 1/Time, 
+                                       .default = Time)),
+            time_units = time_units) %>% 
+            mutate(Time = case_when(str_detect(PKparameter, "CL") ~ 1/Time, 
+                                    .default = Time))
+         
+         PKlist$aggregate$time[, i] <- TEMP$Time
+         rm(TEMP)
+      }
+      
+      PKlist$aggregate <- bind_rows(PKlist$aggregate) %>% 
+         select(-ParamType_time)
+      
+      # individual PK 
+      TEMP <- convert_time_units(
+         DF_to_convert = 
+            PKlist$individual$time %>%
+            rename(Time = Value) %>%
+            mutate(Time_units = existing_exp_details$MainDetails$Units_tmax),
+         time_units = time_units)
+      
+      PKlist$individual$time$Value <- TEMP$Time
+      rm(TEMP)
+      
+      PKlist$individual <- bind_rows(PKlist$individual) %>% 
+         select(-ParamType_time)
+   }
+   
+   return(PKlist)
+   
+}
+
+
 

@@ -13,7 +13,6 @@ extractEnzAbund_mult(
   time_units_to_use = "hours",
   returnAggregateOrIndiv = "aggregate",
   existing_exp_details = NA,
-  fromMultFunction = FALSE,
   ...
 )
 }
@@ -52,11 +51,12 @@ request multiple enzymes, enclose them in \code{c(...)}, e.g.,
 \code{enzymes = c("CYP3A4", "CYP2D6", "CYP2C19")}. Spaces or hyphens in
 enzyme names will be ignored. Not case sensitive.}
 
-\item{tissues}{From which tissues should the desired enzyme abundances be
-extracted? Options are "liver" (default), "gut", or "kidney". Note: If
-"gut" is selected, the output will return both colon and small intestine
-concentrations. To request multiple tissues, enclose them in \code{c(...)},
-e.g., \code{tissues = c("liver", "gut", "kidney")}}
+\item{tissues}{From which tissue should the desired enzyme abundance be
+extracted? Options are "liver" (default), "gut", "ADAM gut", or "kidney".
+Note: If "gut" is selected, the output will return both colon and small
+intestine concentrations but not ADAM-model gut-segmental enzyme levels.
+Using "ADAM gut" will get individual gut segment levels in the stomach
+through the colon.}
 
 \item{time_units_to_use}{time units to use so that all data will be
 comparable. Options are "hours" (default) or "minutes".}
@@ -73,9 +73,6 @@ Sheet" (e.g., when you ran extractExpDetails_mult you said
 save some processing time by supplying that object here, unquoted. If left
 as NA, this function will run \code{extractExpDetails} behind the scenes to
 figure out some information about your experimental set up.}
-
-\item{fromMultFunction}{INTERNAL USE ONLY. TRUE or FALSE on whether this is
-being called on by \code{\link{extractConcTime_mult}}.}
 }
 \value{
 Returns a large data.frame with multiple sets of enzyme-abundance
@@ -83,21 +80,24 @@ Returns a large data.frame with multiple sets of enzyme-abundance
   \code{\link{extractEnzAbund}}
 }
 \description{
-\code{extractEnzAbund_mult} is meant to be used in conjunction with
-\code{\link{enz_plot_overlay}} to create graphs from multiple Simcyp
-Simulator output files or from multiple enzymes or tissues. If you list
-multiple files, multiple tissues, and/or multiple enzymes to extract (see
-notes on options below), this will extract \emph{all} possible variations of
-them. For example, if you ask for data from the files "sim1.xlsx" and
-"sim2.xlsx" and then also ask for the enzymes "CYP3A4" and "CYP2C9", you will
-get the CYP3A4 and CYP2C9 abundance data from \emph{both} files.
-\strong{NOTE:} If ANY of the Excel files you wish to extract data from are
-open, this WILL CRASH and WILL NOT save whatever progress it has made so far.
-Be sure to close all of the source Excel files. For detailed instructions and
-examples, please see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp
-PBPKConsult R Files/SimcypConsultancy function examples and
-instructions/Enzyme abundance plots/Enzyme-abundance-plot-examples.docx".
-(Sorry, we are unable to include a link to it here.)
+\code{extractEnzAbund_mult} is meant to be used in conjunction
+  with \code{\link{enz_plot_overlay}} to create graphs from multiple Simcyp
+  Simulator output files or from multiple enzymes or tissues. If you list
+  multiple files, multiple tissues, and/or multiple enzymes to extract (see
+  notes on options below), this will extract \emph{all} possible variations
+  of them. For example, if you ask for data from the files "sim1.xlsx" and
+  "sim2.xlsx" and then also ask for the enzymes "CYP3A4" and "CYP2C9", you
+  will get the CYP3A4 and CYP2C9 abundance data from \emph{both} files.
+
+  \strong{NOTE:} If ANY of the Excel files you wish to extract data from are
+  open, this WILL CRASH and WILL NOT save whatever progress it has made so
+  far. Be sure to close all of the source Excel files.
+
+  For detailed instructions and examples, please see the SharePoint file
+  "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy
+  function examples and instructions/Enzyme abundance
+  plots/Enzyme-abundance-plot-examples.docx". (Sorry, we are unable to
+  include a link to it here.)
 }
 \examples{
 ConcTimeData <-

@@ -1,22 +1,29 @@
 #' Make tables of PK values from Simulator output Excel files
 #'
-#' \code{pk_table} creates tables of PK parameters for reports and
-#' presentations, including reporting means, CVs, and confidence intervals or
-#' percentiles and, optionally, comparisons to observed data. This function
-#' automatically finds the correct tabs and the correct cells in a Simulator
-#' output Excel file to obtain those data. \strong{Notes:} \itemize{\item{Coding
-#' requires having a standardized way to input all the myriad
+#' @description \code{pk_table} creates tables of PK parameters for reports and
+#'   presentations, including reporting means, CVs, and confidence intervals or
+#'   percentiles and, optionally, comparisons to observed data. This function
+#'   automatically finds the correct tabs and the correct cells in a Simulator
+#'   output Excel file to obtain those data.
+#'
+#' \strong{Notes:} \itemize{\item{Coding requires having a standardized way to input all the myriad
 #' possibilities for PK parameters, which can be tricky. Please try
 #' running \code{\link{make_example_PK_input}} to see examples for how to
-#' specify the PK parameters you need.} \item{For detailed instructions and
+#' specify the PK parameters you need.}
+#'
+#' \item{For detailed instructions and
 #' examples, please see the SharePoint file "Simcyp PBPKConsult
 #' R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function examples and
 #' instructions/Making PK tables/PK-tables.docx". (Sorry, we are unable to
-#' include a link to it here.)} \item{In the results, tmax will be listed as
+#' include a link to it here.)}
+#'
+#' \item{In the results, tmax will be listed as
 #' median, min, and max rather than mean, lower and higher confidence interval
 #' or percentiles. Similarly, if you request trial means, the values for tmax
 #' will be the range of medians for the trials rather than the range of
-#' means.} \item{We strongly recommend saving the output to a Word file, which
+#' means.}
+#'
+#' \item{We strongly recommend saving the output to a Word file, which
 #' will apply any highlighting you request and some other nice formatting,
 #' will not drop trailing zeroes, and will include some text for possible
 #' table headings and captions.}}
@@ -29,7 +36,7 @@
 #'   specify what you need in terms of which tissues, which compounds, which
 #'   simulation files, and which tab to get the data from with the arguments
 #'   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
-#'   \code{sheet_PKparameters}.
+#'   \code{sheet_user_interval}.
 #'   \strong{Details on each option:} \describe{
 #'
 #'   \item{\strong{Option 1: }a file to read or a data.frame}{This
@@ -41,7 +48,7 @@
 #'   tab in the Excel file those data should be pulled. Whatever you supply, the
 #'   columns that will be read are: \itemize{\item{"File" (same thing as the argument
 #'   \code{sim_data_files})} \item{"Sheet" (same thing as the argument
-#'   \code{sheet_PKparameters})} \item{"Tissue" (same as the argument \code{tissues})}
+#'   \code{sheet_user_interval})} \item{"Tissue" (same as the argument \code{tissues})}
 #'   \item{"CompoundID" (same as the argument \code{compoundsToExtract})
 #'   \item{"ObsValue" for any observed data (no equivalent argument)}
 #'   \item{"Variability" for any observed variability (no equivalent argument
@@ -68,7 +75,7 @@
 #'   from all your simulations. List the PK parameters you want here and then,
 #'   in the arguments
 #'   \code{tissues}, \code{compoundsToExtract}, \code{sim_data_files}, and
-#'   \code{sheet_PKparameters} specify which of each of those items you want.
+#'   \code{sheet_user_interval} specify which of each of those items you want.
 #'   You'll get all possible combinations of these, so, for example, if you say
 #'   \code{PKparameters = c("AUCinf_dose1", "Cmax_dose1")} and
 #'   \code{tissues = c("blood", "plasma")}, you'll get the dose 1 AUCinf and
@@ -95,7 +102,10 @@
 #'   \code{AUCinf_dose1_withInhib} when your simulation did not include a
 #'   perpetrator -- will be ignored.
 #'
-#' @param sim_data_files the Simcyp Simulator output Excel files to use. Options
+#' @param sim_data_files the Simcyp Simulator output Excel files to use. If you
+#'   have specified which simulation files to use in what you supplied for the
+#'   argument \code{PKparameters}, anything you supply here will be ignored.
+#'   Options
 #'   for how to specify these: \itemize{\item{NA to extract PK data
 #'   for \emph{all} the Excel files in the current folder or for all the files
 #'   listed in what you supply to the argument \code{PKparameters}}
@@ -103,9 +113,9 @@
 #'   in the current folder and all subfolders.} \item{a character
 #'   vector of simulator output files, each in quotes and encapsulated with
 #'   \code{c(...)}} } If you do want specific simulations, please take pity on your
-#'   poor R coders and do not use the same simulation file names in different
-#'   subfolders; duplicate file names are just too confusing, and we might give
-#'   you incorrect results.
+#'   poor R coders and do not request PK data for the same simulation file names
+#'   in different subfolders; duplicate file names are just too confusing, and
+#'   we might give you incorrect results.
 #' @param compoundsToExtract For which compounds do you want to extract PK data?
 #'   Options are any combination of the following:
 #'   \itemize{\item{"substrate" (default)} \item{"primary metabolite 1"}
@@ -134,10 +144,10 @@
 #' @param file_order order of the simulations in the output table, default is to
 #'   leave the order "as is", in which case the order will be whatever is
 #'   specified with \code{sim_data_files}.
-#' @param sheet_PKparameters (optional) If you want the PK parameters to be
+#' @param sheet_user_interval (optional) If you want the PK parameters to be
 #'   pulled from a \strong{user-defined interval tab} in the simulator output
 #'   file, list that tab here. Otherwise, this should be left as NA.
-#'   \code{sheet_PKparameters} can only have a \emph{single value}, though. If
+#'   \code{sheet_user_interval} can only have a \emph{single value}, though. If
 #'   you want some parameters from a custom-interval tab and others from the
 #'   regular tabs, you must supply that as part of a data.frame or csv file for
 #'   the argument \code{PKparameters}. Please try running
@@ -198,16 +208,16 @@
 #' @param conc_units What concentration units should be used in the table?
 #'   Default is NA to leave the units as is, but if you set the concentration
 #'   units to something else, this will attempt to convert the units to match
-#'   that. This adjusts only the simulated values, since we're assuming that
-#'   that's the most likely problem and that observed units are relatively easy
-#'   to fix, and it also only affects AUC and Cmax values. If you leave this as
-#'   NA, the units in the 1st simulation will be used as the units for
-#'   \emph{all} the simulations for consistency and clarity. Acceptable input is
-#'   any concentration unit
-#'   listed in the Excel form for PE data entry, e.g. \code{conc_units =
-#'   "ng/mL"} or \code{conc_units = "uM"}. Molar concentrations will be
-#'   automatically converted using the molecular weight of whatever you set for
-#'   \code{compoundToExtract}.
+#'   that. This adjusts only the simulated values. If you leave this as NA, the
+#'   units in the 1st simulation will be used as the units for \emph{all} the
+#'   simulations for consistency and clarity. Acceptable input is any
+#'   concentration unit listed in the Excel form for PE data entry, e.g.
+#'   \code{conc_units = "ng/mL"} or \code{conc_units = "uM"}. Molar
+#'   concentrations will be automatically converted using the molecular weight
+#'   of whatever you set for \code{compoundToExtract}.
+#' @param time_units What time units should be used in the table? Default is
+#'   "hours"; other acceptable options: "minutes", "hours", "days", or "weeks".
+#'   This adjusts only the simulated values.
 #' @param include_dose_num NA (default), TRUE, or FALSE on whether to include
 #'   the dose number when listing the PK parameter. By default, the parameter
 #'   will be labeled, e.g., "Dose 1 Cmax ratio" or "Last dose AUCtau ratio", if
@@ -312,14 +322,10 @@
 #'   info, by supplying a file name in quotes here, e.g., "My nicely formatted
 #'   table.docx" or "My table.csv", depending on whether you'd prefer to have
 #'   the table saved as a Word or csv file.  Do not include any slashes, dollar
-#'   signs, or periods in the file name. (You can also save the table to a Word
-#'   file later with the function \code{\link{formatTable_Simcyp}}.) If you
-#'   supply only the file extension, e.g., \code{save_table = "docx"}, the name
-#'   of the file will be "PK summary table" with that extension. If you supply
-#'   something other than just "docx" or just "csv" for the file name but you
-#'   leave off the file extension, we'll assume you want it to be ".csv". All PK
-#'   info will be included in a single Word or csv file, and, if
-#'   \code{checkDataSource = TRUE}, that will be saved in a single csv file.
+#'   signs, or periods in the file name. While the main PK table data will be in
+#'   whatever file format you requested, if you set \code{checkDataSource =
+#'   TRUE}, the QC data will be in a csv file on its own and will have "- QC"
+#'   added to the end of the file name.
 #' @param name_clinical_study optionally specify the name(s) of the clinical
 #'   study or studies for any observed data. This only affects the caption of
 #'   the graph. For example, specifying \code{name_clinical_study = "101, fed
@@ -353,6 +359,19 @@
 #'   "conc_units" instead.
 #' @param checkDosingInterval TRUE or FALSE (default) for whether to return
 #'   information for checking the dosing intervals
+#' @param interval_in_columns TRUE (default) or FALSE for whether to include the
+#'   dosing interval that pertains to that specific PK parameter in the columns
+#'   of the table or, if FALSE, in the rows. The default will give you a table
+#'   that is wide by AUC interval, with, for example, one column for Cmax for
+#'   dose 1 and a different column for Cmax for the last dose simulated. Setting
+#'   this to FALSE will give you all of a given PK parameter in the same column
+#'   with an additional column specifying which interval it was. For example,
+#'   you'll get a column with the interval, and then all Cmax values will be in
+#'   one column with the data for the 1st dose in one set of rows and the data
+#'   for the last dose in a different set of rows.
+#' @param sheet_PKparameters deprecated because we should have named this
+#'   argument more clearly originally! Please see the argument
+#'   'sheet_user_interval'.
 #'
 #' @return a data.frame
 #' @export
@@ -364,7 +383,7 @@ pk_table <- function(PKparameters = NA,
                      sim_data_files = NA, 
                      compoundsToExtract = NA,
                      tissues = NA, 
-                     sheet_PKparameters = NA, 
+                     sheet_user_interval = NA, 
                      existing_exp_details = NA, 
                      mean_type = NA, 
                      use_median_for_tmax = TRUE, 
@@ -378,6 +397,8 @@ pk_table <- function(PKparameters = NA,
                      concatVariability = TRUE, 
                      variability_format = "to",
                      conc_units = NA, 
+                     time_units = "hours", 
+                     interval_in_columns = TRUE, 
                      include_dose_num = NA,
                      PKorder = "default", 
                      file_order = "as is", 
@@ -400,7 +421,8 @@ pk_table <- function(PKparameters = NA,
                      return_PK_pulled = FALSE, 
                      return_caption = FALSE, 
                      ..., 
-                     convert_conc_units = NA){
+                     convert_conc_units = NA, 
+                     sheet_PKparameters = NA){
    
    # Error catching ----------------------------------------------------------
    
@@ -428,6 +450,18 @@ pk_table <- function(PKparameters = NA,
       tissues <- sys.call()$tissue
    }
    
+   if(any(complete.cases(sheet_PKparameters))){
+      
+      if(all(is.na(sheet_user_interval))){
+         warning(wrapn("You have specified something for the argument 'sheet_PKparameters', which we are deprecating in favor of 'sheet_user_interval', which we're hoping will be a clearer name in terms of what this function is expecting. We will set the argument 'sheet_user_interval' to what you had provided for 'sheet_PKparameters'."), 
+                 call. = FALSE)
+         sheet_user_interval <- sheet_PKparameters
+      } else {
+         warning(wrapn("You have specified something for both the argument 'sheet_PKparameters', which we are deprecating, and the argument 'sheet_user_interval', which is what we're replacing it with. We will ignore what you provided for 'sheet_PKparameters'."), 
+                 call. = FALSE)
+      }
+   }
+   
    if("convert_conc_units" %in% names(match.call())){
       if("conc_units" %in% names(match.call()) == FALSE){
          conc_units <- convert_conc_units
@@ -452,10 +486,10 @@ pk_table <- function(PKparameters = NA,
       }
    }
    
-   # sheet_PKparameters should be length 1 and not be named b/c, if they want
+   # sheet_user_interval should be length 1 and not be named b/c, if they want
    # more than 1, they need to supply it to PKparameters.
-   if(length(sheet_PKparameters) > 1){
-      stop(str_wrap("The value for sheet_PKparameters must be only 1 item, and it looks like you have more than that. If you want to specify multiple sheets to use for PK parameters, please specify them by supplying a data.frame to the argument `PKparameters`. You can see examples for how to supply this by running `make_PK_example_input()`."), 
+   if(length(sheet_user_interval) > 1){
+      stop(str_wrap("The value for sheet_user_interval must be only 1 item, and it looks like you have more than that. If you want to specify multiple sheets to use for PK parameters, please specify them by supplying a data.frame to the argument `PKparameters`. You can see examples for how to supply this by running `make_PK_example_input()`."), 
            call. = FALSE)
    }
    
@@ -480,7 +514,7 @@ pk_table <- function(PKparameters = NA,
    PKparam_tidied <- tidy_input_PK(PKparameters = PKparameters, 
                                    sim_data_files = sim_data_files, 
                                    compoundsToExtract = compoundsToExtract, 
-                                   sheet_PKparameters = sheet_PKparameters, 
+                                   sheet_user_interval = sheet_user_interval, 
                                    tissues = tissues, 
                                    existing_exp_details = existing_exp_details)
    
@@ -778,6 +812,7 @@ pk_table <- function(PKparameters = NA,
             PKparameters = PKparameters[[i]], 
             existing_exp_details = existing_exp_details, 
             conc_units = conc_units,
+            time_units = time_units, 
             MeanType = MeanType, 
             GMR_mean_type = GMR_mean_type, 
             includeTrialMeans = includeTrialMeans, 
@@ -982,15 +1017,44 @@ pk_table <- function(PKparameters = NA,
       
    }
    
-   MyPKResults <- MyPKResults %>% 
-      pivot_wider(names_from = PKParam, values_from = Value) %>%
-      mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
-             Stat = factor(Stat, levels = unique(
-                AllStats$InternalColNames[
-                   which(complete.cases(AllStats$InternalColNames))]))) %>% 
-      arrange(File, CompoundID, Tissue, SorO, Stat) %>% 
-      filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
-      mutate(across(.cols = everything(), .fns = as.character)) 
+   # Optionally keeping long by interval
+   if(interval_in_columns){
+      
+      MyPKResults <- MyPKResults %>% 
+         pivot_wider(names_from = PKParam, values_from = Value) %>%
+         mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
+                Stat = factor(Stat, levels = unique(
+                   AllStats$InternalColNames[
+                      which(complete.cases(AllStats$InternalColNames))]))) %>% 
+         arrange(File, CompoundID, Tissue, SorO, Stat) %>% 
+         filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
+         mutate(across(.cols = everything(), .fns = as.character)) 
+      
+   } else {
+      
+      MyPKResults <- MyPKResults %>% 
+         mutate(Interval = str_extract(PKParam, "dose1|last")) %>% 
+         left_join(CheckDoseInt$interval %>% 
+                      select(File, Sheet, CompoundID, 
+                             Tissue, Interval, StartHr, EndHr), 
+                   by = c("File", "Sheet", "CompoundID", 
+                          "Tissue", "Interval")) %>% 
+         mutate(Interval = case_when(
+            Interval == "dose1" & is.na(EndHr) ~ "first dose", 
+            Interval == "dose1" & complete.cases(EndHr) ~ 
+               paste(StartHr, "to", EndHr, "(h)"), 
+            Interval != "dose1" ~ 
+               paste(StartHr, "to", EndHr, "(h)"))) %>% 
+         select(Stat, PKParam, Value, SorO, File, Sheet, CompoundID, 
+                Tissue, Interval) %>% 
+         # Need to make PK parameter more generic if we remove interval from name
+         mutate(PKParam = sub("_dose1|_last", "", PKParam), 
+                PKParam = case_match(PKParam, 
+                                     "AUCtau" ~ "AUCt", 
+                                     .default = PKParam)) %>% 
+         pivot_wider(names_from = PKParam, 
+                     values_from = Value)
+   }
    
    rm(GoodPKParam)
    
@@ -1113,7 +1177,7 @@ pk_table <- function(PKparameters = NA,
       filter(if_any(.cols = -c(Stat, SorO), .fns = complete.cases)) %>% 
       mutate(across(.cols = everything(), .fns = as.character)) %>% 
       select(-Stat, -SorO) %>%
-      select(Statistic, everything())
+      select(any_of("Interval"), Statistic, everything())
    
    # setting levels for PK parameters so that they're in a nice order. 
    PKlevels <- switch(PKorder, 
@@ -1132,7 +1196,7 @@ pk_table <- function(PKparameters = NA,
                       "user specified" = PKparameters$PKparameter)
    
    MyPKResults <- MyPKResults %>%
-      select(any_of(c("Statistic", 
+      select(any_of(c("Interval", "Statistic", 
                       unique(as.character(PKlevels)))), 
              everything()) %>% 
       relocate(File, .after = last_col())
@@ -1247,15 +1311,32 @@ pk_table <- function(PKparameters = NA,
       }
       
       # Adjusting units as needed.
-      ColNames$PrettifiedNames <- sub("\\(ng/mL.h\\)",
-                                      paste0("(", conc_units, ".h)"), 
-                                      ColNames$PrettifiedNames)
-      
-      ColNames$PrettifiedNames <- sub("\\(ng/mL\\)", 
-                                      paste0("(", conc_units, ")"),
-                                      ColNames$PrettifiedNames)
-      
-      ColNames$PrettifiedNames <- gsub("ug/mL", "µg/mL", ColNames$PrettifiedNames)
+      # Adjusting units as needed.
+      ColNames <- ColNames %>% 
+         mutate(PrettifiedNames = sub("ng/mL.h", 
+                                      paste0(conc_units, ".", 
+                                             case_match(time_units, 
+                                                        "minutes" ~ "min", 
+                                                        "hours" ~ "h", 
+                                                        "days" ~ "d", 
+                                                        "weeks" ~ "wk")), PrettifiedNames), 
+                PrettifiedNames = sub("L/h", 
+                                      paste0("L/", 
+                                             case_match(time_units, 
+                                                        "minutes" ~ "min", 
+                                                        "hours" ~ "h", 
+                                                        "days" ~ "d", 
+                                                        "weeks" ~ "wk")), PrettifiedNames), 
+                PrettifiedNames = sub("ng/mL", conc_units, PrettifiedNames), 
+                PrettifiedNames = sub("\\(h\\)", 
+                                      paste0("(", 
+                                             case_match(time_units, 
+                                                        "minutes" ~ "min", 
+                                                        "hours" ~ "h", 
+                                                        "days" ~ "d", 
+                                                        "weeks" ~ "wk"), 
+                                             ")"), PrettifiedNames), 
+                PrettifiedNames = sub("ug/", "µg/", PrettifiedNames))
       
       MyPerpetrator <- determine_myperpetrator(existing_exp_details,
                                                prettify_compound_names)

@@ -2,13 +2,12 @@
 % Please edit documentation in R/so_graph.R
 \name{so_graph}
 \alias{so_graph}
-\title{Graph of simulated vs. observed PK}
+\title{Graphs of simulated vs. observed PK}
 \usage{
 so_graph(
   PKtable,
   PKparameters = NA,
   PKorder = "default",
-  boundary_indicator = "lines",
   boundaries = c(1, 1.5, 2),
   boundaries_Guest = c(1, 2),
   boundary_color_set = "red black",
@@ -19,97 +18,92 @@ so_graph(
   error_bars = "none",
   variability_type = "90\% CI",
   point_color_column,
-  point_color_set = "default",
   legend_label_point_color = NA,
+  point_color_set = "default",
   point_shape_column,
+  legend_label_point_shape = NA,
   point_shape = NA,
   point_size = NA,
   point_transparency = 1,
-  legend_label_point_shape = NA,
   legend_position = "none",
   axis_title_x = "Observed",
   axis_title_y = "Simulated",
-  include_dose_num = NA,
   facet_title_size = NA,
   title_adjustments = c(),
   graph_labels = FALSE,
-  all_intervals_together = FALSE,
+  include_dose_num = NA,
   all_AUCs_together = FALSE,
+  all_intervals_together = FALSE,
+  interval_labels = NA,
+  number_format = NA,
   grid_color = NA,
   ncol = NULL,
   nrow = NULL,
   save_graph = NA,
   fig_width = 8,
   fig_height = 6,
-  return_list_of_graphs = FALSE,
-  axis_titles = NA
+  return_separate_graphs = FALSE,
+  return_list_of_graphs = NA
 )
 }
 \arguments{
 \item{PKtable}{a table in the same format as output from the function
 \code{\link{pk_table}}. This should include a column titled "Statistic" and
 columns for each of the PK parameters you want to graph. The column
-statistic should have values of "Simulated" and "Observed" for the
-simulated and observed PK, respectively; anything else will be ignored. The
-columns for each PK parameter should be named like the values in the
-data.frame PKParameterDefinitions, in the column "PKparameter". To see
-that, please enter \code{view(PKParameterDefinitions)} into the console.}
+"Statistic" should have values of "Simulated" and "Observed" for the
+simulated and observed PK, respectively, and also values for any
+variability you'd like to show as error bars.}
 
-\item{PKparameters}{any of the AUC, Cmax, tmax, CL, or half-life PK
-parameters included in the output from \code{\link{pk_table}}; if left as
-NA, this will make graphs for each parameter included in \code{PKtable}. To
-see the full set of possible parameters, enter
-\code{view(PKParameterDefinitions)} into the console.}
+\item{PKparameters}{any of the PK parameters included in the output from
+\code{\link{pk_table}}; if left as NA, this will make graphs for each
+parameter included in \code{PKtable}. You can request all of something,
+e.g., all Cmax parameters or all dose 1 parameters, by specifying
+\code{PKparameters = "all XXX"} where "XXX" is some text you want to match
+in the PK table column names. Setting this to "all Cmax" will give you all
+the PK data pertaining to Cmax regardless of which dose it is or whether
+there was a perpetrator drug present. Similarly, setting this to "all dose
+1" will get you all the first-dose PK. You can specify more than one "all
+XXX" item, e.g., \code{PKparameters = c("all Cmax", "all AUC")} This is not
+case sensitive, but whatever you're looking for must be included in the
+column names of what you supplied for PKtable. If you want to specify
+individual PK parameters here, you'll need to list them by their
+SimcypConsultancy package coded name. To see the full set of possible
+parameters, enter \code{view(PKParameterDefinitions)} into the console.}
 
 \item{PKorder}{optionally specify the order of the graphs. Leaving this as
-"default" puts the graphs in the same order as the columns in the Simcyp
-Consultancy Team template for PK tables (plus some guesses at a good order
-for PK parameters that are not listed in said template table). Setting this
-to "user specified" will make the order of the graphs match the order you
-specified with the argument \code{PKparameters}. Graphs are plotted left to
-right and then top to bottom. If you would like a blank space inserted
-between some parameters -- for example, to keep all your Cmax values in the
-same column or something like that -- include "BLANK" in the values you
-list for \code{PKparameters} wherever you want that to happen, e.g.,
+"default" puts the graphs in approximately the same order as the columns in
+the Simcyp Consultancy Team template for PK tables. Setting this to "user
+specified" will make the order of the graphs match the order you specified
+with the argument \code{PKparameters}. Graphs are plotted left to right and
+then top to bottom. If you would like a blank space inserted between some
+parameters -- for example, to keep all your Cmax values in the same column
+or something like that -- include "BLANK" in the values you list for
+\code{PKparameters} wherever you want that to happen, e.g.,
 \code{PKparameters = c("Cmax_dose1", "BLANK", "AUCinf_dose1", "BLANK",
 "tmax_dose1")}}
-
-\item{boundary_indicator}{how to indicate the boundaries for simulated /
-observed. Options are "lines" (default), "fill" to get a shaded area, or
-"none" to remove any indicators of those
-boundaries. \strong{NOTE: There is a known bug within RStudio that causes
-filled semi-transparent areas like you get with the "fill" option to NOT
-get graphed for certain versions of RStudio.} To get around this, within
-RStudio, go to Tools --> Global Options --> General --> Graphics --> And
-then set "Graphics device: backend" to "AGG". Honestly, this is a better
-option for higher-quality graphics anyway!}
 
 \item{boundaries}{Numerical boundaries to show on the graph. Defaults to the
 1.5- and 2-fold boundaries. Indicate boundaries you want like this:
 \code{boundaries = c(1.25, 1.5, 2)}}
 
 \item{boundaries_Guest}{Numerical boundaries to show on the graph when the PK
-parameter is a mean ratio of the parameter in the presence of a perpetrator
-/ the parameter in the absence of the perpetrator. Please see
-[BoundariesGuest Galetin 2011 Drug Metab
-Dispos](https://pubmed.ncbi.nlm.nih.gov/21036951/) for a reference for this
-type of graph. If you'd rather show straight lines for these parameters
-instead of BoundariesGuest curves, set this to NA. The default boundaries
-for BoundariesGuest curves are 1 (straight line at unity; even if you don't
-include 1, we'll add it back in) and 2. For all numbers > 1, you'll get a
-BoundariesGuest curve that approaches that value at higher DDI ratios, and,
-for the highest number you list, you'll additionally get straight line
-boundaries. This matches what is described in the BoundariesGuest Galetin
-2011 paper. We recommend using only 1 and 2 as BoundariesGuest boundaries
-for clarity of the graph.}
+parameter is a mean ratio of the parameter in the presence of a precipitant
+drug / the parameter at baseline. Please see
+https://pubmed.ncbi.nlm.nih.gov/21036951/ for a reference for this type of
+graph. If you'd rather show straight lines for these parameters instead of
+Guest curves, set this to NA. The default boundaries for Guest curves are 1
+(straight line at unity; even if you don't include 1, we'll add it back in)
+and 2. For all numbers > 1, you'll get a Guest curve that approaches that
+value at higher DDI ratios, and, for the highest number you list, you'll
+additionally get straight line boundaries. This matches what is described
+in the Guest Galetin 2011 Drug Metab Dispos paper. We recommend using only
+1 and 2 as Guest boundaries for clarity of the graph.}
 
 \item{boundary_color_set}{set of colors to use for indicating the X-fold
 boundaries of the simulated / observed ratio. The default is "red black",
 which, for the default boundaries, results in a black line at the 1.5-fold
 boundary and a red one at the 2-fold boundary. Other options are "red
-green", "muted red green" (a lighter, more muted red and green that work
-well for indicating boundaries when you're using shading instead of lines),
-and "black", which will result in only black lines or shading. You also can
+green" and "black", which will result in only black lines. You also can
 set this to any set of colors you'd like, e.g., \code{boundary_color_set =
 c("yellow", "blue")}. The number of colors should equal the number of
 boundaries that you've indicated or the graph won't be easily
@@ -117,33 +111,28 @@ interpretable.}
 
 \item{boundary_color_set_Guest}{set of colors to use for indicating the
 X-fold boundaries of the simulated / observed ratio for DDI ratio graphs.
-The default is "red black", which, for the default BoundariesGuest
-boundaries, results in a black curved line and a red straight line at the
-2-fold boundary. Other options are "red green", "muted red green" (a
-lighter, more muted red and green that work well for indicating boundaries
-when you're using shading instead of lines), and "black", which will result
-in only black lines or shading. You also can set this to
+The default is "red black", which, for the default Guest boundaries,
+results in a black curved line and a red straight line at the 2-fold
+boundary. Other options are "red green" and "black", which will result in
+only black lines or shading. You also can set this to
 any set of colors you'd like, e.g., \code{boundary_color_set_Guest = c("yellow",
-"blue")}. The number of colors should equal the number of BoundariesGuest boundaries
+"blue")}. The number of colors should equal the number of Guest boundaries
 that you've indicated or the graph won't be easily interpretable.}
 
 \item{boundary_line_types}{optionally specify the line types to use for the
-boundaries (only applicable when \code{boundary_indicator = "lines"}).
-Leaving this as "default" results in a dashed line at unity and solid lines
-for all others, but you can specify this with any R-acceptable line types,
-e.g., \code{boundary_line_types = c("dotted", "dashed", "solid")}. To see
-the possibilities, type \code{ggpubr::show_line_types()} into the console.}
+boundaries. Leaving this as "default" results in a dashed line at unity and
+solid lines for all others, but you can specify this with any R-acceptable
+line types, e.g., \code{boundary_line_types = c("dotted", "dashed",
+"solid")}. To see possible line types, run \code{ggpubr::show_line_types()}.}
 
 \item{boundary_line_types_Guest}{optionally specify the line types to use for
-the DDI ratio graph boundaries (only applicable when
-\code{boundary_indicator = "lines"}). Leaving this as "default" results in
-a dashed line at unity and solid lines for all others, but you can specify
+the DDI ratio graph boundaries. Leaving this as "default" results in a
+dashed line at unity and solid lines for all others, but you can specify
 this with any R-acceptable line types, e.g., \code{boundary_line_types_Guest =
-c("dotted", "dashed", "solid")}. To see the possibilities, type
-\code{ggpubr::show_line_types()} into the console.}
+c("dotted", "dashed", "solid")}. To see possible line types, run
+\code{ggpubr::show_line_types()}.}
 
-\item{boundary_line_width}{line width; default is 0.7. This only applies when
-\code{boundary_indicator} is set to "lines", the default.}
+\item{boundary_line_width}{boundary line width; default is 0.7.}
 
 \item{error_bars}{Which error bars should be shown on the graph? Options are
 "none" (default), "simulated" to show vertical error bars ("vertical" also
@@ -154,13 +143,23 @@ works), or "both".}
 variability would you like to have those error bars display? Options are
 "90\% CI" (default), "95\% CI", "CV\%", "percentiles", "standard
 deviation", ("SD" will also work fine), or "range". If \code{error_bars} is
-set to "none", this will be ignored.}
+set to "none", this will be ignored. Obviously, if your source data do not
+include the variability type you requested, we can't show that on the
+graph.}
 
 \item{point_color_column}{(optional) the column in \code{PKtable} that should
 be used for determining which color the points will be. This should be
 unquoted. For example, if you have a column named "Study" in the data.frame
 you're using for PKtable and you want to color the points by which study
 they came from, you would use: \code{point_color_column = Study}.}
+
+\item{legend_label_point_color}{optionally indicate on the legend something
+explanatory about what the colors represent. For example, if
+\code{point_color_column = Study} and \code{legend_label_point_color =
+"Studies included"}, that will make the label above the items in the legend
+"Studies included" rather than the default, which is to use whatever the
+column name is for \code{point_color_column}. If you don't want a label for
+this legend item, set this to "none".}
 
 \item{point_color_set}{the set of colors to use for the points. Options:
   \describe{
@@ -216,36 +215,12 @@ they came from, you would use: \code{point_color_column = Study}.}
   of the R Working Group about how to do that using
   \link{colorRampPalette}.}}}
 
-\item{legend_label_point_color}{optionally indicate on the legend something
-explanatory about what the colors represent. For example, if
-\code{point_color_column = Study} and \code{legend_label_point_color =
-"Studies included"}, that will make the label above the items in the legend
-"Studies included" rather than the default, which is to use whatever the
-column name is for \code{point_color_column}. If you don't want a label for
-this legend item, set this to "none".}
-
 \item{point_shape_column}{(optional) the column in \code{PKtable} that should
 be used for determining which shape the points will be. This should be
 unquoted. For example, if you have a column named "DosingFrequency" in the
 data.frame you're using for PKtable and you want to change the shape of the
 points by which dosing frequency was used, you would use:
 \code{point_color_column = DosingFrequency}.}
-
-\item{point_shape}{optionally specify what shapes are used for the points.
-Input should look like this, for example: \code{c(1, 2)} to get an open
-circle and an open triangle. If you only specify one value, it will be used
-for all points. If you don't specify anything for
-\code{point_shape_column}, then only the first value listed will be used.
-To see all the possible shapes and what number corresponds to which shape,
-type \code{ggpubr::show_point_shapes()} into the console. If left as NA,
-all points will be filled circles.}
-
-\item{point_size}{optionally specify the size of the points to use for the
-observed data. If left as NA, the size will be 2.}
-
-\item{point_transparency}{optionally specify how transparent to make the
-points. The default of 1 will make completely opaque points, and 0 would be
-completely transparent (invisible).}
 
 \item{legend_label_point_shape}{optionally indicate on the legend something
 explanatory about what the colors represent. For example, if
@@ -255,21 +230,29 @@ explanatory about what the colors represent. For example, if
 column name is for \code{point_color_column}. If you don't want a label for
 this legend item, set this to "none".}
 
+\item{point_shape}{optionally specify what shapes are used for the points.
+Input should look like this, for example: \code{c(1, 2)} to get an open
+circle and an open triangle. If you only specify one value, it will be used
+for all points. If you don't specify anything for
+\code{point_shape_column}, then only the first value listed will be used.
+To see possible shapes and what number corresponds to which shape, run
+\code{ggpubr::show_point_shapes()}. If left as NA, all points will be
+filled circles.}
+
+\item{point_size}{optionally specify the size of the points to use for the
+observed data. If left as NA, the size will be 2.}
+
+\item{point_transparency}{optionally specify how transparent to make the
+points. The default of 1 will make completely opaque points, and 0 would be
+completely transparent (invisible).}
+
 \item{legend_position}{Specify where you want the legend to be. Options are
-"left", "right" (default in most scenarios), "bottom", "top", or "none" if
-you don't want one at all.}
+"left", "right", "bottom", "top", or "none" (default) if you don't want one
+at all.}
 
 \item{axis_title_x}{title for the x axis; default is "Observed"}
 
 \item{axis_title_y}{title for the y axis; default is "Simulated"}
-
-\item{include_dose_num}{Should the dose number be included? If set to TRUE,
-then the dose number part of the graph title, e.g., the "Dose 1" or "Last
-dose" part of "Dose 1 AUCinf" or "Last dose Cmax", will be included. If set
-to FALSE, those would be come "AUCinf" and "Cmax" only with no reference to
-which dose it was. If left as the default NA, then the dose number will be
-omitted if all the data are all for dose 1 or all for the last dose, and it
-will be included if you have a mix of dosing intervals.}
 
 \item{facet_title_size}{optionally specify what font size to use for the
 facet titles. If left as NA, a reasonable guess will be used.}
@@ -282,7 +265,7 @@ facet titles. If left as NA, a reasonable guess will be used.}
   "Last dose Cmax", this will use "steady-state" instead, e.g.,
   "Steady-state Cmax"}
 
-  \item{"use my expressions"}{If you'd like to use your own specific R
+  \item{a list of exactly what you want}{If you'd like to use your own specific R
   expressions rather than the defaults included in the package, you can do
   that. You will need to supply a list here, and all of your PK parameters
   must be included or things will not work well. Here is an example of how
@@ -290,27 +273,50 @@ facet titles. If left as NA, a reasonable guess will be used.}
   "Cmax_last" = expression(C[max]), "Cmin_last" = expression(C[trough]))}
 
   \item{sub 0 to inf for inf}{NOT SET UP YET. This is a placeholder for other
-  substitutions people might want. Instead of the using AUCinf, graph titles will
+  substitutions people might want. Instead of the using AUCinf, graph titles would
   use AUC0 to inf}}}
 
 \item{graph_labels}{TRUE or FALSE (default) for whether to include labels (A,
 B, C, etc.) for each of the small graphs.}
 
+\item{include_dose_num}{Should the dose number be included? If set to TRUE,
+then the dose number part of the graph title, e.g., the "Dose 1" or "Last
+dose" part of "Dose 1 AUCinf" or "Last dose Cmax", will be included. If set
+to FALSE, those would become "AUCinf" and "Cmax" only with no reference to
+which dose it was. If left as the default NA, then the dose number will be
+omitted if all the data are all for dose 1 or all for the last dose, and it
+will be included if you have a mix of dosing intervals.}
+
+\item{all_AUCs_together}{TRUE or FALSE (default) for whether to combine,
+e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
+with this because, if you have points for both AUCinf and AUCt for a
+simulation, BOTH of those points will show up on the graph.}
+
 \item{all_intervals_together}{TRUE or FALSE (default) for whether to combine
 all of a single type of PK parameter into a single graph. For example,
 setting this to TRUE would put all the Cmax PK -- regardless of whether it
-was for the 1st dose, the last dose, or a custom interval -- into a single
-graph. The default, FALSE, means that anything that was its own column in
-the PK summary table would also be its own graph here. \emph{NOTE:} If you
-do set this to TRUE, the shape of the points will be mapped to which
+was for the 1st dose, the last dose simulated, or a custom interval -- into
+a single graph. The default, FALSE, means that anything that was its own
+column in the PK table would also be its own graph here. \emph{NOTE:} If
+you do set this to TRUE, the shape of the points will be mapped to which
 interval it is, which means that you can't \emph{also} specify something
 for the argument \code{point_shape_column}. If you do, it will be ignored.
 Try this out if you're uncertain what we mean.}
 
-\item{all_AUCs_together}{TRUE or FALSE (default) for whether to combine,
-e.g., AUCinf and AUCt for dose 1 into a single graph. \strong{Be careful}
-with this because if you have points for both AUCinf and AUCt for a
-simulation, then BOTH of those points will show up on the graph.}
+\item{interval_labels}{If you have set \code{all_intervals_together} to TRUE,
+you can rename the intervals here. The default names for the intervals come
+from the column names in the PK table, and will be named "dose 1" and "last
+dose" for those two very typical intervals and will be named "from X h to Y
+h" for all user-defined intervals. To rename those to something else, use a
+named character vector, where the names are the default intervals and the
+values are what you'd like to use instead. For example, this will change
+"dose 1" to "Day 1", etc.: \code{interval_labels = c("dose 1" = "Day 1",
+"from 144 h to 168 h" = "Day 7", "last dose" = "Day 14")}}
+
+\item{number_format}{How should the numbers on the axes be formatted? Options
+are "scientific", "regular", or NA, which will use scientific notation when
+the largest value, rounded up, is > 1e5 and regular notation with commas
+for every 10^3 interval otherwise.}
 
 \item{grid_color}{optionally specify the color of the major and minor grid
 lines on your graph. Default is "grey92", which is the standard grey for
@@ -330,37 +336,56 @@ in quotes here, e.g., "My conc time graph.png"}
 
 \item{fig_height}{figure height in inches; default is 8}
 
-\item{return_list_of_graphs}{TRUE or FALSE (default) for whether to return a
+\item{return_separate_graphs}{TRUE or FALSE (default) for whether to return a
 list of each individual graph as its own separate ggplot2 object.}
 
-\item{axis_titles}{SOON TO BE DEPRECATED in favor of \code{axis_title_x} and
-\code{axis_title_x}. Optionally specify what you'd like for the x and y
-axis titles with a named character vector. The default is \code{axis_titles =
-c("x" = "Observed", "y" = "Simulated")}}
+\item{return_list_of_graphs}{SOON TO BE DEPRECATED. Same as
+'return_separate_graphs', but we thought the other name was clearer.}
 }
 \value{
-a set of arranged ggplot2 graphs
+a set of arranged ggplot2 graphs or a list of individual graphs
 }
 \description{
-\code{so_graph} makes a graph of simulated vs. observed PK, including
-indicating where the predicted parameters fell within X fold of the observed.
+\code{so_graph} makes graphs of simulated vs. observed PK that
+  indicate where the predicted parameters fell within X fold of the observed,
+  where "X" is whatever cutoffs you specify.
+
+  \strong{Note from LSh:} You will sometimes see this warning repeated once
+  for each graph: "Duplicated `override.aes` is ignored.". I can't seem to
+  make these superfluous warnings go away, but you should ignore them.
 }
 \examples{
-# Assuming you have run pk_table on a few files with observed data
-# to generate an object called MyPKOutput, then:
+
+# The object SOdata has some example PK data to work with
+# and is included in the package.
 so_graph(PKtable = SOdata)
-so_graph(PKtable = SOdata, boundary_indicator = "fill")
+
 so_graph(PKtable = SOdata,
-         axis_titles = c("y" = "Predicted", "x" = "Observed"))
-so_graph(PKtable = SOdata, ncol = 1)
-so_graph(PKtable = SOdata, point_shape_column = Study,
-         legend_position = "bottom")
+         axis_title_y = "Predicted",
+         axis_title_x = "Observed",
+         grid_color = "none")
+
+so_graph(PKtable = SOdata,
+         ncol = 1)
+
 so_graph(PKtable = SOdata,
          point_shape_column = Study,
-         legend_label_point_shape = "Studies involving\nDrug X",
+         legend_position = "bottom")
+
+so_graph(PKtable = SOdata,
+         point_shape_column = Study,
+         legend_label_point_shape = "Studies involving Drug X",
+         point_shape = c(21:25),
          point_color_column = File,
          legend_label_point_color = "Simulation file",
-         legend_position = "right")
+         point_color_set = "blues",
+         legend_position = "right",
+         error_bars = "horizontal")
+# NB: This will generate 3 warnings about
+# `override.aes` being ignored that we *CANNOT*
+# get to disappear. Please ignore the warnings
+# about `override.aes` being ignored. Yes,
+# that's a lot of ignoring. :)
 
 
 }
