@@ -460,13 +460,6 @@
 "SOdata"
 
 
-#' Equations used for calculating drug-metabolizing enzyme and drug transport
-#' ontogenies in pediatric populations
-#' 
-#' @format a data.frame
-"OntogenyEquations"
-
-
 #' Examples for specifying PK parameters with pk_table
 #'
 #' @format a data.frame

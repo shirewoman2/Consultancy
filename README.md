@@ -899,17 +899,20 @@ listed first in each section.
 ## Other data visualizations that can help you analyze your data
 
 - **sensitivity_plot()** - Make graphs of sensitivity analysis results
+
 - **checkSS()** - Create a graph of simulated concentrations to check
   for whether a perpetrator drug is at steady-state when the victim drug
   is dosed
+
 - fm_treemap() - For comparing fm values, make a treemap as opposed to
   the standard and arguably inferior pie chart
+
 - dissolution_profile_plot() - Make a graph of the dissolution profiles
   of a compound
+
 - graph_boxplot() - Make boxplots or boxplots overlaid with individual
   points
-- ontogeny_plot() - Graph the ontogenies of drug-metabolizing enzymes
-  and transporters
+
 - release_profile_plot() - Make a graph of the release profiles of a
   compound
 
