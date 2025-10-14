@@ -10,24 +10,33 @@ add_sims(object_A, object_B)
 \item{object_A}{one R object}
 
 \item{object_B}{a second R object whose results you want to combine with the
-first R object. Bothe object_A and object_B must have the same data class,
+first R object. Both object_A and object_B must have the same data class,
 i.e., both must be lists or both data.frames.}
 }
 \value{
 the combined R object
 }
 \description{
-\code{add_sims} was designed with the idea of adding information from two
-objects that were created by running extractExpDetails_mult, but you can also
-use it with other R objects. For example, say you ran extractExpDetails_mult
-with some initial development simulations and then, later, you ran it with
-some other development simulations another time and now, you want both of
-those sets of results be combined, maybe because you want to run
-\code{\link{annotateDetails}} to compare them.
+\code{add_sims} was designed with the idea of adding togethet
+  information from two objects that were created from two separate calls to
+  \code{\link{extractExpDetails_mult}}, but you can also use it with other R
+  objects.
+
+  For example, say you ran \code{\link{extractExpDetails_mult}} with some
+  initial development simulations and then, later, you ran it with some other
+  development simulations another time and now, you want both of those sets
+  of results be combined, maybe because you want to run
+  \code{\link{annotateDetails}} to compare them. Run \code{add_sims} on these
+  two objects to combine them into a single set of details with the standard
+  structure for objects created by \code{\link{extractExpDetails_mult}}.
+  Similarly, you can run this from an object created from one call to
+  \code{\link{extractConcTime}} and a second object created the same way to
+  obtain a single object with the same structure as if you'd gotten all the
+  data extracted at once.
 }
 \examples{
 Details <- add_sims(object_A = Details_dev,
-                    object_B = Detrails_final)
+                    object_B = Details_final)
 
 
 }

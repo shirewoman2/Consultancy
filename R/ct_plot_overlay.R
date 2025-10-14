@@ -1381,6 +1381,11 @@ ct_plot_overlay <- function(ct_dataframe,
    # Removing negative concs.
    ct_dataframe <- ct_dataframe %>% filter(Conc >= 0)
    
+   if(nrow(ct_dataframe) == 0){
+      stop(wrapn("Something is amiss because your data.frame has no rows once we looked for aggregated simulated data following the 1st dose administered and any appropriate observed data. Please check your input."), 
+           call. = FALSE)
+   }
+   
    # If the user set obs_color to "none", then they must not want to include
    # observed data in the graph. Set nrow to 0 in that case.
    if(complete.cases(obs_color) && obs_color == "none"){

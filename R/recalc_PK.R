@@ -313,6 +313,10 @@ recalc_PK <- function(ct_dataframe,
       }
    }
    
+   # NOTHING should be grouped or this will generate a million annoying messages
+   # about adding grouping variables!
+   ct_dataframe <- ungroup(ct_dataframe)
+   
    if("File" %in% names(ct_dataframe) == FALSE){
       ct_dataframe$File <- "unknown file"
    }
@@ -509,7 +513,8 @@ recalc_PK <- function(ct_dataframe,
    # for that.
    MaxDoseNum <- CTsubset %>% 
       group_by(File) %>%
-      summarize(MaxDoseNum = max(DoseNum))
+      summarize(MaxDoseNum = max(DoseNum)) %>% 
+      ungroup()
    
    CTsubset <- CTsubset %>% 
       left_join(MaxDoseNum, by = "File") %>% 
@@ -606,7 +611,8 @@ recalc_PK <- function(ct_dataframe,
                          # data is NOT summarize and that this occurs even when
                          # they have specified .drop = FALSE in the function
                          # that DOES perform the grouping is *beyond me*.
-                         .groups = "keep") 
+                         .groups = "keep") %>% 
+               ungroup()
             
             suppressMessages(
                FirstDoseInfo <- FirstDoseInfo %>% 
@@ -670,7 +676,8 @@ recalc_PK <- function(ct_dataframe,
                             switch(as.character(complete.cases(dosing_interval)),
                                    "TRUE" = t0 + dosing_interval,
                                    "FALSE" = MaxTime)) %>%
-                  filter(complete.cases(File) | complete.cases(ObsFile))
+                  filter(complete.cases(File) | complete.cases(ObsFile)) %>% 
+                  ungroup()
             ))
             
             if(complete.cases(first_dose_time)){
@@ -1005,7 +1012,8 @@ recalc_PK <- function(ct_dataframe,
                                switch(as.character(complete.cases(dosing_interval)),
                                       "TRUE" = t0 + dosing_interval,
                                       "FALSE" = MaxTime)) %>% 
-                     filter(complete.cases(File))
+                     filter(complete.cases(File)) %>% 
+                     ungroup()
                ))
                
                if(complete.cases(last_dose_time)){
@@ -1234,7 +1242,8 @@ recalc_PK <- function(ct_dataframe,
                             switch(as.character(complete.cases(dosing_interval)),
                                    "TRUE" = t0 + dosing_interval,
                                    "FALSE" = MaxTime)) %>% 
-                  filter(complete.cases(File) | complete.cases(ObsFile))
+                  filter(complete.cases(File) | complete.cases(ObsFile)) %>% 
+                  ungroup()
             ))
             
             if(complete.cases(first_dose_time)){
@@ -1439,7 +1448,8 @@ recalc_PK <- function(ct_dataframe,
                CI90_upper = gm_conf(Value, CI = 0.90)[2],
                Median = median(Value, na.rm = T), 
                Minimum = min(Value, na.rm = T), 
-               Maximum = max(Value, na.rm = T)) 
+               Maximum = max(Value, na.rm = T)) %>% 
+            ungroup()
       ))
       
    }
