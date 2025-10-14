@@ -772,7 +772,7 @@ Below are descriptions of all the functions in the package, and the functions mo
    - fm_treemap() - For comparing fm values, make a treemap as opposed to the standard and arguably inferior pie chart 
    - dissolution_profile_plot() - Make a graph of the dissolution profiles of a compound 
    - graph_boxplot() - Make boxplots or boxplots overlaid with individual points 
-   - ontogeny_plot() - Graph the ontogenies of drug-metabolizing enzymes and transporters 
+
    - release_profile_plot() - Make a graph of the release profiles of a compound 
    
 ### Helper functions for graphing 

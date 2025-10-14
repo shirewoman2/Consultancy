@@ -1423,7 +1423,11 @@ ct_plot <- function(ct_dataframe = NA,
    DDI <- (unique(Data$CompoundID) %in% AllCompounds$CompoundID[
       AllCompounds$DDIrole == "victim"] | 
          EnzPlot) & 
-      all(unique(Data$Inhibitor) %in% "none") == FALSE
+      all(unique(Data$Inhibitor) %in% "none") == FALSE &
+      # If they requested a plot of the substrate with inhibitor and NOT both
+      # baseline AND with inhibitor, then this is not a regular DDI plot and
+      # should not be labeled as DDI here.
+      length(unique(Data$Inhibitor)) != 1
    
    # The only two ways that observed data color can be mapped: 
    
