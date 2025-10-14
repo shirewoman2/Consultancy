@@ -176,9 +176,11 @@ elimFit <- function(DF,
    `!!` <- rlang::`!!`
    
    # Catching inappropriate model input
+   modelType <- tolower(modelType[1])
    if(modelType %in% c("monoexponential", "biexponential",
                        "triexponential") == FALSE){
-      return("Acceptable model types are 'monoexponential', 'biexponential', or 'triexponential'.")
+      stop(wrapn("Acceptable model types for fitting elimination rates are 'monoexponential', 'biexponential', or 'triexponential'."), 
+           call. = FALSE)
    }
    
    # Setting up the input data.frame
@@ -190,7 +192,7 @@ elimFit <- function(DF,
    # within DF, issue a warning but keep going.
    if(any(complete.cases(omit)) & any(omit %in% 1:nrow(DF) == FALSE) |
       length(omit) == 0){
-      message("One or more of the values supplied for 'omit' do not fall within the range of the data.frame supplied. All of the points supplied were included in the regression.")
+      message(wrapn("One or more of the values supplied for 'omit' do not fall within the range of the data.frame supplied. All of the points supplied were included in the regression."))
    }
    
    DF <- DF %>% dplyr::select(!! concentration, !! time) %>%
@@ -261,16 +263,12 @@ elimFit <- function(DF,
       if(modelType == "monoexponential"){
          startValues <- list(A = startValues.A,
                              k = startValues.k)
-      }
-      
-      if(modelType == "biexponential"){
+      } else if(modelType == "biexponential"){
          startValues <- list(A = startValues.A,
                              alpha = startValues.k,
                              B = startValues.A/2,
                              beta = 0.1) # Just guessing that this value might work
-      }
-      
-      if(modelType == "triexponential"){
+      } else if(modelType == "triexponential"){
          startValues <- list(A = startValues.A,
                              alpha = startValues.k,
                              B = startValues.A/2,
@@ -285,7 +283,7 @@ elimFit <- function(DF,
    # Setting up the weights to use
    if(class(weights) == "character"){
       
-      WeightOptions <- DF %>%
+      WeightOptions <- DF %>% ungroup() %>% # FIXME Why is this grouped!??!?!?!?
          dplyr::select(CONC, TIME) %>%
          dplyr::mutate(One_x = 1/TIME,
                        One_x2 = 1/TIME^2,
@@ -301,11 +299,13 @@ elimFit <- function(DF,
    }
    
    if(any(is.infinite(weights))){
-      stop("The weights used for the regression cannot include infinite numbers. Please change the weighting scheme to avoid this.")
+      stop(wrapn("The weights used for the regression cannot include infinite numbers. Please change the weighting scheme to avoid this."), 
+           call. = FALSE)
    }
    
    # Fitting
    Fit <- NULL
+   
    if(modelType == "monoexponential"){
       # Determining whether to use nls or nls2 and then fitting
       if(class(startValues) == "list"){
@@ -329,9 +329,7 @@ elimFit <- function(DF,
                                     nls.control(maxiter = maxiter)),
                          error = function(x) return("Cannot fit to model"))
       }
-   }
-   
-   if(modelType == "biexponential"){
+   } else if(modelType == "biexponential"){
       # Determining whether to use nls or nls2 and then fitting
       if(class(startValues) == "list"){
          Fit <- tryCatch(nls(
@@ -358,9 +356,7 @@ elimFit <- function(DF,
             weights = weights),
             error = function(x) return("Cannot fit to model"))
       }
-   }
-   
-   if(modelType == "triexponential"){
+   } else if(modelType == "triexponential"){
       # Determining whether to use nls or nls2
       if(class(startValues) == "list"){
          Fit <- tryCatch(nls(
@@ -441,9 +437,7 @@ elimFit <- function(DF,
             dplyr::mutate(Beta = row.names(Estimates)) %>%
             dplyr::select(Beta, everything())
          
-      }
-      
-      if(modelType == "biexponential"){
+      } else if(modelType == "biexponential"){
          CurveData <- CurveData %>%
             dplyr::mutate(A = Estimates[row.names(Estimates) == "A", "Estimate"],
                           alpha = Estimates[row.names(Estimates) == "alpha", "Estimate"],
@@ -473,9 +467,7 @@ elimFit <- function(DF,
          Estimates <- Estimates %>% dplyr::left_join(Betas, by = "Estimate") %>%
             dplyr::arrange(Beta) %>%
             dplyr::select(Beta, everything())
-      }
-      
-      if(modelType == "triexponential"){
+      } else if(modelType == "triexponential"){
          CurveData <- CurveData %>%
             dplyr::mutate(A = Estimates[row.names(Estimates) == "A", "Estimate"],
                           alpha = Estimates[row.names(Estimates) == "alpha", "Estimate"],
@@ -537,10 +529,6 @@ elimFit <- function(DF,
       }
    }
    
-   Result <- list(DataUsed = DFinit,
-                  Estimates = Estimates,
-                  Graph = Graph)
-   
    # Here's what to do if the fit didn't work at all. I can't remember what
    # caused this to happen, but I know I needed to catch this.
    if(is.null(Fit)){
@@ -550,37 +538,32 @@ elimFit <- function(DF,
                             "Pr(>|t|)")
       Estimates$Message <- "Cannot fit to model"
       
-      Result <- list(DataUsed = DFinit,
-                     Estimates = Estimates,
-                     Graph)
+      Graph <- ggplot()
+      
    }
    
    # If the user wants to use better names for the output data.frame, setting
    # those here.
    if(useNLS_outnames == FALSE & class(Fit) == "nls"){
-      names(Result[["Estimates"]]) <-
+      names(Estimates) <-
          c("Beta", "Estimate", "SE", "tvalue", "pvalue")
    }
    
    # If the user wanted to have an estimate of the residual sum of squares,
    # adding that to the output data.frame.
    if(returnRSS & !is.null(Fit) & class(Fit) == "nls"){
-      Result[["Estimates"]]$RSS <- as.numeric(Fit$m$deviance())
+      Estimates$RSS <- as.numeric(Fit$m$deviance())
    }
    
    # Adjusting the final output to only contain the results requested.
+   Result <- list("Estimates" = Estimates)
+   
    if(returnDataUsed){
-      if(graph){
-         Result <- Result[c("Estimates", "DataUsed", "Graph")]
-      } else{
-         Result <- Result[c("Estimates", "DataUsed")]
-      }
-   } else{
-      if(graph){
-         Result <- Result[c("Estimates", "Graph")]
-      } else{
-         Result <- Result[["Estimates"]]
-      }
+      Result$DataUsed <- DFinit
+   } 
+   
+   if(graph){
+      Result$Graph <- Graph
    }
    
    return(Result)

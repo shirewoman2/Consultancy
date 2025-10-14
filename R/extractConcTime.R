@@ -648,7 +648,8 @@ extractConcTime <- function(sim_data_file,
             ConcUnit = ifelse(TypeCode == "Kpuu_BrainMass", NA, ConcUnit)) %>%
          group_by(TypeCode) %>%
          fill(ConcUnit, .direction = "down") %>% ungroup() %>%
-         filter(complete.cases(TypeCode)) %>% select(-OrigVal) %>% unique()
+         filter(complete.cases(TypeCode)) %>% select(-OrigVal) %>% unique() %>% 
+         ungroup()
       
       if("cumulative fraction released" %in% tissue){
          SimConcUnits <- bind_rows(SimConcUnits %>%
@@ -783,7 +784,8 @@ extractConcTime <- function(sim_data_file,
                                          "Conc_med" ~ "trial median"), 
                       Individual = paste(Trial, TrialOrig), 
                       IndivOrAgg = "aggregate") %>% 
-               select(-TrialOrig, -MeanType)
+               select(-TrialOrig, -MeanType) %>% 
+               ungroup()
          )
          
          sim_data[[cmpd]][[ss]] <- bind_rows(sim_data[[cmpd]][[ss]], 
@@ -804,7 +806,8 @@ extractConcTime <- function(sim_data_file,
                   ungroup() %>%
                   mutate(Trial = "geomean", 
                          Individual = as.character(NA), 
-                         IndivOrAgg = "aggregate")
+                         IndivOrAgg = "aggregate") %>% 
+                  ungroup()
             )
             
             sim_data[[cmpd]][[ss]] <- bind_rows(sim_data[[cmpd]][[ss]], 
