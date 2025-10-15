@@ -73,19 +73,19 @@ harmonize_details <- function(existing_exp_details){
                          Dose, Dose_units, DoseRoute)
                
             } else {
-               CustomDosing <- NULL
+               CustomDosing <- tibble()
             }
             
-            existing_exp_details$CustomDosing_sub <-  NULL
-            existing_exp_details$CustomDosing_inhib <- NULL
-            existing_exp_details$CustomDosing_inhib2 <- NULL
+            existing_exp_details$CustomDosing_sub <-  tibble()
+            existing_exp_details$CustomDosing_inhib <- tibble()
+            existing_exp_details$CustomDosing_inhib2 <- tibble()
             
             existing_exp_details$CustomDosing <- CustomDosing
             
          }
          
          itemstoadd <- setdiff(ExpDetailListItems, names(existing_exp_details))
-         append_items <- lapply(itemstoadd, function(x) return(NULL))
+         append_items <- lapply(itemstoadd, function(x) return(tibble()))
          names(append_items) <- itemstoadd
          existing_exp_details <- c(existing_exp_details, append_items)
          
@@ -182,7 +182,7 @@ harmonize_details <- function(existing_exp_details){
             which(sapply(existing_exp_details, length) == 1)]))
          
          for(i in ExpDetailListItems[2:length(ExpDetailListItems)]){
-            Out[[i]] <- data.frame()
+            Out[[i]] <- tibble()
          }
          
          # # Check whether MainDetails includes SheetNames b/c need it for other
@@ -278,7 +278,7 @@ harmonize_details <- function(existing_exp_details){
       existing_exp_details <- list(MainDetails = existing_exp_details)
       
       itemstoadd <- setdiff(ExpDetailListItems, names(existing_exp_details))
-      append_items <- lapply(itemstoadd, function(x) return(NULL))
+      append_items <- lapply(itemstoadd, function(x) return(tibble()))
       names(append_items) <- itemstoadd
       existing_exp_details <- c(existing_exp_details, append_items)
       

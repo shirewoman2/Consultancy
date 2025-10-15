@@ -131,22 +131,16 @@ make_color_set <- function(color_set,
          return("black")
       }
       
-      if(color_set == "default" & num_colors == 2){
-         color_set <- "set1"
-      }
-      
-      # NOTE: For no reason I can discern, if the user has observed data that
-      # should be all one color but then uses scale_color_X where x is anything
-      # except "manual", the observed points DISAPPEAR. That's why, below,
-      # whenever it's scale_color_x, I'm setting the colors needed and then
-      # using scale_color_manual instead of scale_color_x. -LSh
-      
-      color_set <- ifelse(str_detect(tolower(color_set), 
-                                     "default|brewer.*2|set.*2|dark.*2"), 
-                          "set2", color_set)
-      color_set <- ifelse(str_detect(tolower(color_set),
-                                     "brewer.*1|set.*1"), 
-                          "set1", color_set)
+      color_set <- case_when(
+         color_set == "default" & num_colors == 2 ~ "set1", 
+         
+         str_detect(color_set, "green") & str_detect(color_set, "blue") ~ "blue-green", 
+         
+         str_detect(color_set, "default|brewer.*2|set.*2|dark.*2") ~ "set2", 
+         
+         str_detect(color_set, "brewer.*1|set.*1") ~ "set1", 
+         
+         .default = color_set)
       
       shade <- case_when(is.na(shade) & 
                             color_set %in% c("greens", "purples") ~ "darker", 

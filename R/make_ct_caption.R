@@ -92,20 +92,23 @@ make_ct_caption <- function(ct_dataframe,
    if(plot_type  %in% c("enzyme-abundance", "fm")){
       MyCompound <- str_comma(sort(unique(ct_dataframe$Enzyme)))
    } else {
+      
+      AllMyCompounds <- sort(unique(ct_dataframe$Compound))
+      
       MyCompound <- case_when(
          "logical" %in% class(prettify_compound_names) &&
             prettify_compound_names == TRUE ~ 
-            str_comma(sort(unique(prettify_compound_name(ct_dataframe$Compound)))), 
+            str_comma(prettify_compound_name(AllMyCompounds)), 
          
          "logical" %in% class(prettify_compound_names) &&
             prettify_compound_names == FALSE ~ 
-            str_comma(sort(unique(ct_dataframe$Compound))), 
+            str_comma(AllMyCompounds), 
          
          "character" %in% class(prettify_compound_names) & 
             any(CompoundID %in% names(prettify_compound_names)) ~ 
             str_comma(sort(unique(prettify_compound_names[CompoundID]))), 
          
-         .default = str_comma(sort(unique(ct_dataframe$Compound)))
+         .default = str_comma(AllMyCompounds)
       )
    }
    
