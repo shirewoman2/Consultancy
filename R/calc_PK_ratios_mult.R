@@ -562,7 +562,8 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
             .default = NA)) %>% 
          select(-`90% CI - Lower`, -`90% CI - Upper`) %>% 
          pivot_longer(cols = -c(CompoundID, Tissue, File, PKparameter, 
-                                Interval_Numerator, Interval_Denominator), 
+                                any_of(c("Interval_Numerator", 
+                                         "Interval_Denominator"))), 
                       names_to = "Statistic", 
                       values_to = "Value") %>% 
          pivot_wider(names_from = PKparameter, 
@@ -607,8 +608,9 @@ calc_PK_ratios_mult <- function(PKparameters = NA,
    
    # Setting column order
    MyPKResults <- MyPKResults %>% 
-      relocate(Interval_Numerator, Interval_Denominator, 
-               CompoundID, Tissue, File, .after = last_col())
+      relocate(any_of(c("Interval_Numerator", "Interval_Denominator", 
+                        "CompoundID", "Tissue", "File")),
+               .after = last_col())
    
    if(includeConfInt == FALSE){
       MyPKResults <- MyPKResults %>% 

@@ -1254,12 +1254,12 @@ calc_PK_ratios <- function(PKparameters = NA,
    }
    
    MyPKResults$File <- Comparisons %>% pull(FilePair) %>% unique()
-   MyPKResults$Interval_Numerator <- unique(PKnumerator$TimeInterval$Interval)
-   MyPKResults$Interval_Denominator <- unique(PKdenominator$TimeInterval$Interval)
+   # MyPKResults$Interval_Numerator <- unique(PKnumerator$TimeInterval$Interval)
+   # MyPKResults$Interval_Denominator <- unique(PKdenominator$TimeInterval$Interval)
    
    # Setting column order 
    MyPKResults <- MyPKResults %>% 
-      relocate(Interval_Numerator, Interval_Denominator, 
+      relocate(#Interval_Numerator, Interval_Denominator, 
                any_of(c("CompoundID",
                         "CompoundID_Numerator",
                         "CompoundID_Denominator", 
