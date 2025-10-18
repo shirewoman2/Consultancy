@@ -18,6 +18,13 @@
 
 harmonize_details <- function(existing_exp_details){
    
+   # First: Make sure everything is unique
+   if("list" %in% class(existing_exp_details)){
+      existing_exp_details <- map(existing_exp_details, .f = unique)
+   } else if("data.frame" %in% class(existing_exp_details)){
+      existing_exp_details <- unique(existing_exp_details)
+   }
+   
    # Setting up data structure -----------------------------------------------
    
    # At the end of this function, the output object should be a list with the

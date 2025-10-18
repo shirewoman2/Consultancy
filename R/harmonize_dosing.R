@@ -35,10 +35,10 @@ harmonize_dosing <- function(existing_exp_details){
       
       for(cmpd in unique(AllCompounds$DosedCompoundID)){
          
-         MyCompundName <- Main[[ff]][[AllCompounds$DetailNames[
+         MyCompoundName <- Main[[ff]][[AllCompounds$DetailNames[
             AllCompounds$CompoundID == cmpd]]]
          
-         if(is.null(MyCompundName) || is.na(MyCompundName)){next}
+         if(is.null(MyCompoundName) || is.na(MyCompoundName)){next}
          
          # If it was custom dosing, then we won't be able to get any info from
          # dosing interval, etc., so skipping those. 

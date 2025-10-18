@@ -194,11 +194,11 @@ tidy_input_PK <- function(PKparameters,
       # File
       names(PKparameters)[
          str_detect(tolower(names(PKparameters)), 
-                    "^numerator$|numerator.*file|numerator.*sim")][1] <- "Numerator_File"
+                    "^numerator$|numerator.*file|file.*numerator|numerator.*sim|sim.*numerator")][1] <- "Numerator_File"
       
       names(PKparameters)[
          str_detect(tolower(names(PKparameters)), 
-                    "^denominator$|denominator.*file|denominator.*sim")][1] <- "Denominator_File"
+                    "^denominator$|denominator.*file|file.*denominator|denominator.*sim|sim.*denominator")][1] <- "Denominator_File"
       
       if(all(c("Numerator_File", "Denominator_File") %in%
              names(PKparameters) == FALSE) & 
