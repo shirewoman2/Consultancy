@@ -429,7 +429,7 @@ convert_time_units <- function(DF_to_convert,
    }
    
    if("logical" %in% class(DF_with_good_units)){
-      DF_with_good_units <- list(Time_units = time_units)
+      DF_with_good_units <- tibble(Time_units = time_units)
    }
    
    time_units <- tolower(time_units)[1]
@@ -441,6 +441,14 @@ convert_time_units <- function(DF_to_convert,
                             .default = time_units)
    
    DF_to_convert <- DF_to_convert %>% 
+      mutate(Time_units = case_match(Time_units, 
+                                     "h" ~ "hours", 
+                                     "d" ~ "days", 
+                                     "wks" ~ "weeks", 
+                                     "min" ~ "minutes", 
+                                     .default = Time_units))
+   
+   DF_with_good_units <- DF_with_good_units %>% 
       mutate(Time_units = case_match(Time_units, 
                                      "h" ~ "hours", 
                                      "d" ~ "days", 

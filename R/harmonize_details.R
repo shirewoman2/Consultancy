@@ -18,6 +18,13 @@
 
 harmonize_details <- function(existing_exp_details){
    
+   # First: Make sure everything is unique
+   if("list" %in% class(existing_exp_details)){
+      existing_exp_details <- map(existing_exp_details, .f = unique)
+   } else if("data.frame" %in% class(existing_exp_details)){
+      existing_exp_details <- unique(existing_exp_details)
+   }
+   
    # Setting up data structure -----------------------------------------------
    
    # At the end of this function, the output object should be a list with the
@@ -73,48 +80,27 @@ harmonize_details <- function(existing_exp_details){
                          Dose, Dose_units, DoseRoute)
                
             } else {
-               CustomDosing <- NULL
+               CustomDosing <- tibble()
             }
             
-            existing_exp_details$CustomDosing_sub <-  NULL
-            existing_exp_details$CustomDosing_inhib <- NULL
-            existing_exp_details$CustomDosing_inhib2 <- NULL
+            existing_exp_details$CustomDosing_sub <-  tibble()
+            existing_exp_details$CustomDosing_inhib <- tibble()
+            existing_exp_details$CustomDosing_inhib2 <- tibble()
             
             existing_exp_details$CustomDosing <- CustomDosing
             
          }
          
          itemstoadd <- setdiff(ExpDetailListItems, names(existing_exp_details))
-         append_items <- lapply(itemstoadd, function(x) return(NULL))
+         append_items <- lapply(itemstoadd, function(x) return(tibble()))
          names(append_items) <- itemstoadd
          existing_exp_details <- c(existing_exp_details, append_items)
-         
-         # # Check whether MainDetails includes SheetNames b/c need it for other
-         # # functions now.
-         # if(("SheetNames" %in% names(existing_exp_details$MainDetails) && 
-         #     any(is.na(existing_exp_details$MainDetails$SheetNames)) |
-         #     any(existing_exp_details$MainDetails$SheetNames == "`NA`", na.rm = T)) | 
-         #    "SheetNames" %in% names(existing_exp_details$MainDetails) == FALSE){
-         #    
-         #    for(i in existing_exp_details$MainDetails$File){
-         #       if(file.exists(i) & 
-         #          !str_detect(i, "\\.db$|\\.wksz")){
-         #          SheetNames <- tryCatch(readxl::excel_sheets(i),
-         #                                 error = openxlsx::getSheetNames(i))
-         #       } else { SheetNames <- NA}
-         #       
-         #       existing_exp_details$MainDetails$SheetNames[
-         #          existing_exp_details$MainDetails$File == i] <- 
-         #          str_c(paste0("`", SheetNames, "`"), collapse = " ")
-         #       rm(SheetNames)
-         #    }
-         # }
          
          # Adding missing, necessary list items
          Missing1 <- setdiff(
             paste0(rep(c("DoseInt", "Dose", "DoseRoute", "Regimen", "NumDoses"),
-                       each = 3), 
-                   c("_sub", "_inhib", "_inhib2")), 
+                       each = length(unique(AllCompounds$DosedCompoundID))), 
+                   unique(AllCompounds$DosedCompoundSuffix)), 
             names(existing_exp_details$MainDetails))
          
          if(length(Missing1) > 0){
@@ -182,7 +168,7 @@ harmonize_details <- function(existing_exp_details){
             which(sapply(existing_exp_details, length) == 1)]))
          
          for(i in ExpDetailListItems[2:length(ExpDetailListItems)]){
-            Out[[i]] <- data.frame()
+            Out[[i]] <- tibble()
          }
          
          # # Check whether MainDetails includes SheetNames b/c need it for other
@@ -278,7 +264,7 @@ harmonize_details <- function(existing_exp_details){
       existing_exp_details <- list(MainDetails = existing_exp_details)
       
       itemstoadd <- setdiff(ExpDetailListItems, names(existing_exp_details))
-      append_items <- lapply(itemstoadd, function(x) return(NULL))
+      append_items <- lapply(itemstoadd, function(x) return(tibble()))
       names(append_items) <- itemstoadd
       existing_exp_details <- c(existing_exp_details, append_items)
       
@@ -332,7 +318,7 @@ harmonize_details <- function(existing_exp_details){
       }
       
       # Making DoseInt_x and Dose_x numeric all the time. We'll get custom dosing
-      # info from Regimen_x and DoseRexisting_exp_details$MainDetailse_x.
+      # info from Regimen_x and existing_exp_details$MainDetails.
       suppressWarnings(
          existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
             mutate(DoseInt_sub = as.numeric(DoseInt_sub), 

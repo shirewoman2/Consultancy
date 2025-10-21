@@ -539,7 +539,8 @@ formatTable_Simcyp <- function(DF,
       # AllPerps_colposition so that the column position of the perpetrator is
       # retained.
       AllPerps_colposition <-
-         gsub("with | \\(.*", "", str_extract(OrigNames, "with .*"))
+         gsub("with | \\(.*|denominator simulation", "", 
+              str_extract(OrigNames, "with .*|denominator simulation"))
       AllPerps <- sort(unique(AllPerps_colposition))
       
       # This will only work with pretty columns b/c ugly columns will only say
@@ -551,14 +552,15 @@ formatTable_Simcyp <- function(DF,
          # XXX". If there is only one value for XXX, then use that as
          # perpetrator_name.
          if(length(AllPerps) == 1){
-            prepetrator_name <- AllPerps
+            perpetrator_name <- AllPerps
          } else {
             perpetrator_name <- "perpetrator"
          }
       }
       
-      PerpRegex <- paste0(" with .* \\(| ratio|_withInhib|_ratio| with ", 
-                          perpetrator_name)
+      PerpRegex <- paste0(
+         " with .* \\(| ratio|_withInhib|_ratio| with |numerator simulation", 
+         perpetrator_name)
       
       DDIcols <- which(sapply(names(DF), 
                               FUN = function(x){
@@ -570,8 +572,14 @@ formatTable_Simcyp <- function(DF,
       DDIcols <- setdiff(DDIcols, RatioCols)
       
       TopRowValues <- OrigNames
-      TopRowValues[BLcols] <- "Baseline"
-      TopRowValues[DDIcols] <- paste("With", perpetrator_name)
+      
+      if(any(str_detect(OrigNames, "numerator|denominator"))){
+         TopRowValues[BLcols] <- "Baseline"
+         TopRowValues[DDIcols] <- "Comparison scenario"
+      } else {
+         TopRowValues[BLcols] <- "Baseline"
+         TopRowValues[DDIcols] <- paste("With", perpetrator_name)
+      }
       TopRowValues[RatioCols] <- "GMR"
       
       NewNames <- sub(str_c(paste(" with", AllPerps), collapse = "|"),

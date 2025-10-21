@@ -742,11 +742,13 @@ inductFit <- function(DF,
             pivot_wider(values_from = Value,
                         names_from = Param) %>% 
             mutate(Model = model) %>% 
-            select(Model, DonorID,
-                   any_of(paste0(rep(c("Emax", "EC50", "Gamma", "slope", "Indmax", "IndC50"), 
-                                     each = 3), 
-                                 c("", "_SE", "_pvalue"))), 
-                   any_of("AIC"))
+            arrange(Model, DonorID) %>% 
+            select(
+               Model, DonorID,
+               any_of(paste0(rep(c("Emax", "EC50", "Gamma", "slope", "Indmax", "IndC50"), 
+                                 each = 3), 
+                             c("", "_SE", "_pvalue"))), 
+               any_of("AIC"))
          
          if(graph_mean_of_fits){
             
@@ -859,11 +861,13 @@ inductFit <- function(DF,
             select(-term) %>% 
             pivot_wider(values_from = Value,
                         names_from = Param) %>% 
-            select(Model, DonorID,
-                   any_of(paste0(rep(c("Emax", "EC50", "Gamma", "slope", "Indmax", "IndC50"), 
-                                     each = 3), 
-                                 c("", "_SE", "_pvalue"))), 
-                   AIC)
+            arrange(Model, DonorID) %>% 
+            select(
+               Model, DonorID,
+               any_of(paste0(rep(c("Emax", "EC50", "Gamma", "slope", "Indmax", "IndC50"), 
+                                 each = 3), 
+                             c("", "_SE", "_pvalue"))), 
+               AIC)
          
          # Checking for failed fits and printing warning message
          if(any(sapply(FitFail, length) > 0)){

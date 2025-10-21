@@ -483,6 +483,32 @@ ct_plot_1stlast <- function(ct_dataframe,
            call. = FALSE)
    }
    
+   linear_or_log <- tolower(linear_or_log)[1]
+   linear_or_log <- case_match(linear_or_log, 
+                               "log" ~ "semi-log", 
+                               "both" ~ "both vertical", 
+                               .default = linear_or_log)
+   if(linear_or_log %in% c("linear", "semi-log", 
+                           "both vertical", "both horizontal") == FALSE){
+      warning(wrapn("You have specified something for the argument 'linear_or_log' that is not among the possible options, so we'll set this to the default of 'both vertical'."), 
+              call. = FALSE)
+      linear_or_log <- "both vertical"
+   }
+   
+   legend_position <- tolower(legend_position)[1]
+   if(complete.cases(legend_position) && 
+      legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
+      warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'right'."), 
+              call. = FALSE)
+      legend_position <- "right"
+   }
+   
+   legend_position <- case_when(
+      is.na(legend_position) & linear_or_log == "both horizontal" ~ "bottom",
+      is.na(legend_position) & linear_or_log != "both horizontal" ~ "right",
+      .default = legend_position)
+   
+   
    # Main body of function -------------------------------------------------
    
    facet1_column <- rlang::enquo(facet1_column)
@@ -492,8 +518,11 @@ ct_plot_1stlast <- function(ct_dataframe,
    
    ct_subfun <- function(dosenumber = NA, 
                          firstorlast = "1st",
+                         graph_title = NA, 
                          timerange = NA, 
-                         xaxisinterval = NA){
+                         xaxisinterval = NA, 
+                         linear_or_log = "linear", 
+                         legend_position = legend_position){
       
       if(complete.cases(dosenumber)){
          ct_temp <- ct_dataframe %>% filter(DoseNum == dosenumber)
@@ -551,8 +580,15 @@ ct_plot_1stlast <- function(ct_dataframe,
                       vline_position = vline_position, 
                       vline_style = vline_style,
                       graph_labels = FALSE,
-                      graph_title = ifelse(firstorlast == "1st", 
-                                           "First dose", "Last dose"),
+                      # Need a way to remove graph title when user wants linear
+                      # and log and this would be the call that makes the bottom
+                      # graph, which doesn't need a graph title b/c that would
+                      # be redundant.
+                      graph_title = case_when(
+                         is.na(graph_title) & firstorlast == "1st" ~ "First dose",
+                         is.na(graph_title) & firstorlast == "last" ~ "Last dose", 
+                         graph_title == "none" ~ NA, 
+                         .default = graph_title),
                       graph_title_size = graph_title_size, 
                       legend_position = legend_position,
                       prettify_compound_names = prettify_compound_names,
@@ -562,35 +598,98 @@ ct_plot_1stlast <- function(ct_dataframe,
                       fig_width = fig_width)
    }
    
-   A <- ct_subfun(
-      dosenumber = ifelse(any(complete.cases(time_range_1st)), 
-                          NA, 1), 
-      firstorlast = "1st",
-      timerange = switch(as.character(any(complete.cases(time_range_1st))), 
-                         "TRUE" = time_range_1st, 
-                         "FALSE" = NA), 
-      xaxisinterval = x_axis_interval_1st)
-   
    LastDoseNumber <- ifelse(
       any(complete.cases(time_range_last)), 
       NA, max(ct_dataframe$DoseNum[ct_dataframe$Simulated == TRUE], na.rm = T))
    
-   suppressMessages(
-      B <- ct_subfun(
-         dosenumber = LastDoseNumber, 
-         firstorlast = "last",
-         timerange = switch(as.character(any(complete.cases(time_range_last))), 
-                            "TRUE" = time_range_last, 
+   if(linear_or_log %in% c("linear", "semi-log")){
+      
+      A <- ct_subfun(
+         dosenumber = ifelse(any(complete.cases(time_range_1st)), 
+                             NA, 1), 
+         firstorlast = "1st",
+         timerange = switch(as.character(any(complete.cases(time_range_1st))), 
+                            "TRUE" = time_range_1st, 
                             "FALSE" = NA), 
-         xaxisinterval = x_axis_interval_last) )
-   
-   if(linear_or_log %in% c("both", "both vertical", "linear", "log", "semi-log")){
-      Out <- A + B + plot_layout(ncol = 2) + plot_layout(guides = "collect")
+         xaxisinterval = x_axis_interval_1st, 
+         linear_or_log = linear_or_log, 
+         legend_position = legend_position)
+      
+      suppressMessages(
+         B <- ct_subfun(
+            dosenumber = LastDoseNumber, 
+            firstorlast = "last",
+            timerange = switch(as.character(any(complete.cases(time_range_last))), 
+                               "TRUE" = time_range_last, 
+                               "FALSE" = NA), 
+            xaxisinterval = x_axis_interval_last, 
+            linear_or_log = linear_or_log, 
+            legend_position = legend_position))
+      
    } else {
-      Out <- A + B + plot_layout(nrow = 2) + plot_layout(guides = "collect")
+      Alin <- ct_subfun(
+         dosenumber = ifelse(any(complete.cases(time_range_1st)), 
+                             NA, 1), 
+         firstorlast = "1st",
+         timerange = switch(as.character(any(complete.cases(time_range_1st))), 
+                            "TRUE" = time_range_1st, 
+                            "FALSE" = NA), 
+         xaxisinterval = x_axis_interval_1st, 
+         linear_or_log = "linear", 
+         legend_position = legend_position)
+      
+      suppressMessages(
+         Alog <- ct_subfun(
+            dosenumber = ifelse(any(complete.cases(time_range_1st)), 
+                                NA, 1), 
+            firstorlast = "1st",
+            graph_title = "none", 
+            timerange = switch(as.character(any(complete.cases(time_range_1st))), 
+                               "TRUE" = time_range_1st, 
+                               "FALSE" = NA), 
+            xaxisinterval = x_axis_interval_1st, 
+            linear_or_log = "semi-log", 
+            legend_position = legend_position))
+      
+      suppressMessages(
+         Blin <- ct_subfun(
+            dosenumber = LastDoseNumber, 
+            firstorlast = "last",
+            timerange = switch(as.character(any(complete.cases(time_range_last))), 
+                               "TRUE" = time_range_last, 
+                               "FALSE" = NA), 
+            xaxisinterval = x_axis_interval_last, 
+            linear_or_log = "linear", 
+            legend_position = legend_position))
+      
+      suppressMessages(
+         Blog <- ct_subfun(
+            dosenumber = LastDoseNumber, 
+            firstorlast = "last",
+            graph_title = "none", 
+            timerange = switch(as.character(any(complete.cases(time_range_last))), 
+                               "TRUE" = time_range_last, 
+                               "FALSE" = NA), 
+            xaxisinterval = x_axis_interval_last, 
+            linear_or_log = "semi-log", 
+            legend_position = legend_position))
+      
    }
    
-   Out <- list("graph" = Out)
+   if(linear_or_log %in% c("linear", "semi-log")){
+      Graph <- (A + B) + 
+         plot_layout(nrow = 2, 
+                     guides = "collect") & 
+         theme(legend.position = legend_position)
+      
+   } else {
+      Graph <- (Alin + Blin + Alog + Blog) + 
+         plot_layout(ncol = 2, 
+                     guides = "collect") & 
+         theme(legend.position = legend_position)
+   }
+   
+   Out <- list("graph" = Graph)
    
    # Setting up figure caption --------------------------------------------
    

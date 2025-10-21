@@ -147,25 +147,6 @@ if(single_table){
          select(-any_of("Tissue"))
    }
    
-   # Similarly, if they only wanted 1 compoundID, don't include a column for
-   # that in the table.
-   if(length(unique(MyPKResults$CompoundID)) == 1 &&
-      str_detect(unique(MyPKResults$CompoundID), " / ") == FALSE){
-      MyPKResults <- MyPKResults %>% 
-         select(-any_of("CompoundID"))
-   }
-   
-   # If the column names were prettified, then they will include the dosing
-   # interval and there is thus no need for the "Sheet" column. Similarly,
-   # regardless of whether they prettified the column names, if there is only
-   # one value present for the Sheet column, remove it. 
-   if(prettify_columns | 
-      ("Sheet" %in% names(MyPKResults) && 
-       length(unique(MyPKResults$Sheet)) == 1)){
-      MyPKResults <- MyPKResults %>% 
-         select(-any_of("Sheet"))
-   }
-   
    include_dose_num <- check_include_dose_num(MyPKResults, 
                                               include_dose_num)
    
@@ -183,10 +164,8 @@ if(single_table){
                          merge_columns = intersect(
                             names(MyPKResults), 
                             c("File", "Interval", 
-                              "Sheet", "Tissue", 
-                              "CompoundID", 
-                              "Interval numerator simulation", 
-                              "Interval denominator simulation")), 
+                              "Compound", "Tissue", 
+                              "CompoundID")), 
                          fontsize = fontsize,
                          prettify_columns = prettify_columns, 
                          add_header_for_DDI = add_header_for_DDI, 
@@ -203,10 +182,8 @@ if(single_table){
                          merge_columns = intersect(
                             names(MyPKResults), 
                             c("File", "Interval", 
-                              "Sheet", "Tissue", 
-                              "CompoundID", 
-                              "Interval numerator simulation", 
-                              "Interval denominator simulation")), 
+                              "Compound", "Tissue", 
+                              "CompoundID")),  
                          fontsize = fontsize,
                          prettify_columns = prettify_columns, 
                          add_header_for_DDI = add_header_for_DDI, 

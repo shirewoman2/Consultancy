@@ -75,10 +75,14 @@ if(FromCalcPKRatios){
 # Adding a warning if there was a mismatch between the dosing interval and the
 # AUC interval
 
-DoseIntProb <- CheckDoseInt_list[[i]] %>% 
-         filter(IntStartMatch == FALSE | IntEndMatch == FALSE | 
-                   IntDurationMatch == FALSE) 
-DoseIntProb <- nrow(DoseIntProb) > 0
+if(FromCalcPKRatios){
+   DoseIntProb <- FALSE
+} else {
+   DoseIntProb <- CheckDoseInt_list[[i]] %>% 
+      filter(IntStartMatch == FALSE | IntEndMatch == FALSE | 
+                IntDurationMatch == FALSE) 
+   DoseIntProb <- nrow(DoseIntProb) > 0
+}
 
 if(DoseIntProb){
    
@@ -98,7 +102,7 @@ if(DoseIntProb){
                case_when(
                   IntDurationMatch == FALSE ~ "The duration of the AUC interval does not match the dosing interval. ", 
                   .default = ""))) %>% 
-            select(File, Sheet, CompoundID, StartHr, EndHr, IntDuration, DoseInt, Problems) %>% 
+         select(File, Sheet, CompoundID, StartHr, EndHr, IntDuration, DoseInt, Problems) %>% 
          rename("Start AUC interval time (h)" = StartHr, 
                 "End AUC interval time (h)" = EndHr, 
                 "AUC interval (h)" = IntDuration, 
