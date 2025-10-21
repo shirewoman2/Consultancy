@@ -4,7 +4,6 @@
 # Overview
 
 <!-- badges: start -->
-
 <!-- badges: end -->
 
 The SimcypConsultancy R package provides tools for analyzing and
@@ -28,7 +27,7 @@ You can install the SimcypConsultancy package from GitHub like this:
     devtools::install_github(repo = "shirewoman2/Consultancy", 
                              upgrade = "never")
 
-Current version: 3.10.6
+Current version: 4.9.0
 
 **NOTE:** The SimcypConsultancy package requires that you have tidyverse
 loaded.
