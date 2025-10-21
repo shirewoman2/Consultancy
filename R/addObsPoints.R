@@ -140,7 +140,7 @@ addObsPoints <- function(obs_dataframe,
                geom_point(data = obs_dataframe,
                           aes(shape = linetype_column,
                               color = colorBy_column),
-                          alpha = obs_fill_trans,
+                          alpha = obs_line_trans,
                           size = obs_size,
                           show.legend = LegCheck) 
             
@@ -151,7 +151,7 @@ addObsPoints <- function(obs_dataframe,
                geom_point(data = obs_dataframe,
                           aes(shape = linetype_column),
                           color = unique(obs_color), 
-                          alpha = obs_fill_trans,
+                          alpha = obs_line_trans,
                           size = obs_size,
                           show.legend = LegCheck) 
          }
@@ -193,7 +193,7 @@ addObsPoints <- function(obs_dataframe,
             geom_point(data = obs_dataframe,
                        aes(shape = linetype_column),
                        color = unique(obs_color), 
-                       alpha = obs_fill_trans,
+                       alpha = obs_line_trans,
                        size = obs_size,
                        show.legend = LegCheck) 
       }
@@ -233,7 +233,7 @@ addObsPoints <- function(obs_dataframe,
             geom_point(data = obs_dataframe,
                        aes(color = colorBy_column),
                        shape = unique(obs_shape), 
-                       alpha = obs_fill_trans,
+                       alpha = obs_line_trans,
                        size = obs_size,
                        show.legend = LegCheck) 
       }
@@ -277,7 +277,7 @@ addObsPoints <- function(obs_dataframe,
             geom_point(data = obs_dataframe,
                        color = unique(obs_color), 
                        shape = unique(obs_shape), 
-                       alpha = obs_fill_trans,
+                       alpha = obs_line_trans,
                        size = obs_size,
                        show.legend = LegCheck) 
       }

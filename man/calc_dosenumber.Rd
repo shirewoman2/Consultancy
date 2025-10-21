@@ -14,31 +14,40 @@ either \code{\link{extractConcTime}} or \code{\link{extractConcTime_mult}}}
 \item{existing_exp_details}{the output from running
 \code{\link{extractExpDetails}} or \code{\link{extractExpDetails_mult}} on
 the same simulations that were used for making \code{ct_dataframe}. Note:
-If you would like to have this calculate dose numbers on data where you
-don't have simulation experimental details (example: observed data), then
-please supply a single-row data.frame with the following columns, using
-substrate dosing info as an example:
-\describe{\item{File}{(character) each Simulator Excel file name (check
+If you would like to have this calculate dose numbers on data where you do
+\emph{not} have simulation experimental details (example: observed data),
+then please supply a single-row data.frame with the following columns,
+using substrate dosing info as an example:
+\describe{
+
+\item{File}{(character) each Simulator Excel file name (check
 that the file names match perfectly!) or "all" if you want the same dosing
-regimen for all files} \item{DoseInt_sub}{(numeric) the dosing interval in
-hours} \item{StartHr_sub}{(numeric) the start time for the substrate;
-probably 0} \item{NumDoses_sub}{(numeric) the number of doses overall}
-\item{Regimen_sub}{(character) presumably "Multiple Dose" but "Single Dose"
-is also acceptable}} If you want the dose number for other compound IDs,
+regimen for all files} 
+
+\item{Dose_sub}{(numeric) the dose amount} 
+
+\item{DoseInt_sub}{(numeric) the dosing interval in
+hours} 
+
+\item{StartHr_sub}{(numeric) the start time for the substrate;
+probably 0} 
+
+\item{NumDoses_sub}{(numeric) the number of doses overall}} 
+
+If you want the dose number for other compound IDs,
 then replace "_sub" with, e.g., "_inhib". Please run
-\code{view(AllRegCompounds)} to see acceptable suffixes for each compound ID.}
+\code{view(AllCompounds)} to see acceptable suffixes for each compound
+ID.}
 }
 \value{
 Output is a data.frame of concentration-time data with the calculated
   dose number included
 }
 \description{
-\code{calc_dosenumber} is mainly for internal use in the SimcypConsultancy
-package and will calculate which dose number a given time should be if you
-provide the ct_dataframe and the extracted simulation experimental details
-(the output from \code{\link{extractExpDetails}}). This is meant to be used
-for a single simulation at a time or a set of concentration-time data where
-the dosing regimen is IDENTICAL for all simulations.
+\code{calc_dosenumber} is mainly for internal use in the
+  SimcypConsultancy package and will calculate which dose number a given time
+  should be if you provide the ct_dataframe and the extracted simulation
+  experimental details (the output from \code{\link{extractExpDetails}}).
 }
 \examples{
 # None yet

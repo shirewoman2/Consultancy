@@ -1326,46 +1326,78 @@ tidy_input_PK <- function(PKparameters,
       rename(Value = ObsValue, 
              Variability = ObsVariability)
    
-   # FIXME: I think I can remove this next bit b/c we've already checked. 
+   # NB: Need to retain this part in case they have supplied NA for PKparameters
+   # but have also supplied user-defined interval sheets. 
    
-   # # Checking that, when they've supplied a specific sheet, PKparameter does NOT
-   # # include the dose number. When they have *not* specified a tab, then it
-   # # should be a PKparameter w/the dose number or it should be something that
-   # # applies to the entire simulation.
-   # PKparameters <- PKparameters %>% 
-   #    mutate(PKparameter = case_when(complete.cases(Sheet) & Sheet != "" ~ 
-   #                                      sub("_dose1|_last", "", PKparameter), 
-   #                                   TRUE ~ PKparameter), 
-   #           PKparameter = harmonize_PK_names(PKparameter), 
-   #           DoseNumProblem = 
-   #              (PKparameter %in% (AllPKParameters %>% 
-   #                                    filter(AppliesToAllDoses == FALSE) %>% 
-   #                                    pull(PKparameter)) & 
-   #                  is.na(Sheet) & 
-   #                  str_detect(PKparameter, "_dose1|_last") == FALSE) |
-   #              (PKparameter %in% (AllPKParameters %>% 
-   #                                    filter(AppliesToAllDoses == TRUE) %>% 
-   #                                    pull(PKparameter)) & 
-   #                  complete.cases(Sheet)))
-   # 
-   # if(any(PKparameters$DoseNumProblem)){
-   #    message(wrapn("You have not specified which interval you want for the following PK:"))
-   #    
-   #    Problem <- PKparameters %>% filter(DoseNumProblem == TRUE) %>% 
-   #       select(File, CompoundID, Tissue, PKparameter) %>% 
-   #       as.data.frame()
-   #    
-   #    Problem <- capture.output(print(Problem, row.names = FALSE))
-   #    
-   #    message(str_c(Problem, collapse = "\n"))
-   #    
-   #    message(paste0(str_wrap("These PK parameters need to either end in `_dose1` or `_last` or something must be filled in for the sheet if it's a user-defined interval. These PK data will be omitted.\n"), 
-   #                   "\n"), 
-   #            call. = FALSE)
-   #    
-   #    PKparameters <- PKparameters %>% 
-   #       filter(DoseNumProblem == FALSE) %>% select(-DoseNumProblem)
-   # }
+   # Checking that, when they've supplied a specific sheet, PKparameter does NOT
+   # include the dose number. When they have *not* specified a tab, then it
+   # should be a PKparameter w/the dose number or it should be something that
+   # applies to the entire simulation. We are NOT issuing a warning here b/c I
+   # think this will only come up if they supplied nothing for the PK parameters
+   # specifically, so no need.
+   PKparameters <- PKparameters %>%
+      mutate(PKparameter = case_when(complete.cases(Sheet) & Sheet != "" ~
+                                        sub("_dose1|_last", "", PKparameter),
+                                     TRUE ~ PKparameter),
+             PKparameter = harmonize_PK_names(PKparameter))
+   
+   if(FromCalcPKRatios){
+      # Doing some additional final tidying specific to the calc_PK_ratios
+      # options. Need to make the tidied PK parameters in PKparameters be the
+      # ones that are also present in FilePairs, which has NOT been fully
+      # tidied. Also need to break up by sheet and interval here.
+      
+      # PKparameter should be the only thing that might be all NA in FilePairs
+      # but complete in PKparameters. This means we should be able to join
+      # FilePairs and PKparameters based on the other columns.
+      if(all(is.na(FilePairs$Numerator_PKparameter)) & 
+          all(is.na(FilePairs$Denominator_PKparameter))){
+         # These are the scenarios when the PK parameter should be the same for
+         # the numerator and the denominator.
+         
+         suppressMessages(
+            FilePairs <- FilePairs %>% 
+               select(-Numerator_PKparameter, -Denominator_PKparameter) %>% 
+               left_join(
+                  PKparameters %>% 
+                     filter(NorD == "Numerator") %>% 
+                     select(-OriginallyRequested, -Value, -Variability, -NorD) %>% 
+                     rename_with(.cols = -FilePair, 
+                                 .fn = \(x) paste0("Numerator_", x))) %>% 
+               # if all parameters were NA, then the numerator and denominator
+               # parameters should be the same.
+               mutate(Denominator_PKparameter = Numerator_PKparameter)
+         )
+         
+      } else {
+         # FIXME: Still trying to figure out how best to determine how to tidy
+         # PK parameters when they differed for the numerator and denominator. I
+         # think it *might* be ok to skip this, actually, b/c FilePairs will
+         # have numerator and denominator PK parameters for all other scenarios.
+         # I think.
+      }
+      
+      # Using finalized parameters in FilePairs to determine dataset b/c will
+      # need to call on calc_PK_ratios_subfun one dataset at a time. Need
+      # those datasets to be broken up by interval, including one interval
+      # for 1st dose and one interval for last dose.
+      
+      FilePairs <- FilePairs %>% 
+         mutate(
+            IntervalInternalUse_num = 
+               str_extract(Numerator_PKparameter, "_dose1|_last"), 
+            IntervalInternalUse_denom = 
+               str_extract(Denominator_PKparameter, "_dose1|_last"), 
+            IntervalInternalUse_num = 
+               case_when(
+                  is.na(IntervalInternalUse_num) ~ Numerator_Sheet, 
+                  .default = IntervalInternalUse_num), 
+            IntervalInternalUse_denom = 
+               case_when(
+                  is.na(IntervalInternalUse_denom) ~ Denominator_Sheet, 
+                  .default = IntervalInternalUse_denom))
+      
+   }
    
    
    # Output -------------------------------------------------------------

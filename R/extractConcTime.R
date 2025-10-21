@@ -1278,9 +1278,9 @@ extractConcTime <- function(sim_data_file,
       mutate(subsection_ADAM = Tissue_subtype)
    
    # Filtering to return ONLY the compound the user requested. This is what
-   # works for input to ct_plot at the moment, too, so things get buggered up
-   # if there are multiple compounds and the user called on extractConcTime
-   # itself rather than extractConcTime_mult.
+   # works for input to ct_plot at the moment, too, so things get buggered up if
+   # there are multiple compounds and the user called on extractConcTime itself
+   # rather than extractConcTime_mult.
    if(fromMultFunction == FALSE){
       Data <- Data %>%
          filter(CompoundID %in% c(compoundToExtract, "UNKNOWN"))

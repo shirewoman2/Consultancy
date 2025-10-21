@@ -2,7 +2,9 @@
 % Please edit documentation in R/calc_PK_ratios_mult.R
 \name{calc_PK_ratios_mult}
 \alias{calc_PK_ratios_mult}
-\title{Calculate the ratio of PK parameters between multiple pairs of simulations}
+\title{SOON TO BE DEPRECATED IN FAVOR OF JUST USING \code{calc_PK_ratios} FOR ALL
+SCENARIOS. Calculate the ratio of PK parameters between multiple pairs of
+simulations}
 \usage{
 calc_PK_ratios_mult(
   PKparameters = NA,
@@ -14,7 +16,7 @@ calc_PK_ratios_mult(
   match_subjects_by = "individual and trial",
   include_num_denom_columns = TRUE,
   conc_units = "ng/mL",
-  time_units = "hours",
+  time_units = "h",
   mean_type = "geometric",
   conf_int = 0.9,
   distribution_type = "t",
@@ -27,7 +29,7 @@ calc_PK_ratios_mult(
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   rounding = NA,
-  checkDataSource = TRUE,
+  checkDataSource = FALSE,
   save_table = NA,
   name_clinical_study = NA,
   shading_column,
@@ -35,7 +37,6 @@ calc_PK_ratios_mult(
   single_table = TRUE,
   page_orientation = "landscape",
   fontsize = 11,
-  sim_data_file_pairs = "deprecated",
   sheet_PKparameters = NA
 )
 }
@@ -48,7 +49,9 @@ calc_PK_ratios_mult(
   simulation files, and which tab to get the data from with the arguments
   \code{tissue}, \code{compoundToExtract}, \code{sim_data_file_numerator},
   \code{sim_data_file_denominator}, and \code{sheet_user_interval}.
-  \strong{Details on each option:} \describe{\item{\strong{Option 1: }a file to read or a data.frame}{This
+  \strong{Details on each option:} \describe{\item{
+
+  \strong{Option 1: }a file to read or a data.frame}{This
   is the most versatile option and, we think, the clearest in terms of
   getting what you expected. Please try running \code{\link{make_example_PK_input}}
   to see examples for how to set up a csv or Excel file or data.frame to
@@ -60,8 +63,8 @@ calc_PK_ratios_mult(
 
   \item{"Denominator_File"}{This is the same thing as the argument \code{sim_data_file_denominator})}
 
-  \item{"Numerator_UserAUCSheet" or "Denominator_UserAUCSheet"}{When it's
-  a user-defined AUC interval you want,
+  \item{"Numerator_UserAUCSheet" or "Denominator_UserAUCSheet"}{When it's a
+  user-defined AUC interval you want,
   this specifies which sheet in the Simulator output Excel file to use for
   the corresponding PK parameter in the numerator or denominator,
   respectively. If it's a regular first-dose or last-dose PK parameter,
@@ -100,7 +103,10 @@ calc_PK_ratios_mult(
   from all your simulations. List the PK parameters you want here and then,
   in the arguments
   \code{tissue}, \code{compoundToExtract}, and
-  \code{sheet_user_interval} specify what you want for each of those. If
+  \code{sheet_user_interval} specify what you want for each of those.
+  \strong{CAVEAT: You can only specify ONE item for each argument other than
+  \code{PKparameters}, so onlye ONE tissue and ONE user AUC interval sheet
+  and ONE compound ID, etc. (It's just too confusing otherwise.)} If
   you're going this route, here are the two options
   you have for the argument \code{PKparameters}: \describe{
 
@@ -351,16 +357,16 @@ file into multiple tables. This only applies to the Word output.}
 \item{fontsize}{the numeric font size for Word output. Default is 11 point.
 This only applies when you save the table as a Word file.}
 
+\item{sheet_PKparameters}{deprecated because we should have named this
+argument more clearly originally! Please see the argument
+'sheet_user_interval'.}
+
 \item{sim_data_file_pairs}{DEPRECATED. This argument was used in the past to
 specify which pairs of files to compare, but we are changing the way we're
 asking you to tell us that. Now, we'd like you to give us this information
 with the argument \code{PKarameters} and ONLY there. We apologize for the
 inconvenience, but, to be frank, this is a pretty complicated function to
 put together, and we needed to simplify things.}
-
-\item{sheet_PKparameters}{deprecated because we should have named this
-argument more clearly originally! Please see the argument
-'sheet_user_interval'.}
 }
 \value{
 A list or a data.frame of PK data that optionally includes where the
@@ -374,8 +380,4 @@ see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp PBPKConsult R
 Files/SimcypConsultancy function examples and instructions/Calculating PK
 ratios from separate simulations/Calculating-PK-ratios.docx". (Sorry, we are
 unable to include a link to it here.)
-}
-\examples{
-# No examples yet.
-
 }

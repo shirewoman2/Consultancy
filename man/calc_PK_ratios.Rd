@@ -2,7 +2,8 @@
 % Please edit documentation in R/calc_PK_ratios.R
 \name{calc_PK_ratios}
 \alias{calc_PK_ratios}
-\title{Calculate the ratio of PK parameters between two simulations}
+\title{Calculate the ratio of PK parameters between pairs of simulations, tissues,
+or intervals}
 \usage{
 calc_PK_ratios(
   PKparameters = NA,
@@ -14,25 +15,27 @@ calc_PK_ratios(
   existing_exp_details = NA,
   paired = TRUE,
   match_subjects_by = "individual and trial",
-  conc_units = "ng/mL",
-  time_units = "hours",
   include_num_denom_columns = TRUE,
+  conc_units = "ng/mL",
+  time_units = "h",
   mean_type = "geometric",
   conf_int = 0.9,
   distribution_type = "t",
   includeConfInt = TRUE,
   includeCV = TRUE,
   include_dose_num = NA,
+  extract_forest_data = FALSE,
   concatVariability = TRUE,
   variability_format = "to",
   prettify_columns = TRUE,
   prettify_compound_names = TRUE,
   rounding = NA,
-  checkDataSource = TRUE,
+  checkDataSource = FALSE,
   save_table = NA,
   name_clinical_study = NA,
   shading_column,
   highlight_gmr_colors = NA,
+  single_table = TRUE,
   page_orientation = "landscape",
   fontsize = 11,
   sheet_PKparameters = NA
@@ -96,13 +99,15 @@ calc_PK_ratios(
   columns you would have had in the .csv or Excel file, that works just the
   same.}}}}
 
-  \item{\strong{Option 2: }specify just the PK parameters you want}{This is
+  \item{\strong{Option 2:} Specify just the PK parameters you want}{This is
   a good option when you want the same information
   from all your simulations. List the PK parameters you want here and then,
   in the arguments
   \code{tissue}, \code{compoundToExtract}, and
-  \code{sheet_user_interval} specify what you want for each of those. If
-  you're going this route, here are the two options
+  \code{sheet_user_interval} specify what you want for each of those.
+  \strong{CAVEAT: You can only specify ONE item for each argument other than
+  \code{PKparameters}, so only ONE tissue and ONE user AUC interval sheet
+  and ONE compound ID, etc.} If you're going this route, here are the two options
   you have for the argument \code{PKparameters}: \describe{
 
   \item{NA}{If you leave this as NA, by default, if you have a single-dose
@@ -128,7 +133,7 @@ calc_PK_ratios(
 provide the numerator for the calculated ratios.}
 
 \item{sim_data_file_denominator}{a simulator output Excel file that will
-provide the denominator for the calculated ratios}
+provide the denominator for the calculated ratios#'}
 
 \item{compoundToExtract}{For which compound do you want to extract PK data?
 Options are: \itemize{\item{"substrate" (default if left as NA),} \item{"primary
@@ -200,17 +205,6 @@ setting of "individual and trial" but the trials are NOT the same between
 simulations, you'll get a warning and no results, which we think is vastly
 superior to getting \emph{incorrect} results.}
 
-\item{conc_units}{What concentration units should be used in the table?
-Default is "ng/mL", but if you set the concentration units to something
-else, this will attempt to convert the units to match that. This adjusts
-only the simulated values, and it also only affects AUC and Cmax values.
-Acceptable input is any concentration unit listed in the Excel form for PE
-data entry, e.g. \code{conc_units = "ng/mL"} or \code{conc_units = "uM"}.}
-
-\item{time_units}{What time units should be used in the table? Default is
-"hours"; other acceptable options: "minutes", "hours", "days", or "weeks".
-This adjusts only the simulated values.}
-
 \item{include_num_denom_columns}{TRUE (default) or FALSE for whether to
 include columns in the output table for the numerator data alone and
 columns for the denominator alone. For example, if you wanted to calculate
@@ -220,10 +214,20 @@ and also a column with summary statistics on the AUC for cancer patients
 and a column with summary statistics on the AUC for healthy volunteers.
 Setting it to FALSE would give you only the ratios.}
 
+\item{conc_units}{What concentration units should be used in the table?
+Default is "ng/mL", but if you set the concentration units to something
+else, this will attempt to convert the units to match that. This adjusts
+only the simulated values, and it also only affects AUC and Cmax values.
+Acceptable input is any concentration unit listed in the Excel form for PE
+data entry, e.g. \code{conc_units = "ng/mL"} or \code{conc_units = "uM"}.}
+
+\item{time_units}{What time units should be used in the table? Default is
+"hours", and "days" is the other acceptable option. This adjusts only the
+simulated values.}
+
 \item{mean_type}{What kind of means and confidence intervals do you want
 listed in the output table? Options are "arithmetic" or "geometric"
-(default). This will give you arithmetic or geometric means for everything
-but tmax values, which will be medians.}
+(default).}
 
 \item{conf_int}{confidence interval to use; default is 90\%}
 
@@ -249,6 +253,17 @@ default, if you have data only for the first dose or only for the last
 dose, the dose number will be omitted and it will be labeled, e.g., "AUCtau
 ratio" or "Cmax ratio". Set this to TRUE or FALSE as desired to override
 the default behavior and get exactly what you want.}
+
+\item{extract_forest_data}{TRUE or FALSE (default) to get forest-plot data at
+the same time. If set to TRUE, this will return a list that includes data
+formatted for use with the function \code{\link{forest_plot}}. This will
+assume that the denominator is the baseline or control scenario and the
+numerator is the comparison. In the output for this, the column "Dose_sub"
+will contain the dose of the substrate in the denominator simualtions, and
+the column "Dose_inhib" will contain the dose of the inhibitor (if there
+was one) in the numerator simulations or the dose of the substrate in the
+numerator simulations if there was not. If there was not an inhibitor, the
+column "Inhibitor 1" will contain the file names for the numerator sims.}
 
 \item{concatVariability}{TRUE (default) or FALSE for whether to concatenate
 the variability. If "TRUE", the output will be formatted into a single row
@@ -300,7 +315,7 @@ function \code{\link{round_consultancy}}, which does the rounding here.}
 X" also works fine.} \item{"round X" where "X" is a number}{Output will be
 rounded to X digits}}}
 
-\item{checkDataSource}{TRUE (default) or FALSE for whether to include in the
+\item{checkDataSource}{TRUE or FALSE (default) for whether to include in the
 output a data.frame that lists exactly where the data were pulled from the
 simulator output file. Useful for QCing.}
 
@@ -338,6 +353,10 @@ highlighting geometric mean ratios for DDIs. Options are "yellow to red",
 "green to red" or a vector of 4 colors of your choosing. If left as NA, no
 highlighting for GMR level will be done.}
 
+\item{single_table}{TRUE (default) or FALSE for whether to save all the PK
+data in a single table or break the data up by tissue, compound ID, and
+file into multiple tables. This only applies to the Word output.}
+
 \item{page_orientation}{set the page orientation for the Word file output to
 "portrait" or "landscape" (default)}
 
@@ -350,20 +369,15 @@ argument more clearly originally! Please see the argument
 }
 \value{
 A list or a data.frame of PK data that optionally includes where the
-  data came from
+  data came from and data to use for making forest plots
 }
 \description{
-\code{calc_PK_ratios} matches PK data from a pair of simulator output Excel
-files and calculates the mean and confidence intervals of the ratios of the
-requested PK parameters. To do this for multiple pairs of simulator output
-files, please see the function \code{\link{calc_PK_ratios_mult}}. For
-detailed instructions and examples, please see the SharePoint file "Simcyp
-PBPKConsult R Files - Simcyp PBPKConsult R Files/SimcypConsultancy function
-examples and instructions/Calculating PK ratios from separate
+\code{calc_PK_ratios} pulls PK data from pairs of simulator
+output Excel files and calculates the mean and confidence intervals of the
+ratios of the requested PK parameters. For detailed instructions and
+examples, please see the SharePoint file "Simcyp PBPKConsult R Files - Simcyp
+PBPKConsult R Files/SimcypConsultancy function examples and
+instructions/Calculating PK ratios from separate
 simulations/Calculating-PK-ratios.docx". (Sorry, we are unable to include a
 link to it here.)
-}
-\examples{
-# No examples yet.
-
 }

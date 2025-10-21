@@ -259,7 +259,14 @@ demog_plot <- function(demog_dataframe,
            call. = FALSE)
    }
    
-   if(facet_by_sex & length(unique(demog_dataframe$Sex)) == 1){
+   if("Sex" %in% names(demog_dataframe) == FALSE){
+      warning(wrapn("You requested that we facet the graphs by sex (or used the default settings, which tries to facet by sex), but subject sexes were not included in what you supplied for the argument demog_dataframe. (Sex is not included when you only request info from, e.g., the 'Enzymatic Status CYPs' type of tabs.) We will not be able to break up your data by sex."), 
+              call. = FALSE)
+      
+      facet_by_sex <- FALSE
+      demog_dataframe$Sex <- NA
+      
+   } else if(facet_by_sex & length(unique(demog_dataframe$Sex)) == 1){
       warning("You requested that we facet the graphs by sex, but there's only one sex in your data. We will not be able to do this.\n", 
               call. = FALSE)
       facet_by_sex = FALSE
