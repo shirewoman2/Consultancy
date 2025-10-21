@@ -1,0 +1,229 @@
+import groovy.transform.Field
+
+@Field
+SOURCE_PROJECT_NAME = "SimcypConsultancy"
+ARTIFACTORY_BUILD_NAME = "shared-cran-library-rsimcypconsultancy"
+TEAMS_CHANNEL_NAME = "sharedlibraries"
+ARTIFACTORY_CONFIG = "shared"
+
+node {
+    stage('Initialize') {
+        withAWSParameterStore(credentialsId: '', naming: 'relative', path: '/CodeBuild', recursive: true, regionName: 'us-east-1') {
+            // TEAMS
+            def buildnotificationchannel = 'TEAMS_BUILD_CHANNEL_' + TEAMS_CHANNEL_NAME.toUpperCase()
+            TEAMS_HOOK = evaluate("${buildnotificationchannel}")
+            DEPLOYMENT_HOOK = BASE_RELEASE_APPROVAL_CHANNEL
+            SUBMITTER_GROUP = BASE_RELEASE_APPROVAL_GROUP
+        }
+    }
+}
+
+pipeline {
+    agent {
+        kubernetes {
+            yamlFile 'build/buildpods.yaml'
+        }
+    }
+    options {
+        office365ConnectorWebhooks([[
+            name: "LocalPipeline",
+            startNotification: true,
+            notifySuccess: true,
+            notifyNotBuilt: true,
+            notifyAborted: true,
+            notifyFailure: true,
+            notifyRepeatedFailure: true,
+            timeout: "10000",
+            url: "${TEAMS_HOOK}"
+        ]])
+        disableConcurrentBuilds()
+    }
+    environment {
+        AWS_SDK_LOAD_CONFIG = 1
+    }
+    stages {
+        stage('Notify'){
+            when {
+                tag pattern: "[0-9]+.[0-9]+.[0-9]+", comparator: "REGEXP"
+            }
+            steps {
+                container('certara-rlang') {
+                    office365ConnectorSend color: "#ffff00", message: "Production Release Build ${BUILD_ID} deploy approval requested", webhookUrl: "${DEPLOYMENT_HOOK}"
+                }
+            }
+        }
+        stage('Approval') {
+            when {
+                beforeOptions true
+                beforeInput true
+                tag pattern: "[0-9]+.[0-9]+.[0-9]+", comparator: "REGEXP"
+            }
+            options {
+                timeout(time: 2, unit: 'HOURS')
+            }
+            input {
+                message "Approve Deploy?"
+                ok "Yes"
+                submitter "${SUBMITTER_GROUP}"
+                submitterParameter "APPROVER"
+            }
+            steps {
+                container('certara-rlang') {
+                    script {
+                        SUBMITTER_APPROVER = APPROVER
+                    }
+                    echo "Approval for deployment"
+                }
+            }
+            post {
+                success {
+                    office365ConnectorSend color: "#008000", message: "Production Release Build ${BUILD_ID} deploy approved by ${SUBMITTER_APPROVER}", webhookUrl: "${DEPLOYMENT_HOOK}"
+                }
+            }
+        }
+        stage('Config') {
+            steps {
+                mineRepository()
+                scmSkip(deleteBuild: true, skipPattern:'.*\\[skip build\\].*')
+                container('certara-rlang') {
+                    withAWSParameterStore(credentialsId: "", naming: "relative", path: "/CodeBuild/artifactory/${ARTIFACTORY_CONFIG}", recursive: true, regionName: "us-east-1") {
+                        script {
+                            // ARTIFACTORY
+                            ARTIFACTORY_SERVER_ID = SERVER_ID
+                            ARTIFACTORY_DEVELOP_REPOSITORY = REPOSITORY_CRAN_DEVELOP
+                            ARTIFACTORY_RELEASE_REPOSITORY = REPOSITORY_CRAN_RELEASE
+                            ARTIFACTORY_RELEASE_REPOSITORY_PUBLIC = REPOSITORY_CRAN_RELEASE_PUBLIC
+                            ARTIFACTORY_CRANREADER_REPOSITORY = REPOSITORY_CRAN_DEVELOP_VIRTUAL
+                        }
+                    }
+                    withAWSParameterStore(credentialsId: '', naming: 'relative', path: '/CodeBuild', recursive: true, regionName: 'us-east-1') {
+                        script {
+                            // BUILD
+                            NODEJS_HOME = BASE_NODEJS_HOME
+                            TEST_RESULTS_DIR = BASE_TEST_RESULTS_DIR
+                            // ARTIFACTORY BASE
+                            ARTIFACTORY_URI = ARTIFACTORY_BASE_URI
+                            ARTIFACTORY_READ_ID = ARTIFACTORY_BASE_READ_ID
+                            ARTIFACTORY_READ_SERVER_ID = ARTIFACTORY_BASE_READ_SERVER_ID
+                            ARTIFACTORY_MAX_BUILD_COUNT = ARTIFACTORY_BASE_MAX_BUILD_COUNT
+                            // TAGGING
+                            REPO_SHORT = scm.getUserRemoteConfigs()[0].getUrl().tokenize('/').last().split("\\.")[0]
+                            BASE_BUILD_VERSION = sh (script: "grep -Po \"(?<=Version: )([0-9]|\\.)*(?=\\s|\$)\" DESCRIPTION", returnStdout: true).trim()
+                            if( env.TAG_NAME ) {
+                                BUILD_VERSION = env.TAG_NAME
+                            }
+                            else {
+                                BUILD_VERSION = "${BASE_BUILD_VERSION}.${BUILD_ID}"
+                            }
+                        }
+                        labelledShell label: 'Building Artifactory Repository Context - R', script: """
+                            set +x
+                            sed -i -e "s|ARTIFACTORY_CRANREADER_USERNAME|${ARTIFACTORY_CRANREADER_USERNAME}|g" -e "s|ARTIFACTORY_CRANREADER_TOKEN|${ARTIFACTORY_CRANREADER_TOKEN}|g" -e "s|ARTIFACTORY_CRANREADER_REPOSITORY|${ARTIFACTORY_CRANREADER_REPOSITORY}|g" /root/.Rprofile
+                            set -x
+                        """
+                        labelledShell label: 'Creating Test Results Directory', script: """
+                            set +x
+                            mkdir -p ${TEST_RESULTS_DIR}
+                            chown -R 1000:1000 ${TEST_RESULTS_DIR}
+                            set -x
+                        """
+                        labelledShell label: 'Build Container Version', script: """
+                            set +x
+                            cat /version
+                            set -x
+                        """
+                    }
+                }
+            }
+        }
+        stage('Build') {
+            steps {
+                container('certara-rlang') {
+                    labelledShell label: 'Replacing R DESCRIPTION File Version', script: """
+                        set +x
+                        sed -i -e "s|Version: ${BASE_BUILD_VERSION}|Version: ${BUILD_VERSION} |g" DESCRIPTION
+                        set -x
+                    """
+                    labelledShell label: "Build R package", script: """
+                        R CMD build .
+                    """
+                    echo "Compiled Version: ${BUILD_VERSION}"
+                }
+            }
+        }
+        stage('CI Artifact Store') {
+            when {
+                anyOf {
+                    allOf {
+                        not { changeRequest() }
+                        branch 'main'
+                    }
+                    buildingTag()
+                }
+            }
+            steps {
+                container('certara-rlang') {
+                    script {
+                        RELEASE_TIER = "dev"
+                    }
+                    rtBuildInfo(
+                        maxBuilds: "${ARTIFACTORY_MAX_BUILD_COUNT}",
+                        deleteBuildArtifacts: true,
+                        buildName: "${ARTIFACTORY_BUILD_NAME}",
+                        buildNumber: "${BUILD_VERSION}"
+                    )
+                    rtUpload(
+                        serverId: "${ARTIFACTORY_SERVER_ID}",
+                        spec: """{
+                            "files": [
+                                {
+                                    "pattern": "${SOURCE_PROJECT_NAME}_${BUILD_VERSION}.tar.gz",
+                                    "target": "${ARTIFACTORY_DEVELOP_REPOSITORY}/src/contrib/"
+                                }
+                            ]
+                        }""",
+                        failNoOp: true,
+                        buildName: "${ARTIFACTORY_BUILD_NAME}",
+                        buildNumber: "${BUILD_VERSION}"
+                    )
+                    rtPublishBuildInfo(
+                        serverId: "${ARTIFACTORY_SERVER_ID}",
+                        buildName: "${ARTIFACTORY_BUILD_NAME}",
+                        buildNumber: "${BUILD_VERSION}"
+                    )
+                }
+            }
+        }
+        stage('Release Artifact Promotion') {
+            when {
+                tag pattern: "[0-9]+.[0-9]+.[0-9]+", comparator: "REGEXP"
+            }
+            steps {
+                container('certara-rlang') {
+                    rtPromote(
+                        serverId: "${ARTIFACTORY_SERVER_ID}",
+                        targetRepo: "${ARTIFACTORY_RELEASE_REPOSITORY}",
+                        sourceRepo: "${ARTIFACTORY_DEVELOP_REPOSITORY}",
+                        comment: "Approved promotion by ${SUBMITTER_APPROVER}",
+                        status: "Released",
+                        failFast: true,
+                        copy: true,
+                        buildName: "${ARTIFACTORY_BUILD_NAME}",
+                        buildNumber: "${BUILD_VERSION}"
+                    )
+                    rtPromote(
+                        serverId: "${ARTIFACTORY_SERVER_ID}",
+                        targetRepo: "${ARTIFACTORY_RELEASE_REPOSITORY_PUBLIC}",
+                        sourceRepo: "${ARTIFACTORY_DEVELOP_REPOSITORY}",
+                        comment: "Approved for public release by Certara",
+                        status: "Released",
+                        failFast: true,
+                        copy: true,
+                        buildName: "${ARTIFACTORY_BUILD_NAME}",
+                        buildNumber: "${BUILD_VERSION}"
+                    )
+                }
+            }
+        }
+    }
+}
