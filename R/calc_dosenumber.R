@@ -68,92 +68,91 @@ calc_dosenumber <- function(ct_dataframe,
                   which_sims = c(unique(ct_dataframe$File), "all"), 
                   include_or_omit = "include")
    
-   DosedCompounds <- AllCompounds %>% 
+   Cmpd_in_CT <- AllCompounds %>% 
       filter(CompoundID %in% unique(ct_dataframe$CompoundID))
    
    
    ## Checking that user has provided all info needed ------------------------
    
-   # Some columns must be both present AND have values. Checking that. 
-   ColsNeeded4Dosing <- expand_grid(
-      Item1 = c("Dose", "DoseInt", "StartHr", "NumDoses"), 
-      Suffix = unique(DosedCompounds$DosedCompoundSuffix)) %>% 
-      mutate(Item = paste0(Item1, Suffix)) %>% 
-      pull(Item) %>% unique()
-   
-   ColsNeeded4Dosing_missingcol <-
-      setdiff(ColsNeeded4Dosing, 
-              names(existing_exp_details$MainDetails))
-   
-   ColsNeeded4Dosing_NAvals <- 
-      existing_exp_details$MainDetails %>%
-      select(all_of(ColsNeeded4Dosing[
-         # Don't need DoseInt_X to be complete here b/c could be NA if it's
-         # single dose
-         !str_detect(ColsNeeded4Dosing, "DoseInt")])) %>%
-      summarize(across(.cols = everything(), .fns = \(x) any(is.na(x)))) %>% 
-      pivot_longer(cols = everything(), 
-                   names_to = "Cols", 
-                   values_to = "AnyNA") %>% 
-      filter(AnyNA == TRUE) %>% 
-      pull(Cols)
-   
-   if(length(ColsNeeded4Dosing_missingcol) > 0 | 
-      length(ColsNeeded4Dosing_NAvals) > 0){
-      stop(paste0(wrapn("We do not have sufficient information in what you provided for 'existing_exp_details' to calculate the dose numbers for all the compounds present in your concentration-time data. Specifically, we are missing the following pieces of information:"), 
-                  str_c(paste0("   ", c(ColsNeeded4Dosing_missingcol, 
-                                        ColsNeeded4Dosing_NAvals)),
-                        collapse = "\n")), 
-           call. = FALSE)
-   }
-   
-   # Need to have compound name to fill out dosenumber; just one more check that
-   # things are lining up correctly.
-   ColsNeeded4Compounds <- AllCompounds %>% 
-      filter(CompoundID %in% unique(ct_dataframe$CompoundID)) %>% 
-      pull(DetailNames)
-   
-   if(all(ColsNeeded4Compounds %in% 
-          names(existing_exp_details$MainDetails)) == FALSE){
-      
-      # Compound names must match what's in ct_dataframe. 
-      CompoundNames <- ct_dataframe %>% 
-         select(File, CompoundID, Compound) %>% unique() %>% 
-         left_join(AllCompounds %>% select(CompoundID, DetailNames), 
-                   by = "CompoundID") %>% 
-         select(-CompoundID) %>% 
-         pivot_wider(names_from = DetailNames, 
-                     values_from = Compound)
-      
-      existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
-         left_join(CompoundNames, by = "File") 
-      
-   }
-   
-   # If user supplied just the minimum amount of info required to get this to
-   # work, we'll still be missing a few pieces of information for
-   # harmonize_details to have accurately created a "Dosing" data.frame. Adding
-   # that information here as needed and then harmonizing dosing to create
-   # "Dosing" dataframe, which we'll need lower down. 
-   
-   # First, noting whether Dosing data.frame were initially present b/c we're
-   # NOT going to overwrite it if not. We'll only adjust units as needed in that
-   # case.
+   # Noting whether Dosing data.frame were initially present b/c that changes
+   # what inforamtion we need. We're NOT going to overwrite it if not. We'll
+   # only adjust units as needed in that case.
    DosingDFOrigPresent <- ncol(existing_exp_details$Dosing) > 0
    
    if(DosingDFOrigPresent == FALSE){
       
-      # We need to know the time units, and harmonizing dosing will work best if
-      # the time units there match the time units in the conc-time data, regardless
-      # of what was originally in the simulation. We will also be replacing the
-      # time units in the Dosing data.frame, so this will be ok to only set for
-      # MainDetails here. Setting time_units accordingly.
+      # Some columns must be both present AND have values. Checking that. 
+      ColsNeeded4Dosing <- expand_grid(
+         Item1 = c("Dose", "DoseInt", "StartHr", "NumDoses"), 
+         Suffix = unique(Cmpd_in_CT$DosedCompoundSuffix)) %>% 
+         mutate(Item = paste0(Item1, Suffix)) %>% 
+         pull(Item) %>% unique()
+      
+      ColsNeeded4Dosing_missingcol <-
+         setdiff(ColsNeeded4Dosing, 
+                 names(existing_exp_details$MainDetails))
+      
+      ColsNeeded4Dosing_NAvals <- 
+         existing_exp_details$MainDetails %>%
+         select(all_of(ColsNeeded4Dosing[
+            # Don't need DoseInt_X to be complete here b/c could be NA if it's
+            # single dose
+            !str_detect(ColsNeeded4Dosing, "DoseInt")])) %>%
+         summarize(across(.cols = everything(), .fns = \(x) any(is.na(x)))) %>% 
+         pivot_longer(cols = everything(), 
+                      names_to = "Cols", 
+                      values_to = "AnyNA") %>% 
+         filter(AnyNA == TRUE) %>% 
+         pull(Cols)
+      
+      if(length(ColsNeeded4Dosing_missingcol) > 0 | 
+         length(ColsNeeded4Dosing_NAvals) > 0){
+         stop(paste0(wrapn("We do not have sufficient information in what you provided for 'existing_exp_details' to calculate the dose numbers for all the compounds present in your concentration-time data. Specifically, we are missing the following pieces of information:"), 
+                     str_c(paste0("   ", c(ColsNeeded4Dosing_missingcol, 
+                                           ColsNeeded4Dosing_NAvals)),
+                           collapse = "\n")), 
+              call. = FALSE)
+      }
+      
+      # Need to have compound name to fill out dosenumber; just one more check
+      # that things are lining up correctly.
+      ColsNeeded4Compounds <- AllCompounds %>% 
+         filter(CompoundID %in% unique(ct_dataframe$CompoundID)) %>% 
+         pull(DetailNames)
+      
+      if(all(ColsNeeded4Compounds %in% 
+             names(existing_exp_details$MainDetails)) == FALSE){
+         
+         # Compound names must match what's in ct_dataframe. 
+         CompoundNames <- ct_dataframe %>% 
+            select(File, CompoundID, Compound) %>% unique() %>% 
+            left_join(AllCompounds %>% select(CompoundID, DetailNames), 
+                      by = "CompoundID") %>% 
+            select(-CompoundID) %>% 
+            pivot_wider(names_from = DetailNames, 
+                        values_from = Compound)
+         
+         existing_exp_details$MainDetails <- existing_exp_details$MainDetails %>% 
+            left_join(CompoundNames, by = "File") 
+         
+      }
+      
+      # If user supplied just the minimum amount of info required to get this to
+      # work, we'll still be missing a few pieces of information for
+      # harmonize_details to have accurately created a "Dosing" data.frame.
+      # Adding that information here as needed and then harmonizing dosing to
+      # create "Dosing" dataframe, which we'll need lower down. We need to know
+      # the time units, and harmonizing dosing will work best if the time units
+      # there match the time units in the conc-time data, regardless of what was
+      # originally in the simulation. We will also be replacing the time units
+      # in the Dosing data.frame, so this will be ok to only set for MainDetails
+      # here. Setting time_units accordingly.
       existing_exp_details$MainDetails$Units_tmax <-
          unique(ct_dataframe$Time_units)
       
       ColsNeeded4Harmonization <- expand_grid(
          Item1 = c("DoseRoute", "Units_dose", "Dose"), 
-         Suffix = unique(DosedCompounds$DosedCompoundSuffix)) %>% 
+         Suffix = unique(Cmpd_in_CT$DosedCompoundSuffix)) %>% 
          mutate(Item = paste0(Item1, Suffix)) %>% 
          pull(Item) %>% unique()
       
@@ -186,6 +185,8 @@ calc_dosenumber <- function(ct_dataframe,
       existing_exp_details <- 
          harmonize_dosing(existing_exp_details = existing_exp_details)
       
+   } else {
+      # FIXME: Do we need to adjust time units? ?
    }
    
    Deets <- existing_exp_details$MainDetails
@@ -270,31 +271,6 @@ calc_dosenumber <- function(ct_dataframe,
    
    for(i in intersect(names(Deets), 
                       names(ct_dataframe))){
-      
-      # Previous versions of the package checked for whether the simulation had
-      # a large molecule present differently b/c I hadn't really come up with a
-      # good strategy for dealing with them. Hacking around data extracted from
-      # previous package versions here.
-      if("LgMol_simulation" %in% names(Deets)){
-         LgMolSim <- Deets$LgMol_simulation
-      } else if("ADCSimulation_sub" %in% names(Deets)){
-         if(is.character(Deets$ADCSimulation_sub)){
-            LgMolSim <- case_match(Deets$ADCSimulation_sub, 
-                                   "yes" ~ TRUE, 
-                                   "no" ~ FALSE)
-         } else if(is.logical(Deets$ADCSimulation_sub)){
-            LgMolSim <- Deets$ADCSimulation_sub
-         }
-      } else if("ADCSimulation" %in% names(Deets)){
-         LgMolSim <- case_when(
-            is.character(Deets$ADCSimulation) ~ 
-               case_match(Deets$ADCSimulation, 
-                          "yes" ~ TRUE, 
-                          "no" ~ FALSE), 
-            is.logical(Deets$ADCSimulation) ~ Deets$ADCSimulation)
-      } else {
-         LgMolSim <- FALSE
-      }
       
       ## Getting dose regimen info ------------------------------------------
       
