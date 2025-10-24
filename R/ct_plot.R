@@ -1112,15 +1112,17 @@ ct_plot <- function(ct_dataframe = NA,
          mutate(Study = factor(Study, levels = sort(unique(Study))))
    }
    
-   Data <- Data %>% 
-      # Making columns for mapping color/fill and linetype/shape
-      mutate(
-         colorBy_column = case_when(
-            {figure_type} == "compound summary" ~ Study, 
-            .default = Inhibitor), 
-         linetype_column = case_when(
-            {figure_type} == "compound summary" ~ Study, 
-            .default = Inhibitor))
+   # Making columns for mapping color/fill and linetype/shape
+   if(figure_type == "compound summary"){
+      Data <- Data %>% 
+         mutate(colorBy_column = Study, 
+                linetype_column = Study)
+   } else {
+      Data <- Data %>% 
+         mutate(
+            colorBy_column = Inhibitor, 
+            linetype_column = Inhibitor)
+   }
    
    if("factor" %in% class(Data$colorBy_column) == FALSE){
       Data <- Data %>% mutate(colorBy_column = factor(colorBy_column))

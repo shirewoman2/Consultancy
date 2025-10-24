@@ -254,7 +254,7 @@ extractInputTab <- function(deets = "all",
            "DisintegrationProfile_Input"), suffix) %in% names(Out)) &&
          complete.cases(Out[[paste0("DisintegrationProfile_Input", suffix)]]) &&
          Out[[paste0("DisintegrationProfile_Input", suffix)]] != "Weibull"){
-            
+         
          Out[[paste0("DisintegrationProfile_alpha")]] <- NA
          Out[[paste0("DisintegrationProfile_beta")]] <- NA
       }
@@ -642,7 +642,7 @@ extractInputTab <- function(deets = "all",
    }
    
    
-      ## Pulling CL info ----------------------------------------------------
+   ## Pulling CL info ----------------------------------------------------
    MyInputDeets2 <- MyInputDeets[str_detect(MyInputDeets, "CLint_")]
    
    if(length(MyInputDeets2) > 0){
@@ -880,12 +880,20 @@ extractInputTab <- function(deets = "all",
                   }
                   
                   if(CLType == "Vmax"){
+                     # Sometimes, Vmax is listed twice. This definitely happens
+                     # with user UGT elimination, but not sure about any other
+                     # situations. Cannot extract data by index here. 
+                     
+                     Names_i <- InputTab[CLrow:LastRow_i, NameCol] %>% pull()
+                     
                      suppressWarnings(
                         Out[[paste0(
                            paste("Vmax", Enzyme,
                                  Pathway, sep = "_"),
                            Suffix)]] <-
-                           as.numeric(InputTab[CLrow, NameCol + 1])
+                           as.numeric(InputTab[
+                              CLrow + which(str_detect(Names_i, "Vmax"))[1] - 1,
+                              NameCol + 1])
                      )
                      
                      suppressWarnings(
@@ -893,7 +901,9 @@ extractInputTab <- function(deets = "all",
                            paste("Km", Enzyme,
                                  Pathway, sep = "_"),
                            Suffix)]] <-
-                           as.numeric(InputTab[CLrow+1, NameCol + 1])
+                           as.numeric(InputTab[
+                              CLrow + which(str_detect(Names_i, "Km"))[1] - 1,
+                              NameCol + 1])
                      )
                      
                      suppressWarnings(
@@ -901,8 +911,22 @@ extractInputTab <- function(deets = "all",
                            paste("fu_mic", Enzyme,
                                  Pathway, sep = "_"),
                            Suffix)]] <-
-                           as.numeric(InputTab[CLrow+2, NameCol + 1])
+                           as.numeric(InputTab[
+                              CLrow + which(str_detect(Names_i, "fu mic"))[1] - 1,
+                              NameCol + 1])
                      )
+                     
+                     if(any(str_detect(Names_i, "ISEF"))){
+                        suppressWarnings(
+                           Out[[paste0(
+                              paste("ISEF", Enzyme,
+                                    Pathway, sep = "_"),
+                              Suffix)]] <-
+                              as.numeric(InputTab[
+                                 CLrow + which(str_detect(Names_i, "ISEF"))[1] - 1,
+                                 NameCol + 1])
+                        )
+                     }
                      
                      rm(Enzyme, Pathway, CLType)
                      next
@@ -929,13 +953,13 @@ extractInputTab <- function(deets = "all",
                   )
                   
                } else if(str_detect(as.character(InputTab[i, NameCol]), "^Additional HLM CLint")){
-               # Other HLM CL
+                  # Other HLM CL
                   suppressWarnings(
                      Out[[paste0("CLint_additional_HLM", Suffix)]] <-
                         as.numeric(InputTab[i, NameCol + 1])
                   )
                } else if(str_detect(as.character(InputTab[i, NameCol]), "^Additional HKM CLint")){
-               # Other HKM CL
+                  # Other HKM CL
                   suppressWarnings(
                      Out[[paste0("CLint_additional_HKM", Suffix)]] <-
                         as.numeric(InputTab[i, NameCol + 1])
@@ -1347,7 +1371,7 @@ extractInputTab <- function(deets = "all",
          }
       }
    }
-
+   
    
    # Paediatric age bins --------------------------------------------------
    
@@ -1384,7 +1408,7 @@ extractInputTab <- function(deets = "all",
       AgeBins <- NULL
    }
    
-      
+   
    # Returning --------------------------------------------------------------
    Out <- Out[sort(names(Out))]
    Out[["ConcDependent_BP"]] <- CDBPProfs
