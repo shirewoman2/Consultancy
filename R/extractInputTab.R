@@ -668,7 +668,6 @@ extractInputTab <- function(deets = "all",
                           "(Liver|Intestine|Biliary) Clearance"))
          CLRows <- CLRows[complete.cases(InputTab[CLRows + 1, NameCol])]
          
-         
          if(Out[["SimulatorUsed"]] == "Simcyp Discovery"){
             # Discovery sims have a slightly different setup on the Input
             # Sheet and only the 1st CLRows value should be used b/c that
@@ -764,8 +763,9 @@ extractInputTab <- function(deets = "all",
             # Regular Simulator data extraction starts here. 
             
             # Checking for interaction data
-            IntRowStart <- which(str_detect(InputTab[, NameCol] %>%
-                                               pull(), "Ind max|^Ki |^MBI|Interaction"))[1] - 1
+            IntRowStart <- which(str_detect(
+               InputTab[, NameCol] %>%
+                  pull(), "Ind max|^Ki |^MBI|Interaction"))[1] - 1
             
             if(complete.cases(IntRowStart)){
                CLRows <- CLRows[CLRows < min(IntRowStart)]
@@ -797,15 +797,18 @@ extractInputTab <- function(deets = "all",
                   }
                   
                   CLType <- str_extract(InputTab[CLrow, NameCol],
-                                        "CLint|Vmax|t1/2|Ind max")
+                                        "CLint|Vmax|t1/2")
+                  
+                  Names_i <- InputTab[CLrow:LastRow_i, NameCol] %>% pull()
                   
                   if(CLType == "CLint"){
                      
-                     # NOTE TO CODERS: I'd been including units for CLint in
-                     # the past, but I realized that I hadn't included units
-                     # for other enzymes, so I decided later to omit them.
-                     # Keeping this bit of code, albeit commented out, so
-                     # that we can add them back easily if we want.
+                     # NOTE TO CODERS: I'd been including units for CYP-mediated
+                     # CLint in the past, but I realized that I hadn't included
+                     # units for other enzymes, which can differ, so I decided
+                     # later to omit them. Keeping this bit of code, albeit
+                     # commented out, so that we can add them back easily if we
+                     # want.
                      
                      # Units <- str_extract(InputTab[CLrow, NameCol], 
                      #                      "\\(.*\\)")
@@ -824,67 +827,10 @@ extractInputTab <- function(deets = "all",
                            as.numeric(InputTab[CLrow, NameCol + 1])
                      )
                      
-                     suppressWarnings(
-                        Out[[paste0(
-                           paste("fu_mic", Enzyme,
-                                 Pathway, sep = "_"),
-                           Suffix)]] <-
-                           as.numeric(InputTab[CLrow+1, NameCol + 1])
-                     )
-                     
-                     # Check for any UGT-specific CL parameters
-                     if(str_detect(Enzyme, "UGT") & 
-                        any(str_detect(t(InputTab[i:LastRow_i, NameCol]),
-                                       "rUGT"))){
-                        
-                        rUGTSysInfo <- InputTab[i:LastRow_i, c(NameCol, ValueCol)] %>% 
-                           rename(Name = 1, Value = 2) %>% 
-                           filter(str_detect(Name, "rUGT"))
-                        
-                        Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTSystem",
-                                    Suffix)]] <-
-                           rUGTSysInfo[which(str_detect(rUGTSysInfo$Name, 
-                                                        "rUGTSystem")), ] %>% 
-                           pull(Value)
-                        
-                        suppressWarnings(
-                           Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTScalar_liver",
-                                       Suffix)]] <-
-                              rUGTSysInfo[which(
-                                 str_detect(tolower(rUGTSysInfo$Name), 
-                                            "rugtscalar.*liver")), ] %>% 
-                              pull(Value) %>% as.numeric())
-                        
-                        suppressWarnings(
-                           Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTScalar_intestine",
-                                       Suffix)]] <-
-                              rUGTSysInfo[which(
-                                 str_detect(tolower(rUGTSysInfo$Name), 
-                                            "rugtscalar.*intestine")), ] %>% 
-                              pull(Value) %>% as.numeric())
-                        
-                        suppressWarnings(
-                           Out[[paste0("CLint_", Enzyme, "_", Pathway, "_rUGTScalar_kidney",
-                                       Suffix)]] <-
-                              rUGTSysInfo[which(
-                                 str_detect(tolower(rUGTSysInfo$Name), 
-                                            "rugtscalar.*kidney")), ] %>% 
-                              pull(Value) %>% as.numeric())
-                        
-                        rm(rUGTSysInfo)
-                     }
-                     
-                     rm(Enzyme, Pathway, CLType)
-                     next
-                     
-                  }
-                  
-                  if(CLType == "Vmax"){
+                  } else if(CLType == "Vmax"){
                      # Sometimes, Vmax is listed twice. This definitely happens
                      # with user UGT elimination, but not sure about any other
                      # situations. Cannot extract data by index here. 
-                     
-                     Names_i <- InputTab[CLrow:LastRow_i, NameCol] %>% pull()
                      
                      suppressWarnings(
                         Out[[paste0(
@@ -892,7 +838,7 @@ extractInputTab <- function(deets = "all",
                                  Pathway, sep = "_"),
                            Suffix)]] <-
                            as.numeric(InputTab[
-                              CLrow + which(str_detect(Names_i, "Vmax"))[1] - 1,
+                              CLrow-1 + which(str_detect(Names_i, "Vmax"))[1],
                               NameCol + 1])
                      )
                      
@@ -902,37 +848,11 @@ extractInputTab <- function(deets = "all",
                                  Pathway, sep = "_"),
                            Suffix)]] <-
                            as.numeric(InputTab[
-                              CLrow + which(str_detect(Names_i, "Km"))[1] - 1,
+                              CLrow-1 + which(str_detect(Names_i, "Km"))[1],
                               NameCol + 1])
                      )
                      
-                     suppressWarnings(
-                        Out[[paste0(
-                           paste("fu_mic", Enzyme,
-                                 Pathway, sep = "_"),
-                           Suffix)]] <-
-                           as.numeric(InputTab[
-                              CLrow + which(str_detect(Names_i, "fu mic"))[1] - 1,
-                              NameCol + 1])
-                     )
-                     
-                     if(any(str_detect(Names_i, "ISEF"))){
-                        suppressWarnings(
-                           Out[[paste0(
-                              paste("ISEF", Enzyme,
-                                    Pathway, sep = "_"),
-                              Suffix)]] <-
-                              as.numeric(InputTab[
-                                 CLrow + which(str_detect(Names_i, "ISEF"))[1] - 1,
-                                 NameCol + 1])
-                        )
-                     }
-                     
-                     rm(Enzyme, Pathway, CLType)
-                     next
-                  }
-                  
-                  if(CLType == "t1/2"){
+                  } else if(CLType == "t1/2"){
                      suppressWarnings(
                         Out[[paste0(
                            paste("HalfLife", Enzyme,
@@ -940,10 +860,73 @@ extractInputTab <- function(deets = "all",
                            Suffix)]] <-
                            as.numeric(InputTab[CLrow, NameCol + 1])
                      )
-                     
-                     rm(Enzyme, Pathway, CLType)
-                     next
                   }
+                  
+                  if(any(str_detect(Names_i, "fu_mic"))){
+                     suppressWarnings(
+                        Out[[paste0(
+                           paste("fu_mic", Enzyme,
+                                 Pathway, sep = "_"),
+                           Suffix)]] <-
+                           as.numeric(InputTab[
+                              CLrow-1 + which(str_detect(Names_i, "fu mic"))[1],
+                              NameCol + 1])
+                     )
+                  }
+                  
+                  if(any(str_detect(Names_i, "ISEF"))){
+                     suppressWarnings(
+                        Out[[paste(CLType, "ISEF", Enzyme,
+                                   Pathway, Suffix, sep = "_")]] <-
+                           as.numeric(InputTab[
+                              CLrow-1 + which(str_detect(Names_i, "ISEF"))[1],
+                              NameCol + 1])
+                     )
+                  }
+                  
+                  # Check for any UGT-specific CL parameters
+                  if(any(str_detect(Names_i, "rUGT"))){
+                     
+                     rUGTSysInfo <- 
+                        InputTab[i:LastRow_i, c(NameCol, ValueCol)] %>% 
+                        rename(Name = 1, Value = 2) %>% 
+                        filter(str_detect(Name, "rUGT"))
+                     
+                     Out[[paste0(CLType, "_", Enzyme, "_", Pathway, 
+                                 "_rUGTSystem", Suffix)]] <-
+                        rUGTSysInfo[which(str_detect(
+                           rUGTSysInfo$Name, "rUGTSystem")), ] %>% 
+                        pull(Value)
+                     
+                     suppressWarnings(
+                        Out[[paste0(CLType, "_", Enzyme, "_", Pathway,
+                                    "_rUGTScalar_liver", Suffix)]] <-
+                           rUGTSysInfo[which(
+                              str_detect(tolower(rUGTSysInfo$Name), 
+                                         "rugtscalar.*liver")), ] %>% 
+                           pull(Value) %>% as.numeric())
+                     
+                     suppressWarnings(
+                        Out[[paste0(CLType, "_", Enzyme, "_", 
+                                    Pathway, "_rUGTScalar_intestine",
+                                    Suffix)]] <-
+                           rUGTSysInfo[which(
+                              str_detect(tolower(rUGTSysInfo$Name), 
+                                         "rugtscalar.*intestine")), ] %>% 
+                           pull(Value) %>% as.numeric())
+                     
+                     suppressWarnings(
+                        Out[[paste0(CLType, "_", Enzyme, "_", Pathway, "_rUGTScalar_kidney",
+                                    Suffix)]] <-
+                           rUGTSysInfo[which(
+                              str_detect(tolower(rUGTSysInfo$Name), 
+                                         "rugtscalar.*kidney")), ] %>% 
+                           pull(Value) %>% as.numeric())
+                     
+                     rm(rUGTSysInfo)
+                  }
+                  
+                  rm(Enzyme, Pathway, CLType)
                   
                } else if(str_detect(as.character(InputTab[i, NameCol]), "^Biliary (CLint|Clearance)")){
                   suppressWarnings(
