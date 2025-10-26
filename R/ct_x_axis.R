@@ -66,7 +66,16 @@ ct_x_axis <- function(Data, time_range, t0,
    
    time_range_input <- time_range
    
-   if(class(time_range_input) == "character" | t0 != "simulation start"){
+   # Checking that user has provided all complete.cases for DoseNum b/c
+   # otherwise next step will break.
+   if(any(is.na(Data$DoseNum)) & class(time_range_input) == "character"){
+      warning(wrapn("You have missing values in your data for the dose number, so we cannot set the x axis in your graph based on this. We will give you the full time range instead."), 
+              call. = FALSE)
+      time_range <- as.logical(NA)
+   }
+   
+   if(all(complete.cases(time_range)) &&
+      class(time_range_input) == "character" | t0 != "simulation start"){
       
       if(complete.cases(time_range) && str_detect(time_range, "first dose")){
          # Things work most consistently if "first dose" becomes "dose 1". 
@@ -298,7 +307,7 @@ ct_x_axis <- function(Data, time_range, t0,
    }
    
    # Setting the time range if it's NA
-   if(is.na(time_range_input[1])){
+   if(all(is.na(time_range_input)) | all(is.na(time_range))){
       
       TEMP_range <- switch(as.character(EnzPlot), 
                            "TRUE" = range(Data$Time, na.rm = T),
