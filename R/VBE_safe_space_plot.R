@@ -115,26 +115,54 @@
 #' @examples
 #' # Using example data included in the package
 #' VBE_safe_space_plot(VBE_dataframe = VBE_disso_example)
-#'
-#' # Setting some colors for actual and hypothetical datasets
-#' MyColors_actual <- reds(4)
+#' 
+#' # Setting some colors for actual and hypothetical datasets. First, let's check
+#' # how many types of formulations we have.
+#' VBE_disso_example %>% select(Type, SorO) %>% unique()
+#' 
+#' # Make a set of reds for the actual data and name them for which formulation you
+#' # want them to represent
+#' MyColors_actual <- reds(ncolors = 4, shade = "darker")
 #' names(MyColors_actual) <- c("Formulation A",
 #'                             "Formulation B",
 #'                             "Formulation C",
 #'                             "Formulation D")
-#'
-#' MyColors_hyp <- blues(6)
-#' names(MyColors_hyp) <- paste("Test", 1:6)
-#'
-#' MyColors <- c(MyColors_actual, MyColors_hyp)
-#'
+#' 
+#' # Make a set of blues for the hypothetical data and name these, too
+#' MyColors_hyp <- blues(4)
+#' names(MyColors_hyp) <- paste("Test", 1:4)
+#' 
+#' # Make the graph and save it
 #' VBE_safe_space_plot(VBE_dataframe = VBE_disso_example,
-#'                     color_set = MyColors,
+#'                     color_set = c(MyColors_actual, MyColors_hyp),
 #'                     safe_space_color = "gray80",
 #'                     linetypes = c("solid", "longdash"),
 #'                     save_graph = "VBE safe space.png",
 #'                     fig_height = 4, fig_width = 6)
-#'
+#' 
+#' # Make the same graph except don't show the points and lines that mark the
+#' # safe-space boundary
+#' VBE_safe_space_plot(VBE_dataframe = VBE_disso_example,
+#'                     color_set = c(MyColors_actual, MyColors_hyp),
+#'                     safe_space_color = "gray80",
+#'                     show_points_on_boundaries = FALSE, 
+#'                     linetypes = c("solid", "longdash"),
+#'                     save_graph = "VBE safe space v2.png",
+#'                     fig_height = 4, fig_width = 6)
+#' 
+#' # Change some additional aesthetics 
+#' VBE_safe_space_plot(VBE_dataframe = VBE_disso_example,
+#'                     color_set = c(MyColors_actual, MyColors_hyp),
+#'                     safe_space_color = "gray95",
+#'                     point_shapes = c(16, 1), 
+#'                     point_sizes = 3, 
+#'                     linewidths = c(2, 0.5), 
+#'                     show_points_on_boundaries = FALSE, 
+#'                     linetypes = c("solid", "longdash"),
+#'                     save_graph = "VBE safe space v3.png",
+#'                     fig_height = 4, fig_width = 6)
+#' 
+#' 
 #' 
 VBE_safe_space_plot <- function(VBE_dataframe, 
                                 color_set = NA, 
@@ -162,10 +190,13 @@ VBE_safe_space_plot <- function(VBE_dataframe,
    if(all(is.na(safe_space_color))){
       safe_space_color <- "#78C679"
    }
+   safe_space_color <- make_color_set(color_set = safe_space_color, 
+                                      num_colors = 1)
    
-   if(all(is.na(safe_space_trans))){
+   if(all(is.na(as.numeric(safe_space_trans)))){
       safe_space_trans <- 0.5
    }
+   safe_space_trans <- safe_space_trans[1]
    
    if(all(is.na(linetypes))){
       linetypes <- c("solid", "solid")
@@ -174,19 +205,27 @@ VBE_safe_space_plot <- function(VBE_dataframe,
    if(all(is.na(point_shapes))){
       point_shapes <- c(16, 17)
    }
+   if(length(point_shapes) != 2){
+      point_shapes <- rep(point_shapes, 2)[1:2]
+   }
    
    if(all(is.na(point_sizes))){
+      point_sizes <- c(2, 1)
+   }
+   if(length(point_sizes) != 2){
+      point_sizes <- rep(point_sizes, 2)[1:2]
+   }
+   if(class(point_sizes) != "numeric"){
+      warning(wrapn("The values for the argument 'point_sizes' must be numeric, and what you supplied is not. We will set the point sizes to the default values of 2 (observed) and 1 (predicted)."), 
+              call. = FALSE)
       point_sizes <- c(2, 1)
    }
    
    if(all(is.na(linewidths))){
       linewidths <- c(0.5, 0.5) 
    }
-   
-   if(class(point_sizes) != "numeric"){
-      warning(wrapn("The values for the argument 'point_sizes' must be numeric, and what you supplied is not. We will set the point sizes to the default values of 2 (observed) and 1 (predicted)."), 
-              call. = FALSE)
-      point_sizes <- c(2, 1)
+   if(length(linewidths) != 2){
+      linewidths <- rep(linewidths, 2)[1:2]
    }
    
    if("character" %in% class(VBE_dataframe) && 
@@ -218,15 +257,20 @@ VBE_safe_space_plot <- function(VBE_dataframe,
    SSPolygon$upper <- SSPolygon$upper %>% arrange(desc(Time))
    SSPolygon <- bind_rows(SSPolygon)
    
-   if(show_points_on_boundaries == FALSE){
-      VBE_dataframe <- VBE_dataframe %>% 
-         filter(is.na(Limit))
-   }
-   
-   Ncol <- unique(VBE_dataframe$Type) %>% length()
-   
+   Ncol <- sort(unique(VBE_dataframe$Type)) %>% length()
    color_set <- make_color_set(color_set = color_set, 
                                num_colors = Ncol)
+   
+   # Making sure that color_set is named so that, regardless of whether we show
+   # points on boundaries, we still have the correct assignment of colors.
+   if(is.null(names(color_set))){
+      names(color_set) <- sort(unique(VBE_dataframe$Type))
+   }
+   
+   if(show_points_on_boundaries == FALSE){
+      VBE_dataframe <- VBE_dataframe %>%
+         filter(is.na(Limit))
+   }
    
    G <- ggplot(data = VBE_dataframe, 
                aes(x = Time, 

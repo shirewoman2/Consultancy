@@ -146,24 +146,52 @@ a ggplot2 graph
 # Using example data included in the package
 VBE_safe_space_plot(VBE_dataframe = VBE_disso_example)
 
-# Setting some colors for actual and hypothetical datasets
-MyColors_actual <- reds(4)
+# Setting some colors for actual and hypothetical datasets. First, let's check
+# how many types of formulations we have.
+VBE_disso_example \%>\% select(Type, SorO) \%>\% unique()
+
+# Make a set of reds for the actual data and name them for which formulation you
+# want them to represent
+MyColors_actual <- reds(ncolors = 4, shade = "darker")
 names(MyColors_actual) <- c("Formulation A",
                             "Formulation B",
                             "Formulation C",
                             "Formulation D")
 
-MyColors_hyp <- blues(6)
-names(MyColors_hyp) <- paste("Test", 1:6)
+# Make a set of blues for the hypothetical data and name these, too
+MyColors_hyp <- blues(4)
+names(MyColors_hyp) <- paste("Test", 1:4)
 
-MyColors <- c(MyColors_actual, MyColors_hyp)
-
+# Make the graph and save it
 VBE_safe_space_plot(VBE_dataframe = VBE_disso_example,
-                    color_set = MyColors,
+                    color_set = c(MyColors_actual, MyColors_hyp),
                     safe_space_color = "gray80",
                     linetypes = c("solid", "longdash"),
                     save_graph = "VBE safe space.png",
                     fig_height = 4, fig_width = 6)
+
+# Make the same graph except don't show the points and lines that mark the
+# safe-space boundary
+VBE_safe_space_plot(VBE_dataframe = VBE_disso_example,
+                    color_set = c(MyColors_actual, MyColors_hyp),
+                    safe_space_color = "gray80",
+                    show_points_on_boundaries = FALSE, 
+                    linetypes = c("solid", "longdash"),
+                    save_graph = "VBE safe space v2.png",
+                    fig_height = 4, fig_width = 6)
+
+# Change some additional aesthetics 
+VBE_safe_space_plot(VBE_dataframe = VBE_disso_example,
+                    color_set = c(MyColors_actual, MyColors_hyp),
+                    safe_space_color = "gray95",
+                    point_shapes = c(16, 1), 
+                    point_sizes = 3, 
+                    linewidths = c(2, 0.5), 
+                    show_points_on_boundaries = FALSE, 
+                    linetypes = c("solid", "longdash"),
+                    save_graph = "VBE safe space v3.png",
+                    fig_height = 4, fig_width = 6)
+
 
 
 }
