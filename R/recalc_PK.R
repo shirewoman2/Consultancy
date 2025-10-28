@@ -605,12 +605,14 @@ recalc_PK <- function(ct_dataframe,
             )
             
             if(any(CustomDoseCheck$Problem == TRUE, na.rm = T)){
-               warning(paste0("The ", unique(CustomDoseCheck$CompoundID), 
-                              " had a custom dosing regimen for the following files:\n", 
-                              str_c(CustomDoseCheck$File[which(CustomDoseCheck$Problem == TRUE)], 
-                                    collapse = "\n"), 
-                              "\nWe will treat them as if they were a single-dose regimen, which may not be correct. Please check the results carefully.\n"), 
-                       call. = FALSE)
+               warning(
+                  paste0(wrapn(paste0(
+                     "The ", unique(CustomDoseCheck$CompoundID), 
+                     " had a custom dosing regimen for the following files:")), 
+                     str_c(CustomDoseCheck$File[which(CustomDoseCheck$Problem == TRUE)], 
+                           collapse = "\n"), 
+                     "\n", wrapn("We will treat them as if they were a single-dose regimen, which may not be correct. Please check the results carefully.")), 
+                  call. = FALSE)
             }
             
             suppressMessages(suppressWarnings(
@@ -1402,7 +1404,7 @@ recalc_PK <- function(ct_dataframe,
    if(any(PKtemp$ExtrapProbs, na.rm = TRUE) & 
       effort_to_get_elimination_rate != "don't try"){
       warning(paste0(
-         "There were problems extrapolating to infinity for some data. The sets of data with problems are listed here by CompoundID, Inhibitor, Tissue, Individual, Trial, whether the data were simulated or observed, File, ObsFile, and DoseNum:\n", 
+         wrapn("There were problems extrapolating to infinity for some data. The sets of data with problems are listed here by CompoundID, Inhibitor, Tissue, Individual, Trial, whether the data were simulated or observed, File, ObsFile, and DoseNum:"), 
          str_c(sort(unique(PKtemp$ID[PKtemp$ExtrapProbs])), collapse = "\n")), 
          call. = FALSE)
    }
