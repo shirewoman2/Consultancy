@@ -176,7 +176,8 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
       Deets[[i]] <- list()
       UserIntervals[[i]] <- list()
       
-      Deets[[i]]$Workspace_TimeLastModified <- as.character(file.info(i)$mtime)
+      Deets[[i]]$Workspace_date_last_saved <- 
+         file.info(i)$mtime %>% as.Date() %>% as.character()
       Deets[[i]]$SimulatorUsed <- ifelse(str_detect(i, "wksz"), 
                                          "Simcyp Simulator", "Simcyp Discovery")
       

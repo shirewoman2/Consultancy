@@ -1211,7 +1211,9 @@ pk_table <- function(PKparameters = NA,
    
    # Any time AUCinf_dose1 was requested, only retain any AUCt_X that were
    # specifically requested or when AUCinf could not be returned.
-   if("AUCinf_dose1" %in% PKpulled$PKpulled & 
+   if("AUCinf_dose1" %in% PKpulled$PKpulled &
+      "AUCinf_dose1" %in% names(MyPKResults) &&
+      all(complete.cases(MyPKResults$AUCinf_dose1)) &
       "AUCt_dose1" %in% PKparam_tidied$PKparameters$PKparameter[
          PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_dose1"))
@@ -1219,6 +1221,8 @@ pk_table <- function(PKparameters = NA,
    }
    
    if("AUCinf_dose1_withInhib" %in% PKpulled$PKpulled & 
+      "AUCinf_dose1_withInhib" %in% names(MyPKResults) &&
+      all(complete.cases(MyPKResults$AUCinf_dose1_withInhib)) &
       "AUCt_dose1_withInhib" %in% PKparam_tidied$PKparameters$PKparameter[
          PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_dose1_withInhib"))
@@ -1226,6 +1230,8 @@ pk_table <- function(PKparameters = NA,
    }
    
    if("AUCinf_ratio_dose1" %in% PKpulled$PKpulled & 
+      "AUCinf_ratio_dose1" %in% names(MyPKResults) &&
+      all(complete.cases(MyPKResults$AUCinf_ratio_dose1)) &
       "AUCt_ratio_dose1" %in% PKparam_tidied$PKparameters$PKparameter[
          PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_ratio_dose1"))

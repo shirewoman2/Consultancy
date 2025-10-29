@@ -369,9 +369,10 @@ extractExpDetails_VBE <- function(sim_data_files,
       WorkspaceFile <- sub(" - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}", 
                            "", WorkspaceFile)
       
-      MainDetails$Workspace_TimeLastModified <- 
+      MainDetails$Workspace_date_last_saved <- 
          ifelse(file.exists(WorkspaceFile), 
-                as.character(file.info(WorkspaceFile)$mtime), NA)
+                file.info(WorkspaceFile)$mtime %>% as.Date() %>% as.character(),
+                NA)
       
       # Noting when this was run. 
       MainDetails$expDetails_TimeStamp <- Sys.time()

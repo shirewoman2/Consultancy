@@ -1617,7 +1617,7 @@ annotateDetails <- function(existing_exp_details,
                             "CompoundID" = 15, 
                             "Compound" = 15, 
                             "Notes" = 40, 
-                            "Detail" = 20)
+                            "Detail" = 26)
          GoodColWidths <- GoodColWidths[intersect(names(GoodColWidths), 
                                                   names(ColWidths))]
          ColWidths[names(GoodColWidths)] <- GoodColWidths
@@ -1639,6 +1639,7 @@ annotateDetails <- function(existing_exp_details,
             NotesColumn <- openxlsx::createStyle(wrapText = TRUE) 
             
             BlueColumn <- openxlsx::createStyle(wrapText = TRUE, 
+                                                valign = "center", 
                                                 fgFill = "#E7F3FF")
             
             BlueColumnHeader <- openxlsx::createStyle(textDecoration = "bold",
@@ -1651,6 +1652,15 @@ annotateDetails <- function(existing_exp_details,
                                                fgFill = "#FFC7CE", 
                                                fontColour = "#9B030C")
             
+            RegCells <- openxlsx::createStyle(wrapText = TRUE, 
+                                              valign = "center")
+            
+            openxlsx::addStyle(wb = WB, 
+                               style = RegCells, 
+                               sheet = output_tab_name, 
+                               rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
+                               cols = 1:ncol(Out[[item]][["DF"]]), 
+                               gridExpand = TRUE)
             
             if(is.na(template_sim) | length(FileOrder) == 1){
                # This is when there is no template simulation, but we are
@@ -1908,7 +1918,7 @@ annotateDetails <- function(existing_exp_details,
                                         color_set = "rainbow", 
                                         bar_width = 1) +
                        ggtitle("Dosing regimens", 
-                               subtitle = "Lines will overlap perfectly when all simulations have the same dosing regimens.\nIf you have a lot of files and want to see a more-informative version of this graph,\nplease try running dosing_regimen_plot(...) separately."))
+                               subtitle = "Lines will overlap perfectly when all simulations have the same dosing regimens.\nIf you have a lot of dosing regimens and want to see a more-informative version of this graph,\nplease try running dosing_regimen_plot(...) separately."))
             )
             
             # Seems like ggplot makes not more than 20 items in the legend
