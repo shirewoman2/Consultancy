@@ -1032,19 +1032,21 @@ pk_table <- function(PKparameters = NA,
       
    } else {
       
-      MyPKResults <- MyPKResults %>% 
+      MyPKResults <-
+         MyPKResults %>% 
          mutate(Interval = str_extract(PKParam, "dose1|last")) %>% 
          left_join(CheckDoseInt$interval %>% 
                       select(File, Sheet, CompoundID, 
-                             Tissue, Interval, StartHr, EndHr), 
+                             Tissue, Interval, StartHr, EndHr, SimDuration), 
                    by = c("File", "Sheet", "CompoundID", 
                           "Tissue", "Interval")) %>% 
          mutate(Interval = case_when(
-            Interval == "dose1" & is.na(EndHr) ~ "first dose", 
+            Interval == "dose1" & is.na(EndHr) ~ 
+               paste0("first dose (", StartHr, " to ", SimDuration, " h)"), 
             Interval == "dose1" & complete.cases(EndHr) ~ 
-               paste(StartHr, "to", EndHr, "(h)"), 
+               paste0("first dose (", StartHr, " to ", EndHr, " h)"), 
             Interval != "dose1" ~ 
-               paste(StartHr, "to", EndHr, "(h)"))) %>% 
+               paste(StartHr, "to", EndHr, " h"))) %>% 
          select(Stat, PKParam, Value, SorO, File, Sheet, CompoundID, 
                 Tissue, Interval) %>% 
          # Need to make PK parameter more generic if we remove interval from name
