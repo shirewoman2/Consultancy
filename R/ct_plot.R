@@ -1488,7 +1488,7 @@ ct_plot <- function(ct_dataframe = NA,
    line_color <-  AesthetStuff$line_color
    obs_shape <- AesthetStuff$obs_shape
    obs_color <- AesthetStuff$obs_color
-   obs_fill_trans<- AesthetStuff$obs_fill_trans
+   obs_fill_trans <- AesthetStuff$obs_fill_trans
    obs_line_trans <- AesthetStuff$obs_line_trans
    
    # Making sure there are enough shapes and colors for "compound summary"
@@ -1535,6 +1535,7 @@ ct_plot <- function(ct_dataframe = NA,
                          aes(x = Time, y = Conc, 
                              group = Group,
                              linetype = linetype_column, 
+                             fill = colorBy_column, 
                              color = colorBy_column)),
                
                "percentiles" = 
@@ -1543,7 +1544,8 @@ ct_plot <- function(ct_dataframe = NA,
                             mutate(Group = paste(Group, Trial)),
                          aes(x = Time, y = Conc,
                              linetype = linetype_column, 
-                             color = colorBy_column, 
+                             color = colorBy_column,
+                             fill = colorBy_column, 
                              group = Group)),
                
                "percentile ribbon" = 
@@ -1561,18 +1563,24 @@ ct_plot <- function(ct_dataframe = NA,
                                          aes(x = Time, y = Conc, 
                                              group = Group,
                                              linetype = linetype_column, 
+                                             fill = colorBy_column, 
                                              color = colorBy_column)), 
                          
                          "FALSE" = ggplot(sim_data_trial,
                                           aes(x = Time, y = Conc, 
                                               group = Group,
                                               linetype = linetype_column, 
+                                              fill = colorBy_column, 
                                               color = colorBy_column))
                   ), 
                
                "compound summary" = 
                   ggplot(sim_data_trial,
-                         aes(x = Time, y = Conc, group = Group)),
+                         aes(x = Time, y = Conc, 
+                             # FIXME: Should these next 2 lines be added? 
+                             # fill = colorBy_column, 
+                             # color = colorBy_column, 
+                             group = Group)),
                
                "means only" = 
                   ggplot(sim_data_mean %>%
@@ -1580,6 +1588,7 @@ ct_plot <- function(ct_dataframe = NA,
                          aes(x = Time, y = Conc,
                              group = Group, 
                              linetype = linetype_column, 
+                             fill = colorBy_column, 
                              color = colorBy_column)))
    
    # Adding optional horizontal line(s)
@@ -1876,9 +1885,6 @@ ct_plot <- function(ct_dataframe = NA,
       labs(x = xlab, y = ylab,
            linetype = case_when(complete.cases(legend_label) ~ legend_label,
                                 .default = "Inhibitor"),
-           shape = case_when(complete.cases(legend_label) ~ legend_label,
-                             figure_type == "compound summary" ~ "Study",
-                             .default = "Inhibitor"),
            color = case_when(complete.cases(legend_label) ~ legend_label,
                              figure_type == "compound summary" ~ "Study",
                              .default = "Inhibitor"),
@@ -1887,6 +1893,12 @@ ct_plot <- function(ct_dataframe = NA,
                             .default = "Inhibitor")) +
       theme_consultancy(border = border)
    
+   if(nrow(obs_dataframe) > 0){
+      A <- A +
+         labs(shape = case_when(complete.cases(legend_label) ~ legend_label,
+                                figure_type == "compound summary" ~ "Study",
+                                .default = "Inhibitor"))
+   }
    
    # If the user didn't want the legend or if the graph is of a perpetrator,
    # remove legend.
@@ -1910,20 +1922,27 @@ ct_plot <- function(ct_dataframe = NA,
    
    # Applying aesthetics
    if(figure_type == "percentile ribbon"){
-      FillColor <- line_color
+      FillColor <- rep(line_color, length(levels(Data$colorBy_column)))[
+         1:length(levels(Data$colorBy_column))]
    } else {
-      FillColor <- obs_color
+      FillColor <- rep(obs_color, length(levels(Data$colorBy_column)))[
+         1:length(levels(Data$colorBy_column))]
    }
    
    A <- A + 
-      # NB: colors/fills only apply to observed data with figure_type = "compound summary"
+      # NB: colors/fills only apply to observed data with figure_type =
+      # "compound summary"
       scale_fill_manual(values = FillColor) +
       scale_color_manual(values = switch(
          as.character(figure_type == "compound summary"), 
          "TRUE" = obs_color, 
          "FALSE" = line_color)) +
-      scale_shape_manual(values = obs_shape) +
       scale_linetype_manual(values = line_type)
+   
+   if(nrow(obs_dataframe) > 0){
+      A <- A +
+         scale_shape_manual(values = obs_shape)
+   }
    
    # Making semi-log graph ------------------------------------------------
    

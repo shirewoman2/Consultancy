@@ -12,6 +12,12 @@
 #'   plots will be used. (Only certain pairs of parameters are available; please
 #'   see notes for the argument 'demog_parameters'.)
 #'
+#'   \strong{Note:} If you have ggplot2 version 4.0.0 or higher, there appears
+#'   to be an incompatibility with the patchwork package, which is used behind
+#'   the scenes to arrange plots for the function \code{demog_plot}. If your
+#'   legend doesn't appear where you're expecting or doesn't look right, please
+#'   try loading the patchwork package with \code{library(patchwork)}
+#'
 #' @param demog_dataframe the output from running \code{\link{extractDemog}}. If
 #'   you would like to include observed data, you can either provide them in the
 #'   same data.frame here and include a column titled "SorO" with "simulated" or
@@ -68,7 +74,7 @@
 #'   mL/min/1.73 m2 body surface area divided by the reference GFR for that
 #'   sex: 120 for female subjects and 130 for male subjects as of V23 of the
 #'   Simcyp Simulator)}
-#'   
+#'
 #'   \item{Any other column name in demog_dataframe that contains numeric data.}
 #'   }}
 #'
@@ -85,10 +91,10 @@
 #'
 #'   If you want only a subset
 #'   of those, list them in a character vector, e.g., \code{demog_parameters = c("Age",
-#'   "Height_cm", "Weight_kg")}. Plots will be in the order you list. NB: If 
-#'   you have extracted demographic data from the "Enzymatic Status CYPs",  
-#'   "Enzymatic Status UGTs", or "Drug-Population Parameters" tabs, this is a LOT
-#'   of possible parameters, so please check what you're asking for. 
+#'   "Height_cm", "Weight_kg")}. Plots will be in the order you list. NB: If
+#'   you have extracted demographic data from the "Enzymatic Status CYPs",
+#'   "Enzymatic Status UGTs", or "Drug-Population Parameters" tabs, this is a
+#'   LOT of possible parameters, so please check what you're asking for.
 #' @param variability_display How should the variability be shown? Options are
 #'   "kernel density" (default, a type of smoothed histogram) or "boxplot". Any
 #'   demographic parameters requested in the form of "X vs Y", e.g., "weight vs
@@ -921,24 +927,31 @@ demog_plot <- function(demog_dataframe,
    # NB: theme(legend.position... must be inside plot_annotation or ALL of the
    # possible legends will show up.
    
-   G <- patchwork::wrap_plots(MyGraphs) +
-      patchwork::plot_layout(
-         guides = "collect",
-         ncol = ncol,
-         nrow = nrow) +
-      patchwork::plot_annotation(
-         title = graph_title,
-         tag_levels = switch(as.character(graph_labels),
-                             "TRUE" = "A",
-                             "FALSE" = NULL), 
-         theme = theme(legend.position = legend_position)) &
-      theme(plot.title = element_text(size = 12,
-                                      hjust = 0.5,
-                                      face = "bold"),
-            legend.box = case_when(
-               legend_position %in% c("left", "right") ~ "vertical", 
-               legend_position %in% c("top", "bottom") ~ "horizontal"), 
-            legend.justification = c(0.5, 0.5))
+   `&` <- patchwork:::`&.gg`
+   
+   # FIXME: When the patchwork package is not attached, I'm getting a warning
+   # that annotation$theme is not a valid theme. Not sure what to make of that.
+   # It doesn't go away when I use ggplot2::theme, either.
+   suppressWarnings(
+      G <- patchwork::wrap_plots(MyGraphs) +
+         patchwork::plot_layout(
+            guides = "collect",
+            ncol = ncol,
+            nrow = nrow) +
+         patchwork::plot_annotation(
+            title = graph_title,
+            tag_levels = switch(as.character(graph_labels),
+                                "TRUE" = "A",
+                                "FALSE" = NULL), 
+            theme = ggplot2::theme(legend.position = legend_position)) &
+         theme(plot.title = element_text(size = 12,
+                                         hjust = 0.5,
+                                         face = "bold"),
+               legend.box = case_when(
+                  legend_position %in% c("left", "right") ~ "vertical", 
+                  legend_position %in% c("top", "bottom") ~ "horizontal"), 
+               legend.justification = c(0.5, 0.5))
+   )
    
    
    # Saving ----------------------------------------------------------------

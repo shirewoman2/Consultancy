@@ -1747,6 +1747,8 @@ so_graph <- function(PKtable,
       }
    }
    
+   `&` <- patchwork:::`&.gg`
+   
    if(length(G) == 1){
       G <- G[[1]] + theme(legend.position = legend_position)
       
