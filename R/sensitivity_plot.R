@@ -10,13 +10,17 @@
 #'   a gemstone). (Side note: We considered a 3D graph, but they're honestly
 #'   hard to do well in a programmatic fashion like this.)
 #'
-#'   \strong{Coding notes:} This function does not detect units, so please check
-#'   your graph labels. We plan to add options for axis breaks as well as color
-#'   schemes. We are in the process of adding more options for labeling the
-#'   sensitivity parameter in the graphs. This funciton does not do 3D graphs
+#'   \strong{Notes:} \itemize{
+#'
+#'   \item{This function does not detect units, so please check
+#'   your graph labels.}
+#'
+#'   \item{This function does not make 3D graphs
 #'   and we have no plans to add option for 3D graphs because A) they're just
-#'   not easy to interpret and B) there aren't great R packages out there for 3D
-#'   graphs.
+#'   not easy to interpret unless you can rotate them, and even then, that's a
+#'   stretch in our humble opinion, and B) there aren't great R packages out there for 3D
+#'   graphs.}
+#'   }
 #'
 #' @param SA_file sensitivity analysis Excel file
 #' @param dependent_variable dependent variable to plot. Options are: "plasma
@@ -37,6 +41,8 @@
 #'   sensitivity-analysis scenarios yet, the value will be unchanged. (If you
 #'   have an independent variable you'd like to add to our list, please email
 #'   Laura Shireman.)
+#' @param ind_var_label2 If you have a 2nd independent variable, optionally
+#'   specify what text use for labeling the 2nd one.
 #' @param rounding option for what rounding to perform, if any. Options are:
 #'   \describe{\item{"significant X" where "X" is a number
 #'   (default: "significant 3")}{Output will be rounded to X significant figures.
@@ -52,11 +58,22 @@
 #'   graph based on the first independent variable listed in the Excel SA file
 #'   or "2", "2nd", or "second" to adjust colors based on the second. If you
 #'   only have one independent variable, this will be ignored.
-#' @param linear_or_log make the y axis "linear" (default) or "log" for plasma
-#'   or blood concentration-time plots. If you're graphing some other dependent
-#'   variable, you can also opt for "log x" to log-transform the x axis, "log y"
-#'   to log-transform the y axis (same as a traditional semi-log plot), or "both
-#'   log", which will log transform both the x and y axes.
+#' @param linear_or_log make the y or y axes linear or log. Options are:
+#' \describe{\item{"linear" (default)}{make the x and y axes linear}
+#'
+#' \item{"log x"}{log10-transform the x axis but keep the y axis linear. This
+#' does not apply to concentration-time profiles, which have time on the x axis.}
+#'
+#' \item{"log y"}{log10-transform the y axis but keep the x axis linear}
+#'
+#' \item{"both", "both vertical", or "both horizontal"}{include both a linear and a
+#' semi-log (y axis is log transformed) plot in the results}
+#'
+#' \item{"both log"}{log10-transform both the x and y axes. This does not apply
+#' to concentration-time profiles, which have time on the x axis.}
+#'
+#' }
+#'
 #' @param y_axis_limits_lin optionally set the Y axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
 #'   limits for the linear plot will be automatically selected.
@@ -64,6 +81,11 @@
 #'   plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 #'   respectively, to a round number. If left as the default NA, the Y axis
 #'   limits for the semi-log plot will be automatically selected.
+#' @param y_axis_interval optionally set the y-axis major tick-mark interval.
+#'   Acceptable input: any number or leave as NA to accept default values, which
+#'   are generally reasonable guesses as to aesthetically pleasing intervals.
+#'   This will be ignored for log-transformed y axes, where the intervals change
+#'   and thus will be set automatically.
 #' @param x_axis_limits_lin optionally set the X axis limits for the linear
 #'   plot, e.g., \code{c(10, 1000)}. If left as the default NA, the X axis
 #'   limits for the linear plot will be automatically selected. This does not
@@ -74,6 +96,11 @@
 #'   to a round number. If left as the default NA, the X axis limits for the
 #'   semi-log plot will be automatically selected. This does not apply when the
 #'   dependent variable requested is plasma or blood concentrations.
+#' @param x_axis_interval optionally set the x-axis major tick-mark interval.
+#'   Acceptable input: any number or leave as NA to accept default values, which
+#'   are generally reasonable guesses as to aesthetically pleasing intervals.
+#'   This will be ignored for log-transformed x axes, where the intervals change
+#'   and thus will be set automatically.
 #' @param time_range time range to show relative to the start of the simulation
 #'   for any concentration-time plots. This does not apply when the plot is of
 #'   some other dependent variable than plasma or blood.
@@ -135,6 +162,9 @@
 #'   like help creating a specific gradation of colors, please talk to a member
 #'   of the R Working Group about how to do that using
 #'   \link{colorRampPalette}.}}
+#' @param legend_position specify where you want the legend to be. Options are
+#'   "left", "right", "bottom", "top", or "none" (default) if you don't want one
+#'   at all.
 #' @param graph_title (optional) a title to include on your graph in quotes
 #' @param save_graph optionally save the output graph by supplying a file name
 #'   in quotes here, e.g., "My conc time graph.png" or "My conc time
@@ -163,14 +193,18 @@
 sensitivity_plot <- function(SA_file, 
                              dependent_variable, 
                              ind_var_label = NA,
+                             ind_var_label2 = NA,
                              target_DV = NA,
                              color_by_which_indvar = "1st",
                              linear_or_log = "linear",
                              y_axis_limits_lin = NA,
                              y_axis_limits_log = NA,
+                             y_axis_interval = NA, 
                              x_axis_limits_lin = NA,
                              x_axis_limits_log = NA,
+                             x_axis_interval = NA,
                              time_range = NA,
+                             legend_position = "right", 
                              rounding = "significant 3", 
                              color_set = "blues", 
                              graph_title = NA,
@@ -181,13 +215,20 @@ sensitivity_plot <- function(SA_file,
    
    # Error catching ------------------------------------------------------
    
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
+   }
+   
    if(missing(SA_file)){
       stop("You must provide a sensitivity-analysis Excel file for the argument 'SA_file'.", 
            call. = FALSE)
    }
    
    # If they didn't include ".xlsx" at the end, add that.
-   SA_file <- ifelse(str_detect(SA_file, "xlsx$"), 
+   SA_file <- ifelse(str_detect(SA_file, "\\.xlsx$"), 
                      SA_file, paste0(SA_file, ".xlsx"))
    
    if(missing(dependent_variable)){
@@ -199,7 +240,7 @@ sensitivity_plot <- function(SA_file,
       tolower(color_by_which_indvar) %in% c("1", "1st", "first") ~ "1st", 
       tolower(color_by_which_indvar) %in% c("2", "2nd", "second") ~ "2nd")
    
-   if(color_by_which_indvar %in% c("1st", "2nd") == FALSE){
+   if(is.na(color_by_which_indvar)){
       warning(wrapn("You have specified something for the argument `color_by_which_indvar` other than 1st or 2nd, which are the only possible options. We'll use the default value of 1st."), 
               call. = FALSE)
       color_by_which_indvar <- "1st"
@@ -211,19 +252,43 @@ sensitivity_plot <- function(SA_file,
       rounding <- "significant 3"
    }
    
-   linear_or_log <- tolower(linear_or_log)
+   linear_or_log_orig <- tolower(linear_or_log)[1]
+   linear_or_log <- case_match(linear_or_log_orig, 
+                               "linear" ~ "linear x linear y", 
+                               "lin" ~ "linear x linear y", 
+                               "log x" ~ "log x linear y", 
+                               "log y" ~ "linear x log y", 
+                               "both" ~ "both vertical", 
+                               "both vertical" ~ "both vertical", 
+                               "both horizontal" ~ "both horizontal", 
+                               "semi-log" ~ "linear x log y", 
+                               "log" ~ "linear x log y", 
+                               "both log" ~ "log x log y", 
+                               "log x and log y" ~ "log x log y", 
+                               "log x & log y" ~ "log x log y", 
+                               "log x log y" ~ "log x log y")
+   # # All options: 
+   # LinLogOpts <- 
+   #    c(
+   #       # output is 1 graph 
+   #       "linear x linear y", 
+   #       "log x linear y", 
+   #       "linear x log y", 
+   #       "log x log y", 
+   #       # output is 2 graphs
+   #       "both vertical", # A) linear x linear y, B) linear x log y
+   #       "both horizontal" # A) linear x linear y, B) linear x log y
+   #    )
    
-   if(linear_or_log %in% c("both log", "log x") &
+   if(str_detect(linear_or_log, "log x") &
       str_detect(dependent_variable, "plasma|blood")){
-      warning(wrapn(paste0("You requested '", linear_or_log, 
+      warning(wrapn(paste0("You requested '", linear_or_log_orig, 
                            "' for the argument 'linear_or_log', but you also requested a plasma or blood concentration-time plot, and that's not an option there. We'll return both linear and semi-log concentration-time plots.")), 
               call. = FALSE)
       linear_or_log <- "both vertical"
    }
    
-   if(linear_or_log %in% c("both", "both vertical", "both horizontal", "linear", 
-                           "semi-log", "log", "both log", "log x", 
-                           "log y") == FALSE){
+   if(is.na(linear_or_log)){
       warning(wrapn("You have specified something for the argument 'linear_or_log' that is not among the possible options. We'll make a linear graph."), 
               call. = FALSE)
       linear_or_log <- "linear"
@@ -241,6 +306,14 @@ sensitivity_plot <- function(SA_file,
             time_range <- NA
          }
       }
+   }
+   
+   legend_position <- tolower(legend_position)[1]
+   if(complete.cases(legend_position) && 
+      legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
+      warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'right'."), 
+              call. = FALSE)
+      legend_position <- "right"
    }
    
    
@@ -382,8 +455,9 @@ sensitivity_plot <- function(SA_file,
              across(.cols = any_of(c("SensValue", "SensValue2", "DV", "SI", "EI")), 
                     .fns = as.numeric))
    
-   # Graph ----------------------------------------------------------------
+   # Setting up for graphing --------------------------------------------------
    
+   ## labels -------------------
    PrettyDV <- list("auc" = expression(AUC~"(ng/mL.h)"), 
                     "auc over dose" = expression("AUC over Dose (h/L)"),
                     "auc over dose with interaction" = expression("AUC over Dose with Interaction (h/L)"),
@@ -405,6 +479,22 @@ sensitivity_plot <- function(SA_file,
                     "tmax" = expression(t[max]~"with interaction (h)"),
                     "vss" = expression(V[ss]~"(L/kg)"))
    
+   # When the SA is with the Km, the names of that parameter are, e.g., "Kinetic
+   # Routes Km 1 (Sub)(CYP 1)", but I think it will be hard to predict how to
+   # label that. If the user has NOT specified labels to use, setting this to be
+   # just "Km" in the data or, if they've used 2 ind vars and BOTH are Km
+   # values, then leaving them as their original names.
+   if(is.na(ind_var_label) & is.na(ind_var_label2) &
+      any(c(str_detect(SensParam, "Km"),  
+            str_detect(SensParam2, "Km")), na.rm = T) == TRUE &
+      all(c(str_detect(SensParam, "Km"),
+            str_detect(SensParam2, "Km")), na.rm = T) == FALSE){
+      SensParam <- case_when(str_detect(SensParam, "Km") ~ "Km", 
+                             .default = SensParam)
+      SensParam2 <- case_when(str_detect(SensParam2, "Km") ~ "Km", 
+                              .default = SensParam2)
+   }
+   
    PrettySensParam <- list("Dose .Sub" = "Dose (mg)",
                            "EC50" = expression(EC[50]~"("*mu*M*")"), 
                            "Emax" = expression(E[max]),
@@ -416,6 +506,7 @@ sensitivity_plot <- function(SA_file,
                            "Intestinal ABCB1 .P-gp. CLint,T" = "Intestinal P-gp CLint,T (µL/min)",
                            "ka" = expression(k[a]), 
                            "Kinetic Routes.*CLint" = expression(CL[int]~"("*mu*"L/min/pmol)"), 
+                           "Km" = expression(K[M]~"("*mu*"M)"), 
                            "^Kp Scalar" = expression(k[p]~scalar),
                            "Lag Time" = expression("lag time (h)"),
                            "LogP" = expression("logP"), 
@@ -435,6 +526,7 @@ sensitivity_plot <- function(SA_file,
                                 "Intestinal ABCB1 .P-gp. CLint,T" = "Intestinal P-gp CLint,T (µL/min)",
                                 "ka" = "ka",
                                 "Kinetic Routes.*CLint" = "CLint", 
+                                "Km" = "Km (µM)", 
                                 "^Kp Scalar" = "kp scalar",
                                 "Lag Time" = "lag time (h)",
                                 "LogP" = "logP", 
@@ -443,41 +535,195 @@ sensitivity_plot <- function(SA_file,
                                 "Vss" = "Vss (L/kg)")
    
    if(class(ind_var_label) == "logical" && is.na(ind_var_label)){
+      # this is when they have not provided labels for ind var 1
+      
       if(any(sapply(names(PrettySensParam), function(.) str_detect(SensParam, .)))){
+         # this is when their ind var 1 is one of the established pretty options
          
-         ind_var_label <- PrettySensParam[which(sapply(names(PrettySensParam), function(.) str_detect(SensParam, .)))][[1]]
-         ind_var_label_char <- PrettySensParam_char[which(sapply(names(PrettySensParam_char), function(.) str_detect(SensParam, .)))][[1]]
+         ind_var_label <- PrettySensParam[
+            which(sapply(names(PrettySensParam), function(.) str_detect(SensParam, .)))][[1]]
+         
+         ind_var_label_char <- PrettySensParam_char[
+            which(sapply(names(PrettySensParam_char), function(.) str_detect(SensParam, .)))][[1]]
          
       } else {
+         # this is when their ind var 1 is NOT one of the established pretty options
          ind_var_label <- SensParam
          ind_var_label_char <- SensParam
       }
       
-      # Adding character labels for facets if needed
-      SAdata <- SAdata %>% 
-         mutate(SensValue_char = paste(ind_var_label_char, "=", SensValue), 
-                SensValue_char = forcats::fct_reorder(.f = SensValue_char, .x = SensValue, .fun = min))
-      
-      # Will need to expand this based on what output names are. Need to make sure
-      # they match.
-      
-      if(complete.cases(SensParam2)){
+   } else {
+      # this is when they HAVE provided labels for ind var 1
+      ind_var_label_char <- ind_var_label
+   }
+   
+   # Adding character labels for facets to match the labels
+   SAdata <- SAdata %>% 
+      mutate(SensValue_char = paste(ind_var_label_char, "=", SensValue), 
+             SensValue_char = forcats::fct_reorder(.f = SensValue_char, .x = SensValue, .fun = min))
+   
+   
+   if(complete.cases(SensParam2)){
+      if(class(ind_var_label2) == "logical" && is.na(ind_var_label2)){
+         # this is when they have not provided labels for ind var 2
+         
          if(any(sapply(names(PrettySensParam), function(.) str_detect(SensParam2, .)))){
+            # this is when their ind var 2 is one of the established pretty options
             
-            ind_var_label2 <- PrettySensParam[which(sapply(names(PrettySensParam), function(.) str_detect(SensParam2, .)))][[1]]
-            ind_var_label2_char <- PrettySensParam_char[which(sapply(names(PrettySensParam_char), function(.) str_detect(SensParam2, .)))][[1]]
+            ind_var_label2 <- PrettySensParam[
+               which(sapply(names(PrettySensParam), function(.) str_detect(SensParam2, .)))][[1]]
+            
+            ind_var_label2_char <- PrettySensParam_char[
+               which(sapply(names(PrettySensParam_char), function(.) str_detect(SensParam2, .)))][[1]]
             
          } else {
+            # this is when their ind var 2 is NOT one of the established pretty options
             ind_var_label2 <- SensParam2
             ind_var_label2_char <- SensParam2
          }
          
-         SAdata <- SAdata %>% 
-            mutate(SensValue2_char = paste(ind_var_label2_char, "=", SensValue2), 
-                   SensValue2_char = forcats::fct_reorder(.f = SensValue2_char, .x = SensValue2, .fun = min))
+      } else {
+         # this is when they HAVE provided labels for ind var 2
+         ind_var_label2_char <- ind_var_label2
+      }
+      
+      # Adding character labels for facets to match the labels
+      SAdata <- SAdata %>% 
+         mutate(SensValue2_char = paste(ind_var_label2_char, "=", SensValue2), 
+                SensValue2_char = forcats::fct_reorder(.f = SensValue2_char, .x = SensValue2, .fun = min))
+      
+   } 
+   
+   ## axis limits and breaks --------------------------------------------------
+   
+   # Setting axis limits 
+   if(all(complete.cases(y_axis_limits_lin))){
+      
+      LinYMin <- sort(y_axis_limits_lin)[1]
+      LinYMax <- sort(y_axis_limits_lin)[2]
+      
+   } else {
+      
+      if(str_detect(dependent_variable, "plasma|blood|conc")){
+         
+         LinYMin <- round_down(min(SAdata$Conc, na.rm = T))
+         LinYMax <- round_up_nice(max(SAdata$Conc, na.rm = T))
+         
+      } else {
+         
+         LinYMin <- round_down(min(SAdata$DV, na.rm = T))
+         LinYMax <- round_up_nice(max(SAdata$DV, na.rm = T))
          
       }
    }
+   
+   if(str_detect(dependent_variable, "plasma|blood|conc")){
+      
+      if(any(is.na(time_range))){
+         
+         XLim <- range(c(SAdata$Time, ObsData$Time), na.rm = T)
+         
+         LinXMin <- ifelse(is.na(time_range[1]), 
+                           round_down(XLim[1]), time_range[1])
+         LinXMax <- ifelse(is.na(time_range[2]), 
+                           round_up_nice(XLim[2]), time_range[2])
+         
+      } else {
+         
+         XLim <- sort(time_range)
+         LinXMin <- XLim[1]
+         LinXMax <- XLim[2]
+         
+      }
+      
+   } else {
+      if(all(complete.cases(x_axis_limits_lin))){
+         
+         LinXMin <- sort(x_axis_limits_lin)[1]
+         LinXMax <- sort(x_axis_limits_lin)[2]
+         
+      } else {
+         
+         if(complete.cases(SensParam2)){
+            
+            LinXMin <- round_down(
+               switch(color_by_which_indvar, 
+                      "1st" = min(SAdata$SensValue2), 
+                      "2nd" = min(SAdata$SensValue)))
+            
+            LinXMax <- round_up_nice(
+               switch(color_by_which_indvar, 
+                      "1st" = max(SAdata$SensValue2), 
+                      "2nd" = max(SAdata$SensValue)))
+            
+         } else {
+            
+            LinXMin <- round_down(min(SAdata$SensValue, na.rm = T))
+            LinXMax <- round_up_nice(max(SAdata$SensValue, na.rm = T))
+            
+         }
+      }
+   }
+   
+   if(all(complete.cases(y_axis_limits_log))){
+      
+      LogY <- make_log_breaks(
+         data_range = sort(y_axis_limits_log), 
+         axis_limits_log = sort(y_axis_limits_log))
+      
+   } else {
+      
+      if(str_detect(dependent_variable, "plasma|blood|conc")){
+         
+         LogY <- make_log_breaks(
+            data_range = range(SAdata$Conc[SAdata$Conc > 0], na.rm = T), 
+            axis_limits_log = y_axis_limits_log)
+         
+      } else {
+         
+         LogY <- make_log_breaks(
+            data_range = range(SAdata$DV[SAdata$DV > 0], na.rm = T), 
+            axis_limits_log = y_axis_limits_log)
+      }
+      
+   }
+   LogYMin <- LogY$axis_limits_log[1]
+   LogYMax <- LogY$axis_limits_log[2]
+   
+   # LogXBreaks will only apply when they have requested log-transformed x
+   # axis, which is not among the options when the DV is plasma or blood
+   # concentrations. For that reason, it does not matter that the range does
+   # not consider the range of time included. 
+   if(all(complete.cases(x_axis_limits_log))){
+      
+      LogX <- make_log_breaks(
+         data_range = sort(x_axis_limits_log), 
+         axis_limits_log = sort(x_axis_limits_log))
+      
+   } else {
+      
+      if(complete.cases(SensParam2)){
+         
+         LogX <- make_log_breaks(
+            data_range = switch(
+               color_by_which_indvar, 
+               "1st" = range(SAdata$SensValue2[SAdata$SensValue2 > 0]), 
+               "2nd" = range(SAdata$SensValue[SAdata$SensValue > 0])), 
+            axis_limits_log = x_axis_limits_log)
+         
+      } else {
+         
+         LogX <- make_log_breaks(
+            data_range = range(SAdata$SensValue[SAdata$SensValue > 0]), 
+            axis_limits_log = x_axis_limits_log)
+         
+      }
+   }
+   LogXMin <- LogX$axis_limits_log[1]
+   LogXMax <- LogX$axis_limits_log[2]
+   
+   
+   # Making graphs --------------------------------------------------------
    
    if(str_detect(dependent_variable, "plasma|blood|conc")){
       
@@ -487,8 +733,9 @@ sensitivity_plot <- function(SA_file,
          MyColors <- make_color_set(color_set = color_set, 
                                     num_colors = length(unique(SAdata$SensValue)))
          
-         G <- ggplot(SAdata, aes(x = Time, y = Conc, color = as.factor(SensValue), 
-                                 group = SensValue)) +
+         G <- ggplot(SAdata, 
+                     aes(x = Time, y = Conc, color = as.factor(SensValue), 
+                         group = SensValue)) +
             scale_color_manual(values = MyColors) +
             geom_line()
          
@@ -498,9 +745,10 @@ sensitivity_plot <- function(SA_file,
          MyColors <- make_color_set(color_set = color_set, 
                                     num_colors = length(unique(SAdata$SensValue2)))
          
-         G <- ggplot(SAdata, aes(x = Time, y = Conc, 
-                                 color = as.factor(SensValue2), 
-                                 group = SensValue2)) +
+         G <- ggplot(SAdata, 
+                     aes(x = Time, y = Conc, 
+                         color = as.factor(SensValue2), 
+                         group = SensValue2)) +
             scale_color_manual(values = MyColors) +
             geom_line()
          
@@ -508,7 +756,9 @@ sensitivity_plot <- function(SA_file,
       
       if(length(ObsRow) > 0){
          
-         MyShapes <- rep(c(15:18, 0:14), length(unique(ObsData$Subject)))[1:length(unique(ObsData$Subject))]
+         MyShapes <- rep(c(15:18, 0:14), 
+                         length(unique(ObsData$Subject)))[
+                            1:length(unique(ObsData$Subject))]
          
          G <- G +
             geom_point(data = ObsData, 
@@ -536,10 +786,6 @@ sensitivity_plot <- function(SA_file,
          xlab("Time (h)") +
          ylab("Concentration (ng/mL)")
       
-      if(all(complete.cases(y_axis_limits_lin))){
-         G <- G + scale_y_continuous(limits = y_axis_limits_lin)
-      }
-      
    } else {
       
       # This is when it's something other than plasma or blood profiles that
@@ -552,17 +798,28 @@ sensitivity_plot <- function(SA_file,
             MyColors <- make_color_set(color_set = color_set, 
                                        num_colors = length(unique(SAdata$SensValue)))
             
-            G <- ggplot(SAdata, aes(x = SensValue2, y = DV, 
-                                    color = as.factor(SensValue), 
-                                    group = SensValue)) +
+            G <- ggplot(SAdata,
+                        aes(x = SensValue2, y = DV, 
+                            color = as.factor(SensValue), 
+                            group = SensValue)) +
                scale_color_manual(values = MyColors) +
                geom_point() + geom_line() +
                xlab(ind_var_label2) 
+            
          } else {
             
-            G <- ggplot(SAdata, aes(x = SensValue, y = DV)) +
+            # This will have only 1 color, but we're including color for
+            # consistency w/other scenarios.
+            MyColors <- make_color_set(color_set = "black", 
+                                       num_colors = 1)
+            
+            G <- ggplot(SAdata, 
+                        aes(x = SensValue, y = DV, color = "placeholder")) +
                geom_point() + geom_line() +
+               scale_color_manual(values = MyColors) +
+               guides(color = "none") +
                xlab(ind_var_label)
+            
          }
          
       } else {
@@ -573,9 +830,10 @@ sensitivity_plot <- function(SA_file,
          MyColors <- make_color_set(color_set = color_set, 
                                     num_colors = length(unique(SAdata$SensValue2)))
          
-         G <- ggplot(SAdata, aes(x = SensValue, y = DV, 
-                                 color = as.factor(SensValue2), 
-                                 group = SensValue2)) +
+         G <- ggplot(SAdata, 
+                     aes(x = SensValue, y = DV, 
+                         color = as.factor(SensValue2), 
+                         group = SensValue2)) +
             scale_color_manual(values = MyColors) +
             geom_point() + geom_line() +
             xlab(ind_var_label)
@@ -589,17 +847,6 @@ sensitivity_plot <- function(SA_file,
                              "1st" = ind_var_label, 
                              "2nd" = ind_var_label2))
       
-      if(all(complete.cases(y_axis_limits_lin)) & 
-         all(complete.cases(x_axis_limits_lin))){
-         G <- G + coord_cartesian(ylim = y_axis_limits_lin, 
-                                  xlim = x_axis_limits_lin)
-      } else if(all(complete.cases(y_axis_limits_lin)) &
-                all(is.na(x_axis_limits_lin))){
-         G <- G + coord_cartesian(ylim = y_axis_limits_lin)
-      } else if(all(complete.cases(x_axis_limits_lin)) &
-                all(is.na(y_axis_limits_lin))){
-         G <- G + coord_cartesian(xlim = x_axis_limits_lin)
-      }
    }
    
    G <- G + 
@@ -613,6 +860,9 @@ sensitivity_plot <- function(SA_file,
          theme(plot.title = element_text(hjust = 0.5))
    }
    
+   # Adding legend as needed
+   G <- G + theme(legend.position = legend_position)
+   
    if(complete.cases(target_DV)){
       G <- G + 
          geom_hline(yintercept = target_DV, linetype = "dotted", 
@@ -623,128 +873,98 @@ sensitivity_plot <- function(SA_file,
                   label = paste0("target = ", prettyNum(target_DV, big.mark = ",")))
    }
    
-   # Setting axis limits as needed
-   LinYRange <- switch(
-      as.character(all(complete.cases(y_axis_limits_lin))), 
-      "TRUE" = y_axis_limits_lin, 
-      "FALSE" = switch(
-         as.character(str_detect(dependent_variable, "plasma|blood|conc")), 
-         "TRUE" = range(SAdata$Conc, na.rm = T), 
-         "FALSE" = range(SAdata$DV, na.rm = T)))
-   
-   LogYBreaks <- make_log_breaks(
-      data_range = switch(
-         as.character(all(complete.cases(y_axis_limits_log))), 
-         "TRUE" = y_axis_limits_log, 
-         "FALSE" = switch(
-            as.character(str_detect(dependent_variable, "plasma|blood|conc")), 
-            "TRUE" = range(SAdata$Conc[SAdata$Conc > 0], na.rm = T), 
-            "FALSE" = range(SAdata$DV[SAdata$DV > 0], na.rm = T))))
-   
+   # Applying axis limits and breaks
    if(str_detect(dependent_variable, "plasma|blood|conc")){
       
-      x_axis_limits_lin <- c(NA, NA)
+      G <- G + 
+         scale_x_time(time_range = c(LinXMin, LinXMax), 
+                      x_axis_interval = x_axis_interval, 
+                      impose_limits = F)
       
    } else {
       
-      LinXRange <- switch(
-         as.character(all(complete.cases(x_axis_limits_lin))), 
-         "TRUE" = x_axis_limits_lin, 
-         "FALSE" = switch(as.character(complete.cases(SensParam2)), 
-                          "TRUE" = switch(color_by_which_indvar, 
-                                          "1st" = range(SAdata$SensValue2), 
-                                          "2nd" = range(SAdata$SensValue)), 
-                          "FALSE" = range(SAdata$SensValue)))
+      G <- G + 
+         scale_x_continuous(
+            limits = c(LinXMin, LinXMax), 
+            breaks = switch(as.character(complete.cases(x_axis_interval)), 
+                            "TRUE" = seq(LinXMin, LinXMax, by = x_axis_interval), 
+                            "FALSE" = waiver())) 
       
-      # LogXBreaks will only apply when they have requested log-transformed x
-      # axis, which is not among the options when the DV is plasma or blood
-      # concentrations. For that reason, it does not matter that the range does
-      # not consider the range of time included.
-      LogXBreaks <- make_log_breaks(
-         data_range = switch(
-            as.character(all(complete.cases(x_axis_limits_log))), 
-            "TRUE" = x_axis_limits_log, 
-            "FALSE" = switch(as.character(complete.cases(SensParam2)), 
-                             "TRUE" = switch(color_by_which_indvar, 
-                                             "1st" = range(SAdata$SensValue2[SAdata$SensValue2 > 0]), 
-                                             "2nd" = range(SAdata$SensValue[SAdata$SensValue > 0])), 
-                             "FALSE" = range(SAdata$SensValue[SAdata$SensValue > 0]))))
    }
    
-   Glog <- G +
-      scale_y_log10(breaks = LogYBreaks$breaks, 
-                    labels = LogYBreaks$labels) 
-   
-   if(str_detect(dependent_variable, "plasma|blood|conc")){
+   # Need to make the log-transformed graph 1st and THEN apply the
+   # scale_y_continuous, coord_cartesian functions.
+   if(linear_or_log %in% c("linear x log y",
+                           "log x log y",
+                           "log x log y horizontal",
+                           "log x log y vertical",
+                           "both vertical",
+                           "both horizontal")){
       
-      if(any(is.na(time_range))){
-         XLim <- range(c(SAdata$Time, ObsData$Time), na.rm = T)
-         x_axis_limits_lin[1] <- ifelse(is.na(time_range[1]), 
-                                        XLim[1], time_range[1])
-         x_axis_limits_lin[2] <- ifelse(is.na(time_range[2]), 
-                                        XLim[2], time_range[2])
+      suppressMessages(
+         G_logY <- G +
+            scale_y_log10(breaks = LogY$breaks, 
+                          labels = LogY$labels, 
+                          limits = LogY$axis_limits_log))
+      
+      if(linear_or_log %in% c("log x log y",
+                              "log x log y horizontal",
+                              "log x log y vertical")){
+         
+         G_logXlogY <- G_logY + 
+            scale_x_log10(breaks = LogX$breaks, 
+                          labels = LogX$labels, 
+                          limits = LogX$axis_limits_log) + 
+            coord_cartesian(xlim = c(LogXMin, LogXMax), 
+                            ylim = c(LogYMin, LogYMax))
+         
       } else {
-         x_axis_limits_lin <- time_range[1:2]
+         G_logY <- G_logY + 
+            coord_cartesian(xlim = c(LinXMin, LinXMax), 
+                            ylim = c(LogYMin, LogYMax))
       }
-      
-      G <- G + 
-         scale_x_time(time_range = x_axis_limits_lin, 
-                      impose_limits = F) + 
-         coord_cartesian(xlim = x_axis_limits_lin, 
-                         ylim = c(round_down(LinYRange[1]),
-                                  round_up_nice(LinYRange[2])))
-      
-   } else {
-      G <- G + 
-         coord_cartesian(ylim = c(round_down(LinYRange[1]),
-                                  round_up_nice(LinYRange[2])), 
-                         xlim = c(round_down(LinXRange[1]),
-                                  round_up_nice(LinXRange[2])))
+   } else if(linear_or_log %in% c("log x linear y")){
+      G_logX <- G + 
+         coord_cartesian(xlim = c(LogXMin, LogXMax), 
+                         ylim = c(LinYMin, LinYMax))
    }
    
-   if(linear_or_log %in% c("both", "both vertical", "both horizontal",
-                           "semi-log", "log", "log y")){
-      
-      if(str_detect(dependent_variable, "plasma|blood|conc")){
-         
-         Glog <- Glog +
-            scale_x_time(time_range = x_axis_limits_lin, 
-                         impose_limits = F) +
-            coord_cartesian(ylim = LogYBreaks$axis_limits_log, 
-                            xlim = x_axis_limits_lin) 
-         
-      } else {
-         
-         Glog <- Glog +
-            coord_cartesian(ylim = c(round_down(LinYRange[1]),
-                                     round_up_nice(LinYRange[2])), 
-                            xlim = c(round_down(LinXRange[1]),
-                                     round_up_nice(LinXRange[2])))
-         
-      }
-   } 
+   G <- G + 
+      scale_y_continuous(
+         limits = c(LinYMin, LinYMax), 
+         breaks = switch(as.character(complete.cases(y_axis_interval)), 
+                         "TRUE" = seq(LinYMin, LinYMax, by = y_axis_interval), 
+                         "FALSE" = waiver())) + 
+      coord_cartesian(xlim = c(LinXMin, LinXMax), 
+                      ylim = c(LinYMin, LinYMax))
+   
+   `&` <- patchwork:::`&.gg`
    
    # Situation where both or just x are log transformed is covered below. 
-   if(linear_or_log %in% c("both", "both vertical")){
-      G <- ggpubr::ggarrange(G, Glog, nrow = 2, align = "hv", common.legend = TRUE)
-   } else if(linear_or_log %in% c("both horizontal")){
-      G <- ggpubr::ggarrange(G, Glog, nrow = 1, align = "hv", common.legend = TRUE)
-   } else if(linear_or_log %in% c("semi-log", "log", "log y")){
-      G <- Glog
-   } else if(linear_or_log %in% c("both log")){
-      G <- G + 
-         scale_x_log10(breaks = LogXBreaks$breaks, 
-                       limits = LogXBreaks$axis_limits_log, 
-                       labels = LogXBreaks$labels) +
-         scale_y_log10(breaks = LogYBreaks$breaks, 
-                       limits = LogYBreaks$axis_limits_log, 
-                       labels = LogYBreaks$labels)
-      
-   } else if(linear_or_log %in% c("log x")){
-      G <- G + scale_x_log10(breaks = LogXBreaks$breaks,
-                             limits = LogXBreaks$axis_limits_log, 
-                             labels = LogXBreaks$labels)
-   }
+   suppressWarnings(
+      Out_G <- switch(
+         linear_or_log, 
+         "linear x linear y" = G, 
+         
+         "log x linear y" = G_logX,
+         
+         "linear x log y" = G_logY,
+         
+         "log x log y" = G_logXlogY,
+         
+         "both vertical" = 
+            patchwork::wrap_plots(G, G_logY, nrow = 2) +
+            patchwork::plot_layout(guides = "collect") & 
+            theme(legend.position = legend_position), 
+         
+         "both horizontal" = 
+            patchwork::wrap_plots(G, G_logY, nrow = 1) +
+            patchwork::plot_layout(guides = "collect") & 
+            theme(legend.position = legend_position)
+      ))
+   
+   
+   # Saving -------------------------------------------------------------
    
    if(complete.cases(save_graph)){
       FileName <- save_graph
@@ -790,7 +1010,7 @@ sensitivity_plot <- function(SA_file,
       } else {
          # This is when they want any kind of graphical file format.
          ggsave(FileName, height = fig_height, width = fig_width, dpi = 600,
-                plot = G)
+                plot = Out_G)
          
       }
    }
@@ -817,11 +1037,11 @@ sensitivity_plot <- function(SA_file,
          names(DF)[names(DF) == "SensValue2"] <- SensParam2
       }
       
-      return(list("graph" = G, 
+      return(list("graph" = Out_G, 
                   "data" = DF))
       
    } else {
-      return(G)
+      return(Out_G)
    }
    
 }

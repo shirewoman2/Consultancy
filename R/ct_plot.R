@@ -866,7 +866,6 @@ ct_plot <- function(ct_dataframe = NA,
       }
    }
    
-   legend_position <- tolower(legend_position)[1]
    if(complete.cases(legend_position) && 
       legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
       warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'right'."), 

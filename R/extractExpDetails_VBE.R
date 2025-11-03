@@ -372,7 +372,7 @@ extractExpDetails_VBE <- function(sim_data_files,
       WorkspaceFile <- sub(" - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}", 
                            "", WorkspaceFile)
       
-      MainDetails$Workspace_date_last_saved <- 
+      MainDetails$Workspace_date_saved <- 
          ifelse(file.exists(WorkspaceFile), 
                 file.info(WorkspaceFile)$mtime %>% as.Date() %>% as.character(),
                 NA)

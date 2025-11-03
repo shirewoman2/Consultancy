@@ -19,6 +19,17 @@
 #'
 #' @param report_name the file name of the report, including the path if it's
 #'   not in your current working directory
+#' @param search_text optionally supply some text to search for in your report
+#'   that would be included in the simulation file names. This can be useful if
+#'   you did not include file extensions in in your report when referring to the
+#'   source of simulated data, e.g., you listed "Source simulated data: abc-1a"
+#'   instead of "Source simulated data: abc-1a.xlsx". If you supplied, for
+#'   example, \code{search_text = "abc"}, we would look for all the places in
+#'   your report that list the source of the data as being something that
+#'   contains "abc". We will do this \emph{in addition} to looking for all the
+#'   places where the data source is listed as being an .xlsx, .wksz, or .db.
+#'   file. Regular expressions work in the search text, and it is case
+#'   sensitive.
 #' @param save_sims_in_report optionally save the list of the references it
 #'   found to a csv file so that you can check that the simulations and which
 #'   figure or table they refer to appear to be correct. For example, if you
@@ -32,18 +43,33 @@
 #' ReportRefs <- find_sims_in_report(report_name = "abc-1a PBPK report.docx")
 #' 
 find_sims_in_report <- function(report_name, 
+                                search_text = NA, 
                                 save_sims_in_report = NA){
    
    # Error catching ----------------------------------------------------------
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
+   }
+   
+   if(length(report_name) != 1){
+      stop(wrapn("What you supply for report_name must have length 1."))
+   }
+   
+   if(length(search_text) != 1){
+      stop(wrapn("What you supply for search_text must have length 1."))
+   }
+   
+   if(length(save_sims_in_report) != 1){
+      stop(wrapn("What you supply for save_sims_in_report must have length 1."))
    }
    
    # Check file extension
    if(str_detect(report_name, "\\.docx$") == FALSE){
-      stop(SimcypConsultancy:::wrapn("Your file must have the extension '.docx'."))
+      stop(wrapn("Your file must have the extension '.docx'."))
    }
    
    
@@ -56,25 +82,51 @@ find_sims_in_report <- function(report_name,
    # This will take a little bit
    BodyText <- officer::docx_summary(OfficerObj, remove_fields = TRUE)
    
+   if(complete.cases(search_text)){
+      SearchText <- 
+         paste0("([a-z|0-9]{1,}[^ ].*\\.(xlsx|wksz|db|sft|phxproj|siva|cvbe))|", 
+                search_text, "(.* |.*$)")
+   } else {
+      SearchText <- "[a-z|0-9]{1,}[^ ].*\\.(xlsx|wksz|db|sft|phxproj|siva|cvbe)"
+   }
+   
    # Looking for text indicating tables and figures. 
    TextMatching <- tibble(
       Index = 1:nrow(BodyText), 
       Text = BodyText$text, 
       FigTab = str_extract(Text, "^(Table|Figure).[0-9]{1,}"), 
-      File = as.character(str_extract_all(Text, "[Ss]ource( simulated)?( data)?: [a-z|0-9]{1,}[^ ].*\\.(xlsx|wksz|db|sft|phxproj)"))) %>% 
+      File = as.character(NA))
+   
+   for(i in 1:nrow(TextMatching)){
+      MyFile <- str_extract_all(
+         TextMatching$Text[i], 
+         paste0("[Ss]ource( simulated)?( data)?: ", SearchText), 
+         simplify = TRUE)
+      
+      TextMatching$File[i] <- 
+         case_when(length(MyFile) == 0 ~ NA, 
+                   .default = str_c(MyFile, collapse = " "))
+      
+      rm(MyFile)
+   }
+   
+   TextMatching <- TextMatching %>% 
       mutate(
-         File = gsub("[Ss]ource( simulated)?( data)?: |,| and", "", File), 
+         File = gsub("[Ss]ource( simulated)?( data)?: ", "", File), 
+         File = gsub("\\[|\\]|\\.$|;|,| and", "", File), 
+         File = str_trim(File), 
          File = case_when(File == "character(0)" ~ NA, 
                           .default = File),
          # placeholder
          `Table/Figure` = as.character(NA)
       )
+   
    # NB: 1 row in the tibble = 1 paragraph
    
-   # Looping through the places where there is an Excel file listed and finding the
-   # figure or table that was listed either in the same paragraph (index will be
-   # the same) or the most-recent paragraph before that Excel file's paragraph
-   # (index will be the last one before the current index).
+   # Looping through the places where there is a source file listed and finding
+   # the figure or table that was listed either in the same paragraph (index
+   # will be the same) or the most-recent paragraph before that source file's
+   # paragraph (index will be the last one before the current index).
    for(i in TextMatching$Index[complete.cases(TextMatching$File)]){
       
       PrevFigTab <- TextMatching %>% 
@@ -100,7 +152,10 @@ find_sims_in_report <- function(report_name,
                            cols_remove = FALSE) %>% 
       mutate(Number = as.numeric(Number)) %>% 
       arrange(FigureOrTable, Number) %>% 
-      mutate(`Table/Figure` = factor(`Table/Figure`, levels = unique(`Table/Figure`)))
+      mutate(`Table/Figure` = factor(`Table/Figure`, 
+                                     levels = unique(`Table/Figure`))) %>% 
+      # Only retaining rows that could be simulated data files we'll need
+      filter(str_detect(File, SearchText))
    
    # Mention in R console how many unique output names were found in the report.
    # This may be useful for people, especially if they know how many simulations
@@ -113,7 +168,7 @@ find_sims_in_report <- function(report_name,
    Out <- TextMatching %>% 
       select(Index, Text, File, `Table/Figure`)
    
-   if(complete.cases(save_sims_in_report[1])){
+   if(complete.cases(save_sims_in_report)){
       
       # Check file extension
       Ext <- str_extract(save_sims_in_report, "\\.*$")

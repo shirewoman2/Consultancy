@@ -734,7 +734,7 @@ extractExpDetails <- function(sim_data_file,
    WorkspaceFile <- sub(" - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}", 
                         "", WorkspaceFile)
    
-   Out$Workspace_date_last_saved <- 
+   Out$Workspace_date_saved <- 
       ifelse(file.exists(WorkspaceFile), 
              file.info(WorkspaceFile)$mtime %>% as.Date() %>% as.character(),
              NA)
