@@ -261,10 +261,11 @@ demog_plot <- function(demog_dataframe,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-   
+      
    if("Sex" %in% names(demog_dataframe) == FALSE){
       warning(wrapn("You requested that we facet the graphs by sex (or used the default settings, which tries to facet by sex), but subject sexes were not included in what you supplied for the argument demog_dataframe. (Sex is not included when you only request info from, e.g., the 'Enzymatic Status CYPs' type of tabs.) We will not be able to break up your data by sex."), 
               call. = FALSE)

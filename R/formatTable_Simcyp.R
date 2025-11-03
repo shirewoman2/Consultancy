@@ -259,12 +259,14 @@ formatTable_Simcyp <- function(DF,
                                table_caption = NA){
    
    # Error catching ---------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-   
+      
    page_orientation <- tolower(page_orientation)[1]
    if(page_orientation %in% c("portrait", "landscape") == FALSE){
       warning(wrapn("You requested something other than `portrait` or `landscape` for the page orientation in the Word output, and those are the only options. We'll use the default of `portrait`."), 

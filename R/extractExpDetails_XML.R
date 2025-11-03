@@ -65,11 +65,14 @@ extractExpDetails_XML <- function(sim_workspace_files = NA,
                                   save_output = NA){
    
    # Error catching ---------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop(paste0(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), "\n     library(tidyverse)\n\nand then try again."), call. = FALSE)
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    # If user did not supply files, then extract all the files in the current
    # folder that end in "wksz" or in all subfolders if they wanted it to be
    # recursive.

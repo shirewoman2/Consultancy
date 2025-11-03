@@ -54,11 +54,14 @@ extractDemog <- function(sim_data_files = NA,
                          which_data = "main demographics"){
    
    # Error catching ---------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    # If user did not supply files, then extract all the files in the current
    # folder that end in "xlsx" or in all subfolders if they wanted it to be
    # recursive.

@@ -54,11 +54,14 @@ extractExpDetails_VBE <- function(sim_data_files,
                                   ...){
    
    # Error catching ---------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop(paste0(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), "\n     library(tidyverse)\n\nand then try again."), call. = FALSE)
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    # Checking whether they've supplied extractExpDetails args instead of
    # extractExpDetails_mult args
    if("sim_data_file" %in% names(match.call()) &

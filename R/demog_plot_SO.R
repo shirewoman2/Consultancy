@@ -58,10 +58,11 @@ demog_plot_SO <- function(demog_dataframe,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-   
+      
    if(facet_by_sex & length(unique(demog_dataframe$Sex)) == 1){
       warning("You requested that we facet the graphs by sex, but there's only one sex in your data. We will not be able to do this.\n", 
               call. = FALSE)

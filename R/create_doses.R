@@ -137,12 +137,14 @@ create_doses <- function(dose_interval = NA,
                          save_output = NA){
    
    # Error catching ---------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-   
+      
    if(length(dose_interval) > 1){
       stop("Please supply a single value for `dose_interval`. If you need to have more than one dosing interval, please use the `custom_dosing_schedule` option.",
            call. = FALSE)

@@ -6,6 +6,13 @@
 #'
 extractObsConcTime_xlsx <- function(obs_data_file){
    
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
+   }
+      
    obs_data_xl <- suppressMessages(
       tryCatch(readxl::read_excel(path = obs_data_file, 
                                   sheet = "PK PD Profiles",
