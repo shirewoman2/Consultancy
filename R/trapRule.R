@@ -66,13 +66,15 @@ trapRule <- function(ct_dataframe,
    # !!! Note to self: Why do I have both this *and* noncompAUC? Maybe delete this function? 
    
     # Error catching ---------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run\nlibrary(tidyverse)\n    ...and then try again.", 
-             call. = FALSE)
-    }
     
-    if(nrow(ct_dataframe) == 0){
+	# Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
+   }
+      
+   if(nrow(ct_dataframe) == 0){
         warning("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
                 call. = FALSE)
         return(NA)

@@ -90,7 +90,7 @@ must be included in \code{demog_dataframe} in the column "File".}
   mL/min/1.73 m2 body surface area divided by the reference GFR for that
   sex: 120 for female subjects and 130 for male subjects as of V23 of the
   Simcyp Simulator)}
-  
+
   \item{Any other column name in demog_dataframe that contains numeric data.}
   }}
 
@@ -107,10 +107,10 @@ must be included in \code{demog_dataframe} in the column "File".}
 
   If you want only a subset
   of those, list them in a character vector, e.g., \code{demog_parameters = c("Age",
-  "Height_cm", "Weight_kg")}. Plots will be in the order you list. NB: If 
-  you have extracted demographic data from the "Enzymatic Status CYPs",  
-  "Enzymatic Status UGTs", or "Drug-Population Parameters" tabs, this is a LOT
-  of possible parameters, so please check what you're asking for.}
+  "Height_cm", "Weight_kg")}. Plots will be in the order you list. NB: If
+  you have extracted demographic data from the "Enzymatic Status CYPs",
+  "Enzymatic Status UGTs", or "Drug-Population Parameters" tabs, this is a
+  LOT of possible parameters, so please check what you're asking for.}
 
 \item{variability_display}{How should the variability be shown? Options are
 "kernel density" (default, a type of smoothed histogram) or "boxplot". Any
@@ -277,6 +277,12 @@ a set of ggplot2 graphs
   across simulations the relationship between pairs of parameters, scatter
   plots will be used. (Only certain pairs of parameters are available; please
   see notes for the argument 'demog_parameters'.)
+
+  \strong{Note:} If you have ggplot2 version 4.0.0 or higher, there appears
+  to be an incompatibility with the patchwork package, which is used behind
+  the scenes to arrange plots for the function \code{demog_plot}. If your
+  legend doesn't appear where you're expecting or doesn't look right, please
+  try loading the patchwork package with \code{library(patchwork)}
 }
 \examples{
 # none yet

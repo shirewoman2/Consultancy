@@ -59,8 +59,8 @@ scale_x_time_setup <- function(time_range = NA,
     DataLayers <- which(sapply(last_plot()$layers,
                                FUN = function(x) "data.frame" %in% class(x$data)))
     GraphData <- bind_rows(lapply(last_plot()$layers[DataLayers], 
-                                  FUN = function(x) x$data), 
-                           last_plot()$data)
+                                  FUN = function(x) x$data)) %>% 
+       bind_rows(last_plot()$data)
     names(GraphData)[which(names(GraphData) == as_label(last_plot()$mapping$x))] <- "Time"
     
     if(all(is.na(time_range))){

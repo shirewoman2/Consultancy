@@ -320,12 +320,14 @@ release_profile_plot <- function(existing_exp_details,
                                  fig_width = 5){
    
    # Error catching ---------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.", 
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-   
+      
    if(figure_type %in% c("means only", "percentile ribbon") == FALSE){
       warning("The only acceptable options for `figure_type` are `means_only` or `percentile ribbon`. We'll set this to the default, `percentile ribbon`.\n", 
               call. = FALSE)

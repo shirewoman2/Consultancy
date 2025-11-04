@@ -1,24 +1,54 @@
 #' Calculate basic PK parameters for concentration-time data
 #'
-#' \code{calc_PK} calculates AUCinf_dose1, AUCt_dose1, AUCtau_last, Cmax_dose1,
-#' Cmax_last, tmax_dose1, tmax_last, CLinf_dose1, and CLtau_last for the
-#' supplied concentration-time data and, when applicable, the same parameters in
-#' the presence of a perpetrator and the ratios of those values for perpetrator
-#' / baseline. The input required for \code{ct_dataframe} is pretty specific;
-#' please see the help file for that argument. A few
-#' notes about the output and calculations: \enumerate{\item{Aggregated PK
-#' will be recalculated to include the newly calculated individual PK
-#' parameters.} \item{Graphs show the time since the start of the dosing
+#' @description \code{calc_PK} calculates AUCinf_dose1, HalfLife_dose,
+#'   AUCt_dose1, AUCtau_last, Cmax_dose1, Cmax_last, tmax_dose1, tmax_last,
+#'   CLinf_dose1, and CLtau_last for the supplied concentration-time data and,
+#'   when applicable, the same parameters in the presence of a perpetrator and
+#'   the ratios of those values for perpetrator / baseline. The input required
+#'   for \code{ct_dataframe} is pretty specific; please see the help file for
+#'   that argument.
+#'
+#' A few notes about the output and calculations: \enumerate{
+#' \item{Graphs show the time since the start of the dosing
 #' interval on the x axis rather than the time since the first dose.}
-#' \item{The ID you'll see listed on graphs or in the console if you ask for 
+#' \item{The ID you'll see listed on graphs or in the console if you ask for
 #' all of the progress to be shown is the compound ID, any perpetrator present,
-#' the tissue, the individual, the trial, whether the data were simulated or 
+#' the tissue, the individual, the trial, whether the data were simulated or
 #' observed, the file name, the observed file name, and the dose number.}}
 #'
 #' @param ct_dataframe a data.frame of concentration-time data in the same
 #'   format as those created by running \code{extractConcTime},
 #'   \code{extractConcTime_mult}, \code{extractObsConcTime}, or
-#'   \code{extractObsConcTime_mult}.
+#'   \code{extractObsConcTime_mult}. Here are the columns that are will be
+#'   included in your data (some are optional):
+#'
+#'   \describe{\item{File (optional)}{as in, simulation file; can be a placeholder for all
+#'   the concentration-time data the you want to be considered together as a
+#'   set. If omitted, we'll assume that all the data should be evaluated as a
+#'   single dataset.}
+#'   \item{ObsFile (optional)}{Observed-data file name. If omitted, we'll
+#'   assume that all the data should be evaluated as a single dataset.}
+#'   \item{CompoundID}{the compound ID, e.g., "substrate", "inhibitor 1",
+#'   "primary metabolite 1", etc. To see all possible compounds, run
+#'   \code{view(AllCompounds)}}
+#'   \item{Inhibitor (optional)}{the name of any perpetrator present. For baseline data,
+#'   set this to "none". If this is missing, we'll assume you had all baseline data.}
+#'   \item{DoseNum}{the dose number. If you don't want to fill this out manually,
+#'   try using \code{\link{calc_dosenumber}} to calculate it for you.}
+#'   \item{Dose_X}{the dose amount. Replace "X" with "sub" for substrate,
+#'   "inhib" for inhibitor 1, and "inhib2" for inhibitor 2.}
+#'   \item{Tissue (optional)}{the tissue, e.g., "plasma". To see all possible tissues, run
+#'   \code{view(AllTissues)}. If missing, we'll assume you had plasma data.}
+#'   \item{Individual}{the individual subject ID}
+#'   \item{Simulated}{TRUE or FALSE for whether these data were simulated}
+#'   \item{Conc}{the concentration}
+#'   \item{Time}{the time}
+#'   }
+#'
+#'   Concentration, time, and dosing units are not considered in these
+#'   calculations, so the units for the PK in the results will match whatever
+#'   concentration, time, and dosing units were used in your input data.
+#'
 #' @param which_dose character vector specifying which dose you want the PK for.
 #'   Default is \code{which_dose = c("first", "last")} to get the PK for the
 #'   first and last doses. If you only want one of those, just specify the one
@@ -185,9 +215,11 @@ calc_PK <- function(ct_dataframe,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    Out <- recalc_PK(ct_dataframe = ct_dataframe,
                     which_dose = which_dose, 
                     compound_name = compound_name, 

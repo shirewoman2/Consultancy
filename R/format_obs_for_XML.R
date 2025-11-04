@@ -129,11 +129,14 @@ format_obs_for_XML <- function(obs_dataframe,
                                return_data = FALSE){
    
    # Error catching ----------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    if(str_detect(missing_value_treatment, "impute")){
       ValToImpute <- as.numeric(str_split_1(missing_value_treatment, pattern = " ")[2])
       missing_value_treatment <- "impute"

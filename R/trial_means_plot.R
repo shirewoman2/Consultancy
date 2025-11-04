@@ -276,7 +276,9 @@ trial_means_plot <- function(sim_data_file,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
    
    if(length(PKparameter) > 1){
@@ -658,15 +660,15 @@ trial_means_plot <- function(sim_data_file,
          MyColors <- make_color_set(color_set = color_set, 
                                     num_colors = 2)
       }
-      names(MyColors) <- c("simulated", "observed")
+      MyFillColors <- MyColors
       
-      MyFillColors <- c("white", "black")
+      names(MyColors) <- c("simulated", "observed")
       names(MyFillColors) <- c("simulated", "observed")
       
       G <- ggplot(PK_long, aes(x = Trial, shape = SorO, 
                                fill = SorO, color = SorO, 
                                y = Center, ymin = Lower, ymax = Upper)) +
-         labs(color = NULL, fill = NULL)
+         labs(color = NULL, fill = NULL, shape = NULL)
    }
    
    # Making sure we have enough point shapes
@@ -674,8 +676,12 @@ trial_means_plot <- function(sim_data_file,
    
    # Dealing w/points that are filled
    if(any(point_shape %in% 21:25)){
-      MyFillColors[point_shape %in% 21:25] <- MyColors[point_shape %in% 21:25]
-      MyColors[point_shape %in% 21:25] <- "black"
+      if(color_set[1] == "black and white"){
+         MyFillColors <- c("white", "black")
+      } else {
+         MyFillColors[point_shape %in% 21:25] <- MyColors[point_shape %in% 21:25]
+         MyColors[point_shape %in% 21:25] <- "black"
+      }
    }
    
    if(lines_for_population_stats != "none"){

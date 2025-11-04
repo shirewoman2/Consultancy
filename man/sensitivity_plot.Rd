@@ -8,14 +8,18 @@ sensitivity_plot(
   SA_file,
   dependent_variable,
   ind_var_label = NA,
+  ind_var_label2 = NA,
   target_DV = NA,
   color_by_which_indvar = "1st",
   linear_or_log = "linear",
   y_axis_limits_lin = NA,
   y_axis_limits_log = NA,
+  y_axis_interval = NA,
   x_axis_limits_lin = NA,
   x_axis_limits_log = NA,
+  x_axis_interval = NA,
   time_range = NA,
+  legend_position = "right",
   rounding = "significant 3",
   color_set = "blues",
   graph_title = NA,
@@ -48,6 +52,9 @@ sensitivity-analysis scenarios yet, the value will be unchanged. (If you
 have an independent variable you'd like to add to our list, please email
 Laura Shireman.)}
 
+\item{ind_var_label2}{If you have a 2nd independent variable, optionally
+specify what text use for labeling the 2nd one.}
+
 \item{target_DV}{optionally specify a target value for the dependent
 variable, which will add a horizontal red dotted line to the graph where
 the target lies.}
@@ -59,11 +66,21 @@ graph based on the first independent variable listed in the Excel SA file
 or "2", "2nd", or "second" to adjust colors based on the second. If you
 only have one independent variable, this will be ignored.}
 
-\item{linear_or_log}{make the y axis "linear" (default) or "log" for plasma
-or blood concentration-time plots. If you're graphing some other dependent
-variable, you can also opt for "log x" to log-transform the x axis, "log y"
-to log-transform the y axis (same as a traditional semi-log plot), or "both
-log", which will log transform both the x and y axes.}
+\item{linear_or_log}{make the y or y axes linear or log. Options are:
+\describe{\item{"linear" (default)}{make the x and y axes linear}
+
+\item{"log x"}{log10-transform the x axis but keep the y axis linear. This
+does not apply to concentration-time profiles, which have time on the x axis.}
+
+\item{"log y"}{log10-transform the y axis but keep the x axis linear}
+
+\item{"both", "both vertical", or "both horizontal"}{include both a linear and a
+semi-log (y axis is log transformed) plot in the results}
+
+\item{"both log"}{log10-transform both the x and y axes. This does not apply
+to concentration-time profiles, which have time on the x axis.}
+
+}}
 
 \item{y_axis_limits_lin}{optionally set the Y axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as the default NA, the Y axis
@@ -73,6 +90,12 @@ limits for the linear plot will be automatically selected.}
 plot, e.g., \code{c(10, 1000)}. Values will be rounded down and up,
 respectively, to a round number. If left as the default NA, the Y axis
 limits for the semi-log plot will be automatically selected.}
+
+\item{y_axis_interval}{optionally set the y-axis major tick-mark interval.
+Acceptable input: any number or leave as NA to accept default values, which
+are generally reasonable guesses as to aesthetically pleasing intervals.
+This will be ignored for log-transformed y axes, where the intervals change
+and thus will be set automatically.}
 
 \item{x_axis_limits_lin}{optionally set the X axis limits for the linear
 plot, e.g., \code{c(10, 1000)}. If left as the default NA, the X axis
@@ -86,6 +109,12 @@ to a round number. If left as the default NA, the X axis limits for the
 semi-log plot will be automatically selected. This does not apply when the
 dependent variable requested is plasma or blood concentrations.}
 
+\item{x_axis_interval}{optionally set the x-axis major tick-mark interval.
+Acceptable input: any number or leave as NA to accept default values, which
+are generally reasonable guesses as to aesthetically pleasing intervals.
+This will be ignored for log-transformed x axes, where the intervals change
+and thus will be set automatically.}
+
 \item{time_range}{time range to show relative to the start of the simulation
   for any concentration-time plots. This does not apply when the plot is of
   some other dependent variable than plasma or blood.
@@ -96,6 +125,10 @@ dependent variable requested is plasma or blood concentrations.}
   \item{a start time and end time in hours}{only data in that time range,
   e.g. \code{c(24, 48)}. Note that there are no quotes around numeric data.}
   }}
+
+\item{legend_position}{specify where you want the legend to be. Options are
+"left", "right", "bottom", "top", or "none" (default) if you don't want one
+at all.}
 
 \item{rounding}{option for what rounding to perform, if any. Options are:
 \describe{\item{"significant X" where "X" is a number
@@ -187,13 +220,17 @@ a ggplot2 graph
   a gemstone). (Side note: We considered a 3D graph, but they're honestly
   hard to do well in a programmatic fashion like this.)
 
-  \strong{Coding notes:} This function does not detect units, so please check
-  your graph labels. We plan to add options for axis breaks as well as color
-  schemes. We are in the process of adding more options for labeling the
-  sensitivity parameter in the graphs. This funciton does not do 3D graphs
+  \strong{Notes:} \itemize{
+
+  \item{This function does not detect units, so please check
+  your graph labels.}
+
+  \item{This function does not make 3D graphs
   and we have no plans to add option for 3D graphs because A) they're just
-  not easy to interpret and B) there aren't great R packages out there for 3D
-  graphs.
+  not easy to interpret unless you can rotate them, and even then, that's a
+  stretch in our humble opinion, and B) there aren't great R packages out there for 3D
+  graphs.}
+  }
 }
 \examples{
 

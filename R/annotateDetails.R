@@ -261,11 +261,14 @@ annotateDetails <- function(existing_exp_details,
                             filename_text = NA){
    
    # Error catching --------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    compoundID <- tolower(compoundID)
    
    if(all(complete.cases(compoundID)) &&
@@ -414,7 +417,7 @@ annotateDetails <- function(existing_exp_details,
    
    # Setting up ways to detect elimination and interaction parameters since we
    # won't know what they're called in advance.
-   EliminationRegex <- "^fu_mic|Transporter|^fu_inc|^Km_|^Vmax|^CL(int|add|biliary|iv|renal|po|pd)|^CL_|^HalfLife"
+   EliminationRegex <- "^fu_mic|Transporter|^fu_inc|^Km_|^Vmax|^ISEF|^CL(int|add|biliary|iv|renal|po|pd)|^CL_|^HalfLife"
    InteractionRegex <- "^Ki_|^kinact|^Kapp|^MBI|^Ind"
    
    MainDetails <- existing_exp_details$MainDetails %>% 
@@ -560,7 +563,7 @@ annotateDetails <- function(existing_exp_details,
    # which sheet they came from and what simulator section they were. Also
    # adding some notes explaining what detail is.
    
-   EnzRegex <- "(CYP|UGT)[0-9]{1,2}[A-Z][0-9]{1,2}|CES[12]|ENZ.USER[1-9]"
+   EnzRegex <- "(CYP|UGT)[0-9]{1,2}[A-Z][0-9]{1,2}|CES[12]|ENZ.USER[1-9]|UserUGT"
    TranspRegex <- "ASBT|BCRP|BSEP|ENT[12]|GLUT1|MATE1|MATE2_K|MCTC1|MDR1|MRP[1-9]|NTCP|OCT(N)?[123]|OAT[1-9]|OATP[124][BC][1-3]|PEPT1|P(_)?gp"
    EnzTranspRegex <- paste0(EnzRegex, "|", TranspRegex)
    
@@ -600,7 +603,7 @@ annotateDetails <- function(existing_exp_details,
             str_detect(Detail, "CLint_AddHLM") ~ "Additional HLM CLint (uL/min/mg protein)",
             str_detect(Detail, "CLint_biliary") ~ "Additional biliary CLint (uL/min/10^6)",
             
-            str_detect(Detail, "CLint_CYP|CLint_UGT|CLint_ENZ.USER[1-9]|CLint_Intestine|CLint_Liver") ~ 
+            str_detect(Detail, "CLint_CYP|CLint_UGT|CLint_UserUGT|CLint_ENZ.USER[1-9]|CLint_Intestine|CLint_Liver") ~ 
                paste(str_extract(Detail, EnzRegex), 
                      "CLint", 
                      case_when(str_detect(Detail, "Intestine|Liver") ~ "(uL/min/mg protein)", 
@@ -617,6 +620,7 @@ annotateDetails <- function(existing_exp_details,
                       
                       case_when(str_detect(Detail, "CLintT") ~ "CLintT ", 
                                 str_detect(Detail, "RAFREF") ~ "RAF or REF ", 
+                                str_detect(Detail, "ISEF") ~ "ISEF,T ", 
                                 str_detect(Detail, "fuinc") ~ "fu,inc ", 
                                 str_detect(Detail, "Jmax") ~ "Jmax ", 
                                 str_detect(Detail, "Km") ~ "Km ", 
@@ -682,6 +686,12 @@ annotateDetails <- function(existing_exp_details,
             str_detect(Detail, "^Jmax_") ~ 
                paste0(str_extract(Detail, TranspRegex), 
                       " Jmax", 
+                      case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (pmol/min/pmol)"), 
+                      .default = ""), 
+            
+            str_detect(Detail, "^ISEF_") ~ 
+               paste0(str_extract(Detail, EnzRegex), 
+                      " ISEF", 
                       case_when(str_detect(Detail, "CYP|UGT|ENZ.USER") ~ " (pmol/min/pmol)"), 
                       .default = ""), 
             
@@ -755,9 +765,14 @@ annotateDetails <- function(existing_exp_details,
       left_join(MainDetails %>% select(Notes, Detail), by = "Notes") %>% 
       unique() %>% 
       mutate(Enzyme = str_extract(Detail, EnzTranspRegex), 
-             Pathway = str_extract(Detail, pattern = paste0(Enzyme, ".*_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)")), 
+             Pathway = str_extract(Detail, pattern = 
+                                      paste0(Enzyme, ".*_(", 
+                                             str_c(unique(AllCompounds$Suffix), 
+                                                   collapse = "|"), ")")), 
              Pathway = str_remove(Pathway, paste0(Enzyme, "_")), 
-             Pathway = str_remove(Pathway, "_(sub|inhib|inhib2|met1|met2|secmet|inhib1met)"), 
+             Pathway = str_remove(Pathway, paste0("_(", 
+                                                  str_c(unique(AllCompounds$Suffix),
+                                                        collapse = "|"), ")")), 
              Pathway = sub("OH", "-OH", Pathway), 
              Pathway = sub("^-", "", Pathway), 
              Pathway = str_replace(Pathway, "Gut", "gut"), 
@@ -905,10 +920,17 @@ annotateDetails <- function(existing_exp_details,
          
          if(item == "MainDetails"){
             DF <- DF %>% 
-               mutate(Notes = str_trim(gsub("(for|of) (the )?(substrate|primary metabolite 1|primary metabolite 2|secondary metabolite|inhibitor 1|inhibitor 2|inhibitor 1 metabolite)",
-                                            "", Notes)), 
-                      Detail = sub("_sub$|_inhib$|_met1$|_met2$|_secmet$|_inhib2$|_inhib1met$", 
-                                   "", Detail))
+               mutate(
+                  Notes = 
+                     str_trim(gsub(
+                        paste0("(for|of) (the )?(", 
+                               str_c(unique(AllCompounds$CompoundID), collapse = "|"), 
+                               ")"), 
+                        "", 
+                        Notes)), 
+                  Detail = sub(str_c(paste0(unique(AllCompounds$Suffix), "$"),
+                                     collapse = "|"), 
+                               "", Detail))
          }
       }
       
@@ -1512,8 +1534,14 @@ annotateDetails <- function(existing_exp_details,
    # Saving ---------------------------------------------------------------
    if(complete.cases(save_output)){
       
-      # Making sure they've got a good extension
-      FileName <- sub("\\..*$", ".xlsx", save_output)
+      FileName <- save_output
+      
+      # Making sure they've got a good extension by just removing whatever they
+      # have and then replacing it with xlsx
+      if(str_detect(save_output, "\\.")){
+         FileName <- sub("\\..*$", "", FileName)
+      } 
+      FileName <- paste0(FileName, ".xlsx")
       
       # Using openxlsx to format things. NB: Versions <= 2.12.17 used the
       # xlsx package to save, but openxlsx allows you to insert graphs and
@@ -1592,7 +1620,7 @@ annotateDetails <- function(existing_exp_details,
                             "CompoundID" = 15, 
                             "Compound" = 15, 
                             "Notes" = 40, 
-                            "Detail" = 20)
+                            "Detail" = 26)
          GoodColWidths <- GoodColWidths[intersect(names(GoodColWidths), 
                                                   names(ColWidths))]
          ColWidths[names(GoodColWidths)] <- GoodColWidths
@@ -1614,6 +1642,7 @@ annotateDetails <- function(existing_exp_details,
             NotesColumn <- openxlsx::createStyle(wrapText = TRUE) 
             
             BlueColumn <- openxlsx::createStyle(wrapText = TRUE, 
+                                                valign = "center", 
                                                 fgFill = "#E7F3FF")
             
             BlueColumnHeader <- openxlsx::createStyle(textDecoration = "bold",
@@ -1626,6 +1655,15 @@ annotateDetails <- function(existing_exp_details,
                                                fgFill = "#FFC7CE", 
                                                fontColour = "#9B030C")
             
+            RegCells <- openxlsx::createStyle(wrapText = TRUE, 
+                                              valign = "center")
+            
+            openxlsx::addStyle(wb = WB, 
+                               style = RegCells, 
+                               sheet = output_tab_name, 
+                               rows = 2:(nrow(Out[[item]][["DF"]]) + 1), 
+                               cols = 1:ncol(Out[[item]][["DF"]]), 
+                               gridExpand = TRUE)
             
             if(is.na(template_sim) | length(FileOrder) == 1){
                # This is when there is no template simulation, but we are
@@ -1755,7 +1793,7 @@ annotateDetails <- function(existing_exp_details,
                      Time_units == "years" ~ End, 
                      Time_units == "months" ~ End / 12, 
                      Time_units == "days" ~ End / 365.25))
-                  
+            
             
             plot(ggplot(AgeBins %>% 
                            mutate(Frequency = factor(Frequency, 
@@ -1788,7 +1826,7 @@ annotateDetails <- function(existing_exp_details,
                                      Out[[item]][["DF"]]$Time_units)) == 1 ~ 
                                      "Simulations with the same age bins will show the same pattern.", 
                                   .default = "Simulations with the same age bins will show the same pattern.\nAll times have been converted to years."))
-                               
+                 
             )
             
             PlotWidth <- 8 
@@ -1883,7 +1921,7 @@ annotateDetails <- function(existing_exp_details,
                                         color_set = "rainbow", 
                                         bar_width = 1) +
                        ggtitle("Dosing regimens", 
-                               subtitle = "Lines will overlap perfectly when all simulations have the same dosing regimens.\nIf you have a lot of files and want to see a more-informative version of this graph,\nplease try running dosing_regimen_plot(...) separately."))
+                               subtitle = "Lines will overlap perfectly when all simulations have the same dosing regimens.\nIf you have a lot of dosing regimens and want to see a more-informative version of this graph,\nplease try running dosing_regimen_plot(...) separately."))
             )
             
             # Seems like ggplot makes not more than 20 items in the legend

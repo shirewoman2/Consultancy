@@ -4,11 +4,23 @@
 \alias{find_sims_in_report}
 \title{Find references to simulations in a Word report}
 \usage{
-find_sims_in_report(report_name, save_sims_in_report = NA)
+find_sims_in_report(report_name, search_text = NA, save_sims_in_report = NA)
 }
 \arguments{
 \item{report_name}{the file name of the report, including the path if it's
 not in your current working directory}
+
+\item{search_text}{optionally supply some text to search for in your report
+that would be included in the simulation file names. This can be useful if
+you did not include file extensions in in your report when referring to the
+source of simulated data, e.g., you listed "Source simulated data: abc-1a"
+instead of "Source simulated data: abc-1a.xlsx". If you supplied, for
+example, \code{search_text = "abc"}, we would look for all the places in
+your report that list the source of the data as being something that
+contains "abc". We will do this \emph{in addition} to looking for all the
+places where the data source is listed as being an .xlsx, .wksz, or .db.
+file. Regular expressions work in the search text, and it is case
+sensitive.}
 
 \item{save_sims_in_report}{optionally save the list of the references it
 found to a csv file so that you can check that the simulations and which

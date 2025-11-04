@@ -44,9 +44,37 @@ recalc_PK(
 }
 \arguments{
 \item{ct_dataframe}{a data.frame of concentration-time data in the same
-format as those created by running \code{extractConcTime},
-\code{extractConcTime_mult}, \code{extractObsConcTime}, or
-\code{extractObsConcTime_mult}.}
+  format as those created by running \code{extractConcTime},
+  \code{extractConcTime_mult}, \code{extractObsConcTime}, or
+  \code{extractObsConcTime_mult}. Here are the columns that are will be
+  included in your data (some are optional):
+
+  \describe{\item{File (optional)}{as in, simulation file; can be a placeholder for all
+  the concentration-time data the you want to be considered together as a
+  set. If omitted, we'll assume that all the data should be evaluated as a
+  single dataset.}
+  \item{ObsFile (optional)}{Observed-data file name. If omitted, we'll
+  assume that all the data should be evaluated as a single dataset.}
+  \item{CompoundID}{the compound ID, e.g., "substrate", "inhibitor 1",
+  "primary metabolite 1", etc. To see all possible compounds, run
+  \code{view(AllCompounds)}}
+  \item{Inhibitor (optional)}{the name of any perpetrator present. For baseline data,
+  set this to "none". If this is missing, we'll assume you had all baseline data.}
+  \item{DoseNum}{the dose number. If you don't want to fill this out manually,
+  try using \code{\link{calc_dosenumber}} to calculate it for you.}
+  \item{Dose_X}{the dose amount. Replace "X" with "sub" for substrate,
+  "inhib" for inhibitor 1, and "inhib2" for inhibitor 2.}
+  \item{Tissue (optional)}{the tissue, e.g., "plasma". To see all possible tissues, run
+  \code{view(AllTissues)}. If missing, we'll assume you had plasma data.}
+  \item{Individual}{the individual subject ID}
+  \item{Simulated}{TRUE or FALSE for whether these data were simulated}
+  \item{Conc}{the concentration}
+  \item{Time}{the time}
+  }
+
+  Concentration, time, and dosing units are not considered in these
+  calculations, so the units for the PK in the results will match whatever
+  concentration, time, and dosing units were used in your input data.}
 
 \item{which_dose}{character vector specifying which dose you want the PK for.
 Default is \code{which_dose = c("first", "last")} to get the PK for the
@@ -253,15 +281,18 @@ want this to be huge if there are a lot of profiles). Defaults to 11.}
 returns a list of individual and/or aggregate PK data
 }
 \description{
-\code{recalc_PK} takes as input the output from \code{\link{calc_PK}} and
-recalculates the PK for any concentration-time profiles specified. A few
-notes about the output and calculations: \enumerate{\item{Aggregated PK
+\code{recalc_PK} takes as input the output from
+  \code{\link{calc_PK}} and recalculates the PK for any concentration-time
+  profiles specified.
+
+  A few notes about the output and calculations:
+  \enumerate{\item{Aggregated PK
 will be recalculated to include the newly calculated individual PK
 parameters.} \item{Graphs show the time since the start of the dosing
 interval on the x axis rather than the time since the first dose.}
-\item{The ID you'll see listed on graphs or in the console if you ask for 
+\item{The ID you'll see listed on graphs or in the console if you ask for
 all of the progress to be shown is the compound ID, any perpetrator present,
-the tissue, the individual, the trial, whether the data were simulated or 
+the tissue, the individual, the trial, whether the data were simulated or
 observed, the file name, the observed file name, and the dose number.}}
 }
 \examples{

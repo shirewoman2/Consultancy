@@ -80,11 +80,14 @@ make_trial_design_table <- function(existing_exp_details,
                                     page_orientation = "portrait"){
    
    # Error catching --------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    if(length(detail_set) > 1 ||
       detail_set %in% c("default", "all trial design") == FALSE){
       stop(wrapn("You have specified something other than 'default' or 'all trial design' for the possible set of details to show in your table, but those are the only possible options for detail_set. Please try again."), 

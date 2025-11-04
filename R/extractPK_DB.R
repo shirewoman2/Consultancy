@@ -69,11 +69,14 @@ extractPK_DB <- function(sim_data_file,
                          existing_exp_details){
    
    # Error catching ----------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    if(length(sim_data_file) > 1){
       warning(wrapn("The extractPK_DB function is for getting information from one database simlation file at a time, and you have provided more than that. Please check your input and try again."), 
               call. = FALSE)

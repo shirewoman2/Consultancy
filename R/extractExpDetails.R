@@ -69,11 +69,14 @@ extractExpDetails <- function(sim_data_file,
                               sheet_names = NA){
    
    # Error catching ---------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop(paste0(wrapn("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), "\n     library(tidyverse)\n\nand then try again."), call. = FALSE)
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    # If they didn't include ".xlsx" at the end, add that.
    sim_data_file <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_file), ".xlsx")
    
@@ -731,9 +734,10 @@ extractExpDetails <- function(sim_data_file,
    WorkspaceFile <- sub(" - [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}-[0-9]{2}-[0-9]{2}", 
                         "", WorkspaceFile)
    
-   Out$Workspace_TimeLastModified <- 
+   Out$Workspace_date_saved <- 
       ifelse(file.exists(WorkspaceFile), 
-             as.character(file.info(WorkspaceFile)$mtime), NA)
+             file.info(WorkspaceFile)$mtime %>% as.Date() %>% as.character(),
+             NA)
    
    # Noting when this was run. 
    Out$expDetails_TimeStamp <- Sys.time()

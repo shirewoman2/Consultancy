@@ -29,12 +29,15 @@ pdf_to_csv <- function(pdf_file,
                        save_csv = "csv"){
     
     # Error catching ----------------------------------------------------------
-    # Check whether tidyverse is loaded
-    if("package:tidyverse" %in% search() == FALSE){
-        stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
-    }
     
-    # Check for appropriate input for arguments
+	# Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
+   }
+      
+   # Check for appropriate input for arguments
     if(length(pdf_file) != 1){
         stop("You must supply a single file name for the argument `pdf_file` for the pdf_to_csv function to work.", 
              call. = FALSE)

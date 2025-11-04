@@ -430,9 +430,11 @@ pk_table <- function(PKparameters = NA,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    # Checking whether they've supplied pksummary_table args instead of
    # pksummary_mult args
    if("sim_data_file" %in% names(match.call()) &
@@ -1032,19 +1034,21 @@ pk_table <- function(PKparameters = NA,
       
    } else {
       
-      MyPKResults <- MyPKResults %>% 
+      MyPKResults <-
+         MyPKResults %>% 
          mutate(Interval = str_extract(PKParam, "dose1|last")) %>% 
          left_join(CheckDoseInt$interval %>% 
                       select(File, Sheet, CompoundID, 
-                             Tissue, Interval, StartHr, EndHr), 
+                             Tissue, Interval, StartHr, EndHr, SimDuration), 
                    by = c("File", "Sheet", "CompoundID", 
                           "Tissue", "Interval")) %>% 
          mutate(Interval = case_when(
-            Interval == "dose1" & is.na(EndHr) ~ "first dose", 
+            Interval == "dose1" & is.na(EndHr) ~ 
+               paste0("first dose (", StartHr, " to ", SimDuration, " h)"), 
             Interval == "dose1" & complete.cases(EndHr) ~ 
-               paste(StartHr, "to", EndHr, "(h)"), 
+               paste0("first dose (", StartHr, " to ", EndHr, " h)"), 
             Interval != "dose1" ~ 
-               paste(StartHr, "to", EndHr, "(h)"))) %>% 
+               paste(StartHr, "to", EndHr, " h"))) %>% 
          select(Stat, PKParam, Value, SorO, File, Sheet, CompoundID, 
                 Tissue, Interval) %>% 
          # Need to make PK parameter more generic if we remove interval from name
@@ -1211,7 +1215,9 @@ pk_table <- function(PKparameters = NA,
    
    # Any time AUCinf_dose1 was requested, only retain any AUCt_X that were
    # specifically requested or when AUCinf could not be returned.
-   if("AUCinf_dose1" %in% PKpulled$PKpulled & 
+   if("AUCinf_dose1" %in% PKpulled$PKpulled &
+      "AUCinf_dose1" %in% names(MyPKResults) &&
+      all(complete.cases(MyPKResults$AUCinf_dose1)) &
       "AUCt_dose1" %in% PKparam_tidied$PKparameters$PKparameter[
          PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_dose1"))
@@ -1219,6 +1225,8 @@ pk_table <- function(PKparameters = NA,
    }
    
    if("AUCinf_dose1_withInhib" %in% PKpulled$PKpulled & 
+      "AUCinf_dose1_withInhib" %in% names(MyPKResults) &&
+      all(complete.cases(MyPKResults$AUCinf_dose1_withInhib)) &
       "AUCt_dose1_withInhib" %in% PKparam_tidied$PKparameters$PKparameter[
          PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_dose1_withInhib"))
@@ -1226,6 +1234,8 @@ pk_table <- function(PKparameters = NA,
    }
    
    if("AUCinf_ratio_dose1" %in% PKpulled$PKpulled & 
+      "AUCinf_ratio_dose1" %in% names(MyPKResults) &&
+      all(complete.cases(MyPKResults$AUCinf_ratio_dose1)) &
       "AUCt_ratio_dose1" %in% PKparam_tidied$PKparameters$PKparameter[
          PKparam_tidied$PKparameters$OriginallyRequested == TRUE] == FALSE){
       MyPKResults <- MyPKResults %>% select(-any_of("AUCt_ratio_dose1"))

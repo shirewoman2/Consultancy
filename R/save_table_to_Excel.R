@@ -102,11 +102,14 @@ save_table_to_Excel <- function(table,
                                 bold_cells = NA){
    
    # Error catching --------------------------------------------------------
+   
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    # Checking input for highlighting
    if(class(highlight_cells) != "logical" & class(highlight_cells) != "list"){
       warning(wrapn("We need the input for the argument 'highlight_cells' to be a named list, where the names are the highlight colors you want and the items in the list are the cells you want to highlight that color, but you have supplied something else. We cannot highlight anything for you."), 

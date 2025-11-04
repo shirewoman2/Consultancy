@@ -15,6 +15,7 @@ make_simulation_directory(
   include_possible_obsfiles = TRUE,
   obsfile_path_option = "full path",
   figure_and_table_assignment = NA,
+  include_related_filetypes = FALSE,
   report_progress = "no",
   save_table = NA,
   overwrite = "ask"
@@ -31,10 +32,11 @@ working directory is the top level of your project folder.}
   \code{existing_exp_details}. Options are:
   \describe{
 
-  \item{"recursive" (default)}{all .xlsx, .db, or .wksz files in the current folder and any
-  subfolders}
+  \item{"recursive" (default)}{all .xlsx, .db, .wksz and, if requested, all
+  .sft, .siva, .cvbe, or .phxproj files in the current folder and any subfolders}
 
-  \item{NA}{all .xlsx, .db, or .wksz files in the current folder}
+  \item{NA}{all .xlsx, .db, .wksz and, if requested, all .sft, .siva, .cvbe, or .phxproj files in
+  the current folder}
 
   \item{a single text string such as "dev"}{include any files in the current
   folder or any folders below it that have that specific text}
@@ -101,6 +103,11 @@ Table 1", "Figure 3", "Figure 4", "Table 2"))} The output from running
 \code{\link{find_report_files}} will work great here. Any simulations that
 are not present in your simulation directory will be ignored.}
 
+\item{include_related_filetypes}{TRUE or FALSE (default) for whether to
+include other possibly related file types in the directory. In addition to
+workspaces and Excel or database files, these would be files with
+extensions .sft, .siva, .cvbe, or .phxproj.}
+
 \item{report_progress}{"yes", "no" (default), or "some" for whether to report
 progress on reading workspaces to find observed XML overlay files. This
 only applies when you have set \code{search_workspaces_for_obsfile} to
@@ -133,8 +140,8 @@ The function \code{make_simulation_directory} will create a
 
   This is wicked fast.*
 
-  *Caveat: Unless you search all the workspaces for XML observed overlay data files. Then it
-  takes about 2 seconds per simulation.
+  *Caveat: Unless you search all the workspaces for XML observed overlay
+  data files. Then it takes about 2 seconds per simulation.
 }
 \examples{
 make_simulation_directory(

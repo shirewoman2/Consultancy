@@ -120,6 +120,13 @@ save_table_to_Word <- function(
       highlight_so_colors = NA, 
       highlight_gmr_colors = NA){
    
+   # Check whether tidyverse is loaded
+   if("package:tidyverse" %in% search() == FALSE){
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
+   }
+      
    # PKtable needs to have the following columns to get saved w/pksummarymult Rmd file:
    # File
    # Statistic -- must contain "S/O" if you want "observed" to show up in table headings

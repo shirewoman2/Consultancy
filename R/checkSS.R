@@ -130,9 +130,11 @@ checkSS <- function(ct_dataframe,
    
    # Check whether tidyverse is loaded
    if("package:tidyverse" %in% search() == FALSE){
-      stop("The SimcypConsultancy R package also requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run `library(tidyverse)` and then try again.")
+      stop(paste0(wrapn("The SimcypConsultancy R package requires the package tidyverse to be loaded, and it doesn't appear to be loaded yet. Please run"), 
+                  "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
+           call. = FALSE)
    }
-   
+      
    if(nrow(ct_dataframe) == 0){
       stop(wrapn("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows."), 
            call. = FALSE)
@@ -262,7 +264,10 @@ checkSS <- function(ct_dataframe,
    # Noting whether perpetrator present and what it is
    MyPerpetrator <- unique(ct_dataframe$Inhibitor[ct_dataframe$Inhibitor != "none"])
    
-   if(length(MyPerpetrator) > 0){
+   if(length(MyPerpetrator) > 1){
+      stop(wrapn("Your data has more options for perpetrators than we were expecting. We were expecting the column 'Inhibitor' to contain just 2 values (one for baseline and one for the DDI scenario), and it contains more than that. Please check your data and try again."), 
+           call. = FALSE)
+   } else if(length(MyPerpetrator) > 0){
       ct_dataframe <- ct_dataframe %>%
          mutate(Inhibitor = factor(Inhibitor, levels = c("none", MyPerpetrator)))
    }
@@ -421,17 +426,28 @@ checkSS <- function(ct_dataframe,
       
    }
    
-   # Setting order of legend items 
-   G <- G + 
-      guides(alpha = guide_legend(order = 1, 
-                                  override.aes =
-                                     list(linetype = c("blank", "solid"),
-                                          shape = c(16, NA),
-                                          size = c(2, 0.5),
-                                          color = c("#7030A0", "gray50"))), 
-             color = guide_legend(order = 2),
-             linetype = guide_legend(order = 3)) +
-      theme(axis.title = element_text(face = "plain"))
+   # Setting order of legend items. Need to adjust things slightly if overlay
+   # compound is the same as the accumulation compound.
+   if(accum_compoundID == overlay_compoundID){
+      G <- G + 
+         guides(alpha = "none", 
+                color = guide_legend(order = 2),
+                linetype = guide_legend(order = 3)) +
+         theme(axis.title = element_text(face = "plain"))
+      
+   } else {
+      G <- G + 
+         guides(alpha = guide_legend(order = 1, 
+                                     override.aes =
+                                        list(linetype = c("blank", "solid"),
+                                             shape = c(16, NA),
+                                             size = c(2, 0.5),
+                                             color = c("#7030A0", "gray50"))), 
+                color = guide_legend(order = 2),
+                linetype = guide_legend(order = 3)) +
+         theme(axis.title = element_text(face = "plain"))
+      
+   }
    
    if(complete.cases(graph_title) & 
       "data.frame" %in% class(sim_enz_dataframe) == FALSE){
