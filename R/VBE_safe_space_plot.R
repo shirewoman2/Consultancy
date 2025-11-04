@@ -185,7 +185,7 @@ VBE_safe_space_plot <- function(VBE_dataframe,
                   "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-      
+   
    if(all(is.na(color_set))){
       color_set <- "rainbow"
    }
@@ -258,7 +258,8 @@ VBE_safe_space_plot <- function(VBE_dataframe,
    SSPolygon <- split(SSPolygon, f = SSPolygon$Limit)
    SSPolygon$lower <- SSPolygon$lower %>% arrange(Time)
    SSPolygon$upper <- SSPolygon$upper %>% arrange(desc(Time))
-   SSPolygon <- bind_rows(SSPolygon)
+   SSPolygon <- bind_rows(SSPolygon) %>% 
+      mutate(MyFill = "Safe space")
    
    Ncol <- sort(unique(VBE_dataframe$Type)) %>% length()
    color_set <- make_color_set(color_set = color_set, 
@@ -279,17 +280,14 @@ VBE_safe_space_plot <- function(VBE_dataframe,
                aes(x = Time, 
                    y = Dissolution, 
                    color = Type, 
-                   fill = "Safe space", 
                    shape = SorO, 
                    linetype = SorO, 
                    linewidth = SorO, 
                    size = SorO)) +
       geom_polygon(data = SSPolygon,
-                   aes(x = Time, y = Dissolution),
-                   fill = safe_space_color,
+                   aes(x = Time, y = Dissolution, fill = MyFill),
                    alpha = safe_space_trans,
                    show.legend = TRUE,
-                   key_glyph = draw_key_rect,
                    inherit.aes = F) +
       geom_line() +
       geom_point() +

@@ -28,7 +28,7 @@ You can install the SimcypConsultancy package from GitHub like this:
     devtools::install_github(repo = "shirewoman2/Consultancy", 
                              upgrade = "never")
 
-Current version: 4.9.0
+Current version: 4.9.5
 
 **NOTE:** The SimcypConsultancy package requires that you have tidyverse
 loaded.
