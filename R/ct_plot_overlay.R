@@ -605,7 +605,7 @@ ct_plot_overlay <- function(ct_dataframe,
                   "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-      
+   
    if(nrow(ct_dataframe) == 0){
       stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
            call. = FALSE)
@@ -1909,6 +1909,15 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    MyPerpetrator <- sort(MyPerpetrator)
    MyPerpetrator <- factor(MyPerpetrator, levels = MyPerpetrator)
+   
+   DDI <- (unique(ct_dataframe$CompoundID) %in% AllCompounds$CompoundID[
+      AllCompounds$DDIrole == "victim"] | 
+         EnzPlot) & 
+      all(unique(ct_dataframe$Inhibitor) %in% "none") == FALSE &
+      # If they requested a plot of the substrate with inhibitor and NOT both
+      # baseline AND with inhibitor, then this is not a regular DDI plot and
+      # should not be labeled as DDI here.
+      length(unique(ct_dataframe$Inhibitor)) != 1
    
    # Making linetype_column and colorBy_column factor data. This will prevent
    # errors w/mapping to color b/c ggplot expects only categorical data for

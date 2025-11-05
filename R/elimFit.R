@@ -55,8 +55,8 @@
 #'   numeric vector of weights to use or choose from "1/x", "1/x^2", "1/y" or
 #'   "1/y^2". If left as NULL, no weighting scheme will be used. Be careful that
 #'   you don't have any infinite values or this will fail!
-#' @param returnRSS TRUE or FALSE for whether to resturn the residual sum of
-#'   squares. If set to TRUE, this will be the last column of the output
+#' @param returnRSS TRUE or FALSE (default) for whether to return the residual
+#'   sum of squares. If set to TRUE, this will be the last column of the output
 #'   data.frame where all rows = the residual sum of squares. (I wanted the
 #'   output to still be a data.frame, so that's the place I could think of to
 #'   put it.)
@@ -73,6 +73,8 @@
 #'   sampling of starting values and thus a higher likelihood of the fit
 #'   converging. However, it also means more processing time.
 #' @param graph TRUE or FALSE for whether to create a graph of the data
+#' @param returnAIC TRUE or FALSE (default) for whether to return the AIC along
+#'   with the estimates for the betas
 #'
 #' @return Returns a data.frame of the coefficients or returns a list containing
 #'   whatever combination the user has specified of: \describe{\item{DataUsed}{A
@@ -155,7 +157,7 @@
 #'
 #'
 #' @export
-#'
+#' 
 
 elimFit <- function(DF, 
                     concentration = Concentration,
@@ -167,6 +169,7 @@ elimFit <- function(DF,
                     returnDataUsed = FALSE,
                     weights = NULL,
                     returnRSS = FALSE,
+                    returnAIC = FALSE, 
                     useNLS_outnames = TRUE,
                     maxiter = 50,
                     graph = FALSE){
@@ -553,6 +556,11 @@ elimFit <- function(DF,
    # adding that to the output data.frame.
    if(returnRSS & !is.null(Fit) & class(Fit) == "nls"){
       Estimates$RSS <- as.numeric(Fit$m$deviance())
+   }
+   
+   # likewise with the AIC
+   if(returnAIC & !is.null(Fit) & class(Fit) == "nls"){
+      Estimates$AIC <- AIC(Fit)
    }
    
    # Adjusting the final output to only contain the results requested.

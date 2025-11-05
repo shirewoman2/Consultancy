@@ -15,6 +15,7 @@ elimFit(
   returnDataUsed = FALSE,
   weights = NULL,
   returnRSS = FALSE,
+  returnAIC = FALSE,
   useNLS_outnames = TRUE,
   maxiter = 50,
   graph = FALSE
@@ -79,11 +80,14 @@ numeric vector of weights to use or choose from "1/x", "1/x^2", "1/y" or
 "1/y^2". If left as NULL, no weighting scheme will be used. Be careful that
 you don't have any infinite values or this will fail!}
 
-\item{returnRSS}{TRUE or FALSE for whether to resturn the residual sum of
-squares. If set to TRUE, this will be the last column of the output
+\item{returnRSS}{TRUE or FALSE (default) for whether to return the residual
+sum of squares. If set to TRUE, this will be the last column of the output
 data.frame where all rows = the residual sum of squares. (I wanted the
 output to still be a data.frame, so that's the place I could think of to
 put it.)}
+
+\item{returnAIC}{TRUE or FALSE (default) for whether to return the AIC along
+with the estimates for the betas}
 
 \item{useNLS_outnames}{TRUE or FALSE for whether to use the standard output
 coeffecient names that come with the nls or nls2 functions, e.g.,

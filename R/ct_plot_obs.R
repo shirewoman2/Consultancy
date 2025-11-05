@@ -441,7 +441,7 @@ ct_plot_obs <- function(ct_dataframe,
                   "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-      
+   
    if(nrow(ct_dataframe) == 0){
       stop("Please check your input. The data.frame you supplied for ct_dataframe doesn't have any rows.", 
            call. = FALSE)
@@ -477,8 +477,10 @@ ct_plot_obs <- function(ct_dataframe,
    ct_dataframe <- ct_dataframe %>% filter(Simulated == FALSE)
    
    if(any(complete.cases(nominal_times))){
-      nominal_times <- as.numeric(nominal_times)
-      ct_dataframe$Time <- centerBin(ct_dataframe$Time, breaks = nominal_times)
+      nominal_times <- as.numeric(nominal_times[complete.cases(nominal_times)])
+      ct_dataframe$Time_nominal <- centerBin(ct_dataframe$Time, breaks = nominal_times)
+   } else {
+      ct_dataframe$Time_nominal <- ct_dataframe$Time
    }
    
    if(str_detect(mean_type, "only")){
@@ -488,6 +490,14 @@ ct_plot_obs <- function(ct_dataframe,
       obs_line_trans <- 0
    } 
    
+   # Need to remove extraneous columns or it messes things up down the line
+   ct_dataframe <- ct_dataframe %>% 
+      select(any_of(c(bind_rows(ObsColNames) %>% pull(ColName) %>% unique(), 
+                      NSEcols, "Compound", "Simulated", "Inhibitor", "ObsFile",
+                      "IndivOrAgg", "Tissue", "Trial", "Dose_sub", "Dose_inhib", 
+                      "Dose_inhib2", "DoseNum", "Time_nominal", 
+                      "Time_units", "Conc_units")))
+   
    if(any(c("obs mean", "obs geomean") %in% ct_dataframe$Trial == FALSE) & 
       mean_type != "none"){
       
@@ -496,9 +506,14 @@ ct_plot_obs <- function(ct_dataframe,
       GroupingCols <- setdiff(
          names(ct_dataframe), 
          
-         map(.x = ObsColNames, 
-             .f = \(x) x %>% filter(VariesWithIndividual == TRUE) %>%
-                pull(ColName)) %>% unlist() %>% unique())
+         c(map(.x = ObsColNames, 
+               .f = \(x) x %>% filter(VariesWithIndividual == TRUE) %>%
+                  pull(ColName)) %>% unlist() %>% unique(), 
+           # NB: Including Time here b/c it is not set as something that varies
+           # w/individual b/c sometimes the column "Time" could contain actual
+           # times or it could contain nominal times. Setting this here to
+           # remove any individual times and only group by nominal times.
+           "Time"))
       
       suppressMessages(
          CTagg <- ct_dataframe %>% 
@@ -513,12 +528,14 @@ ct_plot_obs <- function(ct_dataframe,
                                     "arithmetic" = mean(Conc, na.rm = T), 
                                     "geometric" = gm_mean(Conc), 
                                     "median" = median(Conc, na.rm = T))) %>% 
+            ungroup() %>% 
             mutate(Trial = switch(mean_type, 
                                   "arithmetic" = "mean", 
                                   "geometric" = "geomean", 
                                   "median" = "median"), 
                    IndivOrAgg = "aggregate", 
-                   Individual = "obs mean")
+                   Individual = "obs mean") %>% 
+            rename(Time = Time_nominal)
       )
       
       ct_dataframe <- bind_rows(ct_dataframe, CTagg)
@@ -547,6 +564,25 @@ ct_plot_obs <- function(ct_dataframe,
    
    # Need no NA values here
    ct_dataframe$Compound[is.na(ct_dataframe$Compound)] <- "UNKNOWN COMPOUND"
+   
+   # Setting the colors so that the aggregate data are black. 
+   if(as_label(colorBy_column) == "Individual"){
+      color_set <- c(
+         make_color_set(color_set = color_set, 
+                        num_colors = length(unique(
+                           ct_dataframe %>% pull(!!colorBy_column))) - 1), 
+         "black")
+   } else if(as_label(colorBy_column) != "<empty>"){
+      
+      color_set <- 
+         make_color_set(color_set = color_set, 
+                        num_colors = length(unique(
+                           ct_dataframe %>% pull(!!colorBy_column))))
+   } else {
+      
+      color_set <- "black"
+      
+   }
    
    # Including hacks to make this work
    ct_plot_overlay(

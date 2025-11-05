@@ -91,7 +91,8 @@ make_color_set <- function(color_set,
                   "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-      
+   
+   color_set_orig <- color_set
    
    # Main body of function ----------------------------------------------------
    
@@ -197,8 +198,11 @@ make_color_set <- function(color_set,
       # have to add the [1:num_colors] bit.
       
       if(any(is.na(MyColors))){
-         warning("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow` for now.\n", 
-                 call. = FALSE)
+         
+         if(tolower(color_set_orig)[1] != "default"){
+            warning(wrapn("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow`."), 
+                    call. = FALSE)
+         }
          
          MyColors <- rainbow(num_colors)
       }
