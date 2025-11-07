@@ -928,8 +928,6 @@ demog_plot <- function(demog_dataframe,
    # NB: theme(legend.position... must be inside plot_annotation or ALL of the
    # possible legends will show up.
    
-   `&` <- patchwork:::`&.gg`
-   
    # FIXME: When the patchwork package is not attached, I'm getting a warning
    # that annotation$theme is not a valid theme. Not sure what to make of that.
    # It doesn't go away when I use ggplot2::theme, either.

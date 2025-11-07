@@ -25,13 +25,11 @@ requested. If set to NA, no file will be saved.}
 a data.frame of pdf table content
 }
 \description{
-\code{pdf_to_csv} takes as input a pdf file and a page number and converts
-that to a data.frame and, optionally, saves that to a csv file. This can be
-useful for getting client-supplied data into a useful format. NOTE: This
-requires the package pdftools, which you may have to download and install
-with \code{install.packages("pdftools")}. You only have to do that once.
-}
-\examples{
-# No examples yet.
+\code{pdf_to_csv} takes as input a pdf file and a page number
+and converts that to a data.frame and, optionally, saves that to a csv file.
+This can be useful for getting client-supplied data into a useful format.
 
+NOTE: This requires the package pdftools, which you may have to download and
+install with \code{install.packages("pdftools")}. You only have to do that
+once.
 }
