@@ -1,10 +1,12 @@
 #' Convert a page from a pdf file to a csv file
 #'
-#' \code{pdf_to_csv} takes as input a pdf file and a page number and converts
-#' that to a data.frame and, optionally, saves that to a csv file. This can be
-#' useful for getting client-supplied data into a useful format. NOTE: This
-#' requires the package pdftools, which you may have to download and install
-#' with \code{install.packages("pdftools")}. You only have to do that once.
+#' @description \code{pdf_to_csv} takes as input a pdf file and a page number
+#' and converts that to a data.frame and, optionally, saves that to a csv file.
+#' This can be useful for getting client-supplied data into a useful format.
+#' 
+#' NOTE: This requires the package pdftools, which you may have to download and
+#' install with \code{install.packages("pdftools")}. You only have to do that
+#' once.
 #'
 #' @param pdf_file the pdf file you want to read, in quotes, e.g.,
 #'   \code{pdf_file = "Table data that I want to graph but is in pdf form.pdf"}
@@ -20,9 +22,6 @@
 #'
 #' @return a data.frame of pdf table content
 #' @export
-#'
-#' @examples
-#' # No examples yet.
 #' 
 pdf_to_csv <- function(pdf_file, 
                        page, 
@@ -47,12 +46,18 @@ pdf_to_csv <- function(pdf_file,
         pdf_file <- paste0(pdf_file, ".pdf")
     }
     
-    # if(length(page) > 1){
-    #     warning("The function pdf_to_csv can only accommodate one page at a time (at least for now), and you have supplied more than one value. We'll only use the first value.", 
-    #             call. = FALSE)
-    #     page <- page[1]
-    # }
-    
+   if(length(find.package("pdftools", quiet = TRUE)) == 0){
+      message(paste0("\n", wrapn("The function pdf_to_csv requires the package pdftools, which you do not have.")))
+      Install <- readline(prompt = "Is it ok to install pdftools for you? (y or n)   ")
+      
+      if(tolower(str_sub(Install, 1, 1)) == "y"){
+         install.packages("pdftools")
+      } else {
+         stop(wrapn("Ok, we will not install pdftools for you, but we cannot proceed."), 
+              call. = FALSE)
+      }
+   }
+   
     # Ignore any NA values in the page numbers.
     page <- page[complete.cases(page)]
     

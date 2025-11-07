@@ -212,6 +212,13 @@ extractInputTab <- function(deets = "all",
          assign("InputDeets_DF", InputDeets_DF, envir = parent.frame())
       }
       
+      # MoleculeType may be NA b/c "Molecule Type" is not found. I think that
+      # will only happen for small molecules that are not the substrate.
+      if(str_detect(deet, "MoleculeType") & 
+         length(Val) == 0 & !str_detect(deet, "_sub$")){
+         Val <- "Small Molecule"
+      }
+      
       suppressWarnings(
          Val <- switch(InputDeets_DF$Class[InputDeets_DF$Detail == deet], 
                        "character" = as.character(Val),
