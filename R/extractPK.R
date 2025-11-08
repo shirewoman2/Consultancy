@@ -2179,6 +2179,26 @@ extractPK <- function(sim_data_file,
                          "Median", "Minimum", "Maximum")))
    )
    
+   # For regional ADAM fractions, need to adjust the tissue to what it
+   # *actually* was b/c the argument tissue is ignored for that.
+   Out_agg <- Out_agg %>% 
+      mutate(
+         Tissue = case_when(
+            str_detect(PKparameter, "^fa_|^fm_") ~ 
+               str_extract(PKparameter, "colon|duodenum|ileum(I){1,3}V?|jejunum(I){1,2}"), 
+            .default = Tissue), 
+         Tissue = str_replace(Tissue, "ileumI", "ileum I"), 
+         Tissue = str_replace(Tissue, "jejunumI", "jejunum I"))
+   
+   Out_ind <- Out_ind %>% 
+      mutate(
+         Tissue = case_when(
+            str_detect(PKparameter, "^fa_|^fm_") ~ 
+               str_extract(PKparameter, "colon|duodenum|ileum(I){1,3}V?|jejunum(I){1,2}"), 
+            .default = Tissue), 
+         Tissue = str_replace(Tissue, "ileumI", "ileum I"), 
+         Tissue = str_replace(Tissue, "jejunumI", "jejunum I"))
+   
    Out <- list("individual" = Out_ind,
                "aggregate" = Out_agg, 
                "TimeInterval" = TimeInterval)

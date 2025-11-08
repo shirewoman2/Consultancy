@@ -203,7 +203,7 @@ fm_treemap <- function(fm_dataframe,
    
    # Adding labels 
    fm_dataframe <- fm_dataframe %>% 
-      rename(DME = !!pathway_column,
+      mutate(DME = !!pathway_column,
              fm = !!fm_column)
    
    if("PerpPresent" %in% names(fm_dataframe)){
