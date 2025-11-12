@@ -175,7 +175,8 @@ heading. If you would like to add a horizontal line every time the data set
 changes, e.g., this is a PK table and you want a line every time there's a
 different simulation, tissue, compound, etc. but not every time there's a
 different statistic, set this to "when dataset changes", which is the
-default.}
+default. You can also say "every X rows" where X is the number of rows
+until you want the next horizontal line.}
 
 \item{font}{font to use. Default is "Arial" and any fonts available on your
 machine in either Word or PowerPoint should be acceptable. If you get Times

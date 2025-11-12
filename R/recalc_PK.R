@@ -893,6 +893,7 @@ recalc_PK <- function(ct_dataframe,
          }
          
          if("Estimates" %in% names(TEMP) && 
+            "k" %in% TEMP$Estimates$Beta &&
             TEMP$Estimates$Estimate[TEMP$Estimates$Beta == "k"] > 0){
             ElimFits[[j]] <- TEMP$Estimates
             ExtrapProbs <- FALSE

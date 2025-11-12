@@ -873,10 +873,11 @@ ct_plot_overlay <- function(ct_dataframe,
    if(any(complete.cases(time_units_to_use))){
       time_units_to_use <- tolower(time_units_to_use[1])
       if(time_units_to_use %in% c("hours", "minutes", "days", "weeks") == FALSE){
-         warning(wrapn(paste0("You requested that the graph have time units of `", 
-                              time_units_to_use, 
-                              "`, which is not among the acceptable options. We'll use hours instead.")), 
-                 call. = FALSE)
+         warning(wrapn(paste0(
+            "You requested that the graph have time units of '", 
+            time_units_to_use, 
+            "', which is not among the acceptable options. We'll use hours instead.")), 
+            call. = FALSE)
          time_units_to_use <- "hours"
       }
    }
@@ -886,10 +887,11 @@ ct_plot_overlay <- function(ct_dataframe,
       if(conc_units_to_use %in% c("mg/L", "mg/mL", "µg/L", "ug/L", "µg/mL", 
                                   "ug/mL", "ng/L", "ng/mL", "µM", "uM", 
                                   "nM") == FALSE){
-         warning(wrapn(paste0("You requested that the graph have concentration units of `", 
-                              conc_units_to_use, 
-                              "`, which is not among the acceptable options. We'll use ng/mL instead.")), 
-                 call. = FALSE)
+         warning(wrapn(paste0(
+            "You requested that the graph have concentration units of '", 
+            conc_units_to_use, 
+            ", which is not among the acceptable options. We'll use ng/mL instead.")), 
+            call. = FALSE)
          conc_units_to_use <- "ng/mL"
       }
    }
@@ -924,14 +926,17 @@ ct_plot_overlay <- function(ct_dataframe,
    # statement at some point?
    
    ct_dataframe <- ct_dataframe %>% 
-      mutate(IndivOrAgg = case_when(Simulated == FALSE ~ NA, 
-                                    Simulated == TRUE & Trial %in% 
-                                       c("mean", "median",
-                                         "geomean", 
-                                         "per5", "per95", "per10", "per90", 
-                                         "trial mean", "trial geomean", 
-                                         "trial median") ~ "aggregate", 
-                                    .default = "individual"))
+      mutate(IndivOrAgg = case_when(
+         # NB: This does NOT affect data from the ct_plot_obs function b/c those
+         # data are hacked to have Simulated = TRUE.
+         Simulated == FALSE ~ NA, 
+         Simulated == TRUE & Trial %in% 
+            c("mean", "median",
+              "geomean", 
+              "per5", "per95", "per10", "per90", 
+              "trial mean", "trial geomean", 
+              "trial median") ~ "aggregate", 
+         .default = "individual"))
    
    ct_dataframe <- ct_dataframe %>% 
       filter(Simulated == FALSE |
@@ -944,19 +949,14 @@ ct_plot_overlay <- function(ct_dataframe,
    }
    
    # Noting whether the tissue was from an ADAM model
-   ADAM <- any(unique(ct_dataframe$Tissue) %in% c("stomach", "duodenum", "jejunum I",
-                                                  "jejunum II", "ileum I", "ileum II",
-                                                  "ileum III", "ileum IV", "colon", 
-                                                  "faeces", "gut tissue",
-                                                  "cumulative absorption", 
-                                                  "cumulative dissolution")) &
+   ADAM <- any(unique(ct_dataframe$Tissue) %in%
+                  unique(AllTissues$Tissue[AllTissues$ModelType == "ADAM"])) &
       EnzPlot == FALSE
    
    AdvBrainModel <- "Tissue_subtype" %in% names(ct_dataframe) && 
       (any(ct_dataframe$Tissue == "brain") &
           any(ct_dataframe$Tissue_subtype %in% 
-                 c("intracranial", "brain ICF", "brain ISF", "spinal CSF", "cranial CSF", 
-                   "total brain", "Kp,uu,brain", "Kp,uu,ICF", "Kp,uu,ISF")))
+                 unique(AllTissues$Tissue_subtype[AllTissues$Tissue == "brain"])))
    
    # Noting user's original preferences for a few things
    obs_line_trans_user <- obs_line_trans
@@ -988,17 +988,18 @@ ct_plot_overlay <- function(ct_dataframe,
    # Dose normalizing concs if requested
    if(normalize_by_dose){
       if(ADAM){
-         warning(paste0(str_wrap("You requested a dose-normalized concentration-time plot, but you are plotting ADAM-model concentrations, and we haven't set this up yet for ADAM-model concentrations. We won't be able to give you the dose-normalized plot here, but please tell Laura Shireman if this is an option you would like to have."), 
-                        "\n"), 
-                 call. = FALSE)
+         warning(wrapn(
+            "You requested a dose-normalized concentration-time plot, but you are plotting ADAM-model concentrations, and we haven't set this up yet for ADAM-model concentrations. We won't be able to give you the dose-normalized plot here, but please tell Laura Shireman if this is an option you would like to have."), 
+            call. = FALSE)
          
          normalize_by_dose <- FALSE
+         
       } else if(EnzPlot){
-         warning(paste0(str_wrap("You requested a dose-normalized concentration-time plot, but you are plotting enzyme abundances, which don't make sense to dose-normalize. We won't be able to give you the dose-normalized plot here."), 
-                        "\n"), 
+         warning(wrapn("You requested a dose-normalized concentration-time plot, but you are plotting enzyme abundances, which don't make sense to dose-normalize. We won't be able to give you the dose-normalized plot here."), 
                  call. = FALSE)
          
          normalize_by_dose <- FALSE
+         
       } else if(all(c("Dose_sub", "Dose_inhib", "Dose_inhib2") %in% 
                     names(ct_dataframe))){
          ct_dataframe <- ct_dataframe %>% 
@@ -1014,11 +1015,11 @@ ct_plot_overlay <- function(ct_dataframe,
          
       } else if(all(c("Dose_sub", "Dose_inhib", "Dose_inhib2") %in% 
                     names(ct_dataframe)) == FALSE){
-         warning(paste0(str_wrap("You requested a dose-normalized concentration-time plot, but your data do not contain the columns 'Dose_sub', 'Dose_inhib', and 'Dose_inhib2', and we need those to normalize the data. We won't be able to give you the dose-normalized plot here."), 
-                        "\n"), 
+         warning(wrapn("You requested a dose-normalized concentration-time plot, but your data do not contain the columns 'Dose_sub', 'Dose_inhib', and 'Dose_inhib2', and we need those to normalize the data. We won't be able to give you the dose-normalized plot here."), 
                  call. = FALSE)
          
          normalize_by_dose <- FALSE
+         
       }
    }
    
@@ -1285,6 +1286,16 @@ ct_plot_overlay <- function(ct_dataframe,
       }
    }
    
+   # NB: "none" is a pass-through argument for ct_plot_obs and won't come up
+   # otherwise
+   if(mean_type == "none"){
+      ct_dataframe$Trial <- "mean"
+      mean_type <- "arithmetic"
+      MeanTypeWasNone <- TRUE
+   } else {
+      MeanTypeWasNone <- FALSE
+   }
+   
    MyMeanType <- ct_dataframe %>%
       filter(Trial %in% c("geomean", "mean", "median")) %>% 
       pull(Trial) %>% unique() %>% 
@@ -1294,22 +1305,21 @@ ct_plot_overlay <- function(ct_dataframe,
    if(switch(mean_type, 
              "arithmetic" = "mean", 
              "geometric" = "geomean",
-             # NB: "none" is a pass-through argument for ct_plot_obs and won't
-             # come up for simulated data
-             "none" = "none",
-             "median" = "median") %in% ct_dataframe$Trial == FALSE &
-      mean_type != "none"){
+             "median" = "median") %in% ct_dataframe$Trial == FALSE){
       
-      warning(wrapn(paste0("You requested the ", 
-                           switch(mean_type, "arithmetic" = "arithmetic means",
-                                  "geometric" = "geometric means", 
-                                  "median" = "medians"), 
-                           ", but those are not included in your data. Instead, the ",
-                           ifelse(MyMeanType[1] == "mean", 
-                                  "arithmetic mean", MyMeanType[1]),
-                           "s will be used.")),
-              call. = FALSE)
+      warning(wrapn(paste0(
+         "You requested the ", 
+         switch(mean_type, "arithmetic" = "arithmetic means",
+                "geometric" = "geometric means", 
+                "median" = "medians"), 
+         ", but those are not included in your data. Instead, the ",
+         ifelse(MyMeanType[1] == "mean", 
+                "arithmetic mean", MyMeanType[1]),
+         "s will be used.")),
+         call. = FALSE)
+      
       MyMeanType <- MyMeanType[1] %>% as.character()
+      
       mean_type <-  switch(MyMeanType,
                            "mean" = "arithmetic", 
                            "geomean" = "geometric",
@@ -1351,9 +1361,10 @@ ct_plot_overlay <- function(ct_dataframe,
    } else {
       # for conc-time data
       ct_dataframe <- ct_dataframe %>%
-         unite(col = Group, any_of(c("File", "Trial", "Tissue", "CompoundID",
-                                     "Compound", "Inhibitor", "Individual",
-                                     "colorBy_column", "FC1", "FC2")), 
+         unite(col = Group, 
+               any_of(c("File", "Trial", "Tissue", "Tissue_subtype",
+                        "CompoundID", "Compound", "Inhibitor", "Individual",
+                        "colorBy_column", "FC1", "FC2")), 
                sep = " ", remove = FALSE) %>% 
          mutate(CompoundID = factor(CompoundID,
                                     levels = AllCompounds$CompoundID)) 
@@ -1368,11 +1379,16 @@ ct_plot_overlay <- function(ct_dataframe,
       sim_dataframe <- ct_dataframe %>%
          filter(Simulated == TRUE &
                    Trial %in% 
-                   switch(figure_type, 
-                          "means only" = MyMeanType, 
-                          "trial means" = unique(ct_dataframe$Trial),
-                          "percentiles" = c(MyMeanType, "per5", "per95"),
-                          "percentile ribbon" = c(MyMeanType, "per5", "per95")))
+                   switch(
+                      figure_type, 
+                      "means only" = 
+                         switch(
+                            as.character(MyMeanType == "none"), 
+                            "TRUE" = unique(ct_dataframe$Trial), 
+                            "FALSE" = MyMeanType), 
+                      "trial means" = unique(ct_dataframe$Trial),
+                      "percentiles" = c(MyMeanType, "per5", "per95"),
+                      "percentile ribbon" = c(MyMeanType, "per5", "per95")))
       
       obs_dataframe <- ct_dataframe %>% filter(Simulated == FALSE) %>% 
          mutate(Trial = {MyMeanType})
@@ -1754,13 +1770,14 @@ ct_plot_overlay <- function(ct_dataframe,
       as_label(colorBy_column) != as_label(linetype_column) &&
       length(unique(sim_dataframe$linetype_column)) > 1 & 
       length(unique(linetypes)) == 1){
-      warning(paste0("There are ", length(unique(sim_dataframe$linetype_column)),
-                     " unique values in the column ", as_label(linetype_column),
-                     ", but you have only requested ", 
-                     length(unique(linetypes)), " linetype(s): ", 
-                     str_comma(unique(linetypes)), 
-                     ". You may get a more interpretable graph if you specify more values for the argument 'linetypes'.\n"),
-              call. = FALSE)
+      warning(wrapn(paste0(
+         "There are ", length(unique(sim_dataframe$linetype_column)),
+         " unique values in the column ", as_label(linetype_column),
+         ", but you have only requested ", 
+         length(unique(linetypes)), " linetype(s): ", 
+         str_comma(unique(linetypes)), 
+         ". You may get a more interpretable graph if you specify more values for the argument 'linetypes'.")),
+         call. = FALSE)
    }
    
    # Some of the options inherited from ct_plot depend on there being just one
@@ -3115,6 +3132,13 @@ ct_plot_overlay <- function(ct_dataframe,
                               vline_position = vline_position, 
                               hline_style = hline_style, 
                               vline_style = vline_style)
+   
+   if(MeanTypeWasNone){
+      # this is from ct_plot_obs
+      FigText$caption <- 
+         sub(" The line represents the arithmetic mean data for the simulated population .n = ..XXX....", 
+             "", FigText$caption)
+   }
    
    
    # Saving ----------------------------------------------------------------
