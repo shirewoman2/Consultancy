@@ -1,18 +1,18 @@
-#' Extract fu,plasma values that change with time from a Simulator output Excel
-#' file. UNDER CONSTRUCTION!
+#' Extract fu,plasma values that change with concentration or with time from a
+#' Simulator output Excel file. UNDER CONSTRUCTION.
 #'
-#' \code{extract_fu} extracts the time-dependent fraction unbound in plasma from
-#' a simulator output Excel file. A tab named something like "fu Profile (Sub)"
-#' must be present. This currently only extracts data for the substrate, but if
-#' you have an example with a different compound, please talk to Laura Shireman.
-#' UNDER CONSTRUCTION!
+#' @description \code{extract_fu} extracts the fraction unbound in plasma from a
+#' simulator output Excel file. A tab named something like "fu Profile (Sub)"
+#' must be present. 
+#' 
+#' \itemize{\item{This currently only extracts data for the substrate, but if
+#' you have an example with a different compound, please talk to Laura Shireman.}
+#' 
+#' \item{This has only been set up for baseline simulations without 
+#' perpetrators. Please tell Laura Shireman if you need a DDI version.}}
 #'
 #' @param sim_data_files the Simcyp Simulator Excel results files containing the
 #'   simulated time-dependent fu data, in quotes
-#' @param returnAggregateOrIndiv Return aggregate and/or individual simulated fu
-#'   data? Options are "individual", "aggregate", or "both" (default).
-#'   Aggregated data are not calculated here but are pulled from the simulator
-#'   output rows labeled as "mean".
 #' @param existing_exp_details If you have already run
 #'   \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
 #'   get all the details from the "Input Sheet" (e.g., when you ran
@@ -25,13 +25,10 @@
 #' @return a data.frame
 #'
 #' @export
-#' @examples
-#' # None yet
 #' 
 
 
 extract_fu <- function(sim_data_files,
-                       returnAggregateOrIndiv = "both", 
                        existing_exp_details = NA){
    
    # Error catching --------------------------------------------------------------------
@@ -42,9 +39,24 @@ extract_fu <- function(sim_data_files,
                   "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-      
-   # If they didn't include ".xlsx" at the end, add that.
-   sim_data_files <- paste0(sub("\\.wksz$|\\.dscw$|\\.xlsx$", "", sim_data_files), ".xlsx")
+   
+   # If user did not supply files, then extract all the files in the current
+   # folder that end in "xlsx" or in all subfolders if they wanted it to be
+   # recursive.
+   if(length(sim_data_files) == 1 &&
+      (is.na(sim_data_files) | sim_data_files == "recursive")){
+      sim_data_files <- list.files(pattern = "\\.xlsx$",
+                                   recursive = (complete.cases(sim_data_files) &&
+                                                   sim_data_files == "recursive"))
+      sim_data_files <- sim_data_files[!str_detect(sim_data_files, "^~")]
+   }
+   
+   # If they didn't include ".xlsx" at the end of the file name, add "xlsx".
+   MissingExt <- which(str_detect(sim_data_files, "\\.xlsx$") == FALSE)
+   sim_data_files[MissingExt] <- 
+      sub("\\.wksz$|\\.dscw$", ".xlsx", sim_data_files[MissingExt])
+   
+   sim_data_files <- unique(sim_data_files)
    
    # Checking for file name issues
    CheckFileNames <- check_file_name(sim_data_files)
@@ -54,13 +66,6 @@ extract_fu <- function(sim_data_files,
       warning(paste0("The following file names do not meet file-naming standards for the Simcyp Consultancy Team:\n", 
                      str_c(paste0("     ", BadFileNames), collapse = "\n"), "\n"),
               call. = FALSE)
-   }
-   
-   if(any(c(length(returnAggregateOrIndiv) < 1,
-            length(returnAggregateOrIndiv) > 2,
-            any(unique(returnAggregateOrIndiv) %in% c("aggregate", "individual", "both") == FALSE)))) {
-      stop("returnAggregateOrIndiv must be 'aggregate', 'individual', or 'both'.",
-           call. = FALSE)
    }
    
    
@@ -92,21 +97,54 @@ extract_fu <- function(sim_data_files,
       }
       
       if(Deets$PopRepSim == "Yes"){
-         warning(paste0("The simulator file supplied, `", 
-                        sim_data_file, 
-                        "`, is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.\n"),
+         warning(wrapn(paste0("The simulator file supplied, '", 
+                              sim_data_file, 
+                              "', is for a population-representative simulation and thus doesn't have any aggregate data. Please be warned that some plotting functions will not work well without aggregate data.")),
                  call. = FALSE)
       }
       
       # Figuring out which sheet to extract and dealing with case since that
       # apparently changes between Simulator versions.
-      AllSheets <- readxl::excel_sheets(sim_data_file)
-      SheetToExtract <- AllSheets[str_detect(tolower(AllSheets), "fu profile \\(sub\\)")]
+      # Check whether MainDetails includes SheetNames and adding if not
+      if(("SheetNames" %in% names(Deets) &&
+          any(is.na(Deets$SheetNames)) |
+          any(Deets$SheetNames == "`NA`", na.rm = T)) |
+         "SheetNames" %in% names(Deets) == FALSE){
+         
+         for(i in Deets$File){
+            if(file.exists(i) &
+               !str_detect(i, "\\.db$|\\.wksz")){
+               SheetNames <- tryCatch(readxl::excel_sheets(i),
+                                      error = openxlsx::getSheetNames(i))
+            } else { SheetNames <- NA}
+            
+            Deets$SheetNames[
+               Deets$File == i] <-
+               str_c(paste0("`", SheetNames, "`"), collapse = " ")
+            rm(SheetNames)
+         }
+      }
+      
+      # Checking that the file is, indeed, a simulator output file.
+      SheetNames <- gsub("`", "", str_split_1(Deets$SheetNames, "` `"))
+      
+      if(all(c("Input Sheet", "Summary") %in% SheetNames) == FALSE){
+         # Using "warning" instead of "stop" here b/c I want this to be able to
+         # pass through to other functions and just skip any files that
+         # aren't simulator output.
+         warning(wrapn(paste("The file", sim_data_file,
+                             "does not appear to be a Simcyp Simulator output Excel file. We cannot return any information for this file.")), 
+                 call. = FALSE)
+         return(data.frame())
+      }
+      
+      SheetToExtract <- SheetNames[
+         str_detect(tolower(SheetNames), "fu profile \\(sub\\)")]
       
       if(length(SheetToExtract) == 0){
-         warning(paste0("The simulator output file provided, `", 
-                        sim_data_file, 
-                        "``, does not appear to have a sheet titled `Time variance %fu and fe`, which is what we need for extracting dynamic fu and fe values.\n"),
+         warning(wrapn(paste0("The simulator output file provided, '", 
+                              sim_data_file, 
+                              "', does not appear to have a sheet titled 'fu profile (Sub)', which is what we need for extracting dynamic fu values.")),
                  call. = FALSE)
          return(data.frame())
       }
@@ -118,72 +156,95 @@ extract_fu <- function(sim_data_files,
                             col_names = FALSE))
       
       # Extracting aggregate data ---------------------------------------------
-      if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
-         
-         StartRow_agg <- which(sim_data_xl$...1 == "Population Statistics")
-         TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
-         TimeRow <- TimeRow[TimeRow > StartRow_agg][1]
-         
-         # Figuring out which rows contain which data
-         FirstBlank <- intersect(which(is.na(sim_data_xl$...1)),
-                                 which(1:nrow(sim_data_xl) > TimeRow))[1]
-         FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
-         NamesToCheck <- sim_data_xl$...1[TimeRow[1]:(FirstBlank-1)]
-         
-         RowsToUse <- which(str_detect(NamesToCheck, "^fu "))
-         
-         IDs_agg <- data.frame(ColOrig = paste0("V", 1:(length(RowsToUse) + 1)), 
-                               ID = c("Time", NamesToCheck[RowsToUse])) %>% 
-            mutate(Trial = str_trim(str_extract(tolower(ID),
-                                                "(geometric)? mean| 5(th)? percentile| 95(th)? percentile|median")), 
-                   Trial = case_when(Trial == "5th percentile" ~ "per5", 
-                                     Trial == "95th percentile" ~ "per95", 
-                                     Trial == "geometric mean" ~ "geomean",
-                                     TRUE ~ Trial))
-         
-         sim_data_mean <- sim_data_xl[c(TimeRow, RowsToUse + TimeRow - 1), ] %>% 
-            t() %>%
-            as.data.frame() %>% slice(-(1:3)) %>%
-            mutate_all(as.numeric) %>% 
-            rename(Time = V1) %>% 
-            pivot_longer(names_to = "ColOrig", values_to = "fu", 
-                         cols = -Time) %>%
-            left_join(IDs_agg, by = "ColOrig")
-      }
       
+      StartRow_agg <- which(sim_data_xl$...1 == "Population Statistics")
+      TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
+      TimeRow <- TimeRow[TimeRow > StartRow_agg][1]
+      
+      # Figuring out which rows contain which data
+      FirstBlank <- intersect(which(is.na(sim_data_xl$...1)),
+                              which(1:nrow(sim_data_xl) > TimeRow))[1]
+      FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl), FirstBlank)
+      NamesToCheck <- sim_data_xl$...1[TimeRow[1]:(FirstBlank-1)]
+      
+      RowsToUse <- which(str_detect(NamesToCheck, "^fu "))
+      
+      IDs_agg <- data.frame(ColOrig = paste0("V", 1:(length(RowsToUse) + 1)), 
+                            ID = c("Time", NamesToCheck[RowsToUse])) %>% 
+         mutate(Trial = str_trim(str_extract(tolower(ID),
+                                             "(geometric)? mean| 5(th)? percentile| 95(th)? percentile|median")), 
+                Trial = case_when(Trial == "5th percentile" ~ "per5", 
+                                  Trial == "95th percentile" ~ "per95", 
+                                  Trial == "geometric mean" ~ "geomean",
+                                  TRUE ~ Trial))
+      
+      sim_data_mean <- sim_data_xl[c(TimeRow, RowsToUse + TimeRow - 1), ] %>% 
+         t() %>%
+         as.data.frame() %>% slice(-(1:3)) %>%
+         mutate_all(as.numeric) %>% 
+         rename(Time = V1) %>% 
+         pivot_longer(names_to = "ColOrig", values_to = "fu", 
+                      cols = -Time) %>%
+         left_join(IDs_agg, by = "ColOrig")
+      
+      # In V24, it's not obvious which row in the population data is the mean
+      # data (it ends up being the one labeled as just "fu") and it's even less
+      # obvious what kind of summary stat was used. After getting the individual
+      # data, if there is no arithmetic or geometric mean included, calculate
+      # them. 
       
       # Extracting individual data --------------------------------------------
-      if(any(c("individual", "both") %in% returnAggregateOrIndiv)){
-         
-         StartRow_indiv <- which(sim_data_xl$...1 == "Individual Statistics")
-         TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
-         TimeRow <- TimeRow[TimeRow > StartRow_indiv][1]
-         
-         # Figuring out which rows contain which data
-         FirstBlank <- intersect(which(is.na(sim_data_xl$...1)),
-                                 which(1:nrow(sim_data_xl) > TimeRow))[1]
-         FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl) + 1, FirstBlank)
-         
-         RowsToUse <- which(str_detect(sim_data_xl$...1, "^fu$"))
-         RowsToUse <- RowsToUse[RowsToUse > StartRow_indiv & RowsToUse < FirstBlank]
-         
-         IDs_indiv <- data.frame(ColOrig = paste0("V", 1:(length(RowsToUse) + 1)), 
-                                 ID = c("Time", t(sim_data_xl[RowsToUse, 1])), 
-                                 Individual = sim_data_xl[c(TimeRow, RowsToUse), 2], 
-                                 Trial = sim_data_xl[c(TimeRow, RowsToUse), 3]) %>% 
-            rename(Individual = ...2, 
-                   Trial = ...3)
-         
-         sim_data_indiv <- sim_data_xl[c(TimeRow, RowsToUse), ] %>% 
-            t() %>%
-            as.data.frame() %>% slice(-(1:3)) %>%
-            mutate_all(as.numeric) %>% 
-            rename(Time = V1) %>% 
-            pivot_longer(names_to = "ColOrig", values_to = "fu", 
-                         cols = -Time) %>%
-            left_join(IDs_indiv, by = "ColOrig")
-         
-      }
+      
+      StartRow_indiv <- which(sim_data_xl$...1 == "Individual Statistics")
+      TimeRow <- which(str_detect(sim_data_xl$...1, "^Time "))
+      TimeRow <- TimeRow[TimeRow > StartRow_indiv][1]
+      
+      # Figuring out which rows contain which data
+      FirstBlank <- intersect(which(is.na(sim_data_xl$...1)),
+                              which(1:nrow(sim_data_xl) > TimeRow))[1]
+      FirstBlank <- ifelse(is.na(FirstBlank), nrow(sim_data_xl) + 1, FirstBlank)
+      
+      RowsToUse <- which(str_detect(sim_data_xl$...1, "^fu$"))
+      RowsToUse <- RowsToUse[RowsToUse > StartRow_indiv & RowsToUse < FirstBlank]
+      
+      IDs_indiv <- data.frame(ColOrig = paste0("V", 1:(length(RowsToUse) + 1)), 
+                              ID = c("Time", t(sim_data_xl[RowsToUse, 1])), 
+                              Individual = sim_data_xl[c(TimeRow, RowsToUse), 2], 
+                              Trial = sim_data_xl[c(TimeRow, RowsToUse), 3]) %>% 
+         rename(Individual = ...2, 
+                Trial = ...3)
+      
+      sim_data_indiv <- sim_data_xl[c(TimeRow, RowsToUse), ] %>% 
+         t() %>%
+         as.data.frame() %>% slice(-(1:3)) %>%
+         mutate_all(as.numeric) %>% 
+         rename(Time = V1) %>% 
+         pivot_longer(names_to = "ColOrig", values_to = "fu", 
+                      cols = -Time) %>%
+         left_join(IDs_indiv, by = "ColOrig")
+      
+      # Calculating any missing summary stats --------------------------------
+      
+      StatsToCalc <- c("mean", "geomean") %in% 
+         unique(sim_data_mean$Trial) == FALSE
+      names(StatsToCalc) <- c("mean", "geomean")
+      
+      StatsToCalc <- names(StatsToCalc[StatsToCalc == TRUE])
+      
+      TOADD <- sim_data_indiv %>% 
+         group_by(Time) %>% 
+         summarize(mean = mean(fu), 
+                   geomean = gm_mean(fu)) %>% 
+         ungroup() %>% 
+         pivot_longer(cols = -Time, 
+                      names_to = "Trial", 
+                      values_to = "fu") %>% 
+         filter(Trial %in% StatsToCalc)
+      
+      sim_data_mean <- bind_rows(sim_data_mean, 
+                                 TOADD)
+      
+      rm(TOADD)
       
       # Putting everything together ------------------------------------------
       
@@ -192,71 +253,31 @@ extract_fu <- function(sim_data_files,
       
       Data <- list()
       
-      if(any(c("aggregate", "both") %in% returnAggregateOrIndiv)){
-         Data[["agg"]] <- sim_data_mean %>%
-            arrange(Trial, Time)
-      }
+      Data[["agg"]] <- sim_data_mean %>%
+         mutate(IndivOrAgg = "aggregate") %>% 
+         arrange(Trial, Time)
       
-      if(any(c("individual", "both") %in% returnAggregateOrIndiv)){
-         Data[["indiv"]] <- sim_data_indiv %>%
-            mutate(Individual = as.character(Individual),
-                   Trial = as.character(Trial)) %>%
-            arrange(Individual, Time)
-      }
+      Data[["indiv"]] <- sim_data_indiv %>%
+         mutate(Individual = as.character(Individual),
+                Trial = as.character(Trial), 
+                IndivOrAgg = "individual") %>%
+         arrange(Individual, Time)
       
-      Data <- bind_rows(Data)
+      Data <- bind_rows(Data) %>%
+         mutate(Individual = ifelse(is.na(Individual), Trial, Individual), 
+                Simulated = TRUE, 
+                Tissue = "plasma", 
+                Inhibitor = "none")
       
-      if("individual" %in% returnAggregateOrIndiv){
-         Data <- Data %>%
-            mutate(Individual = ifelse(is.na(Individual), Trial, Individual))
-      }
+      Data <- calc_dosenumber(
+         ct_dataframe = Data %>% 
+            rename(Conc = fu) %>% 
+            mutate(File = ff, 
+                   CompoundID = compoundID),
+         existing_exp_details = existing_exp_details) %>% 
+         rename(fu = Conc)
       
-      # Adding DoseNumber so that we can skip extractExpDetails in ct_plot when
-      # the user requests a specific dose.
-      MyIntervals <- 
-         c("substrate" = Deets$DoseInt_sub,
-           "primary metabolite 1" = Deets$DoseInt_sub,
-           "primary metabolite 2" = Deets$DoseInt_sub,
-           "secondary metabolite" = Deets$DoseInt_sub,
-           "inhibitor 1" = ifelse(is.null(Deets$DoseInt_inhib),
-                                  NA, Deets$DoseInt_inhib),
-           "inhibitor 1 metabolite" = ifelse(is.null(Deets$DoseInt_inhib),
-                                             NA, Deets$DoseInt_inhib),
-           "inhibitor 2" = ifelse(is.null(Deets$DoseInt_inhib2),
-                                  NA, Deets$DoseInt_inhib2))
-      
-      MyStartTimes <- 
-         c("substrate" = Deets$StartHr_sub,
-           "primary metabolite 1" = Deets$StartHr_sub,
-           "primarymetabolite 2" = Deets$StartHr_sub,
-           "secondary metabolite" = Deets$StartHr_sub,
-           "inhibitor 1" = ifelse(is.null(Deets$StartHr_inhib), NA,
-                                  Deets$StartHr_inhib),
-           "inhibitor 2" = ifelse(is.null(Deets$StartHr_inhib2), NA,
-                                  Deets$StartHr_inhib2),
-           "inhibitor 1 metabolite" = ifelse(is.null(Deets$StartHr_inhib), NA,
-                                             Deets$StartHr_inhib))
-      
-      MyMaxDoseNum <- 
-         c("substrate" = ifelse(Deets$Regimen_sub == "Single Dose", 
-                                1, Deets$NumDoses_sub),
-           "primary metabolite 1" = ifelse(Deets$Regimen_sub == "Single Dose", 
-                                           1, Deets$NumDoses_sub),
-           "primarymetabolite 2" = ifelse(Deets$Regimen_sub == "Single Dose", 
-                                          1, Deets$NumDoses_sub),
-           "secondary metabolite" = ifelse(Deets$Regimen_sub == "Single Dose", 
-                                           1, Deets$NumDoses_sub),
-           "inhibitor 1" = ifelse(is.null(Deets$NumDoses_inhib), NA,
-                                  ifelse(Deets$Regimen_inhib == "Single Dose", 
-                                         1, Deets$NumDoses_inhib)),
-           "inhibitor 2" = ifelse(is.null(Deets$NumDoses_inhib2), NA,
-                                  ifelse(Deets$Regimen_inhib2 == "Single Dose", 
-                                         1, Deets$NumDoses_inhib2)),
-           "inhibitor 1 metabolite" = ifelse(is.null(Deets$NumDoses_inhib), NA,
-                                             ifelse(Deets$Regimen_inhib == "Single Dose", 
-                                                    1, Deets$NumDoses_inhib)))
-      
-      # Also adding compound name
+      # Adding compound name
       MyCompound <- 
          c("substrate" = Deets$Substrate,
            "primary metabolite 1" = Deets$PrimaryMetabolite1,
@@ -266,97 +287,11 @@ extract_fu <- function(sim_data_files,
            "inhibitor 1 metabolite" = Deets$Inhibitor1Metabolite, 
            "inhibitor 2" = Deets$Inhibitor2)
       
-      # Converting data to numeric while also retaining names
-      suppressWarnings(
-         MyIntervals <- sapply(MyIntervals, FUN = as.numeric))
-      suppressWarnings(
-         MyStartTimes <- sapply(MyStartTimes, FUN = as.numeric))
-      suppressWarnings(
-         MyMaxDoseNum <- sapply(MyMaxDoseNum, FUN = as.numeric))
-      
-      Data <- Data %>%
-         mutate(StartHr_sub = MyStartTimes["substrate"],
-                TimeSinceDose1_sub = Time - StartHr_sub,
-                DoseInt_sub = MyIntervals["substrate"],
-                MaxDoseNum_sub = MyMaxDoseNum["substrate"],
-                DoseNum_sub = Time %/% DoseInt_sub + 1,
-                # Taking care of possible artifacts
-                DoseNum_sub = ifelse(DoseNum_sub < 0, 0, DoseNum_sub),
-                DoseNum_sub = ifelse(DoseNum_sub > MaxDoseNum_sub, 
-                                     MaxDoseNum_sub, DoseNum_sub),
-                # If it was a single dose, make everything after StartHr dose
-                # 1 and everything before StartHr dose 0. if it was a single
-                # dose, then DoseInt is NA.
-                DoseNum_sub = ifelse(is.na(DoseInt_sub),
-                                     ifelse(TimeSinceDose1_sub < 0, 0, 1), DoseNum_sub),
-                StartHr_inhib1 = MyStartTimes["inhibitor 1"],
-                TimeSinceDose1_inhib1 = Time - StartHr_inhib1,
-                DoseInt_inhib1 = MyIntervals["inhibitor 1"],
-                MaxDoseNum_inhib1 = MyMaxDoseNum["inhibitor 1"],
-                DoseNum_inhib = Time %/% DoseInt_inhib1 + 1,
-                # Taking care of possible artifacts
-                DoseNum_inhib = ifelse(DoseNum_inhib < 0, 0, DoseNum_inhib),
-                DoseNum_inhib = ifelse(DoseNum_inhib > MaxDoseNum_inhib1, 
-                                       MaxDoseNum_inhib1, DoseNum_inhib),
-                # If it was a single dose, make everything after StartHr dose
-                # 1 and everything before StartHr dose 0. if it was a single
-                # dose, then DoseInt is NA.
-                DoseNum_inhib = ifelse(is.na(DoseInt_inhib1),
-                                       ifelse(TimeSinceDose1_inhib1 < 0, 0, 1), DoseNum_inhib),
-                StartHr_inhib2 = MyStartTimes["inhibitor 2"],
-                TimeSinceDose1_inhib2 = Time - StartHr_inhib2,
-                DoseInt_inhib2 = MyIntervals["inhibitor 2"],
-                MaxDoseNum_inhib2 = MyMaxDoseNum["inhibitor 2"],
-                DoseNum_inhib2 = Time %/% DoseInt_inhib2 + 1,
-                # Taking care of possible artifacts
-                DoseNum_inhib2 = ifelse(DoseNum_inhib2 < 0, 0, DoseNum_inhib2),
-                DoseNum_inhib2 = ifelse(DoseNum_inhib2 > MaxDoseNum_inhib2, 
-                                        MaxDoseNum_inhib2, DoseNum_inhib2),
-                # If it was a single dose, make everything after StartHr dose
-                # 1 and everything before StartHr dose 0. if it was a single
-                # dose, then DoseInt is NA.
-                DoseNum_inhib2 = ifelse(is.na(DoseInt_inhib2),
-                                        ifelse(TimeSinceDose1_inhib2 < 0, 0, 1), DoseNum_inhib2))
-      
-      # Checking for when the simulation ends right at the last dose b/c
-      # then, setting that number to 1 dose lower
-      if(length(Data %>% filter(DoseNum_sub == max(Data$DoseNum_sub)) %>%
-                pull(Time) %>% unique()) == 1){
-         MyMaxDoseNum_sub <- max(Data$DoseNum_sub)
-         Data <- Data %>%
-            mutate(DoseNum_sub = ifelse(DoseNum_sub == MyMaxDoseNum_sub,
-                                        MyMaxDoseNum_sub - 1, DoseNum_sub))
-      }
-      
-      if(length(Data %>% filter(DoseNum_inhib == max(Data$DoseNum_inhib)) %>%
-                pull(Time) %>% unique()) == 1){
-         MyMaxDoseNum_inhib1 <- max(Data$DoseNum_inhib)
-         Data <- Data %>%
-            mutate(DoseNum_inhib = ifelse(DoseNum_inhib == MyMaxDoseNum_inhib1,
-                                          MyMaxDoseNum_inhib1 - 1, DoseNum_inhib))
-      }
-      
-      if(length(Data %>% filter(DoseNum_inhib2 == max(Data$DoseNum_inhib2)) %>%
-                pull(Time) %>% unique()) == 1){
-         MyMaxDoseNum_inhib2 <- max(Data$DoseNum_inhib2)
-         Data <- Data %>%
-            mutate(DoseNum_inhib2 = ifelse(DoseNum_inhib2 == MyMaxDoseNum_inhib2,
-                                           MyMaxDoseNum_inhib2 - 1, DoseNum_inhib2))
-      }
-      
       # Finalizing, tidying, selecting only useful columns
       Data <- Data %>%
          mutate(File = sim_data_file,
                 Compound = MyCompound[compoundID], 
-                CompoundID = compoundID, 
-                DoseNum = case_when(
-                   {{compoundID}} %in% 
-                      c("substrate", "primary metabolite 1", 
-                        "primary metabolite 2", 
-                        "secondary metabolite") ~ DoseNum_sub, 
-                   {{compoundID}} %in% c("inhibitor 1", 
-                                         "inhibitor  1 metabolite") ~ DoseNum_inhib, 
-                   {{compoundID}} %in% c("inhibitor 2") ~ DoseNum_inhib2)) %>%
+                CompoundID = compoundID) %>%
          arrange(across(any_of(c("CompoundID", "Compound",
                                  "Individual", "Trial", "Time")))) %>%
          select(any_of(c("Compound", "CompoundID", 

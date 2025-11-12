@@ -2,23 +2,14 @@
 % Please edit documentation in R/extract_fu.R
 \name{extract_fu}
 \alias{extract_fu}
-\title{Extract fu,plasma values that change with time from a Simulator output Excel
-file. UNDER CONSTRUCTION!}
+\title{Extract fu,plasma values that change with concentration or with time from a
+Simulator output Excel file. UNDER CONSTRUCTION.}
 \usage{
-extract_fu(
-  sim_data_files,
-  returnAggregateOrIndiv = "both",
-  existing_exp_details = NA
-)
+extract_fu(sim_data_files, existing_exp_details = NA)
 }
 \arguments{
 \item{sim_data_files}{the Simcyp Simulator Excel results files containing the
 simulated time-dependent fu data, in quotes}
-
-\item{returnAggregateOrIndiv}{Return aggregate and/or individual simulated fu
-data? Options are "individual", "aggregate", or "both" (default).
-Aggregated data are not calculated here but are pulled from the simulator
-output rows labeled as "mean".}
 
 \item{existing_exp_details}{If you have already run
 \code{\link{extractExpDetails_mult}} or \code{\link{extractExpDetails}} to
@@ -33,13 +24,13 @@ about your experimental set up.}
 a data.frame
 }
 \description{
-\code{extract_fu} extracts the time-dependent fraction unbound in plasma from
-a simulator output Excel file. A tab named something like "fu Profile (Sub)"
-must be present. This currently only extracts data for the substrate, but if
-you have an example with a different compound, please talk to Laura Shireman.
-UNDER CONSTRUCTION!
-}
-\examples{
-# None yet
+\code{extract_fu} extracts the fraction unbound in plasma from a
+simulator output Excel file. A tab named something like "fu Profile (Sub)"
+must be present. 
 
+\itemize{\item{This currently only extracts data for the substrate, but if
+you have an example with a different compound, please talk to Laura Shireman.}
+
+\item{This has only been set up for baseline simulations without 
+perpetrators. Please tell Laura Shireman if you need a DDI version.}}
 }

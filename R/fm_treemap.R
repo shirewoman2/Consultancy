@@ -83,6 +83,9 @@
 #'   Leaving this as NA means the file will not be automatically saved to disk.
 #' @param fig_height figure height in inches; default is 3
 #' @param fig_width figure width in inches; default is 4
+#' @param legend_position Specify where you want the legend to be. Options are
+#'   "left", "right", "bottom" (default), "top", or "none" if
+#'   you don't want one at all.
 #'
 #' @return a ggplot2 graph
 #' @export
@@ -111,6 +114,7 @@ fm_treemap <- function(fm_dataframe,
                        color_set = "default", 
                        label_fm_cutoff = 0.05,
                        legend_nrow = NA,
+                       legend_position = "bottom", 
                        biggest_box_position = "top left",
                        graph_title = NA,
                        graph_title_size = 14, 
@@ -198,12 +202,20 @@ fm_treemap <- function(fm_dataframe,
       }
    }
    
+   legend_position <- tolower(legend_position)[1]
+   if(complete.cases(legend_position) && 
+      legend_position %in% c("left", "right", "bottom", "top", "none") == FALSE){
+      warning(wrapn("You have specified something for the legend position that is not among the possible options. We'll set it to 'right'."), 
+              call. = FALSE)
+      legend_position <- "right"
+   }
+   
    
    # Main function ----------------------------------------------------------
    
    # Adding labels 
    fm_dataframe <- fm_dataframe %>% 
-      rename(DME = !!pathway_column,
+      mutate(DME = !!pathway_column,
              fm = !!fm_column)
    
    if("PerpPresent" %in% names(fm_dataframe)){
@@ -279,7 +291,7 @@ fm_treemap <- function(fm_dataframe,
             # breaks = fm_dataframe$LabelLegend[which(fm_dataframe$fm < label_fm_cutoff)],
             values = MyColors) +
          theme(legend.title = element_blank(),
-               legend.position = "bottom")
+               legend.position = legend_position)
       
       if(complete.cases(legend_nrow)){
          G <- G + guides(fill = guide_legend(nrow = legend_nrow))

@@ -599,8 +599,7 @@ ct_plot_obs <- function(ct_dataframe,
       facet2_column = !!facet2_column,
       facet2_title = facet2_title, 
       obs_to_sim_assignment = NA,
-      # mean_type = "none", # NB: This needs to be "none" for ct_plot_overlay to work correctly w/obs data
-      mean_type = mean_type, 
+      mean_type = "none", # NB: This needs to be "none" for ct_plot_overlay to work correctly w/obs data
       figure_type = "means only", 
       linear_or_log = linear_or_log,
       color_labels = color_labels, 

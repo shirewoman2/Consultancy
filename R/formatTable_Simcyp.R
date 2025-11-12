@@ -120,7 +120,8 @@
 #'   changes, e.g., this is a PK table and you want a line every time there's a
 #'   different simulation, tissue, compound, etc. but not every time there's a
 #'   different statistic, set this to "when dataset changes", which is the
-#'   default.
+#'   default. You can also say "every X rows" where X is the number of rows
+#'   until you want the next horizontal line.
 #' @param font font to use. Default is "Arial" and any fonts available on your
 #'   machine in either Word or PowerPoint should be acceptable. If you get Times
 #'   New Roman in your table when you asked for something else, it means that
@@ -266,7 +267,7 @@ formatTable_Simcyp <- function(DF,
                   "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-      
+   
    page_orientation <- tolower(page_orientation)[1]
    if(page_orientation %in% c("portrait", "landscape") == FALSE){
       warning(wrapn("You requested something other than `portrait` or `landscape` for the page orientation in the Word output, and those are the only options. We'll use the default of `portrait`."), 
@@ -339,35 +340,41 @@ formatTable_Simcyp <- function(DF,
    
    # Need hlines to be a number, so adjusting if they requested "when dataset
    # changes"
-   if(any(complete.cases(hlines)) &&
-      any(str_detect(tolower(hlines), "data.*change"))){
+   if(any(complete.cases(hlines))){
       
-      IDs <- DF %>% 
-         select(any_of(setdiff(names(DF), c("Statistic", names(DF)[PKCols]))))
-      
-      if(ncol(IDs) == 0){
-         hlines <- as.numeric(NA)
-      } else {
+      if(any(str_detect(tolower(hlines), "data.*change"))){
          
-         IDs <- IDs %>% 
-            unite(col = "ID", 
-                  setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
-                  remove = FALSE) %>% 
-            unique() %>% 
-            mutate(Row = as.numeric(NA))
+         IDs <- DF %>% 
+            select(any_of(setdiff(names(DF), c("Statistic", names(DF)[PKCols]))))
          
-         DF <- DF %>% 
-            unite(col = "ID", 
-                  setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
-                  remove = FALSE)
-         
-         for(i in 1:nrow(IDs)){
-            IDs$Row[i] <- max(which(DF$ID == IDs$ID[i]))
+         if(ncol(IDs) == 0){
+            hlines <- as.numeric(NA)
+         } else {
+            
+            IDs <- IDs %>% 
+               unite(col = "ID", 
+                     setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
+                     remove = FALSE) %>% 
+               unique() %>% 
+               mutate(Row = as.numeric(NA))
+            
+            DF <- DF %>% 
+               unite(col = "ID", 
+                     setdiff(names(DF), c("Statistic", names(DF)[PKCols])),
+                     remove = FALSE)
+            
+            for(i in 1:nrow(IDs)){
+               IDs$Row[i] <- max(which(DF$ID == IDs$ID[i]))
+            }
+            
+            hlines <- IDs$Row
+            
+            DF$ID <- NULL
          }
+      } else if(any(str_detect(tolower(hlines), "every"))){
          
-         hlines <- IDs$Row
+         hlines <- as.numeric(str_trim(gsub("every|row(s)?", "", hlines)))
          
-         DF$ID <- NULL
       }
    }
    
