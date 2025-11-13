@@ -143,6 +143,9 @@ extractInputTab <- function(deets = "all",
       # Setting up regex to search
       ToDetect <- InputDeets_DF %>% 
          filter(Detail == deet) %>% pull(Regex_row)
+      
+      if(is.na(ToDetect)){return(NA)}
+      
       NameCol <- InputDeets_DF$NameCol[which(InputDeets_DF$Detail == deet)]
       Row <- which(str_detect(InputTab[, NameCol] %>% pull(), ToDetect)) +
          (InputDeets_DF %>% filter(Detail == deet) %>% pull(OffsetRows))
@@ -243,7 +246,7 @@ extractInputTab <- function(deets = "all",
    # to do StartDayTime_x and SimulatorVersion separately.
    MyInputDeets1 <-
       MyInputDeets[!str_detect(MyInputDeets, 
-                               "CLint_|Interaction_|^StartDayTime|Transport_|SimulatorVersion|OrganTissue")]
+                               "CLint_|CL_additional|Interaction_|^StartDayTime|Transport_|SimulatorVersion|OrganTissue|Redefine_subjects_over_time")]
    
    if(length(MyInputDeets1) > 0){
       for(i in MyInputDeets1){
