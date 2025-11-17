@@ -268,7 +268,7 @@ annotateDetails <- function(existing_exp_details,
                   "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-      
+   
    compoundID <- tolower(compoundID)
    
    if(all(complete.cases(compoundID)) &&
@@ -753,32 +753,44 @@ annotateDetails <- function(existing_exp_details,
                       "Compound", "Detail")), everything()) %>% 
       select(-Enzyme, -DetailType)
    
+   CmpdSuff <- AllRegCompounds$CompoundID
+   names(CmpdSuff) <- AllRegCompounds$Suffix
+   
    # Checking for duplicates from, e.g., there being more than one pathway
-   PathwayCheck <- MainDetails %>% 
+   PathwayCheck <-
+      MainDetails %>% 
       filter(complete.cases(Value) & complete.cases(Notes)) %>%
-      group_by(Notes) %>% 
+      group_by(Notes, CompoundID) %>% 
       summarize(N = length(sort(unique(Detail))), 
                 DetailConcat = str_c(unique(Detail), collapse = " | ")) %>% 
       ungroup() %>% 
-      filter(N > 1) %>%
+      filter(N > 1) %>% 
       select(-N) %>% 
-      left_join(MainDetails %>% select(Notes, Detail), by = "Notes") %>% 
+      left_join(MainDetails %>% select(Notes, Detail) %>% unique(), by = "Notes") %>% 
       unique() %>% 
       mutate(Enzyme = str_extract(Detail, EnzTranspRegex), 
              Pathway = str_extract(Detail, pattern = 
-                                      paste0(Enzyme, ".*_(", 
-                                             str_c(unique(AllCompounds$Suffix), 
-                                                   collapse = "|"), ")")), 
-             Pathway = str_remove(Pathway, paste0(Enzyme, "_")), 
-             Pathway = str_remove(Pathway, paste0("_(", 
+                                      paste0(Enzyme, ".*(",
+                                             str_c(unique(AllCompounds$Suffix),
+                                                   collapse = "|"), ")")),
+             Pathway = case_when(
+                complete.cases(Enzyme) ~ str_remove(Pathway, paste0(Enzyme, "_")), 
+                .default = Pathway), 
+             Pathway = str_remove(Pathway, paste0("(", 
                                                   str_c(unique(AllCompounds$Suffix),
                                                         collapse = "|"), ")")), 
              Pathway = sub("OH", "-OH", Pathway), 
              Pathway = sub("^-", "", Pathway), 
              Pathway = str_replace(Pathway, "Gut", "gut"), 
              Pathway = str_replace(Pathway, "Liver", "liver"), 
-             Pathway = str_replace(Pathway, "Kidney", "kidney"), 
-             Pathway = str_replace(Notes, Enzyme, paste0(Enzyme, " (", Pathway, " pathway)"))) %>% 
+             Pathway = str_replace(Pathway, "Kidney", "kidney")) %>% 
+      filter(complete.cases(Enzyme) & complete.cases(Pathway)) %>% 
+      mutate(
+         Pathway = paste0(Enzyme, " (", Pathway, ")"), 
+         Pathway = str_replace(
+            string = Notes, 
+            pattern = Enzyme, 
+            replacement = Pathway)) %>% 
       # Removing some things that wind up being duplicates here b/c the
       # Simulator codes them oddly
       filter(!str_detect(Detail, "NumDoses|StartDayTimeH"))

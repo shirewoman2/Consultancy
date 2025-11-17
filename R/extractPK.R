@@ -1276,7 +1276,9 @@ extractPK <- function(sim_data_file,
             paste0("Abs_model", AllRegCompounds$Suffix[
                AllRegCompounds$CompoundID == compoundToExtract])]
          
-         if(AbsModel == "ADAM"){
+         # NB: AbsModel will be NA for IV dosing. 
+         if(complete.cases(AbsModel) && 
+            AbsModel == "ADAM"){
             
             PKparameters_Abs_ADAM <- intersect(
                PKparameters_Abs, 
@@ -1386,7 +1388,8 @@ extractPK <- function(sim_data_file,
                   mutate(PKparameter = i)
             } 
             
-         } else if(AbsModel == "1st order"){
+         } else if(complete.cases(AbsModel) && 
+                   AbsModel == "1st order"){
             # Data extraction when model was first order
             
             # Error catching

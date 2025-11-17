@@ -469,7 +469,7 @@ ct_plot_mult <- function(ct_dataframe,
    
    ## Setting up graph titles and order --------------------------------------
    if(length(graph_titles) == 1 && complete.cases(graph_titles) &&
-      str_detect(tolower(graph_titles), "tell me")){
+      str_detect(tolower(graph_titles), "tell me|show me|example")){
       
       graph_titles_all <- sort(unique(DatasetCheck$GraphLabs))
       
