@@ -11,7 +11,7 @@ A data.frame
 CYP3A4_liver
 }
 \description{
-Enzyem-abundance levels for liver CYP3A4 in the presence and absence of
+Enzyme-abundance levels for liver CYP3A4 in the presence and absence of
 multiple-dose ritonavir. Format of the data are the same as the output from
 \code{\link{extractEnzAbund}}.
 }

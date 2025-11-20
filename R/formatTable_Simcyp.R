@@ -374,6 +374,7 @@ formatTable_Simcyp <- function(DF,
       } else if(any(str_detect(tolower(hlines), "every"))){
          
          hlines <- as.numeric(str_trim(gsub("every|row(s)?", "", hlines)))
+         hlines <- seq(hlines, nrow(DF), by = hlines)
          
       }
    }
@@ -386,12 +387,12 @@ formatTable_Simcyp <- function(DF,
    ## Making DF into a flextable ----------------------------------------------
    
    if("data.frame" %in% class(DF) == FALSE){
-      stop("Please check your input. The `formatTable_Simcyp` function only works with data.frames or flextables, and it looks like you have supplied some other type of data.", 
+      stop(wrapn("Please check your input. The `formatTable_Simcyp` function only works with data.frames or flextables, and it looks like you have supplied some other type of data."), 
            call. = FALSE)
    }
    
    if(nrow(DF) == 0){
-      stop("Please check your input. The data.frame you supplied doesn't have any rows.", 
+      stop(wrapn("Please check your input. The data.frame you supplied doesn't have any rows."), 
            call. = FALSE)
    }
    
@@ -931,6 +932,7 @@ formatTable_Simcyp <- function(DF,
          flextable::fix_border_issues()
    } 
    
+   ### hlines -------------------------------------------------------
    if(any(complete.cases(hlines))){
       FT <- FT %>% 
          flextable::hline(part = "body",

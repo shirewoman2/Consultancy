@@ -54,7 +54,7 @@ extractAUCXtab <- function(PKparameters,
       # able to pass through to other functions and just skip any
       # files that aren't simulator output.
       warning(wrapn(paste0("It appears that you don't have any aggregate data in your simulator output file ",
-                     sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.")),
+                           sim_data_file, "; was this a population-representative simulation? This function only really works well when there are aggregate data present, so this file will be skipped.")),
               call. = FALSE)
       return(list())
    } 
@@ -122,8 +122,8 @@ extractAUCXtab <- function(PKparameters,
          # They'll get what they get! :-D
          if(any(PKparameters_orig %in% c("all", "AUC tab", "Absorption tab")) == FALSE){
             warning(wrapn(paste0("The column with information for ", i,
-                           " on the tab '", Sheet, "' cannot be found in the file '", 
-                           sim_data_file, "'.")), 
+                                 " on the tab '", Sheet, "' cannot be found in the file '", 
+                                 sim_data_file, "'.")), 
                     call. = FALSE)
             
             Warn_if_noAUCinf_col[i] <- FALSE
@@ -182,7 +182,8 @@ extractAUCXtab <- function(PKparameters,
       File = sim_data_file, 
       Sheet = Sheet, 
       PKparameter = names(Out_agg), 
-      Interval = gsub("\\(|\\)", "", str_extract(AUCX_xl[1, 1], "from.*"))) %>% 
+      Interval = as.character(
+         gsub("\\(|\\)", "", str_extract(AUCX_xl[1, 1], "from.*")))) %>% 
       mutate(Interval = gsub("\\.00 ", " ", Interval))
    
    Out <- list("Out_ind" = Out_ind,

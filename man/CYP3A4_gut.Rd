@@ -11,7 +11,7 @@ A data.frame
 CYP3A4_gut
 }
 \description{
-Enzyem-abundance levels for CYP3A4 in the colon and in the small intestine in
+Enzyme-abundance levels for CYP3A4 in the colon and in the small intestine in
 the presence and absence of multiple-dose ritonavir. Format of the data are
 the same as the output from \code{\link{extractEnzAbund}}.
 }

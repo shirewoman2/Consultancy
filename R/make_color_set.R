@@ -111,7 +111,7 @@ make_color_set <- function(color_set,
                        "colors to use. We will recycle the colors to get enough to display your data, but you probably will want to supply more colors and re-graph.\n"), 
                  call. = FALSE)
          
-         MyColors <- rep(color_set, 100)[1:num_colors]
+         MyColors <- rep(color_set, num_colors)[1:num_colors]
       } else {
          MyColors <- color_set
       }
@@ -134,16 +134,45 @@ make_color_set <- function(color_set,
          return("black")
       }
       
+      # Fixing possible misspecification of color set names
       color_set <- case_when(
          color_set == "default" & num_colors == 2 ~ "set1", 
          
          str_detect(color_set, "green") & str_detect(color_set, "blue") ~ "blue-green", 
          
+         str_detect(color_set, "green") & str_detect(color_set, "red") ~ "green to red", 
+         
+         str_detect(color_set, "yellow") & str_detect(color_set, "red") ~ "yellow to red", 
+         
          str_detect(color_set, "default|brewer.*2|set.*2|dark.*2") ~ "set2", 
          
          str_detect(color_set, "brewer.*1|set.*1") ~ "set1", 
          
+         str_detect(color_set, "laura sa") ~ "laurasa", 
+         
+         str_detect(color_set, "laura sh") ~ "laurash", 
+         
          .default = color_set)
+      
+      if(color_set %in% tolower(names(OurFavoriteColors))){
+         
+         names(OurFavoriteColors) <- tolower(names(OurFavoriteColors))
+         
+         NumColSpecified <- length(OurFavoriteColors[[color_set]])
+         
+         # Defining functions for gradients of specific people's color sets
+         gradConsultant <- colorRampPalette(OurFavoriteColors[[color_set]])
+         
+         OurFavoriteColors[["consultantx"]] <- OurFavoriteColors[[color_set]]
+         
+         # Making the color set name be generic.
+         color_set <- "consultantx"
+         
+      } else {
+         NumColSpecified <- num_colors # placeholder
+         gradConsultant <- colorRampPalette(c("black", "white")) # placeholder
+         OurFavoriteColors[["consultantx"]] <- c("black", "white") # placeholder
+      }
       
       shade <- case_when(is.na(shade) & 
                             color_set %in% c("greens", "purples") ~ "darker", 
@@ -177,13 +206,22 @@ make_color_set <- function(color_set,
                
                color_set == "reds" ~ reds(num_colors, shade = shade), 
                
+               color_set == "green to red" ~ as.character(green_to_red())[
+                  1:num_colors], 
+               
+               color_set == "yellow to red" ~ as.character(yellow_to_red())[
+                  1:num_colors], 
+               
+               color_set == "traffic" ~ c("#00B050", "#92D050", "#FFC000", "#FF0000")[
+                  1:num_colors], 
+               
                color_set == "rainbow" ~ rainbow(num_colors, shade = shade),
                
-               color_set == "elle" & num_colors <= 4 ~
-                  c("#800074", "#298c8c", "dodgerblue4", "black")[1:num_colors], 
+               color_set == "consultantx" & num_colors <= NumColSpecified ~
+                  OurFavoriteColors[["consultantx"]][1:num_colors], 
                
-               color_set == "elle" & num_colors > 4 ~ 
-                  rainbow(num_colors, shade = shade), 
+               color_set == "consultantx" & num_colors > NumColSpecified ~
+                  gradConsultant(num_colors), 
                
                color_set == "set1" ~ RColorBrewer::brewer.pal(num_colors, "Set1")[
                   1:num_colors],
@@ -200,7 +238,9 @@ make_color_set <- function(color_set,
       if(any(is.na(MyColors))){
          
          if(tolower(color_set_orig)[1] != "default"){
-            warning(wrapn("The color set you requested does not have enough values for the number of colors required. We're switching the color set to `rainbow`."), 
+            warning(wrapn(paste0("The color set you requested, '", 
+                                 color_set_orig, 
+                                 "', does not have enough values for the number of colors required. We're switching the color set to 'rainbow'.")), 
                     call. = FALSE)
          }
          
