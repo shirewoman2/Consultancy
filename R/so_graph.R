@@ -351,15 +351,9 @@ so_graph <- function(PKtable,
                   "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-      
+   
    if("list" %in% class(PKtable)){
       PKtable <- PKtable$Table
-   }
-   
-   if("CompoundID" %in% names(PKtable) && 
-      length(unique(PKtable$CompoundID)) > 1){
-      stop(wrapn("You have more than one compound ID in your data, and the so_graph function is meant to be used with just one compound ID at a time since the idea is that we'd be evaluating just one model at a time. Please remove the rows in your table that apply to whatever compounds you do not want and try again."), 
-           call. = FALSE)
    }
    
    if(is.na(axis_title_x)){
@@ -1029,7 +1023,8 @@ so_graph <- function(PKtable,
    # A bit more error catching now that everything is tidy
    if("CompoundID" %in% names(SO) && length(unique(SO$CompoundID)) > 1){
       warning(paste0(wrapn("You have more than one compound ID present in your PK data, so making a single set of simulated-vs-observed graphs for all of them might not be advisable. Specifically you have the following compounds present in your PK data:"), 
-                     str_c(sort(unique(SO$CompoundID)), collapse = "\n"), "\n"), 
+                     str_c(paste0("   ", sort(unique(SO$CompoundID))), collapse = "\n"), "\n", 
+                     "Please make sure that's what you wanted.\n"), 
               call. = FALSE)
    }
    
@@ -1507,7 +1502,7 @@ so_graph <- function(PKtable,
                              aes(x = Observed, 
                                  color = point_color_column, 
                                  ymin = Var_lower, ymax = Var_upper),
-                             width = BarWidth, 
+                             height = BarWidth, 
                              show.legend = FALSE)
          )
       } 
@@ -1519,7 +1514,7 @@ so_graph <- function(PKtable,
                               aes(y = Simulated, 
                                   color = point_color_column, 
                                   xmin = ObsVar_lower, xmax = ObsVar_upper), 
-                              height = BarWidth, 
+                              width = BarWidth, 
                               show.legend = FALSE)
          )
       } 
@@ -1570,20 +1565,6 @@ so_graph <- function(PKtable,
             values = MyColors, drop = FALSE, 
             name = legend_label_point_color, 
             guide = guide_legend(
-               nrow = switch(
-                  legend_position,
-                  "bottom" = case_when(
-                     length(unique(SO[[i]]$point_color_column)) > 3 & 
-                        length(unique(SO[[i]]$point_color_column)) <= 6 ~ 2, 
-                     length(unique(SO[[i]]$point_color_column)) > 6 ~ 3, 
-                     .default = 1),
-                  "top" = case_when(
-                     length(unique(SO[[i]]$point_color_column)) > 3 & 
-                        length(unique(SO[[i]]$point_color_column)) <= 6 ~ 2, 
-                     length(unique(SO[[i]]$point_color_column)) > 6 ~ 3, 
-                     .default = 1), 
-                  "left" = NULL,
-                  "right" = NULL), 
                order = case_when(
                   # no legend for color
                   as_label(point_color_column) == "<empty>" ~ 99,
@@ -1594,19 +1575,6 @@ so_graph <- function(PKtable,
             values = MyFillColors, drop = FALSE, 
             name = legend_label_point_color, 
             guide = guide_legend(
-               nrow = switch(legend_position,
-                             "bottom" = case_when(
-                                length(levels(SO[[i]]$point_color_column)) > 3 & 
-                                   length(levels(SO[[i]]$point_color_column)) <= 6 ~ 2, 
-                                length(levels(SO[[i]]$point_color_column)) > 6 ~ 3, 
-                                .default = 1),
-                             "top" = case_when(
-                                length(levels(SO[[i]]$point_color_column)) > 3 & 
-                                   length(levels(SO[[i]]$point_color_column)) <= 6 ~ 2, 
-                                length(levels(SO[[i]]$point_color_column)) > 6 ~ 3, 
-                                .default = 1), 
-                             "left" = NULL,
-                             "right" = NULL), 
                order = case_when(
                   # no legend for color
                   as_label(point_color_column) == "<empty>" ~ 99,
@@ -1617,19 +1585,6 @@ so_graph <- function(PKtable,
             values = MyShapes, drop = FALSE, 
             name = legend_label_point_shape, 
             guide = guide_legend(
-               nrow = switch(legend_position,
-                             "bottom" = case_when(
-                                length(levels(SO[[i]]$point_shape_column)) > 3 & 
-                                   length(levels(SO[[i]]$point_shape_column)) <= 6 ~ 2, 
-                                length(levels(SO[[i]]$point_shape_column)) > 6 ~ 3, 
-                                .default = 1),
-                             "top" = case_when(
-                                length(levels(SO[[i]]$point_shape_column)) > 3 & 
-                                   length(levels(SO[[i]]$point_shape_column)) <= 6 ~ 2, 
-                                length(levels(SO[[i]]$point_shape_column)) > 6 ~ 3, 
-                                .default = 1),
-                             "left" = NULL,
-                             "right" = NULL), 
                order = case_when(
                   # no legend for color
                   as_label(point_shape_column) == "<empty>" & 
@@ -1651,13 +1606,92 @@ so_graph <- function(PKtable,
                      as_label(point_color_column) == as_label(point_shape_column) ~ 1)))
       
       if(any(MyPointShapes %in% c(21:25))){
+         
+         if(as_label(point_shape_column) == as_label(point_color_column)){
+            # Do not override the aes for shape if shape and color are mapped to
+            # the same thing
+            
+            G[[i]] <- G[[i]] + 
+               guides(
+                  color = guide_legend(
+                     # override.aes = list(shape = 21), 
+                     nrow = switch(
+                        legend_position,
+                        "bottom" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                        "top" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                        "left" = NULL,
+                        "right" = NULL)),
+                  fill = guide_legend(
+                     # override.aes = list(shape = 21), 
+                     nrow = switch(
+                        legend_position,
+                        "bottom" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                        "top" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                        "left" = NULL,
+                        "right" = NULL)), 
+                  shape = guide_legend(
+                     nrow = switch(
+                        legend_position,
+                        "bottom" = (length(levels(SO[[i]]$point_shape_column)) - 1) %/% 3 + 1,
+                        "top" = (length(levels(SO[[i]]$point_shape_column)) - 1) %/% 3 + 1,
+                        "left" = NULL,
+                        "right" = NULL)))
+         } else {
+            
+            G[[i]] <- G[[i]] + 
+               guides(
+                  color = guide_legend(
+                     override.aes = list(shape = 21), 
+                     nrow = switch(
+                        legend_position,
+                        "bottom" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                        "top" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                        "left" = NULL,
+                        "right" = NULL)),
+                  fill = guide_legend(
+                     override.aes = list(shape = 21), 
+                     nrow = switch(
+                        legend_position,
+                        "bottom" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                        "top" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                        "left" = NULL,
+                        "right" = NULL)), 
+                  shape = guide_legend(
+                     nrow = switch(
+                        legend_position,
+                        "bottom" = (length(levels(SO[[i]]$point_shape_column)) - 1) %/% 3 + 1,
+                        "top" = (length(levels(SO[[i]]$point_shape_column)) - 1) %/% 3 + 1,
+                        "left" = NULL,
+                        "right" = NULL)))
+         }
+         
+      } else {
+         
          G[[i]] <- G[[i]] + 
             guides(
                color = guide_legend(
-                  override.aes = list(shape = 21)), 
+                  nrow = switch(
+                     legend_position,
+                     "bottom" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                     "top" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                     "left" = NULL,
+                     "right" = NULL)),
                fill = guide_legend(
-                  override.aes = list(shape = 21)))
-      } 
+                  nrow = switch(
+                     legend_position,
+                     "bottom" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                     "top" = (length(levels(SO[[i]]$point_color_column)) - 1) %/% 3 + 1,
+                     "left" = NULL,
+                     "right" = NULL)), 
+               shape = guide_legend(
+                  nrow = switch(
+                     legend_position,
+                     "bottom" = (length(levels(SO[[i]]$point_shape_column)) - 1) %/% 3 + 1,
+                     "top" = (length(levels(SO[[i]]$point_shape_column)) - 1) %/% 3 + 1,
+                     "left" = NULL,
+                     "right" = NULL)))
+         
+      }
       
       if("list" %in% class(title_adjustments)){
          Gtitle <- title_adjustments[[i]]

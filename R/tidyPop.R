@@ -126,8 +126,17 @@ tidyPop <- function(input_pop,
       "Rat" = "rats")
    
    TidySteps <- data.frame(Step1 = sub("Sim-", "", input_pop))
-   TidySteps$Step2 <- sapply(TidySteps$Step1, function(x) which(str_detect(x, names(PopNiceNames)))[1])
+   
+   TidySteps$Step2 <-
+      sapply(TidySteps$Step1, 
+             function(x) which(str_detect(x, names(PopNiceNames)))[1])
    TidySteps$SimulatorName <- names(PopNiceNames)[TidySteps$Step2]
+   
+   TidySteps <- TidySteps %>% 
+      mutate(SimulatorName = case_when(is.na(SimulatorName) ~ "NOT FOUND", 
+                                       .default = SimulatorName), 
+             Step2 = case_when(is.na(Step2) ~ 0, 
+                               .default = Step2))
    
    TidySteps <- TidySteps %>% 
       cbind(str_locate(TidySteps$Step1, TidySteps$SimulatorName)) %>% 

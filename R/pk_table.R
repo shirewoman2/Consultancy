@@ -434,7 +434,7 @@ pk_table <- function(PKparameters = NA,
                   "\nlibrary(tidyverse)\n\n    ...and then try again.\n"), 
            call. = FALSE)
    }
-      
+   
    # Checking whether they've supplied pksummary_table args instead of
    # pksummary_mult args
    if("sim_data_file" %in% names(match.call()) &
@@ -1023,7 +1023,8 @@ pk_table <- function(PKparameters = NA,
    if(interval_in_columns){
       
       MyPKResults <- MyPKResults %>% 
-         pivot_wider(names_from = PKParam, values_from = Value) %>%
+         pivot_wider(names_from = PKParam, 
+                     values_from = Value) %>%
          mutate(SorO = factor(SorO, levels = c("Sim", "Obs", "S_O", "S_O_TM")), 
                 Stat = factor(Stat, levels = unique(
                    AllStats$InternalColNames[
@@ -1052,12 +1053,17 @@ pk_table <- function(PKparameters = NA,
          select(Stat, PKParam, Value, SorO, File, Sheet, CompoundID, 
                 Tissue, Interval) %>% 
          # Need to make PK parameter more generic if we remove interval from name
-         mutate(PKParam = sub("_dose1|_last", "", PKParam), 
-                PKParam = case_match(PKParam, 
-                                     "AUCtau" ~ "AUCt", 
-                                     .default = PKParam)) %>% 
+         mutate(
+            PKParam = sub("_dose1|_last", "", PKParam), 
+            PKParam = case_match(PKParam, 
+                                 "AUCtau" ~ "AUCt", 
+                                 .default = PKParam), 
+            PKParam = factor(
+               PKParam, 
+               levels = unique(AllPKParameters$PKparameter_nodosenum))) %>% 
          pivot_wider(names_from = PKParam, 
                      values_from = Value)
+      
    }
    
    rm(GoodPKParam)
@@ -1188,15 +1194,16 @@ pk_table <- function(PKparameters = NA,
                       
                       # the default scenario
                       "default" =
-                         bind_rows(AllPKParameters, 
-                                   AllPKParameters %>% 
-                                      mutate(PKparameter = sub("_dose1|_last", "", PKparameter), 
-                                             SortOrder = SortOrder + 25)) %>% # This should work based on how I've got the SortOrder set up in AllPKParameters.
-                         select(PKparameter, SortOrder) %>% 
-                         arrange(SortOrder) %>%
+                         bind_rows(
+                            AllPKParameters %>% 
+                               select(PKparameter, SortOrder),
+                            AllPKParameters %>% 
+                               select(PKparameter_nodosenum, SortOrder) %>% 
+                               rename(PKparameter = PKparameter_nodosenum)) %>% 
+                         arrange(SortOrder, PKparameter) %>% 
                          pull(PKparameter) %>% unique(), 
                       
-                      # user wants a specific order but using default tabs
+                      # user wants a specific order 
                       "user specified" = PKparameters$PKparameter)
    
    MyPKResults <- MyPKResults %>%
